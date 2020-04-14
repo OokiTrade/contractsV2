@@ -1,0 +1,9 @@
+__pycache__
+.history
+.hypothesis/
+build/
+reports/
+.*
+!.gitignore
+!.gitattributes
+ignore
