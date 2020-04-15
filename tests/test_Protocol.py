@@ -5,17 +5,17 @@ import pytest
 def test_targetSetup(Constants, FuncSigs, bzx):
     
     sigs = [
-        FuncSigs["setupLoanParams"],
-        FuncSigs["disableLoanParams"]
+        FuncSigs["LoanSettings"]["setupLoanParams"],
+        FuncSigs["LoanSettings"]["disableLoanParams"]
     ]
     targets = [Constants["ONE_ADDRESS"]] * len(sigs)
     bzx.setTargets(sigs, targets)
 
-    assert bzx.getTarget(FuncSigs["setupLoanParams"]) == Constants["ONE_ADDRESS"]
-    assert bzx.getTarget(FuncSigs["disableLoanParams"]) == Constants["ONE_ADDRESS"]
+    assert bzx.getTarget(FuncSigs["LoanSettings"]["setupLoanParams"]) == Constants["ONE_ADDRESS"]
+    assert bzx.getTarget(FuncSigs["LoanSettings"]["disableLoanParams"]) == Constants["ONE_ADDRESS"]
 
     targets = [Constants["ZERO_ADDRESS"]] * len(sigs)
     bzx.setTargets(sigs, targets)
 
-    assert bzx.getTarget(FuncSigs["setupLoanParams"]) == Constants["ZERO_ADDRESS"]
-    assert bzx.getTarget(FuncSigs["disableLoanParams"]) == Constants["ZERO_ADDRESS"]
+    assert bzx.getTarget(FuncSigs["LoanSettings"]["setupLoanParams"]) == Constants["ZERO_ADDRESS"]
+    assert bzx.getTarget(FuncSigs["LoanSettings"]["disableLoanParams"]) == Constants["ZERO_ADDRESS"]

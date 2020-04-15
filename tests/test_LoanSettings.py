@@ -4,7 +4,7 @@ import pytest
 
 from brownie import Wei, reverts
 
-def test_addremoveLoanParams(Constants, bzx, settings, accounts, TestToken):
+def test_addremoveLoanParams(Constants, bzx, loanSettings, accounts, TestToken):
 
     accounts[0].deploy(TestToken, "Token0", "Token0", 18, 1e21)
     accounts[0].deploy(TestToken, "Token1", "Token1", 18, 1e21)
@@ -19,11 +19,11 @@ def test_addremoveLoanParams(Constants, bzx, settings, accounts, TestToken):
         "maintenanceMargin": Wei("15 ether"),
         "maxLoanDuration": "2419200"
     }
-    tx = settings.setupLoanParams([list(loanParams.values())])
+    tx = loanSettings.setupLoanParams["tuple[]"]([list(loanParams.values())])
 
-    loanParamsId = tx.events["LoanParamsIdAdded"][0]["id"]
+    loanParamsId = tx.events["LoanParamsIdSetup"][0]["id"]
 
-    loanParamsAfter = settings.getLoanParams(loanParamsId)
+    loanParamsAfter = loanSettings.getLoanParams(loanParamsId)
     loanParamsAfter = dict(zip(list(loanParamsAfter.keys()), loanParamsAfter))
     print(loanParamsAfter)
     
@@ -33,7 +33,7 @@ def test_addremoveLoanParams(Constants, bzx, settings, accounts, TestToken):
     assert(loanParamsAfter["loanToken"] == TestToken[0].address)
 
     with reverts("unauthorized owner"):
-        settings.disableLoanParams([loanParamsId], { "from": accounts[1] })
+        loanSettings.disableLoanParams([loanParamsId], { "from": accounts[1] })
         
-    settings.disableLoanParams([loanParamsId], { "from": accounts[0] })
-    assert(settings.getLoanParams(loanParamsId)[0] != "0x0")
+    loanSettings.disableLoanParams([loanParamsId], { "from": accounts[0] })
+    assert(loanSettings.getLoanParams(loanParamsId)[0] != "0x0")
