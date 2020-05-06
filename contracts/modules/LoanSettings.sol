@@ -20,7 +20,7 @@ contract LoanSettings is State, VaultController {
         address indexed collateralToken,
         uint256 initialMargin,
         uint256 maintenanceMargin,
-        uint256 maxLoanDuration
+        uint256 fixedLoanTerm
     );
     event LoanParamsIdSetup(
         bytes32 indexed id,
@@ -34,7 +34,7 @@ contract LoanSettings is State, VaultController {
         address indexed collateralToken,
         uint256 initialMargin,
         uint256 maintenanceMargin,
-        uint256 maxLoanDuration
+        uint256 fixedLoanTerm
     );
     event LoanParamsIdDisabled(
         bytes32 indexed id,
@@ -50,6 +50,14 @@ contract LoanSettings is State, VaultController {
         uint256 expirationStartTimestamp
     );
 
+    event LoanOrderChangeAmount(
+        bytes32 indexed loanParamsId,
+        address indexed owner,
+        bool indexed isLender,
+        uint256 oldBalance,
+        uint256 newBalance
+    );
+
     constructor() public {}
 
     function()
@@ -58,15 +66,7 @@ contract LoanSettings is State, VaultController {
         revert("fallback not allowed");
     }
 
-    // Setup for new LoanParams
-    // setupLoanParams((bytes32,bool,address,address,address,uint256,uint256,uint256))
     // setupLoanParams((bytes32,bool,address,address,address,uint256,uint256,uint256)[])
-    function setupLoanParams(
-        LoanParams calldata loanParamsLocal)
-        external
-    {
-        _setupLoanParams(loanParamsLocal);
-    }
     function setupLoanParams(
         LoanParams[] calldata loanParamsList)
         external
@@ -77,11 +77,12 @@ contract LoanSettings is State, VaultController {
     }
 
     // setupOrder((bytes32,bool,address,address,address,uint256,uint256,uint256),uint256,uint256,uint256,bool)
-    // setupOrder(uint256,uint256,uint256,uint256,bool)
     function setupOrder(
         LoanParams calldata loanParamsLocal,
         uint256 lockedAmount,
         uint256 interestRate,
+        uint256 minLoanTerm,
+        uint256 maxLoanTerm,
         uint256 expirationStartTimestamp,
         bool isLender)
         external
@@ -92,14 +93,20 @@ contract LoanSettings is State, VaultController {
             loanParams[loanParamsId],
             lockedAmount,
             interestRate,
+            minLoanTerm,
+            maxLoanTerm,
             expirationStartTimestamp,
             isLender
         );
     }
-    function setupOrder(
+
+    // setupOrderWithId(uint256,uint256,uint256,uint256,bool)
+    function setupOrderWithId(
         bytes32 loanParamsId,
         uint256 lockedAmount, // initial deposit
         uint256 interestRate,
+        uint256 minLoanTerm,
+        uint256 maxLoanTerm,
         uint256 expirationStartTimestamp,
         bool isLender)
         external
@@ -111,8 +118,42 @@ contract LoanSettings is State, VaultController {
             loanParamsLocal,
             lockedAmount,
             interestRate,
+            minLoanTerm,
+            maxLoanTerm,
             expirationStartTimestamp,
             isLender
+        );
+    }
+
+    // depositToOrder(bytes32,uint256,bool)
+    function depositToOrder(
+        bytes32 loanParamsId,
+        uint256 depositAmount,
+        bool isLender)
+        external
+        payable
+    {
+        _changeOrderBalance(
+            loanParamsId,
+            depositAmount, // changeAmount,
+            isLender,
+            true // isDeposit
+        );
+    }
+
+    // withdrawFromOrder(bytes32,uint256,bool)
+    function withdrawFromOrder(
+        bytes32 loanParamsId,
+        uint256 depositAmount,
+        bool isLender)
+        external
+        payable
+    {
+        _changeOrderBalance(
+            loanParamsId,
+            depositAmount, // changeAmount,
+            isLender,
+            false // isDeposit
         );
     }
 
@@ -135,7 +176,7 @@ contract LoanSettings is State, VaultController {
                 loanParamsLocal.collateralToken,
                 loanParamsLocal.initialMargin,
                 loanParamsLocal.maintenanceMargin,
-                loanParamsLocal.maxLoanDuration
+                loanParamsLocal.fixedLoanTerm
             );
             emit LoanParamsIdDisabled(
                 loanParamsLocal.id,
@@ -144,10 +185,20 @@ contract LoanSettings is State, VaultController {
         }
     }
 
-    // getLoanParams(bytes32[])
-    /*function getLoanParams(
-        bytes32[] calldata loanParamsIdList)
-        external
+    // getLoanParams(bytes32)
+    function getLoanParams(
+        bytes32 loanParamsId)
+        public
+        view
+        returns (LoanParams memory)
+    {
+        return loanParams[loanParamsId];
+    }
+
+    // getLoanParams(bytes32)
+    function getLoanParamsBatch(
+        bytes32[] memory loanParamsIdList)
+        public
         view
         returns (LoanParams[] memory loanParamsList)
     {
@@ -155,7 +206,7 @@ contract LoanSettings is State, VaultController {
         uint256 itemCount;
 
         for (uint256 i=0; i < loanParamsIdList.length; i++) {
-            LoanParams memory loanParamsLocal = loanParams[loanParamsIdList[i]];
+            LoanParams memory loanParamsLocal = getLoanParams(loanParamsIdList[i]);
             if (loanParamsLocal.id == 0) {
                 continue;
             }
@@ -168,18 +219,17 @@ contract LoanSettings is State, VaultController {
                 mstore(loanParamsList, itemCount)
             }
         }
-    }*/
-
-    // getLoanParams(bytes32)
-    function getLoanParams(
-        bytes32 loanParamsId)
-        external
-        view
-        returns (LoanParams memory)
-    {
-        return loanParams[loanParamsId];
     }
 
+    function getTotalPrincipal(
+        address lender,
+        address loanToken)
+        external
+        view
+        returns (uint256)
+    {
+        return lenderInterest[lender][loanToken].principalTotal;
+    }
 
     function _setupLoanParams(
         LoanParams memory loanParamsLocal)
@@ -213,7 +263,7 @@ contract LoanSettings is State, VaultController {
             loanParamsLocal.collateralToken,
             loanParamsLocal.initialMargin,
             loanParamsLocal.maintenanceMargin,
-            loanParamsLocal.maxLoanDuration
+            loanParamsLocal.fixedLoanTerm
         );
         emit LoanParamsIdSetup(
             loanParamsId,
@@ -227,6 +277,8 @@ contract LoanSettings is State, VaultController {
         LoanParams memory loanParamsLocal,
         uint256 lockedAmount,
         uint256 interestRate,
+        uint256 minLoanTerm,
+        uint256 maxLoanTerm,
         uint256 expirationStartTimestamp,
         bool isLender)
         internal
@@ -237,10 +289,15 @@ contract LoanSettings is State, VaultController {
         Order memory orderLocal = isLender ?
             lenderOrders[msg.sender][loanParamsLocal.id] :
             borrowerOrders[msg.sender][loanParamsLocal.id];
-        require(orderLocal.lockedAmount == 0, "order exists");
+        require(orderLocal.createdStartTimestamp == 0, "order exists");
+
+        require(maxLoanTerm >= minLoanTerm, "invalid term range");
 
         orderLocal.lockedAmount = lockedAmount;
         orderLocal.interestRate = interestRate;
+        orderLocal.minLoanTerm = minLoanTerm;
+        orderLocal.maxLoanTerm = maxLoanTerm;
+        orderLocal.createdStartTimestamp = block.timestamp;
         orderLocal.expirationStartTimestamp = expirationStartTimestamp;
         if (isLender) {
             lenderOrders[msg.sender][loanParamsLocal.id] = orderLocal;
@@ -257,7 +314,10 @@ contract LoanSettings is State, VaultController {
                 lockedAmount
             );
         } else {
-            vaultEtherDeposit(msg.value);
+            vaultEtherDeposit(
+                msg.sender,
+                lockedAmount // == msg.value
+            );
         }
 
         emit LoanOrderSetup(
@@ -267,6 +327,83 @@ contract LoanSettings is State, VaultController {
             lockedAmount,
             interestRate,
             expirationStartTimestamp
+        );
+    }
+
+    function _changeOrderBalance(
+        bytes32 loanParamsId,
+        uint256 changeAmount,
+        bool isLender,
+        bool isDeposit)
+        internal
+    {
+        LoanParams memory loanParamsLocal = loanParams[loanParamsId];
+        require(loanParamsLocal.id != 0, "loanParams not exists");
+
+        Order memory orderLocal = isLender ?
+            lenderOrders[msg.sender][loanParamsLocal.id] :
+            borrowerOrders[msg.sender][loanParamsLocal.id];
+        require(orderLocal.createdStartTimestamp != 0, "order not exists");
+
+        uint256 oldLockedAmount = orderLocal.lockedAmount;
+
+        if (isDeposit) {
+            require(msg.value == 0 || loanParamsLocal.collateralToken == address(wethToken), "wrong asset sent");
+            require(changeAmount != 0 && (msg.value == 0 || msg.value == changeAmount), "insufficient asset sent");
+
+            orderLocal.lockedAmount = orderLocal.lockedAmount
+                .add(changeAmount);
+
+            if (msg.value == 0) {
+                vaultDeposit(
+                    isLender ?
+                        loanParamsLocal.loanToken :
+                        loanParamsLocal.collateralToken,
+                    msg.sender,
+                    changeAmount
+                );
+            } else {
+                vaultEtherDeposit(
+                    msg.sender,
+                    changeAmount // == msg.value
+                );
+            }
+        } else {
+            require(msg.value == 0, "ether sent");
+            require(changeAmount <= orderLocal.lockedAmount, "insufficient lockedAmount");
+
+            orderLocal.lockedAmount = orderLocal.lockedAmount
+                .sub(changeAmount);
+
+            if (loanParamsLocal.collateralToken == address(wethToken)) {
+                vaultWithdraw(
+                    isLender ?
+                        loanParamsLocal.loanToken :
+                        loanParamsLocal.collateralToken,
+                    msg.sender,
+                    changeAmount
+                );
+            } else {
+                vaultEtherWithdraw(
+                    msg.sender,
+                    changeAmount
+                );
+            }
+
+        }
+
+        if (isLender) {
+            lenderOrders[msg.sender][loanParamsLocal.id] = orderLocal;
+        } else {
+            borrowerOrders[msg.sender][loanParamsLocal.id] = orderLocal;
+        }
+
+        emit LoanOrderChangeAmount(
+            loanParamsLocal.id,
+            msg.sender,
+            isLender,
+            oldLockedAmount,
+            orderLocal.lockedAmount
         );
     }
 }

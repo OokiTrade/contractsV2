@@ -12,11 +12,30 @@ import "../openzeppelin/SafeERC20.sol";
 contract VaultController is Constants {
     using SafeERC20 for IERC20;
 
+    event VaultDeposit(
+        address indexed asset,
+        address indexed from,
+        uint256 amount
+    );
+    event VaultWithdraw(
+        address indexed asset,
+        address indexed to,
+        uint256 amount
+    );
+
     function vaultEtherDeposit(
+        address from,
         uint256 value)
         internal
     {
-        wethToken.deposit.value(value)();
+        IWethERC20 _wethToken = wethToken;
+        _wethToken.deposit.value(value)();
+
+        emit VaultDeposit(
+            address(_wethToken),
+            from,
+            value
+        );
     }
 
     function vaultEtherWithdraw(
@@ -25,11 +44,18 @@ contract VaultController is Constants {
         internal
     {
         if (value != 0) {
+            IWethERC20 _wethToken = wethToken;
             uint256 balance = address(this).balance;
             if (value > balance) {
-                wethToken.withdraw(value - balance);
+                _wethToken.withdraw(value - balance);
             }
             Address.sendValue(to, value);
+
+            emit VaultWithdraw(
+                address(_wethToken),
+                to,
+                value
+            );
         }
     }
 
@@ -45,6 +71,12 @@ contract VaultController is Constants {
                 address(this),
                 value
             );
+
+            emit VaultDeposit(
+                token,
+                from,
+                value
+            );
         }
     }
 
@@ -56,6 +88,12 @@ contract VaultController is Constants {
     {
         if (value != 0) {
             IERC20(token).safeTransfer(
+                to,
+                value
+            );
+
+            emit VaultWithdraw(
+                token,
                 to,
                 value
             );

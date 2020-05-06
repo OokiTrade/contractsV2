@@ -1,56 +1,39 @@
 # Brownie configuration file
 # https://eth-brownie.readthedocs.io/en/stable/config.html
-network:
-    default: development # the default network that brownie connects to
-    settings:
-        gas_limit: "auto"
-        gas_price: "auto"
-        persist: true
-        reverting_tx_gas_limit: false  # if false, reverting tx's will raise without broadcasting
-    networks:
-        # any settings given here will replace the defaults
-        development:
-            host: http://127.0.0.1
-            gas_price: 0
-            persist: false #true
-            reverting_tx_gas_limit: 6721975
-            test_rpc:
-                cmd: ganache-cli #--db ./db
-                port: 8545
-                gas_limit: 8000000
-                accounts: 10
-                evm_version: istanbul
-                mnemonic: brownie
-        # set your Infura API token to the environment variable WEB3_INFURA_PROJECT_ID
-        mainnet:
-            host: https://eth-mainnet.alchemyapi.io/v2/
-        mainnet_fork:
-            host: http://127.0.0.1:8546
-            persist: false
-            gas_limit: 7200000
-            gas_price: 8000000000
-        goerli:
-            host: https://goerli.infura.io/v3/$WEB3_INFURA_PROJECT_ID
-        kovan:
-            host: https://kovan.infura.io/v3/$WEB3_INFURA_PROJECT_ID
-        rinkeby:
-            host: https://rinkeby.infura.io/v3/$WEB3_INFURA_PROJECT_ID
-        ropsten:
-            host: https://ropsten.infura.io/v3/$WEB3_INFURA_PROJECT_ID
-        classic:
-            host: https://www.ethercluster.com/etc
-        kotti:
-            host: https://www.ethercluster.com/kotti
-pytest:
-    # these settings replace the defaults when running pytest
-    gas_limit: 6721975
-    default_contract_owner: true
-    reverting_tx_gas_limit: 6721975
-    revert_traceback: true
+networks:
+    default: development
+    development:
+        gas_limit: 8000000
+        gas_price: 0
+        reverting_tx_gas_limit: 8000000
+        default_contract_owner: true
+    live:
+        gas_limit: auto
+        gas_price: 8000000000
+        reverting_tx_gas_limit: false
+        default_contract_owner: false
+
 compiler:
     evm_version: null
-    minify_source: false
     solc:
-        version: 0.5.17
-        optimize: true
-        runs: 200
+        version: null
+        optimizer:
+            enabled: true
+            runs: 200
+        remappings: null
+
+# Setup ANSI escape sequences for PowerShell on Windows 10, run
+# Set-ItemProperty HKCU:\Console VirtualTerminalLevel -Type DWORD 1, then open a new shell
+console:
+    show_colors: true
+    color_style: monokai
+    auto_suggest: true
+    completions: true
+
+hypothesis:
+    deadline: null
+    max_examples: 50
+    stateful_step_count: 10
+
+autofetch_sources: false
+dependencies: null

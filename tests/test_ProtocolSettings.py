@@ -2,26 +2,26 @@
 
 import pytest
 
-#from brownie import Wei, reverts
+def test_setCoreParams(Constants, bzx, bzxproxy):
 
-def test_setCoreParams(Constants, bzx, settings):
-
-    settings.setCoreParams(
+    bzx.setCoreParams(
         Constants["ONE_ADDRESS"], # protocolTokenAddress
-        Constants["ONE_ADDRESS"], # feedsController
-        Constants["ONE_ADDRESS"], # feedsController
+        Constants["ONE_ADDRESS"], # priceFeeds
+        Constants["ONE_ADDRESS"], # swapsImpl
+        5e18 # protocolFeePercent
     )
 
-    assert bzx.protocolTokenAddress() == Constants["ONE_ADDRESS"]
-    assert bzx.feedsController() == Constants["ONE_ADDRESS"]
-    assert bzx.feedsController() == Constants["ONE_ADDRESS"]
+    assert bzxproxy.protocolTokenAddress() == Constants["ONE_ADDRESS"]
+    assert bzxproxy.priceFeeds() == Constants["ONE_ADDRESS"]
+    assert bzxproxy.swapsImpl() == Constants["ONE_ADDRESS"]
+    assert bzxproxy.protocolFeePercent() == 5e18
 
-def test_setProtocolManagers(Constants, settings, accounts):
+def test_setProtocolManagers(Constants, bzx, accounts):
 
-    assert(not settings.protocolManagers(accounts[1]))
-    assert(not settings.protocolManagers(accounts[2]))
+    assert(not bzx.protocolManagers(accounts[1]))
+    assert(not bzx.protocolManagers(accounts[2]))
 
-    settings.setProtocolManagers(
+    bzx.setProtocolManagers(
         [
             accounts[1],
             accounts[2]
@@ -32,10 +32,10 @@ def test_setProtocolManagers(Constants, settings, accounts):
         ]
     )
 
-    assert(settings.protocolManagers(accounts[1]))
-    assert(settings.protocolManagers(accounts[2]))
+    assert(bzx.protocolManagers(accounts[1]))
+    assert(bzx.protocolManagers(accounts[2]))
 
-    settings.setProtocolManagers(
+    bzx.setProtocolManagers(
         [
             accounts[1],
             accounts[2]
@@ -46,9 +46,48 @@ def test_setProtocolManagers(Constants, settings, accounts):
         ]
     )
 
-    assert(not settings.protocolManagers(accounts[1]))
-    assert(not settings.protocolManagers(accounts[2]))
+    assert(not bzx.protocolManagers(accounts[1]))
+    assert(not bzx.protocolManagers(accounts[2]))
 
+def test_setLoanPools(Constants, bzx, accounts):
+
+    assert(bzx.loanPoolToUnderlying(accounts[6]) == Constants["ZERO_ADDRESS"])
+    assert(bzx.underlyingToLoanPool(accounts[7]) == Constants["ZERO_ADDRESS"])
+
+    bzx.setLoanPools(
+        [
+            accounts[6],
+            accounts[8]
+        ],
+        [
+            accounts[7],
+            accounts[9]
+        ]
+    )
+
+    assert(bzx.loanPoolToUnderlying(accounts[6]) == accounts[7])
+    assert(bzx.underlyingToLoanPool(accounts[7]) == accounts[6])
+
+    assert(bzx.loanPoolToUnderlying(accounts[8]) == accounts[9])
+    assert(bzx.underlyingToLoanPool(accounts[9]) == accounts[8])
+
+    #print(bzx.getloanPoolsList(0, 100))
+
+    bzx.setLoanPools(
+        [
+            accounts[6]
+        ],
+        [
+            Constants["ZERO_ADDRESS"]
+        ]
+    )
+
+    assert(bzx.loanPoolToUnderlying(accounts[6]) == Constants["ZERO_ADDRESS"])
+    assert(bzx.underlyingToLoanPool(accounts[7]) == Constants["ZERO_ADDRESS"])
+
+    #print(bzx.getloanPoolsList(0, 100))
+
+    #assert(False)
 '''
 @pytest.mark.parametrize('idx', [0, 1, 2])
 def test_transferFrom_reverts(token, accounts, idx):

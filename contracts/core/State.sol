@@ -38,12 +38,15 @@ contract State is Constants, ReentrancyGuard, Ownable {
         address collateralToken; // collateralTokenAddress
         uint256 initialMargin; // initialMarginAmount
         uint256 maintenanceMargin; // maintenanceMarginAmount
-        uint256 maxLoanDuration; // maxDurationUnixTimestampSec
+        uint256 fixedLoanTerm; // maxDurationUnixTimestampSec
     }
 
     struct Order {
         uint256 lockedAmount;
         uint256 interestRate;
+        uint256 minLoanTerm;
+        uint256 maxLoanTerm;
+        uint256 createdStartTimestamp;
         uint256 expirationStartTimestamp;
     }
 
@@ -56,24 +59,24 @@ contract State is Constants, ReentrancyGuard, Ownable {
     }*/
 
     struct LenderInterest {
-        uint256 borrowTotal;        // total borrowed amount outstanding
+        uint256 principalTotal;     // total borrowed amount outstanding
         uint256 owedPerDay;         // interestOwedPerDay
         uint256 owedTotal;          // interest owed for all loans (assuming they go to full term)
-        uint256 interestPaid;       // interestPaid so far
+        uint256 paidTotal;          // interestPaid so far
         uint256 updatedTimestamp;   // interestPaidDate
     }
 
     struct LoanInterest {
         uint256 owedPerDay;         // interestOwedPerDay
-        uint256 paidTotal;          // interestPaid
-        uint256 depositTotal;       // interestDepositTotal
+        //uint256 paidTotal;          // interestPaid
+        uint256 depositToken;        // interestDepositTotal
         uint256 updatedTimestamp;   // updatedTimestamp
     }
 
 
     address public protocolTokenAddress;                                            // protocol token address
-    address public feedsController;                                                 // handles asset reference price lookups
-    address public tradesController;                                                // handles asset trades
+    address public priceFeeds;                                                 // handles asset reference price lookups
+    address public swapsImpl;                                                // handles asset trades
 
     mapping (bytes4 => address) public logicTargets;                                // implementations of protocol functions
 
@@ -102,4 +105,35 @@ contract State is Constants, ReentrancyGuard, Ownable {
     //  owner can change expirationStartTimestamp
     //EnumerableBytes32Set.Bytes32Set internal lendOrdersSet;                         // active loans set
     //EnumerableBytes32Set.Bytes32Set internal borrowOrdersSet;                       // active loans set
+
+    uint256 public protocolFeePercent;                                              //
+    mapping (address => uint256) public protocolFeeTokens;                            // delegated => approved
+
+    mapping (address => address) public loanPoolToUnderlying;                            // delegated => approved
+    mapping (address => address) public underlyingToLoanPool;                            // delegated => approved
+    EnumerableBytes32Set.Bytes32Set internal loanPoolsSet;                              // active loans set
+
+    // supported tokens for swaps
+    mapping (address => bool) public supportedTokens;
+
+    // TODO: setters for these ->
+    // A threshold of minimum initial margin for loan to be insured by the guarantee fund
+    // A value of 0 indicates that no threshold exists for this parameter.
+    uint256 public minInitialMarginAmount = 0;
+
+    // A threshold of minimum maintenance margin for loan to be insured by the guarantee fund
+    // A value of 0 indicates that no threshold exists for this parameter.
+    uint256 public minMaintenanceMarginAmount = 15 * 10**18;
+
+    uint256 public maxDisagreement = 5 * 10**18;
+
+    // Percentage of maximum slippage allowed for Kyber swap when liquidating
+    // This will always be between 0 and 100%
+    //uint256 public maxLiquidationSlippagePercent = 10 * 10**18; // 5 * 10**18;
+
+    // Percentage of maximum slippage allowed for Kyber swap during regular trades
+    // This will always be between 0 and 100%
+    uint256 public maxNormalSlippagePercent = 5 * 10**18; // 3 * 10**18;
+
+    //uint256 public maxSwapSize = 1500 ether;
 }

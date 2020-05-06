@@ -3,7 +3,7 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+pragma solidity >=0.5.0 <0.6.0;
 
 
 contract IERC20 {
@@ -18,4 +18,4 @@ contract IERC20 {
     function approve(address _spender, uint256 _value) public returns (bool);
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
-    }
+}

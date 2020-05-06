@@ -7,3 +7,5 @@ reports/
 !.gitignore
 !.gitattributes
 ignore
+*.txt
+*.log

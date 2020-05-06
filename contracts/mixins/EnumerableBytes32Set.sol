@@ -27,6 +27,21 @@ library EnumerableBytes32Set {
     }
 
     /**
+     * @dev Add an address value to a set. O(1).
+     * Returns false if the value was already in the set.
+     */
+    function addAddress(Bytes32Set storage set, address addrvalue)
+        internal
+        returns (bool)
+    {
+        bytes32 value;
+        assembly {
+            value := addrvalue
+        }
+        return add(set, value);
+    }
+
+    /**
      * @dev Add a value to a set. O(1).
      * Returns false if the value was already in the set.
      */
@@ -40,6 +55,21 @@ library EnumerableBytes32Set {
         } else {
             return false;
         }
+    }
+
+    /**
+     * @dev Removes an address value from a set. O(1).
+     * Returns false if the value was not present in the set.
+     */
+    function removeAddress(Bytes32Set storage set, address addrvalue)
+        internal
+        returns (bool)
+    {
+        bytes32 value;
+        assembly {
+            value := addrvalue
+        }
+        return remove(set, value);
     }
 
     /**
@@ -95,14 +125,21 @@ library EnumerableBytes32Set {
      * WARNING: This function may run out of gas on large sets: use {length} and
      * {get} instead in these cases.
      */
-    function enumerate(Bytes32Set storage set)
+    function enumerate(Bytes32Set storage set, uint256 start, uint256 count)
         internal
         view
-        returns (bytes32[] memory)
+        returns (bytes32[] memory output)
     {
-        bytes32[] memory output = new bytes32[](set.values.length);
-        for (uint256 i; i < set.values.length; i++){
-            output[i] = set.values[i];
+        uint256 end = start + count;
+        require(end >= start, "addition overflow");
+        end = set.values.length < end ? set.values.length : end;
+        if (end == 0 || start >= end) {
+            return output;
+        }
+
+        output = new bytes32[](end-start);
+        for (uint256 i; i < end-start; i++) {
+            output[i] = set.values[i+start];
         }
         return output;
     }
