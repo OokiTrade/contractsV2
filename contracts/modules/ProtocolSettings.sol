@@ -8,7 +8,7 @@ pragma experimental ABIEncoderV2;
 
 import "../core/State.sol";
 
-import "../../interfaces/IERC20.sol";
+import "../interfaces/IERC20.sol";
 
 contract ProtocolSettings is State {
 

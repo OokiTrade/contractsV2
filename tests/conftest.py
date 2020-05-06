@@ -2,7 +2,7 @@
 
 import pytest
 from brownie import Contract, network
-from brownie.network.contract import InterfaceContainer
+#from brownie.network.contract import InterfaceContainer
 from brownie.network.state import _add_contract, _remove_contract
 
 @pytest.fixture(scope="module")
@@ -60,8 +60,8 @@ def bzxproxy(bZxProtocol, accounts):
     return accounts[0].deploy(bZxProtocol)
 
 @pytest.fixture(scope="module")
-def bzx(accounts, bzxproxy, interface):
-    c = Contract.from_abi("bzx", address=bzxproxy.address, abi=interface.IBZx.abi, owner=accounts[0])
+def bzx(accounts, bzxproxy, IBZx):
+    c = Contract.from_abi("bzx", address=bzxproxy.address, abi=IBZx.abi, owner=accounts[0])
     _add_contract(c)
     return c
 

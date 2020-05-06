@@ -5,7 +5,7 @@
 
 pragma solidity 0.5.17;
 
-import "../../interfaces/IWethERC20.sol";
+import "../interfaces/IWethERC20.sol";
 
 
 contract Constants {

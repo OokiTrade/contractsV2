@@ -1,11 +1,16 @@
 __pycache__
+.DS_Store
 .history
 .hypothesis/
 build/
 reports/
+node_modules/
+ignore/
 .*
 !.gitignore
 !.gitattributes
+!.solhint.json
 ignore
 *.txt
 *.log
+package-lock.json

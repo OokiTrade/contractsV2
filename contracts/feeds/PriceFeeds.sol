@@ -9,7 +9,7 @@ pragma solidity 0.5.17;
 //import "../openzeppelin/Math.sol";
 import "../openzeppelin/SafeMath.sol";
 import "../openzeppelin/Ownable.sol";
-import "../../interfaces/IERC20.sol";
+import "../interfaces/IERC20.sol";
 import "../core/Constants.sol";
 
 
