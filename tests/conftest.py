@@ -2,7 +2,7 @@
 
 import pytest
 from brownie import Contract, network
-#from brownie.network.contract import InterfaceContainer
+from brownie.network.contract import InterfaceContainer
 from brownie.network.state import _add_contract, _remove_contract
 
 @pytest.fixture(scope="module")
@@ -48,6 +48,15 @@ def FuncSigs():
             "getRequiredCollateral": "getRequiredCollateral(address,address,uint256,uint256,bool)",
             "getBorrowAmount": "getBorrowAmount(address,address,uint256,uint256)",
         },
+        "LoanClosings": {
+        },
+        "LoanMaintenance": {
+            "extendLoanByInterest": "extendLoanByInterest(bytes32,address,uint256,bool,bytes)",
+            "reduceLoanByInterest": "reduceLoanByInterest(bytes32,address,address,uint256)",
+            "getUserLoans": "getUserLoans(address,uint256,uint256,uint256,bool,bool)",
+            "getLoan": "getLoan(bytes32)",
+            "getActiveLoans": "getActiveLoans(uint256,uint256,bool)",
+        },
         "SwapsExternal": {
             "swapExternal": "swapExternal(address,address,address,address,uint256,uint256,uint256,bytes)",
             "setSupportedSwapTokensBatch": "setSupportedSwapTokensBatch(address[],bool[])",
@@ -60,8 +69,8 @@ def bzxproxy(bZxProtocol, accounts):
     return accounts[0].deploy(bZxProtocol)
 
 @pytest.fixture(scope="module")
-def bzx(accounts, bzxproxy, IBZx):
-    c = Contract.from_abi("bzx", address=bzxproxy.address, abi=IBZx.abi, owner=accounts[0])
+def bzx(accounts, bzxproxy, interface):
+    c = Contract.from_abi("bzx", address=bzxproxy.address, abi=interface.IBZx.abi, owner=accounts[0])
     _add_contract(c)
     return c
 
@@ -92,11 +101,11 @@ def priceFeeds(accounts, WETH, DAI, LINK, PriceFeeds, PriceFeeds_local):
     return feeds
 
 @pytest.fixture(scope="module")
-def swapsImpl(accounts, SwapsImpl, SwapsImpl_local):
+def swapsImpl(accounts, SwapsImplKyber, SwapsImplLocal):
     if network.show_active() == "development":
-        feeds = accounts[0].deploy(SwapsImpl_local)
+        feeds = accounts[0].deploy(SwapsImplLocal)
     else:
-        feeds = accounts[0].deploy(SwapsImpl)
+        feeds = accounts[0].deploy(SwapsImplKyber)
         #feeds.setPriceFeedsBatch(...)
 
     return feeds
@@ -121,6 +130,17 @@ def loanSettings(LoanSettings, FuncSigs, accounts, bzxproxy):
     for s in FuncSigs["LoanSettings"].values():
         sigs.append(s)
     targets = [loanSettings.address] * len(sigs)
+    bzxproxy.setTargets(sigs, targets)
+
+@pytest.fixture(scope="module", autouse=True)
+def loanMaintenance(LoanMaintenance, FuncSigs, accounts, bzxproxy):
+
+    loanMaintenance = accounts[0].deploy(LoanMaintenance)
+
+    sigs = []
+    for s in FuncSigs["LoanMaintenance"].values():
+        sigs.append(s)
+    targets = [loanMaintenance.address] * len(sigs)
     bzxproxy.setTargets(sigs, targets)
 
 @pytest.fixture(scope="function", autouse=True)

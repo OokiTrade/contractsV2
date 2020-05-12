@@ -85,7 +85,16 @@ def test_borrow(Constants, WethDaiParamsId, WethDaiOrderSetup, bzx, DAI, account
 
     assert(borrowerBeforeBalance - 10e18 == borrowerAfterBalance)
     assert(receiverBeforeBalance + 1e18 == receiverAfterBalance)
-    
+
+    '''l = bzx.getUserLoans(
+        accounts[1],
+        0,
+        100,
+        0,
+        False,
+        False)
+    print (l)'''
+
     '''
     trace = web3.provider.make_request(
         "debug_traceTransaction", (tx.txid, {"disableMemory": True, "disableStack": True, "disableStorage": False})

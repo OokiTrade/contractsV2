@@ -1,0 +1,2 @@
+eth-brownie==1.8.4
+slither-analyzer==0.6.12

@@ -7,22 +7,22 @@ pragma solidity >=0.5.0 <0.6.0;
 pragma experimental ABIEncoderV2;
 
 import "../contracts/core/State.sol";
+import "../contracts/events/ProtocolSettingsEvents.sol";
+import "../contracts/events/LoanSettingsEvents.sol";
+import "../contracts/events/LoanOpeningsEvents.sol";
+import "../contracts/events/LoanClosingsEvents.sol";
+import "../contracts/events/SwapsEvents.sol";
 
 
-contract IBZx is State {
+contract IBZx is
+    State,
+    ProtocolSettingsEvents,
+    LoanSettingsEvents,
+    LoanOpeningsEvents,
+    LoanClosingsEvents,
+    SwapsEvents {
 
     ////// Protocol Settings //////
-    event CoreParamsSet(
-        address protocolTokenAddress,
-        address feedsController,
-        address swapsController,
-        uint256 protocolFeePercent
-    );
-    event ProtocolManagerSet(
-        address indexed delegator,
-        address indexed delegated,
-        bool isActive
-    );
 
     // setCoreParams(address,address,address,uint256)
     function setCoreParams(
@@ -52,51 +52,6 @@ contract IBZx is State {
 
 
     ////// Loan Settings //////
-    event LoanParamsSetup(
-        bytes32 indexed id,
-        address owner,
-        address indexed loanToken,
-        address indexed collateralToken,
-        uint256 initialMargin,
-        uint256 maintenanceMargin,
-        uint256 fixedLoanTerm
-    );
-    event LoanParamsIdSetup(
-        bytes32 indexed id,
-        address indexed owner
-    );
-
-    event LoanParamsDisabled(
-        bytes32 indexed id,
-        address owner,
-        address indexed loanToken,
-        address indexed collateralToken,
-        uint256 initialMargin,
-        uint256 maintenanceMargin,
-        uint256 fixedLoanTerm
-    );
-    event LoanParamsIdDisabled(
-        bytes32 indexed id,
-        address indexed owner
-    );
-
-    event LoanOrderSetup(
-        bytes32 indexed loanParamsId,
-        address indexed owner,
-        bool indexed isLender,
-        uint256 lockedAmount,
-        uint256 interestRate,
-        uint256 expirationStartTimestamp
-    );
-
-    event LoanOrderChangeAmount(
-        bytes32 indexed loanParamsId,
-        address indexed owner,
-        bool indexed isLender,
-        uint256 oldBalance,
-        uint256 newBalance
-    );
-
 
     // setupLoanParams((bytes32,bool,address,address,address,uint256,uint256,uint256)[])
     function setupLoanParams(
@@ -173,24 +128,6 @@ contract IBZx is State {
 
 
     ////// Loan Openings //////
-    event Borrow(
-        bytes32 indexed loanId,
-        address indexed borrower,
-        address indexed loanToken,
-        address collateralToken,
-        uint256 newPrincipal,
-        uint256 newCollateral,
-        uint256 interestRate,
-        uint256 collateralToLoanRate,
-        uint256 currentMargin
-    );
-
-    event DelegatedManagerSet(
-        bytes32 indexed loanId,
-        address indexed delegator,
-        address indexed delegated,
-        bool isActive
-    );
 
     // borrow(bytes32,bytes32,uint256,uint256,address,address,address)
     function borrow(
@@ -205,6 +142,7 @@ contract IBZx is State {
         payable
         returns (uint256);
 
+    // borrowOrTradeFromPool(bytes32,bytes32,address[4],uint256[5],bytes)
     function borrowOrTradeFromPool(
         bytes32 loanParamsId,
         bytes32 loanId, // if 0, start a new loan
@@ -225,6 +163,7 @@ contract IBZx is State {
         payable
         returns (uint256);
 
+    // getRequiredCollateral(address,address,uint256,uint256,bool)
     function getRequiredCollateral(
         address loanToken,
         address collateralToken,
@@ -235,6 +174,7 @@ contract IBZx is State {
         view
         returns (uint256 collateralAmountRequired);
 
+    // getBorrowAmount(address,address,uint256,uint256)
     function getBorrowAmount(
         address loanToken,
         address collateralToken,
@@ -245,6 +185,7 @@ contract IBZx is State {
         view
         returns (uint256 borrowAmount);
 
+    // setDelegatedManager(bytes32,address,bool)
     function setDelegatedManager(
         bytes32 loanId,
         address delegated,
@@ -256,4 +197,71 @@ contract IBZx is State {
 
 
 
+    ////// Loan Maintenance //////
+
+    // extendLoanByInterest(bytes32,address,uint256,bool,bytes)
+    function extendLoanByInterest(
+        bytes32 loanId,
+        address payer,
+        uint256 depositAmount,
+        bool useCollateral,
+        bytes calldata loanDataBytes)
+        external
+        payable
+        returns (uint256 secondsExtended);
+
+    // reduceLoanByInterest(bytes32,address,address,uint256)
+    function reduceLoanByInterest(
+        bytes32 loanId,
+        address borrower,
+        address receiver,
+        uint256 withdrawAmount)
+        external
+        returns (uint256 secondsReduced);
+
+    struct LoanReturnData {
+        bytes32 loanId;
+        address loanToken;
+        address collateralToken;
+        uint256 principal;
+        uint256 collateral;
+        uint256 interestOwedPerDay;
+        uint256 interestDepositRemaining;
+        uint256 initialMargin;
+        uint256 maintenanceMargin;
+        uint256 currentMargin;
+        uint256 fixedLoanTerm;
+        uint256 loanEndTimestamp;
+        uint256 maxLiquidatable;
+        uint256 maxSeizable;
+    }
+
+    // getUserLoans(address,uint256,uint256,uint256,bool,bool)
+    function getUserLoans(
+        address user,
+        uint256 start,
+        uint256 count,
+        uint256 loanType,
+        bool isLender,
+        bool unsafeOnly)
+        external
+        view
+        returns (LoanReturnData[] memory loansData);
+
+
+    // getLoan(bytes32)
+    function getLoan(
+        bytes32 loanId)
+        external
+        view
+        returns (LoanReturnData memory loanData);
+
+    // getActiveLoans(uint256,uint256,bool)
+    function getActiveLoans(
+        uint256 start,
+        uint256 count,
+        bool unsafeOnly)
+        external
+        view
+        returns (LoanReturnData[] memory loansData);
 }

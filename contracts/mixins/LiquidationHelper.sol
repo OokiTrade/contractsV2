@@ -1,0 +1,83 @@
+/**
+ * Copyright 2017-2020, bZeroX, LLC. All Rights Reserved.
+ * Licensed under the Apache License, Version 2.0.
+ */
+
+pragma solidity 0.5.17;
+
+import "../core/State.sol";
+
+
+contract LiquidationHelper is State {
+
+    function _getLiquidationAmounts(
+        uint256 principal,
+        uint256 collateral,
+        uint256 currentMargin,
+        uint256 initialMargin,
+        uint256 maintenanceMargin,
+        uint256 collateralToLoanRate)
+        internal
+        view
+        returns (uint256 maxLiquidatable, uint256 maxSeizable, uint256 incentivePercent)
+    {
+        incentivePercent = liquidationIncentivePercent;
+        if (currentMargin < incentivePercent) {
+            incentivePercent = currentMargin;
+        }
+
+        if (currentMargin > maintenanceMargin) {
+            return (maxLiquidatable, maxSeizable, incentivePercent);
+        }
+
+        uint256 desiredMargin = maintenanceMargin
+            .add(5 ether); // 5 percentage points above maintenance
+        if (desiredMargin > initialMargin) {
+            desiredMargin = initialMargin;
+        }
+
+        maxLiquidatable = desiredMargin
+            .add(10*20)
+            .mul(principal)
+            .div(10**20);
+        maxLiquidatable = maxLiquidatable
+            .sub(
+                collateral
+                    .mul(collateralToLoanRate)
+                    .div(10**18)
+            );
+        maxLiquidatable = maxLiquidatable
+            .div(
+                desiredMargin
+                    .sub(incentivePercent)
+            )
+            .mul(10**20);
+        if (maxLiquidatable > principal) {
+            maxLiquidatable = principal;
+        }
+
+        maxSeizable = maxLiquidatable
+            .mul(collateralToLoanRate);
+        maxSeizable = maxSeizable
+            .mul(
+                incentivePercent
+                    .add(10*20)
+            );
+        maxSeizable = maxSeizable
+            .div(10**38);
+        if (maxSeizable > collateral) {
+            maxSeizable = collateral;
+        }
+
+        return (maxLiquidatable, maxSeizable, incentivePercent);
+    }
+/*
+formulas:
+5% collateral bonus
+min margin = 5%
+bonus reduces from there
+
+max_payback_amount = ((1 + new_margin)*old_loan - collateralToLoanRate*old_collateral) / (new_margin - 0.05)
+    }
+*/
+}

@@ -5,30 +5,16 @@
 
 pragma solidity 0.5.17;
 
-import "../SwapsImpl.sol";
+import "../../core/State.sol";
+import "../../openzeppelin/SafeERC20.sol";
+import "../ISwapsImpl.sol";
 import "../../feeds/IPriceFeeds.sol";
 import "../../testhelpers/TestToken.sol";
 
 
-contract SwapsImpl_local is SwapsImpl {
+contract SwapsImplLocal is State, ISwapsImpl {
+    using SafeERC20 for IERC20;
 
-    function _getExpectedRate(
-        address sourceTokenAddress,
-        address destTokenAddress,
-        uint256 sourceTokenAmount)
-        internal
-        view
-        returns (uint256)
-    {
-        (uint256 sourceToDestRate, uint256 sourceToDestPrecision) = IPriceFeeds(priceFeeds).queryRate(
-            sourceTokenAddress,
-            destTokenAddress
-        );
-
-        return sourceTokenAmount
-            .mul(sourceToDestRate)
-            .div(sourceToDestPrecision);
-    }
 
     function internalSwap(
         address sourceTokenAddress,
@@ -77,5 +63,23 @@ contract SwapsImpl_local is SwapsImpl {
                 );
             }
         }
+    }
+
+    function internalExpectedRate(
+        address sourceTokenAddress,
+        address destTokenAddress,
+        uint256 sourceTokenAmount)
+        public
+        view
+        returns (uint256)
+    {
+        (uint256 sourceToDestRate, uint256 sourceToDestPrecision) = IPriceFeeds(priceFeeds).queryRate(
+            sourceTokenAddress,
+            destTokenAddress
+        );
+
+        return sourceTokenAmount
+            .mul(sourceToDestRate)
+            .div(sourceToDestPrecision);
     }
 }

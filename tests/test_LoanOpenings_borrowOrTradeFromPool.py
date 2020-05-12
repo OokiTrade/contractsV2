@@ -2,7 +2,7 @@
 
 import pytest
 from brownie import Contract, Wei, reverts
-
+from fixedint import *
 
 @pytest.fixture(scope="module", autouse=True)
 def loanOpenings(LoanOpenings, FuncSigs, accounts, bzx, bzxproxy, Constants, priceFeeds, swapsImpl):
@@ -31,8 +31,8 @@ def LinkDaiParamsId(Constants, LINK, DAI, bzx, accounts):
         "owner": Constants["ZERO_ADDRESS"],
         "loanToken": DAI.address,
         "collateralToken": LINK.address,
-        "initialMargin": Wei("50 ether"),
-        "maintenanceMargin": Wei("15 ether"),
+        "initialMargin": 100e18, # 2x position (100% initialMargin for a LONG)
+        "maintenanceMargin": 15e18,
         "fixedLoanTerm": "2419200" # 28 days
     }
     tx = bzx.setupLoanParams([list(loanParams.values())])
@@ -50,7 +50,13 @@ def test_borrowOrTradeFromPool_sim(Constants, LinkDaiParamsId, bzx, DAI, LINK, a
         ]
     )
 
-    loanTokenSent = 104.25e18
+    bZxBeforeDAIBalance = DAI.balanceOf(bzx.address)
+    print("bZxBeforeDAIBalance", bZxBeforeDAIBalance)
+    
+    bZxBeforeLINKBalance = LINK.balanceOf(bzx.address)
+    print("bZxBeforeLINKBalance", bZxBeforeLINKBalance)
+
+    loanTokenSent = 100e18
 
     DAI.mint(
         bzx.address,
@@ -61,8 +67,8 @@ def test_borrowOrTradeFromPool_sim(Constants, LinkDaiParamsId, bzx, DAI, LINK, a
     collateralTokenSent = bzx.getRequiredCollateral(
         DAI.address,
         LINK.address,
-        100.1e18,
-        50e18,
+        loanTokenSent,
+        100e18,
         False
     )
     LINK.mint(
@@ -71,11 +77,8 @@ def test_borrowOrTradeFromPool_sim(Constants, LinkDaiParamsId, bzx, DAI, LINK, a
         { "from": accounts[0] }
     )
 
-    bZxBeforeDAIBalance = DAI.balanceOf(bzx.address)
-    print("bZxBeforeDAIBalance", bZxBeforeDAIBalance)
-    
-    bZxBeforeLINKBalance = LINK.balanceOf(bzx.address)
-    print("bZxBeforeLINKBalance", bZxBeforeLINKBalance)
+    print("loanTokenSent",loanTokenSent)
+    print("collateralTokenSent",collateralTokenSent)
 
     tx = bzx.borrowOrTradeFromPool(
         LinkDaiParamsId, #loanParamsId
@@ -89,8 +92,8 @@ def test_borrowOrTradeFromPool_sim(Constants, LinkDaiParamsId, bzx, DAI, LINK, a
         ],
         [
             5e18, # newRate (5%)
-            100e18, # newPrincipal
-            0,#1.25e18, # torqueInterest (100e18 * 0.05 / 365 * 7884000 / 86400)
+            loanTokenSent, # newPrincipal
+            0, # torqueInterest
             loanTokenSent, # loanTokenSent
             collateralTokenSent # collateralTokenSent
         ],
@@ -105,9 +108,16 @@ def test_borrowOrTradeFromPool_sim(Constants, LinkDaiParamsId, bzx, DAI, LINK, a
     bZxAfterLINKBalance = LINK.balanceOf(bzx.address)
     print("bZxAfterLINKBalance", bZxAfterLINKBalance)
 
-    #assert(borrowerBeforeBalance - 10e18 == borrowerAfterBalance)
-    #assert(receiverBeforeBalance + 1e18 == receiverAfterBalance)
-    
+    tradeEvent = tx.events["Trade"][0]
+    print(tradeEvent)
+
+    interestForPosition = fixedint(loanTokenSent).mul(5e18).div(1e20).div(365).mul(2419200).div(86400)
+    print("interestForPosition",interestForPosition)
+
+    # expectedPositionSize = collateralTokenSent + ((loanTokenSent - interestForPosition) * tradeEvent["entryPrice"] // 1e18)
+    expectedPositionSize = fixedint(loanTokenSent).sub(interestForPosition).mul(tradeEvent["entryPrice"]).div(1e18).add(collateralTokenSent)
+    assert(expectedPositionSize == tradeEvent["positionSize"])
+
     '''
     trace = web3.provider.make_request(
         "debug_traceTransaction", (tx.txid, {"disableMemory": True, "disableStack": True, "disableStorage": False})
@@ -123,7 +133,7 @@ def test_borrowOrTradeFromPool_sim(Constants, LinkDaiParamsId, bzx, DAI, LINK, a
             break
     '''
     
-    assert(False)
+    #assert(False)
 
 
 

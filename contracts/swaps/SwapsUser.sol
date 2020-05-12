@@ -6,13 +6,12 @@
 pragma solidity 0.5.17;
 
 import "../core/State.sol";
-import "../mixins/VaultController.sol";
 import "../feeds/IPriceFeeds.sol";
-import "./SwapsEvents.sol";
+import "../events/SwapsEvents.sol";
 import "./ISwapsImpl.sol";
 
 
-contract SwapsUser is State, VaultController, SwapsEvents {
+contract SwapsUser is State, SwapsEvents {
 
     function _loanSwap(
         address user,

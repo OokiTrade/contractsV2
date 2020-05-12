@@ -7,56 +7,11 @@ pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
 import "../core/State.sol";
-
+import "../events/LoanSettingsEvents.sol";
 import "../mixins/VaultController.sol";
 
 
-contract LoanSettings is State, VaultController {
-
-    event LoanParamsSetup(
-        bytes32 indexed id,
-        address owner,
-        address indexed loanToken,
-        address indexed collateralToken,
-        uint256 initialMargin,
-        uint256 maintenanceMargin,
-        uint256 fixedLoanTerm
-    );
-    event LoanParamsIdSetup(
-        bytes32 indexed id,
-        address indexed owner
-    );
-
-    event LoanParamsDisabled(
-        bytes32 indexed id,
-        address owner,
-        address indexed loanToken,
-        address indexed collateralToken,
-        uint256 initialMargin,
-        uint256 maintenanceMargin,
-        uint256 fixedLoanTerm
-    );
-    event LoanParamsIdDisabled(
-        bytes32 indexed id,
-        address indexed owner
-    );
-
-    event LoanOrderSetup(
-        bytes32 indexed loanParamsId,
-        address indexed owner,
-        bool indexed isLender,
-        uint256 lockedAmount,
-        uint256 interestRate,
-        uint256 expirationStartTimestamp
-    );
-
-    event LoanOrderChangeAmount(
-        bytes32 indexed loanParamsId,
-        address indexed owner,
-        bool indexed isLender,
-        uint256 oldBalance,
-        uint256 newBalance
-    );
+contract LoanSettings is State, LoanSettingsEvents, VaultController {
 
     constructor() public {}
 

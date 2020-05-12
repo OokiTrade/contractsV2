@@ -7,23 +7,11 @@ pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
 import "../core/State.sol";
-
+import "../events/ProtocolSettingsEvents.sol";
 import "../interfaces/IERC20.sol";
 
-contract ProtocolSettings is State {
 
-    event CoreParamsSet(
-        address protocolTokenAddress,
-        address priceFeeds,
-        address swapsImpl,
-        uint256 protocolFeePercent
-    );
-
-    event ProtocolManagerSet(
-        address indexed delegator,
-        address indexed delegated,
-        bool isActive
-    );
+contract ProtocolSettings is State, ProtocolSettingsEvents {
 
     constructor() public {}
 

@@ -5,23 +5,13 @@
 
 pragma solidity 0.5.17;
 
-
 import "../core/State.sol";
-import "../mixins/VaultController.sol";
+import "../openzeppelin/SafeERC20.sol";
 import "./ISwapsImpl.sol";
 
 
-contract SwapsImpl is State, VaultController, ISwapsImpl {
+contract SwapsImplKyber is State, ISwapsImpl {
     using SafeERC20 for IERC20;
-
-    event Swap(
-        bytes32 indexed loanId,
-        address indexed sourceToken,
-        address indexed destToken,
-        address borrower,
-        uint256 sourceAmount,
-        uint256 destAmount
-    );
 
     address internal constant feeWallet = 0x13ddAC8d492E463073934E2a101e419481970299;
 
@@ -45,7 +35,7 @@ contract SwapsImpl is State, VaultController, ISwapsImpl {
         require(sourceTokenAddress != destTokenAddress, "source == dest");
         require(supportedTokens[sourceTokenAddress] && supportedTokens[destTokenAddress], "invalid tokens");
 
-        bytes memory txnData = _getTradeTxnData(
+        bytes memory txnData = _getSwapTxnData(
             sourceTokenAddress,
             destTokenAddress,
             receiverAddress,
@@ -147,7 +137,7 @@ contract SwapsImpl is State, VaultController, ISwapsImpl {
         return expectedRate;
     }
 
-    function _getTradeTxnData(
+    function _getSwapTxnData(
         address sourceTokenAddress,
         address destTokenAddress,
         address receiverAddress,
