@@ -3,6 +3,9 @@
 import pytest
 from brownie import Wei, reverts
 
+@pytest.fixture(scope="module", autouse=True)
+def loanSettings(LoanSettings, accounts, bzx):
+    bzx.replaceContract(accounts[0].deploy(LoanSettings).address)
 
 def test_setup_removeLoanParams(Constants, bzx, accounts, DAI, WETH):
 

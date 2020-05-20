@@ -2,7 +2,7 @@
 
 import pytest
 
-def test_setCoreParams(Constants, bzx, bzxproxy):
+def test_setCoreParams(Constants, bzx):
 
     bzx.setCoreParams(
         Constants["ONE_ADDRESS"], # protocolTokenAddress
@@ -11,10 +11,10 @@ def test_setCoreParams(Constants, bzx, bzxproxy):
         5e18 # protocolFeePercent
     )
 
-    assert bzxproxy.protocolTokenAddress() == Constants["ONE_ADDRESS"]
-    assert bzxproxy.priceFeeds() == Constants["ONE_ADDRESS"]
-    assert bzxproxy.swapsImpl() == Constants["ONE_ADDRESS"]
-    assert bzxproxy.protocolFeePercent() == 5e18
+    assert bzx.protocolTokenAddress() == Constants["ONE_ADDRESS"]
+    assert bzx.priceFeeds() == Constants["ONE_ADDRESS"]
+    assert bzx.swapsImpl() == Constants["ONE_ADDRESS"]
+    assert bzx.protocolFeePercent() == 5e18
 
 def test_setProtocolManagers(Constants, bzx, accounts):
 
@@ -49,12 +49,12 @@ def test_setProtocolManagers(Constants, bzx, accounts):
     assert(not bzx.protocolManagers(accounts[1]))
     assert(not bzx.protocolManagers(accounts[2]))
 
-def test_setLoanPools(Constants, bzx, accounts):
+def test_setLoanPoolToUnderlying(Constants, bzx, accounts):
 
     assert(bzx.loanPoolToUnderlying(accounts[6]) == Constants["ZERO_ADDRESS"])
     assert(bzx.underlyingToLoanPool(accounts[7]) == Constants["ZERO_ADDRESS"])
 
-    bzx.setLoanPools(
+    bzx.setLoanPoolToUnderlying(
         [
             accounts[6],
             accounts[8]
@@ -73,7 +73,7 @@ def test_setLoanPools(Constants, bzx, accounts):
 
     #print(bzx.getloanPoolsList(0, 100))
 
-    bzx.setLoanPools(
+    bzx.setLoanPoolToUnderlying(
         [
             accounts[6]
         ],

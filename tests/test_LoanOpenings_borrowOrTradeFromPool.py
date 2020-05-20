@@ -5,15 +5,8 @@ from brownie import Contract, Wei, reverts
 from fixedint import *
 
 @pytest.fixture(scope="module", autouse=True)
-def loanOpenings(LoanOpenings, FuncSigs, accounts, bzx, bzxproxy, Constants, priceFeeds, swapsImpl):
-
-    loanOpenings = accounts[0].deploy(LoanOpenings)
-
-    sigs = []
-    for s in FuncSigs["LoanOpenings"].values():
-        sigs.append(s)
-    targets = [loanOpenings.address] * len(sigs)
-    bzxproxy.setTargets(sigs, targets)
+def loanOpenings(LoanOpenings, accounts, bzx, Constants, priceFeeds, swapsImpl):
+    bzx.replaceContract(accounts[0].deploy(LoanOpenings).address)
 
     bzx.setCoreParams(
         Constants["ZERO_ADDRESS"], # protocolTokenAddress
@@ -84,6 +77,7 @@ def test_borrowOrTradeFromPool_sim(Constants, LinkDaiParamsId, bzx, DAI, LINK, a
         LinkDaiParamsId, #loanParamsId
         "0", # loanId
         False, # isTorqueLoan,
+        100e18, # initialMargin
         [
             accounts[2], # lender
             accounts[1], # borrower
@@ -117,6 +111,15 @@ def test_borrowOrTradeFromPool_sim(Constants, LinkDaiParamsId, bzx, DAI, LINK, a
     # expectedPositionSize = collateralTokenSent + ((loanTokenSent - interestForPosition) * tradeEvent["entryPrice"] // 1e18)
     expectedPositionSize = fixedint(loanTokenSent).sub(interestForPosition).mul(tradeEvent["entryPrice"]).div(1e18).add(collateralTokenSent)
     assert(expectedPositionSize == tradeEvent["positionSize"])
+
+    '''l = bzx.getUserLoans(
+        accounts[1],
+        0,
+        100,
+        0,
+        False,
+        False)
+    print (l)'''
 
     '''
     trace = web3.provider.make_request(

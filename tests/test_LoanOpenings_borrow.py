@@ -5,15 +5,8 @@ from brownie import Contract, Wei, reverts
 
 
 @pytest.fixture(scope="module", autouse=True)
-def loanOpenings(LoanOpenings, FuncSigs, accounts, bzx, bzxproxy, Constants, priceFeeds, swapsImpl):
-
-    loanOpenings = accounts[0].deploy(LoanOpenings)
-
-    sigs = []
-    for s in FuncSigs["LoanOpenings"].values():
-        sigs.append(s)
-    targets = [loanOpenings.address] * len(sigs)
-    bzxproxy.setTargets(sigs, targets)
+def loanOpenings(LoanOpenings, accounts, bzx, Constants, priceFeeds, swapsImpl):
+    bzx.replaceContract(accounts[0].deploy(LoanOpenings).address)
 
     bzx.setCoreParams(
         Constants["ZERO_ADDRESS"], # protocolTokenAddress
@@ -54,7 +47,7 @@ def WethDaiOrderSetup(Constants, WethDaiParamsId, bzx, DAI, accounts):
         { "from": accounts[0] }
     )
 
-def test_borrow(Constants, WethDaiParamsId, WethDaiOrderSetup, bzx, DAI, accounts, web3):
+def test_borrow(Constants, WethDaiParamsId, WethDaiOrderSetup, bzx, DAI, WETH, accounts, web3):
 
     #DAI.approve(bzx.address, Constants["MAX_UINT"])
 
@@ -66,15 +59,27 @@ def test_borrow(Constants, WethDaiParamsId, WethDaiOrderSetup, bzx, DAI, account
     print("borrowerBeforeBalance", borrowerBeforeBalance)
     print("receiverBeforeBalance", receiverBeforeBalance)
 
+    borrowAmount = 1e18
+
+    collateralTokenSent = bzx.getDepositAmountForBorrow(
+        DAI.address,
+        WETH.address,
+        borrowAmount,
+        50e18,
+        864000,
+        5e18
+    )
+
     tx = bzx.borrow(
         WethDaiParamsId, ## loanParamsId
         0,  ## loanId
-        1e18, ## borrowAmount
+        borrowAmount, ## borrowAmount
         864000, ## initialLoanDuration
         accounts[0], ## lender
         accounts[2], ## receiver
         Constants["ZERO_ADDRESS"], ## manager
-        { "from": accounts[1], "value": 10e18 }
+        True, ## depositCollateral
+        { "from": accounts[1], "value": collateralTokenSent }
     )
     print(tx.events)
 
@@ -83,17 +88,17 @@ def test_borrow(Constants, WethDaiParamsId, WethDaiOrderSetup, bzx, DAI, account
     print("borrowerAfterBalance", borrowerAfterBalance)
     print("receiverAfterBalance", receiverAfterBalance)
 
-    assert(borrowerBeforeBalance - 10e18 == borrowerAfterBalance)
-    assert(receiverBeforeBalance + 1e18 == receiverAfterBalance)
+    assert(borrowerBeforeBalance - collateralTokenSent == borrowerAfterBalance)
+    assert(receiverBeforeBalance + borrowAmount == receiverAfterBalance)
 
-    '''l = bzx.getUserLoans(
+    l = bzx.getUserLoans(
         accounts[1],
         0,
         100,
         0,
         False,
         False)
-    print (l)'''
+    print (l)
 
     '''
     trace = web3.provider.make_request(
