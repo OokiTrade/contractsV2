@@ -21,7 +21,18 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         revert("fallback not allowed");
     }
 
-    // setCoreParams(address,address,address,uint256)
+    function initialize(
+        address target)
+        external
+        onlyOwner
+    {
+        logicTargets[this.setCoreParams.selector] = target;
+        logicTargets[this.setProtocolManagers.selector] = target;
+        logicTargets[this.setLoanPoolToUnderlying.selector] = target;
+        logicTargets[this.setSupportedTokens.selector] = target;
+        logicTargets[this.getloanPoolsList.selector] = target;
+    }
+
     function setCoreParams(
         address _protocolTokenAddress,
         address _priceFeeds,
@@ -37,7 +48,8 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         require(_protocolFeePercent <= 10**20);
         protocolFeePercent = _protocolFeePercent;
 
-        emit CoreParamsSet(
+        emit SetCoreParams(
+            msg.sender,
             _protocolTokenAddress,
             _priceFeeds,
             _swapsImpl,
@@ -45,7 +57,6 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         );
     }
 
-    // setProtocolManagers(address[],bool[])
     function setProtocolManagers(
         address[] calldata addrs,
         bool[] calldata toggles)
@@ -54,10 +65,10 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
     {
         require(addrs.length == toggles.length, "count mismatch");
 
-        for (uint256 i=0; i < addrs.length; i++) {
+        for (uint256 i = 0; i < addrs.length; i++) {
             protocolManagers[addrs[i]] = toggles[i];
 
-            emit ProtocolManagerSet(
+            emit SetProtocolManager(
                 msg.sender,
                 addrs[i],
                 toggles[i]
@@ -65,8 +76,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         }
     }
 
-    // setLoanPools(address[],address[])
-    function setLoanPools(
+    function setLoanPoolToUnderlying(
         address[] calldata pools,
         address[] calldata assets)
         external
@@ -74,7 +84,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
     {
         require(pools.length == assets.length, "count mismatch");
 
-        for (uint256 i=0; i < pools.length; i++) {
+        for (uint256 i = 0; i < pools.length; i++) {
             require(pools[i] != assets[i], "pool == asset");
             require(pools[i] != address(0), "pool == 0");
             require(assets[i] != address(0) || loanPoolToUnderlying[pools[i]] != address(0), "pool not exists");
@@ -87,26 +97,34 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
                 underlyingToLoanPool[assets[i]] = pools[i];
                 loanPoolsSet.addAddress(pools[i]);
             }
+
+            emit SetLoanPoolToUnderlying(
+                msg.sender,
+                pools[i],
+                assets[i]
+            );
         }
     }
 
-    // setDecimalsBatch(address[])
-    /*
-        // set decimals for ether
-        decimals[address(0)] = 18;
-        decimals[address(0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee)] = 18;
-        decimals[address(wethToken)] = 18;
-    */
-    /*function setDecimalsBatch(
-        IERC20[] memory tokens)
-        public
+    function setSupportedTokens(
+        address[] calldata addrs,
+        bool[] calldata toggles)
+        external
+        onlyOwner
     {
-        for (uint256 i=0; i < tokens.length; i++) {
-            decimals[address(tokens[i])] = tokens[i].decimals();
-        }
-    }*/
+        require(addrs.length == toggles.length, "count mismatch");
 
-    // getloanPoolsList(uint256,uint256)
+        for (uint256 i = 0; i < addrs.length; i++) {
+            supportedTokens[addrs[i]] = toggles[i];
+
+            emit SetSupportedTokens(
+                msg.sender,
+                addrs[i],
+                toggles[i]
+            );
+        }
+    }
+
     function getloanPoolsList(
         uint256 start,
         uint256 count)

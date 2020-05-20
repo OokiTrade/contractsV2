@@ -8,8 +8,8 @@ networks:
         reverting_tx_gas_limit: 8000000
         default_contract_owner: true
     live:
-        gas_limit: auto
-        gas_price: 8000000000
+        gas_limit: 8000000
+        gas_price: 1000000000 # 8000000000
         reverting_tx_gas_limit: false
         default_contract_owner: false
 

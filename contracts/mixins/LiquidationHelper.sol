@@ -14,7 +14,6 @@ contract LiquidationHelper is State {
         uint256 principal,
         uint256 collateral,
         uint256 currentMargin,
-        uint256 initialMargin,
         uint256 maintenanceMargin,
         uint256 collateralToLoanRate)
         internal
@@ -32,10 +31,8 @@ contract LiquidationHelper is State {
 
         uint256 desiredMargin = maintenanceMargin
             .add(5 ether); // 5 percentage points above maintenance
-        if (desiredMargin > initialMargin) {
-            desiredMargin = initialMargin;
-        }
 
+        // maxLiquidatable = ((1 + desiredMargin)*principal - collateralToLoanRate*collateral) / (desiredMargin - 0.05)
         maxLiquidatable = desiredMargin
             .add(10*20)
             .mul(principal)
@@ -71,13 +68,4 @@ contract LiquidationHelper is State {
 
         return (maxLiquidatable, maxSeizable, incentivePercent);
     }
-/*
-formulas:
-5% collateral bonus
-min margin = 5%
-bonus reduces from there
-
-max_payback_amount = ((1 + new_margin)*old_loan - collateralToLoanRate*old_collateral) / (new_margin - 0.05)
-    }
-*/
 }

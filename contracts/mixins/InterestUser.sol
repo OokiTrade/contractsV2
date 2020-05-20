@@ -16,7 +16,7 @@ contract InterestUser is State, VaultController {
     function _payInterest(
         LenderInterest memory lenderInterestLocal,
         address lender,
-        address interestTokenAddress)
+        address interestToken)
         internal
     {
         uint256 interestOwedNow = 0;
@@ -32,12 +32,12 @@ contract InterestUser is State, VaultController {
                 uint256 interestFee = interestOwedNow
                     .mul(protocolFeePercent)
                     .div(10**20);
-                protocolFeeTokens[interestTokenAddress] = protocolFeeTokens[interestTokenAddress]
+                protocolFeeTokens[interestToken] = protocolFeeTokens[interestToken]
                     .add(interestFee);
 
                 // transfers the interest to the lender, less the interest fee
                 vaultWithdraw(
-                    interestTokenAddress,
+                    interestToken,
                     lender,
                     interestOwedNow.sub(interestFee)
                 );
@@ -45,6 +45,6 @@ contract InterestUser is State, VaultController {
         }
 
         lenderInterestLocal.updatedTimestamp = block.timestamp;
-        lenderInterest[lender][interestTokenAddress] = lenderInterestLocal;
+        lenderInterest[lender][interestToken] = lenderInterestLocal;
     }
 }

@@ -29,40 +29,50 @@ interface IPriceFeeds {
         external
         view;
 
-    function getPositionOffset(
-        address loanTokenAddress,
-        address collateralTokenAddress,
-        uint256 loanTokenAmount,
-        uint256 collateralTokenAmount,
-        uint256 initialMarginAmount)
+    function getMaxDrawdown(
+        address loanToken,
+        address collateralToken,
+        uint256 loanAmount,
+        uint256 collateralAmount,
+        uint256 maintenanceMargin)
         external
         view
-        returns (bool isPositive, uint256 loanOffsetAmount, uint256 collateralOffsetAmount);
+        returns (uint256);
+
+    /*unction getPositionOffset(
+        address loanToken,
+        address collateralToken,
+        uint256 loanAmount,
+        uint256 collateralAmount,
+        uint256 minInitialMargin)
+        external
+        view
+        returns (bool isPositive, uint256 loanOffsetAmount, uint256 collateralOffsetAmount);*/
 
     function getCurrentMarginAndCollateralSize(
-        address loanTokenAddress,
-        address collateralTokenAddress,
-        uint256 loanTokenAmount,
-        uint256 collateralTokenAmount)
+        address loanToken,
+        address collateralToken,
+        uint256 loanAmount,
+        uint256 collateralAmount)
         external
         view
         returns (uint256 currentMargin, uint256 collateralInEthAmount);
 
     function getCurrentMargin(
-        address loanTokenAddress,
-        address collateralTokenAddress,
-        uint256 loanTokenAmount,
-        uint256 collateralTokenAmount)
+        address loanToken,
+        address collateralToken,
+        uint256 loanAmount,
+        uint256 collateralAmount)
         external
         view
         returns (uint256 currentMargin, uint256 collateralToLoanRate);
 
     function shouldLiquidate(
-        address loanTokenAddress,
-        address collateralTokenAddress,
-        uint256 loanTokenAmount,
-        uint256 collateralTokenAmount,
-        uint256 maintenanceMarginAmount)
+        address loanToken,
+        address collateralToken,
+        uint256 loanAmount,
+        uint256 collateralAmount,
+        uint256 maintenanceMargin)
         external
         view
         returns (bool);

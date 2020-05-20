@@ -10,11 +10,10 @@ import "../core/State.sol";
 import "../events/LoanOpeningsEvents.sol";
 import "../mixins/VaultController.sol";
 import "../mixins/InterestUser.sol";
-import "../modifiers/GasTokenUser.sol";
+import "../mixins/GasTokenUser.sol";
 import "../swaps/SwapsUser.sol";
 
 
-//TODO: check: prevent collateralToken == loanToken
 //TODO: function borrow(...) for trading directly from loan orders
 contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUser, GasTokenUser, SwapsUser {
 
@@ -26,7 +25,19 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         revert("fallback not allowed");
     }
 
-    // borrow(bytes32,bytes32,uint256,uint256,address,address,address)
+    function initialize(
+        address target)
+        external
+        onlyOwner
+    {
+        logicTargets[this.borrow.selector] = target;
+        logicTargets[this.borrowOrTradeFromPool.selector] = target;
+        logicTargets[this.setDelegatedManager.selector] = target;
+        logicTargets[this.getDepositAmountForBorrow.selector] = target;
+        logicTargets[this.getRequiredCollateral.selector] = target;
+        logicTargets[this.getBorrowAmount.selector] = target;
+    }
+
     function borrow(
         bytes32 loanParamsId,
         bytes32 loanId, // if 0, start a new loan
@@ -34,14 +45,15 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         uint256 initialLoanDuration,
         address lender,
         address receiver,
-        address manager)
+        address manager,
+        bool depositCollateral)
         external
         payable
         //usesGasToken
         nonReentrant
         returns (uint256)
     {
-        Order memory orderLocal = lenderOrders[lender][loanParamsId];
+        Order storage orderLocal = lenderOrders[lender][loanParamsId];
         require(orderLocal.createdStartTimestamp != 0, "order not exists");
         require(initialLoanDuration >= orderLocal.minLoanTerm, "loan too short");
         require(initialLoanDuration <= orderLocal.maxLoanTerm, "loan too long");
@@ -49,7 +61,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         LoanParams memory loanParamsLocal = loanParams[loanParamsId];
         require(loanParamsLocal.id != 0, "loanParams not exists");
         require(msg.value == 0 || loanParamsLocal.collateralToken == address(wethToken), "wrong asset sent");
-        require (loanParamsLocal.fixedLoanTerm == 0 || initialLoanDuration <= loanParamsLocal.fixedLoanTerm, "duration too long");
+        require (loanParamsLocal.maxLoanTerm == 0 || initialLoanDuration <= loanParamsLocal.maxLoanTerm, "duration too long");
 
         address[4] memory sentAddresses;
 
@@ -85,7 +97,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             loanParamsLocal.loanToken,
             loanParamsLocal.collateralToken,
             sentValues[1],
-            loanParamsLocal.initialMargin,
+            loanParamsLocal.minInitialMargin,
             true // isTorqueLoan
         );
         require(collateralAmountRequired != 0, "collateral is 0");
@@ -109,22 +121,29 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             );
         }
 
-        // deposit collateral from msg.sender (usually borrower)
-        if (msg.value == 0) {
-            vaultDeposit(
-                loanParamsLocal.collateralToken,
-                msg.sender,
-                collateralAmountRequired
-            );
-            sentValues[4] = collateralAmountRequired;
+        if (depositCollateral) {
+            // deposit collateral from msg.sender (usually borrower)
+            if (msg.value == 0) {
+                vaultDeposit(
+                    loanParamsLocal.collateralToken,
+                    msg.sender,
+                    collateralAmountRequired
+                );
+                sentValues[4] = collateralAmountRequired;
+            } else {
+                require(msg.value >= collateralAmountRequired, "not enough ether");
+                vaultEtherDeposit(
+                    msg.sender,
+                    msg.value
+                );
+                sentValues[4] = msg.value; // all sent ether applies to collateral balance
+            }
         } else {
-            // TODO: how to handle too much ether sent?
-            require(msg.value >= collateralAmountRequired, "not enough ether");
-            vaultEtherDeposit(
-                msg.sender,
-                msg.value
-            );
-            sentValues[4] = msg.value; // all sent ether applies to collateral balance
+            require (msg.value == 0, "ether not accepted");
+
+            // if collateral isn't deposited, an existing loan can be added to if there's sufficient
+            // excess collateral (checked later)
+            // sentValues[4] == 0
         }
 
         return _borrowOrTrade(
@@ -132,17 +151,18 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             loanId,
             true, // isTorqueLoan
             collateralAmountRequired,
+            loanParamsLocal.minInitialMargin,
             sentAddresses,
             sentValues,
             "" // loanDataBytes
         );
     }
 
-    // borrowOrTradeFromPool(bytes32,bytes32,address[4],uint256[5],bytes)
     function borrowOrTradeFromPool(
         bytes32 loanParamsId,
         bytes32 loanId, // if 0, start a new loan
         bool isTorqueLoan,
+        uint256 initialMargin,
         address[4] calldata sentAddresses,
             // lender: must match loan if loanId provided
             // borrower: must match loan if loanId provided
@@ -174,7 +194,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             loanParamsLocal.loanToken,
             loanParamsLocal.collateralToken,
             sentValues[1],
-            loanParamsLocal.initialMargin,
+            initialMargin,
             isTorqueLoan
         );
         require(collateralAmountRequired != 0, "collateral is 0");
@@ -184,10 +204,116 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             loanId,
             isTorqueLoan,
             collateralAmountRequired,
+            initialMargin,
             sentAddresses,
             sentValues,
             loanDataBytes
         );
+    }
+
+    function setDelegatedManager(
+        bytes32 loanId,
+        address delegated,
+        bool toggle)
+        external
+    {
+        require(loans[loanId].borrower == msg.sender, "unauthorized");
+
+        _setDelegatedManager(
+            loanId,
+            msg.sender,
+            delegated,
+            toggle
+        );
+    }
+
+    function getDepositAmountForBorrow(
+        address loanToken,            // address(0) means ETH
+        address collateralToken,      // address(0) means ETH
+        uint256 borrowAmount,
+        uint256 marginAmount,
+        uint256 initialLoanDuration,  // duration in seconds
+        uint256 interestRate)
+        external
+        view
+        returns (uint256 depositAmount)
+    {
+        if (borrowAmount != 0) {
+            // adjust value since interest is also borrowed
+            uint256 _borrowAmount = borrowAmount
+                .mul(
+                    interestRate
+                        .mul(initialLoanDuration)
+                        .div(315360) // 365 * 86400 / 100
+                        .add(10**22)
+                )
+                .div(10**22);
+
+            return _getRequiredCollateral(
+                loanToken,
+                collateralToken != address(0) ? collateralToken : address(wethToken),
+                _borrowAmount,
+                marginAmount,
+                true // isTorqueLoan
+            ).add(10); // some dust to compensate for rounding errors
+        }
+    }
+
+    function getRequiredCollateral(
+        address loanToken,
+        address collateralToken,
+        uint256 newPrincipal,
+        uint256 marginAmount,
+        bool isTorqueLoan)
+        public
+        view
+        returns (uint256 collateralAmountRequired)
+    {
+        if (marginAmount != 0) {
+            collateralAmountRequired = _getRequiredCollateral(
+                loanToken,
+                collateralToken,
+                newPrincipal,
+                marginAmount,
+                isTorqueLoan
+            );
+        }
+    }
+
+    function getBorrowAmount(
+        address loanToken,
+        address collateralToken,
+        uint256 collateralTokenAmount,
+        uint256 marginAmount,
+        bool isTorqueLoan)
+        public
+        view
+        returns (uint256 borrowAmount)
+    {
+        if (marginAmount != 0) {
+            if (isTorqueLoan) {
+                marginAmount = marginAmount
+                    .add(10**20); // adjust for over-collateralized loan
+            }
+
+            if (loanToken == collateralToken) {
+                borrowAmount = collateralTokenAmount
+                    .mul(10**20)
+                    .div(marginAmount);
+            } else {
+                (uint256 sourceToDestRate, uint256 sourceToDestPrecision) = IPriceFeeds(priceFeeds).queryRate(
+                    collateralToken,
+                    loanToken
+                );
+                if (sourceToDestPrecision != 0) {
+                    borrowAmount = collateralTokenAmount
+                        .mul(10**20)
+                        .div(marginAmount)
+                        .mul(sourceToDestRate)
+                        .div(sourceToDestPrecision);
+                }
+            }
+        }
     }
 
     function _borrowOrTrade(
@@ -195,6 +321,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         bytes32 loanId, // if 0, start a new loan
         bool isTorqueLoan,
         uint256 collateralAmountRequired,
+        uint256 margin, // initialMargin
         address[4] memory sentAddresses,
             // lender: must match loan if loanId provided
             // borrower: must match loan if loanId provided
@@ -210,10 +337,11 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         internal
         returns (uint256)
     {
-        require(loanParamsLocal.collateralToken != loanParamsLocal.loanToken, "collateral/loan match");
+        require (loanParamsLocal.collateralToken != loanParamsLocal.loanToken, "collateral/loan match");
+        require (margin >= loanParamsLocal.minInitialMargin, "initialMargin too low");
 
-        // fixedLoanTerm == 0 indicates a Torqueloan and requres that torqueInterest != 0
-        require(loanParamsLocal.fixedLoanTerm != 0 ||
+        // maxLoanTerm == 0 indicates a Torqueloan and requres that torqueInterest != 0
+        require(loanParamsLocal.maxLoanTerm != 0 ||
             sentValues[2] != 0, // torqueInterest
             "invalid interest");
 
@@ -261,6 +389,8 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         // settle collateral
         require(
             _isCollateralSatisfied(
+                loanParamsLocal,
+                loanLocal,
                 sentValues[4],
                 collateralAmountRequired
             ),
@@ -270,8 +400,15 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         loanLocal.collateral = loanLocal.collateral
             .add(sentValues[4]);
 
-        uint256 margin;
-        // re-using amount variable to avoid stack too deep error
+        if (isTorqueLoan) {
+            // reclaiming varaible -> interestDuration
+            sentValues[2] = loanLocal.loanEndTimestamp.sub(block.timestamp);
+        } else {
+            // reclaiming varaible -> entryLeverage = 100 / initialMargin
+            sentValues[2] = SafeMath.div(10**38, margin);
+        }
+
+        // re-using margin and amount variables to avoid stack too deep error
         (margin, amount) = IPriceFeeds(priceFeeds).getCurrentMargin(
             loanParamsLocal.loanToken,
             loanParamsLocal.collateralToken,
@@ -283,13 +420,34 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             "unhealthy position"
         );
 
-        if (isTorqueLoan) {
-            // reclaiming varaible -> interestDuration
-            sentValues[2] = loanLocal.loanEndTimestamp.sub(block.timestamp);
+        _emitEvents(
+            loanParamsLocal,
+            loanLocal,
+            sentAddresses,
+            sentValues,
+            amount,
+            margin,
+            isTorqueLoan
+        );
 
+        return sentValues[1]; // newPrincipal
+    }
+
+    function _emitEvents(
+        LoanParams memory loanParamsLocal,
+        Loan memory loanLocal,
+        address[4] memory sentAddresses,
+        uint256[5] memory sentValues,
+        uint256 amount,
+        uint256 margin,
+        bool isTorqueLoan)
+        internal
+    {
+        if (isTorqueLoan) {
             emit Borrow(
                 loanLocal.id,                                   // loanId
                 sentAddresses[1],                               // borrower
+                sentAddresses[0],                               // lender
                 loanParamsLocal.loanToken,                      // loanToken
                 loanParamsLocal.collateralToken,                // collateralToken
                 sentValues[1],                                  // newPrincipal
@@ -303,9 +461,6 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             // entryPrice = 1 / collateralToLoanRate
             amount = SafeMath.div(10**36, amount);
 
-            // reclaiming varaible -> entryLeverage = 100 / initialMargin
-            sentValues[2] = SafeMath.div(10**38, loanParamsLocal.initialMargin);
-
             // currentLeverage = 100 / currentMargin
             margin = SafeMath.div(10**38, margin);
 
@@ -313,6 +468,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                 sentAddresses[1],                               // trader
                 loanParamsLocal.collateralToken,                // baseToken
                 loanParamsLocal.loanToken,                      // quoteToken
+                sentAddresses[0],                               // lender
                 loanLocal.id,                                   // loanId
                 sentValues[4],                                  // positionSize
                 sentValues[1],                                  // borrowedAmount
@@ -323,25 +479,6 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                 margin                                          // currentLeverage
             );
         }
-
-        return sentValues[1]; // newPrincipal
-    }
-
-    // setDelegatedManager(bytes32,address,bool)
-    function setDelegatedManager(
-        bytes32 loanId,
-        address delegated,
-        bool toggle)
-        external
-    {
-        require(loans[loanId].borrower == msg.sender, "unauthorized");
-
-        _setDelegatedManager(
-            loanId,
-            msg.sender,
-            delegated,
-            toggle
-        );
     }
 
     function _setDelegatedManager(
@@ -361,83 +498,32 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         );
     }
 
-    // getRequiredCollateral(address,address,uint256,uint256,bool)
-    function getRequiredCollateral(
-        address loanToken,
-        address collateralToken,
-        uint256 newPrincipal,
-        uint256 marginAmount,
-        bool isTorqueLoan)
-        public
-        view
-        returns (uint256 collateralAmountRequired)
-    {
-        if (marginAmount != 0) {
-            collateralAmountRequired = _getRequiredCollateral(
-                loanToken,
-                collateralToken,
-                newPrincipal,
-                marginAmount,
-                isTorqueLoan
-            );
-        }
-    }
-
-    // getBorrowAmount(address,address,uint256,uint256,bool)
-    function getBorrowAmount(
-        address loanToken,
-        address collateralToken,
-        uint256 collateralTokenAmount,
-        uint256 marginAmount,
-        bool isTorqueLoan)
-        public
-        view
-        returns (uint256 borrowAmount)
-    {
-        if (marginAmount != 0) {
-            if (isTorqueLoan) {
-                marginAmount = marginAmount
-                    .add(10**20); // adjust for over-collateralized loan
-            }
-
-            if (loanToken == collateralToken) {
-                borrowAmount = collateralTokenAmount
-                    .mul(10**20)
-                    .div(marginAmount);
-            } else {
-                (uint256 sourceToDestRate, uint256 sourceToDestPrecision) = IPriceFeeds(priceFeeds).queryRate(
-                    collateralToken,
-                    loanToken
-                );
-                if (sourceToDestPrecision != 0) {
-                    borrowAmount = collateralTokenAmount
-                        .mul(10**20)
-                        .div(marginAmount)
-                        .mul(sourceToDestRate)
-                        .div(sourceToDestPrecision);
-                }
-            }
-        }
-    }
-
     function _isCollateralSatisfied(
+        LoanParams memory loanParamsLocal,
+        Loan memory loanLocal,
         uint256 newCollateral,
         uint256 collateralAmountRequired)
         internal
-        pure
+        view
         returns (bool)
     {
         if (newCollateral < collateralAmountRequired) {
-            // allow at most 2% under-collateralized
-            uint256 diff = collateralAmountRequired
-                .sub(newCollateral)
-                .mul(10**20)
-                .div(collateralAmountRequired);
-
-            return diff <= (2 * 10**18); // 2% diff
-        } else {
-            return true;
+            // check that existing collateral is sufficient coverage
+            if (loanLocal.collateral != 0) {
+                uint256 maxDrawdown = IPriceFeeds(priceFeeds).getMaxDrawdown(
+                    loanParamsLocal.loanToken,
+                    loanParamsLocal.collateralToken,
+                    loanLocal.principal,
+                    loanLocal.collateral,
+                    loanParamsLocal.maintenanceMargin
+                );
+                return newCollateral
+                    .add(maxDrawdown) >= collateralAmountRequired;
+            } else {
+                return false;
+            }
         }
+        return true;
     }
 
     function _initializeLoan(
@@ -448,6 +534,8 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         internal
         returns (bytes32)
     {
+        require(loanParamsLocal.active, "loanParams disabled");
+
         address lender = sentAddresses[0];
         address borrower = sentAddresses[1];
         address manager = sentAddresses[3];
@@ -502,82 +590,6 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         loans[loanId] = loanLocal;
 
         return loanId;
-
-        /*
-
-        Loan memory loanLocal = loans[loanId];
-        if (loanLocal.active) {
-            // borrower has already filled part of the loan order previously and that loan is still active
-            require(block.timestamp < loanLocal.loanEndTimestamp, "loan has ended");
-
-            //require(depositToken == loanParamsLocal.collateralToken, "wrong collateral");
-
-            if (tradeTokenAddress == address(0)) {
-                require(loanParamsLocal.loanToken == loanLocal.positionTokenAddressFilled, "no withdrawals when in trade");
-            } else {
-                require(tradeTokenAddress == loanLocal.positionTokenAddressFilled, "wrong trade");
-            }
-
-            loanLocal.principal = loanLocal.principal.add(newPrincipal);
-        } else {
-            // borrower has not previously filled part of this loan or the previous fill is inactive
-            
-            loanId = uint256(keccak256(abi.encodePacked(
-                loanParamsLocal.loanParamsId,
-                orderPositionList[loanParamsLocal.loanParamsId].length,
-                borrower,
-                msg.sender, // lender
-                block.timestamp
-            )));
-
-            loanLocal = Loan({
-                borrower: borrower,
-                collateralTokenFilled: collateralToken,
-                positionTokenAddressFilled: tradeTokenAddress == address(0) ? loanParamsLocal.loanToken : tradeTokenAddress,
-                principal: newPrincipal,
-                loanTokenAmountUsed: 0,
-                collateral: 0, // set later
-                positionTokenAmountFilled: 0, // set later, unless tradeTokenAddress == address(0) (withdrawOnOpen)
-                loanStartTimestamp: block.timestamp,
-                loanEndTimestamp: 0, // set later
-                active: true,
-                loanId: loanId
-            });
-            
-            if (!orderListIndex[loanParamsLocal.loanParamsId][borrower].isSet) {
-                orderList[borrower].push(loanParamsLocal.loanParamsId);
-                orderListIndex[loanParamsLocal.loanParamsId][borrower] = ListIndex({
-                    index: orderList[borrower].length-1,
-                    isSet: true
-                });
-            }
-
-            orderPositionList[loanParamsLocal.loanParamsId].push(loanId);
-
-            positionList.push(PositionRef({
-                loanParamsId: loanParamsLocal.loanParamsId,
-                loanId: loanId
-            }));
-            positionListIndex[loanId] = ListIndex({
-                index: positionList.length-1,
-                isSet: true
-            });
-
-            loanIds[loanParamsLocal.loanParamsId][borrower] = loanId;
-        }
-
-        if (orderLender[loanParamsLocal.loanParamsId] == address(0)) {
-            // send lender (msg.sender)
-            orderLender[loanParamsLocal.loanParamsId] = msg.sender;
-            orderList[msg.sender].push(loanParamsLocal.loanParamsId);
-            orderListIndex[loanParamsLocal.loanParamsId][msg.sender] = ListIndex({
-                index: orderList[msg.sender].length-1,
-                isSet: true
-            });
-        }
-        orderFilledAmounts[loanParamsLocal.loanParamsId] = orderFilledAmounts[loanParamsLocal.loanParamsId].add(newPrincipal);
-
-        loans[loanId] = loanLocal;*/
     }
 
     function _initializeInterest(
@@ -599,10 +611,10 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             loanParamsLocal.loanToken
         );
 
-        uint256 maxDuration = loanParamsLocal.fixedLoanTerm;
+        uint256 maxLoanTerm = loanParamsLocal.maxLoanTerm;
 
         uint256 previousDepositRemaining;
-        if (maxDuration == 0 && loanLocal.loanEndTimestamp != 0) {
+        if (maxLoanTerm == 0 && loanLocal.loanEndTimestamp != 0) {
             previousDepositRemaining = loanLocal.loanEndTimestamp
                 .sub(block.timestamp) // block.timestamp < loanEndTimestamp was confirmed earlier
                 .mul(loanInterestLocal.owedPerDay)
@@ -619,7 +631,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         lenderInterestLocal.owedPerDay = lenderInterestLocal.owedPerDay
             .add(owedPerDay);
 
-        if (maxDuration == 0) {
+        if (maxLoanTerm == 0) {
             // indefinite-term (Torque) loan
 
             // torqueInterest != 0 was confirmed earlier
@@ -629,12 +641,12 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                 .div(loanInterestLocal.owedPerDay)
                 .add(block.timestamp);
 
-            // update maxDuration
-            maxDuration = loanLocal.loanEndTimestamp
+            // update maxLoanTerm
+            maxLoanTerm = loanLocal.loanEndTimestamp
                 .sub(block.timestamp);
 
             // loan term has to at least be 24 hours
-            require(maxDuration >= 86400, "loan too short");
+            require(maxLoanTerm >= 86400, "loan too short");
 
             interestAmountRequired = torqueInterest;
         } else {
@@ -642,7 +654,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
 
             if (loanLocal.loanEndTimestamp == 0) {
                 loanLocal.loanEndTimestamp = block.timestamp
-                    .add(maxDuration);
+                    .add(maxLoanTerm);
             }
 
             interestAmountRequired = loanLocal.loanEndTimestamp

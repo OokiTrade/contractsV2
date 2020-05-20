@@ -10,7 +10,8 @@ contract LoanOpeningsEvents {
     event Borrow(
         bytes32 indexed loanId,
         address indexed borrower,
-        address indexed loanToken,
+        address indexed lender,
+        address loanToken,
         address collateralToken,
         uint256 newPrincipal,
         uint256 newCollateral,
@@ -24,6 +25,7 @@ contract LoanOpeningsEvents {
         address indexed trader,
         address indexed baseToken,
         address indexed quoteToken,
+        address lender,
         bytes32 loanId,
         uint256 positionSize,
         uint256 borrowedAmount,

@@ -12,9 +12,9 @@ contract LoanSettingsEvents {
         address owner,
         address indexed loanToken,
         address indexed collateralToken,
-        uint256 initialMargin,
+        uint256 minInitialMargin,
         uint256 maintenanceMargin,
-        uint256 fixedLoanTerm
+        uint256 maxLoanTerm
     );
     event LoanParamsIdSetup(
         bytes32 indexed id,
@@ -26,9 +26,9 @@ contract LoanSettingsEvents {
         address owner,
         address indexed loanToken,
         address indexed collateralToken,
-        uint256 initialMargin,
+        uint256 minInitialMargin,
         uint256 maintenanceMargin,
-        uint256 fixedLoanTerm
+        uint256 maxLoanTerm
     );
     event LoanParamsIdDisabled(
         bytes32 indexed id,

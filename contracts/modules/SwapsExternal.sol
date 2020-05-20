@@ -22,8 +22,17 @@ contract SwapsExternal is State, VaultController, SwapsUser {
         revert("fallback not allowed");
     }
 
+    function initialize(
+        address target)
+        external
+        onlyOwner
+    {
+        logicTargets[this.swapExternal.selector] = target;
+        logicTargets[this.setSupportedSwapTokensBatch.selector] = target;
+        logicTargets[this.getExpectedSwapRate.selector] = target;
+    }
+
     // TODO: add support for ether source
-    // swapExternal(address,address,address,address,uint256,uint256,uint256,bytes)
     function swapExternal(
         address sourceToken,
         address destToken,
@@ -66,7 +75,6 @@ contract SwapsExternal is State, VaultController, SwapsUser {
         );
     }
 
-    // setSupportedSwapTokensBatch(address[],bool[])
     function setSupportedSwapTokensBatch(
         address[] calldata tokens,
         bool[] calldata toggles)
@@ -75,12 +83,11 @@ contract SwapsExternal is State, VaultController, SwapsUser {
     {
         require(tokens.length == toggles.length, "count mismatch");
 
-        for (uint256 i=0; i < tokens.length; i++) {
+        for (uint256 i = 0; i < tokens.length; i++) {
             supportedTokens[tokens[i]] = toggles[i];
         }
     }
 
-    // getExpectedSwapRate(address,address,uint256)
     function getExpectedSwapRate(
         address sourceTokenAddress,
         address destTokenAddress,

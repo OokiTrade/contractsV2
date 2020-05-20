@@ -24,10 +24,10 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         uint256 collateral;
         uint256 interestOwedPerDay;
         uint256 interestDepositRemaining;
-        uint256 initialMargin;
+        uint256 minInitialMargin;
         uint256 maintenanceMargin;
         uint256 currentMargin;
-        uint256 fixedLoanTerm;
+        uint256 maxLoanTerm;
         uint256 loanEndTimestamp;
         uint256 maxLiquidatable;
         uint256 maxSeizable;
@@ -41,17 +41,111 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         revert("fallback not allowed");
     }
 
-    // extendLoanByInterest(bytes32,address,uint256,bool,bytes)
-    function extendLoanByInterest(
+    function initialize(
+        address target)
+        external
+        onlyOwner
+    {
+        logicTargets[this.depositCollateral.selector] = target;
+        logicTargets[this.withdrawCollateral.selector] = target;
+        //logicTargets[this.rolloverLoan.selector] = target;
+        logicTargets[this.withdrawAccruedInterest.selector] = target;
+        logicTargets[this.extendLoanByInterest.selector] = target;
+        logicTargets[this.reduceLoanByInterest.selector] = target;
+        logicTargets[this.getLenderInterestData.selector] = target;
+        logicTargets[this.getLoanInterestData.selector] = target;
+        logicTargets[this.getUserLoans.selector] = target;
+        logicTargets[this.getLoan.selector] = target;
+        logicTargets[this.getActiveLoans.selector] = target;
+    }
+
+    function depositCollateral(
         bytes32 loanId,
-        address payer,
-        uint256 depositAmount,
-        bool useCollateral,
-        bytes calldata loanDataBytes)
+        uint256 depositAmount) // must match msg.value if ether is sent
         external
         payable
         nonReentrant
-        returns (uint256 secondsExtended)
+    {
+        require(depositAmount != 0, "depositAmount is 0");
+        Loan storage loanLocal = loans[loanId];
+        LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
+
+        require(loanLocal.active, "loan is closed");
+        require(msg.value == 0 || loanParamsLocal.collateralToken == address(0), "wrong asset sent");
+
+        loanLocal.collateral = loanLocal.collateral
+            .add(depositAmount);
+
+        if (msg.value == 0) {
+            vaultDeposit(
+                loanParamsLocal.collateralToken,
+                msg.sender,
+                depositAmount
+            );
+        } else {
+            require(msg.value == depositAmount, "ether deposit mismatch");
+            vaultEtherDeposit(
+                msg.sender,
+                msg.value
+            );
+        }
+    }
+
+    function withdrawCollateral(
+        bytes32 loanId,
+        address receiver,
+        uint256 withdrawAmount)
+        external
+        nonReentrant
+        returns (uint256 actualWithdrawAmount)
+    {
+        require(withdrawAmount != 0, "withdrawAmount is 0");
+        Loan storage loanLocal = loans[loanId];
+        LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
+
+        require(loanLocal.active, "loan is closed");
+        require(
+            msg.sender == loanLocal.borrower ||
+            delegatedManagers[loanLocal.id][msg.sender],
+            "unauthorized"
+        );
+
+        uint256 maxDrawdown = IPriceFeeds(priceFeeds).getMaxDrawdown(
+            loanParamsLocal.loanToken,
+            loanParamsLocal.collateralToken,
+            loanLocal.principal,
+            loanLocal.collateral,
+            loanParamsLocal.maintenanceMargin
+        );
+
+        if (withdrawAmount > maxDrawdown) {
+            actualWithdrawAmount = maxDrawdown;
+        } else {
+            actualWithdrawAmount = withdrawAmount;
+        }
+
+        loanLocal.collateral = loanLocal.collateral
+            .sub(actualWithdrawAmount);
+
+        if (loanParamsLocal.collateralToken == address(wethToken)) {
+            vaultEtherWithdraw(
+                receiver,
+                actualWithdrawAmount
+            );
+        } else {
+            vaultWithdraw(
+                loanParamsLocal.collateralToken,
+                receiver,
+                actualWithdrawAmount
+            );
+        }
+    }
+
+    /*function rolloverLoan(
+        bytes32 loanId,
+        bytes calldata loanDataBytes)
+        external
+        nonReentrant
     {
         require(depositAmount != 0, "depositAmount is 0");
         Loan storage loanLocal = loans[loanId];
@@ -66,7 +160,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
             ) || protocolManagers[msg.sender],
             "unauthorized"
         );
-        require(loanParamsLocal.fixedLoanTerm == 0, "indefinite-term only");
+        require(loanParamsLocal.maxLoanTerm == 0, "indefinite-term only");
         require(msg.value == 0 || (!useCollateral && loanParamsLocal.loanToken == address(wethToken)), "wrong asset sent");
 
 
@@ -115,8 +209,139 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
                     depositAmount
                 );
             } else {
-                // TODO: how to handle too much ether sent?
-                require(msg.value >= depositAmount, "not enough ether");
+                require(msg.value == depositAmount, "ether deposit mismatch");
+                vaultEtherDeposit(
+                    msg.sender,
+                    msg.value
+                );
+            }
+        }
+
+        secondsExtended = depositAmount
+            .mul(86400)
+            .div(loanInterestLocal.owedPerDay);
+
+        loanLocal.loanEndTimestamp = loanLocal.loanEndTimestamp
+            .add(secondsExtended);
+
+        require (loanLocal.loanEndTimestamp > block.timestamp, "loan too short");
+
+        uint256 maxDuration = loanLocal.loanEndTimestamp
+            .sub(block.timestamp);
+
+        // loan term has to at least be 24 hours
+        require(maxDuration >= 86400, "loan too short");
+
+        loanInterestLocal.depositTotal = loanInterestLocal.depositTotal
+            .add(depositAmount);
+        loanInterestLocal.updatedTimestamp = block.timestamp;
+
+        lenderInterestLocal.owedTotal = lenderInterestLocal.owedTotal
+            .add(depositAmount);
+
+
+
+        if (block.timestamp >= loanLocal.loanEndTimestamp) {
+        }
+
+        // Handle back interest
+        uint256 backInterestTime = block.timestamp
+            .sub(loanLocal.loanEndTimestamp);
+        uint256 backInterestOwed = backInterestTime
+            .mul(loanInterestLocal.owedPerDay);
+        backInterestOwed = backInterestOwed
+            .div(86400);
+    }*/
+
+    function withdrawAccruedInterest(
+        address loanToken)
+        external
+    {
+        LenderInterest storage lenderInterestLocal = lenderInterest[msg.sender][loanToken];
+        if (lenderInterestLocal.owedTotal != 0) {
+            // pay outstanding interest to lender
+            _payInterest(
+                lenderInterestLocal,
+                msg.sender, // lender
+                loanToken
+            );
+        }
+    }
+
+    function extendLoanByInterest(
+        bytes32 loanId,
+        address payer,
+        uint256 depositAmount,
+        bool useCollateral,
+        bytes calldata loanDataBytes)
+        external
+        payable
+        nonReentrant
+        returns (uint256 secondsExtended)
+    {
+        require(depositAmount != 0, "depositAmount is 0");
+        Loan storage loanLocal = loans[loanId];
+        LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
+
+        require(loanLocal.active, "loan is closed");
+        require(
+            (
+                (
+                    msg.sender == loanLocal.borrower || delegatedManagers[loanLocal.id][msg.sender]
+                ) && msg.sender == payer
+            ) || protocolManagers[msg.sender],
+            "unauthorized"
+        );
+        require(loanParamsLocal.maxLoanTerm == 0, "indefinite-term only");
+        require(msg.value == 0 || (!useCollateral && loanParamsLocal.loanToken == address(wethToken)), "wrong asset sent");
+
+
+        LoanInterest storage loanInterestLocal = loanInterest[loanLocal.id];
+        LenderInterest storage lenderInterestLocal = lenderInterest[loanLocal.lender][loanParamsLocal.loanToken];
+
+        // pay outstanding interest to lender
+        _payInterest(
+            lenderInterestLocal,
+            loanLocal.lender,
+            loanParamsLocal.loanToken
+        );
+
+        // deposit interest
+        if (useCollateral) {
+            // reverts in _swap if amountNeeded can't be bought
+            (,uint256 sourceTokenAmountUsed) = _loanSwap(
+                loanLocal.borrower,
+                loanParamsLocal.collateralToken,
+                loanParamsLocal.loanToken,
+                loanLocal.collateral,
+                depositAmount, // requiredDestTokenAmount (partial spend of loanLocal.collateral to fill this amount)
+                0, // minConversionRate
+                false, // isLiquidation
+                loanDataBytes
+            );
+            loanLocal.collateral = loanLocal.collateral
+                .sub(sourceTokenAmountUsed);
+
+            // ensure the loan is still healthy
+            (uint256 currentMargin,) = IPriceFeeds(priceFeeds).getCurrentMargin(
+                loanParamsLocal.loanToken,
+                loanParamsLocal.collateralToken,
+                loanLocal.principal,
+                loanLocal.collateral
+            );
+            require(
+                currentMargin > loanParamsLocal.maintenanceMargin,
+                "unhealthy position"
+            );
+        } else {
+            if (msg.value == 0) {
+                vaultDeposit(
+                    loanParamsLocal.loanToken,
+                    payer,
+                    depositAmount
+                );
+            } else {
+                require(msg.value == depositAmount, "ether deposit mismatch");
                 vaultEtherDeposit(
                     msg.sender,
                     msg.value
@@ -147,10 +372,8 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
             .add(depositAmount);
     }
 
-    // reduceLoanByInterest(bytes32,address,address,uint256)
     function reduceLoanByInterest(
         bytes32 loanId,
-        address borrower,
         address receiver,
         uint256 withdrawAmount)
         external
@@ -168,7 +391,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
             protocolManagers[msg.sender],
             "unauthorized"
         );
-        require(loanParamsLocal.fixedLoanTerm == 0, "indefinite-term only");
+        require(loanParamsLocal.maxLoanTerm == 0, "indefinite-term only");
 
         LoanInterest storage loanInterestLocal = loanInterest[loanLocal.id];
         LenderInterest storage lenderInterestLocal = lenderInterest[loanLocal.lender][loanParamsLocal.loanToken];
@@ -226,12 +449,78 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
             .sub(withdrawAmount);
     }
 
+    /// @dev Gets current lender interest data totals for all loans with a specific oracle and interest token
+    /// @param lender The lender address
+    /// @param loanToken The loan token address
+    /// @return interestPaid The total amount of interest that has been paid to a lender so far
+    /// @return interestPaidDate The date of the last interest pay out, or 0 if no interest has been withdrawn yet
+    /// @return interestOwedPerDay The amount of interest the lender is earning per day
+    /// @return interestUnPaid The total amount of interest the lender is owned and not yet withdrawn
+    /// @return principalTotal The total amount of outstading principal the lender has loaned
+    function getLenderInterestData(
+        address lender,
+        address loanToken)
+        external
+        view
+        returns (
+            uint256 interestPaid,
+            uint256 interestPaidDate,
+            uint256 interestOwedPerDay,
+            uint256 interestUnPaid,
+            uint256 principalTotal)
+    {
+        LenderInterest memory lenderInterestLocal = lenderInterest[lender][loanToken];
+
+        interestUnPaid = block.timestamp.sub(lenderInterestLocal.updatedTimestamp).mul(lenderInterestLocal.owedPerDay).div(86400);
+        if (interestUnPaid > lenderInterestLocal.owedTotal)
+            interestUnPaid = lenderInterestLocal.owedTotal;
+
+        return (
+            lenderInterestLocal.paidTotal,
+            lenderInterestLocal.paidTotal > 0 ? lenderInterestLocal.updatedTimestamp : 0,
+            lenderInterestLocal.owedPerDay,
+            lenderInterestLocal.updatedTimestamp > 0 ? interestUnPaid : 0,
+            lenderInterestLocal.principalTotal
+        );
+    }
+
+    /// @dev Gets current interest data for a loan
+    /// @param loanId A unique id representing the loan
+    /// @return loanToken The loan token that interest is paid in
+    /// @return interestOwedPerDay The amount of interest the borrower is paying per day
+    /// @return interestDepositTotal The total amount of interest the borrower has deposited
+    /// @return interestDepositRemaining The amount of deposited interest that is not yet owed to a lender
+    function getLoanInterestData(
+        bytes32 loanId)
+        external
+        view
+        returns (
+            address loanToken,
+            uint256 interestOwedPerDay,
+            uint256 interestDepositTotal,
+            uint256 interestDepositRemaining)
+    {
+        loanToken = loanParams[loans[loanId].loanParamsId].loanToken;
+        interestOwedPerDay = loanInterest[loanId].owedPerDay;
+        interestDepositTotal = loanInterest[loanId].depositTotal;
+
+        uint256 loanEndTimestamp = loans[loanId].loanEndTimestamp;
+        uint256 interestTime = block.timestamp > loanEndTimestamp ?
+            loanEndTimestamp :
+            block.timestamp;
+        interestDepositRemaining = loanEndTimestamp > interestTime ?
+            loanEndTimestamp
+                .sub(interestTime)
+                .mul(interestOwedPerDay)
+                .div(86400) :
+                0;
+    }
+
     // Only returns data for loans that are active
     // loanType 0: all loans
     // loanType 1: margin trade loans
     // loanType 2: non-margin trade loans
     // only active loans are returned
-    // getUserLoans(address,uint256,uint256,uint256,bool,bool)
     function getUserLoans(
         address user,
         uint256 start,
@@ -254,7 +543,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
 
         loansData = new LoanReturnData[](count);
         uint256 itemCount;
-        for (uint256 i=end-start; i > 0; i--) {
+        for (uint256 i = end-start; i > 0; i--) {
             if (itemCount == count) {
                 break;
             }
@@ -277,7 +566,6 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         }
     }
 
-    // getLoan(bytes32)
     function getLoan(
         bytes32 loanId)
         external
@@ -291,7 +579,6 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         );
     }
 
-    // getActiveLoans(uint256,uint256,bool)
     function getActiveLoans(
         uint256 start,
         uint256 count,
@@ -307,7 +594,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
 
         loansData = new LoanReturnData[](count);
         uint256 itemCount;
-        for (uint256 i=end-start; i > 0; i--) {
+        for (uint256 i = end-start; i > 0; i--) {
             if (itemCount == count) {
                 break;
             }
@@ -343,8 +630,8 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
 
         if (loanType != 0) {
             if (!(
-                (loanType == 1 && loanParamsLocal.fixedLoanTerm != 0) ||
-                (loanType == 2 && loanParamsLocal.fixedLoanTerm == 0)
+                (loanType == 1 && loanParamsLocal.maxLoanTerm != 0) ||
+                (loanType == 2 && loanParamsLocal.maxLoanTerm == 0)
             )) {
                 return loanData;
             }
@@ -370,7 +657,6 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
                     loanLocal.principal,
                     loanLocal.collateral,
                     currentMargin,
-                    loanParamsLocal.initialMargin,
                     loanParamsLocal.maintenanceMargin,
                     collateralToLoanRate
                 );
@@ -385,10 +671,10 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
             collateral: loanLocal.collateral,
             interestOwedPerDay: loanInterestLocal.owedPerDay,
             interestDepositRemaining: loanLocal.loanEndTimestamp >= block.timestamp ? loanLocal.loanEndTimestamp.sub(block.timestamp).mul(loanInterestLocal.owedPerDay).div(86400) : 0,
-            initialMargin: loanParamsLocal.initialMargin,
+            minInitialMargin: loanParamsLocal.minInitialMargin,
             maintenanceMargin: loanParamsLocal.maintenanceMargin,
             currentMargin: currentMargin,
-            fixedLoanTerm: loanParamsLocal.fixedLoanTerm,
+            maxLoanTerm: loanParamsLocal.maxLoanTerm,
             loanEndTimestamp: loanLocal.loanEndTimestamp,
             maxLiquidatable: maxLiquidatable,
             maxSeizable: maxSeizable

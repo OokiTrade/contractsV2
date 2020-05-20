@@ -21,17 +21,34 @@ contract LoanSettings is State, LoanSettingsEvents, VaultController {
         revert("fallback not allowed");
     }
 
-    // setupLoanParams((bytes32,bool,address,address,address,uint256,uint256,uint256)[])
+    function initialize(
+        address target)
+        external
+        onlyOwner
+    {
+        logicTargets[this.setupLoanParams.selector] = target;
+        logicTargets[this.setupOrder.selector] = target;
+        logicTargets[this.setupOrderWithId.selector] = target;
+        logicTargets[this.depositToOrder.selector] = target;
+        logicTargets[this.withdrawFromOrder.selector] = target;
+        logicTargets[this.disableLoanParams.selector] = target;
+        logicTargets[this.getLoanParams.selector] = target;
+        logicTargets[this.getLoanParamsBatch.selector] = target;
+        logicTargets[this.getLoanParamsList.selector] = target;
+        logicTargets[this.getTotalPrincipal.selector] = target;
+    }
+
     function setupLoanParams(
         LoanParams[] calldata loanParamsList)
         external
+        returns (bytes32[] memory loanParamsIdList)
     {
-        for (uint256 i=0; i < loanParamsList.length; i++) {
-            _setupLoanParams(loanParamsList[i]);
+        loanParamsIdList = new bytes32[](loanParamsList.length);
+        for (uint256 i = 0; i < loanParamsList.length; i++) {
+            loanParamsIdList[i] = _setupLoanParams(loanParamsList[i]);
         }
     }
 
-    // setupOrder((bytes32,bool,address,address,address,uint256,uint256,uint256),uint256,uint256,uint256,bool)
     function setupOrder(
         LoanParams calldata loanParamsLocal,
         uint256 lockedAmount,
@@ -55,7 +72,6 @@ contract LoanSettings is State, LoanSettingsEvents, VaultController {
         );
     }
 
-    // setupOrderWithId(uint256,uint256,uint256,uint256,bool)
     function setupOrderWithId(
         bytes32 loanParamsId,
         uint256 lockedAmount, // initial deposit
@@ -80,7 +96,6 @@ contract LoanSettings is State, LoanSettingsEvents, VaultController {
         );
     }
 
-    // depositToOrder(bytes32,uint256,bool)
     function depositToOrder(
         bytes32 loanParamsId,
         uint256 depositAmount,
@@ -96,7 +111,6 @@ contract LoanSettings is State, LoanSettingsEvents, VaultController {
         );
     }
 
-    // withdrawFromOrder(bytes32,uint256,bool)
     function withdrawFromOrder(
         bytes32 loanParamsId,
         uint256 depositAmount,
@@ -113,15 +127,13 @@ contract LoanSettings is State, LoanSettingsEvents, VaultController {
     }
 
     // Deactivates LoanParams for future loans. Active loans using it are unaffected.
-    // disableLoanParams(bytes32[])
     function disableLoanParams(
         bytes32[] calldata loanParamsIdList)
         external
     {
-        for (uint256 i=0; i < loanParamsIdList.length; i++) {
+        for (uint256 i = 0; i < loanParamsIdList.length; i++) {
             require(msg.sender == loanParams[loanParamsIdList[i]].owner, "unauthorized owner");
             loanParams[loanParamsIdList[i]].active = false;
-            //loanParamsSet.remove(loanParamsIdList[i]);
 
             LoanParams memory loanParamsLocal = loanParams[loanParamsIdList[i]];
             emit LoanParamsDisabled(
@@ -129,9 +141,9 @@ contract LoanSettings is State, LoanSettingsEvents, VaultController {
                 loanParamsLocal.owner,
                 loanParamsLocal.loanToken,
                 loanParamsLocal.collateralToken,
-                loanParamsLocal.initialMargin,
+                loanParamsLocal.minInitialMargin,
                 loanParamsLocal.maintenanceMargin,
-                loanParamsLocal.fixedLoanTerm
+                loanParamsLocal.maxLoanTerm
             );
             emit LoanParamsIdDisabled(
                 loanParamsLocal.id,
@@ -140,7 +152,6 @@ contract LoanSettings is State, LoanSettingsEvents, VaultController {
         }
     }
 
-    // getLoanParams(bytes32)
     function getLoanParams(
         bytes32 loanParamsId)
         public
@@ -150,7 +161,6 @@ contract LoanSettings is State, LoanSettingsEvents, VaultController {
         return loanParams[loanParamsId];
     }
 
-    // getLoanParams(bytes32)
     function getLoanParamsBatch(
         bytes32[] memory loanParamsIdList)
         public
@@ -160,7 +170,7 @@ contract LoanSettings is State, LoanSettingsEvents, VaultController {
         loanParamsList = new LoanParams[](loanParamsIdList.length);
         uint256 itemCount;
 
-        for (uint256 i=0; i < loanParamsIdList.length; i++) {
+        for (uint256 i = 0; i < loanParamsIdList.length; i++) {
             LoanParams memory loanParamsLocal = getLoanParams(loanParamsIdList[i]);
             if (loanParamsLocal.id == 0) {
                 continue;
@@ -170,6 +180,38 @@ contract LoanSettings is State, LoanSettingsEvents, VaultController {
         }
 
         if (itemCount < loanParamsList.length) {
+            assembly {
+                mstore(loanParamsList, itemCount)
+            }
+        }
+    }
+
+    function getLoanParamsList(
+        address owner,
+        uint256 start,
+        uint256 count)
+        external
+        view
+        returns (bytes32[] memory loanParamsList)
+    {
+        EnumerableBytes32Set.Bytes32Set storage set = userLoanParamSets[owner];
+
+        uint256 end = count.min256(set.values.length);
+        if (end == 0 || start >= end) {
+            return loanParamsList;
+        }
+
+        loanParamsList = new bytes32[](count);
+        uint256 itemCount;
+        for (uint256 i = end-start; i > 0; i--) {
+            if (itemCount == count) {
+                break;
+            }
+            loanParamsList[itemCount] = set.get(i+start-1);
+            itemCount++;
+        }
+
+        if (itemCount < count) {
             assembly {
                 mstore(loanParamsList, itemCount)
             }
@@ -200,7 +242,7 @@ contract LoanSettings is State, LoanSettingsEvents, VaultController {
 
         require(loanParamsLocal.loanToken != address(0) &&
             loanParamsLocal.collateralToken != address(0) &&
-            loanParamsLocal.initialMargin > loanParamsLocal.maintenanceMargin,
+            loanParamsLocal.minInitialMargin > loanParamsLocal.maintenanceMargin,
             "invalid params"
         );
 
@@ -209,16 +251,16 @@ contract LoanSettings is State, LoanSettingsEvents, VaultController {
         loanParamsLocal.owner = msg.sender;
 
         loanParams[loanParamsId] = loanParamsLocal;
-        //loanParamsSet.add(loanParamsId);
+        userLoanParamSets[msg.sender].add(loanParamsId);
 
         emit LoanParamsSetup(
             loanParamsId,
             loanParamsLocal.owner,
             loanParamsLocal.loanToken,
             loanParamsLocal.collateralToken,
-            loanParamsLocal.initialMargin,
+            loanParamsLocal.minInitialMargin,
             loanParamsLocal.maintenanceMargin,
-            loanParamsLocal.fixedLoanTerm
+            loanParamsLocal.maxLoanTerm
         );
         emit LoanParamsIdSetup(
             loanParamsId,

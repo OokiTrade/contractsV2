@@ -108,11 +108,18 @@ contract VaultController is Constants {
         internal
     {
         if (value != 0) {
-            IERC20(token).safeTransferFrom(
-                from,
-                to,
-                value
-            );
+            if (from == address(this)) {
+                IERC20(token).safeTransfer(
+                    to,
+                    value
+                );
+            } else {
+                IERC20(token).safeTransferFrom(
+                    from,
+                    to,
+                    value
+                );
+            }
         }
     }
 

@@ -155,37 +155,72 @@ contract PriceFeeds is Constants, Ownable {
         IERC20[] memory tokens)
         public
     {
-        for (uint256 i=0; i < tokens.length; i++) {
+        for (uint256 i = 0; i < tokens.length; i++) {
             decimals[address(tokens[i])] = tokens[i].decimals();
         }
     }
 
-    function getPositionOffset(
-        address loanTokenAddress,
-        address collateralTokenAddress,
-        uint256 loanTokenAmount,
-        uint256 collateralTokenAmount,
-        uint256 initialMarginAmount)
+    function getMaxDrawdown(
+        address loanToken,
+        address collateralToken,
+        uint256 loanAmount,
+        uint256 collateralAmount,
+        uint256 margin)
+        public
+        view
+        returns (uint256)
+    {
+        uint256 loanToCollateralAmount;
+        if (collateralToken == loanToken) {
+            loanToCollateralAmount = loanAmount;
+        } else {
+            (uint256 rate, uint256 precision) = queryRate(
+                loanToken,
+                collateralToken
+            );
+            loanToCollateralAmount = loanAmount
+                .mul(rate)
+                .div(precision);
+        }
+
+        uint256 combined = loanToCollateralAmount
+            .add(
+                loanToCollateralAmount
+                    .mul(margin)
+                    .div(10**20)
+                );
+
+        return collateralAmount > combined ?
+            collateralAmount - combined :
+            0;
+    }
+
+    /*function getPositionOffset(
+        address loanToken,
+        address collateralToken,
+        uint256 loanAmount,
+        uint256 collateralAmount,
+        uint256 minInitialMargin)
         public
         view
         returns (bool isPositive, uint256 loanOffsetAmount, uint256 collateralOffsetAmount)
     {
         uint256 collateralToLoanAmount;
         uint256 collateralToLoanRatePrecise;
-        if (collateralTokenAddress == loanTokenAddress) {
-            collateralToLoanAmount = collateralTokenAmount;
+        if (collateralToken == loanToken) {
+            collateralToLoanAmount = collateralAmount;
             collateralToLoanRatePrecise = 10**18;
         } else {
             uint256 precision;
             (collateralToLoanRatePrecise, precision) = queryRate(
-                collateralTokenAddress,
-                loanTokenAddress
+                collateralToken,
+                loanToken
             );
             collateralToLoanRatePrecise = collateralToLoanRatePrecise.mul(10**18).div(precision);
-            collateralToLoanAmount = collateralTokenAmount.mul(collateralToLoanRatePrecise).div(10**18);
+            collateralToLoanAmount = collateralAmount.mul(collateralToLoanRatePrecise).div(10**18);
         }
 
-        uint256 initialCombinedCollateral = loanTokenAmount.add(loanTokenAmount.mul(initialMarginAmount).div(10**20));
+        uint256 initialCombinedCollateral = loanAmount.add(loanAmount.mul(minInitialMargin).div(10**20));
 
         isPositive = false;
         if (collateralToLoanAmount > initialCombinedCollateral) {
@@ -198,65 +233,65 @@ contract PriceFeeds is Constants, Ownable {
         if (collateralToLoanRatePrecise != 0) {
             collateralOffsetAmount = loanOffsetAmount.mul(10**18).div(collateralToLoanRatePrecise);
         }
-    }
+    }*/
 
     function getCurrentMarginAndCollateralSize(
-        address loanTokenAddress,
-        address collateralTokenAddress,
-        uint256 loanTokenAmount,
-        uint256 collateralTokenAmount)
+        address loanToken,
+        address collateralToken,
+        uint256 loanAmount,
+        uint256 collateralAmount)
         public
         view
         returns (uint256 currentMargin, uint256 collateralInEthAmount)
     {
         (currentMargin,) = getCurrentMargin(
-            loanTokenAddress,
-            collateralTokenAddress,
-            loanTokenAmount,
-            collateralTokenAmount
+            loanToken,
+            collateralToken,
+            loanAmount,
+            collateralAmount
         );
 
         collateralInEthAmount = amountInEth(
-            collateralTokenAddress,
-            collateralTokenAmount
+            collateralToken,
+            collateralAmount
         );
     }
 
     function getCurrentMargin(
-        address loanTokenAddress,
-        address collateralTokenAddress,
-        uint256 loanTokenAmount,
-        uint256 collateralTokenAmount)
+        address loanToken,
+        address collateralToken,
+        uint256 loanAmount,
+        uint256 collateralAmount)
         public
         view
         returns (uint256 currentMargin, uint256 collateralToLoanRate)
     {
         uint256 collateralToLoanAmount;
-        if (collateralTokenAddress == loanTokenAddress) {
-            collateralToLoanAmount = collateralTokenAmount;
+        if (collateralToken == loanToken) {
+            collateralToLoanAmount = collateralAmount;
             collateralToLoanRate = 10**18;
         } else {
             uint256 collateralToLoanPrecision;
             (collateralToLoanRate, collateralToLoanPrecision) = queryRate(
-                collateralTokenAddress,
-                loanTokenAddress
+                collateralToken,
+                loanToken
             );
 
             collateralToLoanRate = collateralToLoanRate
                 .mul(10**18)
                 .div(collateralToLoanPrecision);
 
-            collateralToLoanAmount = collateralTokenAmount
+            collateralToLoanAmount = collateralAmount
                 .mul(collateralToLoanRate)
                 .div(10**18);
         }
 
-        if (collateralToLoanAmount >= loanTokenAmount) {
+        if (collateralToLoanAmount >= loanAmount) {
             return (
                 collateralToLoanAmount
-                    .sub(loanTokenAmount)
+                    .sub(loanAmount)
                     .mul(10**20)
-                    .div(loanTokenAmount),
+                    .div(loanAmount),
                 collateralToLoanRate
             );
         } else {
@@ -268,23 +303,23 @@ contract PriceFeeds is Constants, Ownable {
     }
 
     function shouldLiquidate(
-        address loanTokenAddress,
-        address collateralTokenAddress,
-        uint256 loanTokenAmount,
-        uint256 collateralTokenAmount,
-        uint256 maintenanceMarginAmount)
+        address loanToken,
+        address collateralToken,
+        uint256 loanAmount,
+        uint256 collateralAmount,
+        uint256 maintenanceMargin)
         public
         view
         returns (bool)
     {
         (uint256 currentMargin,) = getCurrentMargin(
-            loanTokenAddress,
-            collateralTokenAddress,
-            loanTokenAmount,
-            collateralTokenAmount
+            loanToken,
+            collateralToken,
+            loanAmount,
+            collateralAmount
         );
 
-        return currentMargin <= maintenanceMarginAmount;
+        return currentMargin <= maintenanceMargin;
     }
 
     /*
@@ -299,7 +334,7 @@ contract PriceFeeds is Constants, Ownable {
     {
         require(tokens.length == feeds.length, "count mismatch");
 
-        for (uint256 i=0; i < tokens.length; i++) {
+        for (uint256 i = 0; i < tokens.length; i++) {
             pricesFeeds[tokens[i]] = feeds[i];
         }
     }

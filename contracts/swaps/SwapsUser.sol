@@ -32,7 +32,7 @@ contract SwapsUser is State, SwapsEvents {
             address(this), // returnToSender
             sourceTokenAmount,
             requiredDestTokenAmount,
-            0, // minConversionRate,
+            minConversionRate,
             loanDataBytes
         );
 

@@ -10,7 +10,8 @@ contract LoanClosingsEvents {
     event Repay(
         bytes32 indexed loanId,
         address indexed borrower,
-        address indexed loanToken,
+        address indexed lender,
+        address loanToken,
         address collateralToken,
         uint256 repayAmount,
         uint256 collateralWithdrawAmount,
@@ -21,7 +22,8 @@ contract LoanClosingsEvents {
     event Liquidate(
         bytes32 indexed loanId,
         address indexed borrower,
-        address indexed loanToken,
+        address indexed lender,
+        address loanToken,
         address collateralToken,
         uint256 repayAmount,
         uint256 collateralWithdrawAmount,

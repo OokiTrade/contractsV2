@@ -34,22 +34,30 @@ contract bZxProtocol is State {
         }
     }
 
+    function replaceContract(
+        address target)
+        external
+        onlyOwner
+    {
+        target.delegatecall(abi.encodeWithSignature("initialize(address)", target));
+    }
+
     function setTargets(
-        string[] memory sigsArr,
-        address[] memory targetsArr)
-        public
+        string[] calldata sigsArr,
+        address[] calldata targetsArr)
+        external
         onlyOwner
     {
         require(sigsArr.length == targetsArr.length, "count mismatch");
 
-        for (uint256 i=0; i < sigsArr.length; i++) {
+        for (uint256 i = 0; i < sigsArr.length; i++) {
             logicTargets[bytes4(keccak256(abi.encodePacked(sigsArr[i])))] = targetsArr[i];
         }
     }
 
     function getTarget(
-        string memory sig)
-        public
+        string calldata sig)
+        external
         view
         returns (address)
     {

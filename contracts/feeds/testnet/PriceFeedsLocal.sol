@@ -8,7 +8,7 @@ pragma solidity 0.5.17;
 import "../PriceFeeds.sol";
 
 
-contract PriceFeeds_local is PriceFeeds {
+contract PriceFeedsLocal is PriceFeeds {
 
     mapping (address => mapping (address => uint256)) public rates;
 

@@ -41,11 +41,11 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
     // Internals
     EnumerableBytes32Set.Bytes32Set internal logicTargetsSet;                       // implementations set
     EnumerableBytes32Set.Bytes32Set internal activeLoansSet;                        // active loans set
-    //EnumerableBytes32Set.Bytes32Set internal loanParamsSet;                         // active loanParms set
     EnumerableBytes32Set.Bytes32Set internal auxDataKeySet;                         // aux data keys set
 
     mapping (address => EnumerableBytes32Set.Bytes32Set) internal lenderLoanSets;
     mapping (address => EnumerableBytes32Set.Bytes32Set) internal borrowerLoanSets;
+    mapping (address => EnumerableBytes32Set.Bytes32Set) internal userLoanParamSets;
 
     // TODO: setters for lenders and borrowers
     //  owner can deposit or withdraw (changes locked amount and transfers the token in or out)
@@ -67,11 +67,11 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
     // TODO: setters for these ->
     // A threshold of minimum initial margin for loan to be insured by the guarantee fund
     // A value of 0 indicates that no threshold exists for this parameter.
-    uint256 public minInitialMarginAmount = 0;
+    uint256 public guaranteeInitialMarginAmount = 0;
 
     // A threshold of minimum maintenance margin for loan to be insured by the guarantee fund
     // A value of 0 indicates that no threshold exists for this parameter.
-    uint256 public minMaintenanceMarginAmount = 15 * 10**18;
+    uint256 public guaranteeMaintenanceMarginAmount = 15 * 10**18;
 
     uint256 public maxDisagreement = 5 * 10**18;
 
