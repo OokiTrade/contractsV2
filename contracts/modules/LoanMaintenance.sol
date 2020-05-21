@@ -50,8 +50,8 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         logicTargets[this.withdrawCollateral.selector] = target;
         //logicTargets[this.rolloverLoan.selector] = target;
         logicTargets[this.withdrawAccruedInterest.selector] = target;
-        logicTargets[this.extendLoanByInterest.selector] = target;
-        logicTargets[this.reduceLoanByInterest.selector] = target;
+        logicTargets[this.extendLoanDuration.selector] = target;
+        logicTargets[this.reduceLoanDuration.selector] = target;
         logicTargets[this.getLenderInterestData.selector] = target;
         logicTargets[this.getLoanInterestData.selector] = target;
         logicTargets[this.getUserLoans.selector] = target;
@@ -71,7 +71,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
         require(loanLocal.active, "loan is closed");
-        require(msg.value == 0 || loanParamsLocal.collateralToken == address(0), "wrong asset sent");
+        require(msg.value == 0 || loanParamsLocal.collateralToken == address(wethToken), "wrong asset sent");
 
         loanLocal.collateral = loanLocal.collateral
             .add(depositAmount);
@@ -106,6 +106,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         require(loanLocal.active, "loan is closed");
         require(
             msg.sender == loanLocal.borrower ||
+            protocolManagers[msg.sender] ||
             delegatedManagers[loanLocal.id][msg.sender],
             "unauthorized"
         );
@@ -156,7 +157,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
             (
                 (
                     msg.sender == loanLocal.borrower || delegatedManagers[loanLocal.id][msg.sender]
-                ) && msg.sender == payer
+                ) && msg.sender == payer <-- get rid of this
             ) || protocolManagers[msg.sender],
             "unauthorized"
         );
@@ -268,9 +269,8 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         }
     }
 
-    function extendLoanByInterest(
+    function extendLoanDuration(
         bytes32 loanId,
-        address payer,
         uint256 depositAmount,
         bool useCollateral,
         bytes calldata loanDataBytes)
@@ -285,11 +285,10 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
 
         require(loanLocal.active, "loan is closed");
         require(
-            (
-                (
-                    msg.sender == loanLocal.borrower || delegatedManagers[loanLocal.id][msg.sender]
-                ) && msg.sender == payer
-            ) || protocolManagers[msg.sender],
+            !useCollateral ||
+            msg.sender == loanLocal.borrower ||
+            protocolManagers[msg.sender] ||
+            delegatedManagers[loanLocal.id][msg.sender],
             "unauthorized"
         );
         require(loanParamsLocal.maxLoanTerm == 0, "indefinite-term only");
@@ -337,7 +336,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
             if (msg.value == 0) {
                 vaultDeposit(
                     loanParamsLocal.loanToken,
-                    payer,
+                    msg.sender,
                     depositAmount
                 );
             } else {
@@ -372,7 +371,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
             .add(depositAmount);
     }
 
-    function reduceLoanByInterest(
+    function reduceLoanDuration(
         bytes32 loanId,
         address receiver,
         uint256 withdrawAmount)

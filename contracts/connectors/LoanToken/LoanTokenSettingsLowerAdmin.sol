@@ -39,7 +39,7 @@ contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage {
         address owner;
         address loanToken;
         address collateralToken;
-        uint256 initialMargin;
+        uint256 minInitialMargin;
         uint256 maintenanceMargin;
         uint256 maxLoanTerm;
     }
@@ -57,17 +57,35 @@ contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage {
     }
 */
     function setupLoanParams(
-        LoanParamsStruct.LoanParams[] calldata loanParamsList)
-        external
+        LoanParamsStruct.LoanParams[] memory loanParamsList)
+        public
         onlyAdmin
     {
-        bytes32[] memory loanParamsIdList = ProtocolSettingsLike(bZxContract).setupLoanParams(loanParamsList);
+        bytes32[] memory loanParamsIdList;
+        address _loanTokenAddress = loanTokenAddress;
+
+        // setup torque loan params
+        for (uint256 i = 0; i < loanParamsList.length; i++) {
+            loanParamsList[i].loanToken = _loanTokenAddress;
+            loanParamsList[i].maxLoanTerm = 0;
+        }
+        loanParamsIdList = ProtocolSettingsLike(bZxContract).setupLoanParams(loanParamsList);
         for (uint256 i = 0; i < loanParamsIdList.length; i++) {
             loanOrderHashes[uint256(keccak256(abi.encodePacked(
                 loanParamsList[i].collateralToken,
-                loanParamsList[i].maxLoanTerm == 0 ? // isTorqueLoan
-                    true :
-                    false
+                true // isTorqueLoan
+            )))] = loanParamsIdList[i];
+        }
+
+        // setup margin loan params
+        for (uint256 i = 0; i < loanParamsList.length; i++) {
+            loanParamsList[i].maxLoanTerm = 2419200; // 28 days
+        }
+        loanParamsIdList = ProtocolSettingsLike(bZxContract).setupLoanParams(loanParamsList);
+        for (uint256 i = 0; i < loanParamsIdList.length; i++) {
+            loanOrderHashes[uint256(keccak256(abi.encodePacked(
+                loanParamsList[i].collateralToken,
+                false // isTorqueLoan
             )))] = loanParamsIdList[i];
         }
     }

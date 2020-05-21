@@ -107,16 +107,15 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
             receiver
         );
 
-        emit Liquidate(
-            loanLocal.id,
-            loanLocal.borrower,
-            loanLocal.lender,
-            loanParamsLocal.loanToken,
-            loanParamsLocal.collateralToken,
-            closeAmount,
+        _emitClosingEvents(
+            loanParamsLocal,
+            loanLocal,
+            loanCloseAmount,
             collateralWithdrawAmount,
             collateralToLoanRate,
-            currentMargin
+            currentMargin,
+            3, // closeType
+            0 // tradeCloseAmount
         );
     }
 
@@ -160,6 +159,7 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
             loanLocal,
             loanParamsLocal,
             loanCloseAmount,
+            0, // tradeCloseAmount
             receiver
         );
     }
@@ -251,6 +251,9 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
             loanLocal,
             loanParamsLocal,
             loanCloseAmount,
+            amountIsCollateral ? // tradeCloseAmount
+                closeAmount :
+                0,
             receiver
         );
     }
@@ -458,6 +461,7 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
         Loan storage loanLocal,
         LoanParams storage loanParamsLocal,
         uint256 loanCloseAmount,
+        uint256 tradeCloseAmount,
         address receiver)
         internal
         returns (uint256 collateralWithdrawAmount)
@@ -486,20 +490,22 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
             loanLocal.collateral
         );
         require(
+            loanLocal.principal == 0 ||
             currentMargin > loanParamsLocal.maintenanceMargin,
             "unhealthy position"
         );
 
-        emit Repay(
-            loanLocal.id,
-            loanLocal.borrower,
-            loanLocal.lender,
-            loanParamsLocal.loanToken,
-            loanParamsLocal.collateralToken,
+        _emitClosingEvents(
+            loanParamsLocal,
+            loanLocal,
             loanCloseAmount,
             collateralWithdrawAmount,
             collateralToLoanRate,
-            currentMargin
+            currentMargin,
+            tradeCloseAmount == 0 ? // closeType
+                0 :
+                1,
+            tradeCloseAmount
         );
     }
 
@@ -566,5 +572,61 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
             .sub(interestRefund);
 
         return interestRefund;
+    }
+
+    function _emitClosingEvents(
+        LoanParams memory loanParamsLocal,
+        Loan memory loanLocal,
+        uint256 loanCloseAmount,
+        uint256 collateralWithdrawAmount,
+        uint256 collateralToLoanRate,
+        uint256 currentMargin,
+        uint256 tradeCloseAmount,
+        uint256 closeType)
+        internal
+    {
+        if (closeType == 0) {
+            emit Repay(
+                loanLocal.id,
+                loanLocal.borrower,
+                loanLocal.lender,
+                loanParamsLocal.loanToken,
+                loanParamsLocal.collateralToken,
+                loanCloseAmount,
+                collateralWithdrawAmount,
+                collateralToLoanRate,
+                currentMargin
+            );
+        } else if (closeType == 1) {
+            // exitPrice = 1 / collateralToLoanRate
+            collateralToLoanRate = SafeMath.div(10**36, collateralToLoanRate);
+
+            // currentLeverage = 100 / currentMargin
+            currentMargin = SafeMath.div(10**38, currentMargin);
+
+            emit CloseTrade(
+                loanLocal.borrower,                             // trader
+                loanParamsLocal.collateralToken,                // baseToken
+                loanParamsLocal.loanToken,                      // quoteToken
+                loanLocal.lender,                               // lender
+                loanLocal.id,                                   // loanId
+                tradeCloseAmount,                               // positionCloseSize
+                loanCloseAmount,                                // loanCloseAmount
+                collateralToLoanRate,                           // exitPrice
+                currentMargin                                   // currentLeverage
+            );
+        } else { // closeType == 3
+            emit Liquidate(
+                loanLocal.id,
+                loanLocal.borrower,
+                loanLocal.lender,
+                loanParamsLocal.loanToken,
+                loanParamsLocal.collateralToken,
+                loanCloseAmount,
+                collateralWithdrawAmount,
+                collateralToLoanRate,
+                currentMargin
+            );
+        }
     }
 }

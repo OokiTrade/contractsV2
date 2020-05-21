@@ -168,7 +168,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         bytes32 loanId, // 0 if new loan
         uint256 withdrawAmount,
         uint256 initialLoanDuration,    // duration in seconds
-        uint256 collateralTokenSent,    // if 0, loanId must be provided
+        uint256 collateralTokenSent,    // if 0, loanId must be provided; any ETH sent must equal this value
         address borrower,
         address receiver,
         address collateralTokenAddress, // address(0) means ETH and ETH must be sent with the call
@@ -180,6 +180,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         _checkPause();
 
         require(
+            (msg.value == 0 || msg.value == collateralTokenSent) &&
             (collateralTokenSent != 0 || loanId != 0) &&
             (collateralTokenAddress != address(0) || msg.value != 0),
             "6"
@@ -187,26 +188,22 @@ contract LoanTokenLogicStandard is AdvancedToken {
 
         if (msg.value != 0) {
             collateralTokenAddress = wethToken;
-            collateralTokenSent = msg.value;
         }
-
-        uint256 newPrincipal;
 
         _settleInterest();
 
         uint256[5] memory sentAmounts;
 
         if (withdrawAmount == 0) {
-            newPrincipal = _getBorrowAmountForDeposit(
+            withdrawAmount = _getBorrowAmountForDeposit(
                 collateralTokenSent,
                 initialLoanDuration,
                 collateralTokenAddress
             );
-            require(newPrincipal != 0, "35");
-        } else {
-            // withdrawalAmount
-            newPrincipal = withdrawAmount;
+            require(withdrawAmount != 0, "35");
         }
+
+        uint256 newPrincipal = withdrawAmount;
 
         // interestRate, interestInitialAmount, borrowAmount (newBorrowAmount)
         (sentAmounts[0], sentAmounts[2], newPrincipal) = _getInterestRateAndAmount(
@@ -904,9 +901,15 @@ contract LoanTokenLogicStandard is AdvancedToken {
             withdrawAmount
         );
 
-        // adding the loan token amount from the lender to loanTokenSent
+        // adding the loan token portion from the lender to loanTokenSent
         sentAmounts[3] = sentAmounts[3]
             .add(sentAmounts[1]); // newPrincipal
+
+        if (withdrawAmount != 0) {
+            // withdrawAmount already sent to the borrower, so we aren't sending it to the protocol
+            sentAmounts[3] = sentAmounts[3]
+                .sub(withdrawAmount);
+        }
 
         uint256 msgValue;
         if (msg.value != 0) {

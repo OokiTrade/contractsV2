@@ -236,6 +236,9 @@ contract LoanSettings is State, LoanSettingsEvents, VaultController {
         bytes32 loanParamsId = keccak256(abi.encodePacked(
             loanParamsLocal.loanToken,
             loanParamsLocal.collateralToken,
+            loanParamsLocal.minInitialMargin,
+            loanParamsLocal.maintenanceMargin,
+            loanParamsLocal.maxLoanTerm,
             block.timestamp
         ));
         require(loanParams[loanParamsId].id == 0, "loanParams exists");

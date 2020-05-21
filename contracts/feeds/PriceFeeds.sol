@@ -69,7 +69,7 @@ contract PriceFeeds is Constants, Ownable {
 
             uint256 destRate;
             if (destTokenAddress != address(wethToken)) {
-                IPriceFeedsExt _destFeed = pricesFeeds[sourceTokenAddress];
+                IPriceFeedsExt _destFeed = pricesFeeds[destTokenAddress];
                 require(address(_destFeed) != address(0), "unsupported dst feed");
                 destRate = uint256(_destFeed.latestAnswer());
                 require(destRate != 0 && (destRate >> 128) == 0, "price error");
@@ -286,7 +286,7 @@ contract PriceFeeds is Constants, Ownable {
                 .div(10**18);
         }
 
-        if (collateralToLoanAmount >= loanAmount) {
+        if (loanAmount != 0 && collateralToLoanAmount >= loanAmount) {
             return (
                 collateralToLoanAmount
                     .sub(loanAmount)

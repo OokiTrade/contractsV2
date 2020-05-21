@@ -420,7 +420,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             "unhealthy position"
         );
 
-        _emitEvents(
+        _emitOpeningEvents(
             loanParamsLocal,
             loanLocal,
             sentAddresses,
@@ -433,7 +433,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         return sentValues[1]; // newPrincipal
     }
 
-    function _emitEvents(
+    function _emitOpeningEvents(
         LoanParams memory loanParamsLocal,
         Loan memory loanLocal,
         address[4] memory sentAddresses,

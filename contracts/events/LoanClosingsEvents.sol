@@ -19,6 +19,18 @@ contract LoanClosingsEvents {
         uint256 currentMargin
     );
 
+    event CloseTrade(
+        address indexed trader,
+        address indexed baseToken,
+        address indexed quoteToken,
+        address lender,
+        bytes32 loanId,
+        uint256 positionCloseSize,
+        uint256 loanCloseAmount,
+        uint256 exitPrice, // one unit of baseToken, denominated in quoteToken
+        uint256 currentLeverage
+    );
+
     event Liquidate(
         bytes32 indexed loanId,
         address indexed borrower,
@@ -30,4 +42,5 @@ contract LoanClosingsEvents {
         uint256 collateralToLoanRate,
         uint256 currentMargin
     );
+
 }
