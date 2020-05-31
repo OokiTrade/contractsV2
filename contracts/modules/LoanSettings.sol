@@ -26,16 +26,16 @@ contract LoanSettings is State, LoanSettingsEvents, VaultController {
         external
         onlyOwner
     {
-        logicTargets[this.setupLoanParams.selector] = target;
-        logicTargets[this.setupOrder.selector] = target;
-        logicTargets[this.setupOrderWithId.selector] = target;
-        logicTargets[this.depositToOrder.selector] = target;
-        logicTargets[this.withdrawFromOrder.selector] = target;
-        logicTargets[this.disableLoanParams.selector] = target;
-        logicTargets[this.getLoanParams.selector] = target;
-        logicTargets[this.getLoanParamsBatch.selector] = target;
-        logicTargets[this.getLoanParamsList.selector] = target;
-        logicTargets[this.getTotalPrincipal.selector] = target;
+        _setTarget(this.setupLoanParams.selector, target);
+        _setTarget(this.setupOrder.selector, target);
+        _setTarget(this.setupOrderWithId.selector, target);
+        _setTarget(this.depositToOrder.selector, target);
+        _setTarget(this.withdrawFromOrder.selector, target);
+        _setTarget(this.disableLoanParams.selector, target);
+        _setTarget(this.getLoanParams.selector, target);
+        _setTarget(this.getLoanParamsBatch.selector, target);
+        _setTarget(this.getLoanParamsList.selector, target);
+        _setTarget(this.getTotalPrincipal.selector, target);
     }
 
     function setupLoanParams(
@@ -55,7 +55,7 @@ contract LoanSettings is State, LoanSettingsEvents, VaultController {
         uint256 interestRate,
         uint256 minLoanTerm,
         uint256 maxLoanTerm,
-        uint256 expirationStartTimestamp,
+        uint256 expirationTimestamp,
         bool isLender)
         external
         payable
@@ -67,7 +67,7 @@ contract LoanSettings is State, LoanSettingsEvents, VaultController {
             interestRate,
             minLoanTerm,
             maxLoanTerm,
-            expirationStartTimestamp,
+            expirationTimestamp,
             isLender
         );
     }
@@ -78,7 +78,7 @@ contract LoanSettings is State, LoanSettingsEvents, VaultController {
         uint256 interestRate,
         uint256 minLoanTerm,
         uint256 maxLoanTerm,
-        uint256 expirationStartTimestamp,
+        uint256 expirationTimestamp,
         bool isLender)
         external
         payable
@@ -91,7 +91,7 @@ contract LoanSettings is State, LoanSettingsEvents, VaultController {
             interestRate,
             minLoanTerm,
             maxLoanTerm,
-            expirationStartTimestamp,
+            expirationTimestamp,
             isLender
         );
     }
@@ -123,6 +123,40 @@ contract LoanSettings is State, LoanSettingsEvents, VaultController {
             depositAmount, // changeAmount,
             isLender,
             false // isDeposit
+        );
+    }
+
+    function changeOrderExpiration(
+        bytes32 loanParamsId,
+        uint256 newTimestamp,
+        bool isLender)
+        external
+    {
+        LoanParams memory loanParamsLocal = loanParams[loanParamsId];
+        require(loanParamsLocal.id != 0, "loanParams not exists");
+
+        if (newTimestamp != 0 && newTimestamp < block.timestamp) {
+            // a timestamp in the past expires the order immediately
+            newTimestamp = block.timestamp;
+        }
+
+        uint256 oldTimestamp;
+        if (isLender) {
+            require(lenderOrders[msg.sender][loanParamsLocal.id].createdTimestamp != 0, "order not exists");
+            oldTimestamp = lenderOrders[msg.sender][loanParamsLocal.id].expirationTimestamp;
+            lenderOrders[msg.sender][loanParamsLocal.id].expirationTimestamp = newTimestamp;
+        } else {
+            require(borrowerOrders[msg.sender][loanParamsLocal.id].createdTimestamp != 0, "order not exists");
+            oldTimestamp = borrowerOrders[msg.sender][loanParamsLocal.id].expirationTimestamp;
+            borrowerOrders[msg.sender][loanParamsLocal.id].expirationTimestamp = newTimestamp;
+        }
+
+        emit LoanOrderChangeExpiration(
+            loanParamsLocal.id,
+            msg.sender,
+            isLender,
+            oldTimestamp,
+            newTimestamp
         );
     }
 
@@ -279,7 +313,7 @@ contract LoanSettings is State, LoanSettingsEvents, VaultController {
         uint256 interestRate,
         uint256 minLoanTerm,
         uint256 maxLoanTerm,
-        uint256 expirationStartTimestamp,
+        uint256 expirationTimestamp,
         bool isLender)
         internal
     {
@@ -289,16 +323,17 @@ contract LoanSettings is State, LoanSettingsEvents, VaultController {
         Order memory orderLocal = isLender ?
             lenderOrders[msg.sender][loanParamsLocal.id] :
             borrowerOrders[msg.sender][loanParamsLocal.id];
-        require(orderLocal.createdStartTimestamp == 0, "order exists");
+        require(orderLocal.createdTimestamp == 0, "order exists");
 
         require(maxLoanTerm >= minLoanTerm, "invalid term range");
+        require(expirationTimestamp == 0 || expirationTimestamp > block.timestamp, "invalid expiration");
 
         orderLocal.lockedAmount = lockedAmount;
         orderLocal.interestRate = interestRate;
         orderLocal.minLoanTerm = minLoanTerm;
         orderLocal.maxLoanTerm = maxLoanTerm;
-        orderLocal.createdStartTimestamp = block.timestamp;
-        orderLocal.expirationStartTimestamp = expirationStartTimestamp;
+        orderLocal.createdTimestamp = block.timestamp;
+        orderLocal.expirationTimestamp = expirationTimestamp;
         if (isLender) {
             lenderOrders[msg.sender][loanParamsLocal.id] = orderLocal;
         } else {
@@ -326,7 +361,7 @@ contract LoanSettings is State, LoanSettingsEvents, VaultController {
             isLender,
             lockedAmount,
             interestRate,
-            expirationStartTimestamp
+            expirationTimestamp
         );
     }
 
@@ -343,7 +378,7 @@ contract LoanSettings is State, LoanSettingsEvents, VaultController {
         Order memory orderLocal = isLender ?
             lenderOrders[msg.sender][loanParamsLocal.id] :
             borrowerOrders[msg.sender][loanParamsLocal.id];
-        require(orderLocal.createdStartTimestamp != 0, "order not exists");
+        require(orderLocal.createdTimestamp != 0, "order not exists");
 
         uint256 oldLockedAmount = orderLocal.lockedAmount;
 

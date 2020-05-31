@@ -34,7 +34,7 @@ def Addresses():
             "WBTCTokenAddress": "0x95cc8d8f29d0f7fcc425e8708893e759d1599c97" # Kyber ENG
         },
         "kovan": {
-            "bZxProtocol": "0xE0B26CEa48e90D4a746069ebf33305de4772Fb94",
+            "bZxProtocol": "0x115338E77339d64b3d58181Aa9c0518df9D18022", #"0xa62236aB5825325d7a1F762c389608e84D38f17F",
             "ENSRegistry": "0x9590A50Ee1043F8915FF72C0aCC2Dbc600080d36",
             "ENSResolver": "0x44b92B8F27abAC2ebc9d0C4fa6fF0EEd4E98ba79",
             "WethHelper": "0x3b5bDCCDFA2a0a1911984F203C19628EeB6036e0",
@@ -47,7 +47,7 @@ def Addresses():
             "MultiSig": "0x0000000000000000000000000000000000000000",
             "TokenizedRegistry": "0xF1C87dD61BF8a4e21978487e2705D52AA687F97E",
             "LoanTokenSettings": "0x7645F5FFd0b24A60C6A9fFF54Ce767f144f41Df4",
-            "LoanTokenSettingsLowerAdmin": "0x957D62C0395Db1A6a01404eF183A23BD63A4BAA4",
+            "LoanTokenSettingsLowerAdmin": "0xF993D090C98036Cb65Fca4C7a8328F43Bc5f535E",
             "PositionTokenSettingsV2": "0x9039aa76ec9d3a7c9dcec1ee008c7b9b1163f709",
             "PositionTokenLogicV2_Initialize": "0x1665364b226e8aa9e545b613ccded1c4b0834fcf",
             "WETHTokenAddress": "0xd0A1E359811322d97991E03f863a0C30C2cF029C",

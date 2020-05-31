@@ -27,9 +27,9 @@ contract SwapsExternal is State, VaultController, SwapsUser {
         external
         onlyOwner
     {
-        logicTargets[this.swapExternal.selector] = target;
-        logicTargets[this.setSupportedSwapTokensBatch.selector] = target;
-        logicTargets[this.getExpectedSwapRate.selector] = target;
+        _setTarget(this.swapExternal.selector, target);
+        _setTarget(this.setSupportedSwapTokensBatch.selector, target);
+        _setTarget(this.getExpectedSwapRate.selector, target);
     }
 
     // TODO: add support for ether source
@@ -66,7 +66,7 @@ contract SwapsExternal is State, VaultController, SwapsUser {
             swapData
         );
 
-        emit Swap(
+        emit ExternalSwap(
             msg.sender, // user
             sourceToken,
             destToken,

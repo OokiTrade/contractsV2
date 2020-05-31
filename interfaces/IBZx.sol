@@ -55,7 +55,7 @@ contract IBZx is
         bool[] calldata toggles)
         external;
 
-    function setLoanPoolToUnderlying(
+    function setLoanPool(
         address[] calldata pools,
         address[] calldata assets)
         external;
@@ -65,10 +65,36 @@ contract IBZx is
         bool[] calldata toggles)
         external;
 
+    function setGuaranteedInitialMargin(
+        uint256 newAmount)
+        external;
+
+    function setGuaranteedMaintenanceMargin(
+        uint256 newAmount)
+        external;
+
+    function setMaxDisagreement(
+        uint256 newAmount)
+        external;
+
+    function setSourceBufferPercent(
+        uint256 newAmount)
+        external;
+
+    function setMaxSwapSize(
+        uint256 newAmount)
+        external;
+
     function getloanPoolsList(
         uint256 start,
         uint256 count)
         external;
+
+    function isLoanPool(
+        address loanPool)
+        external
+        view
+        returns (bool);
 
 
     ////// Loan Settings //////
@@ -231,45 +257,33 @@ contract IBZx is
         payable
         returns (
             uint256 loanCloseAmount,
-            uint256 collateralWithdrawAmount,
-            address collateralToken
+            uint256 seizedAmount,
+            address seizedToken
         );
 
-    function repayWithDeposit(
+    function closeWithDeposit(
         bytes32 loanId,
-        address payer,
         address receiver,
-        uint256 closeAmount) // denominated in loanToken
+        uint256 depositAmount) // denominated in loanToken
         external
         payable
         returns (
             uint256 loanCloseAmount,
-            uint256 collateralWithdrawAmount,
-            address collateralToken
+            uint256 withdrawAmount,
+            address withdrawToken
         );
 
-    function closeTrade(
+    function closeWithSwap(
         bytes32 loanId,
         address receiver,
-        uint256 positionCloseAmount, // denominated in collateralToken
+        uint256 swapAmount, // denominated in collateralToken
+        bool returnTokenIsCollateral, // true: withdraws collateralToken, false: withdraws loanToken
         bytes calldata loanDataBytes)
         external
         returns (
             uint256 loanCloseAmount,
-            uint256 collateralWithdrawAmount,
-            address collateralToken
-        );
-
-    function repayWithCollateral(
-        bytes32 loanId,
-        address receiver,
-        uint256 closeAmount, // denominated in loanToken
-        bytes calldata loanDataBytes)
-        external
-        returns (
-            uint256 loanCloseAmount,
-            uint256 collateralWithdrawAmount,
-            address collateralToken
+            uint256 withdrawAmount,
+            address withdrawToken
         );
 
 
@@ -339,11 +353,12 @@ contract IBZx is
         uint256 collateral;
         uint256 interestOwedPerDay;
         uint256 interestDepositRemaining;
-        uint256 initialMargin;
+        uint256 startRate; // collateralToLoanRate
+        uint256 startMargin;
         uint256 maintenanceMargin;
         uint256 currentMargin;
-        uint256 fixedLoanTerm;
-        uint256 loanEndTimestamp;
+        uint256 maxLoanTerm;
+        uint256 endTimestamp;
         uint256 maxLiquidatable;
         uint256 maxSeizable;
     }

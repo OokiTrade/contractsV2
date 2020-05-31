@@ -53,6 +53,15 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
 
     /* Internal functions */
 
+    // sentAddresses[0]: lender
+    // sentAddresses[1]: borrower
+    // sentAddresses[2]: receiver
+    // sentAddresses[3]: manager
+    // sentAmounts[0]: interestRate
+    // sentAmounts[1]: newPrincipal
+    // sentAmounts[2]: interestInitialAmount
+    // sentAmounts[3]: loanTokenSent
+    // sentAmounts[4]: collateralTokenSent
     function _verifyTransfers(
         address collateralTokenAddress,
         address[4] memory sentAddresses,
@@ -60,11 +69,14 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
         uint256 withdrawalAmount)
         internal
     {
-        address _loanTokenAddress = wethToken;
+        address _wethToken = wethToken;
+        address _loanTokenAddress = _wethToken;
         address receiver = sentAddresses[2];
         uint256 newPrincipal = sentAmounts[1];
         uint256 loanTokenSent = sentAmounts[3];
         uint256 collateralTokenSent = sentAmounts[4];
+
+        require(_loanTokenAddress != collateralTokenAddress, "26");
 
         bool success;
         if (withdrawalAmount != 0) { // withdrawOnOpen == true
@@ -75,24 +87,20 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
                 _safeTransfer(_loanTokenAddress, bZxContract, newPrincipal - withdrawalAmount, "");
             }
         } else {
-            _safeTransfer(_loanTokenAddress, bZxContract, newPrincipal, "26");
+            _safeTransfer(_loanTokenAddress, bZxContract, newPrincipal, "27");
         }
 
         if (collateralTokenSent != 0) {
-            if (collateralTokenAddress == wethToken && msg.value != 0 && collateralTokenSent == msg.value) {
-                IWeth(wethToken).deposit.value(collateralTokenSent)();
-                _safeTransfer(collateralTokenAddress, bZxContract, collateralTokenSent, "27");
-            } else {
-                if (collateralTokenAddress == _loanTokenAddress) {
-                    loanTokenSent = loanTokenSent.add(collateralTokenSent);
-                } else {
-                    _safeTransferFrom(collateralTokenAddress, msg.sender, bZxContract, collateralTokenSent, "27");
-                }
-            }
+            _safeTransferFrom(collateralTokenAddress, msg.sender, bZxContract, collateralTokenSent, "28");
         }
 
         if (loanTokenSent != 0) {
-            _safeTransferFrom(_loanTokenAddress, msg.sender, bZxContract, loanTokenSent, "31");
+            if (msg.value != 0 && msg.value >= loanTokenSent) {
+                IWeth(_wethToken).deposit.value(loanTokenSent)();
+                _safeTransfer(_loanTokenAddress, bZxContract, loanTokenSent, "29");
+            } else {
+                _safeTransferFrom(_loanTokenAddress, msg.sender, bZxContract, loanTokenSent, "29");
+            }
         }
     }
 }

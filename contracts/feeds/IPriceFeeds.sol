@@ -23,11 +23,12 @@ interface IPriceFeeds {
         external
         view;
 
-    function checkMaxTradeSize(
+    function amountInEth(
         address tokenAddress,
         uint256 amount)
         external
-        view;
+        view
+        returns (uint256 ethAmount);
 
     function getMaxDrawdown(
         address loanToken,

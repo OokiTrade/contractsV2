@@ -76,8 +76,8 @@ interface ProtocolLike {
         view
         returns (uint256 borrowAmount);
 
-    function protocolManagers(
-        address manager)
+    function isLoanPool(
+        address loanPool)
         external
         view
         returns (bool);

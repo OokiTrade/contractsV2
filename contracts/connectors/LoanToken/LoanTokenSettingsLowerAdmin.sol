@@ -32,31 +32,7 @@ contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage {
         revert("invalid");
     }
 
-/*
-    struct LoanParams {
-        bytes32 id;
-        bool active;
-        address owner;
-        address loanToken;
-        address collateralToken;
-        uint256 minInitialMargin;
-        uint256 maintenanceMargin;
-        uint256 maxLoanTerm;
-    }
-*/
-/*
-    struct LoanData {
-        bytes32 loanOrderHash;
-        uint256 leverageAmount;
-        uint256 initialMarginAmount;
-        uint256 maintenanceMarginAmount;
-        uint256 maxDurationUnixTimestampSec;
-        uint256 index;
-        uint256 marginPremiumAmount;
-        address collateralTokenAddress;
-    }
-*/
-    function setupLoanParams(
+    function setupTorqueLoanParams(
         LoanParamsStruct.LoanParams[] memory loanParamsList)
         public
         onlyAdmin
@@ -76,9 +52,19 @@ contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage {
                 true // isTorqueLoan
             )))] = loanParamsIdList[i];
         }
+    }
+
+    function setupMarginLoanParams(
+        LoanParamsStruct.LoanParams[] memory loanParamsList)
+        public
+        onlyAdmin
+    {
+        bytes32[] memory loanParamsIdList;
+        address _loanTokenAddress = loanTokenAddress;
 
         // setup margin loan params
         for (uint256 i = 0; i < loanParamsList.length; i++) {
+            loanParamsList[i].loanToken = _loanTokenAddress;
             loanParamsList[i].maxLoanTerm = 2419200; // 28 days
         }
         loanParamsIdList = ProtocolSettingsLike(bZxContract).setupLoanParams(loanParamsList);
@@ -110,70 +96,6 @@ contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage {
 
         ProtocolSettingsLike(bZxContract).disableLoanParams(loanParamsIdList);
     }
-
-    /*function initLeverageBatch(
-        LeverageParams[] memory leverageParamsArr,
-        bool allowUpdate)
-        public
-        onlyAdmin
-    {
-        for (uint256 i = 0; i < leverageParamsArr.length; i++) {
-            LeverageParams memory leverageParams = leverageParamsArr[i];
-
-            uint256 leverageAmount = leverageParams.collateralTokenAddress == address(0) ?
-                leverageParams.leverageAmount :
-                uint256(keccak256(abi.encodePacked(leverageParams.leverageAmount,leverageParams.collateralTokenAddress)));
-
-            if (!allowUpdate && loanOrderHashes[leverageAmount] != 0) {
-                continue;
-            }
-
-            address[8] memory orderAddresses = [
-                address(this), // makerAddress
-                loanTokenAddress, // loanTokenAddress
-                loanTokenAddress, // interestTokenAddress (same as loanToken)
-                leverageParams.collateralTokenAddress, // collateralTokenAddress
-                address(0), // feeRecipientAddress
-                bZxOracle, // (leave as original value)
-                address(0), // takerAddress
-                address(0) // tradeTokenAddress
-            ];
-
-            uint256[11] memory orderValues = [
-                0, // loanTokenAmount
-                0, // interestAmountPerDay
-                leverageParams.initialMarginAmount, // initialMarginAmount,
-                leverageParams.maintenanceMarginAmount, // maintenanceMarginAmount,
-                0, // lenderRelayFee
-                0, // traderRelayFee
-                leverageParams.maxDurationUnixTimestampSec, // maxDurationUnixTimestampSec,
-                0, // expirationUnixTimestampSec
-                0, // makerRole (0 = lender)
-                0, // withdrawOnOpen
-                uint(keccak256(abi.encodePacked(msg.sender, block.timestamp))) // salt
-            ];
-
-            bytes32 loanOrderHash = IBZxSettings(bZxContract).pushLoanOrderOnChain(
-                orderAddresses,
-                orderValues,
-                abi.encodePacked(address(this)), // oracleData -> closeLoanNotifier
-                ""
-            );
-
-            loanOrderData[loanOrderHash] = LoanData({
-                loanOrderHash: loanOrderHash,
-                leverageAmount: leverageParams.leverageAmount, // actutal leverage value
-                initialMarginAmount: leverageParams.initialMarginAmount,
-                maintenanceMarginAmount: leverageParams.maintenanceMarginAmount,
-                maxDurationUnixTimestampSec: leverageParams.maxDurationUnixTimestampSec,
-                index: leverageList.length,
-                marginPremiumAmount: leverageParams.marginPremiumAmount, // applies for over-collateralized loans
-                collateralTokenAddress: leverageParams.collateralTokenAddress
-            });
-            loanOrderHashes[leverageAmount] = loanOrderHash;
-            leverageList.push(leverageAmount);
-        }
-    }*/
 
     function removeLegacyLeverages(
         uint256[] memory leverageAmounts,

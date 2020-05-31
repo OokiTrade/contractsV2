@@ -14,9 +14,10 @@ import "./ISwapsImpl.sol";
 contract SwapsUser is State, SwapsEvents {
 
     function _loanSwap(
-        address user,
+        bytes32 loanId,
         address sourceToken,
         address destToken,
+        address user,
         uint256 sourceTokenAmount,
         uint256 requiredDestTokenAmount,
         uint256 minConversionRate,
@@ -25,6 +26,13 @@ contract SwapsUser is State, SwapsEvents {
         internal
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
     {
+        // will revert if swap size too large
+        if (requiredDestTokenAmount == 0) {
+            _checkSwapSize(sourceToken, sourceTokenAmount);
+        } else {
+            _checkSwapSize(destToken, requiredDestTokenAmount);
+        }
+
         (destTokenAmountReceived, sourceTokenAmountUsed) = _swapsCall(
             sourceToken,
             destToken,
@@ -36,34 +44,6 @@ contract SwapsUser is State, SwapsEvents {
             loanDataBytes
         );
 
-
-/*
-    if (maxDestTokenAmount < 10**28) {
-        _checkSwapSize(destTokenAddress, maxDestTokenAmount);
-    } else {
-        _checkSwapSize(sourceTokenAddress, estimatedSourceAmount);
-    }
-function _checkSwapSize(
-    address tokenAddress,
-    uint256 amount)
-    internal
-    view
-{
-    uint256 amountInEth;
-    if (tokenAddress == address(wethToken)) {
-        amountInEth = amount;
-    } else {
-        (uint toEthRate,) = _querySaneRate(
-            tokenAddress,
-            address(wethToken)
-        );
-        amountInEth = amount
-            .mul(toEthRate)
-            .div(_getDecimalPrecision(tokenAddress, address(wethToken)));
-    }
-    require(amountInEth <= maxSwapSize, "trade too large");
-}
-*/
         // will revert if disagreement found
         IPriceFeeds(priceFeeds).checkPriceDisagreement(
             sourceToken,
@@ -73,10 +53,11 @@ function _checkSwapSize(
             maxDisagreement
         );
 
-        emit Swap(
-            user,
+        emit LoanSwap(
+            loanId,
             sourceToken,
             destToken,
+            user,
             sourceTokenAmountUsed,
             destTokenAmountReceived
         );
@@ -144,5 +125,23 @@ function _checkSwapSize(
         }
 
         return (destTokenAmountReceived, sourceTokenAmountUsed);
+    }
+
+    function _checkSwapSize(
+        address tokenAddress,
+        uint256 amount)
+        internal
+        view
+    {
+        uint256 _maxSwapSize = maxSwapSize;
+        if (_maxSwapSize != 0) {
+            uint256 amountInEth;
+            if (tokenAddress == address(wethToken)) {
+                amountInEth = amount;
+            } else {
+                amountInEth = IPriceFeeds(priceFeeds).amountInEth(tokenAddress, amount);
+            }
+            require(amountInEth <= _maxSwapSize, "swap too large");
+        }
     }
 }

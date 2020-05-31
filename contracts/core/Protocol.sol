@@ -39,7 +39,8 @@ contract bZxProtocol is State {
         external
         onlyOwner
     {
-        target.delegatecall(abi.encodeWithSignature("initialize(address)", target));
+        (bool success,) = target.delegatecall(abi.encodeWithSignature("initialize(address)", target));
+        require(success, "setup failed");
     }
 
     function setTargets(
@@ -51,7 +52,7 @@ contract bZxProtocol is State {
         require(sigsArr.length == targetsArr.length, "count mismatch");
 
         for (uint256 i = 0; i < sigsArr.length; i++) {
-            logicTargets[bytes4(keccak256(abi.encodePacked(sigsArr[i])))] = targetsArr[i];
+            _setTarget(bytes4(keccak256(abi.encodePacked(sigsArr[i]))), targetsArr[i]);
         }
     }
 

@@ -154,27 +154,27 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
     }
 
     // ***** NOTE: Reentrancy is allowed here to allow flashloan use cases *****
-    function borrowTokenFromDeposit(
-        bytes32 loanId, // 0 if new loan
+    function borrow(
+        bytes32 loanId,                 // 0 if new loan
         uint256 withdrawAmount,
         uint256 initialLoanDuration,    // duration in seconds
-        uint256 collateralTokenSent,    // if 0, loanId must be provided
+        uint256 collateralTokenSent,    // if 0, loanId must be provided; any ETH sent must equal this value
+        address collateralToken,        // if address(0), this means ETH and ETH must be sent with the call or loanId must be provided
         address borrower,
         address receiver,
-        address collateralTokenAddress, // address(0) means ETH and ETH must be sent with the call
-        bytes memory /*loanDataBytes*/) // arbitrary order data
+        bytes memory /*loanDataBytes*/) // arbitrary order data (for future use)
         public
         payable
         returns (uint256) // returns new principal added to loan
     {
-        uint256 newPrincipal = super.borrowTokenFromDeposit(
+        uint256 newPrincipal = super.borrow(
             loanId,
             withdrawAmount,
             initialLoanDuration,
             collateralTokenSent,
+            collateralToken,
             borrower,
             receiver,
-            collateralTokenAddress,
             "" // loanDataBytes
         );
 
@@ -184,35 +184,30 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
     }
 
     // Called to borrow and immediately get into a positions
-    // assumption: depositAmount is collateral + interest deposit and will be denominated in deposit token
-    // assumption: loan token and interest token are the same
-    // returns loanParamsId for the base protocol loan
     // ***** NOTE: Reentrancy is allowed here to allow flashloan use cases *****
-    function marginTradeFromDeposit(
-        bytes32 loanId, // 0 if new loan
+    function marginTrade(
+        bytes32 loanId,                 // 0 if new loan
         uint256 depositAmount,
         uint256 leverageAmount,
         uint256 loanTokenSent,
         uint256 collateralTokenSent,
-        uint256 tradeTokenSent,
+        address depositToken,
+        address collateralToken,
         address trader,
-        address depositTokenAddress,
-        address collateralTokenAddress,
-        bytes memory loanDataBytes)
+        bytes memory loanDataBytes)     // arbitrary order data
         public
         payable
         returns (uint256) // returns new principal added to loan
     {
-        uint256 newPrincipal = super.marginTradeFromDeposit(
+        uint256 newPrincipal = super.marginTrade(
             loanId,
             depositAmount,
             leverageAmount,
             loanTokenSent,
             collateralTokenSent,
-            tradeTokenSent,
+            depositToken,
+            collateralToken,
             trader,
-            depositTokenAddress,
-            collateralTokenAddress,
             loanDataBytes
         );
 
@@ -310,9 +305,13 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
             .mul(10**18)
             .div(currentPrice);
 
-        _mint(receiver, mintAmount, depositAmount, currentPrice);
-
-        checkpointPrices_[receiver] = currentPrice;
+        uint256 oldBalance = balances[receiver];
+        _updateCheckpoints(
+            receiver,
+            oldBalance,
+            _mint(receiver, mintAmount, depositAmount, currentPrice), // newBalance
+            currentPrice
+        );
     }
 
     function _burnToken(
@@ -364,13 +363,13 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
         }
         require (success, "37"); // free liquidity of DAI/CHAI insufficient
 
-        _burn(msg.sender, burnAmount, loanAmountOwed, currentPrice);
-
-        if (balances[msg.sender] != 0) {
-            checkpointPrices_[msg.sender] = currentPrice;
-        } else {
-            checkpointPrices_[msg.sender] = 0;
-        }
+        uint256 oldBalance = balances[msg.sender];
+        _updateCheckpoints(
+            msg.sender,
+            oldBalance,
+            _burn(msg.sender, burnAmount, loanAmountOwed, currentPrice), // newBalance
+            currentPrice
+        );
     }
 
     // sentAddresses[0]: lender

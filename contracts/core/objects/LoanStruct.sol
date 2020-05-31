@@ -14,8 +14,10 @@ contract LoanStruct {
         bool active;
         uint256 principal;
         uint256 collateral;
-        uint256 loanStartTimestamp;
-        uint256 loanEndTimestamp;
+        uint256 startTimestamp;
+        uint256 endTimestamp;
+        uint256 startMargin;
+        uint256 startRate; // collateralToLoanRate
         address borrower;
         address lender;
     }

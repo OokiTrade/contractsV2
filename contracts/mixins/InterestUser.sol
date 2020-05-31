@@ -13,6 +13,12 @@ import "../mixins/VaultController.sol";
 contract InterestUser is State, VaultController {
     using SafeERC20 for IERC20;
 
+    event InterestData(
+        uint256 interestOwedNow,
+        uint256 lenderSent,
+        uint256 feeKept
+    );
+
     function _payInterest(
         LenderInterest memory lenderInterestLocal,
         address lender,
@@ -41,6 +47,12 @@ contract InterestUser is State, VaultController {
                     lender,
                     interestOwedNow.sub(interestFee)
                 );
+
+                emit InterestData(
+                    interestOwedNow,
+                    interestOwedNow.sub(interestFee),
+                    interestFee
+                );
             }
         }
 
@@ -48,3 +60,26 @@ contract InterestUser is State, VaultController {
         lenderInterest[lender][interestToken] = lenderInterestLocal;
     }
 }
+/*
+TODO - Bug fixes:
+
+    - test borrow and payback.. for some reason it leaves beind more DAI than it should
+        - check InterestData event above
+    - there may still be a bug with profit checkpointing in iToken. test again
+
+
+also:
+    - reploy iTokens
+    - this bug:
+    ok, looks like a bug somewhere for collateral estimates when utilization the pool is really high. 
+    i just lended more DAI to bring the util now, now DAI borrow works
+
+also:
+    - test collateralized iTokens <- update so that Swaps contract handles the iToken conversions
+
+also:
+    - how to handle swaps of collateralized itokens?
+
+also:
+    - implement roll-over liquidations for interest
+*/

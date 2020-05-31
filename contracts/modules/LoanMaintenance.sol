@@ -24,11 +24,12 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         uint256 collateral;
         uint256 interestOwedPerDay;
         uint256 interestDepositRemaining;
-        uint256 minInitialMargin;
+        uint256 startRate; // collateralToLoanRate
+        uint256 startMargin;
         uint256 maintenanceMargin;
         uint256 currentMargin;
         uint256 maxLoanTerm;
-        uint256 loanEndTimestamp;
+        uint256 endTimestamp;
         uint256 maxLiquidatable;
         uint256 maxSeizable;
     }
@@ -46,17 +47,17 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         external
         onlyOwner
     {
-        logicTargets[this.depositCollateral.selector] = target;
-        logicTargets[this.withdrawCollateral.selector] = target;
-        //logicTargets[this.rolloverLoan.selector] = target;
-        logicTargets[this.withdrawAccruedInterest.selector] = target;
-        logicTargets[this.extendLoanDuration.selector] = target;
-        logicTargets[this.reduceLoanDuration.selector] = target;
-        logicTargets[this.getLenderInterestData.selector] = target;
-        logicTargets[this.getLoanInterestData.selector] = target;
-        logicTargets[this.getUserLoans.selector] = target;
-        logicTargets[this.getLoan.selector] = target;
-        logicTargets[this.getActiveLoans.selector] = target;
+        _setTarget(this.depositCollateral.selector, target);
+        _setTarget(this.withdrawCollateral.selector, target);
+        //_setTarget(this.rolloverLoan.selector, target);
+        _setTarget(this.withdrawAccruedInterest.selector, target);
+        _setTarget(this.extendLoanDuration.selector, target);
+        _setTarget(this.reduceLoanDuration.selector, target);
+        _setTarget(this.getLenderInterestData.selector, target);
+        _setTarget(this.getLoanInterestData.selector, target);
+        _setTarget(this.getUserLoans.selector, target);
+        _setTarget(this.getLoan.selector, target);
+        _setTarget(this.getActiveLoans.selector, target);
     }
 
     function depositCollateral(
@@ -106,7 +107,6 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         require(loanLocal.active, "loan is closed");
         require(
             msg.sender == loanLocal.borrower ||
-            protocolManagers[msg.sender] ||
             delegatedManagers[loanLocal.id][msg.sender],
             "unauthorized"
         );
@@ -154,11 +154,8 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
 
         require(loanLocal.active, "loan is closed");
         require(
-            (
-                (
-                    msg.sender == loanLocal.borrower || delegatedManagers[loanLocal.id][msg.sender]
-                ) && msg.sender == payer <-- get rid of this
-            ) || protocolManagers[msg.sender],
+            msg.sender == loanLocal.borrower ||
+            delegatedManagers[loanLocal.id][msg.sender],
             "unauthorized"
         );
         require(loanParamsLocal.maxLoanTerm == 0, "indefinite-term only");
@@ -179,9 +176,10 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         if (useCollateral) {
             // reverts in _swap if amountNeeded can't be bought
             (,uint256 sourceTokenAmountUsed) = _loanSwap(
-                loanLocal.borrower,
+                loanLocal.id,
                 loanParamsLocal.collateralToken,
                 loanParamsLocal.loanToken,
+                loanLocal.borrower,
                 loanLocal.collateral,
                 depositAmount, // requiredDestTokenAmount (partial spend of loanLocal.collateral to fill this amount)
                 0, // minConversionRate
@@ -222,12 +220,12 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
             .mul(86400)
             .div(loanInterestLocal.owedPerDay);
 
-        loanLocal.loanEndTimestamp = loanLocal.loanEndTimestamp
+        loanLocal.endTimestamp = loanLocal.endTimestamp
             .add(secondsExtended);
 
-        require (loanLocal.loanEndTimestamp > block.timestamp, "loan too short");
+        require (loanLocal.endTimestamp > block.timestamp, "loan too short");
 
-        uint256 maxDuration = loanLocal.loanEndTimestamp
+        uint256 maxDuration = loanLocal.endTimestamp
             .sub(block.timestamp);
 
         // loan term has to at least be 24 hours
@@ -242,12 +240,12 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
 
 
 
-        if (block.timestamp >= loanLocal.loanEndTimestamp) {
+        if (block.timestamp >= loanLocal.endTimestamp) {
         }
 
         // Handle back interest
         uint256 backInterestTime = block.timestamp
-            .sub(loanLocal.loanEndTimestamp);
+            .sub(loanLocal.endTimestamp);
         uint256 backInterestOwed = backInterestTime
             .mul(loanInterestLocal.owedPerDay);
         backInterestOwed = backInterestOwed
@@ -287,15 +285,12 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         require(
             !useCollateral ||
             msg.sender == loanLocal.borrower ||
-            protocolManagers[msg.sender] ||
             delegatedManagers[loanLocal.id][msg.sender],
             "unauthorized"
         );
         require(loanParamsLocal.maxLoanTerm == 0, "indefinite-term only");
         require(msg.value == 0 || (!useCollateral && loanParamsLocal.loanToken == address(wethToken)), "wrong asset sent");
 
-
-        LoanInterest storage loanInterestLocal = loanInterest[loanLocal.id];
         LenderInterest storage lenderInterestLocal = lenderInterest[loanLocal.lender][loanParamsLocal.loanToken];
 
         // pay outstanding interest to lender
@@ -309,9 +304,10 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         if (useCollateral) {
             // reverts in _swap if amountNeeded can't be bought
             (,uint256 sourceTokenAmountUsed) = _loanSwap(
-                loanLocal.borrower,
+                loanLocal.id,
                 loanParamsLocal.collateralToken,
                 loanParamsLocal.loanToken,
+                loanLocal.borrower,
                 loanLocal.collateral,
                 depositAmount, // requiredDestTokenAmount (partial spend of loanLocal.collateral to fill this amount)
                 0, // minConversionRate
@@ -348,16 +344,18 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
             }
         }
 
+        LoanInterest storage loanInterestLocal = loanInterest[loanLocal.id];
+
         secondsExtended = depositAmount
             .mul(86400)
             .div(loanInterestLocal.owedPerDay);
 
-        loanLocal.loanEndTimestamp = loanLocal.loanEndTimestamp
+        loanLocal.endTimestamp = loanLocal.endTimestamp
             .add(secondsExtended);
 
-        require (loanLocal.loanEndTimestamp > block.timestamp, "loan too short");
+        require (loanLocal.endTimestamp > block.timestamp, "loan too short");
 
-        uint256 maxDuration = loanLocal.loanEndTimestamp
+        uint256 maxDuration = loanLocal.endTimestamp
             .sub(block.timestamp);
 
         // loan term has to at least be 24 hours
@@ -386,8 +384,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         require(loanLocal.active, "loan is closed");
         require(
             msg.sender == loanLocal.borrower ||
-            delegatedManagers[loanLocal.id][msg.sender] ||
-            protocolManagers[msg.sender],
+            delegatedManagers[loanLocal.id][msg.sender],
             "unauthorized"
         );
         require(loanParamsLocal.maxLoanTerm == 0, "indefinite-term only");
@@ -403,10 +400,10 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         );
 
         uint256 interestTime = block.timestamp;
-        if (interestTime > loanLocal.loanEndTimestamp) {
-            interestTime = loanLocal.loanEndTimestamp;
+        if (interestTime > loanLocal.endTimestamp) {
+            interestTime = loanLocal.endTimestamp;
         }
-        uint256 interestDepositRemaining = loanLocal.loanEndTimestamp > interestTime ? loanLocal.loanEndTimestamp.sub(interestTime).mul(loanInterestLocal.owedPerDay).div(86400) : 0;
+        uint256 interestDepositRemaining = loanLocal.endTimestamp > interestTime ? loanLocal.endTimestamp.sub(interestTime).mul(loanInterestLocal.owedPerDay).div(86400) : 0;
         require(withdrawAmount < interestDepositRemaining, "withdraw amount too high");
 
         // withdraw interest
@@ -427,14 +424,14 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
             .mul(86400)
             .div(loanInterestLocal.owedPerDay);
 
-        require (loanLocal.loanEndTimestamp > secondsReduced, "loan too short");
+        require (loanLocal.endTimestamp > secondsReduced, "loan too short");
 
-        loanLocal.loanEndTimestamp = loanLocal.loanEndTimestamp
+        loanLocal.endTimestamp = loanLocal.endTimestamp
             .sub(secondsReduced);
 
-        require (loanLocal.loanEndTimestamp > block.timestamp, "loan too short");
+        require (loanLocal.endTimestamp > block.timestamp, "loan too short");
 
-        uint256 maxDuration = loanLocal.loanEndTimestamp
+        uint256 maxDuration = loanLocal.endTimestamp
             .sub(block.timestamp);
 
         // loan term has to at least be 24 hours
@@ -503,12 +500,12 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         interestOwedPerDay = loanInterest[loanId].owedPerDay;
         interestDepositTotal = loanInterest[loanId].depositTotal;
 
-        uint256 loanEndTimestamp = loans[loanId].loanEndTimestamp;
-        uint256 interestTime = block.timestamp > loanEndTimestamp ?
-            loanEndTimestamp :
+        uint256 endTimestamp = loans[loanId].endTimestamp;
+        uint256 interestTime = block.timestamp > endTimestamp ?
+            endTimestamp :
             block.timestamp;
-        interestDepositRemaining = loanEndTimestamp > interestTime ?
-            loanEndTimestamp
+        interestDepositRemaining = endTimestamp > interestTime ?
+            endTimestamp
                 .sub(interestTime)
                 .mul(interestOwedPerDay)
                 .div(86400) :
@@ -669,12 +666,13 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
             principal: loanLocal.principal,
             collateral: loanLocal.collateral,
             interestOwedPerDay: loanInterestLocal.owedPerDay,
-            interestDepositRemaining: loanLocal.loanEndTimestamp >= block.timestamp ? loanLocal.loanEndTimestamp.sub(block.timestamp).mul(loanInterestLocal.owedPerDay).div(86400) : 0,
-            minInitialMargin: loanParamsLocal.minInitialMargin,
+            interestDepositRemaining: loanLocal.endTimestamp >= block.timestamp ? loanLocal.endTimestamp.sub(block.timestamp).mul(loanInterestLocal.owedPerDay).div(86400) : 0,
+            startRate: loanLocal.startRate,
+            startMargin: loanLocal.startMargin,
             maintenanceMargin: loanParamsLocal.maintenanceMargin,
             currentMargin: currentMargin,
             maxLoanTerm: loanParamsLocal.maxLoanTerm,
-            loanEndTimestamp: loanLocal.loanEndTimestamp,
+            endTimestamp: loanLocal.endTimestamp,
             maxLiquidatable: maxLiquidatable,
             maxSeizable: maxSeizable
         });

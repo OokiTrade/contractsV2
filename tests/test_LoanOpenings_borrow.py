@@ -24,7 +24,7 @@ def WethDaiParamsId(Constants, WETH, DAI, bzx, accounts):
         "owner": Constants["ZERO_ADDRESS"],
         "loanToken": DAI.address,
         "collateralToken": WETH.address,
-        "initialMargin": Wei("50 ether"),
+        "minInitialMargin": Wei("20 ether"),
         "maintenanceMargin": Wei("15 ether"),
         "fixedLoanTerm": "0"
     }

@@ -58,7 +58,7 @@ contract SwapsImplKyber is State, ISwapsImpl {
 
                 IERC20(sourceTokenAddress).safeApprove(
                     kyberContract,
-                    10**28
+                    uint256(-1)
                 );
             }
 
@@ -181,7 +181,7 @@ contract SwapsImplKyber is State, ISwapsImpl {
                 destTokenAddress,
                 sourceTokenAddress,
                 requiredDestTokenAmount.mul(
-                    maxNormalSlippagePercent // add slippage amount
+                    sourceBufferPercent // add slippage amount
                         .add(10**20)
                         .div(10**20)
                 )
@@ -204,7 +204,9 @@ contract SwapsImplKyber is State, ISwapsImpl {
             estimatedSourceAmount,
             destTokenAddress,
             receiverAddress,
-            requiredDestTokenAmount,
+            requiredDestTokenAmount == 0 || requiredDestTokenAmount > 10**28 ? // maxDestAmount
+                10**28 :
+                requiredDestTokenAmount,
             minConversionRate,
             feeWallet,
             "" // hint

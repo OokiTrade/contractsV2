@@ -24,8 +24,8 @@ contract ProtocolMigration is State {
         external
         onlyOwner
     {
-        logicTargets[this.setLegacyOracles.selector] = target;
-        logicTargets[this.getLegacyOracle.selector] = target;
+        _setTarget(this.setLegacyOracles.selector, target);
+        _setTarget(this.getLegacyOracle.selector, target);
     }
 
     function setLegacyOracles(

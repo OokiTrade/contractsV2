@@ -16,45 +16,15 @@ def test_setCoreParams(Constants, bzx):
     assert bzx.swapsImpl() == Constants["ONE_ADDRESS"]
     assert bzx.protocolFeePercent() == 5e18
 
-def test_setProtocolManagers(Constants, bzx, accounts):
-
-    assert(not bzx.protocolManagers(accounts[1]))
-    assert(not bzx.protocolManagers(accounts[2]))
-
-    bzx.setProtocolManagers(
-        [
-            accounts[1],
-            accounts[2]
-        ],
-        [
-            True,
-            True
-        ]
-    )
-
-    assert(bzx.protocolManagers(accounts[1]))
-    assert(bzx.protocolManagers(accounts[2]))
-
-    bzx.setProtocolManagers(
-        [
-            accounts[1],
-            accounts[2]
-        ],
-        [
-            False,
-            False
-        ]
-    )
-
-    assert(not bzx.protocolManagers(accounts[1]))
-    assert(not bzx.protocolManagers(accounts[2]))
-
-def test_setLoanPoolToUnderlying(Constants, bzx, accounts):
+def test_setLoanPool(Constants, bzx, accounts):
 
     assert(bzx.loanPoolToUnderlying(accounts[6]) == Constants["ZERO_ADDRESS"])
     assert(bzx.underlyingToLoanPool(accounts[7]) == Constants["ZERO_ADDRESS"])
 
-    bzx.setLoanPoolToUnderlying(
+    assert(not bzx.isLoanPool(accounts[6]))
+    assert(not bzx.isLoanPool(accounts[8]))
+
+    bzx.setLoanPool(
         [
             accounts[6],
             accounts[8]
@@ -71,9 +41,12 @@ def test_setLoanPoolToUnderlying(Constants, bzx, accounts):
     assert(bzx.loanPoolToUnderlying(accounts[8]) == accounts[9])
     assert(bzx.underlyingToLoanPool(accounts[9]) == accounts[8])
 
+    assert(bzx.isLoanPool(accounts[6]))
+    assert(bzx.isLoanPool(accounts[8]))
+
     #print(bzx.getloanPoolsList(0, 100))
 
-    bzx.setLoanPoolToUnderlying(
+    bzx.setLoanPool(
         [
             accounts[6]
         ],
@@ -84,6 +57,8 @@ def test_setLoanPoolToUnderlying(Constants, bzx, accounts):
 
     assert(bzx.loanPoolToUnderlying(accounts[6]) == Constants["ZERO_ADDRESS"])
     assert(bzx.underlyingToLoanPool(accounts[7]) == Constants["ZERO_ADDRESS"])
+
+    assert(not bzx.isLoanPool(accounts[6]))
 
     #print(bzx.getloanPoolsList(0, 100))
 

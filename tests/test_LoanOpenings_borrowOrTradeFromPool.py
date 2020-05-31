@@ -15,8 +15,12 @@ def loanOpenings(LoanOpenings, accounts, bzx, Constants, priceFeeds, swapsImpl):
         10e18 # protocolFeePercent (10%)
     )
 
+@pytest.fixture(scope="module", autouse=True)
+def loanClosings(LoanClosings, accounts, bzx, Constants, priceFeeds, swapsImpl):
+    bzx.replaceContract(accounts[0].deploy(LoanClosings).address)
+
 @pytest.fixture(scope="module")
-def LinkDaiParamsId(Constants, LINK, DAI, bzx, accounts):
+def LinkDaiMarginParamsId(Constants, LINK, DAI, bzx, accounts):
 
     loanParams = {
         "id": "0x0",
@@ -24,22 +28,38 @@ def LinkDaiParamsId(Constants, LINK, DAI, bzx, accounts):
         "owner": Constants["ZERO_ADDRESS"],
         "loanToken": DAI.address,
         "collateralToken": LINK.address,
-        "initialMargin": 100e18, # 2x position (100% initialMargin for a LONG)
+        "minInitialMargin": 20e18,
         "maintenanceMargin": 15e18,
         "fixedLoanTerm": "2419200" # 28 days
     }
     tx = bzx.setupLoanParams([list(loanParams.values())])
     return tx.events["LoanParamsIdSetup"][0]["id"]
 
-def test_borrowOrTradeFromPool_sim(Constants, LinkDaiParamsId, bzx, DAI, LINK, accounts, web3):
+@pytest.fixture(scope="module")
+def LinkDaiBorrowParamsId(Constants, LINK, DAI, bzx, accounts):
 
-    ## setup protocol manager
-    bzx.setProtocolManagers(
+    loanParams = {
+        "id": "0x0",
+        "active": False,
+        "owner": Constants["ZERO_ADDRESS"],
+        "loanToken": DAI.address,
+        "collateralToken": LINK.address,
+        "minInitialMargin": 20e18,
+        "maintenanceMargin": 15e18,
+        "fixedLoanTerm": "0" # torque loan
+    }
+    tx = bzx.setupLoanParams([list(loanParams.values())])
+    return tx.events["LoanParamsIdSetup"][0]["id"]
+
+def marginTradeFromPool_sim(Constants, LinkDaiMarginParamsId, bzx, DAI, LINK, accounts, web3):
+
+    ## setup simulated loan pool
+    bzx.setLoanPool(
         [
             accounts[1],
         ],
         [
-            True
+            accounts[2]
         ]
     )
 
@@ -74,7 +94,7 @@ def test_borrowOrTradeFromPool_sim(Constants, LinkDaiParamsId, bzx, DAI, LINK, a
     print("collateralTokenSent",collateralTokenSent)
 
     tx = bzx.borrowOrTradeFromPool(
-        LinkDaiParamsId, #loanParamsId
+        LinkDaiMarginParamsId, #loanParamsId
         "0", # loanId
         False, # isTorqueLoan,
         100e18, # initialMargin
@@ -138,12 +158,111 @@ def test_borrowOrTradeFromPool_sim(Constants, LinkDaiParamsId, bzx, DAI, LINK, a
     
     #assert(False)
 
+def test_borrowFromPool_sim(Constants, LinkDaiBorrowParamsId, bzx, DAI, LINK, accounts, web3):
+
+    ## setup simulated loan pool
+    bzx.setLoanPool(
+        [
+            accounts[1],
+        ],
+        [
+            accounts[2]
+        ]
+    )
+
+    bZxBeforeDAIBalance = DAI.balanceOf(bzx.address)
+    print("bZxBeforeDAIBalance", bZxBeforeDAIBalance)
+    
+    bZxBeforeLINKBalance = LINK.balanceOf(bzx.address)
+    print("bZxBeforeLINKBalance", bZxBeforeLINKBalance)
+
+    ## loanTokenSent to protocol is just the borrowed/escrowed interest since the actual borrow would have 
+    ## already been transfered to the borrower by the pool before borrowOrTradeFromPool is called
+    loanTokenSent = 1e18
+    newPrincipal = 101e18
+
+    DAI.mint(
+        bzx.address,
+        loanTokenSent,
+        { "from": accounts[0] }
+    )
+    
+    collateralTokenSent = bzx.getRequiredCollateral(
+        DAI.address,
+        LINK.address,
+        newPrincipal,
+        50e18,
+        True
+    )
+    LINK.mint(
+        bzx.address,
+        collateralTokenSent,
+        { "from": accounts[0] }
+    )
+
+    print("newPrincipal",newPrincipal)
+    print("loanTokenSent",loanTokenSent)
+    print("collateralTokenSent",collateralTokenSent)
+
+    tx = bzx.borrowOrTradeFromPool(
+        LinkDaiBorrowParamsId, #loanParamsId
+        "0", # loanId
+        True, # isTorqueLoan,
+        50e18, # initialMargin
+        [
+            accounts[2], # lender
+            accounts[1], # borrower
+            accounts[1], # receiver
+            Constants["ZERO_ADDRESS"], # manager
+        ],
+        [
+            5e18, # newRate (5%)
+            newPrincipal, # newPrincipal
+            1e18, # torqueInterest
+            loanTokenSent, # loanTokenSent
+            collateralTokenSent # collateralTokenSent
+        ],
+        b'', # loanDataBytes
+        { "from": accounts[1] }
+    )
+    print(tx.events)
+
+    bZxAfterDAIBalance = DAI.balanceOf(bzx.address)
+    print("bZxAfterDAIBalance", bZxAfterDAIBalance)
+    
+    bZxAfterLINKBalance = LINK.balanceOf(bzx.address)
+    print("bZxAfterLINKBalance", bZxAfterLINKBalance)
+
+    borrowEvent = tx.events["Borrow"][0]
+    print(borrowEvent)
 
 
 
- 
- 
+    ## TODO: test close, figure out wrong interest reembursement
 
 
+    '''l = bzx.getUserLoans(
+        accounts[1],
+        0,
+        100,
+        0,
+        False,
+        False)
+    print (l)'''
 
-
+    '''
+    trace = web3.provider.make_request(
+        "debug_traceTransaction", (tx.txid, {"disableMemory": True, "disableStack": True, "disableStorage": False})
+    )
+    trace = trace["result"]["structLogs"]
+    for i in reversed(trace):
+        if i["depth"] == 1:
+            import pprint
+            storage = pprint.pformat(i["storage"], indent=2, width=80)
+            f = open("latest_storage.log", "w")
+            f.write(storage)
+            f.close()
+            break
+    '''
+    
+    #assert(False)

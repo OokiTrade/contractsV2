@@ -7,7 +7,7 @@ pragma solidity 0.5.17;
 
 
 contract LoanClosingsEvents {
-    event Repay(
+    event CloseWithDeposit(
         bytes32 indexed loanId,
         address indexed borrower,
         address indexed lender,
@@ -19,7 +19,7 @@ contract LoanClosingsEvents {
         uint256 currentMargin
     );
 
-    event CloseTrade(
+    event CloseWithSwap(
         address indexed trader,
         address indexed baseToken,
         address indexed quoteToken,

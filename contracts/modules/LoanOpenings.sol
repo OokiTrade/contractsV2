@@ -30,12 +30,12 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         external
         onlyOwner
     {
-        logicTargets[this.borrow.selector] = target;
-        logicTargets[this.borrowOrTradeFromPool.selector] = target;
-        logicTargets[this.setDelegatedManager.selector] = target;
-        logicTargets[this.getDepositAmountForBorrow.selector] = target;
-        logicTargets[this.getRequiredCollateral.selector] = target;
-        logicTargets[this.getBorrowAmount.selector] = target;
+        _setTarget(this.borrow.selector, target);
+        _setTarget(this.borrowOrTradeFromPool.selector, target);
+        _setTarget(this.setDelegatedManager.selector, target);
+        _setTarget(this.getDepositAmountForBorrow.selector, target);
+        _setTarget(this.getRequiredCollateral.selector, target);
+        _setTarget(this.getBorrowAmount.selector, target);
     }
 
     function borrow(
@@ -54,9 +54,10 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         returns (uint256)
     {
         Order storage orderLocal = lenderOrders[lender][loanParamsId];
-        require(orderLocal.createdStartTimestamp != 0, "order not exists");
+        require(orderLocal.createdTimestamp != 0, "order not exists");
         require(initialLoanDuration >= orderLocal.minLoanTerm, "loan too short");
         require(initialLoanDuration <= orderLocal.maxLoanTerm, "loan too long");
+        require(orderLocal.expirationTimestamp == 0 || orderLocal.expirationTimestamp > block.timestamp, "order is expired");
 
         LoanParams memory loanParamsLocal = loanParams[loanParamsId];
         require(loanParamsLocal.id != 0, "loanParams not exists");
@@ -184,7 +185,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         require(msg.value == 0 || loanDataBytes.length != 0, "loanDataBytes required with ether");
 
         // only callable by loan pools
-        require(protocolManagers[msg.sender], "not authorized");
+        require(loanPoolToUnderlying[msg.sender] != address(0), "not authorized");
 
         LoanParams memory loanParamsLocal = loanParams[loanParamsId];
         require(loanParamsLocal.id != 0, "loanParams not exists");
@@ -350,6 +351,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             _initializeLoan(
                 loanParamsLocal,
                 loanId,
+                margin, // initialMargin
                 sentAddresses,
                 sentValues
             )
@@ -373,9 +375,10 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         } else {
             // update collateral after trade
             (uint256 receivedAmount,) = _loanSwap(
-                sentAddresses[1], // borrower
+                loanId,
                 loanParamsLocal.loanToken,
                 loanParamsLocal.collateralToken,
+                sentAddresses[1], // borrower
                 sentValues[3], // loanTokenUsable
                 0, // requiredDestTokenAmount (enforces that all of loanTokenUsable is swapped)
                 0, // minConversionRate
@@ -391,6 +394,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             _isCollateralSatisfied(
                 loanParamsLocal,
                 loanLocal,
+                margin, // initialMargin
                 sentValues[4],
                 collateralAmountRequired
             ),
@@ -402,7 +406,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
 
         if (isTorqueLoan) {
             // reclaiming varaible -> interestDuration
-            sentValues[2] = loanLocal.loanEndTimestamp.sub(block.timestamp);
+            sentValues[2] = loanLocal.endTimestamp.sub(block.timestamp);
         } else {
             // reclaiming varaible -> entryLeverage = 100 / initialMargin
             sentValues[2] = SafeMath.div(10**38, margin);
@@ -419,6 +423,10 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             margin > loanParamsLocal.maintenanceMargin,
             "unhealthy position"
         );
+
+        if (loanLocal.startTimestamp == block.timestamp) {
+            loanLocal.startRate = amount; // collateralToLoanRate
+        }
 
         _emitOpeningEvents(
             loanParamsLocal,
@@ -473,7 +481,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                 sentValues[4],                                  // positionSize
                 sentValues[1],                                  // borrowedAmount
                 sentValues[0],                                  // interestRate,
-                loanLocal.loanEndTimestamp,                     // settlementDate
+                loanLocal.endTimestamp,                         // settlementDate
                 amount,                                         // entryPrice
                 sentValues[2],                                  // entryLeverage
                 margin                                          // currentLeverage
@@ -501,6 +509,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
     function _isCollateralSatisfied(
         LoanParams memory loanParamsLocal,
         Loan memory loanLocal,
+        uint256 initialMargin,
         uint256 newCollateral,
         uint256 collateralAmountRequired)
         internal
@@ -515,7 +524,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                     loanParamsLocal.collateralToken,
                     loanLocal.principal,
                     loanLocal.collateral,
-                    loanParamsLocal.maintenanceMargin
+                    initialMargin
                 );
                 return newCollateral
                     .add(maxDrawdown) >= collateralAmountRequired;
@@ -529,6 +538,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
     function _initializeLoan(
         LoanParams memory loanParamsLocal,
         bytes32 loanId,
+        uint256 initialMargin,
         address[4] memory sentAddresses,
         uint256[5] memory sentValues)
         internal
@@ -559,8 +569,10 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                 active: true,
                 principal: newPrincipal,
                 collateral: 0, // calculated later
-                loanStartTimestamp: block.timestamp,
-                loanEndTimestamp: 0, // calculated later
+                startTimestamp: block.timestamp,
+                endTimestamp: 0, // calculated later
+                startMargin: initialMargin,
+                startRate: 0, // queried later
                 borrower: borrower,
                 lender: lender
             });
@@ -570,9 +582,10 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             borrowerLoanSets[borrower].add(loanId);
         } else {
             loanLocal = loans[loanId];
-            require(loanLocal.active && block.timestamp < loanLocal.loanEndTimestamp, "loan has ended");
+            require(loanLocal.active && block.timestamp < loanLocal.endTimestamp, "loan has ended");
             require(loanLocal.borrower == borrower, "borrower mismatch");
             require(loanLocal.lender == lender, "lender mismatch");
+            require(loanLocal.loanParamsId == loanParamsLocal.id, "loanParams mismatch");
 
             loanLocal.principal = loanLocal.principal
                 .add(newPrincipal);
@@ -614,9 +627,9 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         uint256 maxLoanTerm = loanParamsLocal.maxLoanTerm;
 
         uint256 previousDepositRemaining;
-        if (maxLoanTerm == 0 && loanLocal.loanEndTimestamp != 0) {
-            previousDepositRemaining = loanLocal.loanEndTimestamp
-                .sub(block.timestamp) // block.timestamp < loanEndTimestamp was confirmed earlier
+        if (maxLoanTerm == 0 && loanLocal.endTimestamp != 0) {
+            previousDepositRemaining = loanLocal.endTimestamp
+                .sub(block.timestamp) // block.timestamp < endTimestamp was confirmed earlier
                 .mul(loanInterestLocal.owedPerDay)
                 .div(86400);
         }
@@ -635,14 +648,14 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             // indefinite-term (Torque) loan
 
             // torqueInterest != 0 was confirmed earlier
-            loanLocal.loanEndTimestamp = torqueInterest
+            loanLocal.endTimestamp = torqueInterest
                 .add(previousDepositRemaining)
                 .mul(86400)
                 .div(loanInterestLocal.owedPerDay)
                 .add(block.timestamp);
 
             // update maxLoanTerm
-            maxLoanTerm = loanLocal.loanEndTimestamp
+            maxLoanTerm = loanLocal.endTimestamp
                 .sub(block.timestamp);
 
             // loan term has to at least be 24 hours
@@ -652,12 +665,12 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         } else {
             // fixed-term loan
 
-            if (loanLocal.loanEndTimestamp == 0) {
-                loanLocal.loanEndTimestamp = block.timestamp
+            if (loanLocal.endTimestamp == 0) {
+                loanLocal.endTimestamp = block.timestamp
                     .add(maxLoanTerm);
             }
 
-            interestAmountRequired = loanLocal.loanEndTimestamp
+            interestAmountRequired = loanLocal.endTimestamp
                 .sub(block.timestamp)
                 .mul(owedPerDay)
                 .div(86400);

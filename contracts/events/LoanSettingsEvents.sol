@@ -41,7 +41,7 @@ contract LoanSettingsEvents {
         bool indexed isLender,
         uint256 lockedAmount,
         uint256 interestRate,
-        uint256 expirationStartTimestamp
+        uint256 expirationTimestamp
     );
 
     event LoanOrderChangeAmount(
@@ -50,5 +50,13 @@ contract LoanSettingsEvents {
         bool indexed isLender,
         uint256 oldBalance,
         uint256 newBalance
+    );
+
+    event LoanOrderChangeExpiration(
+        bytes32 indexed loanParamsId,
+        address indexed owner,
+        bool indexed isLender,
+        uint256 oldTimestamp,
+        uint256 newTimestamp
     );
 }

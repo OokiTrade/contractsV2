@@ -15,13 +15,7 @@ contract ProtocolSettingsEvents {
         uint256 protocolFeePercent
     );
 
-    event SetProtocolManager(
-        address indexed delegator,
-        address indexed delegated,
-        bool isActive
-    );
-
-    event SetLoanPoolToUnderlying(
+    event SetLoanPool(
         address indexed sender,
         address indexed loanPool,
         address indexed underlying

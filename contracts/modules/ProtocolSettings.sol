@@ -26,11 +26,16 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         external
         onlyOwner
     {
-        logicTargets[this.setCoreParams.selector] = target;
-        logicTargets[this.setProtocolManagers.selector] = target;
-        logicTargets[this.setLoanPoolToUnderlying.selector] = target;
-        logicTargets[this.setSupportedTokens.selector] = target;
-        logicTargets[this.getloanPoolsList.selector] = target;
+        _setTarget(this.setCoreParams.selector, target);
+        _setTarget(this.setLoanPool.selector, target);
+        _setTarget(this.setSupportedTokens.selector, target);
+        _setTarget(this.setGuaranteedInitialMargin.selector, target);
+        _setTarget(this.setGuaranteedMaintenanceMargin.selector, target);
+        _setTarget(this.setMaxDisagreement.selector, target);
+        _setTarget(this.setSourceBufferPercent.selector, target);
+        _setTarget(this.setMaxSwapSize.selector, target);
+        _setTarget(this.getloanPoolsList.selector, target);
+        _setTarget(this.isLoanPool.selector, target);
     }
 
     function setCoreParams(
@@ -57,26 +62,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         );
     }
 
-    function setProtocolManagers(
-        address[] calldata addrs,
-        bool[] calldata toggles)
-        external
-        onlyOwner
-    {
-        require(addrs.length == toggles.length, "count mismatch");
-
-        for (uint256 i = 0; i < addrs.length; i++) {
-            protocolManagers[addrs[i]] = toggles[i];
-
-            emit SetProtocolManager(
-                msg.sender,
-                addrs[i],
-                toggles[i]
-            );
-        }
-    }
-
-    function setLoanPoolToUnderlying(
+    function setLoanPool(
         address[] calldata pools,
         address[] calldata assets)
         external
@@ -98,7 +84,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
                 loanPoolsSet.addAddress(pools[i]);
             }
 
-            emit SetLoanPoolToUnderlying(
+            emit SetLoanPool(
                 msg.sender,
                 pools[i],
                 assets[i]
@@ -125,6 +111,46 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         }
     }
 
+    function setGuaranteedInitialMargin(
+        uint256 newAmount)
+        external
+        onlyOwner
+    {
+        guaranteedInitialMargin = newAmount;
+    }
+
+    function setGuaranteedMaintenanceMargin(
+        uint256 newAmount)
+        external
+        onlyOwner
+    {
+        guaranteedMaintenanceMargin = newAmount;
+    }
+
+    function setMaxDisagreement(
+        uint256 newAmount)
+        external
+        onlyOwner
+    {
+        maxDisagreement = newAmount;
+    }
+
+    function setSourceBufferPercent(
+        uint256 newAmount)
+        external
+        onlyOwner
+    {
+        sourceBufferPercent = newAmount;
+    }
+
+    function setMaxSwapSize(
+        uint256 newAmount)
+        external
+        onlyOwner
+    {
+        maxSwapSize = newAmount;
+    }
+
     function getloanPoolsList(
         uint256 start,
         uint256 count)
@@ -133,5 +159,14 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         returns(bytes32[] memory)
     {
         return loanPoolsSet.enumerate(start, count);
+    }
+
+    function isLoanPool(
+        address loanPool)
+        external
+        view
+        returns (bool)
+    {
+        return loanPoolToUnderlying[loanPool] != address(0);
     }
 }

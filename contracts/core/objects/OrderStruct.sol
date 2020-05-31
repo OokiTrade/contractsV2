@@ -12,7 +12,7 @@ contract OrderStruct {
         uint256 interestRate;
         uint256 minLoanTerm;
         uint256 maxLoanTerm;
-        uint256 createdStartTimestamp;
-        uint256 expirationStartTimestamp;
+        uint256 createdTimestamp;
+        uint256 expirationTimestamp;
     }
 }
