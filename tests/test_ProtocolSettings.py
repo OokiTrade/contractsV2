@@ -7,14 +7,12 @@ def test_setCoreParams(Constants, bzx):
     bzx.setCoreParams(
         Constants["ONE_ADDRESS"], # protocolTokenAddress
         Constants["ONE_ADDRESS"], # priceFeeds
-        Constants["ONE_ADDRESS"], # swapsImpl
-        5e18 # protocolFeePercent
+        Constants["ONE_ADDRESS"]  # swapsImpl
     )
 
     assert bzx.protocolTokenAddress() == Constants["ONE_ADDRESS"]
     assert bzx.priceFeeds() == Constants["ONE_ADDRESS"]
     assert bzx.swapsImpl() == Constants["ONE_ADDRESS"]
-    assert bzx.protocolFeePercent() == 5e18
 
 def test_setLoanPool(Constants, bzx, accounts):
 

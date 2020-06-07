@@ -1,5 +1,14 @@
 # Brownie configuration file
 # https://eth-brownie.readthedocs.io/en/stable/config.html
+
+project_structure:
+    build: build
+    contracts: contracts
+    interfaces: interfaces
+    reports: reports
+    scripts: scripts
+    tests: tests
+
 networks:
     default: development
     development:
@@ -7,6 +16,7 @@ networks:
         gas_price: 0
         reverting_tx_gas_limit: 8000000
         default_contract_owner: true
+        cmd_settings: null
     live:
         gas_limit: 8000000
         gas_price: 1000000000 # 8000000000
@@ -33,7 +43,9 @@ console:
 hypothesis:
     deadline: null
     max_examples: 50
+    report_multiple_bugs: False
     stateful_step_count: 10
 
 autofetch_sources: false
 dependencies: null
+dev_deployment_artifacts: false

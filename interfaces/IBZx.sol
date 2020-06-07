@@ -45,9 +45,8 @@ contract IBZx is
 
     function setCoreParams(
         address _protocolTokenAddress,
-        address _feedsController,
-        address _swapsController,
-        uint256 _protocolFeePercent) // 10 * 10**18;
+        address _priceFeeds,
+        address _swapsImpl)
         external;
 
     function setProtocolManagers(
@@ -63,6 +62,26 @@ contract IBZx is
     function setSupportedTokens(
         address[] calldata addrs,
         bool[] calldata toggles)
+        external;
+
+    function setLendingFeePercent(
+        uint256 newValue)
+        external;
+
+    function setTradingFeePercent(
+        uint256 newValue)
+        external;
+
+    function setBorrowingFeePercent(
+        uint256 newValue)
+        external;
+
+    function setAffiliateFeePercent(
+        uint256 newValue)
+        external;
+
+    function setLiquidationIncentivePercent(
+        uint256 newAmount)
         external;
 
     function setGuaranteedInitialMargin(
@@ -215,16 +234,16 @@ contract IBZx is
         bool toggle)
         external;
 
-    function getDepositAmountForBorrow(
-        address loanToken,            // address(0) means ETH
-        address collateralToken,      // address(0) means ETH
-        uint256 borrowAmount,
-        uint256 marginAmount,
-        uint256 initialLoanDuration,  // duration in seconds
-        uint256 interestRate)
+    function getEstimatedMarginExposure(
+        address loanToken,
+        address collateralToken,
+        uint256 loanTokenSent,
+        uint256 collateralTokenSent,
+        uint256 interestRate,
+        uint256 newPrincipal)
         external
         view
-        returns (uint256 depositAmount);
+        returns (uint256);
 
     function getRequiredCollateral(
         address loanToken,

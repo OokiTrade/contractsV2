@@ -15,14 +15,14 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
     uint256 constant RAY = 10 ** 27;
 
     // Mainnet
-    /*IChai public constant chai = IChai(0x06AF07097C9Eeb7fD685c692751D5C66dB49c215);
+    IChai public constant chai = IChai(0x06AF07097C9Eeb7fD685c692751D5C66dB49c215);
     IPot public constant pot = IPot(0x197E90f9FAD81970bA7976f33CbD77088E5D7cf7);
-    IERC20 public constant dai = IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F);*/
+    IERC20 public constant dai = IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F);
 
     // Kovan
-    IChai public constant chai = IChai(0x71DD45d9579A499B58aa85F50E5E3B241Ca2d10d);
+    /*IChai public constant chai = IChai(0x71DD45d9579A499B58aa85F50E5E3B241Ca2d10d);
     IPot public constant pot = IPot(0xEA190DBDC7adF265260ec4dA6e9675Fd4f5A78bb);
-    IERC20 public constant dai = IERC20(0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa);
+    IERC20 public constant dai = IERC20(0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa);*/
 
 
     /* Public functions */
@@ -165,9 +165,9 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
         bytes memory /*loanDataBytes*/) // arbitrary order data (for future use)
         public
         payable
-        returns (uint256) // returns new principal added to loan
+        returns (uint256, uint256) // returns new principal and new collateral added to loan
     {
-        uint256 newPrincipal = super.borrow(
+        (uint256 newPrincipal, uint256 newCollateral) = super.borrow(
             loanId,
             withdrawAmount,
             initialLoanDuration,
@@ -180,32 +180,28 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
 
         _dsrDeposit();
 
-        return newPrincipal;
+        return (newPrincipal, newCollateral);
     }
 
     // Called to borrow and immediately get into a positions
     // ***** NOTE: Reentrancy is allowed here to allow flashloan use cases *****
     function marginTrade(
         bytes32 loanId,                 // 0 if new loan
-        uint256 depositAmount,
         uint256 leverageAmount,
         uint256 loanTokenSent,
         uint256 collateralTokenSent,
-        address depositToken,
         address collateralToken,
         address trader,
         bytes memory loanDataBytes)     // arbitrary order data
         public
         payable
-        returns (uint256) // returns new principal added to loan
+        returns (uint256, uint256) // returns new principal and new collateral added to trade
     {
-        uint256 newPrincipal = super.marginTrade(
+        (uint256 newPrincipal, uint256 newCollateral) = super.marginTrade(
             loanId,
-            depositAmount,
             leverageAmount,
             loanTokenSent,
             collateralTokenSent,
-            depositToken,
             collateralToken,
             trader,
             loanDataBytes
@@ -213,7 +209,7 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
 
         _dsrDeposit();
 
-        return newPrincipal;
+        return (newPrincipal, newCollateral);
     }
 
 
@@ -560,13 +556,14 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
     }
 
 
-    // called only by BZxOracle when a loan is partially or fully closed
+    // Called only by BZxOracle when a loan is partially or fully closed
+    // Used for backwards compatibility with bZx v1
     function closeLoanNotifier(
         LegacyBZxObjects.LoanOrder memory,
         LegacyBZxObjects.LoanPosition memory,
-        address loanCloser,
+        address /*loanCloser*/,
         uint256 closeAmount,
-        bool isLiquidation)
+        bool /*isLiquidation*/)
         public
         returns (bool)
     {

@@ -15,3 +15,5 @@ ignore
 *.log
 !requirements.txt
 package-lock.json
+*_ignore_*
+*_joined_*

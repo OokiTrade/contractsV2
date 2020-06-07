@@ -5,7 +5,6 @@
 
 pragma solidity 0.5.17;
 
-
 //import "../openzeppelin/Math.sol";
 import "../openzeppelin/SafeMath.sol";
 import "../openzeppelin/Ownable.sol";
@@ -73,42 +72,48 @@ contract PriceFeeds is Constants, Ownable {
         }
     }
 
-    function _queryRate(
+    function queryPrecision(
         address sourceToken,
         address destToken)
-        internal
+        public
         view
-        returns (uint256 rate, uint256 precision)
+        returns (uint256)
     {
         if (sourceToken != destToken) {
-            uint256 sourceRate;
-            if (sourceToken != address(wethToken)) {
-                IPriceFeedsExt _sourceFeed = pricesFeeds[sourceToken];
-                require(address(_sourceFeed) != address(0), "unsupported src feed");
-                sourceRate = uint256(_sourceFeed.latestAnswer());
-                require(sourceRate != 0 && (sourceRate >> 128) == 0, "price error");
-            } else {
-                sourceRate = 10**18;
-            }
+            (sourceToken,,) = _underlyingConversion(sourceToken, 0);
+            (destToken,,) = _underlyingConversion(destToken, 0);
 
-            uint256 destRate;
-            if (destToken != address(wethToken)) {
-                IPriceFeedsExt _destFeed = pricesFeeds[destToken];
-                require(address(_destFeed) != address(0), "unsupported dst feed");
-                destRate = uint256(_destFeed.latestAnswer());
-                require(destRate != 0 && (destRate >> 128) == 0, "price error");
-            } else {
-                destRate = 10**18;
-            }
-
-            rate = sourceRate
-                .mul(10**18)
-                .div(destRate);
-
-            precision = _getDecimalPrecision(sourceToken, destToken);
+            return _getDecimalPrecision(sourceToken, destToken);
         } else {
-            rate = 10**18;
-            precision = 10**18;
+            return 10**18;
+        }
+    }
+
+    function queryReturn(
+        address sourceToken,
+        address destToken,
+        uint256 sourceAmount)
+        public
+        view
+        returns (uint256 destAmount)
+    {
+        uint256 destPoolRate;
+        (sourceToken,sourceAmount,) = _underlyingConversion(sourceToken, sourceAmount);
+        (destToken,,destPoolRate) = _underlyingConversion(destToken, 0);
+
+        (uint256 rate, uint256 precision) = _queryRate(
+            sourceToken,
+            destToken
+        );
+
+        destAmount = sourceAmount
+            .mul(rate)
+            .div(precision);
+
+        if (destPoolRate != 0) {
+            destAmount = destAmount
+                .mul(10**18)
+                .div(destPoolRate);
         }
     }
 
@@ -365,6 +370,45 @@ contract PriceFeeds is Constants, Ownable {
     /*
     * Internal functions
     */
+
+    function _queryRate(
+        address sourceToken,
+        address destToken)
+        internal
+        view
+        returns (uint256 rate, uint256 precision)
+    {
+        if (sourceToken != destToken) {
+            uint256 sourceRate;
+            if (sourceToken != address(wethToken)) {
+                IPriceFeedsExt _sourceFeed = pricesFeeds[sourceToken];
+                require(address(_sourceFeed) != address(0), "unsupported src feed");
+                sourceRate = uint256(_sourceFeed.latestAnswer());
+                require(sourceRate != 0 && (sourceRate >> 128) == 0, "price error");
+            } else {
+                sourceRate = 10**18;
+            }
+
+            uint256 destRate;
+            if (destToken != address(wethToken)) {
+                IPriceFeedsExt _destFeed = pricesFeeds[destToken];
+                require(address(_destFeed) != address(0), "unsupported dst feed");
+                destRate = uint256(_destFeed.latestAnswer());
+                require(destRate != 0 && (destRate >> 128) == 0, "price error");
+            } else {
+                destRate = 10**18;
+            }
+
+            rate = sourceRate
+                .mul(10**18)
+                .div(destRate);
+
+            precision = _getDecimalPrecision(sourceToken, destToken);
+        } else {
+            rate = 10**18;
+            precision = 10**18;
+        }
+    }
 
     function _underlyingConversion(
         address asset,

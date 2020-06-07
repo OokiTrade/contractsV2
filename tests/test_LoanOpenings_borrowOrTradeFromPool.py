@@ -11,8 +11,7 @@ def loanOpenings(LoanOpenings, accounts, bzx, Constants, priceFeeds, swapsImpl):
     bzx.setCoreParams(
         Constants["ZERO_ADDRESS"], # protocolTokenAddress
         priceFeeds.address, # priceFeeds
-        swapsImpl.address, # swapsImpl
-        10e18 # protocolFeePercent (10%)
+        swapsImpl.address # swapsImpl
     )
 
 @pytest.fixture(scope="module", autouse=True)

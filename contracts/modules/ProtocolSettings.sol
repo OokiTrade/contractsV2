@@ -29,6 +29,11 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         _setTarget(this.setCoreParams.selector, target);
         _setTarget(this.setLoanPool.selector, target);
         _setTarget(this.setSupportedTokens.selector, target);
+        _setTarget(this.setLendingFeePercent.selector, target);
+        _setTarget(this.setTradingFeePercent.selector, target);
+        _setTarget(this.setBorrowingFeePercent.selector, target);
+        _setTarget(this.setAffiliateFeePercent.selector, target);
+        _setTarget(this.setLiquidationIncentivePercent.selector, target);
         _setTarget(this.setGuaranteedInitialMargin.selector, target);
         _setTarget(this.setGuaranteedMaintenanceMargin.selector, target);
         _setTarget(this.setMaxDisagreement.selector, target);
@@ -41,8 +46,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
     function setCoreParams(
         address _protocolTokenAddress,
         address _priceFeeds,
-        address _swapsImpl,
-        uint256 _protocolFeePercent) // 10 * 10**18;
+        address _swapsImpl)
         external
         onlyOwner
     {
@@ -50,15 +54,11 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         priceFeeds = _priceFeeds;
         swapsImpl = _swapsImpl;
 
-        require(_protocolFeePercent <= 10**20);
-        protocolFeePercent = _protocolFeePercent;
-
         emit SetCoreParams(
             msg.sender,
             _protocolTokenAddress,
             _priceFeeds,
-            _swapsImpl,
-            _protocolFeePercent
+            _swapsImpl
         );
     }
 
@@ -111,44 +111,124 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         }
     }
 
-    function setGuaranteedInitialMargin(
-        uint256 newAmount)
+    function setLendingFeePercent(
+        uint256 newValue)
         external
         onlyOwner
     {
-        guaranteedInitialMargin = newAmount;
+        require(newValue <= 10**20, "value too high");
+        uint256 oldValue = lendingFeePercent;
+        lendingFeePercent = newValue;
+
+        emit SetLendingFeePercent(
+            msg.sender,
+            oldValue,
+            newValue
+        );
+    }
+
+    function setTradingFeePercent(
+        uint256 newValue)
+        external
+        onlyOwner
+    {
+        require(newValue <= 10**20, "value too high");
+        uint256 oldValue = tradingFeePercent;
+        tradingFeePercent = newValue;
+
+        emit SetTradingFeePercent(
+            msg.sender,
+            oldValue,
+            newValue
+        );
+    }
+
+    function setBorrowingFeePercent(
+        uint256 newValue)
+        external
+        onlyOwner
+    {
+        require(newValue <= 10**20, "value too high");
+        uint256 oldValue = borrowingFeePercent;
+        borrowingFeePercent = newValue;
+
+        emit SetBorrowingFeePercent(
+            msg.sender,
+            oldValue,
+            newValue
+        );
+    }
+
+    function setAffiliateFeePercent(
+        uint256 newValue)
+        external
+        onlyOwner
+    {
+        require(newValue <= 10**20, "value too high");
+        uint256 oldValue = affiliateFeePercent;
+        affiliateFeePercent = newValue;
+
+        emit SetAffiliateFeePercent(
+            msg.sender,
+            oldValue,
+            newValue
+        );
+    }
+
+    function setLiquidationIncentivePercent(
+        uint256 newValue)
+        external
+        onlyOwner
+    {
+        require(newValue <= 10**20, "value too high");
+        uint256 oldValue = liquidationIncentivePercent;
+        liquidationIncentivePercent = newValue;
+
+        emit SetLiquidationIncentivePercent(
+            msg.sender,
+            oldValue,
+            newValue
+        );
+    }
+
+    function setGuaranteedInitialMargin(
+        uint256 newValue)
+        external
+        onlyOwner
+    {
+        guaranteedInitialMargin = newValue;
     }
 
     function setGuaranteedMaintenanceMargin(
-        uint256 newAmount)
+        uint256 newValue)
         external
         onlyOwner
     {
-        guaranteedMaintenanceMargin = newAmount;
+        guaranteedMaintenanceMargin = newValue;
     }
 
     function setMaxDisagreement(
-        uint256 newAmount)
+        uint256 newValue)
         external
         onlyOwner
     {
-        maxDisagreement = newAmount;
+        maxDisagreement = newValue;
     }
 
     function setSourceBufferPercent(
-        uint256 newAmount)
+        uint256 newValue)
         external
         onlyOwner
     {
-        sourceBufferPercent = newAmount;
+        sourceBufferPercent = newValue;
     }
 
     function setMaxSwapSize(
-        uint256 newAmount)
+        uint256 newValue)
         external
         onlyOwner
     {
-        maxSwapSize = newAmount;
+        maxSwapSize = newValue;
     }
 
     function getloanPoolsList(

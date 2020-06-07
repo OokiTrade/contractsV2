@@ -28,11 +28,9 @@ contract SwapsExternal is State, VaultController, SwapsUser {
         onlyOwner
     {
         _setTarget(this.swapExternal.selector, target);
-        _setTarget(this.setSupportedSwapTokensBatch.selector, target);
-        _setTarget(this.getExpectedSwapRate.selector, target);
+        _setTarget(this.getSwapExpectedReturn.selector, target);
     }
 
-    // TODO: add support for ether source
     function swapExternal(
         address sourceToken,
         address destToken,
@@ -43,13 +41,22 @@ contract SwapsExternal is State, VaultController, SwapsUser {
         uint256 minConversionRate,
         bytes calldata swapData)
         external
+        payable
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
     {
-        IERC20(sourceToken).safeTransferFrom(
-            msg.sender,
-            address(this),
-            sourceTokenAmount
-        );
+        require(sourceTokenAmount != 0, "sourceTokenAmount == 0");
+
+        if (msg.value != 0) {
+            require(sourceToken == address(0) || sourceToken == address(wethToken), "sourceToken mismatch");
+            require(msg.value == sourceTokenAmount, "sourceTokenAmount mismatch");
+            wethToken.deposit.value(sourceTokenAmount)();
+        } else {
+            IERC20(sourceToken).safeTransferFrom(
+                msg.sender,
+                address(this),
+                sourceTokenAmount
+            );
+        }
 
         if (destToken == address(0)) {
             destToken = address(0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee); // Kyber ETH designation
@@ -63,6 +70,7 @@ contract SwapsExternal is State, VaultController, SwapsUser {
             sourceTokenAmount,
             requiredDestTokenAmount,
             minConversionRate,
+            false, // bypassFee
             swapData
         );
 
@@ -75,40 +83,18 @@ contract SwapsExternal is State, VaultController, SwapsUser {
         );
     }
 
-    function setSupportedSwapTokensBatch(
-        address[] calldata tokens,
-        bool[] calldata toggles)
-        external
-        onlyOwner
-    {
-        require(tokens.length == toggles.length, "count mismatch");
-
-        for (uint256 i = 0; i < tokens.length; i++) {
-            supportedTokens[tokens[i]] = toggles[i];
-        }
-    }
-
-    function getExpectedSwapRate(
-        address sourceTokenAddress,
-        address destTokenAddress,
+    function getSwapExpectedReturn(
+        address sourceToken,
+        address destToken,
         uint256 sourceTokenAmount)
         external
         view
         returns (uint256)
     {
-        uint256 expectedRate;
-        (bool success, bytes memory returnData) = swapsImpl.staticcall(
-            abi.encodeWithSelector(
-                ISwapsImpl(swapsImpl).internalExpectedRate.selector,
-                sourceTokenAddress,
-                destTokenAddress,
-                sourceTokenAmount
-            )
+        return _swapsExpectedReturn(
+            sourceToken,
+            destToken,
+            sourceTokenAmount
         );
-        require(success, "rate call failed");
-        assembly {
-            expectedRate := mload(add(returnData, 32))
-        }
-        return expectedRate;
     }
 }

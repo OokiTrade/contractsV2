@@ -78,7 +78,6 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
 
         require(_loanTokenAddress != collateralTokenAddress, "26");
 
-        bool success;
         if (withdrawalAmount != 0) { // withdrawOnOpen == true
             IWethHelper wethHelper = IWethHelper(0x3b5bDCCDFA2a0a1911984F203C19628EeB6036e0);
             _safeTransfer(_loanTokenAddress, address(wethHelper), withdrawalAmount, "");

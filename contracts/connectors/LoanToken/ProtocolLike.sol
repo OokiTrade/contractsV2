@@ -26,7 +26,7 @@ interface ProtocolLike {
         bytes calldata loanDataBytes)
         external
         payable
-        returns (uint256);
+        returns (uint256 newPrincipal, uint256 newCollateral);
 
     function getTotalPrincipal(
         address lender,
@@ -55,6 +55,17 @@ interface ProtocolLike {
         external
         view
         returns (address);
+
+    function getEstimatedMarginExposure(
+        address loanToken,
+        address collateralToken,
+        uint256 loanTokenSent,
+        uint256 collateralTokenSent,
+        uint256 interestRate,
+        uint256 newPrincipal)
+        external
+        view
+        returns (uint256);
 
     function getRequiredCollateral(
         address loanToken,

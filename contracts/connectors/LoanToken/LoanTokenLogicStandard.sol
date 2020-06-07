@@ -171,43 +171,36 @@ contract LoanTokenLogicStandard is AdvancedToken {
         uint256 withdrawAmount,
         uint256 initialLoanDuration,    // duration in seconds
         uint256 collateralTokenSent,    // if 0, loanId must be provided; any ETH sent must equal this value
-        address collateralToken,        // if address(0), this means ETH and ETH must be sent with the call or loanId must be provided
+        address collateralTokenAddress, // if address(0), this means ETH and ETH must be sent with the call or loanId must be provided
         address borrower,
         address receiver,
         bytes memory /*loanDataBytes*/) // arbitrary order data (for future use)
         public
         payable
-        returns (uint256) // returns new principal added to loan
+        returns (uint256, uint256) // returns new principal and new collateral added to loan
     {
+        require(withdrawAmount != 0, "6");
+
         _checkPause();
 
-        require(msg.value == 0 || msg.value == collateralTokenSent, "6");
-        require(collateralTokenSent != 0 || loanId != 0, "7");
-        require(collateralToken != address(0) || msg.value != 0 || loanId != 0, "8");
+        require(msg.value == 0 || msg.value == collateralTokenSent, "7");
+        require(collateralTokenSent != 0 || loanId != 0, "8");
+        require(collateralTokenAddress != address(0) || msg.value != 0 || loanId != 0, "9");
 
-        if (collateralToken == address(0)) {
-            collateralToken = wethToken;
+        if (collateralTokenAddress == address(0)) {
+            collateralTokenAddress = wethToken;
         }
-        require(collateralToken != loanTokenAddress, "9");
+        require(collateralTokenAddress != loanTokenAddress, "10");
 
         _settleInterest();
 
         uint256[5] memory sentAmounts;
 
-        if (withdrawAmount == 0) {
-            withdrawAmount = _getBorrowAmountForDeposit(
-                collateralTokenSent,
-                initialLoanDuration,
-                collateralToken
-            );
-            require(withdrawAmount != 0, "35");
-        }
-
-        uint256 newPrincipal = withdrawAmount;
+        sentAmounts[1] = withdrawAmount;
 
         // interestRate, interestInitialAmount, borrowAmount (newBorrowAmount)
-        (sentAmounts[0], sentAmounts[2], newPrincipal) = _getInterestRateAndAmount(
-            newPrincipal,
+        (sentAmounts[0], sentAmounts[2], sentAmounts[1]) = _getInterestRateAndAmount(
+            sentAmounts[1],
             _totalAssetSupplies(0), // interest is settled above
             initialLoanDuration,
             true // useFixedInterestModel
@@ -217,7 +210,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
             loanId,
             withdrawAmount,
             2 * 10**18, // leverageAmount (translates to 150% margin for a Torque loan)
-            collateralToken,
+            collateralTokenAddress,
             [
                 address(this), // lender
                 borrower,
@@ -226,7 +219,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
             ],
             [
                 sentAmounts[0],         // interestRate
-                newPrincipal,
+                sentAmounts[1],
                 sentAmounts[2],         // interestInitialAmount
                 0,                      // loanTokenSent
                 collateralTokenSent
@@ -239,39 +232,29 @@ contract LoanTokenLogicStandard is AdvancedToken {
     // ***** NOTE: Reentrancy is allowed here to allow flashloan use cases *****
     function marginTrade(
         bytes32 loanId,                 // 0 if new loan
-        uint256 depositAmount,
         uint256 leverageAmount,
         uint256 loanTokenSent,
         uint256 collateralTokenSent,
-        address depositToken,
-        address collateralToken,
+        address collateralTokenAddress,
         address trader,
         bytes memory loanDataBytes)     // arbitrary order data
         public
         payable
-        returns (uint256) // returns new principal added to loan
+        returns (uint256, uint256) // returns new principal and new collateral added to trade
     {
         _checkPause();
 
-        require(collateralToken != loanTokenAddress, "10");
-
-        // To calculate borrow amount and interest owed to lender we need deposit amount to be represented as loan token
-        if (depositToken == collateralToken) {
-            (uint256 sourceToDestRate, uint256 sourceToDestPrecision) = FeedsLike(ProtocolLike(bZxContract).priceFeeds()).queryRate(
-                collateralToken,
-                loanTokenAddress
-            );
-            if (sourceToDestPrecision != 0) {
-                depositAmount = depositAmount
-                    .mul(sourceToDestRate);
-                depositAmount = depositAmount
-                    .div(sourceToDestPrecision);
-            }
-        } else if (depositToken != loanTokenAddress) {
-            // depositToken can only be collateralToken or loanTokenAddress
-            revert("13");
+        if (collateralTokenAddress == address(0)) {
+            collateralTokenAddress = wethToken;
         }
-        require(depositAmount != 0, "21");
+        require(collateralTokenAddress != loanTokenAddress, "11");
+
+        uint256 totalDeposit = _totalDeposit(
+            collateralTokenAddress,
+            collateralTokenSent,
+            loanTokenSent
+        );
+        require(totalDeposit != 0, "12");
 
         address[4] memory sentAddresses;
         uint256[5] memory sentAmounts;
@@ -282,7 +265,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         //sentAddresses[3] = address(0); // manager
 
         //sentAmounts[0] = 0; // interestRate (found later)
-        sentAmounts[1] = depositAmount; // amount of deposit
+        sentAmounts[1] = totalDeposit; // total amount of deposit
         //sentAmounts[2] = 0; // interestInitialAmount (interest is calculated based on fixed-term loan)
         sentAmounts[3] = loanTokenSent;
         sentAmounts[4] = collateralTokenSent;
@@ -298,7 +281,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
             loanId,
             0, // withdrawAmount
             leverageAmount,
-            collateralToken,
+            collateralTokenAddress,
             sentAddresses,
             sentAmounts,
             loanDataBytes
@@ -407,7 +390,6 @@ contract LoanTokenLogicStandard is AdvancedToken {
         if (_oldBalance != 0 && _newBalance != 0) {
             _currentProfit = _profitOf(
                 slot,
-                _user,
                 _oldBalance,
                 _currentPrice,
                 checkpointPrices_[_user]
@@ -444,7 +426,6 @@ contract LoanTokenLogicStandard is AdvancedToken {
 
         return _profitOf(
             slot,
-            user,
             balances[user],
             tokenPrice(),
             checkpointPrices_[user]
@@ -453,7 +434,6 @@ contract LoanTokenLogicStandard is AdvancedToken {
 
     function _profitOf(
         bytes32 slot,
-        address _user,
         uint256 _balance,
         uint256 _currentPrice,
         uint256 _checkpointPrice)
@@ -612,8 +592,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         return ProtocolLike(bZxContract).getTotalPrincipal(
             address(this),
             loanTokenAddress
-        )
-        .add(totalAssetBorrow);
+        ).add(totalAssetBorrow);
     }
 
     function totalAssetSupply()
@@ -664,6 +643,46 @@ contract LoanTokenLogicStandard is AdvancedToken {
             .div(10**18);
     }
 
+    function getEstimatedMarginDetails(
+        uint256 leverageAmount,
+        uint256 loanTokenSent,
+        uint256 collateralTokenSent,
+        address collateralTokenAddress)     // address(0) means ETH
+        public
+        view
+        returns (uint256 principal, uint256 collateral, uint256 interestRate)
+    {
+        if (collateralTokenAddress == address(0)) {
+            collateralTokenAddress = wethToken;
+        }
+
+        uint256 totalDeposit = _totalDeposit(
+            collateralTokenAddress,
+            collateralTokenSent,
+            loanTokenSent
+        );
+
+        (principal, interestRate) = _getMarginBorrowAmountAndRate(
+            leverageAmount,
+            totalDeposit
+        );
+        if (principal > _underlyingBalance()) {
+            return (0, 0, 0);
+        }
+
+        loanTokenSent = loanTokenSent
+            .add(principal);
+
+        collateral = ProtocolLike(bZxContract).getEstimatedMarginExposure(
+            loanTokenAddress,
+            collateralTokenAddress,
+            loanTokenSent,
+            collateralTokenSent,
+            interestRate,
+            principal
+        );
+    }
+
     function getDepositAmountForBorrow(
         uint256 borrowAmount,
         uint256 initialLoanDuration,        // duration in seconds
@@ -698,11 +717,24 @@ contract LoanTokenLogicStandard is AdvancedToken {
         view
         returns (uint256 borrowAmount)
     {
-        borrowAmount = _getBorrowAmountForDeposit(
-            depositAmount,
-            initialLoanDuration,
-            collateralTokenAddress
-        );
+        if (depositAmount != 0) {
+            borrowAmount = ProtocolLike(bZxContract).getBorrowAmount(
+                loanTokenAddress,
+                collateralTokenAddress != address(0) ? collateralTokenAddress : wethToken,
+                depositAmount,
+                50 * 10**18, // initialMargin,
+                true // isTorqueLoan
+            );
+
+            // adjust value since interest is also borrowed
+            borrowAmount = borrowAmount
+                .mul(10**22)
+                .div(_getTargetNextRateMultiplierValue(initialLoanDuration));
+
+            if (borrowAmount > _underlyingBalance()) {
+                borrowAmount = 0;
+            }
+        }
     }
 
 
@@ -788,30 +820,25 @@ contract LoanTokenLogicStandard is AdvancedToken {
         }
     }
 
-    function _getBorrowAmountForDeposit(
-        uint256 depositAmount,
-        uint256 initialLoanDuration,        // duration in seconds
-        address collateralTokenAddress)     // address(0) means ETH
+    function _totalDeposit(
+        address collateralTokenAddress,
+        uint256 collateralTokenSent,
+        uint256 loanTokenSent)
         internal
         view
-        returns (uint256 borrowAmount)
+        returns (uint256 totalDeposit)
     {
-        if (depositAmount != 0) {
-            borrowAmount = ProtocolLike(bZxContract).getBorrowAmount(
-                loanTokenAddress,
-                collateralTokenAddress != address(0) ? collateralTokenAddress : wethToken,
-                depositAmount,
-                50 * 10**18, // initialMargin,
-                true // isTorqueLoan
+        totalDeposit = loanTokenSent;
+        if (collateralTokenSent != 0) {
+            (uint256 sourceToDestRate, uint256 sourceToDestPrecision) = FeedsLike(ProtocolLike(bZxContract).priceFeeds()).queryRate(
+                collateralTokenAddress,
+                loanTokenAddress
             );
-
-            // adjust value since interest is also borrowed
-            borrowAmount = borrowAmount
-                .mul(10**22)
-                .div(_getTargetNextRateMultiplierValue(initialLoanDuration));
-
-            if (borrowAmount > _underlyingBalance()) {
-                borrowAmount = 0;
+            if (sourceToDestPrecision != 0) {
+                totalDeposit = collateralTokenSent
+                    .mul(sourceToDestRate)
+                    .div(sourceToDestPrecision)
+                    .add(totalDeposit);
             }
         }
     }
@@ -822,10 +849,19 @@ contract LoanTokenLogicStandard is AdvancedToken {
         view
         returns (uint256)
     {
-        return rateMultiplier
+        uint256 thisBaseRate;
+        uint256 thisRateMultiplier;
+        //keccak256("iToken_FixedInterestBaseRate")
+        //keccak256("iToken_FixedInterestRateMultiplier")
+        assembly {
+            thisBaseRate := sload(0x185a40c6b6d3f849f72c71ea950323d21149c27a9d90f7dc5e5ea2d332edcf7f)
+            thisRateMultiplier := sload(0x9ff54bc0049f5eab56ca7cd14591be3f7ed6355b856d01e3770305c74a004ea2)
+        }
+
+        return thisRateMultiplier
             .mul(80 ether)
             .div(10**20)
-            .add(baseRate)
+            .add(thisBaseRate)
             .mul(initialLoanDuration)
             .div(315360) // 365 * 86400 / 100
             .add(10**22);
@@ -890,7 +926,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         uint256[5] memory sentAmounts,
         bytes memory loanDataBytes)
         internal
-        returns (uint256)
+        returns (uint256, uint256)
     {
         _checkPause();
 
@@ -939,7 +975,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         // converting to initialMargin
         leverageAmount = SafeMath.div(10**38, leverageAmount);
 
-        sentAmounts[1] = ProtocolLike(bZxContract).borrowOrTradeFromPool.value(msgValue)( // newPrincipal
+        (sentAmounts[1], sentAmounts[4]) = ProtocolLike(bZxContract).borrowOrTradeFromPool.value(msgValue)( // newPrincipal, newCollateral
             loanParamsId,
             loanId,
             withdrawAmount != 0 ? // isTorqueLoan
@@ -961,7 +997,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
             sentAddresses[2] == address(0)  // withdrawOnOpen
         );*/
 
-        return sentAmounts[1]; // newPrincipal;
+        return (sentAmounts[1], sentAmounts[4]); // newPrincipal, newCollateral
     }
 
     // sentAddresses[0]: lender
@@ -1356,13 +1392,14 @@ contract LoanTokenLogicStandard is AdvancedToken {
         }
     }
 
-    // called only by BZxOracle when a loan is partially or fully closed
+    // Called only by BZxOracle when a loan is partially or fully closed
+    // Used for backwards compatibility with bZx v1
     function closeLoanNotifier(
         LegacyBZxObjects.LoanOrder memory,
         LegacyBZxObjects.LoanPosition memory,
-        address loanCloser,
+        address /*loanCloser*/,
         uint256 closeAmount,
-        bool isLiquidation)
+        bool /*isLiquidation*/)
         public
         returns (bool)
     {

@@ -46,9 +46,18 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
     mapping (address => EnumerableBytes32Set.Bytes32Set) internal borrowerLoanSets;
     mapping (address => EnumerableBytes32Set.Bytes32Set) internal userLoanParamSets;
 
-    uint256 public protocolFeePercent;
-    mapping (address => uint256) public protocolFeeTokens;
-    uint256 public liquidationIncentivePercent;
+    uint256 public lendingFeePercent = 10 * 10**18; // 10% fee
+    mapping (address => uint256) public lendingFeeTokens;
+
+    uint256 public tradingFeePercent = 25 * 10**16; // 0.25% fee
+    mapping (address => uint256) public tradingFeeTokens;
+
+    uint256 public borrowingFeePercent = 9 * 10**16; // 0.09% fee
+    mapping (address => uint256) public borrowingFeeTokens;
+
+    uint256 public affiliateFeePercent = 30 * 10**18; // 30% fee share
+
+    uint256 public liquidationIncentivePercent = 5 * 10**18; // 5% collateral discount
 
     mapping (address => address) public loanPoolToUnderlying;                            // loanPool => underlying
     mapping (address => address) public underlyingToLoanPool;                            // underlying => loanPool

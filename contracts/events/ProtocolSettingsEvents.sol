@@ -11,8 +11,7 @@ contract ProtocolSettingsEvents {
         address indexed sender,
         address protocolTokenAddress,
         address priceFeeds,
-        address swapsImpl,
-        uint256 protocolFeePercent
+        address swapsImpl
     );
 
     event SetLoanPool(
@@ -25,5 +24,35 @@ contract ProtocolSettingsEvents {
         address indexed sender,
         address indexed token,
         bool isActive
+    );
+
+    event SetLendingFeePercent(
+        address indexed sender,
+        uint256 oldValue,
+        uint256 newValue
+    );
+
+    event SetTradingFeePercent(
+        address indexed sender,
+        uint256 oldValue,
+        uint256 newValue
+    );
+
+    event SetBorrowingFeePercent(
+        address indexed sender,
+        uint256 oldValue,
+        uint256 newValue
+    );
+
+    event SetAffiliateFeePercent(
+        address indexed sender,
+        uint256 oldValue,
+        uint256 newValue
+    );
+
+    event SetLiquidationIncentivePercent(
+        address indexed sender,
+        uint256 oldValue,
+        uint256 newValue
     );
 }

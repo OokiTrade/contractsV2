@@ -8,23 +8,38 @@ pragma solidity 0.5.17;
 
 interface IPriceFeeds {
     function queryRate(
-        address sourceTokenAddress,
-        address destTokenAddress)
+        address sourceToken,
+        address destToken)
         external
         view
         returns (uint256 rate, uint256 precision);
 
+    function queryPrecision(
+        address sourceToken,
+        address destToken)
+        external
+        view
+        returns (uint256 precision);
+
+    function queryReturn(
+        address sourceToken,
+        address destToken,
+        address sourceAmount)
+        external
+        view
+        returns (uint256 destAmount);
+
     function checkPriceDisagreement(
-        address sourceTokenAddress,
-        address destTokenAddress,
-        uint256 sourceTokenAmount,
-        uint256 destTokenAmount,
+        address sourceToken,
+        address destToken,
+        uint256 sourceAmount,
+        uint256 destAmount,
         uint256 maxSlippage)
         external
         view;
 
     function amountInEth(
-        address tokenAddress,
+        address Token,
         uint256 amount)
         external
         view

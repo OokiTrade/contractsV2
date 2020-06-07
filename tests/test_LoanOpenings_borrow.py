@@ -11,8 +11,7 @@ def loanOpenings(LoanOpenings, accounts, bzx, Constants, priceFeeds, swapsImpl):
     bzx.setCoreParams(
         Constants["ZERO_ADDRESS"], # protocolTokenAddress
         priceFeeds.address, # priceFeeds
-        swapsImpl.address, # swapsImpl
-        10e18 # protocolFeePercent (10%)
+        swapsImpl.address # swapsImpl
     )
 
 @pytest.fixture(scope="module")
@@ -61,14 +60,15 @@ def test_borrow(Constants, WethDaiParamsId, WethDaiOrderSetup, bzx, DAI, WETH, a
 
     borrowAmount = 1e18
 
-    collateralTokenSent = bzx.getDepositAmountForBorrow(
+    '''collateralTokenSent = bzx.getDepositAmountForBorrow(
         DAI.address,
         WETH.address,
         borrowAmount,
         50e18,
         864000,
         5e18
-    )
+    )'''
+    collateralTokenSent = 1e18
 
     tx = bzx.borrow(
         WethDaiParamsId, ## loanParamsId

@@ -161,20 +161,18 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         require(loanParamsLocal.maxLoanTerm == 0, "indefinite-term only");
         require(msg.value == 0 || (!useCollateral && loanParamsLocal.loanToken == address(wethToken)), "wrong asset sent");
 
-
-        LoanInterest storage loanInterestLocal = loanInterest[loanLocal.id];
-        LenderInterest storage lenderInterestLocal = lenderInterest[loanLocal.lender][loanParamsLocal.loanToken];
-
         // pay outstanding interest to lender
         _payInterest(
-            lenderInterestLocal,
             loanLocal.lender,
             loanParamsLocal.loanToken
         );
 
+        LoanInterest storage loanInterestLocal = loanInterest[loanLocal.id];
+        LenderInterest storage lenderInterestLocal = lenderInterest[loanLocal.lender][loanParamsLocal.loanToken];
+
         // deposit interest
         if (useCollateral) {
-            // reverts in _swap if amountNeeded can't be bought
+            // reverts in _loanSwap if amountNeeded can't be bought
             (,uint256 sourceTokenAmountUsed) = _loanSwap(
                 loanLocal.id,
                 loanParamsLocal.collateralToken,
@@ -183,7 +181,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
                 loanLocal.collateral,
                 depositAmount, // requiredDestTokenAmount (partial spend of loanLocal.collateral to fill this amount)
                 0, // minConversionRate
-                false, // isLiquidation
+                false, // bypassFee
                 loanDataBytes
             );
             loanLocal.collateral = loanLocal.collateral
@@ -256,15 +254,11 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         address loanToken)
         external
     {
-        LenderInterest storage lenderInterestLocal = lenderInterest[msg.sender][loanToken];
-        if (lenderInterestLocal.owedTotal != 0) {
-            // pay outstanding interest to lender
-            _payInterest(
-                lenderInterestLocal,
-                msg.sender, // lender
-                loanToken
-            );
-        }
+        // pay outstanding interest to lender
+        _payInterest(
+            msg.sender, // lender
+            loanToken
+        );
     }
 
     function extendLoanDuration(
@@ -291,18 +285,15 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         require(loanParamsLocal.maxLoanTerm == 0, "indefinite-term only");
         require(msg.value == 0 || (!useCollateral && loanParamsLocal.loanToken == address(wethToken)), "wrong asset sent");
 
-        LenderInterest storage lenderInterestLocal = lenderInterest[loanLocal.lender][loanParamsLocal.loanToken];
-
         // pay outstanding interest to lender
         _payInterest(
-            lenderInterestLocal,
             loanLocal.lender,
             loanParamsLocal.loanToken
         );
 
         // deposit interest
         if (useCollateral) {
-            // reverts in _swap if amountNeeded can't be bought
+            // reverts in _loanSwap if amountNeeded can't be bought
             (,uint256 sourceTokenAmountUsed) = _loanSwap(
                 loanLocal.id,
                 loanParamsLocal.collateralToken,
@@ -311,7 +302,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
                 loanLocal.collateral,
                 depositAmount, // requiredDestTokenAmount (partial spend of loanLocal.collateral to fill this amount)
                 0, // minConversionRate
-                false, // isLiquidation
+                true, // bypassFee
                 loanDataBytes
             );
             loanLocal.collateral = loanLocal.collateral
@@ -365,7 +356,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
             .add(depositAmount);
         loanInterestLocal.updatedTimestamp = block.timestamp;
 
-        lenderInterestLocal.owedTotal = lenderInterestLocal.owedTotal
+        lenderInterest[loanLocal.lender][loanParamsLocal.loanToken].owedTotal = lenderInterest[loanLocal.lender][loanParamsLocal.loanToken].owedTotal
             .add(depositAmount);
     }
 
@@ -389,15 +380,14 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         );
         require(loanParamsLocal.maxLoanTerm == 0, "indefinite-term only");
 
-        LoanInterest storage loanInterestLocal = loanInterest[loanLocal.id];
-        LenderInterest storage lenderInterestLocal = lenderInterest[loanLocal.lender][loanParamsLocal.loanToken];
-
         // pay outstanding interest to lender
         _payInterest(
-            lenderInterestLocal,
             loanLocal.lender,
             loanParamsLocal.loanToken
         );
+
+        LoanInterest storage loanInterestLocal = loanInterest[loanLocal.id];
+        LenderInterest storage lenderInterestLocal = lenderInterest[loanLocal.lender][loanParamsLocal.loanToken];
 
         uint256 interestTime = block.timestamp;
         if (interestTime > loanLocal.endTimestamp) {

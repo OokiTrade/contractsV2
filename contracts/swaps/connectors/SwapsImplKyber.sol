@@ -5,9 +5,10 @@
 
 pragma solidity 0.5.17;
 
-import "../core/State.sol";
-import "../openzeppelin/SafeERC20.sol";
-import "./ISwapsImpl.sol";
+import "../../core/State.sol";
+import "../../feeds/IPriceFeeds.sol";
+import "../../openzeppelin/SafeERC20.sol";
+import "../ISwapsImpl.sol";
 
 
 contract SwapsImplKyber is State, ISwapsImpl {
@@ -15,9 +16,9 @@ contract SwapsImplKyber is State, ISwapsImpl {
 
     address internal constant feeWallet = 0x13ddAC8d492E463073934E2a101e419481970299;
 
-    // address public constant kyberContract = 0x818E6FECD516Ecc3849DAf6845e3EC868087B755; // mainnet
+    //address public constant kyberContract = 0x818E6FECD516Ecc3849DAf6845e3EC868087B755; // mainnet
     address public constant kyberContract = 0x692f391bCc85cefCe8C237C01e1f636BbD70EA4D; // kovan
-    // address public constant kyberContract = 0x818E6FECD516Ecc3849DAf6845e3EC868087B755; // ropsten
+    //address public constant kyberContract = 0x818E6FECD516Ecc3849DAf6845e3EC868087B755; // ropsten
 
 
     function internalSwap(
@@ -109,8 +110,6 @@ contract SwapsImplKyber is State, ISwapsImpl {
             expectedRate = 10**18;
         } else {
             if (sourceTokenAmount != 0) {
-                require(supportedTokens[sourceTokenAddress] && supportedTokens[destTokenAddress], "invalid tokens");
-
                 (bool result, bytes memory data) = kyberContract.staticcall(
                     abi.encodeWithSignature(
                         "getExpectedRate(address,address,uint256)",
@@ -148,44 +147,30 @@ contract SwapsImplKyber is State, ISwapsImpl {
         view
         returns (bytes memory)
     {
-        uint256 estimatedSourceAmount;
+        /*uint256 estimatedSourceAmount;
         if (requiredDestTokenAmount != 0) {
-            /*uint256 maxSrcAllowed = maxSourceAmountAllowed[sourceTokenAddress];
-            (uint256 slippageRate,) = internalExpectedRate(
+            uint256 sourceToDestPrecision = IPriceFeeds(priceFeeds).queryPrecision(
                 sourceTokenAddress,
-                destTokenAddress,
-                sourceTokenAmount < maxSrcAllowed || maxSrcAllowed == 0 ?
-                    sourceTokenAmount :
-                    maxSrcAllowed
+                destTokenAddress
             );
-            if (slippageRate == 0) {
+            if (sourceToDestPrecision == 0) {
                 return "";
             }
 
-            uint256 sourceToDestPrecision = _getDecimalPrecision(sourceTokenAddress, destTokenAddress);
+            uint256 bufferMultiplier = sourceBufferPercent
+                .add(10**20);
 
-            maxSourceTokenAmount = requiredDestTokenAmount
+            estimatedSourceAmount = requiredDestTokenAmount
                 .mul(sourceToDestPrecision)
-                .div(slippageRate)
-                .mul(11).div(10); // include 1% safety buffer
-            if (maxSourceTokenAmount == 0) {
-                return "";
-            }
+                .div(internalExpectedRate(
+                    sourceTokenAddress,
+                    destTokenAddress,
+                    sourceTokenAmount
+                ));
+            //estimatedSourceAmount = estimatedSourceAmount // buffer yields more source
+            //    .mul(bufferMultiplier)
+            //    .div(10**20);
 
-            // max can't exceed what we sent in
-            if (maxSourceTokenAmount > sourceTokenAmount) {
-                maxSourceTokenAmount = sourceTokenAmount;
-            }*/
-
-            estimatedSourceAmount = internalExpectedRate(
-                destTokenAddress,
-                sourceTokenAddress,
-                requiredDestTokenAmount.mul(
-                    sourceBufferPercent // add slippage amount
-                        .add(10**20)
-                        .div(10**20)
-                )
-            );
             if (estimatedSourceAmount == 0) {
                 return "";
             }
@@ -196,12 +181,12 @@ contract SwapsImplKyber is State, ISwapsImpl {
             }
         } else {
             estimatedSourceAmount = sourceTokenAmount;
-        }
+        }*/
 
         return abi.encodeWithSignature(
             "tradeWithHint(address,uint256,address,address,uint256,uint256,address,bytes)",
             sourceTokenAddress,
-            estimatedSourceAmount,
+            sourceTokenAmount, // estimatedSourceAmount
             destTokenAddress,
             receiverAddress,
             requiredDestTokenAmount == 0 || requiredDestTokenAmount > 10**28 ? // maxDestAmount
