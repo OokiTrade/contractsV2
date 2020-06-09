@@ -49,11 +49,6 @@ contract IBZx is
         address _swapsImpl)
         external;
 
-    function setProtocolManagers(
-        address[] calldata addrs,
-        bool[] calldata toggles)
-        external;
-
     function setLoanPool(
         address[] calldata pools,
         address[] calldata assets)
@@ -102,6 +97,28 @@ contract IBZx is
 
     function setMaxSwapSize(
         uint256 newAmount)
+        external;
+
+    function setFeesAdmin(
+        address newAdmin)
+        external;
+
+    function withdrawLendingFees(
+        address token,
+        address receiver,
+        uint256 amount)
+        external;
+
+    function withdrawTradingFees(
+        address token,
+        address receiver,
+        uint256 amount)
+        external;
+
+    function withdrawBorrowingFees(
+        address token,
+        address receiver,
+        uint256 amount)
         external;
 
     function getloanPoolsList(

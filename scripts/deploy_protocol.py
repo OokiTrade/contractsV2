@@ -400,6 +400,8 @@ def deployProtocol():
                 ]
             )
 
+        bzx.setFeesAdmin(acct.address)
+
     ## LoanSettings
     if deploys.LoanSettings is True:
         print("Deploying LoanSettings.")

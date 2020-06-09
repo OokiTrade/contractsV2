@@ -8,10 +8,11 @@ pragma experimental ABIEncoderV2;
 
 import "../core/State.sol";
 import "../events/ProtocolSettingsEvents.sol";
-import "../interfaces/IERC20.sol";
+import "../openzeppelin/SafeERC20.sol";
 
 
 contract ProtocolSettings is State, ProtocolSettingsEvents {
+    using SafeERC20 for IERC20;
 
     constructor() public {}
 
@@ -39,6 +40,10 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         _setTarget(this.setMaxDisagreement.selector, target);
         _setTarget(this.setSourceBufferPercent.selector, target);
         _setTarget(this.setMaxSwapSize.selector, target);
+        _setTarget(this.setFeesAdmin.selector, target);
+        _setTarget(this.withdrawLendingFees.selector, target);
+        _setTarget(this.withdrawTradingFees.selector, target);
+        _setTarget(this.withdrawBorrowingFees.selector, target);
         _setTarget(this.getloanPoolsList.selector, target);
         _setTarget(this.isLoanPool.selector, target);
     }
@@ -228,7 +233,131 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         external
         onlyOwner
     {
+        uint256 oldValue = maxSwapSize;
         maxSwapSize = newValue;
+
+        emit SetMaxSwapSize(
+            msg.sender,
+            oldValue,
+            newValue
+        );
+    }
+
+    function setFeesAdmin(
+        address newAdmin)
+        external
+        onlyOwner
+    {
+        address oldAdmin = feesAdmin;
+        feesAdmin = newAdmin;
+
+        emit SetFeesAdmin(
+            msg.sender,
+            oldAdmin,
+            newAdmin
+        );
+    }
+
+    function withdrawLendingFees(
+        address token,
+        address receiver,
+        uint256 amount)
+        external
+    {
+        require(msg.sender == feesAdmin, "unauthorized");
+
+        uint256 withdrawAmount = amount;
+
+        uint256 balance = lendingFeeTokensHeld[token];
+        if (withdrawAmount > balance) {
+            withdrawAmount = balance;
+        }
+        require(withdrawAmount != 0, "nothing to withdraw");
+
+        lendingFeeTokensHeld[token] = balance
+            .sub(withdrawAmount);
+        lendingFeeTokensPaid[token] = lendingFeeTokensPaid[token]
+            .add(withdrawAmount);
+
+        IERC20(token).safeTransfer(
+            receiver,
+            withdrawAmount
+        );
+
+        emit WithdrawLendingFees(
+            msg.sender,
+            token,
+            receiver,
+            withdrawAmount
+        );
+    }
+
+    function withdrawTradingFees(
+        address token,
+        address receiver,
+        uint256 amount)
+        external
+    {
+        require(msg.sender == feesAdmin, "unauthorized");
+
+        uint256 withdrawAmount = amount;
+
+        uint256 balance = tradingFeeTokensHeld[token];
+        if (withdrawAmount > balance) {
+            withdrawAmount = balance;
+        }
+        require(withdrawAmount != 0, "nothing to withdraw");
+
+        tradingFeeTokensHeld[token] = balance
+            .sub(withdrawAmount);
+        tradingFeeTokensPaid[token] = tradingFeeTokensPaid[token]
+            .add(withdrawAmount);
+
+        IERC20(token).safeTransfer(
+            receiver,
+            withdrawAmount
+        );
+
+        emit WithdrawTradingFees(
+            msg.sender,
+            token,
+            receiver,
+            withdrawAmount
+        );
+    }
+
+    function withdrawBorrowingFees(
+        address token,
+        address receiver,
+        uint256 amount)
+        external
+    {
+        require(msg.sender == feesAdmin, "unauthorized");
+
+        uint256 withdrawAmount = amount;
+
+        uint256 balance = borrowingFeeTokensHeld[token];
+        if (withdrawAmount > balance) {
+            withdrawAmount = balance;
+        }
+        require(withdrawAmount != 0, "nothing to withdraw");
+
+        borrowingFeeTokensHeld[token] = balance
+            .sub(withdrawAmount);
+        borrowingFeeTokensPaid[token] = borrowingFeeTokensPaid[token]
+            .add(withdrawAmount);
+
+        IERC20(token).safeTransfer(
+            receiver,
+            withdrawAmount
+        );
+
+        emit WithdrawBorrowingFees(
+            msg.sender,
+            token,
+            receiver,
+            withdrawAmount
+        );
     }
 
     function getloanPoolsList(

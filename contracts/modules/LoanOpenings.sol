@@ -14,7 +14,7 @@ import "../mixins/GasTokenUser.sol";
 import "../swaps/SwapsUser.sol";
 
 
-// TODO: function for trading directly from loan orders
+//TODO: function borrow(...) for trading directly from loan orders
 contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUser, GasTokenUser, SwapsUser {
 
     constructor() public {}
@@ -705,7 +705,6 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                 .div(loanInterestLocal.owedPerDay)
                 .add(block.timestamp);
 
-            // update maxLoanTerm
             maxLoanTerm = loanLocal.endTimestamp
                 .sub(block.timestamp);
 

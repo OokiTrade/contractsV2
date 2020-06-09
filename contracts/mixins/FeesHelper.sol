@@ -50,7 +50,7 @@ contract FeesHelper is State {
             tradingFee
         );*/
         if (tradingFee != 0) {
-            tradingFeeTokens[address(feeToken)] = tradingFeeTokens[address(feeToken)]
+            tradingFeeTokensHeld[address(feeToken)] = tradingFeeTokensHeld[address(feeToken)]
                 .add(tradingFee);
         }
     }
@@ -65,7 +65,7 @@ contract FeesHelper is State {
             borrowingFee
         );*/
         if (borrowingFee != 0) {
-            borrowingFeeTokens[address(feeToken)] = borrowingFeeTokens[address(feeToken)]
+            borrowingFeeTokensHeld[address(feeToken)] = borrowingFeeTokensHeld[address(feeToken)]
                 .add(borrowingFee);
         }
     }

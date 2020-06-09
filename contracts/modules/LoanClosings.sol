@@ -521,7 +521,7 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
 
                 returnedToLenderAmount = principalNeeded;
                 withdrawAmount = destTokenAmountReceived - principalNeeded;
-            
+
             } else {
                 // sourceTokenAmountUsed == swapAmount < loanLocal.collateral
 

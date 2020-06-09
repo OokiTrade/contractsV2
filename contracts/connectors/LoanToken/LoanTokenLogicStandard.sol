@@ -199,11 +199,10 @@ contract LoanTokenLogicStandard is AdvancedToken {
         sentAmounts[1] = withdrawAmount;
 
         // interestRate, interestInitialAmount, borrowAmount (newBorrowAmount)
-        (sentAmounts[0], sentAmounts[2], sentAmounts[1]) = _getInterestRateAndAmount(
+        (sentAmounts[0], sentAmounts[2], sentAmounts[1]) = _getInterestRateAndBorrowAmount(
             sentAmounts[1],
             _totalAssetSupplies(0), // interest is settled above
-            initialLoanDuration,
-            true // useFixedInterestModel
+            initialLoanDuration
         );
 
         return _borrowOrTrade(
@@ -867,53 +866,32 @@ contract LoanTokenLogicStandard is AdvancedToken {
             .add(10**22);
     }
 
-    function _getInterestRateAndAmount(
+    function _getInterestRateAndBorrowAmount(
         uint256 borrowAmount,
         uint256 assetSupply,
-        uint256 initialLoanDuration,        // duration in seconds
-        bool useFixedInterestModel)         // False=variable interest, True=fixed interest
+        uint256 initialLoanDuration) // duration in seconds
         internal
         view
         returns (uint256 interestRate, uint256 interestInitialAmount, uint256 newBorrowAmount)
     {
-        (,interestInitialAmount) = _getInterestRateAndAmount2(
-            borrowAmount,
-            assetSupply,
-            initialLoanDuration,
-            useFixedInterestModel
-        );
-
-        (interestRate, interestInitialAmount) = _getInterestRateAndAmount2(
-            borrowAmount
-                .add(interestInitialAmount),
-            assetSupply,
-            initialLoanDuration,
-            useFixedInterestModel
-        );
-
-        newBorrowAmount = borrowAmount
-            .add(interestInitialAmount);
-    }
-
-    function _getInterestRateAndAmount2(
-        uint256 borrowAmount,
-        uint256 assetSupply,
-        uint256 initialLoanDuration,
-        bool useFixedInterestModel)
-        internal
-        view
-        returns (uint256 interestRate, uint256 interestInitialAmount)
-    {
         interestRate = _nextBorrowInterestRate2(
             borrowAmount,
             assetSupply,
-            useFixedInterestModel
+            true // useFixedInterestModel
         );
 
         interestInitialAmount = borrowAmount
             .mul(interestRate)
             .mul(initialLoanDuration)
             .div(31536000 * 10**20); // 365 * 86400 * 10**20
+
+        newBorrowAmount = borrowAmount
+            .add(interestInitialAmount);
+
+        // reduce so the user isn't paying interest on interest
+        interestRate = interestRate
+            .mul(borrowAmount)
+            .div(newBorrowAmount);
     }
 
     // returns newPrincipal

@@ -39,7 +39,7 @@ contract InterestUser is State, VaultController {
                 uint256 lendingFee = interestOwedNow
                     .mul(lendingFeePercent)
                     .div(10**20);
-                lendingFeeTokens[interestToken] = lendingFeeTokens[interestToken]
+                lendingFeeTokensHeld[interestToken] = lendingFeeTokensHeld[interestToken]
                     .add(lendingFee);
 
                 // transfers the interest to the lender, less the interest fee

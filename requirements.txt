@@ -1,3 +1,2 @@
-eth-brownie==1.9.1
-slither-analyzer==0.6.12
+eth-brownie==1.9.2
 munch==2.5.0

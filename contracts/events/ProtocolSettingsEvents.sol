@@ -55,4 +55,37 @@ contract ProtocolSettingsEvents {
         uint256 oldValue,
         uint256 newValue
     );
+
+    event SetMaxSwapSize(
+        address indexed sender,
+        uint256 oldValue,
+        uint256 newValue
+    );
+
+    event SetFeesAdmin(
+        address indexed sender,
+        address indexed oldAdmin,
+        address indexed newAdmin
+    );
+
+    event WithdrawLendingFees(
+        address indexed sender,
+        address indexed token,
+        address indexed receiver,
+        uint256 amount
+    );
+
+    event WithdrawTradingFees(
+        address indexed sender,
+        address indexed token,
+        address indexed receiver,
+        uint256 amount
+    );
+
+    event WithdrawBorrowingFees(
+        address indexed sender,
+        address indexed token,
+        address indexed receiver,
+        uint256 amount
+    );
 }

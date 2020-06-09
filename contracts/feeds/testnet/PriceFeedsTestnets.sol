@@ -86,6 +86,8 @@ contract PriceFeedsTestnets is PriceFeeds {
     {
         if (sourceToken != destToken) {
             uint256 rate;
+
+            // source to dest
             (bool result, bytes memory data) = kyberContract.staticcall(
                 abi.encodeWithSignature(
                     "getExpectedRate(address,address,uint256)",
@@ -103,9 +105,27 @@ contract PriceFeedsTestnets is PriceFeeds {
                     rate := mload(add(data, 32))
                 }
             }
-
             rates[sourceToken][destToken] = rate;
-            rates[destToken][sourceToken] = SafeMath.div(10**36, rate);
+
+            // dest to source
+            (result, data) = kyberContract.staticcall(
+                abi.encodeWithSignature(
+                    "getExpectedRate(address,address,uint256)",
+                    destToken,
+                    sourceToken,
+                    10**16
+                )
+            );
+            assembly {
+                switch result
+                case 0 {
+                    rate := 0
+                }
+                default {
+                    rate := mload(add(data, 32))
+                }
+            }
+            rates[destToken][sourceToken] = rate;
         }
     }
 
