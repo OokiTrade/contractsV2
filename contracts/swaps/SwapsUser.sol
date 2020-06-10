@@ -19,32 +19,28 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
         address sourceToken,
         address destToken,
         address user,
-        uint256 sourceTokenAmount,
+        uint256 minSourceTokenAmount,
+        uint256 maxSourceTokenAmount,
         uint256 requiredDestTokenAmount,
-        uint256 minConversionRate,
         bool bypassFee,
         bytes memory loanDataBytes)
         internal
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
     {
-        // will revert if swap size too large
-        if (requiredDestTokenAmount == 0) {
-            _checkSwapSize(sourceToken, sourceTokenAmount);
-        } else {
-            _checkSwapSize(destToken, requiredDestTokenAmount);
-        }
-
         (destTokenAmountReceived, sourceTokenAmountUsed) = _swapsCall(
             sourceToken,
             destToken,
             address(this), // receiver
             address(this), // returnToSender
-            sourceTokenAmount,
+            minSourceTokenAmount,
+            maxSourceTokenAmount,
             requiredDestTokenAmount,
-            minConversionRate,
             bypassFee,
             loanDataBytes
         );
+
+        // will revert if swap size too large
+        _checkSwapSize(sourceToken, sourceTokenAmountUsed);
 
         // will revert if disagreement found
         IPriceFeeds(priceFeeds).checkPriceDisagreement(
@@ -70,31 +66,42 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
         address destToken,
         address receiver,
         address returnToSender,
-        uint256 sourceTokenAmount,
+        uint256 minSourceTokenAmount,
+        uint256 maxSourceTokenAmount,
         uint256 requiredDestTokenAmount,
-        uint256 minConversionRate,
         bool miscBool, // bypassFee
         bytes memory loanDataBytes)
         internal
         returns (uint256, uint256)
     {
+        require(minSourceTokenAmount != 0, "sourceAmount == 0");
+
+        if (maxSourceTokenAmount == 0) {
+            maxSourceTokenAmount = minSourceTokenAmount;
+        }
+        require(minSourceTokenAmount <= maxSourceTokenAmount, "sourceAmount larger than max");
+
         uint256 destTokenAmountReceived;
         uint256 sourceTokenAmountUsed;
 
         uint256 tradingFee;
         if (!miscBool) { // bypassFee
             if (requiredDestTokenAmount == 0) {
-                tradingFee = _getTradingFee(sourceTokenAmount);
+                // condition: minSourceTokenAmount will always used as sourceAmount
+
+                tradingFee = _getTradingFee(minSourceTokenAmount);
                 if (tradingFee != 0) {
                     _payTradingFee(
                         IERC20(sourceToken),
                         tradingFee
                     );
 
-                    sourceTokenAmount = sourceTokenAmount
+                    minSourceTokenAmount = minSourceTokenAmount
                         .sub(tradingFee);
                 }
             } else {
+                // condition: unknown sourceAmount will be used
+
                 tradingFee = _getTradingFee(requiredDestTokenAmount);
 
                 if (tradingFee != 0) {
@@ -111,9 +118,9 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
                 destToken,
                 receiver, // receiverAddress
                 returnToSender, // returnToSenderAddress
-                sourceTokenAmount,
-                requiredDestTokenAmount,
-                minConversionRate
+                minSourceTokenAmount,
+                maxSourceTokenAmount,
+                requiredDestTokenAmount
             );
 
             // reclaiming miscBool to avoid stack too deep error
@@ -150,15 +157,16 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
         }
 
         if (requiredDestTokenAmount == 0) {
-            // there's no minimum destTokenAmount, but all sourceTokenAmount must be spent
-            require(sourceTokenAmountUsed == sourceTokenAmount, "swap too large to fill");
+            // there's no minimum destTokenAmount, but all of minSourceTokenAmount must be spent
+            require(sourceTokenAmountUsed == minSourceTokenAmount, "swap too large to fill");
 
             if (tradingFee != 0) {
                 sourceTokenAmountUsed = sourceTokenAmountUsed
                     .add(tradingFee);
             }
         } else {
-            // there's a minimum destTokenAmount required, but not all of the sourceTokenAmount must be spent
+            // there's a minimum destTokenAmount required, but sourceTokenAmountUsed won't be greater than maxSourceTokenAmount
+            require(sourceTokenAmountUsed <= maxSourceTokenAmount, "swap fill too large");
             require(destTokenAmountReceived >= requiredDestTokenAmount, "insufficient swap liquidity");
 
             if (tradingFee != 0) {

@@ -12,9 +12,9 @@ interface ISwapsImpl {
         address destTokenAddress,
         address receiverAddress,
         address returnToSenderAddress,
-        uint256 sourceTokenAmount,
-        uint256 requiredDestTokenAmount,
-        uint256 minConversionRate)
+        uint256 minSourceTokenAmount,
+        uint256 maxSourceTokenAmount,
+        uint256 requiredDestTokenAmount)
         external
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed);
 

@@ -178,9 +178,9 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
                 loanParamsLocal.collateralToken,
                 loanParamsLocal.loanToken,
                 loanLocal.borrower,
-                loanLocal.collateral,
+                loanLocal.collateral, // minSourceTokenAmount
+                0, // maxSourceTokenAmount (0 means minSourceTokenAmount)
                 depositAmount, // requiredDestTokenAmount (partial spend of loanLocal.collateral to fill this amount)
-                0, // minConversionRate
                 false, // bypassFee
                 loanDataBytes
             );
@@ -299,9 +299,9 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
                 loanParamsLocal.collateralToken,
                 loanParamsLocal.loanToken,
                 loanLocal.borrower,
-                loanLocal.collateral,
+                loanLocal.collateral, // minSourceTokenAmount
+                0, // maxSourceTokenAmount (0 means minSourceTokenAmount)
                 depositAmount, // requiredDestTokenAmount (partial spend of loanLocal.collateral to fill this amount)
-                0, // minConversionRate
                 true, // bypassFee
                 loanDataBytes
             );

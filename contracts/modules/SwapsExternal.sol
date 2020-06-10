@@ -38,7 +38,6 @@ contract SwapsExternal is State, VaultController, SwapsUser {
         address returnToSender,
         uint256 sourceTokenAmount,
         uint256 requiredDestTokenAmount,
-        uint256 minConversionRate,
         bytes calldata swapData)
         external
         payable
@@ -67,9 +66,9 @@ contract SwapsExternal is State, VaultController, SwapsUser {
             destToken,
             receiver,
             returnToSender,
-            sourceTokenAmount,
+            sourceTokenAmount, // minSourceTokenAmount
+            sourceTokenAmount, // maxSourceTokenAmount
             requiredDestTokenAmount,
-            minConversionRate,
             false, // bypassFee
             swapData
         );

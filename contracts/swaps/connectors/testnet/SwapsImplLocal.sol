@@ -5,29 +5,27 @@
 
 pragma solidity 0.5.17;
 
-import "../../core/State.sol";
-import "../../openzeppelin/SafeERC20.sol";
-import "../ISwapsImpl.sol";
-import "../../feeds/IPriceFeeds.sol";
-import "../../testhelpers/TestToken.sol";
+import "../../../core/State.sol";
+import "../../../openzeppelin/SafeERC20.sol";
+import "../../ISwapsImpl.sol";
+import "../../../feeds/IPriceFeeds.sol";
+import "../../../testhelpers/TestToken.sol";
 
 
 contract SwapsImplLocal is State, ISwapsImpl {
     using SafeERC20 for IERC20;
-
 
     function internalSwap(
         address sourceTokenAddress,
         address destTokenAddress,
         address /*receiverAddress*/,
         address returnToSenderAddress,
-        uint256 sourceTokenAmount,
-        uint256 requiredDestTokenAmount,
-        uint256 /*minConversionRate*/)
+        uint256 minSourceTokenAmount,
+        uint256 maxSourceTokenAmount,
+        uint256 requiredDestTokenAmount)
         public
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
     {
-        require(sourceTokenAmount != 0, "sourceAmount == 0");
         require(sourceTokenAddress != destTokenAddress, "source == dest");
         require(sourceTokenAddress != address(wethToken) && destTokenAddress != address(wethToken),
             "WETH swaps not supported on testnet"
@@ -39,8 +37,8 @@ contract SwapsImplLocal is State, ISwapsImpl {
         );
 
         if (requiredDestTokenAmount == 0) {
-            sourceTokenAmountUsed = sourceTokenAmount;
-            destTokenAmountReceived = sourceTokenAmount
+            sourceTokenAmountUsed = minSourceTokenAmount;
+            destTokenAmountReceived = minSourceTokenAmount
                 .mul(tradeRate)
                 .div(precision);
         } else {
@@ -48,18 +46,18 @@ contract SwapsImplLocal is State, ISwapsImpl {
             sourceTokenAmountUsed = requiredDestTokenAmount
                 .mul(precision)
                 .div(tradeRate);
-            require(sourceTokenAmountUsed <= sourceTokenAmount, "destAmount too great");
+            require(sourceTokenAmountUsed <= minSourceTokenAmount, "destAmount too great");
         }
 
         TestToken(sourceTokenAddress).burn(address(this), sourceTokenAmountUsed);
         TestToken(destTokenAddress).mint(address(this), destTokenAmountReceived);
 
         if (returnToSenderAddress != address(this)) {
-            if (sourceTokenAmountUsed < sourceTokenAmount) {
+            if (sourceTokenAmountUsed < maxSourceTokenAmount) {
                 // send unused source token back
                 IERC20(sourceTokenAddress).safeTransfer(
                     returnToSenderAddress,
-                    sourceTokenAmount-sourceTokenAmountUsed
+                    maxSourceTokenAmount-sourceTokenAmountUsed
                 );
             }
         }

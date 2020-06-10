@@ -188,7 +188,7 @@ contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage {
             address(this),  // receiverAddress
             address(this),  // returnToSenderAddress
             amount,         // sourceTokenAmount
-            uint256(-1),       // maxDestTokenAmount
+            uint256(-1),    // maxDestTokenAmount
             0               // minConversionRate
         );
     }*/

@@ -410,9 +410,9 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                 loanParamsLocal.loanToken,
                 loanParamsLocal.collateralToken,
                 sentAddresses[1], // borrower
-                sentValues[3], // loanTokenUsable
+                sentValues[3], // loanTokenUsable (minSourceTokenAmount)
+                0, // maxSourceTokenAmount (0 means minSourceTokenAmount)
                 0, // requiredDestTokenAmount (enforces that all of loanTokenUsable is swapped)
-                0, // minConversionRate
                 false, // bypassFee
                 loanDataBytes
             );

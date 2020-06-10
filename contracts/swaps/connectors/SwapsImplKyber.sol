@@ -26,13 +26,12 @@ contract SwapsImplKyber is State, ISwapsImpl {
         address destTokenAddress,
         address receiverAddress,
         address returnToSenderAddress,
-        uint256 sourceTokenAmount,
-        uint256 requiredDestTokenAmount,
-        uint256 minConversionRate)
+        uint256 minSourceTokenAmount,
+        uint256 maxSourceTokenAmount,
+        uint256 requiredDestTokenAmount)
         public
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
     {
-        require(sourceTokenAmount != 0, "sourceAmount == 0");
         require(sourceTokenAddress != destTokenAddress, "source == dest");
         require(supportedTokens[sourceTokenAddress] && supportedTokens[destTokenAddress], "invalid tokens");
 
@@ -40,15 +39,15 @@ contract SwapsImplKyber is State, ISwapsImpl {
             sourceTokenAddress,
             destTokenAddress,
             receiverAddress,
-            sourceTokenAmount,
-            requiredDestTokenAmount,
-            minConversionRate
+            minSourceTokenAmount,
+            maxSourceTokenAmount,
+            requiredDestTokenAmount
         );
 
         if (txnData.length != 0) {
             // re-up the Kyber spend approval if needed
             uint256 tempAllowance = IERC20(sourceTokenAddress).allowance(address(this), kyberContract);
-            if (tempAllowance < sourceTokenAmount) {
+            if (tempAllowance < maxSourceTokenAmount) {
                 if (tempAllowance != 0) {
                     // reset approval to 0
                     IERC20(sourceTokenAddress).safeApprove(
@@ -79,11 +78,11 @@ contract SwapsImplKyber is State, ISwapsImpl {
         }
 
         if (returnToSenderAddress != address(this)) {
-            if (sourceTokenAmountUsed < sourceTokenAmount) {
+            if (sourceTokenAmountUsed < maxSourceTokenAmount) {
                 // send unused source token back
                 IERC20(sourceTokenAddress).safeTransfer(
                     returnToSenderAddress,
-                    sourceTokenAmount-sourceTokenAmountUsed
+                    maxSourceTokenAmount-sourceTokenAmountUsed
                 );
             }
         }
@@ -140,14 +139,14 @@ contract SwapsImplKyber is State, ISwapsImpl {
         address sourceTokenAddress,
         address destTokenAddress,
         address receiverAddress,
-        uint256 sourceTokenAmount,
-        uint256 requiredDestTokenAmount,
-        uint256 minConversionRate)
+        uint256 minSourceTokenAmount,
+        uint256 maxSourceTokenAmount,
+        uint256 requiredDestTokenAmount)
         internal
         view
         returns (bytes memory)
     {
-        /*uint256 estimatedSourceAmount;
+        uint256 estimatedSourceAmount;
         if (requiredDestTokenAmount != 0) {
             uint256 sourceToDestPrecision = IPriceFeeds(priceFeeds).queryPrecision(
                 sourceTokenAddress,
@@ -165,34 +164,33 @@ contract SwapsImplKyber is State, ISwapsImpl {
                 .div(internalExpectedRate(
                     sourceTokenAddress,
                     destTokenAddress,
-                    sourceTokenAmount
+                    minSourceTokenAmount
                 ));
-            //estimatedSourceAmount = estimatedSourceAmount // buffer yields more source
-            //    .mul(bufferMultiplier)
-            //    .div(10**20);
+            estimatedSourceAmount = estimatedSourceAmount // buffer yields more source
+                .mul(bufferMultiplier)
+                .div(10**20);
 
             if (estimatedSourceAmount == 0) {
                 return "";
             }
 
-            // max can't exceed what we sent in
-            if (estimatedSourceAmount > sourceTokenAmount) {
-                estimatedSourceAmount = sourceTokenAmount;
+            if (estimatedSourceAmount > maxSourceTokenAmount) {
+                estimatedSourceAmount = maxSourceTokenAmount;
             }
         } else {
-            estimatedSourceAmount = sourceTokenAmount;
-        }*/
+            estimatedSourceAmount = minSourceTokenAmount;
+        }
 
         return abi.encodeWithSignature(
             "tradeWithHint(address,uint256,address,address,uint256,uint256,address,bytes)",
             sourceTokenAddress,
-            sourceTokenAmount, // estimatedSourceAmount
+            estimatedSourceAmount,
             destTokenAddress,
             receiverAddress,
             requiredDestTokenAmount == 0 || requiredDestTokenAmount > 10**28 ? // maxDestAmount
                 10**28 :
                 requiredDestTokenAmount,
-            minConversionRate,
+            0, // minConversionRate
             feeWallet,
             "" // hint
         );
