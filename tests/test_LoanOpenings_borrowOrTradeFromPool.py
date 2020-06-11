@@ -236,10 +236,6 @@ def test_borrowFromPool_sim(Constants, LinkDaiBorrowParamsId, bzx, DAI, LINK, ac
     print(borrowEvent)
 
 
-
-    ## TODO: test close, figure out wrong interest reembursement
-
-
     '''l = bzx.getUserLoans(
         accounts[1],
         0,

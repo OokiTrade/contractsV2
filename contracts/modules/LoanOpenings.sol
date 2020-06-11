@@ -14,7 +14,7 @@ import "../mixins/GasTokenUser.sol";
 import "../swaps/SwapsUser.sol";
 
 
-//TODO: function borrow(...) for trading directly from loan orders
+// TODO: function borrow(...) for trading directly from loan orders
 contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUser, GasTokenUser, SwapsUser {
 
     constructor() public {}
