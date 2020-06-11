@@ -17,6 +17,13 @@ Kovan tokens:
 
 contract PriceFeedsTestnets is PriceFeeds {
 
+    enum FeedTypes {
+        Kyber,
+        Chainlink,
+        Custom
+    }
+    FeedTypes public feedType = FeedTypes.Kyber;
+
     mapping (address => mapping (address => uint256)) public rates;
 
     address public constant kyberContract = 0x692f391bCc85cefCe8C237C01e1f636BbD70EA4D; // kovan
@@ -30,9 +37,25 @@ contract PriceFeedsTestnets is PriceFeeds {
         returns (uint256 rate, uint256 precision)
     {
         if (sourceToken != destToken) {
-            rate = rates[sourceToken][destToken];
-
-            if (rate == 0) {
+            if (feedType == FeedTypes.Kyber) {
+                (bool result, bytes memory data) = kyberContract.staticcall(
+                    abi.encodeWithSignature(
+                        "getExpectedRate(address,address,uint256)",
+                        sourceToken,
+                        destToken,
+                        10**16
+                    )
+                );
+                assembly {
+                    switch result
+                    case 0 {
+                        rate := 0
+                    }
+                    default {
+                        rate := mload(add(data, 32))
+                    }
+                }
+            } else if (feedType == FeedTypes.Chainlink) {
                 uint256 sourceRate;
                 if (sourceToken != address(wethToken)) {
                     IPriceFeedsExt _sourceFeed = pricesFeeds[sourceToken];
@@ -56,6 +79,8 @@ contract PriceFeedsTestnets is PriceFeeds {
                 rate = sourceRate
                     .mul(10**18)
                     .div(destRate);
+            } else {
+                rate = rates[sourceToken][destToken];
             }
 
             precision = _getDecimalPrecision(sourceToken, destToken);
@@ -65,7 +90,7 @@ contract PriceFeedsTestnets is PriceFeeds {
         }
     }
 
-    function setRateToCustom(
+    function setCustomRate(
         address sourceToken,
         address destToken,
         uint256 rate)
@@ -78,64 +103,24 @@ contract PriceFeedsTestnets is PriceFeeds {
         }
     }
 
-    function setRateToKyber(
-        address sourceToken,
-        address destToken)
+    function useKyber()
         public
         onlyOwner
     {
-        if (sourceToken != destToken) {
-            uint256 rate;
-
-            // source to dest
-            (bool result, bytes memory data) = kyberContract.staticcall(
-                abi.encodeWithSignature(
-                    "getExpectedRate(address,address,uint256)",
-                    sourceToken,
-                    destToken,
-                    10**16
-                )
-            );
-            assembly {
-                switch result
-                case 0 {
-                    rate := 0
-                }
-                default {
-                    rate := mload(add(data, 32))
-                }
-            }
-            rates[sourceToken][destToken] = rate;
-
-            // dest to source
-            (result, data) = kyberContract.staticcall(
-                abi.encodeWithSignature(
-                    "getExpectedRate(address,address,uint256)",
-                    destToken,
-                    sourceToken,
-                    10**16
-                )
-            );
-            assembly {
-                switch result
-                case 0 {
-                    rate := 0
-                }
-                default {
-                    rate := mload(add(data, 32))
-                }
-            }
-            rates[destToken][sourceToken] = rate;
-        }
+        feedType = FeedTypes.Kyber;
     }
 
-    function setRateToChainlink(
-        address sourceToken,
-        address destToken)
+    function useChainlink()
         public
         onlyOwner
     {
-        rates[sourceToken][destToken] = 0;
-        rates[destToken][sourceToken] = 0;
+        feedType = FeedTypes.Chainlink;
+    }
+
+    function useCustom()
+        public
+        onlyOwner
+    {
+        feedType = FeedTypes.Custom;
     }
 }
