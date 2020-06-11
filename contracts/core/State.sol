@@ -48,11 +48,11 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
 
     address public feesAdmin;
 
-    uint256 public lendingFeePercent = 10 * 10**18; // 10% fee
+    uint256 public lendingFeePercent = 10**19; // 10% fee
     mapping (address => uint256) public lendingFeeTokensHeld;
     mapping (address => uint256) public lendingFeeTokensPaid;
 
-    uint256 public tradingFeePercent = 25 * 10**16; // 0.25% fee
+    uint256 public tradingFeePercent = 10**17; // 0.1% fee
     mapping (address => uint256) public tradingFeeTokensHeld;
     mapping (address => uint256) public tradingFeeTokensPaid;
 
