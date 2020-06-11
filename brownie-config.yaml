@@ -16,7 +16,15 @@ networks:
         gas_price: 0
         reverting_tx_gas_limit: 8000000
         default_contract_owner: true
-        cmd_settings: null
+        cmd_settings:
+            port: 8555
+            gas_limit: 8000000
+            accounts: 10
+            evm_version: istanbul
+            mnemonic: brownie
+            block_time: 0
+            default_balance: 100
+            #time: 2020-05-08T14:54:08+0000
     live:
         gas_limit: 8000000
         gas_price: 1000000000 # 8000000000
