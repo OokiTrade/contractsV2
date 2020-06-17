@@ -880,18 +880,20 @@ contract LoanTokenLogicStandard is AdvancedToken {
             true // useFixedInterestModel
         );
 
-        interestInitialAmount = borrowAmount
-            .mul(interestRate)
-            .mul(initialLoanDuration)
-            .div(31536000 * 10**20); // 365 * 86400 * 10**20
-
+        // newBorrowAmount = borrowAmount * 10^18 / (10^18 - interestRate * 7884000 * 10^18 / 31536000 / 10^20)
         newBorrowAmount = borrowAmount
-            .add(interestInitialAmount);
+            .mul(10**18)
+            .div(
+                SafeMath.sub(10**18,
+                    interestRate
+                        .mul(initialLoanDuration)
+                        .mul(10**18)
+                        .div(31536000 * 10**20) // 365 * 86400 * 10**20
+                )
+            );
 
-        // reduce so the user isn't paying interest on interest
-        interestRate = interestRate
-            .mul(borrowAmount)
-            .div(newBorrowAmount);
+        interestInitialAmount = newBorrowAmount
+            .sub(borrowAmount);
     }
 
     // returns newPrincipal
@@ -965,15 +967,6 @@ contract LoanTokenLogicStandard is AdvancedToken {
             loanDataBytes
         );
         require (sentAmounts[1] != 0, "25");
-
-        /*emit Borrow(
-            sentAddresses[0],               // borrower
-            sentAmounts[1],                 // newPrincipal
-            sentAmounts[0],                 // interestRate
-            sentAddresses[1],               // collateralTokenAddress
-            sentAddresses[2],               // tradeTokenAddress
-            sentAddresses[2] == address(0)  // withdrawOnOpen
-        );*/
 
         return (sentAmounts[1], sentAmounts[4]); // newPrincipal, newCollateral
     }
@@ -1154,7 +1147,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
     function _nextBorrowInterestRate2(
         uint256 newBorrowAmount,
         uint256 assetSupply,
-        bool useFixedInterestModel)
+        bool /*useFixedInterestModel*/) // kept for legacy reasons since calling functions have the param (now always assumed "true")
         internal
         view
         returns (uint256 nextRate)
@@ -1169,7 +1162,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         uint256 thisBaseRate;
         uint256 thisRateMultiplier;
 
-        if (useFixedInterestModel) {
+        /*if (useFixedInterestModel) {
             if (utilRate < 80 ether) {
                 // target 80% utilization when loan is fixed-rate and utilization is under 80%
                 utilRate = 80 ether;
@@ -1191,6 +1184,17 @@ contract LoanTokenLogicStandard is AdvancedToken {
         } else {
             thisBaseRate = baseRate;
             thisRateMultiplier = rateMultiplier;
+        }*/
+
+        if (utilRate < 80 ether) {
+            // target 80% utilization when loan is fixed-rate and utilization is under 80%
+            utilRate = 80 ether;
+        }
+        //keccak256("iToken_FixedInterestBaseRate")
+        //keccak256("iToken_FixedInterestRateMultiplier")
+        assembly {
+            thisBaseRate := sload(0x185a40c6b6d3f849f72c71ea950323d21149c27a9d90f7dc5e5ea2d332edcf7f)
+            thisRateMultiplier := sload(0x9ff54bc0049f5eab56ca7cd14591be3f7ed6355b856d01e3770305c74a004ea2)
         }
 
         if (utilRate > 90 ether) {
