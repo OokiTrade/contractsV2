@@ -727,9 +727,9 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
     {
         if (closeType == CloseTypes.Deposit) {
             emit CloseWithDeposit(
-                loanLocal.id,                                   // loanId
-                loanLocal.borrower,                             // borrower
+                loanLocal.borrower,                             // user (borrower)
                 loanLocal.lender,                               // lender
+                loanLocal.id,                                   // loanId
                 msg.sender,                                     // closer
                 loanParamsLocal.loanToken,                      // loanToken
                 loanParamsLocal.collateralToken,                // collateralToken
@@ -750,7 +750,7 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
             }
 
             emit CloseWithSwap(
-                loanLocal.borrower,                             // trader
+                loanLocal.borrower,                             // user (trader)
                 loanParamsLocal.collateralToken,                // baseToken
                 loanParamsLocal.loanToken,                      // quoteToken
                 loanLocal.lender,                               // lender
@@ -763,9 +763,9 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
             );
         } else { // closeType == CloseTypes.Liquidation
             emit Liquidate(
-                loanLocal.id,                                   // loanId
+                loanLocal.borrower,                             // user (borrower)
                 msg.sender,                                     // liquidator
-                loanLocal.borrower,                             // borrower
+                loanLocal.id,                                   // loanId
                 loanLocal.lender,                               // lender
                 loanParamsLocal.loanToken,                      // loanToken
                 loanParamsLocal.collateralToken,                // collateralToken

@@ -500,9 +500,9 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
     {
         if (isTorqueLoan) {
             emit Borrow(
-                loanLocal.id,                                   // loanId
-                sentAddresses[1],                               // borrower
+                sentAddresses[1],                               // user (borrower)
                 sentAddresses[0],                               // lender
+                loanLocal.id,                                   // loanId
                 loanParamsLocal.loanToken,                      // loanToken
                 loanParamsLocal.collateralToken,                // collateralToken
                 sentValues[1],                                  // newPrincipal
@@ -520,7 +520,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             margin = SafeMath.div(10**38, margin);
 
             emit Trade(
-                sentAddresses[1],                               // trader
+                sentAddresses[1],                               // user (trader)
                 loanParamsLocal.collateralToken,                // baseToken
                 loanParamsLocal.loanToken,                      // quoteToken
                 sentAddresses[0],                               // lender
