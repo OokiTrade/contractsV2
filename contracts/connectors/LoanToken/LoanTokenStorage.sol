@@ -31,34 +31,6 @@ contract LoanTokenStorage is LoanTokenBase {
         uint256 amount;
     }
 
-    // topic: 0x86e15dd78cd784ab7788bcf5b96b9395e86030e048e5faedcfe752c700f6157e
-    event Borrow(
-        address indexed borrower,
-        uint256 borrowAmount,
-        uint256 interestRate,
-        address collateralTokenAddress,
-        address tradeTokenToFillAddress,
-        bool withdrawOnOpen
-    );
-
-    // topic: 0x85dfc0033a3e5b3b9b3151bd779c1f9b855d66b83ff5bb79283b68d82e8e5b73
-    event Repay(
-        bytes32 indexed loanOrderHash,
-        address indexed borrower,
-        address closer,
-        uint256 amount,
-        bool isLiquidation
-    );
-
-    // topic: 0x68e1caf97c4c29c1ac46024e9590f80b7a1f690d393703879cf66eea4e1e8421
-    event Claim(
-        address indexed claimant,
-        uint256 tokenAmount,
-        uint256 assetAmount,
-        uint256 remainingTokenAmount,
-        uint256 price
-    );
-
     bool internal isInitialized_ = false;
 
     address public tokenizedRegistry;
