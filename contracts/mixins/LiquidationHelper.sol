@@ -34,7 +34,7 @@ contract LiquidationHelper is State {
 
         // maxLiquidatable = ((1 + desiredMargin)*principal - collateralToLoanRate*collateral) / (desiredMargin - 0.05)
         maxLiquidatable = desiredMargin
-            .add(10*20)
+            .add(10**20)
             .mul(principal)
             .div(10**20);
         maxLiquidatable = maxLiquidatable
@@ -44,24 +44,24 @@ contract LiquidationHelper is State {
                     .div(10**18)
             );
         maxLiquidatable = maxLiquidatable
+            .mul(10**20)
             .div(
                 desiredMargin
                     .sub(incentivePercent)
-            )
-            .mul(10**20);
+            );
         if (maxLiquidatable > principal) {
             maxLiquidatable = principal;
         }
 
+        // maxSeizable = maxLiquidatable * (1 + incentivePercent) / collateralToLoanRate
         maxSeizable = maxLiquidatable
-            .mul(collateralToLoanRate);
-        maxSeizable = maxSeizable
             .mul(
                 incentivePercent
-                    .add(10*20)
+                    .add(10**20)
             );
         maxSeizable = maxSeizable
-            .div(10**38);
+            .div(collateralToLoanRate)
+            .div(100);
         if (maxSeizable > collateral) {
             maxSeizable = collateral;
         }

@@ -7,66 +7,25 @@ pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
 import "./AdvancedToken.sol";
-import "./ProtocolLike.sol";
-import "./FeedsLike.sol";
+import "./interfaces/ProtocolLike.sol";
+import "./interfaces/FeedsLike.sol";
+import "../gastoken/GasTokenUser.sol";
 
 
-contract LegacyBZxObjects {
-    struct LoanOrder {
-        address loanTokenAddress;
-        address interestTokenAddress;
-        address collateralTokenAddress;
-        address oracleAddress;
-        uint256 loanTokenAmount;
-        uint256 interestAmount;
-        uint256 initialMarginAmount;
-        uint256 maintenanceMarginAmount;
-        uint256 maxDurationUnixTimestampSec;
-        bytes32 loanOrderHash;
-    }
-
-    struct LoanPosition {
-        address trader;
-        address collateralTokenAddressFilled;
-        address positionTokenAddressFilled;
-        uint256 loanTokenAmountFilled;
-        uint256 loanTokenAmountUsed;
-        uint256 collateralTokenAmountFilled;
-        uint256 positionTokenAmountFilled;
-        uint256 loanStartUnixTimestampSec;
-        uint256 loanEndUnixTimestampSec;
-        bool active;
-        uint256 positionId;
-    }
-}
-
-interface LegacyBZxLike {
-    function payInterestForOracle(
-        address oracleAddress,
-        address interestTokenAddress)
-        external
-        returns (uint256);
-
-    function getLenderInterestForOracle(
-        address lender,
-        address oracleAddress,
-        address interestTokenAddress)
-        external
-        view
-        returns (
-            uint256 interestPaid,
-            uint256 interestPaidDate,
-            uint256 interestOwedPerDay,
-            uint256 interestUnPaid);
-}
-
-contract LoanTokenLogicStandard is AdvancedToken {
+contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
     using SafeMath for uint256;
 
     address internal target_;
 
     uint256 public constant VERSION = 5;
     address internal constant arbitraryCaller = 0x000F400e6818158D541C3EBE45FE3AA0d47372FF;
+
+    //address public constant bZxContract = 0xAbd9372723C735D426D0a760D047206Fe115ee6d; // mainnet
+    //address public constant wethToken = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // mainnet
+
+    address public constant bZxContract = 0xAbd9372723C735D426D0a760D047206Fe115ee6d; // kovan
+    address public constant wethToken = 0xd0A1E359811322d97991E03f863a0C30C2cF029C; // kovan
+
 
     function()
         external
@@ -124,10 +83,10 @@ contract LoanTokenLogicStandard is AdvancedToken {
         // save before balances
         uint256 beforeEtherBalance = address(this).balance.sub(msg.value);
         uint256 beforeAssetsBalance = _underlyingBalance()
-            .add(totalAssetBorrows());
+            .add(totalAssetBorrow());
 
         // lock totalAssetSupply for duration of flash loan
-        burntTokenReserved = beforeAssetsBalance;
+        _flTotalAssetSupply = beforeAssetsBalance;
 
         // transfer assets to calling contract
         if (borrowAmount != 0) {
@@ -152,13 +111,13 @@ contract LoanTokenLogicStandard is AdvancedToken {
         require(success, "call failed");
 
         // unlock totalAssetSupply
-        burntTokenReserved = 0;
+        _flTotalAssetSupply = 0;
 
         // verifies return of flash loan
         require(
             address(this).balance >= beforeEtherBalance &&
             _underlyingBalance()
-                .add(totalAssetBorrows()) >= beforeAssetsBalance,
+                .add(totalAssetBorrow()) >= beforeAssetsBalance,
             "40"
         );
 
@@ -177,6 +136,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         bytes memory /*loanDataBytes*/) // arbitrary order data (for future use)
         public
         payable
+        usesGasToken
         returns (uint256, uint256) // returns new principal and new collateral added to loan
     {
         require(withdrawAmount != 0, "6");
@@ -194,36 +154,34 @@ contract LoanTokenLogicStandard is AdvancedToken {
 
         _settleInterest();
 
+        address[4] memory sentAddresses;
         uint256[5] memory sentAmounts;
+
+        sentAddresses[0] = address(this); // lender
+        sentAddresses[1] = borrower;
+        sentAddresses[2] = receiver;
+        //sentAddresses[3] = address(0); // manager
 
         sentAmounts[1] = withdrawAmount;
 
         // interestRate, interestInitialAmount, borrowAmount (newBorrowAmount)
         (sentAmounts[0], sentAmounts[2], sentAmounts[1]) = _getInterestRateAndBorrowAmount(
             sentAmounts[1],
-            _totalAssetSupplies(0), // interest is settled above
+            _totalAssetSupply(0), // interest is settled above
             initialLoanDuration
         );
+
+        //sentAmounts[3] = 0; // loanTokenSent
+        sentAmounts[4] = collateralTokenSent;
 
         return _borrowOrTrade(
             loanId,
             withdrawAmount,
             2 * 10**18, // leverageAmount (translates to 150% margin for a Torque loan)
             collateralTokenAddress,
-            [
-                address(this), // lender
-                borrower,
-                receiver,
-                address(0) // manager
-            ],
-            [
-                sentAmounts[0],         // interestRate
-                sentAmounts[1],
-                sentAmounts[2],         // interestInitialAmount
-                0,                      // loanTokenSent
-                collateralTokenSent
-            ],
-            ""                          // loanDataBytes
+            sentAddresses,
+            sentAmounts,
+            "" // loanDataBytes
         );
     }
 
@@ -239,6 +197,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         bytes memory loanDataBytes)     // arbitrary order data
         public
         payable
+        usesGasToken
         returns (uint256, uint256) // returns new principal and new collateral added to trade
     {
         _checkPause();
@@ -481,7 +440,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
             (,interestUnPaid) = _getAllInterest();
         }
 
-        return _tokenPrice(_totalAssetSupplies(interestUnPaid));
+        return _tokenPrice(_totalAssetSupply(interestUnPaid));
     }
 
     function checkpointPrice(
@@ -498,8 +457,8 @@ contract LoanTokenLogicStandard is AdvancedToken {
         view
         returns (uint256)
     {
-        uint256 totalSupply = _totalAssetSupplies(0);
-        uint256 totalBorrow = totalAssetBorrows();
+        uint256 totalSupply = _totalAssetSupply(0);
+        uint256 totalBorrow = totalAssetBorrow();
         if (totalSupply > totalBorrow) {
             return totalSupply.sub(totalBorrow);
         }
@@ -510,7 +469,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         view
         returns (uint256)
     {
-        return _avgBorrowInterestRate(totalAssetBorrows());
+        return _avgBorrowInterestRate(totalAssetBorrow());
     }
 
     // the minimum rate the next base protocol borrower will receive for variable-rate loans
@@ -519,10 +478,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         view
         returns (uint256)
     {
-        return _nextBorrowInterestRate(
-            0,              // borrowAmount
-            false           // useFixedInterestModel
-        );
+        return _nextBorrowInterestRate(0);
     }
 
     function nextBorrowInterestRate(
@@ -531,23 +487,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         view
         returns (uint256)
     {
-        return _nextBorrowInterestRate(
-            borrowAmount,
-            false           // useFixedInterestModel
-        );
-    }
-
-    function nextBorrowInterestRateWithOption(
-        uint256 borrowAmount,
-        bool useFixedInterestModel)
-        public
-        view
-        returns (uint256)
-    {
-        return _nextBorrowInterestRate(
-            borrowAmount,
-            useFixedInterestModel
-        );
+        return _nextBorrowInterestRate(borrowAmount);
     }
 
     // interest that lenders are currently receiving when supplying to the pool
@@ -556,7 +496,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         view
         returns (uint256)
     {
-        return totalSupplyInterestRate(_totalAssetSupplies(0));
+        return totalSupplyInterestRate(_totalAssetSupply(0));
     }
 
     function nextSupplyInterestRate(
@@ -565,7 +505,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         view
         returns (uint256)
     {
-        return totalSupplyInterestRate(_totalAssetSupplies(0).add(supplyAmount));
+        return totalSupplyInterestRate(_totalAssetSupply(0).add(supplyAmount));
     }
 
     function totalSupplyInterestRate(
@@ -574,7 +514,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         view
         returns (uint256)
     {
-        uint256 assetBorrow = totalAssetBorrows();
+        uint256 assetBorrow = totalAssetBorrow();
         if (assetBorrow != 0) {
             return _supplyInterestRate(
                 assetBorrow,
@@ -583,7 +523,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         }
     }
 
-    function totalAssetBorrows()
+    function totalAssetBorrow()
         public
         view
         returns (uint256)
@@ -591,18 +531,10 @@ contract LoanTokenLogicStandard is AdvancedToken {
         return ProtocolLike(bZxContract).getTotalPrincipal(
             address(this),
             loanTokenAddress
-        ).add(totalAssetBorrow);
+        );
     }
 
     function totalAssetSupply()
-        public
-        view
-        returns (uint256)
-    {
-        return totalAssetSupplies();
-    }
-
-    function totalAssetSupplies()
         public
         view
         returns (uint256)
@@ -612,7 +544,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
             (,interestUnPaid) = _getAllInterest();
         }
 
-        return _totalAssetSupplies(interestUnPaid);
+        return _totalAssetSupply(interestUnPaid);
     }
 
     function getMaxEscrowAmount(
@@ -691,16 +623,17 @@ contract LoanTokenLogicStandard is AdvancedToken {
         returns (uint256 depositAmount)
     {
         if (borrowAmount != 0) {
-            // adjust value since interest is also borrowed
-            borrowAmount = borrowAmount
-                .mul(_getTargetNextRateMultiplierValue(initialLoanDuration))
-                .div(10**22);
+            (,,uint256 newBorrowAmount) = _getInterestRateAndBorrowAmount(
+                borrowAmount,
+                totalAssetSupply(),
+                initialLoanDuration
+            );
 
-            if (borrowAmount <= _underlyingBalance()) {
+            if (newBorrowAmount <= _underlyingBalance()) {
                 return ProtocolLike(bZxContract).getRequiredCollateral(
                     loanTokenAddress,
                     collateralTokenAddress != address(0) ? collateralTokenAddress : wethToken,
-                    borrowAmount,
+                    newBorrowAmount,
                     50 * 10**18, // initialMargin
                     true // isTorqueLoan
                 ).add(10); // some dust to compensate for rounding errors
@@ -725,10 +658,11 @@ contract LoanTokenLogicStandard is AdvancedToken {
                 true // isTorqueLoan
             );
 
-            // adjust value since interest is also borrowed
-            borrowAmount = borrowAmount
-                .mul(10**22)
-                .div(_getTargetNextRateMultiplierValue(initialLoanDuration));
+            (,,borrowAmount) = _getInterestRateAndBorrowAmount(
+                borrowAmount,
+                totalAssetSupply(),
+                initialLoanDuration
+            );
 
             if (borrowAmount > _underlyingBalance()) {
                 borrowAmount = 0;
@@ -749,7 +683,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
 
         _settleInterest();
 
-        uint256 currentPrice = _tokenPrice(_totalAssetSupplies(0));
+        uint256 currentPrice = _tokenPrice(_totalAssetSupply(0));
         mintAmount = depositAmount
             .mul(10**18)
             .div(currentPrice);
@@ -782,7 +716,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
 
         _settleInterest();
 
-        uint256 currentPrice = _tokenPrice(_totalAssetSupplies(0));
+        uint256 currentPrice = _tokenPrice(_totalAssetSupply(0));
 
         uint256 loanAmountOwed = burnAmount
             .mul(currentPrice)
@@ -806,12 +740,6 @@ contract LoanTokenLogicStandard is AdvancedToken {
     {
         if (lastSettleTime_ != block.timestamp) {
             ProtocolLike(bZxContract).withdrawAccruedInterest(
-                loanTokenAddress
-            );
-
-            // legacy interest handling
-            _getLegacyProtocol().payInterestForOracle(
-                bZxOracle,
                 loanTokenAddress
             );
 
@@ -842,30 +770,6 @@ contract LoanTokenLogicStandard is AdvancedToken {
         }
     }
 
-    function _getTargetNextRateMultiplierValue(
-        uint256 initialLoanDuration)
-        internal
-        view
-        returns (uint256)
-    {
-        uint256 thisBaseRate;
-        uint256 thisRateMultiplier;
-        //keccak256("iToken_FixedInterestBaseRate")
-        //keccak256("iToken_FixedInterestRateMultiplier")
-        assembly {
-            thisBaseRate := sload(0x185a40c6b6d3f849f72c71ea950323d21149c27a9d90f7dc5e5ea2d332edcf7f)
-            thisRateMultiplier := sload(0x9ff54bc0049f5eab56ca7cd14591be3f7ed6355b856d01e3770305c74a004ea2)
-        }
-
-        return thisRateMultiplier
-            .mul(80 ether)
-            .div(10**20)
-            .add(thisBaseRate)
-            .mul(initialLoanDuration)
-            .div(315360) // 365 * 86400 / 100
-            .add(10**22);
-    }
-
     function _getInterestRateAndBorrowAmount(
         uint256 borrowAmount,
         uint256 assetSupply,
@@ -876,8 +780,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
     {
         interestRate = _nextBorrowInterestRate2(
             borrowAmount,
-            assetSupply,
-            true // useFixedInterestModel
+            assetSupply
         );
 
         // newBorrowAmount = borrowAmount * 10^18 / (10^18 - interestRate * 7884000 * 10^18 / 31536000 / 10^20)
@@ -945,7 +848,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
             }
         }
 
-        bytes32 loanParamsId = loanOrderHashes[uint256(keccak256(abi.encodePacked(
+        bytes32 loanParamsId = loanParamsIds[uint256(keccak256(abi.encodePacked(
             collateralTokenAddress,
             withdrawAmount != 0 ? // isTorqueLoan
                 true :
@@ -1112,14 +1015,13 @@ contract LoanTokenLogicStandard is AdvancedToken {
         if (assetBorrow != 0 && assetSupply >= assetBorrow) {
             return _avgBorrowInterestRate(assetBorrow)
                 .mul(_utilizationRate(assetBorrow, assetSupply))
-                .mul(spreadMultiplier)
+                .mul(SafeMath.sub(10**20, ProtocolLike(bZxContract).lendingFeePercent()))
                 .div(10**40);
         }
     }
 
     function _nextBorrowInterestRate(
-        uint256 borrowAmount,
-        bool useFixedInterestModel)
+        uint256 borrowAmount)
         internal
         view
         returns (uint256)
@@ -1139,62 +1041,30 @@ contract LoanTokenLogicStandard is AdvancedToken {
 
         return _nextBorrowInterestRate2(
             borrowAmount,
-            _totalAssetSupplies(interestUnPaid),
-            useFixedInterestModel
+            _totalAssetSupply(interestUnPaid)
         );
     }
 
     function _nextBorrowInterestRate2(
         uint256 newBorrowAmount,
-        uint256 assetSupply,
-        bool /*useFixedInterestModel*/) // kept for legacy reasons since calling functions have the param (now always assumed "true")
+        uint256 assetSupply)
         internal
         view
         returns (uint256 nextRate)
     {
         uint256 utilRate = _utilizationRate(
-            totalAssetBorrows().add(newBorrowAmount),
+            totalAssetBorrow().add(newBorrowAmount),
             assetSupply
         );
 
         uint256 minRate;
         uint256 maxRate;
-        uint256 thisBaseRate;
-        uint256 thisRateMultiplier;
-
-        /*if (useFixedInterestModel) {
-            if (utilRate < 80 ether) {
-                // target 80% utilization when loan is fixed-rate and utilization is under 80%
-                utilRate = 80 ether;
-            }
-
-            //keccak256("iToken_FixedInterestBaseRate")
-            //keccak256("iToken_FixedInterestRateMultiplier")
-            assembly {
-                thisBaseRate := sload(0x185a40c6b6d3f849f72c71ea950323d21149c27a9d90f7dc5e5ea2d332edcf7f)
-                thisRateMultiplier := sload(0x9ff54bc0049f5eab56ca7cd14591be3f7ed6355b856d01e3770305c74a004ea2)
-            }
-        } else if (utilRate < 50 ether) {
-            thisBaseRate = _getLowUtilBaseRate();
-
-            //keccak256("iToken_LowUtilRateMultiplier")
-            assembly {
-                thisRateMultiplier := sload(0x2b4858b1bc9e2d14afab03340ce5f6c81b703c86a0c570653ae586534e095fb1)
-            }
-        } else {
-            thisBaseRate = baseRate;
-            thisRateMultiplier = rateMultiplier;
-        }*/
+        uint256 thisBaseRate = baseRate;
+        uint256 thisRateMultiplier = rateMultiplier;
 
         if (utilRate < 80 ether) {
-            // target 80% utilization when loan is fixed-rate and utilization is under 80%
+            // target 80% utilization when utilization is under 80%
             utilRate = 80 ether;
-        }
-        //keccak256("iToken_FixedInterestBaseRate")
-        //keccak256("iToken_FixedInterestRateMultiplier")
-        assembly {
-            thisBaseRate := sload(0x185a40c6b6d3f849f72c71ea950323d21149c27a9d90f7dc5e5ea2d332edcf7f)
-            thisRateMultiplier := sload(0x9ff54bc0049f5eab56ca7cd14591be3f7ed6355b856d01e3770305c74a004ea2)
         }
 
         if (utilRate > 90 ether) {
@@ -1237,39 +1107,16 @@ contract LoanTokenLogicStandard is AdvancedToken {
             uint256 interestOwedPerDay,
             uint256 interestUnPaid)
     {
-        // interestPaid, interestPaidDate, interestOwedPerDay, interestUnPaid, principalTotal
-        (,,interestOwedPerDay,interestUnPaid,) = ProtocolLike(bZxContract).getLenderInterestData(
+        // interestPaid, interestPaidDate, interestOwedPerDay, interestUnPaid, interestFeePercent, principalTotal
+        uint256 interestFeePercent;
+        (,,interestOwedPerDay,interestUnPaid,interestFeePercent,) = ProtocolLike(bZxContract).getLenderInterestData(
             address(this),
             loanTokenAddress
         );
 
-        // legacy interest handling
-        (,,uint256 interestOwedPerDayExtra, uint256 interestUnPaidExtra) = _getLegacyProtocol().getLenderInterestForOracle(
-            address(this),
-            bZxOracle,
-            loanTokenAddress
-        );
-        interestOwedPerDay = interestOwedPerDay
-            .add(interestOwedPerDayExtra);
         interestUnPaid = interestUnPaid
-            .add(interestUnPaidExtra);
-
-        interestUnPaid = interestUnPaid
-            .mul(spreadMultiplier)
+            .mul(SafeMath.sub(10**20, interestFeePercent))
             .div(10**20);
-    }
-
-    function _getLegacyProtocol()
-        internal
-        view
-        returns (LegacyBZxLike)
-    {
-        //keccak256("iToken_LegacyProtocolContract")
-        LegacyBZxLike bzx;
-        assembly {
-            bzx := sload(0xb63afa61a70d23f8df32ca45a46641070aaebe46fca63e7727aa8423b712a13d)
-        }
-        return bzx;
     }
 
     function _getMarginBorrowAmountAndRate(
@@ -1285,8 +1132,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
             depositAmount
                 .mul(10**20)
                 .div(initialMargin),
-            _totalAssetSupplies(0),
-            false // useFixedInterestModel
+            _totalAssetSupply(0)
         );
 
         // assumes that loan, collateral, and interest token are the same
@@ -1299,32 +1145,21 @@ contract LoanTokenLogicStandard is AdvancedToken {
             .div(initialMargin);
     }
 
-    function _totalAssetSupplies(
+    function _totalAssetSupply(
         uint256 interestUnPaid)
         internal
         view
         returns (uint256 assetSupply)
     {
         if (totalSupply_ != 0) {
-            uint256 assetsBalance = burntTokenReserved; // temporary holder when flash lending
+            uint256 assetsBalance = _flTotalAssetSupply; // temporary locked totalAssetSupply during a flash loan transaction
             if (assetsBalance == 0) {
                 assetsBalance = _underlyingBalance()
-                    .add(totalAssetBorrows());
+                    .add(totalAssetBorrow());
             }
 
             return assetsBalance
                 .add(interestUnPaid);
-        }
-    }
-
-    function _getLowUtilBaseRate()
-        internal
-        view
-        returns (uint256 lowUtilBaseRate)
-    {
-        //keccak256("iToken_LowUtilBaseRate")
-        assembly {
-            lowUtilBaseRate := sload(0x3d82e958c891799f357c1316ae5543412952ae5c423336f8929ed7458039c995)
         }
     }
 
@@ -1374,44 +1209,8 @@ contract LoanTokenLogicStandard is AdvancedToken {
         }
     }
 
-    // Called only by BZxOracle when a loan is partially or fully closed
-    // Used for backwards compatibility with bZx v1
-    function closeLoanNotifier(
-        LegacyBZxObjects.LoanOrder memory,
-        LegacyBZxObjects.LoanPosition memory,
-        address /*loanCloser*/,
-        uint256 closeAmount,
-        bool /*isLiquidation*/)
-        public
-        returns (bool)
-    {
-        require(msg.sender == ProtocolLike(bZxContract).getLegacyOracle(bZxOracle), "1");
-
-        _settleInterest();
-
-        totalAssetBorrow = totalAssetBorrow > closeAmount ?
-            totalAssetBorrow.sub(closeAmount) : 0;
-
-        return true;
-    }
 
     /* Owner-Only functions */
-
-    // once the pools are migrated, patch again with this removed
-    function tmpMigratePool(
-        address oldBZxContract,
-        address newBZxContract)
-        external
-        onlyOwner
-    {
-        bZxContract = newBZxContract;
-        bZxVault = newBZxContract;
-
-        // keccak256("iToken_LegacyProtocolContract")
-        assembly {
-            sstore(0xb63afa61a70d23f8df32ca45a46641070aaebe46fca63e7727aa8423b712a13d, oldBZxContract)
-        }
-    }
 
     function updateSettings(
         address settingsTarget,

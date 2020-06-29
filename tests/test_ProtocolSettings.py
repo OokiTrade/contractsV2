@@ -4,13 +4,14 @@ import pytest
 
 def test_setCoreParams(Constants, bzx):
 
-    bzx.setCoreParams(
-        Constants["ONE_ADDRESS"], # protocolTokenAddress
-        Constants["ONE_ADDRESS"], # priceFeeds
-        Constants["ONE_ADDRESS"]  # swapsImpl
+    bzx.setPriceFeedContract(
+        Constants["ONE_ADDRESS"]
     )
 
-    assert bzx.protocolTokenAddress() == Constants["ONE_ADDRESS"]
+    bzx.setSwapsImplContract(
+        Constants["ONE_ADDRESS"]
+    )
+
     assert bzx.priceFeeds() == Constants["ONE_ADDRESS"]
     assert bzx.swapsImpl() == Constants["ONE_ADDRESS"]
 

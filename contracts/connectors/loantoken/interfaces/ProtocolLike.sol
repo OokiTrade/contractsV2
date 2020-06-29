@@ -49,6 +49,7 @@ interface ProtocolLike {
             uint256 interestPaidDate,
             uint256 interestOwedPerDay,
             uint256 interestUnPaid,
+            uint256 interestFeePercent,
             uint256 principalTotal);
 
     function priceFeeds()
@@ -93,9 +94,8 @@ interface ProtocolLike {
         view
         returns (bool);
 
-    function getLegacyOracle(
-        address ref)
+    function lendingFeePercent()
         external
         view
-        returns (address);
+        returns (uint256);
 }

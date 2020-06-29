@@ -7,11 +7,16 @@ pragma solidity 0.5.17;
 
 
 contract ProtocolSettingsEvents {
-    event SetCoreParams(
+    event SetPriceFeedContract(
         address indexed sender,
-        address protocolTokenAddress,
-        address priceFeeds,
-        address swapsImpl
+        address oldValue,
+        address newValue
+    );
+
+    event SetSwapsImplContract(
+        address indexed sender,
+        address oldValue,
+        address newValue
     );
 
     event SetLoanPool(
@@ -62,10 +67,10 @@ contract ProtocolSettingsEvents {
         uint256 newValue
     );
 
-    event SetFeesAdmin(
+    event SetFeesController(
         address indexed sender,
-        address indexed oldAdmin,
-        address indexed newAdmin
+        address indexed oldController,
+        address indexed newController
     );
 
     event WithdrawLendingFees(

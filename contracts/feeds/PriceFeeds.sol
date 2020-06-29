@@ -5,34 +5,23 @@
 
 pragma solidity 0.5.17;
 
-//import "../openzeppelin/Math.sol";
 import "../openzeppelin/SafeMath.sol";
 import "../openzeppelin/Ownable.sol";
 import "../interfaces/IERC20.sol";
-import "../interfaces/ILoanPool.sol";
 import "../core/Constants.sol";
 
 
 interface IPriceFeedsExt {
   function latestAnswer() external view returns (int256);
-  /*function latestTimestamp() external view returns (uint256);
-  function latestRound() external view returns (uint256);
-  function getAnswer(uint256 roundId) external view returns (int256);
-  function getTimestamp(uint256 roundId) external view returns (uint256);
-
-  event AnswerUpdated(int256 indexed current, uint256 indexed roundId, uint256 timestamp);
-  event NewRound(uint256 indexed roundId, address indexed startedBy);*/
 }
 
 contract PriceFeeds is Constants, Ownable {
     using SafeMath for uint256;
 
     mapping (address => IPriceFeedsExt) public pricesFeeds;     // token => pricefeed
+    mapping (address => uint256) public decimals;               // decimals of supported tokens
 
-    mapping (address => address) public loanPools;              // loanPool => underlying
-
-    // decimals of supported tokens
-    mapping (address => uint256) public decimals;
+    uint256 public protocolTokenEthPrice = 0.0002 ether;
 
     constructor()
         public
@@ -49,27 +38,10 @@ contract PriceFeeds is Constants, Ownable {
         view
         returns (uint256 rate, uint256 precision)
     {
-        uint256 sourcePoolRate;
-        (sourceToken,,sourcePoolRate) = _underlyingConversion(sourceToken, 0);
-
-        uint256 destPoolRate;
-        (destToken,,destPoolRate) = _underlyingConversion(destToken, 0);
-
-        (rate, precision) = _queryRate(
+        return _queryRate(
             sourceToken,
             destToken
         );
-
-        if (sourcePoolRate != 0) {
-            rate = rate
-                .mul(10**18)
-                .div(sourcePoolRate);
-        }
-        if (destPoolRate != 0) {
-            rate = rate
-                .mul(10**18)
-                .div(destPoolRate);
-        }
     }
 
     function queryPrecision(
@@ -79,14 +51,9 @@ contract PriceFeeds is Constants, Ownable {
         view
         returns (uint256)
     {
-        if (sourceToken != destToken) {
-            (sourceToken,,) = _underlyingConversion(sourceToken, 0);
-            (destToken,,) = _underlyingConversion(destToken, 0);
-
-            return _getDecimalPrecision(sourceToken, destToken);
-        } else {
-            return 10**18;
-        }
+        return sourceToken != destToken ?
+            _getDecimalPrecision(sourceToken, destToken) :
+            10**18;
     }
 
     function queryReturn(
@@ -97,10 +64,6 @@ contract PriceFeeds is Constants, Ownable {
         view
         returns (uint256 destAmount)
     {
-        uint256 destPoolRate;
-        (sourceToken,sourceAmount,) = _underlyingConversion(sourceToken, sourceAmount);
-        (destToken,,destPoolRate) = _underlyingConversion(destToken, 0);
-
         (uint256 rate, uint256 precision) = _queryRate(
             sourceToken,
             destToken
@@ -109,12 +72,6 @@ contract PriceFeeds is Constants, Ownable {
         destAmount = sourceAmount
             .mul(rate)
             .div(precision);
-
-        if (destPoolRate != 0) {
-            destAmount = destAmount
-                .mul(10**18)
-                .div(destPoolRate);
-        }
     }
 
     function checkPriceDisagreement(
@@ -125,27 +82,25 @@ contract PriceFeeds is Constants, Ownable {
         uint256 maxSlippage)
         public
         view
+        returns (uint256 sourceToDestSwapRate)
     {
-        (sourceToken, sourceAmount,) = _underlyingConversion(sourceToken, sourceAmount);
-        (destToken, destAmount,) = _underlyingConversion(destToken, destAmount);
-
         (uint256 rate, uint256 precision) = _queryRate(
             sourceToken,
             destToken
         );
 
-        uint256 actualRate = destAmount
+        sourceToDestSwapRate = destAmount
             .mul(precision)
             .div(sourceAmount);
 
-        uint256 spreadValue = actualRate > rate ?
-            actualRate - rate :
-            rate - actualRate;
+        uint256 spreadValue = sourceToDestSwapRate > rate ?
+            sourceToDestSwapRate - rate :
+            rate - sourceToDestSwapRate;
 
         if (spreadValue != 0) {
             spreadValue = spreadValue
                 .mul(10**20)
-                .div(actualRate);
+                .div(sourceToDestSwapRate);
 
             require(
                 spreadValue <= maxSlippage,
@@ -161,8 +116,6 @@ contract PriceFeeds is Constants, Ownable {
         view
         returns (uint256 ethAmount)
     {
-        (tokenAddress, amount,) = _underlyingConversion(tokenAddress, amount);
-
         if (tokenAddress == address(wethToken)) {
             ethAmount = amount;
         } else {
@@ -186,9 +139,6 @@ contract PriceFeeds is Constants, Ownable {
         view
         returns (uint256 maxDrawdown)
     {
-        uint256 collateralPoolRate;
-        (collateralToken, collateralAmount, collateralPoolRate) = _underlyingConversion(collateralToken, collateralAmount);
-
         uint256 loanToCollateralAmount;
         if (collateralToken == loanToken) {
             loanToCollateralAmount = loanAmount;
@@ -212,12 +162,6 @@ contract PriceFeeds is Constants, Ownable {
         maxDrawdown = collateralAmount > combined ?
             collateralAmount - combined :
             0;
-
-        if (maxDrawdown != 0 && collateralPoolRate != 0) {
-            maxDrawdown = maxDrawdown
-                .mul(10**18)
-                .div(collateralPoolRate);
-        }
     }
 
     function getCurrentMarginAndCollateralSize(
@@ -229,9 +173,6 @@ contract PriceFeeds is Constants, Ownable {
         view
         returns (uint256 currentMargin, uint256 collateralInEthAmount)
     {
-        //(loanToken, loanAmount,) = _underlyingConversion(loanToken, loanAmount); <-- no support for loaning iTokens
-        (collateralToken, collateralAmount,) = _underlyingConversion(collateralToken, collateralAmount);
-
         (currentMargin,) = getCurrentMargin(
             loanToken,
             collateralToken,
@@ -254,12 +195,6 @@ contract PriceFeeds is Constants, Ownable {
         view
         returns (uint256 currentMargin, uint256 collateralToLoanRate)
     {
-        /*uint256 loanPoolRate;
-        (loanToken,,loanPoolRate) = _underlyingConversion(loanToken, 0);*/
-
-        uint256 collateralPoolRate;
-        (collateralToken,,collateralPoolRate) = _underlyingConversion(collateralToken, 0);
-
         uint256 collateralToLoanAmount;
         if (collateralToken == loanToken) {
             collateralToLoanAmount = collateralAmount;
@@ -294,17 +229,6 @@ contract PriceFeeds is Constants, Ownable {
                 collateralToLoanRate
             );
         }
-
-        /*if (loanPoolRate != 0) {
-            collateralToLoanRate = collateralToLoanRate
-                .mul(10**18)
-                .div(loanPoolRate);
-        }*/
-        if (collateralPoolRate != 0) {
-            collateralToLoanRate = collateralToLoanRate
-                .mul(10**18)
-                .div(collateralPoolRate);
-        }
     }
 
     function shouldLiquidate(
@@ -331,6 +255,15 @@ contract PriceFeeds is Constants, Ownable {
     * Owner functions
     */
 
+    function setProtocolTokenEthPrice(
+        uint256 newPrice)
+        external
+        onlyOwner
+    {
+        require(newPrice != 0, "invalid price");
+        protocolTokenEthPrice = newPrice;
+    }
+
     function setPriceFeed(
         address[] calldata tokens,
         IPriceFeedsExt[] calldata feeds)
@@ -341,19 +274,6 @@ contract PriceFeeds is Constants, Ownable {
 
         for (uint256 i = 0; i < tokens.length; i++) {
             pricesFeeds[tokens[i]] = feeds[i];
-        }
-    }
-
-    function setLoanPool(
-        address[] calldata pools,
-        address[] calldata assets)
-        external
-        onlyOwner
-    {
-        require(pools.length == assets.length, "count mismatch");
-
-        for (uint256 i = 0; i < pools.length; i++) {
-            loanPools[pools[i]] = assets[i];
         }
     }
 
@@ -380,23 +300,27 @@ contract PriceFeeds is Constants, Ownable {
     {
         if (sourceToken != destToken) {
             uint256 sourceRate;
-            if (sourceToken != address(wethToken)) {
+            if (sourceToken != address(wethToken) && sourceToken != protocolTokenAddress) {
                 IPriceFeedsExt _sourceFeed = pricesFeeds[sourceToken];
                 require(address(_sourceFeed) != address(0), "unsupported src feed");
                 sourceRate = uint256(_sourceFeed.latestAnswer());
                 require(sourceRate != 0 && (sourceRate >> 128) == 0, "price error");
             } else {
-                sourceRate = 10**18;
+                sourceRate = sourceToken == protocolTokenAddress ?
+                    protocolTokenEthPrice :
+                    10**18;
             }
 
             uint256 destRate;
-            if (destToken != address(wethToken)) {
+            if (destToken != address(wethToken) && destToken != protocolTokenAddress) {
                 IPriceFeedsExt _destFeed = pricesFeeds[destToken];
                 require(address(_destFeed) != address(0), "unsupported dst feed");
                 destRate = uint256(_destFeed.latestAnswer());
                 require(destRate != 0 && (destRate >> 128) == 0, "price error");
             } else {
-                destRate = 10**18;
+                destRate = destToken == protocolTokenAddress ?
+                    protocolTokenEthPrice :
+                    10**18;
             }
 
             rate = sourceRate
@@ -408,27 +332,6 @@ contract PriceFeeds is Constants, Ownable {
             rate = 10**18;
             precision = 10**18;
         }
-    }
-
-    function _underlyingConversion(
-        address asset,
-        uint256 assetAmount)
-        internal
-        view
-        returns (address, uint256, uint256)
-    {
-        uint256 rate;
-        address _underlying = loanPools[asset];
-        if (_underlying != address(0)) {
-            rate = ILoanPool(asset).tokenPrice();
-            if (assetAmount != 0) {
-                assetAmount = assetAmount
-                    .mul(rate)
-                    .div(10**18);
-            }
-            asset = _underlying;
-        }
-        return (asset, assetAmount, rate);
     }
 
     function _getDecimalPrecision(

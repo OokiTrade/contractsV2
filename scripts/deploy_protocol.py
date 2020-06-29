@@ -95,6 +95,8 @@ def deployProtocol():
                         "0xd0A1E359811322d97991E03f863a0C30C2cF029C", # WETH
                         "0xC4375B7De8af5a38a93548eb8453a498222C4fF2", # SAI
                         "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa", # DAI
+                        "0xad67cB4d63C9da94AcA37fDF2761AaDF780ff4a2", # KNC
+                        "0xe3e682A8Fc7EFec410E4099cc09EfCC0743C634a"  # BZRX
                     ]
                 )
 
@@ -103,25 +105,13 @@ def deployProtocol():
                     [
                         "0xC4375B7De8af5a38a93548eb8453a498222C4fF2", # SAI
                         "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa", # DAI
+                        "0xad67cB4d63C9da94AcA37fDF2761AaDF780ff4a2"  # KNC
                     ],
                     [
                         "0x6F47077D3B6645Cb6fb7A29D280277EC1e5fFD90", # SAI - (sharing DAI feed)
                         "0x6F47077D3B6645Cb6fb7A29D280277EC1e5fFD90", # DAI
+                        "0x0893AaF58f62279909F9F6FF2E5642f53342e77F"  # KNC
                     ],
-                )
-
-                print("Calling setLoanPool.")
-                feeds.setLoanPool(
-                    [
-                        "0x54BE07007C680bA087B3fcD8e675d1c929B6aAF5", # iETH
-                        "0xA1e58F3B1927743393b25f261471E1f2D3D9f0F6", # iSAI
-                        "0x6c1E2B0f67e00c06c8e2BE7Dc681Ab785163fF4D", # iDAI
-                    ],
-                    [
-                        "0xd0A1E359811322d97991E03f863a0C30C2cF029C", # WETH
-                        "0xC4375B7De8af5a38a93548eb8453a498222C4fF2", # SAI
-                        "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa", # DAI
-                    ]
                 )
             elif thisNetwork == "sandbox":
                 feeds = acct.deploy(PriceFeeds)
@@ -141,7 +131,8 @@ def deployProtocol():
                         "0x514910771af9ca656af840dff83e8264ecf986ca", # LINK
                         "0x57ab1ec28d129707052df4df418d58a2d46d5f51", # SUSD
                         "0x6b175474e89094c44da98b954eedeac495271d0f", # DAI
-                        "0xdac17f958d2ee523a2206206994597c13d831ec7"  # USDT (Tether)
+                        "0xdac17f958d2ee523a2206206994597c13d831ec7", # USDT (Tether)
+                        "0x1c74cFF0376FB4031Cd7492cD6dB2D66c3f2c6B9"  # BZRX
                     ]
                 )
 
@@ -159,7 +150,8 @@ def deployProtocol():
                         "0x514910771af9ca656af840dff83e8264ecf986ca", # LINK
                         "0x57ab1ec28d129707052df4df418d58a2d46d5f51", # SUSD
                         "0x6b175474e89094c44da98b954eedeac495271d0f", # DAI
-                        "0xdac17f958d2ee523a2206206994597c13d831ec7"  # USDT (Tether)
+                        "0xdac17f958d2ee523a2206206994597c13d831ec7", # USDT (Tether)
+                        "0xA417221ef64b1549575C977764E651c9FAB50141"  # Fast Gas / Gwei
                     ],
                     [
                         "0xdE54467873c3BCAA76421061036053e371721708", # USDC
@@ -173,41 +165,11 @@ def deployProtocol():
                         "0xeCfA53A8bdA4F0c4dd39c55CC8deF3757aCFDD07", # LINK
                         "0x6d626Ff97f0E89F6f983dE425dc5B24A18DE26Ea", # SUSD
                         "0x037E8F2125bF532F3e228991e051c8A7253B642c", # DAI
-                        "0xa874fe207DF445ff19E7482C746C4D3fD0CB9AcE"  # USDT (Tether)
+                        "0xa874fe207DF445ff19E7482C746C4D3fD0CB9AcE", # USDT (Tether)
+                        "0xA417221ef64b1549575C977764E651c9FAB50141"  # Fast Gas / Gwei
                     ]
                 )
 
-                print("Calling setLoanPool.")
-                feeds.setLoanPool(
-                    [
-                        "0x77f973FCaF871459aa58cd81881Ce453759281bC", # iETH
-                        "0xF013406A0B1d544238083DF0B93ad0d2cBE0f65f", # iUSDC
-                        "0x14094949152EDDBFcd073717200DA82fEd8dC960", # iSAI
-                        "0xBA9262578EFef8b3aFf7F60Cd629d6CC8859C8b5", # iWBTC
-                        "0x1cC9567EA2eB740824a45F8026cCF8e46973234D", # iKNC
-                        "0xBd56E9477Fc6997609Cf45F84795eFbDAC642Ff1", # iREP
-                        "0xA8b65249DE7f85494BC1fe75F525f568aa7dfa39", # iBAT
-                        "0xA7Eb2bc82df18013ecC2A6C533fc29446442EDEe", # iZRX
-                        "0x1D496da96caf6b518b133736beca85D5C4F9cBc5", # iLINK
-                        "0x49f4592e641820e928f9919ef4abd92a719b4b49", # iSUSD
-                        "0x493c57c4763932315a328269e1adad09653b9081", # iDAI
-                        "0x8326645f3aa6de6420102fdb7da9e3a91855045b"  # iUSDT
-                    ],
-                    [
-                        "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", # WETH
-                        "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", # USDC
-                        "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359", # SAI
-                        "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599", # WBTC
-                        "0xdd974d5c2e2928dea5f71b9825b8b646686bd200", # KNC
-                        "0x1985365e9f78359a9b6ad760e32412f4a445e862", # REP
-                        "0x0d8775f648430679a709e98d2b0cb6250d2887ef", # BAT
-                        "0xe41d2489571d322189246dafa5ebde1f4699f498", # ZRX
-                        "0x514910771af9ca656af840dff83e8264ecf986ca", # LINK
-                        "0x57ab1ec28d129707052df4df418d58a2d46d5f51", # SUSD
-                        "0x6b175474e89094c44da98b954eedeac495271d0f", # DAI
-                        "0xdac17f958d2ee523a2206206994597c13d831ec7"  # USDT (Tether)
-                    ]
-                )
     else:
         if "PriceFeeds" in addresses[thisNetwork]:
             feeds = Contract.from_abi("feeds", address=addresses[thisNetwork].PriceFeeds, abi=PriceFeeds.abi, owner=acct)
@@ -229,6 +191,7 @@ def deployProtocol():
             raise ValueError('SwapsImpl deployment missing!')
 
 
+    '''
     ## ProtocolMigration
     if deploys.ProtocolMigration is True:
         print("Deploying ProtocolMigration.")
@@ -269,6 +232,7 @@ def deployProtocol():
                     "0x7bc672a622620d531f9eb30de89daec31a4240fa",
                 ]
             )
+    '''
 
     ## ProtocolSettings
     if deploys.ProtocolSettings is True:
@@ -277,32 +241,30 @@ def deployProtocol():
         print("Calling replaceContract.")
         bzx.replaceContract(settings.address)
 
-        print("Calling setCoreParams.")
-        if thisNetwork == "sandbox":
-            bzx.setCoreParams(
-                "0x1c74cFF0376FB4031Cd7492cD6dB2D66c3f2c6B9", # protocolTokenAddress
-                feeds.address, # priceFeeds
-                swaps.address  # swapsImpl
-            )
-        else:
-            bzx.setCoreParams(
-                addresses[thisNetwork]["BZRXTokenAddress"], # protocolTokenAddress
-                feeds.address, # priceFeeds
-                swaps.address  # swapsImpl
-            )
+        print("Calling setPriceFeedContract.")
+        bzx.setPriceFeedContract(
+            feeds.address # priceFeeds
+        )
+
+        print("Calling setSwapsImplContract.")
+        bzx.setSwapsImplContract(
+            swaps.address  # swapsImpl
+        )
 
         if thisNetwork == "kovan":
             print("Calling setLoanPool.")
             bzx.setLoanPool(
                 [
-                    "0x54BE07007C680bA087B3fcD8e675d1c929B6aAF5", # iETH
+                    "0x0afBFCe9DB35FFd1dFdF144A788fa196FD08EFe9", # iETH
                     "0xA1e58F3B1927743393b25f261471E1f2D3D9f0F6", # iSAI
-                    "0x6c1E2B0f67e00c06c8e2BE7Dc681Ab785163fF4D", # iDAI
+                    "0xd40C0e7230c5bde65B61B5EDDc3E973f76Aff252", # iDAI
+                    "0x988F40e4B07aC9b5e78533282Ba14a57440827e8"  # iKNC
                 ],
                 [
                     "0xd0A1E359811322d97991E03f863a0C30C2cF029C", # WETH
                     "0xC4375B7De8af5a38a93548eb8453a498222C4fF2", # SAI
                     "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa", # DAI
+                    "0xad67cB4d63C9da94AcA37fDF2761AaDF780ff4a2"  # KNC
                 ]
             )
 
@@ -312,8 +274,11 @@ def deployProtocol():
                     "0xd0A1E359811322d97991E03f863a0C30C2cF029C", # WETH
                     "0xC4375B7De8af5a38a93548eb8453a498222C4fF2", # SAI
                     "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa", # DAI
+                    "0xad67cB4d63C9da94AcA37fDF2761AaDF780ff4a2", # KNC
+                    "0xe3e682A8Fc7EFec410E4099cc09EfCC0743C634a"  # BZRX
                 ],
                 [
+                    True,
                     True,
                     True,
                     True
@@ -367,7 +332,8 @@ def deployProtocol():
                     "0x514910771af9ca656af840dff83e8264ecf986ca", # LINK
                     "0x57ab1ec28d129707052df4df418d58a2d46d5f51", # SUSD
                     "0x6b175474e89094c44da98b954eedeac495271d0f", # DAI
-                    "0xdac17f958d2ee523a2206206994597c13d831ec7"  # USDT (Tether)
+                    "0xdac17f958d2ee523a2206206994597c13d831ec7", # USDT (Tether)
+                    "0x1c74cFF0376FB4031Cd7492cD6dB2D66c3f2c6B9"  # BZRX
                 ],
                 [
                     True, # WETH
@@ -386,7 +352,7 @@ def deployProtocol():
                 ]
             )
 
-        bzx.setFeesAdmin(acct.address)
+        bzx.setFeesController(acct.address)
 
     ## LoanSettings
     if deploys.LoanSettings is True:

@@ -20,9 +20,9 @@ from munch import Munch
 })'''
 
 '''
-"0x54BE07007C680bA087B3fcD8e675d1c929B6aAF5", # iETH
+"0x0afBFCe9DB35FFd1dFdF144A788fa196FD08EFe9", # iETH
 "0xA1e58F3B1927743393b25f261471E1f2D3D9f0F6", # iSAI
-"0x6c1E2B0f67e00c06c8e2BE7Dc681Ab785163fF4D", # iDAI
+"0xd40C0e7230c5bde65B61B5EDDc3E973f76Aff252", # iDAI
 
 "0xd0A1E359811322d97991E03f863a0C30C2cF029C", # WETH
 "0xC4375B7De8af5a38a93548eb8453a498222C4fF2", # SAI
@@ -44,36 +44,40 @@ def main():
 
     if thisNetwork == "kovan":
         itokens = [
-            "0x54BE07007C680bA087B3fcD8e675d1c929B6aAF5", # iETH
-            "0xA1e58F3B1927743393b25f261471E1f2D3D9f0F6", # iSAI
-            "0x6c1E2B0f67e00c06c8e2BE7Dc681Ab785163fF4D", # iDAI
+            "0x0afBFCe9DB35FFd1dFdF144A788fa196FD08EFe9", # iETH
+            #"0xA1e58F3B1927743393b25f261471E1f2D3D9f0F6", # iSAI
+            "0xd40C0e7230c5bde65B61B5EDDc3E973f76Aff252", # iDAI
+            "0x988F40e4B07aC9b5e78533282Ba14a57440827e8"  # iKNC
         ]
 
-        collateralTokensFull = [
+        '''collateralTokensFull = [
             "0xd0A1E359811322d97991E03f863a0C30C2cF029C", # WETH
-            "0xC4375B7De8af5a38a93548eb8453a498222C4fF2", # SAI
+            #"0xC4375B7De8af5a38a93548eb8453a498222C4fF2", # SAI
             "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa", # DAI
-            "0x54BE07007C680bA087B3fcD8e675d1c929B6aAF5", # iETH
-            "0xA1e58F3B1927743393b25f261471E1f2D3D9f0F6", # iSAI
-            "0x6c1E2B0f67e00c06c8e2BE7Dc681Ab785163fF4D", # iDAI
-        ]
+            "0xad67cB4d63C9da94AcA37fDF2761AaDF780ff4a2", # KNC
+            "0x0afBFCe9DB35FFd1dFdF144A788fa196FD08EFe9", # iETH
+            #"0xA1e58F3B1927743393b25f261471E1f2D3D9f0F6", # iSAI
+            "0xd40C0e7230c5bde65B61B5EDDc3E973f76Aff252", # iDAI
+            "0x988F40e4B07aC9b5e78533282Ba14a57440827e8"  # iKNC
+        ]'''
 
         collateralTokens = [
             "0xd0A1E359811322d97991E03f863a0C30C2cF029C", # WETH
-            "0xC4375B7De8af5a38a93548eb8453a498222C4fF2", # SAI
+            #"0xC4375B7De8af5a38a93548eb8453a498222C4fF2", # SAI
             "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa", # DAI
+            "0xad67cB4d63C9da94AcA37fDF2761AaDF780ff4a2", # KNC
         ]
     elif thisNetwork == "sandbox":
         itokens = [
             "0x493c57c4763932315a328269e1adad09653b9081", # iDAI
         ]
 
-        collateralTokensFull = [
+        '''collateralTokensFull = [
             "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", # WETH
             "0x6b175474e89094c44da98b954eedeac495271d0f", # DAI
             "0x77f973FCaF871459aa58cd81881Ce453759281bC", # iETH
             "0x493c57c4763932315a328269e1adad09653b9081", # iDAI
-        ]
+        ]'''
 
         collateralTokens = [
             "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", # WETH
@@ -103,7 +107,7 @@ def main():
             #loanTokenSettings = acct.deploy(LoanTokenSettingsLowerAdmin)
         elif thisNetwork == "kovan":
             loanToken = Contract.from_abi("loanToken", address=loanPoolAddress, abi=LoanTokenLogicStandard.abi, owner=acct)
-            loanTokenSettings = Contract.from_abi("loanToken", address="0xF993D090C98036Cb65Fca4C7a8328F43Bc5f535E", abi=LoanTokenSettingsLowerAdmin.abi, owner=acct)
+            loanTokenSettings = Contract.from_abi("loanToken", address="0xa1FB8F53678885D952dcdAeDf63E7fbf1F3e909f", abi=LoanTokenSettingsLowerAdmin.abi, owner=acct)
             #loanTokenSettings = acct.deploy(LoanTokenSettingsLowerAdmin)
         elif thisNetwork == "sandbox":
             loanToken = Contract.from_abi("loanToken", address=loanPoolAddress, abi=LoanTokenLogicStandard.abi, owner=acct)
@@ -130,7 +134,7 @@ def main():
         #### Setup Torque Params
         print("\nSetting up Torque for "+loanToken.address+".")
         params = []
-        for collateralToken in collateralTokensFull:
+        for collateralToken in collateralTokens: #collateralTokensFull:
             if collateralToken == loanTokenAddress or collateralToken == loanToken.address:
                 continue
             base_data_copy = base_data.copy()

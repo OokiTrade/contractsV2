@@ -8,17 +8,17 @@ pragma solidity 0.5.17;
 
 contract LoanStruct {
     struct Loan {
-        bytes32 id;
-        bytes32 loanParamsId;
-        bytes32 pendingTradesId;
-        bool active;
-        uint256 principal;
-        uint256 collateral;
-        uint256 startTimestamp;
-        uint256 endTimestamp;
-        uint256 startMargin;
-        uint256 startRate; // collateralToLoanRate
-        address borrower;
-        address lender;
+        bytes32 id;                 // id of the loan
+        bytes32 loanParamsId;       // the linked loan params id
+        bytes32 pendingTradesId;    // the linked pending trades id
+        bool active;                // if false, the loan has been fully closed
+        uint256 principal;          // total borrowed amount outstanding
+        uint256 collateral;         // total collateral escrowed for the loan
+        uint256 startTimestamp;     // loan start time
+        uint256 endTimestamp;       // for active loans, this is the expected loan end time, for in-active loans, is the actual (past) end time
+        uint256 startMargin;        // initial margin when the loan opened
+        uint256 startRate;          // reference rate when the loan opened for converting collateralToken to loanToken
+        address borrower;           // borrower of this loan
+        address lender;             // lender of this loan
     }
 }

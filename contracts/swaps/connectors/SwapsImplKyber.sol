@@ -48,14 +48,6 @@ contract SwapsImplKyber is State, ISwapsImpl {
             // re-up the Kyber spend approval if needed
             uint256 tempAllowance = IERC20(sourceTokenAddress).allowance(address(this), kyberContract);
             if (tempAllowance < maxSourceTokenAmount) {
-                if (tempAllowance != 0) {
-                    // reset approval to 0
-                    IERC20(sourceTokenAddress).safeApprove(
-                        kyberContract,
-                        0
-                    );
-                }
-
                 IERC20(sourceTokenAddress).safeApprove(
                     kyberContract,
                     uint256(-1)
@@ -97,14 +89,6 @@ contract SwapsImplKyber is State, ISwapsImpl {
         returns (uint256)
     {
         uint256 expectedRate;
-
-        if (sourceTokenAddress == address(0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee)) {
-            sourceTokenAddress = address(wethToken);
-        }
-        if (destTokenAddress == address(0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee)) {
-            destTokenAddress = address(wethToken);
-        }
-
         if (sourceTokenAddress == destTokenAddress) {
             expectedRate = 10**18;
         } else {

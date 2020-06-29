@@ -9,14 +9,6 @@ pragma experimental ABIEncoderV2;
 import "./LoanTokenLogicStandard.sol";
 
 
-interface IWethHelper {
-    function claimEther(
-        address receiver,
-        uint256 amount)
-        external
-        returns (uint256 claimAmount);
-}
-
 contract LoanTokenLogicWeth is LoanTokenLogicStandard {
 
     function mintWithEther(
@@ -44,10 +36,11 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
         );
 
         if (loanAmountPaid != 0) {
-            IWethHelper wethHelper = IWethHelper(0x3b5bDCCDFA2a0a1911984F203C19628EeB6036e0);
-
-            _safeTransfer(loanTokenAddress, address(wethHelper), loanAmountPaid, "4");
-            require(loanAmountPaid == wethHelper.claimEther(receiver, loanAmountPaid), "4");
+            IWethERC20(wethToken).withdraw(loanAmountPaid);
+            Address.sendValue(
+                receiver,
+                loanAmountPaid
+            );
         }
     }
 
@@ -79,10 +72,12 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
         require(_loanTokenAddress != collateralTokenAddress, "26");
 
         if (withdrawalAmount != 0) { // withdrawOnOpen == true
-            IWethHelper wethHelper = IWethHelper(0x3b5bDCCDFA2a0a1911984F203C19628EeB6036e0);
-            _safeTransfer(_loanTokenAddress, address(wethHelper), withdrawalAmount, "");
-            if (withdrawalAmount == wethHelper.claimEther(receiver, withdrawalAmount) &&
-                newPrincipal > withdrawalAmount) {
+            IWethERC20(_wethToken).withdraw(withdrawalAmount);
+            Address.sendValue(
+                receiver,
+                withdrawalAmount
+            );
+            if (newPrincipal > withdrawalAmount) {
                 _safeTransfer(_loanTokenAddress, bZxContract, newPrincipal - withdrawalAmount, "");
             }
         } else {

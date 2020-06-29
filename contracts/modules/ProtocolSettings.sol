@@ -9,9 +9,10 @@ pragma experimental ABIEncoderV2;
 import "../core/State.sol";
 import "../events/ProtocolSettingsEvents.sol";
 import "../openzeppelin/SafeERC20.sol";
+import "../mixins/ProtocolTokenUser.sol";
 
 
-contract ProtocolSettings is State, ProtocolSettingsEvents {
+contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
     using SafeERC20 for IERC20;
 
     constructor() public {}
@@ -27,7 +28,8 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         external
         onlyOwner
     {
-        _setTarget(this.setCoreParams.selector, target);
+        _setTarget(this.setPriceFeedContract.selector, target);
+        _setTarget(this.setSwapsImplContract.selector, target);
         _setTarget(this.setLoanPool.selector, target);
         _setTarget(this.setSupportedTokens.selector, target);
         _setTarget(this.setLendingFeePercent.selector, target);
@@ -35,35 +37,46 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         _setTarget(this.setBorrowingFeePercent.selector, target);
         _setTarget(this.setAffiliateFeePercent.selector, target);
         _setTarget(this.setLiquidationIncentivePercent.selector, target);
-        _setTarget(this.setGuaranteedInitialMargin.selector, target);
-        _setTarget(this.setGuaranteedMaintenanceMargin.selector, target);
         _setTarget(this.setMaxDisagreement.selector, target);
         _setTarget(this.setSourceBufferPercent.selector, target);
         _setTarget(this.setMaxSwapSize.selector, target);
-        _setTarget(this.setFeesAdmin.selector, target);
+        _setTarget(this.setFeesController.selector, target);
         _setTarget(this.withdrawLendingFees.selector, target);
         _setTarget(this.withdrawTradingFees.selector, target);
         _setTarget(this.withdrawBorrowingFees.selector, target);
-        _setTarget(this.getloanPoolsList.selector, target);
+        _setTarget(this.withdrawProtocolToken.selector, target);
+        _setTarget(this.depositProtocolToken.selector, target);
+        _setTarget(this.getLoanPoolsList.selector, target);
         _setTarget(this.isLoanPool.selector, target);
     }
 
-    function setCoreParams(
-        address _protocolTokenAddress,
-        address _priceFeeds,
-        address _swapsImpl)
+    function setPriceFeedContract(
+        address newContract)
         external
         onlyOwner
     {
-        protocolTokenAddress = _protocolTokenAddress;
-        priceFeeds = _priceFeeds;
-        swapsImpl = _swapsImpl;
+        address oldContract = priceFeeds;
+        priceFeeds = newContract;
 
-        emit SetCoreParams(
+        emit SetPriceFeedContract(
             msg.sender,
-            _protocolTokenAddress,
-            _priceFeeds,
-            _swapsImpl
+            oldContract,
+            newContract
+        );
+    }
+
+    function setSwapsImplContract(
+        address newContract)
+        external
+        onlyOwner
+    {
+        address oldContract = swapsImpl;
+        swapsImpl = newContract;
+
+        emit SetSwapsImplContract(
+            msg.sender,
+            oldContract,
+            newContract
         );
     }
 
@@ -196,22 +209,6 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         );
     }
 
-    function setGuaranteedInitialMargin(
-        uint256 newValue)
-        external
-        onlyOwner
-    {
-        guaranteedInitialMargin = newValue;
-    }
-
-    function setGuaranteedMaintenanceMargin(
-        uint256 newValue)
-        external
-        onlyOwner
-    {
-        guaranteedMaintenanceMargin = newValue;
-    }
-
     function setMaxDisagreement(
         uint256 newValue)
         external
@@ -243,18 +240,18 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         );
     }
 
-    function setFeesAdmin(
-        address newAdmin)
+    function setFeesController(
+        address newController)
         external
         onlyOwner
     {
-        address oldAdmin = feesAdmin;
-        feesAdmin = newAdmin;
+        address oldController = feesController;
+        feesController = newController;
 
-        emit SetFeesAdmin(
+        emit SetFeesController(
             msg.sender,
-            oldAdmin,
-            newAdmin
+            oldController,
+            newController
         );
     }
 
@@ -263,8 +260,9 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         address receiver,
         uint256 amount)
         external
+        returns (bool)
     {
-        require(msg.sender == feesAdmin, "unauthorized");
+        require(msg.sender == feesController, "unauthorized");
 
         uint256 withdrawAmount = amount;
 
@@ -272,7 +270,9 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         if (withdrawAmount > balance) {
             withdrawAmount = balance;
         }
-        require(withdrawAmount != 0, "nothing to withdraw");
+        if (withdrawAmount == 0) {
+            return false;
+        }
 
         lendingFeeTokensHeld[token] = balance
             .sub(withdrawAmount);
@@ -290,6 +290,8 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
             receiver,
             withdrawAmount
         );
+
+        return true;
     }
 
     function withdrawTradingFees(
@@ -297,8 +299,9 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         address receiver,
         uint256 amount)
         external
+        returns (bool)
     {
-        require(msg.sender == feesAdmin, "unauthorized");
+        require(msg.sender == feesController, "unauthorized");
 
         uint256 withdrawAmount = amount;
 
@@ -306,7 +309,9 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         if (withdrawAmount > balance) {
             withdrawAmount = balance;
         }
-        require(withdrawAmount != 0, "nothing to withdraw");
+        if (withdrawAmount == 0) {
+            return false;
+        }
 
         tradingFeeTokensHeld[token] = balance
             .sub(withdrawAmount);
@@ -324,6 +329,8 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
             receiver,
             withdrawAmount
         );
+
+        return true;
     }
 
     function withdrawBorrowingFees(
@@ -331,8 +338,9 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         address receiver,
         uint256 amount)
         external
+        returns (bool)
     {
-        require(msg.sender == feesAdmin, "unauthorized");
+        require(msg.sender == feesController, "unauthorized");
 
         uint256 withdrawAmount = amount;
 
@@ -340,7 +348,9 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         if (withdrawAmount > balance) {
             withdrawAmount = balance;
         }
-        require(withdrawAmount != 0, "nothing to withdraw");
+        if (withdrawAmount == 0) {
+            return false;
+        }
 
         borrowingFeeTokensHeld[token] = balance
             .sub(withdrawAmount);
@@ -358,9 +368,39 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
             receiver,
             withdrawAmount
         );
+
+        return true;
     }
 
-    function getloanPoolsList(
+    function withdrawProtocolToken(
+        address receiver,
+        uint256 amount)
+        external
+        onlyOwner
+        returns (address, bool)
+    {
+        return _withdrawProtocolToken(
+            receiver,
+            amount
+        );
+    }
+
+   function depositProtocolToken(
+        uint256 amount)
+        external
+        onlyOwner
+    {
+        protocolTokenHeld = protocolTokenHeld
+            .add(amount);
+
+        IERC20(protocolTokenAddress).safeTransferFrom(
+            msg.sender,
+            address(this),
+            amount
+        );
+    }
+
+    function getLoanPoolsList(
         uint256 start,
         uint256 count)
         external

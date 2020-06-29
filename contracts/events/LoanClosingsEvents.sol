@@ -22,17 +22,17 @@ contract LoanClosingsEvents {
         uint256 currentMargin
     );
 
-    // topic0: 0xea42d6c94db037479b045a6b4933be0ba4a5a6d54837e99abdcaa3a0a422689d
+    // topic0: 0x2ed7b29b4ca95cf3bb9a44f703872a66e6aa5e8f07b675fa9a5c124a1e5d7352
     event CloseWithSwap(
         address indexed user,
-        address indexed baseToken,
-        address indexed quoteToken,
-        address lender,
+        address indexed lender,
+        bytes32 indexed loanId,
+        address collateralToken,
+        address loanToken,
         address closer,
-        bytes32 loanId,
         uint256 positionCloseSize,
         uint256 loanCloseAmount,
-        uint256 exitPrice, // one unit of baseToken, denominated in quoteToken
+        uint256 exitPrice, // one unit of collateralToken, denominated in loanToken
         uint256 currentLeverage
     );
 

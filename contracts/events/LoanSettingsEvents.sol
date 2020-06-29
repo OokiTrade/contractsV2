@@ -34,29 +34,4 @@ contract LoanSettingsEvents {
         bytes32 indexed id,
         address indexed owner
     );
-
-    event LoanOrderSetup(
-        bytes32 indexed loanParamsId,
-        address indexed owner,
-        bool indexed isLender,
-        uint256 lockedAmount,
-        uint256 interestRate,
-        uint256 expirationTimestamp
-    );
-
-    event LoanOrderChangeAmount(
-        bytes32 indexed loanParamsId,
-        address indexed owner,
-        bool indexed isLender,
-        uint256 oldBalance,
-        uint256 newBalance
-    );
-
-    event LoanOrderChangeExpiration(
-        bytes32 indexed loanParamsId,
-        address indexed owner,
-        bool indexed isLender,
-        uint256 oldTimestamp,
-        uint256 newTimestamp
-    );
 }

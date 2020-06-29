@@ -11,6 +11,7 @@ import "../contracts/events/ProtocolSettingsEvents.sol";
 import "../contracts/events/LoanSettingsEvents.sol";
 import "../contracts/events/LoanOpeningsEvents.sol";
 import "../contracts/events/LoanClosingsEvents.sol";
+import "../contracts/events/FeesEvents.sol";
 import "../contracts/events/SwapsEvents.sol";
 
 
@@ -43,10 +44,12 @@ contract IBZx is
 
     ////// Protocol Settings //////
 
-    function setCoreParams(
-        address _protocolTokenAddress,
-        address _priceFeeds,
-        address _swapsImpl)
+    function setPriceFeedContract(
+        address newContract)
+        external;
+
+    function setSwapsImplContract(
+        address newContract)
         external;
 
     function setLoanPool(
@@ -79,14 +82,6 @@ contract IBZx is
         uint256 newAmount)
         external;
 
-    function setGuaranteedInitialMargin(
-        uint256 newAmount)
-        external;
-
-    function setGuaranteedMaintenanceMargin(
-        uint256 newAmount)
-        external;
-
     function setMaxDisagreement(
         uint256 newAmount)
         external;
@@ -99,29 +94,42 @@ contract IBZx is
         uint256 newAmount)
         external;
 
-    function setFeesAdmin(
-        address newAdmin)
+    function setFeesController(
+        address newController)
         external;
 
     function withdrawLendingFees(
         address token,
         address receiver,
         uint256 amount)
-        external;
+        external
+        returns (bool);
 
     function withdrawTradingFees(
         address token,
         address receiver,
         uint256 amount)
-        external;
+        external
+        returns (bool);
 
     function withdrawBorrowingFees(
         address token,
         address receiver,
         uint256 amount)
+        external
+        returns (bool);
+
+    function withdrawProtocolToken(
+        address receiver,
+        uint256 amount)
+        external
+        returns (address, bool);
+
+    function depositProtocolToken(
+        uint256 amount)
         external;
 
-    function getloanPoolsList(
+    function getLoanPoolsList(
         uint256 start,
         uint256 count)
         external;
@@ -140,54 +148,12 @@ contract IBZx is
         external
         returns (bytes32[] memory loanParamsIdList);
 
-    function setupOrder(
-        LoanParams calldata loanParamsLocal,
-        uint256 lockedAmount,
-        uint256 interestRate,
-        uint256 minLoanTerm,
-        uint256 maxLoanTerm,
-        uint256 expirationStartTimestamp,
-        bool isLender)
-        external
-        payable;
-
-    function setupOrderWithId(
-        bytes32 loanParamsId,
-        uint256 lockedAmount, // initial deposit
-        uint256 interestRate,
-        uint256 minLoanTerm,
-        uint256 maxLoanTerm,
-        uint256 expirationStartTimestamp,
-        bool isLender)
-        external
-        payable;
-
-    function depositToOrder(
-        bytes32 loanParamsId,
-        uint256 depositAmount,
-        bool isLender)
-        external
-        payable;
-
-    function withdrawFromOrder(
-        bytes32 loanParamsId,
-        uint256 depositAmount,
-        bool isLender)
-        external
-        payable;
-
     // Deactivates LoanParams for future loans. Active loans using it are unaffected.
     function disableLoanParams(
         bytes32[] calldata loanParamsIdList)
         external;
 
     function getLoanParams(
-        bytes32 loanParamsId)
-        external
-        view
-        returns (LoanParams memory);
-
-    function getLoanParamsBatch(
         bytes32[] calldata loanParamsIdList)
         external
         view
@@ -210,19 +176,6 @@ contract IBZx is
 
 
     ////// Loan Openings //////
-
-    function borrow(
-        bytes32 loanParamsId,
-        bytes32 loanId, // if 0, start a new loan
-        uint256 borrowAmount,
-        uint256 initialLoanDuration,
-        address lender,
-        address receiver,
-        address manager,
-        bool depositCollateral)
-        external
-        payable
-        returns (uint256);
 
     function borrowOrTradeFromPool(
         bytes32 loanParamsId,
@@ -369,6 +322,7 @@ contract IBZx is
             uint256 interestPaidDate,
             uint256 interestOwedPerDay,
             uint256 interestUnPaid,
+            uint256 interestFeePercent,
             uint256 principalTotal);
 
     function getLoanInterestData(

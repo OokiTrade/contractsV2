@@ -10,9 +10,10 @@ import "../core/State.sol";
 import "../mixins/VaultController.sol";
 import "../swaps/SwapsUser.sol";
 import "../swaps/ISwapsImpl.sol";
+import "../connectors/gastoken/GasTokenUser.sol";
 
 
-contract SwapsExternal is State, VaultController, SwapsUser {
+contract SwapsExternal is State, VaultController, SwapsUser, GasTokenUser {
 
     constructor() public {}
 
@@ -41,12 +42,17 @@ contract SwapsExternal is State, VaultController, SwapsUser {
         bytes calldata swapData)
         external
         payable
+        usesGasToken
+        nonReentrant
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
     {
         require(sourceTokenAmount != 0, "sourceTokenAmount == 0");
 
         if (msg.value != 0) {
-            require(sourceToken == address(0) || sourceToken == address(wethToken), "sourceToken mismatch");
+            if (sourceToken == address(0)) {
+                sourceToken = address(wethToken);
+            }
+            require(sourceToken == address(wethToken), "sourceToken mismatch");
             require(msg.value == sourceTokenAmount, "sourceTokenAmount mismatch");
             wethToken.deposit.value(sourceTokenAmount)();
         } else {
@@ -57,18 +63,20 @@ contract SwapsExternal is State, VaultController, SwapsUser {
             );
         }
 
-        if (destToken == address(0)) {
-            destToken = address(0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee); // Kyber ETH designation
-        }
-
         (destTokenAmountReceived, sourceTokenAmountUsed) = _swapsCall(
-            sourceToken,
-            destToken,
-            receiver,
-            returnToSender,
-            sourceTokenAmount, // minSourceTokenAmount
-            sourceTokenAmount, // maxSourceTokenAmount
-            requiredDestTokenAmount,
+            [
+                sourceToken,
+                destToken,
+                receiver,
+                returnToSender,
+                msg.sender // user
+            ],
+            [
+                sourceTokenAmount, // minSourceTokenAmount
+                sourceTokenAmount, // maxSourceTokenAmount
+                requiredDestTokenAmount
+            ],
+            0, // loanId (not tied to a specific loan)
             false, // bypassFee
             swapData
         );

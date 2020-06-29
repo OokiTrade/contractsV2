@@ -38,7 +38,7 @@ contract Ownable is Context {
      * @dev Throws if called by any account other than the owner.
      */
     modifier onlyOwner() {
-        require(isOwner(), "Ownable: caller is not the owner");
+        require(isOwner(), "unauthorized");
         _;
     }
 
@@ -47,18 +47,6 @@ contract Ownable is Context {
      */
     function isOwner() public view returns (bool) {
         return _msgSender() == _owner;
-    }
-
-    /**
-     * @dev Leaves the contract without owner. It will not be possible to call
-     * `onlyOwner` functions anymore. Can only be called by the current owner.
-     *
-     * NOTE: Renouncing ownership will leave the contract without an owner,
-     * thereby removing any functionality that is only available to the owner.
-     */
-    function renounceOwnership() public onlyOwner {
-        emit OwnershipTransferred(_owner, address(0));
-        _owner = address(0);
     }
 
     /**

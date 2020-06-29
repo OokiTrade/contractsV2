@@ -25,16 +25,22 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
         bool bypassFee,
         bytes memory loanDataBytes)
         internal
-        returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
+        returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed, uint256 sourceToDestSwapRate)
     {
         (destTokenAmountReceived, sourceTokenAmountUsed) = _swapsCall(
-            sourceToken,
-            destToken,
-            address(this), // receiver
-            address(this), // returnToSender
-            minSourceTokenAmount,
-            maxSourceTokenAmount,
-            requiredDestTokenAmount,
+            [
+                sourceToken,
+                destToken,
+                address(this), // receiver
+                address(this), // returnToSender
+                user
+            ],
+            [
+                minSourceTokenAmount,
+                maxSourceTokenAmount,
+                requiredDestTokenAmount
+            ],
+            loanId,
             bypassFee,
             loanDataBytes
         );
@@ -43,7 +49,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
         _checkSwapSize(sourceToken, sourceTokenAmountUsed);
 
         // will revert if disagreement found
-        IPriceFeeds(priceFeeds).checkPriceDisagreement(
+        sourceToDestSwapRate = IPriceFeeds(priceFeeds).checkPriceDisagreement(
             sourceToken,
             destToken,
             sourceTokenAmountUsed,
@@ -62,74 +68,67 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
     }
 
     function _swapsCall(
-        address sourceToken,
-        address destToken,
-        address receiver,
-        address returnToSender,
-        uint256 minSourceTokenAmount,
-        uint256 maxSourceTokenAmount,
-        uint256 requiredDestTokenAmount,
+        address[5] memory addrs,
+        uint256[3] memory vals,
+        bytes32 loanId,
         bool miscBool, // bypassFee
         bytes memory loanDataBytes)
         internal
         returns (uint256, uint256)
     {
-        require(minSourceTokenAmount != 0, "sourceAmount == 0");
+        //addrs[0]: sourceToken
+        //addrs[1]: destToken
+        //addrs[2]: receiver
+        //addrs[3]: returnToSender
+        //addrs[4]: user
+        //vals[0]:  minSourceTokenAmount
+        //vals[1]:  maxSourceTokenAmount
+        //vals[2]:  requiredDestTokenAmount
 
-        if (maxSourceTokenAmount == 0) {
-            maxSourceTokenAmount = minSourceTokenAmount;
+        require(vals[0] != 0, "sourceAmount == 0");
+
+        if (vals[1] == 0) {
+            vals[1] = vals[0];
         }
-        require(minSourceTokenAmount <= maxSourceTokenAmount, "sourceAmount larger than max");
+        require(vals[0] <= vals[1], "sourceAmount larger than max");
 
         uint256 destTokenAmountReceived;
         uint256 sourceTokenAmountUsed;
 
         uint256 tradingFee;
         if (!miscBool) { // bypassFee
-            if (requiredDestTokenAmount == 0) {
-                // condition: minSourceTokenAmount will always used as sourceAmount
+            if (vals[2] == 0) {
+                // condition: vals[0] will always be used as sourceAmount
 
-                tradingFee = _getTradingFee(minSourceTokenAmount);
+                tradingFee = _getTradingFee(vals[0]);
                 if (tradingFee != 0) {
                     _payTradingFee(
-                        IERC20(sourceToken),
+                        addrs[4], // user
+                        loanId,
+                        addrs[0], // sourceToken
                         tradingFee
                     );
 
-                    minSourceTokenAmount = minSourceTokenAmount
+                    vals[0] = vals[0]
                         .sub(tradingFee);
                 }
             } else {
                 // condition: unknown sourceAmount will be used
 
-                tradingFee = _getTradingFee(requiredDestTokenAmount);
+                tradingFee = _getTradingFee(vals[2]);
 
                 if (tradingFee != 0) {
-                    requiredDestTokenAmount = requiredDestTokenAmount
+                    vals[2] = vals[2]
                         .add(tradingFee);
                 }
             }
         }
 
         if (loanDataBytes.length == 0) {
-            bytes memory data = abi.encodeWithSelector(
-                ISwapsImpl(swapsImpl).internalSwap.selector,
-                sourceToken,
-                destToken,
-                receiver, // receiverAddress
-                returnToSender, // returnToSenderAddress
-                minSourceTokenAmount,
-                maxSourceTokenAmount,
-                requiredDestTokenAmount
+            (destTokenAmountReceived, sourceTokenAmountUsed) = _swapsCall_internal(
+                addrs,
+                vals
             );
-
-            // reclaiming miscBool to avoid stack too deep error
-            (miscBool, data) = swapsImpl.delegatecall(data);
-            require(miscBool, "swap failed");
-            assembly {
-                destTokenAmountReceived := mload(add(data, 32))
-                sourceTokenAmountUsed := mload(add(data, 64))
-            }
         } else {
             /*
             //keccak256("Swaps_SwapsImplZeroX")
@@ -141,14 +140,14 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
             //revert(string(loanDataBytes));
             /*
             vaultWithdraw(
-                sourceToken,
+                addrs[0], // sourceToken
                 address(zeroXConnector),
                 sourceTokenAmount
             );
             (destTokenAmountReceived, sourceTokenAmountUsed) = zeroXConnector.swap.value(msg.value)(
-                sourceToken,
-                destToken,
-                receiver,
+                addrs[0], // sourceToken
+                addrs[1], // destToken
+                addrs[2], // receiver
                 sourceTokenAmount,
                 0,
                 loanDataBytes
@@ -156,22 +155,24 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
             */
         }
 
-        if (requiredDestTokenAmount == 0) {
-            // there's no minimum destTokenAmount, but all of minSourceTokenAmount must be spent
-            require(sourceTokenAmountUsed == minSourceTokenAmount, "swap too large to fill");
+        if (vals[2] == 0) {
+            // there's no minimum destTokenAmount, but all of vals[0] (minSourceTokenAmount) must be spent
+            require(sourceTokenAmountUsed == vals[0], "swap too large to fill");
 
             if (tradingFee != 0) {
                 sourceTokenAmountUsed = sourceTokenAmountUsed
                     .add(tradingFee);
             }
         } else {
-            // there's a minimum destTokenAmount required, but sourceTokenAmountUsed won't be greater than maxSourceTokenAmount
-            require(sourceTokenAmountUsed <= maxSourceTokenAmount, "swap fill too large");
-            require(destTokenAmountReceived >= requiredDestTokenAmount, "insufficient swap liquidity");
+            // there's a minimum destTokenAmount required, but sourceTokenAmountUsed won't be greater than vals[1] (maxSourceTokenAmount)
+            require(sourceTokenAmountUsed <= vals[1], "swap fill too large");
+            require(destTokenAmountReceived >= vals[2], "insufficient swap liquidity");
 
             if (tradingFee != 0) {
                 _payTradingFee(
-                    IERC20(destToken),
+                    addrs[4], // user
+                    loanId, // loanId,
+                    addrs[1], // destToken
                     tradingFee
                 );
 
@@ -181,6 +182,33 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
         }
 
         return (destTokenAmountReceived, sourceTokenAmountUsed);
+    }
+
+    function _swapsCall_internal(
+        address[5] memory addrs,
+        uint256[3] memory vals)
+        internal
+        returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
+    {
+        bytes memory data = abi.encodeWithSelector(
+            ISwapsImpl(swapsImpl).internalSwap.selector,
+            addrs[0], // sourceToken
+            addrs[1], // destToken
+            addrs[2], // receiverAddress
+            addrs[3], // returnToSenderAddress
+            vals[0],  // minSourceTokenAmount
+            vals[1],  // maxSourceTokenAmount
+            vals[2]   // requiredDestTokenAmount
+        );
+
+        bool success;
+        (success, data) = swapsImpl.delegatecall(data);
+        require(success, "swap failed");
+
+        assembly {
+            destTokenAmountReceived := mload(add(data, 32))
+            sourceTokenAmountUsed := mload(add(data, 64))
+        }
     }
 
     function _swapsExpectedReturn(

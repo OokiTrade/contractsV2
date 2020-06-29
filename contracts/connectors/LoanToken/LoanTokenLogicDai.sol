@@ -110,8 +110,8 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
         uint256 beforeAssetsBalance = _dai.balanceOf(address(this));
 
         // lock totalAssetSupply for duration of flash loan
-        burntTokenReserved = _underlyingBalance()
-            .add(totalAssetBorrows());
+        _flTotalAssetSupply = _underlyingBalance()
+            .add(totalAssetBorrow());
 
         // transfer assets to calling contract
         if (borrowAmount != 0) {
@@ -139,7 +139,7 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
         require(success, "call failed");
 
         // unlock totalAssetSupply
-        burntTokenReserved = 0;
+        _flTotalAssetSupply = 0;
 
         // verifies return of flash loan
         require(
@@ -249,14 +249,6 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
             dsr();
     }
 
-    // can safely be called by anyone at anytime
-    /*function setupChai()
-        public
-    {
-        _getDai().approve(address(_getChai()), uint256(-1));
-        _dsrDeposit();
-    }*/
-
 
     /* Internal functions */
 
@@ -271,7 +263,7 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
 
         _settleInterest();
 
-        uint256 currentPrice = _tokenPrice(_totalAssetSupplies(0));
+        uint256 currentPrice = _tokenPrice(_totalAssetSupply(0));
         uint256 currentChaiPrice;
         IERC20 inAsset;
 
@@ -325,7 +317,7 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
 
         _settleInterest();
 
-        uint256 currentPrice = _tokenPrice(_totalAssetSupplies(0));
+        uint256 currentPrice = _tokenPrice(_totalAssetSupply(0));
 
         uint256 loanAmountOwed = burnAmount
             .mul(currentPrice)
@@ -449,6 +441,17 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
     }
 
 
+    /* Owner-Only functions */
+
+    function setupChai()
+        public
+        onlyOwner
+    {
+        _getDai().approve(address(_getChai()), uint256(-1));
+        _dsrDeposit();
+    }
+
+
     /* Internal View functions */
 
     // next supply interest adjustment
@@ -480,7 +483,7 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
 
             uint256 rate = _avgBorrowInterestRate(assetBorrow)
                 .mul(_utilRate)
-                .mul(spreadMultiplier)
+                .mul(SafeMath.sub(10**20, ProtocolLike(bZxContract).lendingFeePercent()))
                 .div(10**20);
             return rate
                 .add(_dsr)
@@ -553,28 +556,5 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
                 }
             }
         }
-    }
-
-
-    // Called only by BZxOracle when a loan is partially or fully closed
-    // Used for backwards compatibility with bZx v1
-    function closeLoanNotifier(
-        LegacyBZxObjects.LoanOrder memory,
-        LegacyBZxObjects.LoanPosition memory,
-        address /*loanCloser*/,
-        uint256 closeAmount,
-        bool /*isLiquidation*/)
-        public
-        returns (bool)
-    {
-        require(msg.sender == ProtocolLike(bZxContract).getLegacyOracle(bZxOracle), "1");
-
-        _settleInterest();
-        _dsrDeposit();
-
-        totalAssetBorrow = totalAssetBorrow > closeAmount ?
-            totalAssetBorrow.sub(closeAmount) : 0;
-
-        return true;
     }
 }

@@ -46,6 +46,20 @@ console:
     auto_suggest: true
     completions: true
 
+reports:
+    exclude_paths:
+        - contracts/testhelpers/**/*.*
+        - contracts/openzeppelin/**/*.*
+        - contracts/feeds/testnet/**/*.*
+    exclude_contracts:
+        - Address
+        - Context
+        - Ownable
+        - ReentrancyGuard
+        - SafeERC20
+        - SafeMath
+        - EnumerableBytes32Set
+
 hypothesis:
     deadline: null
     max_examples: 50

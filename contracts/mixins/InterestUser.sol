@@ -8,9 +8,10 @@ pragma solidity 0.5.17;
 import "../openzeppelin/SafeERC20.sol";
 import "../core/State.sol";
 import "../mixins/VaultController.sol";
+import "./FeesHelper.sol";
 
 
-contract InterestUser is State, VaultController {
+contract InterestUser is State, VaultController, FeesHelper {
     using SafeERC20 for IERC20;
 
     function _payInterest(
@@ -39,8 +40,12 @@ contract InterestUser is State, VaultController {
                 uint256 lendingFee = interestOwedNow
                     .mul(lendingFeePercent)
                     .div(10**20);
-                lendingFeeTokensHeld[interestToken] = lendingFeeTokensHeld[interestToken]
-                    .add(lendingFee);
+
+                _payLendingFee(
+                    lender,
+                    interestToken,
+                    lendingFee
+                );
 
                 // transfers the interest to the lender, less the interest fee
                 vaultWithdraw(

@@ -52,18 +52,7 @@ contract LoanToken is AdvancedTokenStorage {
         address _newTarget)
         internal
     {
-        require(_isContract(_newTarget), "target not a contract");
+        require(Address.isContract(_newTarget), "target not a contract");
         target_ = _newTarget;
-    }
-
-    function _isContract(
-        address addr)
-        internal
-        view
-        returns (bool)
-    {
-        uint256 size;
-        assembly { size := extcodesize(addr) }
-        return size > 0;
     }
 }

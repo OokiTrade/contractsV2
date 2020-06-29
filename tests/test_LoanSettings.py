@@ -23,8 +23,8 @@ def test_setup_removeLoanParams(Constants, bzx, accounts, DAI, WETH):
 
     loanParamsId = tx.events["LoanParamsIdSetup"][0]["id"]
 
-    loanParamsAfter = bzx.getLoanParams(loanParamsId)
-    loanParamsAfter = dict(zip(list(loanParamsAfter.keys()), loanParamsAfter))
+    loanParamsAfter = bzx.getLoanParams([loanParamsId])[0]
+    loanParamsAfter = dict(zip(list(loanParams.keys()), loanParamsAfter))
     print(loanParamsAfter)
     
     assert(loanParamsAfter["id"] != "0x0")
@@ -36,7 +36,7 @@ def test_setup_removeLoanParams(Constants, bzx, accounts, DAI, WETH):
         bzx.disableLoanParams([loanParamsId], { "from": accounts[1] })
         
     bzx.disableLoanParams([loanParamsId], { "from": accounts[0] })
-    assert(bzx.getLoanParams(loanParamsId)[0] != "0x0")
+    assert(bzx.getLoanParams([loanParamsId])[0][0] != "0x0")
 
 def test_setup_removeLoanOrder(Constants, bzx, accounts, DAI, WETH):
 
@@ -54,8 +54,8 @@ def test_setup_removeLoanOrder(Constants, bzx, accounts, DAI, WETH):
 
     loanParamsId = tx.events["LoanParamsIdSetup"][0]["id"]
 
-    loanParamsAfter = bzx.getLoanParams(loanParamsId)
-    loanParamsAfter = dict(zip(list(loanParamsAfter.keys()), loanParamsAfter))
+    loanParamsAfter = bzx.getLoanParams([loanParamsId])[0]
+    loanParamsAfter = dict(zip(list(loanParams.keys()), loanParamsAfter))
     print(loanParamsAfter)
     
     assert(loanParamsAfter["id"] != "0x0")
@@ -67,4 +67,4 @@ def test_setup_removeLoanOrder(Constants, bzx, accounts, DAI, WETH):
         bzx.disableLoanParams([loanParamsId], { "from": accounts[1] })
         
     bzx.disableLoanParams([loanParamsId], { "from": accounts[0] })
-    assert(bzx.getLoanParams(loanParamsId)[0] != "0x0")
+    assert(bzx.getLoanParams([loanParamsId])[0][0] != "0x0")

@@ -11,8 +11,8 @@ import "../events/LoanClosingsEvents.sol";
 import "../mixins/VaultController.sol";
 import "../mixins/InterestUser.sol";
 import "../mixins/LiquidationHelper.sol";
-import "../mixins/GasTokenUser.sol";
 import "../swaps/SwapsUser.sol";
+import "../connectors/gastoken/GasTokenUser.sol";
 
 
 contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUser, GasTokenUser, SwapsUser, LiquidationHelper {
@@ -47,8 +47,71 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
         uint256 closeAmount) // denominated in loanToken
         external
         payable
-        //usesGasToken
         nonReentrant
+        returns (
+            uint256 loanCloseAmount,
+            uint256 seizedAmount,
+            address seizedToken
+        )
+    {
+        return _liquidate(
+            loanId,
+            receiver,
+            closeAmount
+        );
+    }
+
+    function closeWithDeposit(
+        bytes32 loanId,
+        address receiver,
+        uint256 depositAmount) // denominated in loanToken
+        external
+        payable
+        usesGasToken
+        nonReentrant
+        returns (
+            uint256 loanCloseAmount,
+            uint256 withdrawAmount,
+            address withdrawToken
+        )
+    {
+        return _closeWithDeposit(
+            loanId,
+            receiver,
+            depositAmount
+        );
+    }
+
+    function closeWithSwap(
+        bytes32 loanId,
+        address receiver,
+        uint256 swapAmount, // denominated in collateralToken
+        bool returnTokenIsCollateral, // true: withdraws collateralToken, false: withdraws loanToken
+        bytes memory loanDataBytes)
+        public
+        usesGasToken
+        nonReentrant
+        returns (
+            uint256 loanCloseAmount,
+            uint256 withdrawAmount,
+            address withdrawToken
+        )
+    {
+        return _closeWithSwap(
+            loanId,
+            receiver,
+            swapAmount,
+            returnTokenIsCollateral,
+            loanDataBytes
+        );
+    }
+
+
+    function _liquidate(
+        bytes32 loanId,
+        address receiver,
+        uint256 closeAmount)
+        internal
         returns (
             uint256 loanCloseAmount,
             uint256 seizedAmount,
@@ -120,8 +183,9 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
         }
 
         if (loanCloseAmountLessInterest != 0) {
-            // repay remaining principal to the lender
-            _withdrawAsset(
+            // The lender always gets back an ERC20 (even WETH), so we call withdraw directly rather than
+            // use the _withdrawAsset helper function
+            vaultWithdraw(
                 loanParamsLocal.loanToken,
                 loanLocal.lender,
                 loanCloseAmountLessInterest
@@ -152,19 +216,17 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
             loanCloseAmount,
             seizedAmount,
             collateralToLoanRate,
+            0, // collateralToLoanSwapRate
             currentMargin,
             CloseTypes.Liquidation
         );
     }
 
-    function closeWithDeposit(
+    function _closeWithDeposit(
         bytes32 loanId,
         address receiver,
         uint256 depositAmount) // denominated in loanToken
-        external
-        payable
-        //usesGasToken
-        nonReentrant
+        internal
         returns (
             uint256 loanCloseAmount,
             uint256 withdrawAmount,
@@ -221,29 +283,23 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
             );
         }
 
-        _closeLoan(
-            loanLocal,
-            loanCloseAmount
-        );
-
         _finalizeClose(
             loanLocal,
             loanParamsLocal,
             loanCloseAmount,
-            withdrawAmount, // collateralCloseAmount,
+            withdrawAmount, // collateralCloseAmount
+            0, // collateralToLoanSwapRate
             CloseTypes.Deposit
         );
     }
 
-    function closeWithSwap(
+    function _closeWithSwap(
         bytes32 loanId,
         address receiver,
-        uint256 swapAmount, // denominated in collateralToken
-        bool returnTokenIsCollateral, // true: withdraws collateralToken, false: withdraws loanToken
+        uint256 swapAmount,
+        bool returnTokenIsCollateral,
         bytes memory loanDataBytes)
-        public
-        //usesGasToken
-        nonReentrant
+        internal
         returns (
             uint256 loanCloseAmount,
             uint256 withdrawAmount,
@@ -286,7 +342,8 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
 
         uint256 coveredPrincipal;
         uint256 usedCollateral;
-        (coveredPrincipal, usedCollateral, withdrawAmount) = _coverPrincipalWithSwap(
+        // swapAmount repurposed for collateralToLoanSwapRate to avoid stack too deep error
+        (coveredPrincipal, usedCollateral, withdrawAmount, swapAmount) = _coverPrincipalWithSwap(
             loanLocal,
             loanParamsLocal,
             swapAmount,
@@ -296,7 +353,7 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
         );
 
         if (loanCloseAmountLessInterest == 0) {
-            // condition: swapAmount != loanLocal.collateral && !returnTokenIsCollateral
+            // condition prior to swap: swapAmount != loanLocal.collateral && !returnTokenIsCollateral
 
             // amounts that is closed
             loanCloseAmount = coveredPrincipal;
@@ -351,16 +408,12 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
             );
         }
 
-        _closeLoan(
-            loanLocal,
-            loanCloseAmount
-        );
-
         _finalizeClose(
             loanLocal,
             loanParamsLocal,
             loanCloseAmount,
             usedCollateral,
+            swapAmount, // collateralToLoanSwapRate
             CloseTypes.Swap
         );
     }
@@ -487,9 +540,11 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
         bool returnTokenIsCollateral,
         bytes memory loanDataBytes)
         internal
-        returns (uint256 coveredPrincipal, uint256 usedCollateral, uint256 withdrawAmount)
+        returns (uint256 coveredPrincipal, uint256 usedCollateral, uint256 withdrawAmount, uint256 collateralToLoanSwapRate)
     {
-        (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed) = _doSwap(
+        uint256 destTokenAmountReceived;
+        uint256 sourceTokenAmountUsed;
+        (destTokenAmountReceived, sourceTokenAmountUsed, collateralToLoanSwapRate) = _doSwap(
             loanLocal,
             loanParamsLocal,
             swapAmount,
@@ -502,7 +557,6 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
             coveredPrincipal = principalNeeded;
 
             if (destTokenAmountReceived > coveredPrincipal) {
-
                 // better fill than expected, so send excess to borrower
                 _withdrawAsset(
                     loanParamsLocal.loanToken,
@@ -558,9 +612,9 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
         bool returnTokenIsCollateral,
         bytes memory loanDataBytes)
         internal
-        returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
+        returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed, uint256 collateralToLoanSwapRate)
     {
-        (destTokenAmountReceived, sourceTokenAmountUsed) = _loanSwap(
+        (destTokenAmountReceived, sourceTokenAmountUsed, collateralToLoanSwapRate) = _loanSwap(
             loanLocal.id,
             loanParamsLocal.collateralToken,
             loanParamsLocal.loanToken,
@@ -605,9 +659,15 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
         LoanParams storage loanParamsLocal,
         uint256 loanCloseAmount,
         uint256 collateralCloseAmount,
+        uint256 collateralToLoanSwapRate,
         CloseTypes closeType)
         internal
     {
+        _closeLoan(
+            loanLocal,
+            loanCloseAmount
+        );
+
         // this is still called even with full loan close to return collateralToLoanRate
         (uint256 currentMargin, uint256 collateralToLoanRate) = IPriceFeeds(priceFeeds).getCurrentMargin(
             loanParamsLocal.loanToken,
@@ -627,6 +687,7 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
             loanCloseAmount,
             collateralCloseAmount,
             collateralToLoanRate,
+            collateralToLoanSwapRate,
             currentMargin,
             closeType
         );
@@ -670,6 +731,19 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
         LoanInterest storage loanInterestLocal = loanInterest[loanLocal.id];
         LenderInterest storage lenderInterestLocal = lenderInterest[loanLocal.lender][loanParamsLocal.loanToken];
 
+        uint256 interestTime = block.timestamp;
+        if (interestTime > loanLocal.endTimestamp) {
+            interestTime = loanLocal.endTimestamp;
+        }
+
+        _settleFeeRewardOnInterestExpense(
+            loanInterestLocal,
+            loanLocal.id,
+            loanParamsLocal.loanToken,
+            loanLocal.borrower,
+            interestTime
+        );
+
         uint256 owedPerDayRefund;
         if (closePrincipal < loanLocal.principal) {
             owedPerDayRefund = loanInterestLocal.owedPerDay
@@ -686,11 +760,6 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
             .sub(owedPerDayRefund);
 
         // update borrower interest
-        uint256 interestTime = block.timestamp;
-        if (interestTime > loanLocal.endTimestamp) {
-            interestTime = loanLocal.endTimestamp;
-        }
-
         uint256 interestRefundToBorrower = loanLocal.endTimestamp
             .sub(interestTime);
         interestRefundToBorrower = interestRefundToBorrower
@@ -704,7 +773,6 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
         } else {
             loanInterestLocal.depositTotal = 0;
         }
-        loanInterestLocal.updatedTimestamp = interestTime;
 
         // update remaining lender interest values
         lenderInterestLocal.principalTotal = lenderInterestLocal.principalTotal
@@ -721,6 +789,7 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
         uint256 loanCloseAmount,
         uint256 collateralCloseAmount,
         uint256 collateralToLoanRate,
+        uint256 collateralToLoanSwapRate,
         uint256 currentMargin,
         CloseTypes closeType)
         internal
@@ -739,9 +808,9 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
                 currentMargin                                   // currentMargin
             );
         } else if (closeType == CloseTypes.Swap) {
-            // exitPrice = 1 / collateralToLoanRate
-            if (collateralToLoanRate != 0) {
-                collateralToLoanRate = SafeMath.div(10**36, collateralToLoanRate);
+            // exitPrice = 1 / collateralToLoanSwapRate
+            if (collateralToLoanSwapRate != 0) {
+                collateralToLoanSwapRate = SafeMath.div(10**36, collateralToLoanSwapRate);
             }
 
             // currentLeverage = 100 / currentMargin
@@ -751,14 +820,14 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
 
             emit CloseWithSwap(
                 loanLocal.borrower,                             // user (trader)
-                loanParamsLocal.collateralToken,                // baseToken
-                loanParamsLocal.loanToken,                      // quoteToken
                 loanLocal.lender,                               // lender
-                msg.sender,                                     // closer
                 loanLocal.id,                                   // loanId
+                loanParamsLocal.collateralToken,                // collateralToken
+                loanParamsLocal.loanToken,                      // loanToken
+                msg.sender,                                     // closer
                 collateralCloseAmount,                          // positionCloseSize
                 loanCloseAmount,                                // loanCloseAmount
-                collateralToLoanRate,                           // exitPrice
+                collateralToLoanSwapRate,                       // exitPrice (1 / collateralToLoanSwapRate)
                 currentMargin                                   // currentLeverage
             );
         } else { // closeType == CloseTypes.Liquidation

@@ -66,6 +66,8 @@ def bzx(accounts, interface, bZxProtocol, ProtocolSettings, LoanSettings, LoanMa
     bzx.replaceContract(accounts[0].deploy(ProtocolSettings).address)
     bzx.replaceContract(accounts[0].deploy(LoanSettings).address)
     bzx.replaceContract(accounts[0].deploy(LoanMaintenance).address)
+    #bzx.replaceContract(accounts[0].deploy(LoanOpenings).address)
+    #bzx.replaceContract(accounts[0].deploy(LoanClosings).address)
     
     return bzx
 
@@ -75,4 +77,8 @@ def isolate(fn_isolation):
 
 @pytest.fixture(scope="module", autouse=True)
 def WETH(module_isolation, accounts, TestWeth):
+    yield accounts[0].deploy(TestWeth) ## 0x3194cBDC3dbcd3E11a07892e7bA5c3394048Cc87
+
+@pytest.fixture(scope="module", autouse=True)
+def BZRX(module_isolation, accounts, TestWeth):
     yield accounts[0].deploy(TestWeth) ## 0x3194cBDC3dbcd3E11a07892e7bA5c3394048Cc87

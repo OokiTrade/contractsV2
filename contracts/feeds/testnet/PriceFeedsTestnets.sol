@@ -38,47 +38,36 @@ contract PriceFeedsTestnets is PriceFeeds {
     {
         if (sourceToken != destToken) {
             if (feedType == FeedTypes.Kyber) {
-                (bool result, bytes memory data) = kyberContract.staticcall(
-                    abi.encodeWithSignature(
-                        "getExpectedRate(address,address,uint256)",
-                        sourceToken,
-                        destToken,
-                        10**16
-                    )
-                );
-                assembly {
-                    switch result
-                    case 0 {
-                        rate := 0
-                    }
-                    default {
-                        rate := mload(add(data, 32))
+                if (sourceToken == protocolTokenAddress) {
+                    // hack for testnet; only returns price in ETH
+                    rate = protocolTokenEthPrice;
+                } else if (destToken == protocolTokenAddress) {
+                    // hack for testnet; only returns price in ETH
+                    rate = SafeMath.div(10**36, protocolTokenEthPrice);
+                } else {
+                    (bool result, bytes memory data) = kyberContract.staticcall(
+                        abi.encodeWithSignature(
+                            "getExpectedRate(address,address,uint256)",
+                            sourceToken,
+                            destToken,
+                            10**16
+                        )
+                    );
+                    assembly {
+                        switch result
+                        case 0 {
+                            rate := 0
+                        }
+                        default {
+                            rate := mload(add(data, 32))
+                        }
                     }
                 }
             } else if (feedType == FeedTypes.Chainlink) {
-                uint256 sourceRate;
-                if (sourceToken != address(wethToken)) {
-                    IPriceFeedsExt _sourceFeed = pricesFeeds[sourceToken];
-                    require(address(_sourceFeed) != address(0), "unsupported src feed");
-                    sourceRate = uint256(_sourceFeed.latestAnswer());
-                    require(sourceRate != 0 && (sourceRate >> 128) == 0, "price error");
-                } else {
-                    sourceRate = 10**18;
-                }
-
-                uint256 destRate;
-                if (destToken != address(wethToken)) {
-                    IPriceFeedsExt _destFeed = pricesFeeds[destToken];
-                    require(address(_destFeed) != address(0), "unsupported dst feed");
-                    destRate = uint256(_destFeed.latestAnswer());
-                    require(destRate != 0 && (destRate >> 128) == 0, "price error");
-                } else {
-                    destRate = 10**18;
-                }
-
-                rate = sourceRate
-                    .mul(10**18)
-                    .div(destRate);
+                return super._queryRate(
+                    sourceToken,
+                    destToken
+                );
             } else {
                 rate = rates[sourceToken][destToken];
             }

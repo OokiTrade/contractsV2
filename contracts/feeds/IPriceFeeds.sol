@@ -24,7 +24,7 @@ interface IPriceFeeds {
     function queryReturn(
         address sourceToken,
         address destToken,
-        address sourceAmount)
+        uint256 sourceAmount)
         external
         view
         returns (uint256 destAmount);
@@ -36,7 +36,8 @@ interface IPriceFeeds {
         uint256 destAmount,
         uint256 maxSlippage)
         external
-        view;
+        view
+        returns (uint256 sourceToDestSwapRate);
 
     function amountInEth(
         address Token,

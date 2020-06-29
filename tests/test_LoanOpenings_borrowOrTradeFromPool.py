@@ -8,9 +8,11 @@ from fixedint import *
 def loanOpenings(LoanOpenings, accounts, bzx, Constants, priceFeeds, swapsImpl):
     bzx.replaceContract(accounts[0].deploy(LoanOpenings).address)
 
-    bzx.setCoreParams(
-        Constants["ZERO_ADDRESS"], # protocolTokenAddress
-        priceFeeds.address, # priceFeeds
+    bzx.setPriceFeedContract(
+        priceFeeds.address # priceFeeds
+    )
+
+    bzx.setSwapsImplContract(
         swapsImpl.address # swapsImpl
     )
 
@@ -50,7 +52,7 @@ def LinkDaiBorrowParamsId(Constants, LINK, DAI, bzx, accounts):
     tx = bzx.setupLoanParams([list(loanParams.values())])
     return tx.events["LoanParamsIdSetup"][0]["id"]
 
-def marginTradeFromPool_sim(Constants, LinkDaiMarginParamsId, bzx, DAI, LINK, accounts, web3):
+def test_marginTradeFromPool_sim(Constants, LinkDaiMarginParamsId, bzx, DAI, LINK, accounts, web3):
 
     ## setup simulated loan pool
     bzx.setLoanPool(
@@ -75,7 +77,7 @@ def marginTradeFromPool_sim(Constants, LinkDaiMarginParamsId, bzx, DAI, LINK, ac
         loanTokenSent,
         { "from": accounts[0] }
     )
-    
+
     collateralTokenSent = bzx.getRequiredCollateral(
         DAI.address,
         LINK.address,
@@ -129,7 +131,11 @@ def marginTradeFromPool_sim(Constants, LinkDaiMarginParamsId, bzx, DAI, LINK, ac
 
     # expectedPositionSize = collateralTokenSent + ((loanTokenSent - interestForPosition) * tradeEvent["entryPrice"] // 1e18)
     expectedPositionSize = fixedint(loanTokenSent).sub(interestForPosition).mul(tradeEvent["entryPrice"]).div(1e18).add(collateralTokenSent)
-    assert(expectedPositionSize == tradeEvent["positionSize"])
+    
+    ## ignore differences in least significant digits due to rounding error
+    expectedPositionSize = fixedint(expectedPositionSize).div(100)
+    positionSize = fixedint(tradeEvent["positionSize"]).div(100)
+    assert expectedPositionSize == positionSize
 
     '''l = bzx.getUserLoans(
         accounts[1],

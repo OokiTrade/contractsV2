@@ -23,18 +23,18 @@ contract LoanOpeningsEvents {
         uint256 currentMargin
     );
 
-    // topic0: 0xafa6452c53d4537ba2992dec6b9cad9a2fe82db672005ea589963f9f0b3de052
+    // topic0: 0xf640c1cfe1a912a0b0152b5a542e5c2403142eed75b06cde526cee54b1580e5c
     event Trade(
         address indexed user,
-        address indexed baseToken,
-        address indexed quoteToken,
-        address lender,
-        bytes32 loanId,
+        address indexed lender,
+        bytes32 indexed loanId,
+        address collateralToken,
+        address loanToken,
         uint256 positionSize,
         uint256 borrowedAmount,
         uint256 interestRate,
         uint256 settlementDate,
-        uint256 entryPrice, // one unit of baseToken, denominated in quoteToken
+        uint256 entryPrice, // one unit of collateralToken, denominated in loanToken
         uint256 entryLeverage,
         uint256 currentLeverage
     );

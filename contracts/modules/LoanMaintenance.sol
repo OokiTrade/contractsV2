@@ -170,10 +170,23 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         LoanInterest storage loanInterestLocal = loanInterest[loanLocal.id];
         LenderInterest storage lenderInterestLocal = lenderInterest[loanLocal.lender][loanParamsLocal.loanToken];
 
+        uint256 interestTime = block.timestamp;
+        if (interestTime > loanLocal.endTimestamp) {
+            interestTime = loanLocal.endTimestamp;
+        }
+
+        _settleFeeRewardOnInterestExpense(
+            loanInterestLocal,
+            loanLocal.id,
+            loanParamsLocal.loanToken,
+            loanLocal.borrower,
+            interestTime
+        );
+
         // deposit interest
         if (useCollateral) {
             // reverts in _loanSwap if amountNeeded can't be bought
-            (,uint256 sourceTokenAmountUsed) = _loanSwap(
+            (,uint256 sourceTokenAmountUsed,) = _loanSwap(
                 loanLocal.id,
                 loanParamsLocal.collateralToken,
                 loanParamsLocal.loanToken,
@@ -231,7 +244,6 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
 
         loanInterestLocal.depositTotal = loanInterestLocal.depositTotal
             .add(depositAmount);
-        loanInterestLocal.updatedTimestamp = block.timestamp;
 
         lenderInterestLocal.owedTotal = lenderInterestLocal.owedTotal
             .add(depositAmount);
@@ -275,6 +287,16 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         Loan storage loanLocal = loans[loanId];
         LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
+        LoanInterest storage loanInterestLocal = loanInterest[loanLocal.id];
+
+        _settleFeeRewardOnInterestExpense(
+            loanInterestLocal,
+            loanLocal.id,
+            loanParamsLocal.loanToken,
+            loanLocal.borrower,
+            block.timestamp // interestTime
+        );
+
         require(loanLocal.active, "loan is closed");
         require(
             !useCollateral ||
@@ -294,7 +316,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         // deposit interest
         if (useCollateral) {
             // reverts in _loanSwap if amountNeeded can't be bought
-            (,uint256 sourceTokenAmountUsed) = _loanSwap(
+            (,uint256 sourceTokenAmountUsed,) = _loanSwap(
                 loanLocal.id,
                 loanParamsLocal.collateralToken,
                 loanParamsLocal.loanToken,
@@ -335,8 +357,6 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
             }
         }
 
-        LoanInterest storage loanInterestLocal = loanInterest[loanLocal.id];
-
         secondsExtended = depositAmount
             .mul(86400)
             .div(loanInterestLocal.owedPerDay);
@@ -354,7 +374,6 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
 
         loanInterestLocal.depositTotal = loanInterestLocal.depositTotal
             .add(depositAmount);
-        loanInterestLocal.updatedTimestamp = block.timestamp;
 
         lenderInterest[loanLocal.lender][loanParamsLocal.loanToken].owedTotal = lenderInterest[loanLocal.lender][loanParamsLocal.loanToken].owedTotal
             .add(depositAmount);
@@ -393,6 +412,15 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         if (interestTime > loanLocal.endTimestamp) {
             interestTime = loanLocal.endTimestamp;
         }
+
+        _settleFeeRewardOnInterestExpense(
+            loanInterestLocal,
+            loanLocal.id,
+            loanParamsLocal.loanToken,
+            loanLocal.borrower,
+            interestTime
+        );
+
         uint256 interestDepositRemaining = loanLocal.endTimestamp > interestTime ? loanLocal.endTimestamp.sub(interestTime).mul(loanInterestLocal.owedPerDay).div(86400) : 0;
         require(withdrawAmount < interestDepositRemaining, "withdraw amount too high");
 
@@ -429,7 +457,6 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
 
         loanInterestLocal.depositTotal = loanInterestLocal.depositTotal
             .add(withdrawAmount);
-        loanInterestLocal.updatedTimestamp = block.timestamp;
 
         lenderInterestLocal.owedTotal = lenderInterestLocal.owedTotal
             .sub(withdrawAmount);
@@ -442,6 +469,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
     /// @return interestPaidDate The date of the last interest pay out, or 0 if no interest has been withdrawn yet
     /// @return interestOwedPerDay The amount of interest the lender is earning per day
     /// @return interestUnPaid The total amount of interest the lender is owned and not yet withdrawn
+    /// @return interestFeePercent The fee retained by the protocol before interest is paid to the lender
     /// @return principalTotal The total amount of outstading principal the lender has loaned
     function getLenderInterestData(
         address lender,
@@ -453,6 +481,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
             uint256 interestPaidDate,
             uint256 interestOwedPerDay,
             uint256 interestUnPaid,
+            uint256 interestFeePercent,
             uint256 principalTotal)
     {
         LenderInterest memory lenderInterestLocal = lenderInterest[lender][loanToken];
@@ -463,9 +492,10 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
 
         return (
             lenderInterestLocal.paidTotal,
-            lenderInterestLocal.paidTotal > 0 ? lenderInterestLocal.updatedTimestamp : 0,
+            lenderInterestLocal.paidTotal != 0 ? lenderInterestLocal.updatedTimestamp : 0,
             lenderInterestLocal.owedPerDay,
-            lenderInterestLocal.updatedTimestamp > 0 ? interestUnPaid : 0,
+            lenderInterestLocal.updatedTimestamp != 0 ? interestUnPaid : 0,
+            lendingFeePercent,
             lenderInterestLocal.principalTotal
         );
     }
@@ -634,19 +664,16 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
 
         uint256 maxLiquidatable;
         uint256 maxSeizable;
-        uint256 incentivePercent;
-        if (currentMargin > loanParamsLocal.maintenanceMargin) {
-            if (unsafeOnly) {
-                return loanData;
-            } else {
-                (maxLiquidatable, maxSeizable, incentivePercent) = _getLiquidationAmounts(
-                    loanLocal.principal,
-                    loanLocal.collateral,
-                    currentMargin,
-                    loanParamsLocal.maintenanceMargin,
-                    collateralToLoanRate
-                );
-            }
+        if (currentMargin <= loanParamsLocal.maintenanceMargin) {
+            (maxLiquidatable, maxSeizable,) = _getLiquidationAmounts(
+                loanLocal.principal,
+                loanLocal.collateral,
+                currentMargin,
+                loanParamsLocal.maintenanceMargin,
+                collateralToLoanRate
+            );
+        } else if (unsafeOnly) {
+            return loanData;
         }
 
         return LoanReturnData({
