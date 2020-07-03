@@ -49,7 +49,6 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
     {
         _setTarget(this.depositCollateral.selector, target);
         _setTarget(this.withdrawCollateral.selector, target);
-        //_setTarget(this.rolloverLoan.selector, target);
         _setTarget(this.withdrawAccruedInterest.selector, target);
         _setTarget(this.extendLoanDuration.selector, target);
         _setTarget(this.reduceLoanDuration.selector, target);
@@ -142,126 +141,6 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         }
     }
 
-    /*function rolloverLoan(
-        bytes32 loanId,
-        bytes calldata loanDataBytes)
-        external
-        nonReentrant
-    {
-        require(depositAmount != 0, "depositAmount is 0");
-        Loan storage loanLocal = loans[loanId];
-        LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
-
-        require(loanLocal.active, "loan is closed");
-        require(
-            msg.sender == loanLocal.borrower ||
-            delegatedManagers[loanLocal.id][msg.sender],
-            "unauthorized"
-        );
-        require(loanParamsLocal.maxLoanTerm == 0, "indefinite-term only");
-        require(msg.value == 0 || (!useCollateral && loanParamsLocal.loanToken == address(wethToken)), "wrong asset sent");
-
-        // pay outstanding interest to lender
-        _payInterest(
-            loanLocal.lender,
-            loanParamsLocal.loanToken
-        );
-
-        LoanInterest storage loanInterestLocal = loanInterest[loanLocal.id];
-        LenderInterest storage lenderInterestLocal = lenderInterest[loanLocal.lender][loanParamsLocal.loanToken];
-
-        uint256 interestTime = block.timestamp;
-        if (interestTime > loanLocal.endTimestamp) {
-            interestTime = loanLocal.endTimestamp;
-        }
-
-        _settleFeeRewardOnInterestExpense(
-            loanInterestLocal,
-            loanLocal.id,
-            loanParamsLocal.loanToken,
-            loanLocal.borrower,
-            interestTime
-        );
-
-        // deposit interest
-        if (useCollateral) {
-            // reverts in _loanSwap if amountNeeded can't be bought
-            (,uint256 sourceTokenAmountUsed,) = _loanSwap(
-                loanLocal.id,
-                loanParamsLocal.collateralToken,
-                loanParamsLocal.loanToken,
-                loanLocal.borrower,
-                loanLocal.collateral, // minSourceTokenAmount
-                0, // maxSourceTokenAmount (0 means minSourceTokenAmount)
-                depositAmount, // requiredDestTokenAmount (partial spend of loanLocal.collateral to fill this amount)
-                false, // bypassFee
-                loanDataBytes
-            );
-            loanLocal.collateral = loanLocal.collateral
-                .sub(sourceTokenAmountUsed);
-
-            // ensure the loan is still healthy
-            (uint256 currentMargin,) = IPriceFeeds(priceFeeds).getCurrentMargin(
-                loanParamsLocal.loanToken,
-                loanParamsLocal.collateralToken,
-                loanLocal.principal,
-                loanLocal.collateral
-            );
-            require(
-                currentMargin > loanParamsLocal.maintenanceMargin,
-                "unhealthy position"
-            );
-        } else {
-            if (msg.value == 0) {
-                vaultDeposit(
-                    loanParamsLocal.loanToken,
-                    payer,
-                    depositAmount
-                );
-            } else {
-                require(msg.value == depositAmount, "ether deposit mismatch");
-                vaultEtherDeposit(
-                    msg.sender,
-                    msg.value
-                );
-            }
-        }
-
-        secondsExtended = depositAmount
-            .mul(86400)
-            .div(loanInterestLocal.owedPerDay);
-
-        loanLocal.endTimestamp = loanLocal.endTimestamp
-            .add(secondsExtended);
-
-        require (loanLocal.endTimestamp > block.timestamp, "loan too short");
-
-        uint256 maxDuration = loanLocal.endTimestamp
-            .sub(block.timestamp);
-
-        // loan term has to at least be 24 hours
-        require(maxDuration >= 86400, "loan too short");
-
-        loanInterestLocal.depositTotal = loanInterestLocal.depositTotal
-            .add(depositAmount);
-
-        lenderInterestLocal.owedTotal = lenderInterestLocal.owedTotal
-            .add(depositAmount);
-
-
-
-        if (block.timestamp >= loanLocal.endTimestamp) {
-        }
-
-        // Handle back interest
-        uint256 backInterestTime = block.timestamp
-            .sub(loanLocal.endTimestamp);
-        uint256 backInterestOwed = backInterestTime
-            .mul(loanInterestLocal.owedPerDay);
-        backInterestOwed = backInterestOwed
-            .div(86400);
-    }*/
-
     function withdrawAccruedInterest(
         address loanToken)
         external
@@ -277,7 +156,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         bytes32 loanId,
         uint256 depositAmount,
         bool useCollateral,
-        bytes calldata loanDataBytes)
+        bytes calldata /*loanDataBytes*/) // for future use
         external
         payable
         nonReentrant
@@ -286,16 +165,6 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         require(depositAmount != 0, "depositAmount is 0");
         Loan storage loanLocal = loans[loanId];
         LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
-
-        LoanInterest storage loanInterestLocal = loanInterest[loanLocal.id];
-
-        _settleFeeRewardOnInterestExpense(
-            loanInterestLocal,
-            loanLocal.id,
-            loanParamsLocal.loanToken,
-            loanLocal.borrower,
-            block.timestamp // interestTime
-        );
 
         require(loanLocal.active, "loan is closed");
         require(
@@ -313,33 +182,35 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
             loanParamsLocal.loanToken
         );
 
+        LoanInterest storage loanInterestLocal = loanInterest[loanLocal.id];
+
+        _settleFeeRewardForInterestExpense(
+            loanInterestLocal,
+            loanLocal.id,
+            loanParamsLocal.loanToken,
+            loanLocal.borrower,
+            block.timestamp
+        );
+
+        // Handle back interest: calculates interest owned since the loan endtime passed but the loan remained open
+        uint256 backInterestOwed;
+        if (block.timestamp > loanLocal.endTimestamp) {
+            backInterestOwed = block.timestamp
+                .sub(loanLocal.endTimestamp);
+            backInterestOwed = backInterestOwed
+                .mul(loanInterestLocal.owedPerDay);
+            backInterestOwed = backInterestOwed
+                .div(86400);
+
+            require(depositAmount > backInterestOwed, "deposit cannot cover back interest");
+        }
+
         // deposit interest
         if (useCollateral) {
-            // reverts in _loanSwap if amountNeeded can't be bought
-            (,uint256 sourceTokenAmountUsed,) = _loanSwap(
-                loanLocal.id,
-                loanParamsLocal.collateralToken,
-                loanParamsLocal.loanToken,
-                loanLocal.borrower,
-                loanLocal.collateral, // minSourceTokenAmount
-                0, // maxSourceTokenAmount (0 means minSourceTokenAmount)
-                depositAmount, // requiredDestTokenAmount (partial spend of loanLocal.collateral to fill this amount)
-                true, // bypassFee
-                loanDataBytes
-            );
-            loanLocal.collateral = loanLocal.collateral
-                .sub(sourceTokenAmountUsed);
-
-            // ensure the loan is still healthy
-            (uint256 currentMargin,) = IPriceFeeds(priceFeeds).getCurrentMargin(
-                loanParamsLocal.loanToken,
-                loanParamsLocal.collateralToken,
-                loanLocal.principal,
-                loanLocal.collateral
-            );
-            require(
-                currentMargin > loanParamsLocal.maintenanceMargin,
-                "unhealthy position"
+            _doCollateralSwap(
+                loanLocal,
+                loanParamsLocal,
+                depositAmount
             );
         } else {
             if (msg.value == 0) {
@@ -357,6 +228,18 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
             }
         }
 
+        if (backInterestOwed != 0) {
+            depositAmount = depositAmount
+                .sub(backInterestOwed);
+
+            // pay out backInterestOwed
+            _payInterestTransfer(
+                loanLocal.lender,
+                loanParamsLocal.loanToken,
+                backInterestOwed
+            );
+        }
+
         secondsExtended = depositAmount
             .mul(86400)
             .div(loanInterestLocal.owedPerDay);
@@ -369,8 +252,8 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         uint256 maxDuration = loanLocal.endTimestamp
             .sub(block.timestamp);
 
-        // loan term has to at least be 24 hours
-        require(maxDuration >= 86400, "loan too short");
+        // loan term has to at least be greater than one hour
+        require(maxDuration > 3600, "loan too short");
 
         loanInterestLocal.depositTotal = loanInterestLocal.depositTotal
             .add(depositAmount);
@@ -398,6 +281,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
             "unauthorized"
         );
         require(loanParamsLocal.maxLoanTerm == 0, "indefinite-term only");
+        require(loanLocal.endTimestamp > block.timestamp, "loan term has ended");
 
         // pay outstanding interest to lender
         _payInterest(
@@ -406,22 +290,19 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         );
 
         LoanInterest storage loanInterestLocal = loanInterest[loanLocal.id];
-        LenderInterest storage lenderInterestLocal = lenderInterest[loanLocal.lender][loanParamsLocal.loanToken];
 
-        uint256 interestTime = block.timestamp;
-        if (interestTime > loanLocal.endTimestamp) {
-            interestTime = loanLocal.endTimestamp;
-        }
-
-        _settleFeeRewardOnInterestExpense(
+        _settleFeeRewardForInterestExpense(
             loanInterestLocal,
             loanLocal.id,
             loanParamsLocal.loanToken,
             loanLocal.borrower,
-            interestTime
+            block.timestamp
         );
 
-        uint256 interestDepositRemaining = loanLocal.endTimestamp > interestTime ? loanLocal.endTimestamp.sub(interestTime).mul(loanInterestLocal.owedPerDay).div(86400) : 0;
+        uint256 interestDepositRemaining = loanLocal.endTimestamp
+            .sub(block.timestamp)
+            .mul(loanInterestLocal.owedPerDay)
+            .div(86400);
         require(withdrawAmount < interestDepositRemaining, "withdraw amount too high");
 
         // withdraw interest
@@ -452,13 +333,13 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         uint256 maxDuration = loanLocal.endTimestamp
             .sub(block.timestamp);
 
-        // loan term has to at least be 24 hours
-        require(maxDuration >= 86400, "loan too short");
+        // loan term has to at least be greater than one hour
+        require(maxDuration > 3600, "loan too short");
 
         loanInterestLocal.depositTotal = loanInterestLocal.depositTotal
-            .add(withdrawAmount);
+            .sub(withdrawAmount);
 
-        lenderInterestLocal.owedTotal = lenderInterestLocal.owedTotal
+        lenderInterest[loanLocal.lender][loanParamsLocal.loanToken].owedTotal = lenderInterest[loanLocal.lender][loanParamsLocal.loanToken].owedTotal
             .sub(withdrawAmount);
     }
 
@@ -693,5 +574,39 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
             maxLiquidatable: maxLiquidatable,
             maxSeizable: maxSeizable
         });
+    }
+
+    function _doCollateralSwap(
+        Loan storage loanLocal,
+        LoanParams memory loanParamsLocal,
+        uint256 depositAmount)
+        internal
+    {
+        // reverts in _loanSwap if amountNeeded can't be bought
+        (,uint256 sourceTokenAmountUsed,) = _loanSwap(
+            loanLocal.id,
+            loanParamsLocal.collateralToken,
+            loanParamsLocal.loanToken,
+            loanLocal.borrower,
+            loanLocal.collateral, // minSourceTokenAmount
+            0, // maxSourceTokenAmount (0 means minSourceTokenAmount)
+            depositAmount, // requiredDestTokenAmount (partial spend of loanLocal.collateral to fill this amount)
+            true, // bypassFee
+            "" // loanDataBytes
+        );
+        loanLocal.collateral = loanLocal.collateral
+            .sub(sourceTokenAmountUsed);
+
+        // ensure the loan is still healthy
+        (uint256 currentMargin,) = IPriceFeeds(priceFeeds).getCurrentMargin(
+            loanParamsLocal.loanToken,
+            loanParamsLocal.collateralToken,
+            loanLocal.principal,
+            loanLocal.collateral
+        );
+        require(
+            currentMargin > loanParamsLocal.maintenanceMargin,
+            "unhealthy position"
+        );
     }
 }

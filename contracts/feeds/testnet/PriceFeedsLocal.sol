@@ -14,6 +14,14 @@ contract PriceFeedsLocal is PriceFeeds {
 
     //uint256 public slippageMultiplier = 100 ether;
 
+    function _getFastGasPrice()
+        internal
+        view
+        returns (uint256 gasPrice)
+    {
+        return 10 * 10**9;
+    }
+
     function _queryRate(
         address sourceToken,
         address destToken)
@@ -21,6 +29,8 @@ contract PriceFeedsLocal is PriceFeeds {
         view
         returns (uint256 rate, uint256 precision)
     {
+        require(!globalPricingPaused, "pricing is paused");
+
         if (sourceToken == destToken) {
             rate = 10**18;
             precision = 10**18;

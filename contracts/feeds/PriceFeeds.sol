@@ -18,10 +18,17 @@ interface IPriceFeedsExt {
 contract PriceFeeds is Constants, Ownable {
     using SafeMath for uint256;
 
+    event GlobalPricingPaused(
+        address indexed sender,
+        bool indexed isPaused
+    );
+
     mapping (address => IPriceFeedsExt) public pricesFeeds;     // token => pricefeed
     mapping (address => uint256) public decimals;               // decimals of supported tokens
 
     uint256 public protocolTokenEthPrice = 0.0002 ether;
+
+    bool public globalPricingPaused = false;
 
     constructor()
         public
@@ -56,6 +63,7 @@ contract PriceFeeds is Constants, Ownable {
             10**18;
     }
 
+    //// NOTE: This function returns 0 during a pause, rather than a revert. Ensure calling contracts handle correctly. ///
     function queryReturn(
         address sourceToken,
         address destToken,
@@ -251,6 +259,26 @@ contract PriceFeeds is Constants, Ownable {
         return currentMargin <= maintenanceMargin;
     }
 
+    function getFastGasPrice(
+        address payToken)
+        external
+        view
+        returns (uint256)
+    {
+        uint256 gasPrice = _getFastGasPrice();
+        if (payToken != address(wethToken) && payToken != address(0)) {
+            (uint256 rate, uint256 precision) = _queryRate(
+                payToken,
+                address(wethToken)
+            );
+            gasPrice = gasPrice
+                .mul(rate)
+                .div(precision);
+        }
+        return gasPrice;
+    }
+
+
     /*
     * Owner functions
     */
@@ -287,6 +315,21 @@ contract PriceFeeds is Constants, Ownable {
         }
     }
 
+    function setGlobalPricingPaused(
+        bool isPaused)
+        external
+        onlyOwner
+    {
+        if (globalPricingPaused != isPaused) {
+            globalPricingPaused = isPaused;
+
+            emit GlobalPricingPaused(
+                msg.sender,
+                isPaused
+            );
+        }
+    }
+
     /*
     * Internal functions
     */
@@ -298,6 +341,8 @@ contract PriceFeeds is Constants, Ownable {
         view
         returns (uint256 rate, uint256 precision)
     {
+        require(!globalPricingPaused, "pricing is paused");
+
         if (sourceToken != destToken) {
             uint256 sourceRate;
             if (sourceToken != address(wethToken) && sourceToken != protocolTokenAddress) {
@@ -357,5 +402,15 @@ contract PriceFeeds is Constants, Ownable {
             else
                 return 10**(SafeMath.add(18, sourceTokenDecimals-destTokenDecimals));
         }
+    }
+
+    function _getFastGasPrice()
+        internal
+        view
+        returns (uint256 gasPrice)
+    {
+        gasPrice = uint256(pricesFeeds[address(1)].latestAnswer())
+            .mul(10**9);
+        require(gasPrice != 0 && (gasPrice >> 128) == 0, "gas price error");
     }
 }

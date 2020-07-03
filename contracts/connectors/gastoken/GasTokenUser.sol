@@ -26,16 +26,7 @@ contract GasTokenUser is Ownable {
 
             _;
 
-            gasCalcValue = gasCalcValue
-                .add(21000);
-            gasCalcValue = gasCalcValue
-                .sub(gasleft());
-            gasCalcValue = gasCalcValue
-                .add(
-                    msg.data.length
-                        .mul(16)
-                );
-            // usedGas = 21000 + startingGas - gasleft() + 16 * msg.data.length;
+            gasCalcValue = _gasUsed(gasCalcValue);
 
             gasCalcValue = gasCalcValue
                 .add(14154);
@@ -50,5 +41,20 @@ contract GasTokenUser is Ownable {
         } else {
             _;
         }
+    }
+
+    function _gasUsed(
+        uint256 startingGas)
+        internal
+        returns (uint256)
+    {
+        return startingGas
+            .add(21000)
+            .sub(gasleft())
+            .add(
+                msg.data.length
+                    .mul(16)
+            );
+        // usedGas = 21000 + startingGas - gasleft() + 16 * msg.data.length;
     }
 }

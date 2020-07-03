@@ -153,7 +153,8 @@ contract LoanSettings is State, LoanSettingsEvents {
 
         require(loanParamsLocal.loanToken != address(0) &&
             loanParamsLocal.collateralToken != address(0) &&
-            loanParamsLocal.minInitialMargin > loanParamsLocal.maintenanceMargin,
+            loanParamsLocal.minInitialMargin > loanParamsLocal.maintenanceMargin &&
+            (loanParamsLocal.maxLoanTerm == 0 || loanParamsLocal.maxLoanTerm > 3600), // a defined maxLoanTerm has to be greater than one hour
             "invalid params"
         );
 

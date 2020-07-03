@@ -151,7 +151,7 @@ def deployProtocol():
                         "0x57ab1ec28d129707052df4df418d58a2d46d5f51", # SUSD
                         "0x6b175474e89094c44da98b954eedeac495271d0f", # DAI
                         "0xdac17f958d2ee523a2206206994597c13d831ec7", # USDT (Tether)
-                        "0xA417221ef64b1549575C977764E651c9FAB50141"  # Fast Gas / Gwei
+                        "0x0000000000000000000000000000000000000001"  # Fast Gas / Gwei
                     ],
                     [
                         "0xdE54467873c3BCAA76421061036053e371721708", # USDC

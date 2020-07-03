@@ -93,4 +93,10 @@ interface IPriceFeeds {
         external
         view
         returns (bool);
+
+    function getFastGasPrice(
+        address payToken)
+        external
+        view
+        returns (uint256);
 }

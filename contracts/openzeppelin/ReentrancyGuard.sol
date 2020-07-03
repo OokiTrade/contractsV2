@@ -31,10 +31,10 @@ contract ReentrancyGuard {
     * wrapper marked as `nonReentrant`.
     */
     modifier nonReentrant() {
-    require(reentrancyLock == REENTRANCY_GUARD_FREE, "nonReentrant");
-    reentrancyLock = REENTRANCY_GUARD_LOCKED;
-    _;
-    reentrancyLock = REENTRANCY_GUARD_FREE;
+        require(reentrancyLock == REENTRANCY_GUARD_FREE, "nonReentrant");
+        reentrancyLock = REENTRANCY_GUARD_LOCKED;
+        _;
+        reentrancyLock = REENTRANCY_GUARD_FREE;
     }
 
 }

@@ -250,6 +250,11 @@ contract IBZx is
             address seizedToken
         );
 
+    function rollover(
+        bytes32 loanId,
+        bytes calldata loanDataBytes)
+        external;
+
     function closeWithDeposit(
         bytes32 loanId,
         address receiver,

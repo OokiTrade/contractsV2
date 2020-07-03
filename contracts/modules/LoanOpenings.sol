@@ -555,12 +555,12 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
 
         uint256 maxLoanTerm = loanParamsLocal.maxLoanTerm;
 
-        _settleFeeRewardOnInterestExpense(
+        _settleFeeRewardForInterestExpense(
             loanInterestLocal,
             loanLocal.id,
             loanParamsLocal.loanToken,
             loanLocal.borrower,
-            block.timestamp // interestTime
+            block.timestamp
         );
 
         uint256 previousDepositRemaining;
@@ -594,8 +594,8 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             maxLoanTerm = loanLocal.endTimestamp
                 .sub(block.timestamp);
 
-            // loan term has to at least be 24 hours
-            require(maxLoanTerm >= 86400, "loan too short");
+            // loan term has to at least be greater than one hour
+            require(maxLoanTerm > 3600, "loan too short");
 
             interestAmountRequired = torqueInterest;
         } else {

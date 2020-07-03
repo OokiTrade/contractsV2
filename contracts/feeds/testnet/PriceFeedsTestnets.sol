@@ -29,6 +29,14 @@ contract PriceFeedsTestnets is PriceFeeds {
     address public constant kyberContract = 0x692f391bCc85cefCe8C237C01e1f636BbD70EA4D; // kovan
     //address public constant kyberContract = 0x818E6FECD516Ecc3849DAf6845e3EC868087B755; // ropsten
 
+    function _getFastGasPrice()
+        internal
+        view
+        returns (uint256 gasPrice)
+    {
+        return 10 * 10**9;
+    }
+
     function _queryRate(
         address sourceToken,
         address destToken)
@@ -36,6 +44,8 @@ contract PriceFeedsTestnets is PriceFeeds {
         view
         returns (uint256 rate, uint256 precision)
     {
+        require(!globalPricingPaused, "pricing is paused");
+
         if (sourceToken != destToken) {
             if (feedType == FeedTypes.Kyber) {
                 if (sourceToken == protocolTokenAddress) {

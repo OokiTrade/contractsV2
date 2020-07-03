@@ -37,26 +37,39 @@ contract InterestUser is State, VaultController, FeesHelper {
                 lenderInterestLocal.owedTotal = lenderInterestLocal.owedTotal
                     .sub(interestOwedNow);
 
-                uint256 lendingFee = interestOwedNow
-                    .mul(lendingFeePercent)
-                    .div(10**20);
-
-                _payLendingFee(
+                _payInterestTransfer(
                     lender,
                     interestToken,
-                    lendingFee
-                );
-
-                // transfers the interest to the lender, less the interest fee
-                vaultWithdraw(
-                    interestToken,
-                    lender,
                     interestOwedNow
-                        .sub(lendingFee)
                 );
             }
         }
 
         lenderInterestLocal.updatedTimestamp = block.timestamp;
+    }
+
+    function _payInterestTransfer(
+        address lender,
+        address interestToken,
+        uint256 interestOwedNow)
+        internal
+    {
+        uint256 lendingFee = interestOwedNow
+            .mul(lendingFeePercent)
+            .div(10**20);
+
+        _payLendingFee(
+            lender,
+            interestToken,
+            lendingFee
+        );
+
+        // transfers the interest to the lender, less the interest fee
+        vaultWithdraw(
+            interestToken,
+            lender,
+            interestOwedNow
+                .sub(lendingFee)
+        );
     }
 }
