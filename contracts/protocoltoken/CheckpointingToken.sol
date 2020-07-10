@@ -40,7 +40,7 @@ contract CheckpointingToken is IERC20 {
         view
         returns (uint256)
     {
-        return _balanceOfAt(_owner, block.number);
+        return balanceOfAt(_owner, block.number);
     }
 
     function balanceOfAt(
@@ -50,7 +50,7 @@ contract CheckpointingToken is IERC20 {
         view
         returns (uint256)
     {
-        return _balanceOfAt(_owner, _blockNumber);
+        return balancesHistory_[_owner].getValueAt(_blockNumber);
     }
 
     function allowance(
@@ -94,42 +94,29 @@ contract CheckpointingToken is IERC20 {
         public
         returns (bool)
     {
-        uint256 previousBalanceFrom = _balanceOfAt(_from, block.number);
+        uint256 previousBalanceFrom = balanceOfAt(_from, block.number);
         require(previousBalanceFrom >= _value, "insufficient-balance");
 
         if (_from != msg.sender && allowances_[_from][msg.sender] != uint(-1)) {
             require(allowances_[_from][msg.sender] >= _value, "insufficient-allowance");
-            allowances_[_from][msg.sender] = sub(allowances_[_from][msg.sender], _value);
+            allowances_[_from][msg.sender] = allowances_[_from][msg.sender] - _value; // overflow not possible
         }
 
         balancesHistory_[_from].addCheckpoint(
             block.number,
-            sub(
-                previousBalanceFrom,
-                _value
-            )
+            previousBalanceFrom - _value // overflow not possible
         );
 
         balancesHistory_[_to].addCheckpoint(
             block.number,
             add(
-                _balanceOfAt(_to, block.number),
+                balanceOfAt(_to, block.number),
                 _value
             )
         );
 
         emit Transfer(_from, _to, _value);
         return true;
-    }
-
-    function _balanceOfAt(
-        address _owner,
-        uint256 _blockNumber)
-        internal
-        view
-        returns (uint256)
-    {
-        return balancesHistory_[_owner].getValueAt(_blockNumber);
     }
 
     function _getBlockNumber()
@@ -188,7 +175,7 @@ contract CheckpointingToken is IERC20 {
         pure
         returns (uint256 c)
     {
-        require(b > 0, "division by zero");
+        require(b != 0, "division by zero");
         c = a / b;
     }
 }

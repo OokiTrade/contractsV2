@@ -19,13 +19,15 @@ contract BZRXVestingToken is CheckpointingToken {
     string public constant symbol = "vBZRX";
     uint8 public constant decimals = 18;
 
-    uint256 public constant vestingDuration = 126144000; // 86400 * 365 * 4
-    uint256 public constant cliffDuration = 15768000; // 86400 * 365 * 0.5
-    uint256 internal constant vestingDurationAfterCliff_ = 110376000; // 86400 * 365 * 3.5
+    uint256 public constant cliffDuration =                  15768000; // 86400 * 365 * 0.5
+    uint256 public constant vestingDuration =               126144000; // 86400 * 365 * 4
+    uint256 internal constant vestingDurationAfterCliff_ =  110376000; // 86400 * 365 * 3.5
 
     uint256 public vestingStartTimestamp;
     uint256 public vestingCliffTimestamp;
     uint256 public vestingEndTimestamp;
+
+    uint256 public totalClaimed; // total claimed since start
 
     IERC20 public BZRX;
     uint256 internal constant startingBalance_ = 889389933e18; // 889,389,933 BZRX
@@ -34,7 +36,6 @@ contract BZRXVestingToken is CheckpointingToken {
 
     mapping (address => uint256) internal lastClaimTime_;
     mapping (address => uint256) internal userTotalClaimed_;
-    uint256 internal totalClaimed_;
 
     bool internal isInitialized_;
 
@@ -52,13 +53,13 @@ contract BZRXVestingToken is CheckpointingToken {
     {
         require(!isInitialized_, "already initialized");
 
-        require(cliffDuration < vestingDuration, "cliff-too-long");
         vestingStartTimestamp = _startTime;
         vestingCliffTimestamp = _startTime + cliffDuration;
         vestingEndTimestamp = _startTime + vestingDuration;
 
         balancesHistory_[msg.sender].addCheckpoint(_getBlockNumber(), startingBalance_);
         totalSupplyHistory_.addCheckpoint(_getBlockNumber(), startingBalance_);
+        emit Transfer(address(0), msg.sender, startingBalance_);
 
         BZRX.transferFrom(
             msg.sender,
@@ -104,9 +105,9 @@ contract BZRXVestingToken is CheckpointingToken {
         _claim(msg.sender);
 
         uint256 _blockNumber = _getBlockNumber();
-        uint256 balanceBefore = _balanceOfAt(msg.sender, _blockNumber);
+        uint256 balanceBefore = balanceOfAt(msg.sender, _blockNumber);
         balancesHistory_[msg.sender].addCheckpoint(_blockNumber, 0);
-        totalSupplyHistory_.addCheckpoint(_blockNumber, sub(_totalSupplyAt(_blockNumber), balanceBefore));
+        totalSupplyHistory_.addCheckpoint(_blockNumber, sub(totalSupplyAt(_blockNumber), balanceBefore));
 
         emit Transfer(
             msg.sender,
@@ -120,7 +121,7 @@ contract BZRXVestingToken is CheckpointingToken {
         view
         returns (uint256)
     {
-        return _totalSupplyAt(_getBlockNumber());
+        return totalSupplyAt(_getBlockNumber());
     }
 
     function totalSupplyAt(
@@ -129,7 +130,7 @@ contract BZRXVestingToken is CheckpointingToken {
         view
         returns (uint256)
     {
-        return _totalSupplyAt(_blockNumber);
+        return totalSupplyHistory_.getValueAt(_blockNumber);
     }
 
     // total that has vested, but has not yet been claimed by a user
@@ -142,7 +143,7 @@ contract BZRXVestingToken is CheckpointingToken {
         uint256 lastClaim = lastClaimTime_[_owner];
         if (lastClaim < _getTimestamp()) {
             return _totalVested(
-                _balanceOfAt(_owner, _getBlockNumber()),
+                balanceOfAt(_owner, _getBlockNumber()),
                 lastClaim
             );
         }
@@ -153,9 +154,9 @@ contract BZRXVestingToken is CheckpointingToken {
         address _owner)
         public
         view
-        returns (uint256)
+        returns (uint256 balance)
     {
-        uint256 balance = _balanceOfAt(_owner, _getBlockNumber());
+        balance = balanceOfAt(_owner, _getBlockNumber());
         if (balance != 0) {
             uint256 lastClaim = lastClaimTime_[_owner];
             if (lastClaim < _getTimestamp()) {
@@ -168,7 +169,6 @@ contract BZRXVestingToken is CheckpointingToken {
                 );
             }
         }
-        return balance;
     }
 
     // total that has been claimed by a user
@@ -190,15 +190,6 @@ contract BZRXVestingToken is CheckpointingToken {
         return _totalVested(startingBalance_, 0);
     }
 
-    // total claimed since start
-    function totalClaimed()
-        external
-        view
-        returns (uint256)
-    {
-        return totalClaimed_;
-    }
-
     // total unclaimed since start
     function totalUnclaimed()
         external
@@ -207,7 +198,7 @@ contract BZRXVestingToken is CheckpointingToken {
     {
         return sub(
             _totalVested(startingBalance_, 0),
-            totalClaimed_
+            totalClaimed
         );
     }
 
@@ -221,7 +212,7 @@ contract BZRXVestingToken is CheckpointingToken {
         uint256 vested = vestedBalanceOf(_owner);
         if (vested != 0) {
             userTotalClaimed_[_owner] = add(userTotalClaimed_[_owner], vested);
-            totalClaimed_ = add(totalClaimed_, vested);
+            totalClaimed = add(totalClaimed, vested);
 
             BZRX.transfer(
                 _owner,
@@ -234,9 +225,7 @@ contract BZRXVestingToken is CheckpointingToken {
             );
         }
 
-        lastClaimTime_[_owner] = _timestamp < _vestingEndTimestamp ?
-            _timestamp :
-            _vestingEndTimestamp;
+        lastClaimTime_[_owner] = _timestamp;
     }
 
     function _totalVested(
@@ -266,14 +255,5 @@ contract BZRXVestingToken is CheckpointingToken {
 
         uint256 timeSinceClaim = sub(currentTimeForVesting, _lastClaimTime);
         return mul(_proportionalSupply, timeSinceClaim) / vestingDurationAfterCliff_; // will never divide by 0
-    }
-
-    function _totalSupplyAt(
-        uint256 _blockNumber)
-        internal
-        view
-        returns (uint256)
-    {
-        return totalSupplyHistory_.getValueAt(_blockNumber);
     }
 }

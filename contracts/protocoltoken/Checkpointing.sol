@@ -80,11 +80,9 @@ library Checkpointing {
         returns (uint256)
     {
         uint256 length = _self.history.length;
-        if (length > 0) {
+        if (length != 0) {
             return _self.history[length - 1].time;
         }
-
-        return 0;
     }
 
     function latestValue(
@@ -94,11 +92,9 @@ library Checkpointing {
         returns (uint256)
     {
         uint256 length = _self.history.length;
-        if (length > 0) {
+        if (length != 0) {
             return _self.history[length - 1].value;
         }
-
-        return 0;
     }
 
     function _getValueAt(
@@ -134,7 +130,7 @@ library Checkpointing {
         uint256 low = 0;
         uint256 high = lastIndex - 1;
 
-        while (high > low) {
+        while (high != low) {
             uint256 mid = (high + low + 1) / 2; // average, ceil round
             Checkpoint storage checkpoint = _self.history[mid];
             uint256 midTime = checkpoint.time;
