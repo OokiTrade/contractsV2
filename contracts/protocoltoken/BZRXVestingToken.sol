@@ -206,9 +206,6 @@ contract BZRXVestingToken is CheckpointingToken {
         address _owner)
         internal
     {
-        uint256 _timestamp = _getTimestamp();
-        uint256 _vestingEndTimestamp = vestingEndTimestamp;
-
         uint256 vested = vestedBalanceOf(_owner);
         if (vested != 0) {
             userTotalClaimed_[_owner] = add(userTotalClaimed_[_owner], vested);
@@ -225,7 +222,7 @@ contract BZRXVestingToken is CheckpointingToken {
             );
         }
 
-        lastClaimTime_[_owner] = _timestamp;
+        lastClaimTime_[_owner] = _getTimestamp();
     }
 
     function _totalVested(
