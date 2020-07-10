@@ -241,7 +241,7 @@ contract BZRXVestingToken is CheckpointingToken {
             // OR all vested token has already been claimed
             return 0;
         }
-        if (_lastClaimTime == 0) {
+        if (_lastClaimTime < _vestingCliffTimestamp) {
             // vesting starts at the cliff timestamp
             _lastClaimTime = _vestingCliffTimestamp;
         }
