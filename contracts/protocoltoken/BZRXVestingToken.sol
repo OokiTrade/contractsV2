@@ -52,7 +52,12 @@ contract BZRXVestingToken is CheckpointingToken, Ownable {
 
         balancesHistory_[msg.sender].addCheckpoint(_getBlockNumber(), startingBalance_);
         totalSupplyHistory_.addCheckpoint(_getBlockNumber(), startingBalance_);
-        emit Transfer(address(0), msg.sender, startingBalance_);
+
+        emit Transfer(
+            address(0),
+            msg.sender,
+            startingBalance_
+        );
 
         BZRX.transferFrom(
             msg.sender,
