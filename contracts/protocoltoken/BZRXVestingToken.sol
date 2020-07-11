@@ -5,10 +5,11 @@
 
 pragma solidity 0.5.17;
 
+import "../openzeppelin/Ownable.sol";
 import "./CheckpointingToken.sol";
 
 
-contract BZRXVestingToken is CheckpointingToken {
+contract BZRXVestingToken is CheckpointingToken, Ownable {
 
     event Claim(
         address indexed owner,
@@ -23,13 +24,16 @@ contract BZRXVestingToken is CheckpointingToken {
     uint256 public constant vestingDuration =               126144000; // 86400 * 365 * 4
     uint256 internal constant vestingDurationAfterCliff_ =  110376000; // 86400 * 365 * 3.5
 
-    uint256 public vestingStartTimestamp;
-    uint256 public vestingCliffTimestamp;
-    uint256 public vestingEndTimestamp;
+    uint256 public constant vestingStartTimestamp =         1594648800; // start_time
+    uint256 public constant vestingCliffTimestamp =         1594648800 + 15768000; // start_time + cliffDuration
+    uint256 public constant vestingEndTimestamp =           1594648800 + 126144000; // start_time + vestingDuration
+    uint256 public constant vestingLastClaimTimestamp =     1594648800 + 126144000 + 86400 * 365; // start_time + vestingDuration + one year
 
     uint256 public totalClaimed; // total claimed since start
 
-    IERC20 public BZRX;
+    //IERC20 public constant BZRX = IERC20(); // mainnet
+    IERC20 public constant BZRX = IERC20(0xB54Fc2F2ea17d798Ad5C7Aba2491055BCeb7C6b2); // kovan
+
     uint256 internal constant startingBalance_ = 889389933e18; // 889,389,933 BZRX
 
     Checkpointing.History internal totalSupplyHistory_;
@@ -39,23 +43,12 @@ contract BZRXVestingToken is CheckpointingToken {
 
     bool internal isInitialized_;
 
-    constructor(
-        IERC20 _BZRX)
-        public
-    {
-        BZRX = _BZRX;
-    }
 
     // sets up vesting and deposits BZRX
-    function initialize(
-        uint256 _startTime)
+    function initialize()
         external
     {
         require(!isInitialized_, "already initialized");
-
-        vestingStartTimestamp = _startTime;
-        vestingCliffTimestamp = _startTime + cliffDuration;
-        vestingEndTimestamp = _startTime + vestingDuration;
 
         balancesHistory_[msg.sender].addCheckpoint(_getBlockNumber(), startingBalance_);
         totalSupplyHistory_.addCheckpoint(_getBlockNumber(), startingBalance_);
@@ -113,6 +106,21 @@ contract BZRXVestingToken is CheckpointingToken {
             msg.sender,
             address(0),
             balanceBefore
+        );
+    }
+
+    // funds unclaimed one year after vesting ends (5 years) can be rescued
+    function rescue(
+        address _receiver,
+        uint256 _amount)
+        external
+        onlyOwner
+    {
+        require(_getTimestamp() > vestingLastClaimTimestamp, "unauthorized");
+
+        BZRX.transfer(
+            _receiver,
+            _amount
         );
     }
 
@@ -232,22 +240,22 @@ contract BZRXVestingToken is CheckpointingToken {
         view
         returns (uint256)
     {
-        uint256 _vestingCliffTimestamp = vestingCliffTimestamp;
-        uint256 _vestingEndTimestamp = vestingEndTimestamp;
         uint256 currentTimeForVesting = _getTimestamp();
 
-        if (currentTimeForVesting <= _vestingCliffTimestamp || _lastClaimTime >= _vestingEndTimestamp) {
+        if (currentTimeForVesting <= vestingCliffTimestamp ||
+            _lastClaimTime >= vestingEndTimestamp ||
+            currentTimeForVesting > vestingLastClaimTimestamp) {
             // time cannot be before vesting starts
             // OR all vested token has already been claimed
             return 0;
         }
-        if (_lastClaimTime < _vestingCliffTimestamp) {
+        if (_lastClaimTime < vestingCliffTimestamp) {
             // vesting starts at the cliff timestamp
-            _lastClaimTime = _vestingCliffTimestamp;
+            _lastClaimTime = vestingCliffTimestamp;
         }
-        if (currentTimeForVesting > _vestingEndTimestamp) {
+        if (currentTimeForVesting > vestingEndTimestamp) {
             // vesting ends at the end timestamp
-            currentTimeForVesting = _vestingEndTimestamp;
+            currentTimeForVesting = vestingEndTimestamp;
         }
 
         uint256 timeSinceClaim = sub(currentTimeForVesting, _lastClaimTime);

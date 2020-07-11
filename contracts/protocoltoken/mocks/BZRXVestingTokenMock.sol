@@ -13,11 +13,11 @@ contract BZRXVestingTokenMock is BZRXVestingToken {
     uint256 public currentBlock;
     uint256 public currentTime;
 
-    constructor(
+    /*constructor(
         IERC20 _BZRX)
         BZRXVestingToken(_BZRX)
         public
-    {}
+    {}*/
 
     function withdrawAll()
         public
