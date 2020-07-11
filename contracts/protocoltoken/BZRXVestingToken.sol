@@ -25,9 +25,9 @@ contract BZRXVestingToken is CheckpointingToken, Ownable {
     uint256 internal constant vestingDurationAfterCliff_ =  110376000; // 86400 * 365 * 3.5
 
     uint256 public constant vestingStartTimestamp =         1594648800; // start_time
-    uint256 public constant vestingCliffTimestamp =         1594648800 + 15768000; // start_time + cliffDuration
-    uint256 public constant vestingEndTimestamp =           1594648800 + 126144000; // start_time + vestingDuration
-    uint256 public constant vestingLastClaimTimestamp =     1594648800 + 126144000 + 86400 * 365; // start_time + vestingDuration + one year
+    uint256 public constant vestingCliffTimestamp =         vestingStartTimestamp + cliffDuration;
+    uint256 public constant vestingEndTimestamp =           vestingStartTimestamp + vestingDuration;
+    uint256 public constant vestingLastClaimTimestamp =     vestingEndTimestamp + 86400 * 365;
 
     uint256 public totalClaimed; // total claimed since start
 
