@@ -100,7 +100,7 @@ contract BZRXVestingToken is CheckpointingToken, Ownable {
         uint256 _blockNumber = _getBlockNumber();
         uint256 balanceBefore = balanceOfAt(msg.sender, _blockNumber);
         balancesHistory_[msg.sender].addCheckpoint(_blockNumber, 0);
-        totalSupplyHistory_.addCheckpoint(_blockNumber, sub(totalSupplyAt(_blockNumber), balanceBefore));
+        totalSupplyHistory_.addCheckpoint(_blockNumber, totalSupplyAt(_blockNumber) - balanceBefore); // overflow not possible
 
         emit Transfer(
             msg.sender,
