@@ -247,6 +247,7 @@ contract BZRXVestingToken is CheckpointingToken, Ownable {
             currentTimeForVesting > vestingLastClaimTimestamp) {
             // time cannot be before vesting starts
             // OR all vested token has already been claimed
+            // OR time cannot be after last claim date
             return 0;
         }
         if (_lastClaimTime < vestingCliffTimestamp) {
