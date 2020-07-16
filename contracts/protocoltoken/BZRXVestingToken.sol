@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2020, bZeroX, LLC. All Rights Reserved.
+ * Copyright 2017-2020, bZeroX, LLC <https://bzx.network/>. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -31,8 +31,9 @@ contract BZRXVestingToken is CheckpointingToken, Ownable {
 
     uint256 public totalClaimed; // total claimed since start
 
-    //IERC20 public constant BZRX = IERC20(); // mainnet
-    IERC20 public constant BZRX = IERC20(0xB54Fc2F2ea17d798Ad5C7Aba2491055BCeb7C6b2); // kovan
+    //IERC20 public constant BZRX = IERC20(0x3194cBDC3dbcd3E11a07892e7bA5c3394048Cc87); // testnet
+    IERC20 public constant BZRX = IERC20(0x56d811088235F11C8920698a204A5010a788f4b3); // mainnet
+    //IERC20 public constant BZRX = IERC20(0xB54Fc2F2ea17d798Ad5C7Aba2491055BCeb7C6b2); // kovan
 
     uint256 internal constant startingBalance_ = 889389933e18; // 889,389,933 BZRX
 
