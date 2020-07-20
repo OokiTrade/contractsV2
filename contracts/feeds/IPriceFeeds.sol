@@ -56,16 +56,6 @@ interface IPriceFeeds {
         view
         returns (uint256);
 
-    /*unction getPositionOffset(
-        address loanToken,
-        address collateralToken,
-        uint256 loanAmount,
-        uint256 collateralAmount,
-        uint256 minInitialMargin)
-        external
-        view
-        returns (bool isPositive, uint256 loanOffsetAmount, uint256 collateralOffsetAmount);*/
-
     function getCurrentMarginAndCollateralSize(
         address loanToken,
         address collateralToken,
