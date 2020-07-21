@@ -25,7 +25,7 @@ contract LiquidationHelper is State {
             incentivePercent = currentMargin;
         }
 
-        if (currentMargin > maintenanceMargin) {
+        if (currentMargin > maintenanceMargin || collateralToLoanRate == 0) {
             return (maxLiquidatable, maxSeizable, incentivePercent);
         }
 
