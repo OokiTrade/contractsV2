@@ -28,7 +28,7 @@
 
 * [python3](https://www.python.org/downloads/release/python-368/) version 3.6 or greater, python3-dev
 * [ganache-cli](https://github.com/trufflesuite/ganache-cli) - tested with version [6.9.1](https://github.com/trufflesuite/ganache-cli/releases/tag/v6.9.1)
-* [brownie](https://github.com/eth-brownie/brownie/) version 1.9.4 or greater
+* [brownie](https://github.com/eth-brownie/brownie/) version 1.10.3 or greater
 
 ## Documentation and Support
 

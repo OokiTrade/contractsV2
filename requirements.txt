@@ -1,2 +1,2 @@
-eth-brownie==1.9.4
+eth-brownie==1.10.3
 munch==2.5.0
