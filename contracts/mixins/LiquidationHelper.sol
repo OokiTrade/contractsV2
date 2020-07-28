@@ -21,12 +21,10 @@ contract LiquidationHelper is State {
         returns (uint256 maxLiquidatable, uint256 maxSeizable, uint256 incentivePercent)
     {
         incentivePercent = liquidationIncentivePercent;
-        if (currentMargin < incentivePercent) {
-            incentivePercent = currentMargin;
-        }
-
         if (currentMargin > maintenanceMargin || collateralToLoanRate == 0) {
             return (maxLiquidatable, maxSeizable, incentivePercent);
+        } else if (currentMargin <= incentivePercent) {
+            return (principal, collateral, currentMargin);
         }
 
         uint256 desiredMargin = maintenanceMargin
