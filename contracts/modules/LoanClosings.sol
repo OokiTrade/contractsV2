@@ -166,10 +166,9 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
         );
 
         if (loanCloseAmount < maxLiquidatable) {
-            seizedAmount = SafeMath.div(
-                SafeMath.mul(maxSeizable, loanCloseAmount),
-                maxLiquidatable
-            );
+            seizedAmount = maxSeizable
+                .mul(loanCloseAmount)
+                .div(maxLiquidatable);
         } else if (loanCloseAmount > maxLiquidatable) {
             // adjust down the close amount to the max
             loanCloseAmount = maxLiquidatable;
