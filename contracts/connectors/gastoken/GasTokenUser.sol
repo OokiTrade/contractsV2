@@ -46,6 +46,7 @@ contract GasTokenUser is Ownable {
     function _gasUsed(
         uint256 startingGas)
         internal
+        view
         returns (uint256)
     {
         return startingGas

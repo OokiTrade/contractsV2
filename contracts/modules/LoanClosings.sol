@@ -173,6 +173,8 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
             // adjust down the close amount to the max
             loanCloseAmount = maxLiquidatable;
             seizedAmount = maxSeizable;
+        } else {
+            seizedAmount = maxSeizable;
         }
 
         require(loanCloseAmount != 0, "nothing to liquidate");
