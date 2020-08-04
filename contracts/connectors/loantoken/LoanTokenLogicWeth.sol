@@ -61,6 +61,7 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
         uint256[5] memory sentAmounts,
         uint256 withdrawalAmount)
         internal
+        returns (uint256 msgValue)
     {
         address _wethToken = wethToken;
         address _loanTokenAddress = _wethToken;
@@ -70,6 +71,8 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
         uint256 collateralTokenSent = sentAmounts[4];
 
         require(_loanTokenAddress != collateralTokenAddress, "26");
+
+        msgValue = msg.value;
 
         if (withdrawalAmount != 0) { // withdrawOnOpen == true
             IWethERC20(_wethToken).withdraw(withdrawalAmount);
@@ -89,9 +92,10 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
         }
 
         if (loanTokenSent != 0) {
-            if (msg.value != 0 && msg.value >= loanTokenSent) {
+            if (msgValue != 0 && msgValue >= loanTokenSent) {
                 IWeth(_wethToken).deposit.value(loanTokenSent)();
                 _safeTransfer(_loanTokenAddress, bZxContract, loanTokenSent, "29");
+                msgValue -= loanTokenSent;
             } else {
                 _safeTransferFrom(_loanTokenAddress, msg.sender, bZxContract, loanTokenSent, "29");
             }

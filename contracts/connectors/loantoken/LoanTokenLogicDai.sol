@@ -83,7 +83,7 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
         );
     }
 
-    function flashBorrowToken(
+    function flashBorrow(
         uint256 borrowAmount,
         address borrower,
         address target,
@@ -94,16 +94,15 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
         nonReentrant
         returns (bytes memory)
     {
+        require(borrowAmount != 0, "38");
+
         _checkPause();
 
         _settleInterest();
 
-        IERC20 _dai;
-        if (borrowAmount != 0) {
-            _dai = _dsrWithdraw(borrowAmount);
-        } else {
-            _dai = _getDai();
-        }
+        _dsrWithdraw(borrowAmount);
+
+        IERC20 _dai = _getDai();
 
         // save before balances
         uint256 beforeEtherBalance = address(this).balance.sub(msg.value);
@@ -114,12 +113,10 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
             .add(totalAssetBorrow());
 
         // transfer assets to calling contract
-        if (borrowAmount != 0) {
-            require(_dai.transfer(
-                borrower,
-                borrowAmount
-            ), "39");
-        }
+        require(_dai.transfer(
+            borrower,
+            borrowAmount
+        ), "39");
 
         bytes memory callData;
         if (bytes(signature).length == 0) {
@@ -280,13 +277,13 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
             depositAmount
         ), "18");
 
-        _dsrDeposit();
-
         if (withChai) {
             // convert to Dai
             depositAmount = depositAmount
                 .mul(currentChaiPrice)
                 .div(10**18);
+        } else {
+            _dsrDeposit();
         }
 
         mintAmount = depositAmount
@@ -327,6 +324,7 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
 
         bool success;
         if (toChai) {
+            // DSR any free DAI in the contract before Chai withdrawal
             _dsrDeposit();
             
             IChai _chai = _getChai();
@@ -334,7 +332,7 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
             
             success = _chai.move(
                 address(this),
-                msg.sender,
+                receiver,
                 amountPaid
             );
 
@@ -342,7 +340,8 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
             amountPaid = chaiBalance
                 .sub(_chai.balanceOf(address(this)));
         } else {
-            success = _dsrWithdraw(amountPaid).transfer(
+            _dsrWithdraw(amountPaid);
+            success = _getDai().transfer(
                 receiver,
                 amountPaid
             );
@@ -375,10 +374,11 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
         uint256[5] memory sentAmounts,
         uint256 withdrawalAmount)
         internal
+        returns (uint256)
     {
         _dsrWithdraw(sentAmounts[1]);
 
-        super._verifyTransfers(
+        return super._verifyTransfers(
             collateralTokenAddress,
             sentAddresses,
             sentAmounts,
@@ -417,10 +417,8 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
     function _dsrWithdraw(
         uint256 _value)
         internal
-        returns (IERC20 _dai)
     {
-        _dai = _getDai();
-        uint256 localBalance = _dai.balanceOf(address(this));
+        uint256 localBalance = _getDai().balanceOf(address(this));
         if (_value > localBalance) {
             _getChai().draw(
                 address(this),

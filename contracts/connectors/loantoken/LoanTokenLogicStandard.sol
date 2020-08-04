@@ -76,6 +76,8 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         nonReentrant
         returns (bytes memory)
     {
+        require(borrowAmount != 0, "38");
+
         _checkPause();
 
         _settleInterest();
@@ -89,9 +91,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         _flTotalAssetSupply = beforeAssetsBalance;
 
         // transfer assets to calling contract
-        if (borrowAmount != 0) {
-            _safeTransfer(loanTokenAddress, borrower, borrowAmount, "39");
-        }
+        _safeTransfer(loanTokenAddress, borrower, borrowAmount, "39");
 
         bytes memory callData;
         if (bytes(signature).length == 0) {
@@ -823,7 +823,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         }
 
         // handle transfers prior to adding newPrincipal to loanTokenSent
-        _verifyTransfers(
+        uint256 msgValue = _verifyTransfers(
             collateralTokenAddress,
             sentAddresses,
             sentAmounts,
@@ -838,14 +838,6 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
             // withdrawAmount already sent to the borrower, so we aren't sending it to the protocol
             sentAmounts[3] = sentAmounts[3]
                 .sub(withdrawAmount);
-        }
-
-        uint256 msgValue;
-        if (msg.value != 0) {
-            msgValue = address(this).balance;
-            if (msgValue > msg.value) {
-                msgValue = msg.value;
-            }
         }
 
         bytes32 loanParamsId = loanParamsIds[uint256(keccak256(abi.encodePacked(
@@ -889,6 +881,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         uint256[5] memory sentAmounts,
         uint256 withdrawalAmount)
         internal
+        returns (uint256 msgValue)
     {
         address _wethToken = wethToken;
         address _loanTokenAddress = loanTokenAddress;
@@ -898,6 +891,8 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         uint256 collateralTokenSent = sentAmounts[4];
 
         require(_loanTokenAddress != collateralTokenAddress, "26");
+
+        msgValue = msg.value;
 
         if (withdrawalAmount != 0) { // withdrawOnOpen == true
             _safeTransfer(_loanTokenAddress, receiver, withdrawalAmount, "");
@@ -909,9 +904,10 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         }
 
         if (collateralTokenSent != 0) {
-            if (collateralTokenAddress == _wethToken && msg.value != 0 && msg.value >= collateralTokenSent) {
+            if (collateralTokenAddress == _wethToken && msgValue != 0 && msgValue >= collateralTokenSent) {
                 IWeth(_wethToken).deposit.value(collateralTokenSent)();
                 _safeTransfer(collateralTokenAddress, bZxContract, collateralTokenSent, "28");
+                msgValue -= collateralTokenSent;
             } else {
                 _safeTransferFrom(collateralTokenAddress, msg.sender, bZxContract, collateralTokenSent, "28");
             }

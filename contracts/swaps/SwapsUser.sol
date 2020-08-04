@@ -130,6 +130,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
                 vals
             );
         } else {
+            revert("invalid state");
             /*
             //keccak256("Swaps_SwapsImplZeroX")
             address swapsImplZeroX;
