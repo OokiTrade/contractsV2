@@ -507,9 +507,9 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                 lender: lender
             });
 
-            activeLoansSet.add(loanId);
-            lenderLoanSets[lender].add(loanId);
-            borrowerLoanSets[borrower].add(loanId);
+            activeLoansSet.addBytes32(loanId);
+            lenderLoanSets[lender].addBytes32(loanId);
+            borrowerLoanSets[borrower].addBytes32(loanId);
         } else {
             loanLocal = loans[loanId];
             require(loanLocal.active && block.timestamp < loanLocal.endTimestamp, "loan has ended");

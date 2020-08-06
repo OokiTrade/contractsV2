@@ -48,10 +48,10 @@ contract PriceFeedsTestnets is PriceFeeds {
 
         if (sourceToken != destToken) {
             if (feedType == FeedTypes.Kyber) {
-                if (sourceToken == protocolTokenAddress) {
+                if (sourceToken == bzrxTokenAddress) {
                     // hack for testnet; only returns price in ETH
                     rate = protocolTokenEthPrice;
-                } else if (destToken == protocolTokenAddress) {
+                } else if (destToken == bzrxTokenAddress) {
                     // hack for testnet; only returns price in ETH
                     rate = SafeMath.div(10**36, protocolTokenEthPrice);
                 } else {

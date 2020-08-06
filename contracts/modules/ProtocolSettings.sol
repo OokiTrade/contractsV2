@@ -10,6 +10,7 @@ import "../core/State.sol";
 import "../events/ProtocolSettingsEvents.sol";
 import "../openzeppelin/SafeERC20.sol";
 import "../mixins/ProtocolTokenUser.sol";
+import "../interfaces/IVestingToken.sol";
 
 
 contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
@@ -377,12 +378,31 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
         uint256 amount)
         external
         onlyOwner
-        returns (address, bool)
+        returns (address rewardToken, bool success)
     {
-        return _withdrawProtocolToken(
+        (rewardToken, success) = _withdrawProtocolToken(
             receiver,
             amount
         );
+
+        uint256 totalEmission = IVestingToken(vbzrxTokenAddress).claimedBalanceOf(address(this));
+
+        uint256 totalWithdrawn;
+        // keccak256("BZRX_TotalWithdrawn")
+        bytes32 slot = 0xf0cbcfb4979ecfbbd8f7e7430357fc20e06376d29a69ad87c4f21360f6846545;
+        assembly {
+            totalWithdrawn := sload(slot)
+        }
+
+        if (totalEmission > totalWithdrawn) {
+            IERC20(bzrxTokenAddress).safeTransfer(
+                receiver,
+                totalEmission - totalWithdrawn
+            );
+            assembly {
+                sstore(slot, totalEmission)
+            }
+        }
     }
 
    function depositProtocolToken(
@@ -393,7 +413,7 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
         protocolTokenHeld = protocolTokenHeld
             .add(amount);
 
-        IERC20(protocolTokenAddress).safeTransferFrom(
+        IERC20(vbzrxTokenAddress).safeTransferFrom(
             msg.sender,
             address(this),
             amount

@@ -77,8 +77,12 @@ def isolate(fn_isolation):
 
 @pytest.fixture(scope="module", autouse=True)
 def WETH(module_isolation, accounts, TestWeth):
-    yield accounts[0].deploy(TestWeth) ## 0x3194cBDC3dbcd3E11a07892e7bA5c3394048Cc87
+    yield accounts[0].deploy(TestWeth) ## 0x602C71e4DAC47a042Ee7f46E0aee17F94A3bA0B6
 
 @pytest.fixture(scope="module", autouse=True)
 def BZRX(module_isolation, accounts, TestWeth):
     yield accounts[0].deploy(TestWeth) ## 0x3194cBDC3dbcd3E11a07892e7bA5c3394048Cc87
+
+@pytest.fixture(scope="module", autouse=True)
+def vBZRX(module_isolation, accounts, BZRXVestingTokenMock):
+    yield accounts[0].deploy(BZRXVestingTokenMock) ## 0xa3B53dDCd2E3fC28e8E130288F2aBD8d5EE37472

@@ -12,10 +12,10 @@ import "../openzeppelin/Ownable.sol";
 contract TraderCompensation is Ownable {
 
     // mainnet
-    //IERC20 public constant vBZRX = IERC20(0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F);
+    IERC20 public constant vBZRX = IERC20(0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F);
 
     // kovan
-    IERC20 public constant vBZRX = IERC20(0x6F8304039f34fd6A6acDd511988DCf5f62128a32);
+    //IERC20 public constant vBZRX = IERC20(0x6F8304039f34fd6A6acDd511988DCf5f62128a32);
 
     uint256 public optinStartTimestamp;
     uint256 public optinEndTimestamp;

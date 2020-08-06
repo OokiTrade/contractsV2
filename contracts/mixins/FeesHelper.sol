@@ -160,7 +160,7 @@ contract FeesHelper is State, ProtocolTokenUser, FeesEvents {
             abi.encodeWithSelector(
                 IPriceFeeds(_priceFeeds).queryReturn.selector,
                 feeToken,
-                protocolTokenAddress,
+                bzrxTokenAddress, // price rewards using BZRX price rather than vesting token price
                 feeAmount / 2  // 50% of fee value
             )
         );

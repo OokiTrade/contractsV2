@@ -887,9 +887,9 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
             loanLocal.active = false;
             loanLocal.endTimestamp = block.timestamp;
             loanLocal.pendingTradesId = 0;
-            activeLoansSet.remove(loanLocal.id);
-            lenderLoanSets[loanLocal.lender].remove(loanLocal.id);
-            borrowerLoanSets[loanLocal.borrower].remove(loanLocal.id);
+            activeLoansSet.removeBytes32(loanLocal.id);
+            lenderLoanSets[loanLocal.lender].removeBytes32(loanLocal.id);
+            borrowerLoanSets[loanLocal.borrower].removeBytes32(loanLocal.id);
         } else {
             loanLocal.principal = loanLocal.principal
                 .sub(loanCloseAmount);

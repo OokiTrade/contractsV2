@@ -35,10 +35,10 @@ contract PriceFeedsLocal is PriceFeeds {
             rate = 10**18;
             precision = 10**18;
         } else {
-            if (sourceToken == protocolTokenAddress) {
+            if (sourceToken == bzrxTokenAddress) {
                 // hack for testnet; only returns price in ETH
                 rate = protocolTokenEthPrice;
-            } else if (destToken == protocolTokenAddress) {
+            } else if (destToken == bzrxTokenAddress) {
                 // hack for testnet; only returns price in ETH
                 rate = SafeMath.div(10**36, protocolTokenEthPrice);
             } else {

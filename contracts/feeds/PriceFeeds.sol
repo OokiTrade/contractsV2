@@ -345,25 +345,25 @@ contract PriceFeeds is Constants, Ownable {
 
         if (sourceToken != destToken) {
             uint256 sourceRate;
-            if (sourceToken != address(wethToken) && sourceToken != protocolTokenAddress) {
+            if (sourceToken != address(wethToken) && sourceToken != bzrxTokenAddress) {
                 IPriceFeedsExt _sourceFeed = pricesFeeds[sourceToken];
                 require(address(_sourceFeed) != address(0), "unsupported src feed");
                 sourceRate = uint256(_sourceFeed.latestAnswer());
                 require(sourceRate != 0 && (sourceRate >> 128) == 0, "price error");
             } else {
-                sourceRate = sourceToken == protocolTokenAddress ?
+                sourceRate = sourceToken == bzrxTokenAddress ?
                     protocolTokenEthPrice :
                     10**18;
             }
 
             uint256 destRate;
-            if (destToken != address(wethToken) && destToken != protocolTokenAddress) {
+            if (destToken != address(wethToken) && destToken != bzrxTokenAddress) {
                 IPriceFeedsExt _destFeed = pricesFeeds[destToken];
                 require(address(_destFeed) != address(0), "unsupported dst feed");
                 destRate = uint256(_destFeed.latestAnswer());
                 require(destRate != 0 && (destRate >> 128) == 0, "price error");
             } else {
-                destRate = destToken == protocolTokenAddress ?
+                destRate = destToken == bzrxTokenAddress ?
                     protocolTokenEthPrice :
                     10**18;
             }

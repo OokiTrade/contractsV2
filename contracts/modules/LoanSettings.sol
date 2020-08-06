@@ -163,7 +163,7 @@ contract LoanSettings is State, LoanSettingsEvents {
         loanParamsLocal.owner = msg.sender;
 
         loanParams[loanParamsId] = loanParamsLocal;
-        userLoanParamSets[msg.sender].add(loanParamsId);
+        userLoanParamSets[msg.sender].addBytes32(loanParamsId);
 
         emit LoanParamsSetup(
             loanParamsId,
