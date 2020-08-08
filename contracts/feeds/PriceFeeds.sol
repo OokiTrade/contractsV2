@@ -268,8 +268,8 @@ contract PriceFeeds is Constants, Ownable {
         uint256 gasPrice = _getFastGasPrice();
         if (payToken != address(wethToken) && payToken != address(0)) {
             (uint256 rate, uint256 precision) = _queryRate(
-                payToken,
-                address(wethToken)
+                address(wethToken),
+                payToken
             );
             gasPrice = gasPrice
                 .mul(rate)
