@@ -27,7 +27,7 @@ def loanParams(accounts, bzx, WETH, DAI, Constants):
     }
     return loanParams
 
-def test_setup_removeLoanParams(Constants, bzx, accounts, DAI, loanParamsId, loanParams):
+def test_setup_removeLoanParams(bzx, accounts, DAI, loanParamsId, loanParams):
 
     loanParamsAfter = bzx.getLoanParams([loanParamsId])[0]
     loanParamsAfter = dict(zip(list(loanParams.keys()), loanParamsAfter))
@@ -44,7 +44,7 @@ def test_setup_removeLoanParams(Constants, bzx, accounts, DAI, loanParamsId, loa
     bzx.disableLoanParams([loanParamsId], { "from": accounts[0] })
     assert(bzx.getLoanParams([loanParamsId])[0][0] != "0x0")
 
-def test_setup_removeLoanOrder(Constants, bzx, accounts, DAI, loanParamsId, loanParams):
+def test_setup_removeLoanOrder(bzx, accounts, DAI, loanParamsId, loanParams):
 
     loanParamsAfter = bzx.getLoanParams([loanParamsId])[0]
     loanParamsAfter = dict(zip(list(loanParams.keys()), loanParamsAfter))
@@ -62,7 +62,7 @@ def test_setup_removeLoanOrder(Constants, bzx, accounts, DAI, loanParamsId, loan
     assert(bzx.getLoanParams([loanParamsId])[0][0] != "0x0")
 
 
-def test_disableLoanParams(Constants, bzx, accounts, DAI, WETH, loanParamsId, loanParams):
+def test_disableLoanParams(bzx, accounts, DAI, WETH, loanParamsId, loanParams):
 
     bzx.disableLoanParams([loanParamsId], { "from": accounts[0] })
 
@@ -78,7 +78,7 @@ def test_disableLoanParams(Constants, bzx, accounts, DAI, WETH, loanParamsId, lo
     assert(loanParamsAfter["maintenanceMargin"] == Wei("15 ether"))
     assert(loanParamsAfter["fixedLoanTerm"] == "2419200")
 
-def test_getLoanParams(Constants, bzx, accounts, DAI, WETH, loanParamsId, loanParams):
+def test_getLoanParams(bzx, accounts, DAI, WETH, loanParamsId, loanParams):
 
     loanParamsAfter = bzx.getLoanParams([loanParamsId])[0]
     loanParamsAfter = dict(zip(list(loanParams.keys()), loanParamsAfter))
@@ -92,11 +92,12 @@ def test_getLoanParams(Constants, bzx, accounts, DAI, WETH, loanParamsId, loanPa
     assert(loanParamsAfter["maintenanceMargin"] == Wei("15 ether"))
     assert(loanParamsAfter["fixedLoanTerm"] == "2419200")
 
-def test_getLoanParamsList(Constants, bzx, accounts, DAI, WETH, loanParamsId, loanParams):
-    result = bzx.getLoanParamsList(accounts[0], 0, 10000000)
-    print("result", result)
-    assert False
+def test_getLoanParamsList(bzx, accounts, loanParamsId, loanParams):
+    loanParamsList = bzx.getLoanParamsList(accounts[0], 0, 1)
+    assert(loanParamsList[0] == loanParamsId)
 
-# def test_getTotalPrincipal(Constants, bzx, accounts, DAI, WETH):
-#     bzx.getTotalPrincipal
-#     assert False
+
+def test_getTotalPrincipal(Constants, bzx, accounts, DAI, WETH, LINK, loanParamsId, loanParams):
+    totalPrincipal = bzx.getTotalPrincipal(accounts[0], DAI.address)
+    print("totalPrincipal", totalPrincipal)
+    assert(totalPrincipal == 0)
