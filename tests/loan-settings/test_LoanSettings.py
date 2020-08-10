@@ -28,7 +28,6 @@ def loanParams(accounts, bzx, WETH, DAI, Constants):
     return loanParams
 
 def test_setup_removeLoanParams(bzx, accounts, DAI, loanParamsId, loanParams):
-
     loanParamsAfter = bzx.getLoanParams([loanParamsId])[0]
     loanParamsAfter = dict(zip(list(loanParams.keys()), loanParamsAfter))
     print(loanParamsAfter)
@@ -45,7 +44,6 @@ def test_setup_removeLoanParams(bzx, accounts, DAI, loanParamsId, loanParams):
     assert(bzx.getLoanParams([loanParamsId])[0][0] != "0x0")
 
 def test_setup_removeLoanOrder(bzx, accounts, DAI, loanParamsId, loanParams):
-
     loanParamsAfter = bzx.getLoanParams([loanParamsId])[0]
     loanParamsAfter = dict(zip(list(loanParams.keys()), loanParamsAfter))
     print(loanParamsAfter)
@@ -61,11 +59,8 @@ def test_setup_removeLoanOrder(bzx, accounts, DAI, loanParamsId, loanParams):
     bzx.disableLoanParams([loanParamsId], { "from": accounts[0] })
     assert(bzx.getLoanParams([loanParamsId])[0][0] != "0x0")
 
-
 def test_disableLoanParams(bzx, accounts, DAI, WETH, loanParamsId, loanParams):
-
     bzx.disableLoanParams([loanParamsId], { "from": accounts[0] })
-
     loanParamsAfter = bzx.getLoanParams([loanParamsId])[0]
     loanParamsAfter = dict(zip(list(loanParams.keys()), loanParamsAfter))
     print("loanParamsAfter", loanParamsAfter)
@@ -79,7 +74,6 @@ def test_disableLoanParams(bzx, accounts, DAI, WETH, loanParamsId, loanParams):
     assert(loanParamsAfter["fixedLoanTerm"] == "2419200")
 
 def test_getLoanParams(bzx, accounts, DAI, WETH, loanParamsId, loanParams):
-
     loanParamsAfter = bzx.getLoanParams([loanParamsId])[0]
     loanParamsAfter = dict(zip(list(loanParams.keys()), loanParamsAfter))
     print("loanParamsAfter", loanParamsAfter)
@@ -95,7 +89,6 @@ def test_getLoanParams(bzx, accounts, DAI, WETH, loanParamsId, loanParams):
 def test_getLoanParamsList(bzx, accounts, loanParamsId, loanParams):
     loanParamsList = bzx.getLoanParamsList(accounts[0], 0, 1)
     assert(loanParamsList[0] == loanParamsId)
-
 
 def test_getTotalPrincipal(Constants, bzx, accounts, DAI, WETH, LINK, loanParamsId, loanParams):
     totalPrincipal = bzx.getTotalPrincipal(accounts[0], DAI.address)

@@ -21,14 +21,12 @@ def test_setupLoanParamsEvents(Constants, bzx, accounts, DAI, WETH):
 
     tx = bzx.setupLoanParams([list(loanParams.values())])
     print("tx.events", tx.events)
+
     loanParamsIdSetup = tx.events["LoanParamsIdSetup"][0] 
- 
     assert(loanParamsIdSetup[0]["id"] != "0x0")
     assert(loanParamsIdSetup[0]["owner"] == accounts[0])
 
-
     loanParamsSetup = tx.events["LoanParamsSetup"][0] 
-
     assert(loanParamsSetup["id"] != "0x0") 
     assert(loanParamsSetup["owner"] == accounts[0])
     assert(loanParamsSetup["loanToken"] == DAI.address)
@@ -38,7 +36,6 @@ def test_setupLoanParamsEvents(Constants, bzx, accounts, DAI, WETH):
     assert(loanParamsSetup["maxLoanTerm"] == "2419200")
 
 def test_disableLoanParamsEvents(Constants, bzx, accounts, DAI, WETH):
-
     loanParams = {
         "id": "0x0",
         "active": False,
@@ -57,12 +54,10 @@ def test_disableLoanParamsEvents(Constants, bzx, accounts, DAI, WETH):
     print("tx.events", tx)
 
     loanParamsIdDisabled = tx.events["LoanParamsIdDisabled"][0] 
-
     assert(loanParamsIdDisabled[0]["id"] != "0x0")
     assert(loanParamsIdDisabled[0]["owner"] == accounts[0])
 
     loanParamsDisabled = tx.events["LoanParamsDisabled"][0] 
-
     assert(loanParamsDisabled["id"] != "0x0") 
     assert(loanParamsDisabled["owner"] == accounts[0])
     assert(loanParamsDisabled["loanToken"] == DAI.address)
