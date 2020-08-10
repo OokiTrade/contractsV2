@@ -94,3 +94,4 @@ def test_getTotalPrincipal(Constants, bzx, accounts, DAI, WETH, LINK, loanParams
     totalPrincipal = bzx.getTotalPrincipal(accounts[0], DAI.address)
     print("totalPrincipal", totalPrincipal)
     assert(totalPrincipal == 0)
+    
