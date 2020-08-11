@@ -85,9 +85,9 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
         logicTargets[sig] = target;
 
         if (target != address(0)) {
-            logicTargetsSet.add(bytes32(sig));
+            logicTargetsSet.addBytes32(bytes32(sig));
         } else {
-            logicTargetsSet.remove(bytes32(sig));
+            logicTargetsSet.removeBytes32(bytes32(sig));
         }
     }
 }

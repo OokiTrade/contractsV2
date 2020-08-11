@@ -38,14 +38,14 @@ library EnumerableBytes32Set {
         assembly {
             value := addrvalue
         }
-        return add(set, value);
+        return addBytes32(set, value);
     }
 
     /**
      * @dev Add a value to a set. O(1).
      * Returns false if the value was already in the set.
      */
-    function add(Bytes32Set storage set, bytes32 value)
+    function addBytes32(Bytes32Set storage set, bytes32 value)
         internal
         returns (bool)
     {
@@ -69,14 +69,14 @@ library EnumerableBytes32Set {
         assembly {
             value := addrvalue
         }
-        return remove(set, value);
+        return removeBytes32(set, value);
     }
 
     /**
      * @dev Removes a value from a set. O(1).
      * Returns false if the value was not present in the set.
      */
-    function remove(Bytes32Set storage set, bytes32 value)
+    function removeBytes32(Bytes32Set storage set, bytes32 value)
         internal
         returns (bool)
     {
