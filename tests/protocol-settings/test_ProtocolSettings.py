@@ -72,7 +72,7 @@ def test_transferFrom_reverts(token, accounts, idx):
 def test_setMaxDisagreement(Constants, bzx, accounts, DAI, LINK):
     newValue = 4 * 10**18
     bzx.setMaxDisagreement(newValue)
-    assert( newValue == bzx.maxDisagreement.call())
+    assert(newValue == bzx.maxDisagreement.call())
 
 def test_setSourceBufferPercent(Constants, bzx, accounts, DAI, LINK):
     newValue = 4 * 10**18
