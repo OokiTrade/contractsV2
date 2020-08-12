@@ -43,7 +43,7 @@ def test_setLoanPool(Constants, bzx, accounts):
     assert(bzx.isLoanPool(accounts[6]))
     assert(bzx.isLoanPool(accounts[8]))
 
-   #print(bzx.getloanPoolsList(0, 100))
+    #print(bzx.getloanPoolsList(0, 100))
 
     bzx.setLoanPool(
         [
