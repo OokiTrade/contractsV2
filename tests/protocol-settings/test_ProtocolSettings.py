@@ -43,7 +43,7 @@ def test_setLoanPool(Constants, bzx, accounts):
     assert(bzx.isLoanPool(accounts[6]))
     assert(bzx.isLoanPool(accounts[8]))
 
-    #print(bzx.getloanPoolsList(0, 100))
+   #print(bzx.getloanPoolsList(0, 100))
 
     bzx.setLoanPool(
         [
@@ -68,3 +68,13 @@ def test_transferFrom_reverts(token, accounts, idx):
     with brownie.reverts("Insufficient allowance"):
         token.transferFrom(accounts[0], accounts[2], 1e18, {'from': accounts[idx]})
 '''
+
+def test_setMaxDisagreement(Constants, bzx, accounts, DAI, LINK):
+    newValue = 4 * 10**18
+    bzx.setMaxDisagreement(newValue)
+    assert( newValue == bzx.maxDisagreement.call())
+
+def test_setSourceBufferPercent(Constants, bzx, accounts, DAI, LINK):
+    newValue = 4 * 10**18
+    bzx.setSourceBufferPercent(newValue)
+    assert( newValue == bzx.sourceBufferPercent.call())
