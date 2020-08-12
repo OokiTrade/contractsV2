@@ -133,18 +133,14 @@ def test_setFeesController(Constants, bzx, accounts):
     assert(setFeesController[0]["newController"] == Constants["ONE_ADDRESS"])
 
  
+# WIP
+# def test_withdrawLendingFees(Constants, bzx, accounts, DAI, LINK, FeesHelper):
+#     assert False
 
-def test_withdrawLendingFees(Constants, bzx, accounts, DAI, LINK, FeesHelper):
-    tx = bzx.setFeesController(accounts[0])
-    print("tx.info", tx.events)
-    tx2 = FeesHelper._getTradingFee(1)
-    print("tx2.info", tx2.events)
-    success = bzx.withdrawLendingFees(DAI, accounts[0], 1)
-    print("success", success.events)
-    assert False
-
+# WIP
 # def test_withdrawTradingFees(Constants, bzx):
 #     assert False
 
+# WIP
 # def test_withdrawBorrowingFees(Constants, bzx):
 #     assert False
