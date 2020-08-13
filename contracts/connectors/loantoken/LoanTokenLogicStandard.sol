@@ -3,7 +3,9 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: GNU 
+pragma solidity 0.6.12;
+
 pragma experimental ABIEncoderV2;
 
 import "./AdvancedToken.sol";
@@ -27,7 +29,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
     address public constant wethToken = 0xd0A1E359811322d97991E03f863a0C30C2cF029C; // kovan
 
 
-    function()
+    receive()
         external
     {
         revert("fallback not allowed");

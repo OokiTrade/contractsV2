@@ -3,7 +3,9 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: GNU 
+pragma solidity 0.6.12;
+ 
 pragma experimental ABIEncoderV2;
 
 import "../core/State.sol";
@@ -18,7 +20,7 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
 
     constructor() public {}
 
-    function()
+    receive()
         external
     {
         revert("fallback not allowed");

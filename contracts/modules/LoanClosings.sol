@@ -3,7 +3,9 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: GNU 
+pragma solidity 0.6.12;
+
 pragma experimental ABIEncoderV2;
 
 import "../core/State.sol";
@@ -26,7 +28,7 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
 
     constructor() public {}
 
-    function()
+    receive()
         external
     {
         revert("fallback not allowed");
