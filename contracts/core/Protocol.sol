@@ -5,7 +5,6 @@
 
 // SPDX-License-Identifier: GNU 
 pragma solidity 0.6.12;
-// SPDX-License-Identifier: GNU 
 pragma experimental ABIEncoderV2;
 
 import "./State.sol";
