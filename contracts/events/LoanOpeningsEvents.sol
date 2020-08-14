@@ -8,10 +8,6 @@ pragma solidity 0.5.17;
 
 contract LoanOpeningsEvents {
 
-    event Log(
-        uint256 logId
-    );
-    
     // topic0: 0x7bd8cbb7ba34b33004f3deda0fd36c92fc0360acbd97843360037b467a538f90
     event Borrow(
         address indexed user,
