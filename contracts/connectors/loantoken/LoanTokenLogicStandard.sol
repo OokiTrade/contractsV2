@@ -345,19 +345,21 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         );
 
         uint256 _currentProfit;
-        if (_oldBalance != 0 && _newBalance != 0) {
+        if (_oldBalance != 0) {
             _currentProfit = _profitOf(
                 slot,
                 _oldBalance,
                 _currentPrice,
                 checkpointPrices_[_user]
             );
-        } else if (_newBalance == 0) {
-            _currentPrice = 0;
+
+            assembly {
+                sstore(slot, _currentProfit)
+            }
         }
 
-        assembly {
-            sstore(slot, _currentProfit)
+        if (_newBalance == 0) {
+            _currentPrice = 0;
         }
 
         checkpointPrices_[_user] = _currentPrice;
@@ -994,9 +996,8 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         if (assetBorrow != 0) {
             (uint256 interestOwedPerDay,) = _getAllInterest();
             return interestOwedPerDay
-                .mul(10**20)
-                .div(assetBorrow)
-                .mul(365);
+                .mul(365 * 10**20)
+                .div(assetBorrow);
         }
     }
 
@@ -1183,8 +1184,8 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         return maxDuration != 0 ?
             interestRate
                 .mul(10**20)
-                .div(31536000) // 86400 * 365
                 .mul(maxDuration)
+                .div(31536000) // 86400 * 365
                 .div(marginAmount)
                 .add(10**20) :
             10**20;

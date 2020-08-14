@@ -206,8 +206,8 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                 if (sourceToDestPrecision != 0) {
                     borrowAmount = collateral
                         .mul(10**20)
-                        .div(marginAmount)
                         .mul(sourceToDestRate)
+                        .div(marginAmount)
                         .div(sourceToDestPrecision);
                 }
             }

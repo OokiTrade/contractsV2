@@ -29,8 +29,6 @@ contract PriceFeedsLocal is PriceFeeds {
         view
         returns (uint256 rate, uint256 precision)
     {
-        require(!globalPricingPaused, "pricing is paused");
-
         if (sourceToken == destToken) {
             rate = 10**18;
             precision = 10**18;
