@@ -296,27 +296,35 @@ contract IBZx is
         external
         returns (uint256 actualWithdrawAmount);
 
-    function extendLoanByInterest(
+    function withdrawAccruedInterest(
+        address loanToken)
+        external;
+
+    function extendLoanDuration(
         bytes32 loanId,
-        address payer,
         uint256 depositAmount,
         bool useCollateral,
-        bytes calldata loanDataBytes)
+        bytes calldata /*loanDataBytes*/) // for future use
         external
         payable
         returns (uint256 secondsExtended);
 
-    function reduceLoanByInterest(
+    function reduceLoanDuration(
         bytes32 loanId,
         address receiver,
         uint256 withdrawAmount)
         external
         returns (uint256 secondsReduced);
 
-    function withdrawAccruedInterest(
-        address loanToken)
-        external;
-
+    /// @dev Gets current lender interest data totals for all loans with a specific oracle and interest token
+    /// @param lender The lender address
+    /// @param loanToken The loan token address
+    /// @return interestPaid The total amount of interest that has been paid to a lender so far
+    /// @return interestPaidDate The date of the last interest pay out, or 0 if no interest has been withdrawn yet
+    /// @return interestOwedPerDay The amount of interest the lender is earning per day
+    /// @return interestUnPaid The total amount of interest the lender is owned and not yet withdrawn
+    /// @return interestFeePercent The fee retained by the protocol before interest is paid to the lender
+    /// @return principalTotal The total amount of outstading principal the lender has loaned
     function getLenderInterestData(
         address lender,
         address loanToken)
@@ -330,6 +338,13 @@ contract IBZx is
             uint256 interestFeePercent,
             uint256 principalTotal);
 
+
+    /// @dev Gets current interest data for a loan
+    /// @param loanId A unique id representing the loan
+    /// @return loanToken The loan token that interest is paid in
+    /// @return interestOwedPerDay The amount of interest the borrower is paying per day
+    /// @return interestDepositTotal The total amount of interest the borrower has deposited
+    /// @return interestDepositRemaining The amount of deposited interest that is not yet owed to a lender
     function getLoanInterestData(
         bytes32 loanId)
         external
@@ -358,6 +373,11 @@ contract IBZx is
         uint256 maxSeizable;
     }
 
+    // Only returns data for loans that are active
+    // loanType 0: all loans
+    // loanType 1: margin trade loans
+    // loanType 2: non-margin trade loans
+    // only active loans are returned
     function getUserLoans(
         address user,
         uint256 start,
