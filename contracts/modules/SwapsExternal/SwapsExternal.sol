@@ -96,11 +96,6 @@ contract SwapsExternal is State, VaultController, SwapsUser, GasTokenUser {
     {
         require(sourceTokenAmount != 0, "sourceTokenAmount == 0");
 
-
-//deflationary token: check amount before and amoutn after transfer in
-//amount after - amount ebfore = sourcetokenAmount
-
-
         if (msg.value != 0) {
             if (sourceToken == address(0)) {
                 sourceToken = address(wethToken);
