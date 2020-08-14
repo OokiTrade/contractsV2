@@ -6,11 +6,11 @@
 pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
-import "../core/State.sol";
-import "../events/ProtocolSettingsEvents.sol";
-import "../openzeppelin/SafeERC20.sol";
-import "../mixins/ProtocolTokenUser.sol";
-import "../interfaces/IVestingToken.sol";
+import "../../core/State.sol";
+import "../../events/ProtocolSettingsEvents.sol";
+import "../../openzeppelin/SafeERC20.sol";
+import "../../mixins/ProtocolTokenUser.sol";
+import "../../interfaces/IVestingToken.sol";
 
 
 contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {

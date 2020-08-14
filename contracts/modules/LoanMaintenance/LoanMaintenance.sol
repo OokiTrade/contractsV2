@@ -6,12 +6,12 @@
 pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
-import "../core/State.sol";
-import "../events/LoanOpeningsEvents.sol";
-import "../mixins/VaultController.sol";
-import "../mixins/InterestUser.sol";
-import "../mixins/LiquidationHelper.sol";
-import "../swaps/SwapsUser.sol";
+import "../../core/State.sol";
+import "../../events/LoanOpeningsEvents.sol";
+import "../../mixins/VaultController.sol";
+import "../../mixins/InterestUser.sol";
+import "../../mixins/LiquidationHelper.sol";
+import "../../swaps/SwapsUser.sol";
 
 
 contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, InterestUser, SwapsUser, LiquidationHelper {
