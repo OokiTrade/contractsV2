@@ -40,8 +40,8 @@ contract SwapsExternal is State, VaultController, SwapsUser, GasTokenUser {
         address returnToSender,
         uint256 sourceTokenAmount,
         uint256 requiredDestTokenAmount,
-        bytes calldata swapData)
-        external
+        bytes memory swapData)
+        public
         payable
         nonReentrant
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
@@ -104,11 +104,19 @@ contract SwapsExternal is State, VaultController, SwapsUser, GasTokenUser {
             require(msg.value == sourceTokenAmount, "sourceTokenAmount mismatch");
             wethToken.deposit.value(sourceTokenAmount)();
         } else {
-            IERC20(sourceToken).safeTransferFrom(
+            IERC20 sourceTokenContract = IERC20(sourceToken);
+
+            uint256 balanceBefore = sourceTokenContract.balanceOf(address(this));
+
+            sourceTokenContract.safeTransferFrom(
                 msg.sender,
                 address(this),
                 sourceTokenAmount
             );
+
+            // explicit balance check so that we can support deflationary tokens
+            sourceTokenAmount = sourceTokenContract.balanceOf(address(this))
+                .sub(balanceBefore);
         }
 
         (destTokenAmountReceived, sourceTokenAmountUsed) = _swapsCall(

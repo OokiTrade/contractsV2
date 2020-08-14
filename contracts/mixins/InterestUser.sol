@@ -56,7 +56,7 @@ contract InterestUser is State, VaultController, FeesHelper {
     {
         uint256 lendingFee = interestOwedNow
             .mul(lendingFeePercent)
-            .div(10**20);
+            .divCeil(10**20);
 
         _payLendingFee(
             lender,
