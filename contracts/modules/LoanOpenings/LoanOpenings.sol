@@ -59,6 +59,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         nonReentrant
         returns (uint256 newPrincipal, uint256 newCollateral)
     {
+        emit Log(1);
         require(msg.value == 0 || loanDataBytes.length != 0, "loanDataBytes required with ether");
 
         // only callable by loan pools
@@ -75,6 +76,8 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             initialMargin,
             isTorqueLoan
         );
+        emit Log(2);
+        emit Log(collateralAmountRequired);
         require(collateralAmountRequired != 0, "collateral is 0");
 
         return _borrowOrTrade(
@@ -235,6 +238,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         internal
         returns (uint256, uint256)
     {
+        emit Log(3);
         require (loanParamsLocal.collateralToken != loanParamsLocal.loanToken, "collateral/loan match");
         require (initialMargin >= loanParamsLocal.minInitialMargin, "initialMargin too low");
 
@@ -474,6 +478,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         internal
         returns (bytes32)
     {
+        emit Log(4);
         require(loanParamsLocal.active, "loanParams disabled");
 
         address lender = sentAddresses[0];
@@ -491,7 +496,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                 block.timestamp
             ));
             require(loans[loanId].id == 0, "loan exists");
-
+            emit Log(5);
             loanLocal = Loan({
                 id: loanId,
                 loanParamsId: loanParamsLocal.id,
@@ -511,6 +516,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             lenderLoanSets[lender].addBytes32(loanId);
             borrowerLoanSets[borrower].addBytes32(loanId);
         } else {
+            emit Log(6);
             loanLocal = loans[loanId];
             require(loanLocal.active && block.timestamp < loanLocal.endTimestamp, "loan has ended");
             require(loanLocal.borrower == borrower, "borrower mismatch");
