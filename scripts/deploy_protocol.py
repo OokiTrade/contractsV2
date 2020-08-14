@@ -389,3 +389,8 @@ def deployProtocol():
         loanClosings = acct.deploy(LoanClosings)
         print("Calling replaceContract.")
         bzx.replaceContract(loanClosings.address)
+
+        print("Deploying LoanClosingsWithGasToken.")
+        LoanClosingsWithGasToken = acct.deploy(LoanClosingsWithGasToken)
+        print("Calling replaceContract.")
+        bzx.replaceContract(LoanClosingsWithGasToken.address)
