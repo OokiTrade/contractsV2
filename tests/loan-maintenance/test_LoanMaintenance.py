@@ -100,7 +100,7 @@ def getLoanId(Constants, bzx, DAI, LINK, accounts, web3, LinkDaiBorrowParamsId):
     print("borrowEvent.loanId", borrowEvent["loanId"])
     return borrowEvent["loanId"]
 
-# TODO many of the following impossible to reach because of the Constants hardcode 
+# TODO the following impossible to reach because of the Constants hardcode 
 
 # def test_depositCollateral(Constants, bzx, loan):
 #     bzx.depositCollateral(0, 0)
