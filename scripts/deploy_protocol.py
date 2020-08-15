@@ -96,7 +96,8 @@ def deployProtocol():
                         "0xC4375B7De8af5a38a93548eb8453a498222C4fF2", # SAI
                         "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa", # DAI
                         "0xad67cB4d63C9da94AcA37fDF2761AaDF780ff4a2", # KNC
-                        "0xe3e682A8Fc7EFec410E4099cc09EfCC0743C634a"  # BZRX
+                        "0xB54Fc2F2ea17d798Ad5C7Aba2491055BCeb7C6b2", # BZRX
+                        "0x6F8304039f34fd6A6acDd511988DCf5f62128a32"  # vBZRX
                     ]
                 )
 
@@ -132,7 +133,8 @@ def deployProtocol():
                         "0x57ab1ec28d129707052df4df418d58a2d46d5f51", # SUSD
                         "0x6b175474e89094c44da98b954eedeac495271d0f", # DAI
                         "0xdac17f958d2ee523a2206206994597c13d831ec7", # USDT (Tether)
-                        "0x1c74cFF0376FB4031Cd7492cD6dB2D66c3f2c6B9"  # BZRX
+                        "0x56d811088235F11C8920698a204A5010a788f4b3", # BZRX
+                        "0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F"  # vBZRX
                     ]
                 )
 
@@ -154,19 +156,19 @@ def deployProtocol():
                         "0x0000000000000000000000000000000000000001"  # Fast Gas / Gwei
                     ],
                     [
-                        "0xdE54467873c3BCAA76421061036053e371721708", # USDC
-                        "0x037E8F2125bF532F3e228991e051c8A7253B642c", # SAI - (sharing DAI feed)
-                        "0x0133Aa47B6197D0BA090Bf2CD96626Eb71fFd13c", # WBTC
-                        "0xda3d675d50ff6c555973c4f0424964e1f6a4e7d3", # MKR
-                        "0xd0e785973390fF8E77a83961efDb4F271E6B8152", # KNC
-                        "0xb8b513d9cf440C1b6f5C7142120d611C94fC220c", # REP
-                        "0x9b4e2579895efa2b4765063310Dc4109a7641129", # BAT
-                        "0xA0F9D94f060836756FFC84Db4C78d097cA8C23E8", # ZRX
-                        "0xeCfA53A8bdA4F0c4dd39c55CC8deF3757aCFDD07", # LINK
-                        "0x6d626Ff97f0E89F6f983dE425dc5B24A18DE26Ea", # SUSD
-                        "0x037E8F2125bF532F3e228991e051c8A7253B642c", # DAI
-                        "0xa874fe207DF445ff19E7482C746C4D3fD0CB9AcE", # USDT (Tether)
-                        "0xA417221ef64b1549575C977764E651c9FAB50141"  # Fast Gas / Gwei
+                        "0x986b5E1e1755e3C2440e960477f25201B0a8bbD4", # USDC
+                        "0x773616E4d11A78F511299002da57A0a94577F1f4", # SAI - (sharing DAI feed)
+                        "0xdeb288F737066589598e9214E782fa5A8eD689e8", # WBTC
+                        "0x24551a8Fb2A7211A25a17B1481f043A8a8adC7f2", # MKR
+                        "0x656c0544eF4C98A6a98491833A89204Abb045d6b", # KNC
+                        "0xD4CE430C3b67b3E2F7026D86E7128588629e2455", # REP
+                        "0x0d16d4528239e9ee52fa531af613AcdB23D88c94", # BAT
+                        "0x2Da4983a622a8498bb1a21FaE9D8F6C664939962", # ZRX
+                        "0xDC530D9457755926550b59e8ECcdaE7624181557", # LINK
+                        "0x8e0b7e6062272B5eF4524250bFFF8e5Bd3497757", # SUSD
+                        "0x773616E4d11A78F511299002da57A0a94577F1f4", # DAI
+                        "0xEe9F2375b4bdF6387aa8265dD4FB8F16512A1d46"  # USDT (Tether)
+                        "0x169E633A2D1E6c10dD91238Ba11c4A708dfEF37C"  # Fast Gas / Gwei
                     ]
                 )
 
@@ -275,9 +277,12 @@ def deployProtocol():
                     "0xC4375B7De8af5a38a93548eb8453a498222C4fF2", # SAI
                     "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa", # DAI
                     "0xad67cB4d63C9da94AcA37fDF2761AaDF780ff4a2", # KNC
-                    "0xe3e682A8Fc7EFec410E4099cc09EfCC0743C634a"  # BZRX
+                    "0xB54Fc2F2ea17d798Ad5C7Aba2491055BCeb7C6b2", # BZRX
+                    "0x6F8304039f34fd6A6acDd511988DCf5f62128a32"  # vBZRX
                 ],
                 [
+                    True,
+                    True,
                     True,
                     True,
                     True,
@@ -333,7 +338,8 @@ def deployProtocol():
                     "0x57ab1ec28d129707052df4df418d58a2d46d5f51", # SUSD
                     "0x6b175474e89094c44da98b954eedeac495271d0f", # DAI
                     "0xdac17f958d2ee523a2206206994597c13d831ec7", # USDT (Tether)
-                    "0x1c74cFF0376FB4031Cd7492cD6dB2D66c3f2c6B9"  # BZRX
+                    "0x56d811088235F11C8920698a204A5010a788f4b3", # BZRX
+                    "0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F"  # vBZRX
                 ],
                 [
                     True, # WETH
@@ -348,7 +354,9 @@ def deployProtocol():
                     True, # LINK
                     True, # SUSD
                     True, # DAI
-                    True  # USDT (Tether)
+                    True, # USDT (Tether)
+                    True, # BZRX
+                    True  # vBZRX
                 ]
             )
 
@@ -381,3 +389,8 @@ def deployProtocol():
         loanClosings = acct.deploy(LoanClosings)
         print("Calling replaceContract.")
         bzx.replaceContract(loanClosings.address)
+
+        print("Deploying LoanClosingsWithGasToken.")
+        LoanClosingsWithGasToken = acct.deploy(LoanClosingsWithGasToken)
+        print("Calling replaceContract.")
+        bzx.replaceContract(LoanClosingsWithGasToken.address)

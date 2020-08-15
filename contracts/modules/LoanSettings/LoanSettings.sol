@@ -8,8 +8,8 @@ pragma solidity 0.6.12;
 
 pragma experimental ABIEncoderV2;
 
-import "../core/State.sol";
-import "../events/LoanSettingsEvents.sol";
+import "../../core/State.sol";
+import "../../events/LoanSettingsEvents.sol";
 
 
 contract LoanSettings is State, LoanSettingsEvents {

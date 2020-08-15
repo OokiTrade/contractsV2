@@ -23,28 +23,23 @@ def LINK(accounts, TestToken):
 
 @pytest.fixture(scope="module")
 def priceFeeds(accounts, WETH, DAI, LINK, PriceFeeds, PriceFeedsLocal):
-    if network.show_active() == "development":
-        feeds = accounts[0].deploy(PriceFeedsLocal)
+    feeds = accounts[0].deploy(PriceFeedsLocal)
 
-        feeds.setRates(
-            WETH.address,
-            LINK.address,
-            54.52e18
-        )
-        feeds.setRates(
-            WETH.address,
-            DAI.address,
-            200e18
-        )
-        feeds.setRates(
-            LINK.address,
-            DAI.address,
-            3.692e18
-        )
-    else:
-        feeds = accounts[0].deploy(PriceFeeds)
-        #feeds.setPriceFeedsBatch(...)
-
+    feeds.setRates(
+        WETH.address,
+        LINK.address,
+        54.52e18
+    )
+    feeds.setRates(
+        WETH.address,
+        DAI.address,
+        200e18
+    )
+    feeds.setRates(
+        LINK.address,
+        DAI.address,
+        3.692e18
+    )
     return feeds
 
 @pytest.fixture(scope="module")
@@ -58,7 +53,16 @@ def swapsImpl(accounts, SwapsImplKyber, SwapsImplLocal):
     return feeds
 
 @pytest.fixture(scope="module", autouse=True)
-def bzx(accounts, interface, bZxProtocol, ProtocolSettings, LoanSettings, LoanMaintenance):
+def bzx(accounts, 
+    interface, 
+    bZxProtocol, 
+    ProtocolSettings, 
+    LoanSettings, 
+    LoanMaintenance, 
+    LoanOpenings, 
+    LoanClosings, 
+    swapsImpl, 
+    priceFeeds):
     bzxproxy = accounts[0].deploy(bZxProtocol)
     bzx = Contract.from_abi("bzx", address=bzxproxy.address, abi=interface.IBZx.abi, owner=accounts[0])
     _add_contract(bzx)
@@ -66,8 +70,16 @@ def bzx(accounts, interface, bZxProtocol, ProtocolSettings, LoanSettings, LoanMa
     bzx.replaceContract(accounts[0].deploy(ProtocolSettings).address)
     bzx.replaceContract(accounts[0].deploy(LoanSettings).address)
     bzx.replaceContract(accounts[0].deploy(LoanMaintenance).address)
-    #bzx.replaceContract(accounts[0].deploy(LoanOpenings).address)
-    #bzx.replaceContract(accounts[0].deploy(LoanClosings).address)
+    bzx.replaceContract(accounts[0].deploy(LoanOpenings).address)
+    bzx.replaceContract(accounts[0].deploy(LoanClosings).address)
+    
+    bzx.setPriceFeedContract(
+        priceFeeds.address # priceFeeds
+    )
+
+    bzx.setSwapsImplContract(
+        swapsImpl.address # swapsImpl
+    )
     
     return bzx
 

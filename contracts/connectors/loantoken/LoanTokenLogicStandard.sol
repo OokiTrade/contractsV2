@@ -137,56 +137,49 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         bytes memory /*loanDataBytes*/) // arbitrary order data (for future use)
         public
         payable
-        usesGasToken
         returns (uint256, uint256) // returns new principal and new collateral added to loan
     {
-        require(withdrawAmount != 0, "6");
-
-        _checkPause();
-
-        require(msg.value == 0 || msg.value == collateralTokenSent, "7");
-        require(collateralTokenSent != 0 || loanId != 0, "8");
-        require(collateralTokenAddress != address(0) || msg.value != 0 || loanId != 0, "9");
-
-        if (collateralTokenAddress == address(0)) {
-            collateralTokenAddress = wethToken;
-        }
-        require(collateralTokenAddress != loanTokenAddress, "10");
-
-        _settleInterest();
-
-        address[4] memory sentAddresses;
-        uint256[5] memory sentAmounts;
-
-        sentAddresses[0] = address(this); // lender
-        sentAddresses[1] = borrower;
-        sentAddresses[2] = receiver;
-        //sentAddresses[3] = address(0); // manager
-
-        sentAmounts[1] = withdrawAmount;
-
-        // interestRate, interestInitialAmount, borrowAmount (newBorrowAmount)
-        (sentAmounts[0], sentAmounts[2], sentAmounts[1]) = _getInterestRateAndBorrowAmount(
-            sentAmounts[1],
-            _totalAssetSupply(0), // interest is settled above
-            initialLoanDuration
-        );
-
-        //sentAmounts[3] = 0; // loanTokenSent
-        sentAmounts[4] = collateralTokenSent;
-
-        return _borrowOrTrade(
+        return _borrow(
             loanId,
             withdrawAmount,
-            2 * 10**18, // leverageAmount (translates to 150% margin for a Torque loan)
+            initialLoanDuration,
+            collateralTokenSent,
             collateralTokenAddress,
-            sentAddresses,
-            sentAmounts,
-            "" // loanDataBytes
+            borrower,
+            receiver,
+            ""
         );
     }
 
-    // Called to borrow and immediately get into a positions
+    // ***** NOTE: Reentrancy is allowed here to allow flashloan use cases *****
+    function borrowWithGasToken(
+        bytes32 loanId,                 // 0 if new loan
+        uint256 withdrawAmount,
+        uint256 initialLoanDuration,    // duration in seconds
+        uint256 collateralTokenSent,    // if 0, loanId must be provided; any ETH sent must equal this value
+        address collateralTokenAddress, // if address(0), this means ETH and ETH must be sent with the call or loanId must be provided
+        address borrower,
+        address receiver,
+        address gasTokenUser,           // specifies an address that has given spend approval for gas/chi token
+        bytes memory /*loanDataBytes*/) // arbitrary order data (for future use)
+        public
+        payable
+        usesGasToken(gasTokenUser)
+        returns (uint256, uint256) // returns new principal and new collateral added to loan
+    {
+        return _borrow(
+            loanId,
+            withdrawAmount,
+            initialLoanDuration,
+            collateralTokenSent,
+            collateralTokenAddress,
+            borrower,
+            receiver,
+            ""
+        );
+    }
+
+    // Called to borrow and immediately get into a position
     // ***** NOTE: Reentrancy is allowed here to allow flashloan use cases *****
     function marginTrade(
         bytes32 loanId,                 // 0 if new loan
@@ -198,51 +191,42 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         bytes memory loanDataBytes)     // arbitrary order data
         public
         payable
-        usesGasToken
         returns (uint256, uint256) // returns new principal and new collateral added to trade
     {
-        _checkPause();
-
-        if (collateralTokenAddress == address(0)) {
-            collateralTokenAddress = wethToken;
-        }
-        require(collateralTokenAddress != loanTokenAddress, "11");
-
-        uint256 totalDeposit = _totalDeposit(
-            collateralTokenAddress,
-            collateralTokenSent,
-            loanTokenSent
-        );
-        require(totalDeposit != 0, "12");
-
-        address[4] memory sentAddresses;
-        uint256[5] memory sentAmounts;
-
-        sentAddresses[0] = address(this); // lender
-        sentAddresses[1] = trader;
-        sentAddresses[2] = trader;
-        //sentAddresses[3] = address(0); // manager
-
-        //sentAmounts[0] = 0; // interestRate (found later)
-        sentAmounts[1] = totalDeposit; // total amount of deposit
-        //sentAmounts[2] = 0; // interestInitialAmount (interest is calculated based on fixed-term loan)
-        sentAmounts[3] = loanTokenSent;
-        sentAmounts[4] = collateralTokenSent;
-
-        _settleInterest();
-
-        (sentAmounts[1], sentAmounts[0]) = _getMarginBorrowAmountAndRate( // borrowAmount, interestRate
-            leverageAmount,
-            sentAmounts[1] // depositAmount
-        );
-
-        return _borrowOrTrade(
+        return _marginTrade(
             loanId,
-            0, // withdrawAmount
             leverageAmount,
+            loanTokenSent,
+            collateralTokenSent,
             collateralTokenAddress,
-            sentAddresses,
-            sentAmounts,
+            trader,
+            loanDataBytes
+        );
+    }
+
+    // Called to borrow and immediately get into a position
+    // ***** NOTE: Reentrancy is allowed here to allow flashloan use cases *****
+    function marginTradeWithGasToken(
+        bytes32 loanId,                 // 0 if new loan
+        uint256 leverageAmount,
+        uint256 loanTokenSent,
+        uint256 collateralTokenSent,
+        address collateralTokenAddress,
+        address trader,
+        address gasTokenUser,           // specifies an address that has given spend approval for gas/chi token
+        bytes memory loanDataBytes)     // arbitrary order data
+        public
+        payable
+        usesGasToken(gasTokenUser)
+        returns (uint256, uint256) // returns new principal and new collateral added to trade
+    {
+        return _marginTrade(
+            loanId,
+            leverageAmount,
+            loanTokenSent,
+            collateralTokenSent,
+            collateralTokenAddress,
+            trader,
             loanDataBytes
         );
     }
@@ -346,19 +330,21 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         );
 
         uint256 _currentProfit;
-        if (_oldBalance != 0 && _newBalance != 0) {
+        if (_oldBalance != 0) {
             _currentProfit = _profitOf(
                 slot,
                 _oldBalance,
                 _currentPrice,
                 checkpointPrices_[_user]
             );
-        } else if (_newBalance == 0) {
-            _currentPrice = 0;
+
+            assembly {
+                sstore(slot, _currentProfit)
+            }
         }
 
-        assembly {
-            sstore(slot, _currentProfit)
+        if (_newBalance == 0) {
+            _currentPrice = 0;
         }
 
         checkpointPrices_[_user] = _currentPrice;
@@ -736,6 +722,121 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         );
     }
 
+    function _borrow(
+        bytes32 loanId,                 // 0 if new loan
+        uint256 withdrawAmount,
+        uint256 initialLoanDuration,    // duration in seconds
+        uint256 collateralTokenSent,    // if 0, loanId must be provided; any ETH sent must equal this value
+        address collateralTokenAddress, // if address(0), this means ETH and ETH must be sent with the call or loanId must be provided
+        address borrower,
+        address receiver,
+        bytes memory /*loanDataBytes*/) // arbitrary order data (for future use)
+        internal
+        returns (uint256, uint256) // returns new principal and new collateral added to loan
+    {
+        require(withdrawAmount != 0, "6");
+
+        _checkPause();
+
+        require(msg.value == 0 || msg.value == collateralTokenSent, "7");
+        require(collateralTokenSent != 0 || loanId != 0, "8");
+        require(collateralTokenAddress != address(0) || msg.value != 0 || loanId != 0, "9");
+
+        if (collateralTokenAddress == address(0)) {
+            collateralTokenAddress = wethToken;
+        }
+        require(collateralTokenAddress != loanTokenAddress, "10");
+
+        _settleInterest();
+
+        address[4] memory sentAddresses;
+        uint256[5] memory sentAmounts;
+
+        sentAddresses[0] = address(this); // lender
+        sentAddresses[1] = borrower;
+        sentAddresses[2] = receiver;
+        //sentAddresses[3] = address(0); // manager
+
+        sentAmounts[1] = withdrawAmount;
+
+        // interestRate, interestInitialAmount, borrowAmount (newBorrowAmount)
+        (sentAmounts[0], sentAmounts[2], sentAmounts[1]) = _getInterestRateAndBorrowAmount(
+            sentAmounts[1],
+            _totalAssetSupply(0), // interest is settled above
+            initialLoanDuration
+        );
+
+        //sentAmounts[3] = 0; // loanTokenSent
+        sentAmounts[4] = collateralTokenSent;
+
+        return _borrowOrTrade(
+            loanId,
+            withdrawAmount,
+            2 * 10**18, // leverageAmount (translates to 150% margin for a Torque loan)
+            collateralTokenAddress,
+            sentAddresses,
+            sentAmounts,
+            "" // loanDataBytes
+        );
+    }
+
+    function _marginTrade(
+        bytes32 loanId,                 // 0 if new loan
+        uint256 leverageAmount,
+        uint256 loanTokenSent,
+        uint256 collateralTokenSent,
+        address collateralTokenAddress,
+        address trader,
+        bytes memory loanDataBytes)
+        internal
+        returns (uint256, uint256) // returns new principal and new collateral added to trade
+    {
+        _checkPause();
+
+        if (collateralTokenAddress == address(0)) {
+            collateralTokenAddress = wethToken;
+        }
+        require(collateralTokenAddress != loanTokenAddress, "11");
+
+        uint256 totalDeposit = _totalDeposit(
+            collateralTokenAddress,
+            collateralTokenSent,
+            loanTokenSent
+        );
+        require(totalDeposit != 0, "12");
+
+        address[4] memory sentAddresses;
+        uint256[5] memory sentAmounts;
+
+        sentAddresses[0] = address(this); // lender
+        sentAddresses[1] = trader;
+        sentAddresses[2] = trader;
+        //sentAddresses[3] = address(0); // manager
+
+        //sentAmounts[0] = 0; // interestRate (found later)
+        sentAmounts[1] = totalDeposit; // total amount of deposit
+        //sentAmounts[2] = 0; // interestInitialAmount (interest is calculated based on fixed-term loan)
+        sentAmounts[3] = loanTokenSent;
+        sentAmounts[4] = collateralTokenSent;
+
+        _settleInterest();
+
+        (sentAmounts[1], sentAmounts[0]) = _getMarginBorrowAmountAndRate( // borrowAmount, interestRate
+            leverageAmount,
+            sentAmounts[1] // depositAmount
+        );
+
+        return _borrowOrTrade(
+            loanId,
+            0, // withdrawAmount
+            leverageAmount,
+            collateralTokenAddress,
+            sentAddresses,
+            sentAmounts,
+            loanDataBytes
+        );
+    }
+
     function _settleInterest()
         internal
     {
@@ -995,9 +1096,8 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         if (assetBorrow != 0) {
             (uint256 interestOwedPerDay,) = _getAllInterest();
             return interestOwedPerDay
-                .mul(10**20)
-                .div(assetBorrow)
-                .mul(365);
+                .mul(365 * 10**20)
+                .div(assetBorrow);
         }
     }
 
@@ -1184,8 +1284,8 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         return maxDuration != 0 ?
             interestRate
                 .mul(10**20)
-                .div(31536000) // 86400 * 365
                 .mul(maxDuration)
+                .div(31536000) // 86400 * 365
                 .div(marginAmount)
                 .add(10**20) :
             10**20;

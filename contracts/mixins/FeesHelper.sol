@@ -130,9 +130,8 @@ contract FeesHelper is State, ProtocolTokenUser, FeesEvents {
         uint256 interestExpenseFee = interestTime
             .sub(loanInterestLocal.updatedTimestamp)
             .mul(loanInterestLocal.owedPerDay)
-            .div(86400)
             .mul(lendingFeePercent)
-            .div(10**20);
+            .div(86400 * 10**20);
 
         loanInterestLocal.updatedTimestamp = interestTime;
 
@@ -147,7 +146,7 @@ contract FeesHelper is State, ProtocolTokenUser, FeesEvents {
     }
 
 
-    // pay potocolToken reward to user
+    // pay protocolToken reward to user
     function _payFeeReward(
         address user,
         bytes32 loanId,

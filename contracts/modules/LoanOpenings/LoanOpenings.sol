@@ -8,11 +8,11 @@ pragma solidity 0.6.12;
 
 pragma experimental ABIEncoderV2;
 
-import "../core/State.sol";
-import "../events/LoanOpeningsEvents.sol";
-import "../mixins/VaultController.sol";
-import "../mixins/InterestUser.sol";
-import "../swaps/SwapsUser.sol";
+import "../../core/State.sol";
+import "../../events/LoanOpeningsEvents.sol";
+import "../../mixins/VaultController.sol";
+import "../../mixins/InterestUser.sol";
+import "../../swaps/SwapsUser.sol";
 
 
 contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUser, SwapsUser {
@@ -208,8 +208,8 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                 if (sourceToDestPrecision != 0) {
                     borrowAmount = collateral
                         .mul(10**20)
-                        .div(marginAmount)
                         .mul(sourceToDestRate)
+                        .div(marginAmount)
                         .div(sourceToDestPrecision);
                 }
             }

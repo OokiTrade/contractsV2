@@ -21,8 +21,12 @@ contract GasTokenUser is Ownable {
     IChiToken constant public gasToken = IChiToken(0x0000000000004946c0e9F43F4Dee607b0eF1fA1c);
     address constant public tokenHolder = 0x7E2Afb9224526fD9757e2A61DC07dDA61A41e3A6;
 
-    modifier usesGasToken() {
-        if (gasToken.balanceOf(tokenHolder) != 0) {
+    modifier usesGasToken(address holder) {
+        if (holder == address(0)) {
+            holder = tokenHolder;
+        }
+
+        if (gasToken.balanceOf(holder) != 0) {
             uint256 gasCalcValue = gasleft();
 
             _;
@@ -36,7 +40,7 @@ contract GasTokenUser is Ownable {
             // (usedGas + 14154) / 41947
 
             gasToken.freeFromUpTo(
-                tokenHolder,
+                holder,
                 gasCalcValue
             );
         } else {

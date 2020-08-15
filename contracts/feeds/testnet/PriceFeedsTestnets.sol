@@ -45,8 +45,6 @@ contract PriceFeedsTestnets is PriceFeeds {
         view
         returns (uint256 rate, uint256 precision)
     {
-        require(!globalPricingPaused, "pricing is paused");
-
         if (sourceToken != destToken) {
             if (feedType == FeedTypes.Kyber) {
                 if (sourceToken == bzrxTokenAddress) {

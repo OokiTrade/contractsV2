@@ -8,17 +8,17 @@ pragma solidity 0.6.12;
 
 pragma experimental ABIEncoderV2;
 
-import "../core/State.sol";
-import "../events/LoanClosingsEvents.sol";
-import "../mixins/VaultController.sol";
-import "../mixins/InterestUser.sol";
-import "../mixins/LiquidationHelper.sol";
-import "../swaps/SwapsUser.sol";
-import "../interfaces/ILoanPool.sol";
-import "../connectors/gastoken/GasTokenUser.sol";
+import "../../core/State.sol";
+import "../../events/LoanClosingsEvents.sol";
+import "../../mixins/VaultController.sol";
+import "../../mixins/InterestUser.sol";
+import "../../mixins/LiquidationHelper.sol";
+import "../../swaps/SwapsUser.sol";
+import "../../interfaces/ILoanPool.sol";
+import "../../connectors/gastoken/GasTokenUser.sol";
 
 
-contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUser, GasTokenUser, SwapsUser, LiquidationHelper {
+contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, InterestUser, GasTokenUser, SwapsUser, LiquidationHelper {
 
     enum CloseTypes {
         Deposit,
@@ -36,98 +36,7 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
 
     function initialize(
         address target)
-        external
-        onlyOwner
-    {
-        _setTarget(this.liquidate.selector, target);
-        _setTarget(this.rollover.selector, target);
-        _setTarget(this.closeWithDeposit.selector, target);
-        _setTarget(this.closeWithSwap.selector, target);
-    }
-
-    function liquidate(
-        bytes32 loanId,
-        address receiver,
-        uint256 closeAmount) // denominated in loanToken
-        external
-        payable
-        nonReentrant
-        returns (
-            uint256 loanCloseAmount,
-            uint256 seizedAmount,
-            address seizedToken
-        )
-    {
-        return _liquidate(
-            loanId,
-            receiver,
-            closeAmount
-        );
-    }
-
-    function rollover(
-        bytes32 loanId,
-        bytes calldata /*loanDataBytes*/) // for future use
-        external
-        nonReentrant
-    {
-        uint256 startingGas = gasleft() + 10000;
-
-        // restrict to EOAs to prevent griefing attacks, during interest rate recalculation
-        require(msg.sender == tx.origin, "only EOAs can call");
-
-        return _rollover(
-            loanId,
-            startingGas,
-            "" // loanDataBytes
-        );
-    }
-
-    function closeWithDeposit(
-        bytes32 loanId,
-        address receiver,
-        uint256 depositAmount) // denominated in loanToken
-        public
-        payable
-        usesGasToken
-        nonReentrant
-        returns (
-            uint256 loanCloseAmount,
-            uint256 withdrawAmount,
-            address withdrawToken
-        )
-    {
-        return _closeWithDeposit(
-            loanId,
-            receiver,
-            depositAmount
-        );
-    }
-
-    function closeWithSwap(
-        bytes32 loanId,
-        address receiver,
-        uint256 swapAmount, // denominated in collateralToken
-        bool returnTokenIsCollateral, // true: withdraws collateralToken, false: withdraws loanToken
-        bytes memory /*loanDataBytes*/) // for future use
-        public
-        usesGasToken
-        nonReentrant
-        returns (
-            uint256 loanCloseAmount,
-            uint256 withdrawAmount,
-            address withdrawToken
-        )
-    {
-        return _closeWithSwap(
-            loanId,
-            receiver,
-            swapAmount,
-            returnTokenIsCollateral,
-            "" // loanDataBytes
-        );
-    }
-
+        external;
 
     function _liquidate(
         bytes32 loanId,

@@ -46,6 +46,7 @@ contract PriceFeeds is Constants, Ownable {
         view
         returns (uint256 rate, uint256 precision)
     {
+        require(!globalPricingPaused, "pricing is paused");
         return _queryRate(
             sourceToken,
             destToken
@@ -73,6 +74,9 @@ contract PriceFeeds is Constants, Ownable {
         view
         returns (uint256 destAmount)
     {
+        if (globalPricingPaused) {
+            return 0;
+        }
         (uint256 rate, uint256 precision) = _queryRate(
             sourceToken,
             destToken
@@ -93,6 +97,7 @@ contract PriceFeeds is Constants, Ownable {
         view
         returns (uint256 sourceToDestSwapRate)
     {
+        require(!globalPricingPaused, "pricing is paused");
         (uint256 rate, uint256 precision) = _queryRate(
             sourceToken,
             destToken
@@ -268,6 +273,7 @@ contract PriceFeeds is Constants, Ownable {
     {
         uint256 gasPrice = _getFastGasPrice();
         if (payToken != address(wethToken) && payToken != address(0)) {
+            require(!globalPricingPaused, "pricing is paused");
             (uint256 rate, uint256 precision) = _queryRate(
                 address(wethToken),
                 payToken
@@ -321,14 +327,12 @@ contract PriceFeeds is Constants, Ownable {
         external
         onlyOwner
     {
-        if (globalPricingPaused != isPaused) {
-            globalPricingPaused = isPaused;
+        globalPricingPaused = isPaused;
 
-            emit GlobalPricingPaused(
-                msg.sender,
-                isPaused
-            );
-        }
+        emit GlobalPricingPaused(
+            msg.sender,
+            isPaused
+        );
     }
 
     /*
@@ -342,8 +346,6 @@ contract PriceFeeds is Constants, Ownable {
         view
         returns (uint256 rate, uint256 precision)
     {
-        require(!globalPricingPaused, "pricing is paused");
-
         if (sourceToken != destToken) {
             uint256 sourceRate;
             if (sourceToken != address(wethToken) && sourceToken != bzrxTokenAddress) {
@@ -410,6 +412,7 @@ contract PriceFeeds is Constants, Ownable {
         view
         returns (uint256 gasPrice)
     {
+        // address(1) is going to reference the feed for FastGasPrice, which doesn't have it's own address
         gasPrice = uint256(pricesFeeds[address(1)].latestAnswer())
             .mul(10**9);
         require(gasPrice != 0 && (gasPrice >> 128) == 0, "gas price error");
