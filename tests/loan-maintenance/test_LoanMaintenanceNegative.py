@@ -5,7 +5,6 @@ from brownie import Wei, reverts
 
 @pytest.fixture(scope="module")
 def LinkDaiBorrowParamsId(Constants, LINK, DAI, bzx, accounts):
-
     loanParams = {
         "id": "0x0",
         "active": False,
@@ -21,7 +20,6 @@ def LinkDaiBorrowParamsId(Constants, LINK, DAI, bzx, accounts):
 
 @pytest.fixture(scope="module")
 def WethDaiBorrowParamsId(Constants, WETH, DAI, bzx, accounts):
-
     loanParams = {
         "id": "0x0",
         "active": False,
