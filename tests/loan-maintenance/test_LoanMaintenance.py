@@ -2,7 +2,10 @@
 
 import pytest
 
-# def test_depositCollateral(Constants, bzx):
+# TODO, many of the following impossible to complete again becasue of Constans hardcode
+
+# def test_depositCollateral(Constants, bzx, loanId):
+#     bzx.depositCollateral(loanId, 1, {"value":"1 ether"})
 #     assert False
 
 # def test_extendLoanDuration(Constants, bzx):
