@@ -257,7 +257,7 @@ def test_depositCollateralWrongAssetSent(Constants, bzx, loanId):
     with reverts("wrong asset sent"):
         bzx.depositCollateral(loanId, 1, {"value": "1 ether"})
 
-# TODO this is impossible to test untill Constants have injected wethToken
+# TODO this is impossible to test until Constants have injected wethToken
 # def test_depositCollateralEtherDepositMismatch(Constants, bzx, loanId):
 #     with reverts("ether deposit mismatch"):
 #         bzx.depositCollateral(loanId, 1, {"value": "2 ether"})
