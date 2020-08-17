@@ -1,0 +1,1 @@
+# LoanClosingWithGasToken has no events that emit directly
