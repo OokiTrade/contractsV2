@@ -280,6 +280,53 @@ contract IBZx is
             address withdrawToken
         );
 
+    ////// Loan Closings With Gas Token //////
+
+    function liquidateWithGasToken(
+        bytes32 loanId,
+        address receiver,
+        address gasTokenUser,
+        uint256 closeAmount) // denominated in loanToken
+        external
+        payable
+        returns (
+            uint256 loanCloseAmount,
+            uint256 seizedAmount,
+            address seizedToken
+        );
+
+    function rolloverWithGasToken(
+        bytes32 loanId,
+        address gasTokenUser,
+        bytes calldata /*loanDataBytes*/) // for future use
+        external;
+
+    function closeWithDepositWithGasToken(
+        bytes32 loanId,
+        address receiver,
+        address gasTokenUser,
+        uint256 depositAmount) // denominated in loanToken
+        public
+        payable
+        returns (
+            uint256 loanCloseAmount,
+            uint256 withdrawAmount,
+            address withdrawToken
+        );
+
+    function closeWithSwapWithGasToken(
+        bytes32 loanId,
+        address receiver,
+        address gasTokenUser,
+        uint256 swapAmount, // denominated in collateralToken
+        bool returnTokenIsCollateral, // true: withdraws collateralToken, false: withdraws loanToken
+        bytes memory /*loanDataBytes*/) // for future use
+        public
+        returns (
+            uint256 loanCloseAmount,
+            uint256 withdrawAmount,
+            address withdrawToken
+        );
 
     ////// Loan Maintenance //////
 
