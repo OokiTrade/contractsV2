@@ -471,6 +471,7 @@ contract IBZx is
         address receiver,
         address returnToSender,
         address gasTokenUser,
+        uint256 sourceTokenAmount,
         uint256 requiredDestTokenAmount,
         bytes calldata swapData)
         external
@@ -481,8 +482,7 @@ contract IBZx is
         address sourceToken,
         address destToken,
         uint256 sourceTokenAmount)
-         external
-         view
-
+        external
+        view
         returns (uint256);
 }
