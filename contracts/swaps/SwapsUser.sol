@@ -87,11 +87,6 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
 
         require(vals[0] != 0, "sourceAmount == 0");
 
-        if (vals[1] == 0) {
-            vals[1] = vals[0];
-        }
-        require(vals[0] <= vals[1], "sourceAmount larger than max");
-
         uint256 destTokenAmountReceived;
         uint256 sourceTokenAmountUsed;
 
@@ -123,6 +118,11 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
                 }
             }
         }
+
+        if (vals[1] == 0) {
+            vals[1] = vals[0];
+        }
+        require(vals[0] <= vals[1], "sourceAmount larger than max");
 
         if (loanDataBytes.length == 0) {
             (destTokenAmountReceived, sourceTokenAmountUsed) = _swapsCall_internal(
