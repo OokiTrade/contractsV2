@@ -4,22 +4,6 @@ import pytest
 from brownie import Contract, Wei, reverts
 from fixedint import *
 
-@pytest.fixture(scope="module", autouse=True)
-def loanOpenings(LoanOpenings, accounts, bzx, Constants, priceFeeds, swapsImpl):
-    bzx.replaceContract(accounts[0].deploy(LoanOpenings).address)
-
-    bzx.setPriceFeedContract(
-        priceFeeds.address # priceFeeds
-    )
-
-    bzx.setSwapsImplContract(
-        swapsImpl.address # swapsImpl
-    )
-
-@pytest.fixture(scope="module", autouse=True)
-def loanClosings(LoanClosings, accounts, bzx, Constants, priceFeeds, swapsImpl):
-    bzx.replaceContract(accounts[0].deploy(LoanClosings).address)
-
 @pytest.fixture(scope="module")
 def LinkDaiMarginParamsId(Constants, LINK, DAI, bzx, accounts):
 
