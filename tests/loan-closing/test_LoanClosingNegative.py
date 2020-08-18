@@ -71,11 +71,6 @@ def test_rolloverHealtyPosition(bzx, loanId_LINK_DAI):
     with reverts("healthy position"):
         bzx.rollover(loanId_LINK_DAI, b'')
 
-# TODO this require is impossible to create in current system
-# def test_rolloverInvalidLender(bzx, accounts, loanId_LINK_DAI):
-#     with reverts("invalid lender"):
-#         bzx.rollover(loanId_LINK_DAI, b'')
-
 # TODO hard to reach
 # def test_rolloverInsuficientDestAmount(bzx, accounts, loanId_LINK_DAI):
 #     with reverts("insufficient dest amount"):
