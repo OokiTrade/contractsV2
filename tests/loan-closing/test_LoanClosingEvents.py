@@ -32,14 +32,24 @@ def test_liquidateLiquidateEvent(bzx, loanId_LINK_DAI, priceFeeds, DAI, LINK, ac
         1e18 # exchange rate droped from default 10 to 1 so that we can liquidate
     )
 
-    LINK.mint(
-        bzx.address,
-        1e18,
-        { "from": accounts[1] }
-    )
+    tx = DAI.approve(bzx.address, 1)
+    print("tx", tx.info())
 
-    bzx.liquidate(loanId_LINK_DAI, accounts[1], 1)
-    assert False
+    loan = bzx.loans(loanId_LINK_DAI)
+    print("loan", loan)
+
+    print("bzx.address", bzx.address) 
+    tx = bzx.liquidate(loanId_LINK_DAI, accounts[2], 1)
+    print("tx", tx.info())
+    print("accounts", accounts)
+    liquidateEvent = tx.events["Liquidate"][0];
+    assert(liquidateEvent["loanToken"] == DAI)
+    assert(liquidateEvent["collateralToken"] == LINK)
+    assert(liquidateEvent["liquidator"] == accounts[0])
+    assert(liquidateEvent["user"] == accounts[1])
+    assert(liquidateEvent["user"] == accounts[1])
+    assert(liquidateEvent["lender"] == accounts[2])
+    assert(liquidateEvent["repayAmount"] == 1)
 
 # def test_closeWithDepositCloseWithDepositEvent(bzx):
 #     assert False

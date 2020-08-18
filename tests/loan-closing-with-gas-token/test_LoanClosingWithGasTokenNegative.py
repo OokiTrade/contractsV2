@@ -4,9 +4,9 @@ import pytest
 from brownie import Wei, reverts
 
 
-def test_liquidateWithGasTokenLoanIsClosed(bzx, accounts, Constants):
-    with reverts("loan is closed"):
-        bzx.liquidateWithGasToken(1, accounts[1], Constants["ZERO_ADDRESS"], 1)
+# def test_liquidateWithGasTokenLoanIsClosed(bzx, accounts, Constants):
+#     with reverts("loan is closed"):
+#         bzx.liquidateWithGasToken(1, accounts[1], Constants["ZERO_ADDRESS"], 1)
         
 # def test_liquidateWithGasTokenLoanParamsNotExist(bzx):
 #     assert False
