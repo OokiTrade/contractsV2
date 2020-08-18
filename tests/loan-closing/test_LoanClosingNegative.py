@@ -27,12 +27,6 @@ def test_liquidateLoanIsClosed(bzx, accounts, Constants):
     with reverts("loan is closed"):
         bzx.liquidate(1, accounts[1], 1)
 
-# TODO Asked Tom question
-# def test_liquidateLoanParamsNotExist(bzx, accounts, Constants, loanId):
-#     with reverts("loanParams not exists"):
-#         bzx.liquidate(loanId, accounts[1], 1)
-#     assert False
-
 def test_liquidateHealtyPosition(bzx, accounts, loanId_LINK_DAI):
     with reverts("healthy position"):
         bzx.liquidate(loanId_LINK_DAI, accounts[1], 1)
