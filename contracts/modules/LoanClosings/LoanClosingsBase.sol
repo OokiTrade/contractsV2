@@ -51,7 +51,6 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
         require(loanLocal.active, "loan is closed");
-        require(loanParamsLocal.id != 0, "loanParams not exists");
 
         (uint256 currentMargin, uint256 collateralToLoanRate) = IPriceFeeds(priceFeeds).getCurrentMargin(
             loanParamsLocal.loanToken,
@@ -162,7 +161,6 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
         require(loanLocal.active, "loan is closed");
-        require(loanParamsLocal.id != 0, "loanParams not exists");
         require(
             block.timestamp > loanLocal.endTimestamp.sub(3600),
             "healthy position"
@@ -505,7 +503,6 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
             delegatedManagers[loanLocal.id][msg.sender],
             "unauthorized"
         );
-        require(loanParamsLocal.id != 0, "loanParams not exists");
     }
 
     function _settleInterestToPrincipal(
