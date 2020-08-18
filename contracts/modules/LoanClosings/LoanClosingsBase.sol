@@ -311,7 +311,8 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         Loan storage loanLocal = loans[loanId];
         LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
         _checkAuthorized(
-            loanId
+            loanLocal,
+            loanParamsLocal
         );
 
         // can't close more than the full principal
@@ -383,7 +384,8 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         Loan storage loanLocal = loans[loanId];
         LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
         _checkAuthorized(
-            loanId
+            loanLocal,
+            loanParamsLocal
         );
 
         swapAmount = swapAmount > loanLocal.collateral ?
@@ -490,12 +492,11 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
     }
 
     function _checkAuthorized(
-        bytes32 loanId)
+        Loan memory loanLocal,
+        LoanParams memory loanParamsLocal)
         internal
         view
     {
-        Loan storage loanLocal = loans[loanId];
-        LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
         require(loanLocal.active, "loan is closed");
         require(
             msg.sender == loanLocal.borrower ||
