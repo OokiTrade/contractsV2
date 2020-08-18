@@ -119,24 +119,29 @@ contract TestToken {
         totalSupply_ = totalSupply_.add(_value);
         balances[_to] = balances[_to].add(_value);
 
-        emit Mint(_to, _value);
-        emit Transfer(address(0), _to, _value);
+        emit Transfer(
+            address(this),
+            _to,
+            _value
+        );
     }
 
     function burn(
-        address _who,
         uint256 _value)
         public
     {
-        require(_value <= balances[_who], "balance too low");
+        require(_value <= balances[msg.sender], "balance too low");
         // no need to require _value <= totalSupply, since that would imply the
         // sender's balance is greater than the totalSupply, which *should* be an assertion failure
 
-        balances[_who] = balances[_who].sub(_value);
+        balances[msg.sender] = balances[msg.sender].sub(_value);
         totalSupply_ = totalSupply_.sub(_value);
 
-        emit Burn(_who, _value);
-        emit Transfer(_who, address(0), _value);
+        emit Transfer(
+            msg.sender,
+            address(this),
+            _value
+        );
     }
 
     function totalSupply()
