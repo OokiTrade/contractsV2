@@ -7,14 +7,14 @@ pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
 import "../../core/State.sol";
-import "../../events/LoanOpeningsEvents.sol";
+import "../../events/LoanMaintenanceEvents.sol";
 import "../../mixins/VaultController.sol";
 import "../../mixins/InterestUser.sol";
 import "../../mixins/LiquidationHelper.sol";
 import "../../swaps/SwapsUser.sol";
 
 
-contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, InterestUser, SwapsUser, LiquidationHelper {
+contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, InterestUser, SwapsUser, LiquidationHelper {
 
     struct LoanReturnData {
         bytes32 loanId;
@@ -89,6 +89,13 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
                 msg.value
             );
         }
+
+        emit DepositCollateral(
+            loanLocal.borrower,
+            loanParamsLocal.collateralToken,
+            loanId,
+            depositAmount
+        );
     }
 
     function withdrawCollateral(
@@ -139,6 +146,13 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
                 actualWithdrawAmount
             );
         }
+
+        emit WithdrawCollateral(
+            loanLocal.borrower,
+            loanParamsLocal.collateralToken,
+            loanId,
+            withdrawAmount
+        );
     }
 
     function withdrawAccruedInterest(
@@ -206,8 +220,9 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         }
 
         // deposit interest
+        uint256 collateralUsed;
         if (useCollateral) {
-            _doCollateralSwap(
+            collateralUsed = _doCollateralSwap(
                 loanLocal,
                 loanParamsLocal,
                 depositAmount
@@ -260,6 +275,15 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
 
         lenderInterest[loanLocal.lender][loanParamsLocal.loanToken].owedTotal = lenderInterest[loanLocal.lender][loanParamsLocal.loanToken].owedTotal
             .add(depositAmount);
+
+        emit ExtendLoanDuration(
+            loanLocal.borrower,
+            loanParamsLocal.loanToken,
+            loanId,
+            depositAmount,
+            collateralUsed,
+            loanLocal.endTimestamp
+        );
     }
 
     function reduceLoanDuration(
@@ -341,6 +365,14 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
 
         lenderInterest[loanLocal.lender][loanParamsLocal.loanToken].owedTotal = lenderInterest[loanLocal.lender][loanParamsLocal.loanToken].owedTotal
             .sub(withdrawAmount);
+
+        emit ReduceLoanDuration(
+            loanLocal.borrower,
+            loanParamsLocal.loanToken,
+            loanId,
+            withdrawAmount,
+            loanLocal.endTimestamp
+        );
     }
 
     /// @dev Gets current lender interest data totals for all loans with a specific oracle and interest token
@@ -581,6 +613,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         LoanParams memory loanParamsLocal,
         uint256 depositAmount)
         internal
+        returns (uint256)
     {
         // reverts in _loanSwap if amountNeeded can't be bought
         (,uint256 sourceTokenAmountUsed,) = _loanSwap(
@@ -608,5 +641,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
             currentMargin > loanParamsLocal.maintenanceMargin,
             "unhealthy position"
         );
+
+        return sourceTokenAmountUsed;
     }
 }

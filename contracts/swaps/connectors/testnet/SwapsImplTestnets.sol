@@ -40,26 +40,17 @@ contract SwapsImplTestnets is State, ISwapsImpl {
             sourceTokenAmountUsed = minSourceTokenAmount;
             destTokenAmountReceived = minSourceTokenAmount
                 .mul(tradeRate)
-                .div(precision);
+                .div(precision)
+                .mul(1000) // inject a little swap slippage
+                .div(1005);
         } else {
             destTokenAmountReceived = requiredDestTokenAmount;
             sourceTokenAmountUsed = requiredDestTokenAmount
                 .mul(precision)
-                .div(tradeRate);
-            require(sourceTokenAmountUsed <= minSourceTokenAmount, "destAmount too great");
-        }
-
-        // inject a little swap slippage
-        sourceTokenAmountUsed = sourceTokenAmountUsed
-            .mul(1005)
-            .div(1000);
-
-        if (sourceTokenAmountUsed > maxSourceTokenAmount) {
-            // correct for overage
-            destTokenAmountReceived = destTokenAmountReceived
-                .mul(maxSourceTokenAmount)
-                .div(sourceTokenAmountUsed);
-            sourceTokenAmountUsed = maxSourceTokenAmount;
+                .div(tradeRate)
+                .mul(1005) // inject a little swap slippage
+                .div(1000);
+            require(sourceTokenAmountUsed <= maxSourceTokenAmount, "destAmount too great");
         }
 
         TestToken(sourceTokenAddress).burn(sourceTokenAmountUsed);
@@ -91,14 +82,12 @@ contract SwapsImplTestnets is State, ISwapsImpl {
                 _priceFeeds := sload(0x42b587029048e5d48be95db5da189bcafe09be3a4fbb99206a1c8f4ced7d89b4)
             }
         }
-        (uint256 sourceToDestRate, uint256 sourceToDestPrecision) = IPriceFeeds(_priceFeeds).queryRate(
+        (uint256 expectedRate,) = IPriceFeeds(_priceFeeds).queryRate(
             sourceTokenAddress,
             destTokenAddress
         );
 
-        return sourceTokenAmount
-            .mul(sourceToDestRate)
-            .div(sourceToDestPrecision);
+        return expectedRate;
     }
 
     function localPriceFeed()
