@@ -51,7 +51,6 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
         require(loanLocal.active, "loan is closed");
-        require(loanParamsLocal.id != 0, "loanParams not exists");
 
         (uint256 currentMargin, uint256 collateralToLoanRate) = IPriceFeeds(priceFeeds).getCurrentMargin(
             loanParamsLocal.loanToken,
@@ -162,7 +161,6 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
         require(loanLocal.active, "loan is closed");
-        require(loanParamsLocal.id != 0, "loanParams not exists");
         require(
             block.timestamp > loanLocal.endTimestamp.sub(3600),
             "healthy position"
@@ -313,8 +311,9 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         Loan storage loanLocal = loans[loanId];
         LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
         _checkAuthorized(
-            loanLocal,
-            loanParamsLocal
+            loanLocal.id,
+            loanLocal.active,
+            loanLocal.borrower
         );
 
         // can't close more than the full principal
@@ -386,8 +385,9 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         Loan storage loanLocal = loans[loanId];
         LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
         _checkAuthorized(
-            loanLocal,
-            loanParamsLocal
+            loanLocal.id,
+            loanLocal.active,
+            loanLocal.borrower
         );
 
         swapAmount = swapAmount > loanLocal.collateral ?
@@ -494,18 +494,18 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
     }
 
     function _checkAuthorized(
-        Loan memory loanLocal,
-        LoanParams memory loanParamsLocal)
+        bytes32 _id,
+        bool _active,
+        address _borrower)
         internal
         view
     {
-        require(loanLocal.active, "loan is closed");
+        require(_active, "loan is closed");
         require(
-            msg.sender == loanLocal.borrower ||
-            delegatedManagers[loanLocal.id][msg.sender],
+            msg.sender == _borrower ||
+            delegatedManagers[_id][msg.sender],
             "unauthorized"
         );
-        require(loanParamsLocal.id != 0, "loanParams not exists");
     }
 
     function _settleInterestToPrincipal(
