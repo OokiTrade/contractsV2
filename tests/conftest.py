@@ -32,17 +32,17 @@ def priceFeeds(accounts, WETH, DAI, LINK, PriceFeeds, PriceFeedsLocal):
     feeds.setRates(
         WETH.address,
         LINK.address,
-        54.52e18
+        50e18 # this value so it can be easy in manual calculations
     )
     feeds.setRates(
         WETH.address,
         DAI.address,
-        200e18
+        150e18 # this value so it can be easy in manual calculations
     )
     feeds.setRates(
         LINK.address,
         DAI.address,
-        3.692e18
+        10e18 # this value so it can be easy in manual calculations
     )
     return feeds
 
@@ -58,7 +58,8 @@ def bzx(accounts,
     LoanSettings, 
     LoanMaintenance, 
     LoanOpenings, 
-    LoanClosings, 
+    LoanClosings,
+    LoanClosingsWithGasToken,
     swapsImpl, 
     priceFeeds):
     bzxproxy = accounts[0].deploy(bZxProtocol)
@@ -70,7 +71,8 @@ def bzx(accounts,
     bzx.replaceContract(accounts[0].deploy(LoanMaintenance).address)
     bzx.replaceContract(accounts[0].deploy(LoanOpenings).address)
     bzx.replaceContract(accounts[0].deploy(LoanClosings).address)
-    
+    bzx.replaceContract(accounts[0].deploy(LoanClosingsWithGasToken).address)
+
     bzx.setPriceFeedContract(
         priceFeeds.address # priceFeeds
     )
