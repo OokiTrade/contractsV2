@@ -67,18 +67,24 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         nonReentrant
     {
         require(depositAmount != 0, "depositAmount is 0");
+
         Loan storage loanLocal = loans[loanId];
+        require(loanLocal.active, "loan is closed");
+
         LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
-        require(loanLocal.active, "loan is closed");
-        require(msg.value == 0 || loanParamsLocal.collateralToken == address(wethToken), "wrong asset sent");
+        address collateralToken = loanParamsLocal.collateralToken;
+        uint256 collateral = loanLocal.collateral;
 
-        loanLocal.collateral = loanLocal.collateral
+        require(msg.value == 0 || collateralToken == address(wethToken), "wrong asset sent");
+
+        collateral = collateral
             .add(depositAmount);
+        loanLocal.collateral = collateral;
 
         if (msg.value == 0) {
             vaultDeposit(
-                loanParamsLocal.collateralToken,
+                collateralToken,
                 msg.sender,
                 depositAmount
             );
@@ -92,7 +98,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
 
         emit DepositCollateral(
             loanLocal.borrower,
-            loanParamsLocal.collateralToken,
+            collateralToken,
             loanId,
             depositAmount
         );
@@ -117,11 +123,14 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             "unauthorized"
         );
 
+        address collateralToken = loanParamsLocal.collateralToken;
+        uint256 collateral = loanLocal.collateral;
+
         uint256 maxDrawdown = IPriceFeeds(priceFeeds).getMaxDrawdown(
             loanParamsLocal.loanToken,
-            loanParamsLocal.collateralToken,
+            collateralToken,
             loanLocal.principal,
-            loanLocal.collateral,
+            collateral,
             loanParamsLocal.maintenanceMargin
         );
 
@@ -131,17 +140,18 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             actualWithdrawAmount = withdrawAmount;
         }
 
-        loanLocal.collateral = loanLocal.collateral
+        collateral = collateral
             .sub(actualWithdrawAmount);
+        loanLocal.collateral = collateral;
 
-        if (loanParamsLocal.collateralToken == address(wethToken)) {
+        if (collateralToken == address(wethToken)) {
             vaultEtherWithdraw(
                 receiver,
                 actualWithdrawAmount
             );
         } else {
             vaultWithdraw(
-                loanParamsLocal.collateralToken,
+                collateralToken,
                 receiver,
                 actualWithdrawAmount
             );
@@ -149,7 +159,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
 
         emit WithdrawCollateral(
             loanLocal.borrower,
-            loanParamsLocal.collateralToken,
+            collateralToken,
             loanId,
             withdrawAmount
         );
