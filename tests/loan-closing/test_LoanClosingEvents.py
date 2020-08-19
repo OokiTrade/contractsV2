@@ -59,17 +59,57 @@ def test_closeWithDepositCloseWithDepositEvent(bzx, loanId_LINK_DAI, priceFeeds,
 
     loan = bzx.loans(loanId_LINK_DAI)
     print("loan", loan)
+    print("loan.lender", loan[11])
+    loanParams = bzx.loanParams(loan[1])
+    print("loanParams", loanParams)
+    print("loanParams.token", loanParams[3])
     print("accounts", accounts)
+    print("DAI", DAI.address)
+    print("LINK", LINK.address)
 
-    tx = DAI.approve(bzx.address, 10000000000000000000000000000000000, {"from": accounts[1]})
-    print("tx", tx.info())
 
-    tx = LINK.approve(bzx.address, 100000000000000000000000000000000, {"from": accounts[1]})
-    print("tx", tx.info())
+    DAI.mint(
+        accounts[1],
+        100,
+        { "from": accounts[0] }
+    )
 
-    tx = bzx.closeWithDeposit(loanId_LINK_DAI, accounts[1], 1, {"from": accounts[1]})
-    assert False
+    print("balance", DAI.balanceOf(accounts[1]));
 
-# def test_closeWithSwapCloseWithSwapEvent(bzx):
-#     assert False
+    tx = DAI.approve(bzx.address, 100, {"from": accounts[1]}) 
+    tx = bzx.closeWithDeposit(loanId_LINK_DAI, accounts[1], 100, {"from": accounts[1]})
+    closeWithDepositEvent = tx.events["CloseWithDeposit"][0]
+    tx.info()
+
+    assert(closeWithDepositEvent["user"] == accounts[1])
+    assert(closeWithDepositEvent["lender"] == accounts[2])
+    assert(closeWithDepositEvent["loanId"] == loanId_LINK_DAI)
+    assert(closeWithDepositEvent["closer"] == accounts[1])
+    assert(closeWithDepositEvent["loanToken"] == DAI.address)
+    assert(closeWithDepositEvent["collateralToken"] == LINK.address)
+    assert(closeWithDepositEvent["repayAmount"] == 100)
+    assert(closeWithDepositEvent["collateralToLoanRate"] == 1000000000000000000)
+    assert(closeWithDepositEvent["currentMargin"] == 0)
+
+def test_closeWithSwapCloseWithSwapEvent(bzx, loanId_LINK_DAI, priceFeeds, DAI, LINK, accounts):
+    # priceFeeds.setRates(
+    #     LINK.address,
+    #     DAI.address,
+    #     1e18 # exchange rate droped from default 10 to 1 so that we can liquidate
+    # )
+
+    loan = bzx.loans(loanId_LINK_DAI)
+    print("loan", loan)
+
+
+    tx = bzx.closeWithSwap(loanId_LINK_DAI, accounts[1], 100, True, b'', {"from": accounts[1]})
+    tx.info()
+    closeWithSwap = tx.events["CloseWithSwap"][0]
+    assert(closeWithSwap["user"] == accounts[1])
+    assert(closeWithSwap["lender"] == accounts[2])
+    assert(closeWithSwap["loanId"] == loanId_LINK_DAI)
+    assert(closeWithSwap["closer"] == accounts[1])
+    assert(closeWithSwap["loanToken"] == DAI.address)
+    assert(closeWithSwap["collateralToken"] == LINK.address)
+    assert(closeWithSwap["positionCloseSize"] == 100) 
 
