@@ -48,9 +48,9 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         )
     {
         Loan storage loanLocal = loans[loanId];
-        LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
-
         require(loanLocal.active, "loan is closed");
+
+        LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
         (uint256 currentMargin, uint256 collateralToLoanRate) = IPriceFeeds(priceFeeds).getCurrentMargin(
             loanParamsLocal.loanToken,
@@ -158,8 +158,6 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         internal
     {
         Loan storage loanLocal = loans[loanId];
-        LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
-
         require(loanLocal.active, "loan is closed");
         require(
             block.timestamp > loanLocal.endTimestamp.sub(3600),
@@ -169,6 +167,8 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
             loanPoolToUnderlying[loanLocal.lender] != address(0),
             "invalid lender"
         );
+
+        LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
         // pay outstanding interest to lender
         _payInterest(
@@ -309,12 +309,13 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         require(depositAmount != 0, "depositAmount == 0");
 
         Loan storage loanLocal = loans[loanId];
-        LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
         _checkAuthorized(
             loanLocal.id,
             loanLocal.active,
             loanLocal.borrower
         );
+
+        LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
         // can't close more than the full principal
         loanCloseAmount = depositAmount > loanLocal.principal ?
@@ -383,12 +384,13 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         require(swapAmount != 0, "swapAmount == 0");
 
         Loan storage loanLocal = loans[loanId];
-        LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
         _checkAuthorized(
             loanLocal.id,
             loanLocal.active,
             loanLocal.borrower
         );
+
+        LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
         swapAmount = swapAmount > loanLocal.collateral ?
             loanLocal.collateral :

@@ -451,16 +451,38 @@ contract IBZx is
         returns (LoanReturnData[] memory loansData);
 
 
-    ////// Protocol Migration //////
+    ////// Swap External //////
 
-    function setLegacyOracles(
-        address[] calldata refs,
-        address[] calldata oracles)
-        external;
+    function swapExternal(
+        address sourceToken,
+        address destToken,
+        address receiver,
+        address returnToSender,
+        uint256 sourceTokenAmount,
+        uint256 requiredDestTokenAmount,
+        bytes calldata swapData)
+        external
+        payable
+        returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed);
 
-    function getLegacyOracle(
-        address ref)
+    function swapExternalWithGasToken(
+        address sourceToken,
+        address destToken,
+        address receiver,
+        address returnToSender,
+        address gasTokenUser,
+        uint256 sourceTokenAmount,
+        uint256 requiredDestTokenAmount,
+        bytes calldata swapData)
+        external
+        payable
+        returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed);
+
+    function getSwapExpectedReturn(
+        address sourceToken,
+        address destToken,
+        uint256 sourceTokenAmount)
         external
         view
-        returns (address);
+        returns (uint256);
 }

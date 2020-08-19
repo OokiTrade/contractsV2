@@ -9,11 +9,8 @@ import "../openzeppelin/SafeMath.sol";
 import "../openzeppelin/Ownable.sol";
 import "../interfaces/IERC20.sol";
 import "../core/Constants.sol";
+import "./IPriceFeedsExt.sol";
 
-
-interface IPriceFeedsExt {
-  function latestAnswer() external view returns (int256);
-}
 
 contract PriceFeeds is Constants, Ownable {
     using SafeMath for uint256;

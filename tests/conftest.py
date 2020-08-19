@@ -47,8 +47,8 @@ def priceFeeds(accounts, WETH, DAI, LINK, PriceFeeds, PriceFeedsLocal):
     return feeds
 
 @pytest.fixture(scope="module")
-def swapsImpl(accounts, SwapsImplKyber, SwapsImplLocal):
-    return accounts[0].deploy(SwapsImplLocal)
+def swapsImpl(accounts, SwapsImplKyber, SwapsImplTestnets):
+    return accounts[0].deploy(SwapsImplTestnets)
 
 @pytest.fixture(scope="module", autouse=True)
 def bzx(accounts, 

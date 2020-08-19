@@ -7,6 +7,7 @@ pragma solidity 0.5.17;
 
 
 contract SwapsEvents {
+
     event LoanSwap(
         bytes32 indexed loanId,
         address indexed sourceToken,
