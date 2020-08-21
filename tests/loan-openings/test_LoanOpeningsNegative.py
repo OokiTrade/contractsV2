@@ -17,7 +17,21 @@ def setLoanPool(bzx, accounts):
 
 @pytest.fixture(scope="module")
 def linkDaiMarginParamsId(Constants, LINK, DAI, bzx, accounts):
+    loanParams = {
+        "id": "0x0",
+        "active": False,
+        "owner": Constants["ZERO_ADDRESS"],
+        "loanToken": DAI.address,
+        "collateralToken": LINK.address,
+        "minInitialMargin": 20e18,
+        "maintenanceMargin": 15e18,
+        "fixedLoanTerm": "2419200" # 28 days
+    }
+    tx = bzx.setupLoanParams([list(loanParams.values())])
+    return tx.events["LoanParamsIdSetup"][0]["id"]
 
+@pytest.fixture(scope="module")
+def otherLinkDaiMarginParamsId(Constants, LINK, DAI, bzx, accounts):
     loanParams = {
         "id": "0x0",
         "active": False,
@@ -33,7 +47,6 @@ def linkDaiMarginParamsId(Constants, LINK, DAI, bzx, accounts):
 
 @pytest.fixture(scope="module")
 def sameTokenParamsId(Constants, LINK, DAI, bzx, accounts):
-
     loanParams = {
         "id": "0x0",
         "active": False,
@@ -43,6 +56,36 @@ def sameTokenParamsId(Constants, LINK, DAI, bzx, accounts):
         "minInitialMargin": 20e18,
         "maintenanceMargin": 15e18,
         "fixedLoanTerm": "2419200" # 28 days
+    }
+    tx = bzx.setupLoanParams([list(loanParams.values())])
+    return tx.events["LoanParamsIdSetup"][0]["id"]
+
+@pytest.fixture(scope="module")
+def smallInitialMarginParamsId(Constants, LINK, DAI, bzx, accounts):
+    loanParams = {
+        "id": "0x0",
+        "active": False,
+        "owner": Constants["ZERO_ADDRESS"],
+        "loanToken": DAI.address,
+        "collateralToken": LINK.address,
+        "minInitialMargin": 200e20,
+        "maintenanceMargin": 15e18,
+        "fixedLoanTerm": "2419200" # 28 days
+    }
+    tx = bzx.setupLoanParams([list(loanParams.values())])
+    return tx.events["LoanParamsIdSetup"][0]["id"]
+
+@pytest.fixture(scope="module")
+def zeroMaxTermParamsId(Constants, LINK, DAI, bzx, accounts):
+    loanParams = {
+        "id": "0x0",
+        "active": False,
+        "owner": Constants["ZERO_ADDRESS"],
+        "loanToken": DAI.address,
+        "collateralToken": LINK.address,
+        "minInitialMargin": 20e18,
+        "maintenanceMargin": 15e18,
+        "fixedLoanTerm": "0" # 28 days
     }
     tx = bzx.setupLoanParams([list(loanParams.values())])
     return tx.events["LoanParamsIdSetup"][0]["id"]
@@ -90,52 +133,352 @@ def test_borrowOrTradeFromPoolCollateralLoanMatch(Constants, bzx, sameTokenParam
             b"", {"from": accounts[1], "value": "0 ether"})
         tx.info()
 
-# def test_borrowOrTradeFromPoolInitialMarginTooLow(Constants, bzx, linkDaiMarginParamsId, accounts):
-#     initialMargin = 10**20
-#     newPrincipal = 1
-#     with reverts("initialMargin too low"):
+def test_borrowOrTradeFromPoolInitialMarginTooLow(Constants, bzx, smallInitialMarginParamsId, accounts):
+    initialMargin = 10**20
+    newPrincipal = 10
+
+    with reverts("initialMargin too low"):
+        tx = bzx.borrowOrTradeFromPool(smallInitialMarginParamsId, 1, False, initialMargin, 
+            [Constants["ZERO_ADDRESS"], Constants["ZERO_ADDRESS"], Constants["ZERO_ADDRESS"], Constants["ZERO_ADDRESS"]], 
+            [1, newPrincipal, 1, 1, 1], 
+            b"", {"from": accounts[1], "value": "0 ether"})
+        tx.info()
+
+def test_borrowOrTradeFromPoolInvalidInterest(Constants, bzx, zeroMaxTermParamsId, accounts):
+    initialMargin = 10**20
+    newPrincipal = 10
+
+    with reverts("invalid interest"):
+        tx = bzx.borrowOrTradeFromPool(zeroMaxTermParamsId, 1, False, initialMargin, 
+            [Constants["ZERO_ADDRESS"], Constants["ZERO_ADDRESS"], Constants["ZERO_ADDRESS"], Constants["ZERO_ADDRESS"]], 
+            [1, newPrincipal, 0, 1, 1], 
+            b"", {"from": accounts[1], "value": "0 ether"})
+        tx.info()
+
+def test_borrowOrTradeFromPoolLoanParamsDisabled(Constants, bzx, linkDaiMarginParamsId, accounts):
+    tx = bzx.disableLoanParams([linkDaiMarginParamsId])
+    tx.info()
+    initialMargin = 10**20
+    newPrincipal = 10
+    with reverts("loanParams disabled"):
+        tx = bzx.borrowOrTradeFromPool(linkDaiMarginParamsId, 1, False, initialMargin, 
+            [Constants["ZERO_ADDRESS"], Constants["ZERO_ADDRESS"], Constants["ZERO_ADDRESS"], Constants["ZERO_ADDRESS"]], 
+            [1, newPrincipal, 0, 1, 1], 
+            b"", {"from": accounts[1], "value": "0 ether"})
+        tx.info()
+
+
+# TODO this is impossible to reach
+# def test_borrowOrTradeFromPoolLoanExists(Constants, bzx, accounts, linkDaiMarginParamsId):
+#     with reverts("loan exists"):
 #         tx = bzx.borrowOrTradeFromPool(linkDaiMarginParamsId, 1, False, initialMargin, 
 #             [Constants["ZERO_ADDRESS"], Constants["ZERO_ADDRESS"], Constants["ZERO_ADDRESS"], Constants["ZERO_ADDRESS"]], 
-#             [1, newPrincipal, 1, 1, 1], 
+#             [1, newPrincipal, 0, 1, 1], 
 #             b"", {"from": accounts[1], "value": "0 ether"})
 #         tx.info()
 
-# def test_borrowOrTradeFromPoolInvalidInterest(Constants, bzx):
-#     with reverts("invalid interest"):
-#         bzx.borrowOrTradeFromPool(0, 0)
+def test_borrowOrTradeFromPoolLoanHasEnded(Constants, bzx, accounts, linkDaiMarginParamsId):
+    initialMargin = 10**20
+    newPrincipal = 10
+    with reverts("loan has ended"):
+        tx = bzx.borrowOrTradeFromPool(linkDaiMarginParamsId, 1, False, initialMargin, 
+                [Constants["ZERO_ADDRESS"], Constants["ZERO_ADDRESS"], Constants["ZERO_ADDRESS"], Constants["ZERO_ADDRESS"]], 
+                [1, newPrincipal, 0, 1, 1], 
+                b"", {"from": accounts[1], "value": "0 ether"})
+        tx.info()
 
-# def test_borrowOrTradeFromPoolLoanParamsDisabled(Constants, bzx):
-#     with reverts("loanParams disabled"):
-#         bzx.borrowOrTradeFromPool(0, 0)
+def test_borrowOrTradeFromPoolBorrowerMismatch(Constants, bzx, accounts, linkDaiMarginParamsId, LINK, DAI):
 
-# def test_borrowOrTradeFromPoolLoanExists(Constants, bzx):
-#     with reverts("loan exists"):
-#         bzx.borrowOrTradeFromPool(0, 0)
+    bzx.setLoanPool(
+        [
+            accounts[1],
+        ],
+        [
+            accounts[2]
+        ]
+    )
+    loanTokenSent = 100e18
 
-# def test_borrowOrTradeFromPoolLoanHasEnded(Constants, bzx):
-#     with reverts("loan has ended"):
-#         bzx.borrowOrTradeFromPool(0, 0)
+    DAI.mint(
+        bzx.address,
+        loanTokenSent,
+        { "from": accounts[0] }
+    )
+    collateralTokenSent = bzx.getRequiredCollateral(
+        DAI.address,
+        LINK.address,
+        loanTokenSent,
+        100e18,
+        False
+    )
+    LINK.mint(
+        bzx.address,
+        collateralTokenSent,
+        { "from": accounts[0] }
+    )
+    tx = bzx.borrowOrTradeFromPool(
+        linkDaiMarginParamsId, #loanParamsId
+        "0", # loanId
+        False, # isTorqueLoan,
+        100e18, # initialMargin
+        [
+            accounts[2], # lender
+            accounts[1], # borrower
+            accounts[1], # receiver
+            Constants["ZERO_ADDRESS"], # manager
+        ],
+        [
+            5e18, # newRate (5%)
+            loanTokenSent, # newPrincipal
+            0, # torqueInterest
+            loanTokenSent, # loanTokenSent
+            collateralTokenSent # collateralTokenSent
+        ],
+        b'', # loanDataBytes
+        { "from": accounts[1] }
+    )
+    tx.info()
+    loanId = tx.events["Trade"][0]["loanId"]
 
-# def test_borrowOrTradeFromPoolBorrowerMismatch(Constants, bzx):
-#     with reverts("borrower mismatch"):
-#         bzx.borrowOrTradeFromPool(0, 0)
+    initialMargin = 10**20
+    newPrincipal = 10
+    with reverts("borrower mismatch"):
+        tx = bzx.borrowOrTradeFromPool(linkDaiMarginParamsId, loanId, False, initialMargin, 
+                [Constants["ZERO_ADDRESS"], Constants["ZERO_ADDRESS"], Constants["ZERO_ADDRESS"], Constants["ZERO_ADDRESS"]], 
+                [1, newPrincipal, 0, 1, 1], 
+                b"", {"from": accounts[1], "value": "0 ether"})
+        tx.info()
 
-# def test_borrowOrTradeFromPoolLenderMismatch(Constants, bzx):
-#     with reverts("lender mismatch"):
-#         bzx.borrowOrTradeFromPool(0, 0)
+def test_borrowOrTradeFromPoolLenderMismatch(Constants, bzx, accounts, linkDaiMarginParamsId, LINK, DAI):
 
-# def test_borrowOrTradeFromPoolLoanParamMismatch(Constants, bzx):
-#     with reverts("loanParams mismatch"):
-#         bzx.borrowOrTradeFromPool(0, 0)
+    bzx.setLoanPool(
+        [
+            accounts[1],
+        ],
+        [
+            accounts[2]
+        ]
+    )
+    loanTokenSent = 100e18
 
-# def test_borrowOrTradeFromPoolSurplusLoanToken(Constants, bzx):
-#     with reverts("surplus loan token"):
-#         bzx.borrowOrTradeFromPool(0, 0)
+    DAI.mint(
+        bzx.address,
+        loanTokenSent,
+        { "from": accounts[0] }
+    )
+    collateralTokenSent = bzx.getRequiredCollateral(
+        DAI.address,
+        LINK.address,
+        loanTokenSent,
+        100e18,
+        False
+    )
+    LINK.mint(
+        bzx.address,
+        collateralTokenSent,
+        { "from": accounts[0] }
+    )
+    tx = bzx.borrowOrTradeFromPool(
+        linkDaiMarginParamsId, #loanParamsId
+        "0", # loanId
+        False, # isTorqueLoan,
+        100e18, # initialMargin
+        [
+            accounts[2], # lender
+            accounts[1], # borrower
+            accounts[1], # receiver
+            Constants["ZERO_ADDRESS"], # manager
+        ],
+        [
+            5e18, # newRate (5%)
+            loanTokenSent, # newPrincipal
+            0, # torqueInterest
+            loanTokenSent, # loanTokenSent
+            collateralTokenSent # collateralTokenSent
+        ],
+        b'', # loanDataBytes
+        { "from": accounts[1] }
+    )
+    tx.info()
+    loanId = tx.events["Trade"][0]["loanId"]
 
-# def test_borrowOrTradeFromPoolCollateralInsuficient(Constants, bzx):
-#     with reverts("collateral insufficient"):
-#         bzx.borrowOrTradeFromPool(0, 0)
+    initialMargin = 10**20
+    newPrincipal = 10
+    with reverts("lender mismatch"):
+        tx = bzx.borrowOrTradeFromPool(linkDaiMarginParamsId, loanId, False, initialMargin, 
+                [Constants["ZERO_ADDRESS"], accounts[1], Constants["ZERO_ADDRESS"], Constants["ZERO_ADDRESS"]], 
+                [1, newPrincipal, 0, 1, 1], 
+                b"", {"from": accounts[1], "value": "0 ether"})
+        tx.info()
 
-# def test_setDelegatedManagerUnauthorized(Constants, bzx):
-#     with reverts("unauthorized"):
-#         bzx.setDelegatedManager(0, Constants["ZERO_ADDRESS"], 0);
+def test_borrowOrTradeFromPoolLoanParamMismatch(Constants, bzx, accounts, linkDaiMarginParamsId, otherLinkDaiMarginParamsId, LINK, DAI):
+
+    bzx.setLoanPool(
+        [
+            accounts[1],
+        ],
+        [
+            accounts[2]
+        ]
+    )
+    loanTokenSent = 100e18
+
+    DAI.mint(
+        bzx.address,
+        loanTokenSent,
+        { "from": accounts[0] }
+    )
+    collateralTokenSent = bzx.getRequiredCollateral(
+        DAI.address,
+        LINK.address,
+        loanTokenSent,
+        100e18,
+        False
+    )
+    LINK.mint(
+        bzx.address,
+        collateralTokenSent,
+        { "from": accounts[0] }
+    )
+    tx = bzx.borrowOrTradeFromPool(
+        linkDaiMarginParamsId, #loanParamsId
+        "0", # loanId
+        False, # isTorqueLoan,
+        100e18, # initialMargin
+        [
+            accounts[2], # lender
+            accounts[1], # borrower
+            accounts[1], # receiver
+            Constants["ZERO_ADDRESS"], # manager
+        ],
+        [
+            5e18, # newRate (5%)
+            loanTokenSent, # newPrincipal
+            0, # torqueInterest
+            loanTokenSent, # loanTokenSent
+            collateralTokenSent # collateralTokenSent
+        ],
+        b'', # loanDataBytes
+        { "from": accounts[1] }
+    )
+    tx.info()
+    loanId = tx.events["Trade"][0]["loanId"]
+
+    initialMargin = 10**20
+    newPrincipal = 10
+    with reverts("loanParams mismatch"):
+        tx = bzx.borrowOrTradeFromPool(otherLinkDaiMarginParamsId, loanId, False, initialMargin, 
+                [accounts[2], accounts[1], Constants["ZERO_ADDRESS"], Constants["ZERO_ADDRESS"]], 
+                [1, newPrincipal, 0, 1, 1], 
+                b"", {"from": accounts[1], "value": "0 ether"})
+        tx.info()
+
+def test_borrowOrTradeFromPoolSurplusLoanToken(Constants, bzx, accounts, linkDaiMarginParamsId, LINK, DAI):
+
+    bzx.setLoanPool(
+        [
+            accounts[1],
+        ],
+        [
+            accounts[2]
+        ]
+    )
+    loanTokenSent = 100e18
+
+    DAI.mint(
+        bzx.address,
+        loanTokenSent,
+        { "from": accounts[0] }
+    )
+    collateralTokenSent = bzx.getRequiredCollateral(
+        DAI.address,
+        LINK.address,
+        loanTokenSent,
+        100e18,
+        False
+    )
+    LINK.mint(
+        bzx.address,
+        collateralTokenSent,
+        { "from": accounts[0] }
+    )
+
+    with reverts("surplus loan token"):
+        tx = bzx.borrowOrTradeFromPool(
+            linkDaiMarginParamsId, #loanParamsId
+            "0", # loanId
+            True, # isTorqueLoan,
+            100e18, # initialMargin
+            [
+                accounts[2], # lender
+                accounts[1], # borrower
+                accounts[1], # receiver
+                Constants["ZERO_ADDRESS"], # manager
+            ],
+            [
+                5e18, # newRate (5%)
+                loanTokenSent, # newPrincipal
+                0, # torqueInterest
+                loanTokenSent, # loanTokenSent
+                collateralTokenSent # collateralTokenSent
+            ],
+            b'', # loanDataBytes
+            { "from": accounts[1] }
+        )
+
+def test_borrowOrTradeFromPoolUnhealtyPosition(Constants, bzx, accounts, linkDaiMarginParamsId, LINK, DAI):
+
+    bzx.setLoanPool(
+        [
+            accounts[1],
+        ],
+        [
+            accounts[2]
+        ]
+    )
+    loanTokenSent = 100e18
+
+    DAI.mint(
+        bzx.address,
+        loanTokenSent,
+        { "from": accounts[0] }
+    )
+    collateralTokenSent = bzx.getRequiredCollateral(
+        DAI.address,
+        LINK.address,
+        loanTokenSent,
+        100e18,
+        False
+    )
+    LINK.mint(
+        bzx.address,
+        collateralTokenSent,
+        { "from": accounts[0] }
+    )
+
+    with reverts("unhealthy position"):
+        tx = bzx.borrowOrTradeFromPool(
+            linkDaiMarginParamsId, #loanParamsId
+            "0", # loanId
+            False, # isTorqueLoan,
+            100e18, # initialMargin
+            [
+                accounts[2], # lender
+                accounts[1], # borrower
+                accounts[1], # receiver
+                Constants["ZERO_ADDRESS"], # manager
+            ],
+            [
+                5e18, # newRate (5%)
+                loanTokenSent, # newPrincipal
+                0, # torqueInterest
+                loanTokenSent, # loanTokenSent
+                10 # collateralTokenSent
+            ],
+            b'', # loanDataBytes
+            { "from": accounts[1] }
+        )
+
+def test_setDelegatedManagerUnauthorized(Constants, bzx):
+    with reverts("unauthorized"):
+        bzx.setDelegatedManager(0, Constants["ZERO_ADDRESS"], 0);
