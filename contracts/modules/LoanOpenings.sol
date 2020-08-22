@@ -496,7 +496,6 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                 id: loanId,
                 loanParamsId: loanParamsLocal.id,
                 pendingTradesId: 0,
-                active: true,
                 principal: newPrincipal,
                 collateral: 0, // calculated later
                 startTimestamp: block.timestamp,
@@ -504,7 +503,8 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                 startMargin: initialMargin,
                 startRate: 0, // queried later
                 borrower: borrower,
-                lender: lender
+                lender: lender,
+                active: true
             });
 
             activeLoansSet.addBytes32(loanId);

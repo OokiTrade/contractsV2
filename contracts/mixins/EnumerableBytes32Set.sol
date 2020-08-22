@@ -138,8 +138,8 @@ library EnumerableBytes32Set {
         }
 
         output = new bytes32[](end-start);
-        for (uint256 i; i < end-start; i++) {
-            output[i] = set.values[i+start];
+        for (uint256 i = start; i < end; i++) {
+            output[i-start] = set.values[i];
         }
         return output;
     }

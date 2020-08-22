@@ -10,10 +10,9 @@ import "./AdvancedToken.sol";
 import "./interfaces/ProtocolLike.sol";
 import "./interfaces/FeedsLike.sol";
 import "../gastoken/GasTokenUser.sol";
-import "./Pausable.sol";
 
 
-contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser, Pausable {
+contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
     using SafeMath for uint256;
     using SignedSafeMath for int256;
 
@@ -22,12 +21,9 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser, Pausable {
         _;
     }
 
-    uint256 internal constant WEI_PRECISION = 10**18;
-    uint256 internal constant WEI_PERCENT_PRECISION = 10**20;
-
     address internal target_;
 
-    uint256 public constant VERSION = 5;
+    uint256 public constant VERSION = 6;
     address internal constant arbitraryCaller = 0x000F400e6818158D541C3EBE45FE3AA0d47372FF;
 
     //address public constant bZxContract = 0xAbd9372723C735D426D0a760D047206Fe115ee6d; // mainnet

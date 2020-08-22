@@ -12,7 +12,7 @@ import "../../interfaces/IChai.sol";
 
 contract LoanTokenLogicDai is LoanTokenLogicStandard {
 
-    uint256 public constant RAY = 10 ** 27;
+    uint256 public constant RAY = 10**27;
 
     // Mainnet
     /*IChai public constant chai = IChai(0x06AF07097C9Eeb7fD685c692751D5C66dB49c215);

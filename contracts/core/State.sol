@@ -45,36 +45,36 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
 
     address public feesController;                                                      // address controlling fee withdrawals
 
-    uint256 public lendingFeePercent = 10**19; // 10% fee                               // fee taken from lender interest payments
+    uint256 public lendingFeePercent = 10 ether; // 10% fee                             // fee taken from lender interest payments
     mapping (address => uint256) public lendingFeeTokensHeld;                           // total interest fees received and not withdrawn per asset
     mapping (address => uint256) public lendingFeeTokensPaid;                           // total interest fees withdraw per asset (lifetime fees = lendingFeeTokensHeld + lendingFeeTokensPaid)
 
-    uint256 public tradingFeePercent = 15 * 10**16; // 0.15% fee                        // fee paid for each trade
+    uint256 public tradingFeePercent = 0.15 ether; // 0.15% fee                         // fee paid for each trade
     mapping (address => uint256) public tradingFeeTokensHeld;                           // total trading fees received and not withdrawn per asset
     mapping (address => uint256) public tradingFeeTokensPaid;                           // total trading fees withdraw per asset (lifetime fees = tradingFeeTokensHeld + tradingFeeTokensPaid)
 
-    uint256 public borrowingFeePercent = 9 * 10**16; // 0.09% fee                       // origination fee paid for each loan
+    uint256 public borrowingFeePercent = 0.09 ether; // 0.09% fee                       // origination fee paid for each loan
     mapping (address => uint256) public borrowingFeeTokensHeld;                         // total borrowing fees received and not withdrawn per asset
     mapping (address => uint256) public borrowingFeeTokensPaid;                         // total borrowing fees withdraw per asset (lifetime fees = borrowingFeeTokensHeld + borrowingFeeTokensPaid)
 
     uint256 public protocolTokenHeld;                                                   // current protocol token deposit balance
     uint256 public protocolTokenPaid;                                                   // lifetime total payout of protocol token
 
-    uint256 public affiliateFeePercent = 30 * 10**18; // 30% fee share                  // fee share for affiliate program
+    uint256 public affiliateFeePercent = 30 ether; // 30% fee share                     // fee share for affiliate program
 
-    uint256 public liquidationIncentivePercent = 5 * 10**18; // 5% collateral discount  // discount on collateral for liquidators
+    uint256 public liquidationIncentivePercent = 5 ether; // 5% collateral discount     // discount on collateral for liquidators
 
-    mapping (address => address) public loanPoolToUnderlying;                            // loanPool => underlying
-    mapping (address => address) public underlyingToLoanPool;                            // underlying => loanPool
-    EnumerableBytes32Set.Bytes32Set internal loanPoolsSet;                               // loan pools set
+    mapping (address => address) public loanPoolToUnderlying;                           // loanPool => underlying
+    mapping (address => address) public underlyingToLoanPool;                           // underlying => loanPool
+    EnumerableBytes32Set.Bytes32Set internal loanPoolsSet;                              // loan pools set
 
-    mapping (address => bool) public supportedTokens;                                    // supported tokens for swaps
+    mapping (address => bool) public supportedTokens;                                   // supported tokens for swaps
 
-    uint256 public maxDisagreement = 5 * 10**18;                                         // % disagreement between swap rate and reference rate
+    uint256 public maxDisagreement = 5 ether;                                           // % disagreement between swap rate and reference rate
 
-    uint256 public sourceBufferPercent = 5 * 10**18;                                     // used to estimate kyber swap source amount
+    uint256 public sourceBufferPercent = 5 ether;                                       // used to estimate kyber swap source amount
 
-    uint256 public maxSwapSize = 1500 ether;                                             // maximum support swap size in ETH
+    uint256 public maxSwapSize = 1500 ether;                                            // maximum supported swap size in ETH
 
 
     function _setTarget(

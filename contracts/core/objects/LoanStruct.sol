@@ -11,7 +11,6 @@ contract LoanStruct {
         bytes32 id;                 // id of the loan
         bytes32 loanParamsId;       // the linked loan params id
         bytes32 pendingTradesId;    // the linked pending trades id
-        bool active;                // if false, the loan has been fully closed
         uint256 principal;          // total borrowed amount outstanding
         uint256 collateral;         // total collateral escrowed for the loan
         uint256 startTimestamp;     // loan start time
@@ -20,5 +19,6 @@ contract LoanStruct {
         uint256 startRate;          // reference rate when the loan opened for converting collateralToken to loanToken
         address borrower;           // borrower of this loan
         address lender;             // lender of this loan
+        bool active;                // if false, the loan has been fully closed
     }
 }
