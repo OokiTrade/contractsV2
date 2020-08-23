@@ -12,14 +12,6 @@ import "../events/LoanSettingsEvents.sol";
 
 contract LoanSettings is State, LoanSettingsEvents {
 
-    constructor() public {}
-
-    function()
-        external
-    {
-        revert("fallback not allowed");
-    }
-
     function initialize(
         address target)
         external
@@ -141,7 +133,7 @@ contract LoanSettings is State, LoanSettingsEvents {
         internal
         returns (bytes32)
     {
-        bytes32 loanParamsId = keccak256(abi.encodePacked(
+        bytes32 loanParamsId = keccak256(abi.encode(
             loanParamsLocal.loanToken,
             loanParamsLocal.collateralToken,
             loanParamsLocal.minInitialMargin,
@@ -154,7 +146,7 @@ contract LoanSettings is State, LoanSettingsEvents {
         require(loanParamsLocal.loanToken != address(0) &&
             loanParamsLocal.collateralToken != address(0) &&
             loanParamsLocal.minInitialMargin > loanParamsLocal.maintenanceMargin &&
-            (loanParamsLocal.maxLoanTerm == 0 || loanParamsLocal.maxLoanTerm > 3600), // a defined maxLoanTerm has to be greater than one hour
+            (loanParamsLocal.maxLoanTerm == 0 || loanParamsLocal.maxLoanTerm > 1 hours), // a defined maxLoanTerm has to be greater than one hour
             "invalid params"
         );
 

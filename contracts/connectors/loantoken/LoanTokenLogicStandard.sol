@@ -555,7 +555,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         view
         returns (uint256)
     {
-        uint256 initialMargin = SafeMath.div(WEI_PRECISION + WEI_PERCENT_PRECISION, leverageAmount);
+        uint256 initialMargin = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, leverageAmount);
         return marketLiquidity()
             .mul(initialMargin)
             .div(_adjustValue(
@@ -851,7 +851,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         )))];
 
         // converting to initialMargin
-        leverageAmount = SafeMath.div(WEI_PRECISION + WEI_PERCENT_PRECISION, leverageAmount);
+        leverageAmount = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, leverageAmount);
 
         (sentAmounts[1], sentAmounts[4]) = ProtocolLike(bZxContract).borrowOrTradeFromPool.value(msgValue)( // newPrincipal, newCollateral
             loanParamsId,
@@ -1012,7 +1012,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
             return _avgBorrowInterestRate(assetBorrow)
                 .mul(_utilizationRate(assetBorrow, assetSupply))
                 .mul(SafeMath.sub(WEI_PERCENT_PRECISION, ProtocolLike(bZxContract).lendingFeePercent()))
-                .div(WEI_PERCENT_PRECISION + WEI_PERCENT_PRECISION);
+                .div(WEI_PERCENT_PRECISION * WEI_PERCENT_PRECISION);
         }
     }
 
@@ -1122,7 +1122,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         view
         returns (uint256 borrowAmount, uint256 interestRate)
     {
-        uint256 initialMargin = SafeMath.div(WEI_PRECISION + WEI_PERCENT_PRECISION, leverageAmount);
+        uint256 initialMargin = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, leverageAmount);
 
         interestRate = _nextBorrowInterestRate2(
             depositAmount
@@ -1133,7 +1133,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
 
         // assumes that loan, collateral, and interest token are the same
         borrowAmount = depositAmount
-            .mul(WEI_PERCENT_PRECISION + WEI_PERCENT_PRECISION)
+            .mul(WEI_PERCENT_PRECISION * WEI_PERCENT_PRECISION)
             .div(_adjustValue(
                 interestRate,
                 2419200, // 28 day duration for margin trades

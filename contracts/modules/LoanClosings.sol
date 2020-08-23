@@ -24,14 +24,6 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
         Liquidation
     }
 
-    constructor() public {}
-
-    function()
-        external
-    {
-        revert("fallback not allowed");
-    }
-
     function initialize(
         address target)
         external
@@ -169,11 +161,11 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
             seizedAmount = maxSeizable
                 .mul(loanCloseAmount)
                 .div(maxLiquidatable);
-        } else if (loanCloseAmount > maxLiquidatable) {
-            // adjust down the close amount to the max
-            loanCloseAmount = maxLiquidatable;
-            seizedAmount = maxSeizable;
         } else {
+            if (loanCloseAmount > maxLiquidatable) {
+                // adjust down the close amount to the max
+                loanCloseAmount = maxLiquidatable;
+            }
             seizedAmount = maxSeizable;
         }
 
@@ -255,7 +247,7 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
         require(loanLocal.active, "loan is closed");
         require(loanParamsLocal.id != 0, "loanParams not exists");
         require(
-            block.timestamp > loanLocal.endTimestamp.sub(3600),
+            block.timestamp > loanLocal.endTimestamp.sub(1 hours),
             "healthy position"
         );
         require(
@@ -289,7 +281,7 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
             backInterestOwed = backInterestTime
                 .mul(loanInterestLocal.owedPerDay);
             backInterestOwed = backInterestOwed
-                .div(86400);
+                .div(24 hours);
         }
 
         uint256 maxDuration = loanParamsLocal.maxLoanTerm;
@@ -298,7 +290,7 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
             // fixed-term loan, so need to query iToken for latest variable rate
             uint256 owedPerDay = loanLocal.principal
                 .mul(ILoanPool(loanLocal.lender).borrowInterestRate())
-                .div(365 * 10**20);
+                .div(DAYS_IN_A_YEAR * WEI_PERCENT_PRECISION);
 
             lenderInterestLocal.owedPerDay = lenderInterestLocal.owedPerDay
                 .add(owedPerDay);
@@ -308,12 +300,12 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
             loanInterestLocal.owedPerDay = owedPerDay;
         } else {
             // loanInterestLocal.owedPerDay doesn't change
-            maxDuration = 2628000; // approx. 1 month
+            maxDuration = ONE_MONTH;
         }
 
         if (backInterestTime >= maxDuration) {
             maxDuration = backInterestTime
-                .add(86400); // adds an extra 24 hours
+                .add(24 hours); // adds an extra 24 hours
         }
 
         // update loan end time
@@ -325,7 +317,7 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
         interestAmountRequired = interestAmountRequired
             .mul(loanInterestLocal.owedPerDay);
         interestAmountRequired = interestAmountRequired
-            .div(86400);
+            .div(24 hours);
 
         loanInterestLocal.depositTotal = loanInterestLocal.depositTotal
             .add(interestAmountRequired);
@@ -359,15 +351,31 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
             );
         }
 
+        // the amount of collateral drop needed to reach the maintenanceMargin level of the loan
+        uint256 maxDrawdown = IPriceFeeds(priceFeeds).getMaxDrawdown(
+            loanParamsLocal.loanToken,
+            loanParamsLocal.collateralToken,
+            loanLocal.principal,
+            loanLocal.collateral,
+            loanParamsLocal.maintenanceMargin
+        );
+        require(maxDrawdown != 0, "unhealthy position");
+
+        // gets the gas rebate denominated in collateralToken
         uint256 gasRebate = _gasUsed(startingGas)
             .mul(
                 IPriceFeeds(priceFeeds).getFastGasPrice(loanParamsLocal.collateralToken) * 2
             );
 
+        // ensures the gas rebate will not drop the current margin below the maintenance level
+        gasRebate = gasRebate
+            .min256(maxDrawdown);
+
         if (gasRebate != 0) {
             // pay out gas rebate to caller
+            // the preceeding logic should ensure gasRebate <= collateral, but just in case, will use SafeMath here
             loanLocal.collateral = loanLocal.collateral
-                .sub(gasRebate);
+                .sub(gasRebate, "gasRebate too high");
 
             _withdrawAsset(
                 loanParamsLocal.collateralToken,
@@ -375,17 +383,6 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
                 gasRebate
             );
         }
-
-        (uint256 currentMargin,) = IPriceFeeds(priceFeeds).getCurrentMargin(
-            loanParamsLocal.loanToken,
-            loanParamsLocal.collateralToken,
-            loanLocal.principal,
-            loanLocal.collateral
-        );
-        require(
-            currentMargin > 3 ether, // ensure there's more than 3% margin remaining
-            "unhealthy position"
-        );
     }
 
     function _closeWithDeposit(
@@ -439,8 +436,7 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
         withdrawToken = loanParamsLocal.collateralToken;
 
         if (withdrawAmount != 0) {
-            loanLocal.collateral = loanLocal.collateral
-                .sub(withdrawAmount);
+            loanLocal.collateral = loanLocal.collateral - withdrawAmount; // overflow not possible
 
             _withdrawAsset(
                 withdrawToken,
@@ -481,17 +477,18 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
             loanParamsLocal
         );
 
-        swapAmount = swapAmount > loanLocal.collateral ?
-            loanLocal.collateral :
-            swapAmount;
+        if (swapAmount > loanLocal.collateral) {
+            swapAmount = loanLocal.collateral;
+        }
 
         uint256 loanCloseAmountLessInterest;
         if (swapAmount == loanLocal.collateral || returnTokenIsCollateral) {
-            loanCloseAmount = swapAmount == loanLocal.collateral ?
-                loanLocal.principal :
-                loanLocal.principal
+            loanCloseAmount = loanLocal.principal;
+            if (returnTokenIsCollateral) {
+                loanCloseAmount = loanCloseAmount
                     .mul(swapAmount)
                     .div(loanLocal.collateral);
+            }
             require(loanCloseAmount != 0, "loanCloseAmount == 0");
 
             loanCloseAmountLessInterest = _settleInterestToPrincipal(
@@ -500,11 +497,11 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
                 loanCloseAmount,
                 receiver
             );
-        } else {
-            // loanCloseAmount is calculated after swap; for this case we want to swap the entire source amount
-            // and determine the loanCloseAmount and withdraw amount based on that
-            loanCloseAmountLessInterest = 0;
         }
+
+        // if the above conditional is not satisfied, then loanCloseAmountLessInterest remains equal to 0
+        // loanCloseAmount is calculated after swap; for this case we want to swap the entire source amount
+        // and determine the loanCloseAmount and withdraw amount based on that
 
         uint256 coveredPrincipal;
         uint256 usedCollateral;
@@ -635,14 +632,12 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
             // principal fully covered by excess interest
             loanCloseAmountLessInterest = 0;
 
-            if (interestRefundToBorrower != 0) {
-                // refund overage
-                _withdrawAsset(
-                    loanParamsLocal.loanToken,
-                    receiver,
-                    interestRefundToBorrower
-                );
-            }
+            // refund overage
+            _withdrawAsset(
+                loanParamsLocal.loanToken,
+                receiver,
+                interestRefundToBorrower
+            );
         }
 
         if (interestAppliedToPrincipal != 0) {
@@ -760,7 +755,7 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
                     sourceTokenAmountUsed = loanLocal.collateral;
                 } else {
                     coveredPrincipal = destTokenAmountReceived;
-                    withdrawAmount = 0;
+                    // withdrawAmount = 0;
                 }
             }
         }
@@ -946,7 +941,7 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
         interestRefundToBorrower = interestRefundToBorrower
             .mul(owedPerDayRefund);
         interestRefundToBorrower = interestRefundToBorrower
-            .div(86400);
+            .div(24 hours);
 
         if (closePrincipal < loanLocal.principal) {
             loanInterestLocal.depositTotal = loanInterestLocal.depositTotal
@@ -994,7 +989,7 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
         } else if (closeType == CloseTypes.Swap) {
             // exitPrice = 1 / collateralToLoanSwapRate
             if (collateralToLoanSwapRate != 0) {
-                collateralToLoanSwapRate = SafeMath.div(10**36, collateralToLoanSwapRate);
+                collateralToLoanSwapRate = SafeMath.div(WEI_PRECISION * WEI_PRECISION, collateralToLoanSwapRate);
             }
 
             // currentLeverage = 100 / currentMargin

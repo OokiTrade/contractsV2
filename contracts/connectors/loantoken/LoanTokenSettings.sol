@@ -117,6 +117,6 @@ contract LoanTokenSettings is AdvancedTokenStorage {
         symbol = _symbol;
         decimals = IERC20(loanTokenAddress).decimals();
 
-        initialPrice = 10**18; // starting price of 1
+        initialPrice = WEI_PRECISION; // starting price of 1
     }
 }

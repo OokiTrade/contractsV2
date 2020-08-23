@@ -13,6 +13,9 @@ contract Constants {
     uint256 internal constant WEI_PRECISION = 10**18;
     uint256 internal constant WEI_PERCENT_PRECISION = 10**20;
 
+    uint256 internal constant DAYS_IN_A_YEAR = 365;
+    uint256 internal constant ONE_MONTH = 2628000; // approx. seconds in a month
+
     //IWethERC20 public constant wethToken = IWethERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // mainnet
     //address public constant protocolTokenAddress = 0x1c74cFF0376FB4031Cd7492cD6dB2D66c3f2c6B9; // mainnet
 

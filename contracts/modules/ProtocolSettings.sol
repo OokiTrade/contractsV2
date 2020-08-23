@@ -13,15 +13,6 @@ import "../mixins/ProtocolTokenUser.sol";
 
 
 contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
-    using SafeERC20 for IERC20;
-
-    constructor() public {}
-
-    function()
-        external
-    {
-        revert("fallback not allowed");
-    }
 
     function initialize(
         address target)
@@ -91,7 +82,16 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
         for (uint256 i = 0; i < pools.length; i++) {
             require(pools[i] != assets[i], "pool == asset");
             require(pools[i] != address(0), "pool == 0");
-            require(assets[i] != address(0) || loanPoolToUnderlying[pools[i]] != address(0), "pool not exists");
+
+            address pool = loanPoolToUnderlying[pools[i]];
+            if (assets[i] == address(0)) {
+                // removal action
+                require(pool != address(0), "pool not exists");
+            } else {
+                // add action
+                require(pool == address(0), "pool exists");
+            }
+
             if (assets[i] == address(0)) {
                 underlyingToLoanPool[loanPoolToUnderlying[pools[i]]] = address(0);
                 loanPoolToUnderlying[pools[i]] = address(0);
@@ -134,7 +134,7 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
         external
         onlyOwner
     {
-        require(newValue <= 10**20, "value too high");
+        require(newValue <= WEI_PERCENT_PRECISION, "value too high");
         uint256 oldValue = lendingFeePercent;
         lendingFeePercent = newValue;
 
@@ -150,7 +150,7 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
         external
         onlyOwner
     {
-        require(newValue <= 10**20, "value too high");
+        require(newValue <= WEI_PERCENT_PRECISION, "value too high");
         uint256 oldValue = tradingFeePercent;
         tradingFeePercent = newValue;
 
@@ -166,7 +166,7 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
         external
         onlyOwner
     {
-        require(newValue <= 10**20, "value too high");
+        require(newValue <= WEI_PERCENT_PRECISION, "value too high");
         uint256 oldValue = borrowingFeePercent;
         borrowingFeePercent = newValue;
 
@@ -182,7 +182,7 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
         external
         onlyOwner
     {
-        require(newValue <= 10**20, "value too high");
+        require(newValue <= WEI_PERCENT_PRECISION, "value too high");
         uint256 oldValue = affiliateFeePercent;
         affiliateFeePercent = newValue;
 
@@ -198,7 +198,7 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
         external
         onlyOwner
     {
-        require(newValue <= 10**20, "value too high");
+        require(newValue <= WEI_PERCENT_PRECISION, "value too high");
         uint256 oldValue = liquidationIncentivePercent;
         liquidationIncentivePercent = newValue;
 

@@ -82,8 +82,8 @@ contract PriceFeedsTestnets is PriceFeeds {
 
             precision = _getDecimalPrecision(sourceToken, destToken);
         } else {
-            rate = 10**18;
-            precision = 10**18;
+            rate = WEI_PRECISION;
+            precision = WEI_PRECISION;
         }
     }
 
