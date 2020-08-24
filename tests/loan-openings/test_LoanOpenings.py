@@ -8,7 +8,6 @@ def test_getBorrowAmount(Constants, bzx, accounts, DAI, LINK):
 
     margin = 20**18
     borrowAmount = 10**20
-    # fee = 9 * 10**16;
 
     amount = bzx.getBorrowAmount(DAI, LINK, borrowAmount, margin, True)
     print("amount", amount)
