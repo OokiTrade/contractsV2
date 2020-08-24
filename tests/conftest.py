@@ -71,7 +71,7 @@ def bzx(accounts,
     bzx.replaceContract(accounts[0].deploy(LoanMaintenance).address)
     bzx.replaceContract(accounts[0].deploy(LoanOpenings).address)
     bzx.replaceContract(accounts[0].deploy(LoanClosings).address)
-    # bzx.replaceContract(accounts[0].deploy(LoanClosingsWithGasToken).address) disabel for now so that coverage works
+    # bzx.replaceContract(accounts[0].deploy(LoanClosingsWithGasToken).address) disable for now so that coverage works
 
     bzx.setPriceFeedContract(
         priceFeeds.address # priceFeeds
