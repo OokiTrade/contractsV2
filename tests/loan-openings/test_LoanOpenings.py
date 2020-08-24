@@ -6,14 +6,9 @@ from brownie import Wei, reverts
 
 def test_getBorrowAmount(Constants, bzx, accounts, DAI, LINK):
 
-    amount = bzx.getBorrowAmount(DAI, LINK, 1, 100, True)
-    print("amount", amount)
-    assert(amount == 9)
+    margin = 20**18
+    borrowAmount = 10**20
 
-    amount = bzx.getBorrowAmount(DAI, LINK, 1, 100, False)
+    amount = bzx.getBorrowAmount(DAI, LINK, borrowAmount, margin, True)
     print("amount", amount)
-    assert(amount == 10000000000000000000)
-
-    amount = bzx.getBorrowAmount(DAI, DAI, 1, 100, False)
-    print("amount", amount)
-    assert(amount == 1000000000000000000)
+    assert(amount == 380981071063589634)
