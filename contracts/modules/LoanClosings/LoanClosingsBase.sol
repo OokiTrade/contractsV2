@@ -384,17 +384,18 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
 
         LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
-        swapAmount = swapAmount > loanLocal.collateral ?
-            loanLocal.collateral :
-            swapAmount;
+        if (swapAmount > loanLocal.collateral) {
+            swapAmount = loanLocal.collateral;
+        }
 
         uint256 loanCloseAmountLessInterest;
         if (swapAmount == loanLocal.collateral || returnTokenIsCollateral) {
-            loanCloseAmount = swapAmount == loanLocal.collateral ?
-                loanLocal.principal :
-                loanLocal.principal
+            loanCloseAmount = loanLocal.principal;
+            if (returnTokenIsCollateral) {
+                loanCloseAmount = loanCloseAmount
                     .mul(swapAmount)
                     .div(loanLocal.collateral);
+            }
             require(loanCloseAmount != 0, "loanCloseAmount == 0");
 
             loanCloseAmountLessInterest = _settleInterestToPrincipal(
