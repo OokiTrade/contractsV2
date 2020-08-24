@@ -1,28 +1,25 @@
 /**
- * Copyright 2017-2020, bZeroX, LLC. All Rights Reserved.
+ * Copyright 2017-2020, bZeroX, LLC <https://bzx.network/>. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
 pragma solidity 0.5.17;
 
-import "../../openzeppelin/Ownable.sol";
-import "../../openzeppelin/SafeMath.sol";
 
-
-contract IChiToken {
+contract ITokenHolderLike {
     function balanceOf(address _who) public view returns (uint256);
-    function freeFromUpTo(address from, uint256 value)  public returns (uint256 freed);
+    function freeUpTo(uint256 value) public returns (uint256);
+    function freeFromUpTo(address from, uint256 value) public returns (uint256);
 }
 
-contract GasTokenUser is Ownable {
-    using SafeMath for uint256;
+contract GasTokenUser {
 
-    IChiToken constant public gasToken = IChiToken(0x0000000000004946c0e9F43F4Dee607b0eF1fA1c);
-    address constant public tokenHolder = 0x7E2Afb9224526fD9757e2A61DC07dDA61A41e3A6;
+    ITokenHolderLike constant public gasToken = ITokenHolderLike(0x0000000000004946c0e9F43F4Dee607b0eF1fA1c);
+    ITokenHolderLike constant public tokenHolder = ITokenHolderLike(0x2bdfbdd035AA1BaF4192368ef2df35697bf2639F);
 
     modifier usesGasToken(address holder) {
         if (holder == address(0)) {
-            holder = tokenHolder;
+            holder = address(tokenHolder);
         }
 
         if (gasToken.balanceOf(holder) != 0) {
@@ -32,10 +29,17 @@ contract GasTokenUser is Ownable {
 
             gasCalcValue = (_gasUsed(gasCalcValue) + 14154) / 41947;
 
-            gasToken.freeFromUpTo(
-                holder,
-                gasCalcValue
-            );
+            if (holder == address(tokenHolder)) {
+                tokenHolder.freeUpTo(
+                    gasCalcValue
+                );
+            } else {
+                tokenHolder.freeFromUpTo(
+                    holder,
+                    gasCalcValue
+                );
+            }
+
         } else {
             _;
         }
