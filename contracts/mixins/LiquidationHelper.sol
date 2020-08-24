@@ -30,19 +30,19 @@ contract LiquidationHelper is State {
         uint256 desiredMargin = maintenanceMargin
             .add(5 ether); // 5 percentage points above maintenance
 
-        // maxLiquidatable = ((1 + desiredMargin)*principal - collateralToLoanRate*collateral) / (desiredMargin - 0.05)
+        // maxLiquidatable = ((1 + desiredMargin)*principal - collateralToLoanRate*collateral) / (desiredMargin - incentivePercent)
         maxLiquidatable = desiredMargin
-            .add(10**20)
+            .add(WEI_PERCENT_PRECISION)
             .mul(principal)
-            .div(10**20);
+            .div(WEI_PERCENT_PRECISION);
         maxLiquidatable = maxLiquidatable
             .sub(
                 collateral
                     .mul(collateralToLoanRate)
-                    .div(10**18)
+                    .div(WEI_PRECISION)
             );
         maxLiquidatable = maxLiquidatable
-            .mul(10**20)
+            .mul(WEI_PERCENT_PRECISION)
             .div(
                 desiredMargin
                     .sub(incentivePercent)
@@ -55,7 +55,7 @@ contract LiquidationHelper is State {
         maxSeizable = maxLiquidatable
             .mul(
                 incentivePercent
-                    .add(10**20)
+                    .add(WEI_PERCENT_PRECISION)
             );
         maxSeizable = maxSeizable
             .div(collateralToLoanRate)

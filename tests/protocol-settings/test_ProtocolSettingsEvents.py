@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import pytest
+from helpers import setupLoanPool
 
 def test_setPriceFeedContract(Constants, bzx, accounts):
     priceFeedsOldValue = bzx.priceFeeds()

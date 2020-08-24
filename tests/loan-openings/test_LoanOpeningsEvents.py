@@ -2,7 +2,7 @@
 
 import pytest
 from brownie import Wei, reverts 
-from helpers import getLoanId
+from helpers import getLoanId, setupLoanPool
 
 @pytest.fixture(scope="module")
 def LinkDaiBorrowParamsId(Constants, LINK, DAI, bzx, accounts, WETH):
@@ -39,15 +39,8 @@ def loanId_LINK_DAI(Constants, bzx, DAI, LINK, accounts, web3, LinkDaiBorrowPara
     return getLoanId(Constants, bzx, DAI, LINK, accounts, web3, LinkDaiBorrowParamsId)
 
 @pytest.fixture(scope="module")
-def setup(bzx, LINK, DAI, accounts):
-    bzx.setLoanPool(
-        [
-            accounts[1],
-        ],
-        [
-            accounts[2]
-        ]
-    )
+def setup(Constants, bzx, LINK, DAI, accounts):
+    setupLoanPool(Constants, bzx, accounts[1], accounts[2])
 
     loanTokenSent = 1e18
     newPrincipal = 101e18
@@ -135,7 +128,7 @@ def test_borrowOrTradeFromPoolTradeEvent(Constants, bzx, accounts, LinkDaiTradeP
     assert(borrowEvent["loanToken"] == DAI)
     assert(borrowEvent["collateralToken"] == LINK)
 
-def test_setDelegatedManagerDelegatedManagerSetEvent(Constants, bzx, accounts, loanId_LINK_DAI):
+def test_setDelegatedManagerSetEvent(Constants, bzx, accounts, loanId_LINK_DAI):
     tx = bzx.setDelegatedManager(loanId_LINK_DAI, accounts[2], True, {"from": accounts[1]})
     tx.info()
     delegatedManagerSet = tx.events["DelegatedManagerSet"][0]

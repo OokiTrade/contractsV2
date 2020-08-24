@@ -52,7 +52,7 @@ contract LoanClosingsWithGasToken is LoanClosingsBase {
         usesGasToken(gasTokenUser)
         nonReentrant
     {
-        uint256 startingGas = gasleft() + 10000;
+        uint256 startingGas = 21000 + gasleft() + 16 * msg.data.length;
 
         // restrict to EOAs to prevent griefing attacks, during interest rate recalculation
         require(msg.sender == tx.origin, "only EOAs can call");

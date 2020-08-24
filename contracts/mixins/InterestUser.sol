@@ -26,7 +26,7 @@ contract InterestUser is State, VaultController, FeesHelper {
             interestOwedNow = block.timestamp
                 .sub(lenderInterestLocal.updatedTimestamp)
                 .mul(lenderInterestLocal.owedPerDay)
-                .div(86400);
+                .div(1 days);
 
             if (interestOwedNow > lenderInterestLocal.owedTotal)
 	            interestOwedNow = lenderInterestLocal.owedTotal;
@@ -56,7 +56,7 @@ contract InterestUser is State, VaultController, FeesHelper {
     {
         uint256 lendingFee = interestOwedNow
             .mul(lendingFeePercent)
-            .divCeil(10**20);
+            .divCeil(WEI_PERCENT_PRECISION);
 
         _payLendingFee(
             lender,

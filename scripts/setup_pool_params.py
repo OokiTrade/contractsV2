@@ -118,7 +118,7 @@ def main():
         loanTokenAddress = loanToken.loanTokenAddress()
         #print(loanTokenAddress)
 
-        #sig = web3.sha3(text="setupLoanParams((bytes32,bool,address,address,address,uint256,uint256,uint256)[])").hex()[:10]
+        #sig = web3.sha3(text="setupLoanParams((bytes32,bool,address,address,address,uint256,uint256,uint256)[],bool)").hex()[:10]
         base_data = [
             b"0x0", ## id
             False, ## active
@@ -141,7 +141,7 @@ def main():
             base_data_copy[5] = Wei("50 ether") ## minInitialMargin
             params.append(base_data_copy)
 
-        calldata = loanTokenSettings.setupTorqueLoanParams.encode_input(params)
+        calldata = loanTokenSettings.setupLoanParams.encode_input(params, True)
         
         print(calldata)
         loanToken.updateSettings(loanTokenSettings.address, calldata, { "from": acct })
@@ -157,7 +157,7 @@ def main():
             base_data_copy[5] = Wei("20 ether") ## minInitialMargin
             params.append(base_data_copy)
 
-        calldata = loanTokenSettings.setupMarginLoanParams.encode_input(params)
+        calldata = loanTokenSettings.setupLoanParams.encode_input(params, False)
         
         print(calldata)
         loanToken.updateSettings(loanTokenSettings.address, calldata, { "from": acct })

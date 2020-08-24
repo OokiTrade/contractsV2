@@ -7,7 +7,7 @@ pragma solidity 0.5.17;
 
 
 interface ISwapsImpl {
-    function internalSwap(
+    function dexSwap(
         address sourceTokenAddress,
         address destTokenAddress,
         address receiverAddress,
@@ -18,7 +18,7 @@ interface ISwapsImpl {
         external
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed);
 
-    function internalExpectedRate(
+    function dexExpectedRate(
         address sourceTokenAddress,
         address destTokenAddress,
         uint256 sourceTokenAmount)

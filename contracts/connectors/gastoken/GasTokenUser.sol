@@ -30,13 +30,7 @@ contract GasTokenUser is Ownable {
 
             _;
 
-            gasCalcValue = _gasUsed(gasCalcValue);
-
-            gasCalcValue = gasCalcValue
-                .add(14154);
-            gasCalcValue = gasCalcValue
-                .div(41947);
-            // (usedGas + 14154) / 41947
+            gasCalcValue = (_gasUsed(gasCalcValue) + 14154) / 41947;
 
             gasToken.freeFromUpTo(
                 holder,
@@ -53,13 +47,11 @@ contract GasTokenUser is Ownable {
         view
         returns (uint256)
     {
-        return startingGas
-            .add(21000)
-            .sub(gasleft())
-            .add(
-                msg.data.length
-                    .mul(16)
-            );
-        // usedGas = 21000 + startingGas - gasleft() + 16 * msg.data.length;
+        return 21000 +
+            startingGas -
+            gasleft() +
+            16 *
+            msg.data.length;
+
     }
 }

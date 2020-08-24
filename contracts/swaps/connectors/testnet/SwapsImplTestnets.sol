@@ -15,7 +15,7 @@ import "../../../testhelpers/TestToken.sol";
 contract SwapsImplTestnets is State, ISwapsImpl {
     using SafeERC20 for IERC20;
 
-    function internalSwap(
+    function dexSwap(
         address sourceTokenAddress,
         address destTokenAddress,
         address /*receiverAddress*/,
@@ -67,7 +67,7 @@ contract SwapsImplTestnets is State, ISwapsImpl {
         }
     }
 
-    function internalExpectedRate(
+    function dexExpectedRate(
         address sourceTokenAddress,
         address destTokenAddress,
         uint256 sourceTokenAmount)

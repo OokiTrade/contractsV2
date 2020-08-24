@@ -10,6 +10,7 @@ import "../contracts/core/State.sol";
 import "../contracts/events/ProtocolSettingsEvents.sol";
 import "../contracts/events/LoanSettingsEvents.sol";
 import "../contracts/events/LoanOpeningsEvents.sol";
+import "../contracts/events/LoanMaintenanceEvents.sol";
 import "../contracts/events/LoanClosingsEvents.sol";
 import "../contracts/events/FeesEvents.sol";
 import "../contracts/events/SwapsEvents.sol";
@@ -20,6 +21,7 @@ contract IBZx is
     ProtocolSettingsEvents,
     LoanSettingsEvents,
     LoanOpeningsEvents,
+    LoanMaintenanceEvents,
     LoanClosingsEvents,
     SwapsEvents {
 
@@ -402,34 +404,16 @@ contract IBZx is
             uint256 interestDepositTotal,
             uint256 interestDepositRemaining);
 
-    struct LoanReturnData {
-        bytes32 loanId;
-        address loanToken;
-        address collateralToken;
-        uint256 principal;
-        uint256 collateral;
-        uint256 interestOwedPerDay;
-        uint256 interestDepositRemaining;
-        uint256 startRate; // collateralToLoanRate
-        uint256 startMargin;
-        uint256 maintenanceMargin;
-        uint256 currentMargin;
-        uint256 maxLoanTerm;
-        uint256 endTimestamp;
-        uint256 maxLiquidatable;
-        uint256 maxSeizable;
-    }
-
     // Only returns data for loans that are active
-    // loanType 0: all loans
-    // loanType 1: margin trade loans
-    // loanType 2: non-margin trade loans
+    // All(0): all loans
+    // Margin(1): margin trade loans
+    // NonMargin(2): non-margin trade loans
     // only active loans are returned
     function getUserLoans(
         address user,
         uint256 start,
         uint256 count,
-        uint256 loanType,
+        LoanTypes loanType,
         bool isLender,
         bool unsafeOnly)
         external

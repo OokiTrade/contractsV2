@@ -2,6 +2,7 @@
 
 import pytest
 from brownie import Wei, reverts
+from helpers import setupLoanPool
 
 @pytest.fixture(scope="module")
 def LinkDaiBorrowParamsId(Constants, LINK, DAI, bzx, accounts):
@@ -87,14 +88,7 @@ def loanIdWethMaxLoanTermNonZero(Constants, bzx, DAI, LINK, accounts, web3, Para
 
 def getLoanIdNonTorque(Constants, bzx, DAI, LINK, accounts, web3, LinkDaiBorrowParamsId):
     ## setup simulated loan pool
-    bzx.setLoanPool(
-        [
-            accounts[1],
-        ],
-        [
-            accounts[2]
-        ]
-    )
+    setupLoanPool(Constants, bzx, accounts[1], accounts[2])
 
     bZxBeforeDAIBalance = DAI.balanceOf(bzx.address)
     print("bZxBeforeDAIBalance", bZxBeforeDAIBalance)
@@ -166,14 +160,7 @@ def getLoanIdNonTorque(Constants, bzx, DAI, LINK, accounts, web3, LinkDaiBorrowP
 
 def getLoanId(Constants, bzx, DAI, LINK, accounts, web3, LinkDaiBorrowParamsId):
     ## setup simulated loan pool
-    bzx.setLoanPool(
-        [
-            accounts[1],
-        ],
-        [
-            accounts[2]
-        ]
-    )
+    setupLoanPool(Constants, bzx, accounts[1], accounts[2])
 
     bZxBeforeDAIBalance = DAI.balanceOf(bzx.address)
     print("bZxBeforeDAIBalance", bZxBeforeDAIBalance)

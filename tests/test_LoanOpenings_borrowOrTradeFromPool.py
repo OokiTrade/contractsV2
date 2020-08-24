@@ -3,6 +3,7 @@
 import pytest
 from brownie import Contract, Wei, reverts
 from fixedint import *
+from helpers import setupLoanPool
 
 @pytest.fixture(scope="module")
 def LinkDaiMarginParamsId(Constants, LINK, DAI, bzx, accounts):
@@ -39,14 +40,7 @@ def LinkDaiBorrowParamsId(Constants, LINK, DAI, bzx, accounts):
 def test_marginTradeFromPool_sim(Constants, LinkDaiMarginParamsId, bzx, DAI, LINK, accounts, web3):
 
     ## setup simulated loan pool
-    bzx.setLoanPool(
-        [
-            accounts[1],
-        ],
-        [
-            accounts[2]
-        ]
-    )
+    setupLoanPool(Constants, bzx, accounts[1], accounts[2])
 
     bZxBeforeDAIBalance = DAI.balanceOf(bzx.address)
     print("bZxBeforeDAIBalance", bZxBeforeDAIBalance)
@@ -150,14 +144,7 @@ def test_marginTradeFromPool_sim(Constants, LinkDaiMarginParamsId, bzx, DAI, LIN
 def test_borrowFromPool_sim(Constants, LinkDaiBorrowParamsId, bzx, DAI, LINK, accounts, web3):
 
     ## setup simulated loan pool
-    bzx.setLoanPool(
-        [
-            accounts[1],
-        ],
-        [
-            accounts[2]
-        ]
-    )
+    setupLoanPool(Constants, bzx, accounts[1], accounts[2])
 
     bZxBeforeDAIBalance = DAI.balanceOf(bzx.address)
     print("bZxBeforeDAIBalance", bZxBeforeDAIBalance)

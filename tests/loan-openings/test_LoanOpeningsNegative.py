@@ -2,18 +2,11 @@
 
 import pytest
 from brownie import Wei, reverts
-from helpers import getLoanId
+from helpers import getLoanId, setupLoanPool
 
 @pytest.fixture(scope="module")
-def setLoanPool(bzx, accounts):
-    return bzx.setLoanPool(
-        [
-            accounts[1],
-        ],
-        [
-            accounts[2]
-        ]
-    )
+def setLoanPool(Constants, bzx, accounts):
+    setupLoanPool(Constants, bzx, accounts[1], accounts[2])
 
 @pytest.fixture(scope="module")
 def linkDaiMarginParamsId(Constants, LINK, DAI, bzx, accounts):
@@ -189,14 +182,7 @@ def test_borrowOrTradeFromPoolLoanHasEnded(Constants, bzx, accounts, linkDaiMarg
 
 def test_borrowOrTradeFromPoolBorrowerMismatch(Constants, bzx, accounts, linkDaiMarginParamsId, LINK, DAI):
 
-    bzx.setLoanPool(
-        [
-            accounts[1],
-        ],
-        [
-            accounts[2]
-        ]
-    )
+    setupLoanPool(Constants, bzx, accounts[1], accounts[2])
     loanTokenSent = 100e18
 
     DAI.mint(
@@ -251,14 +237,7 @@ def test_borrowOrTradeFromPoolBorrowerMismatch(Constants, bzx, accounts, linkDai
 
 def test_borrowOrTradeFromPoolLenderMismatch(Constants, bzx, accounts, linkDaiMarginParamsId, LINK, DAI):
 
-    bzx.setLoanPool(
-        [
-            accounts[1],
-        ],
-        [
-            accounts[2]
-        ]
-    )
+    setupLoanPool(Constants, bzx, accounts[1], accounts[2])
     loanTokenSent = 100e18
 
     DAI.mint(
@@ -313,14 +292,7 @@ def test_borrowOrTradeFromPoolLenderMismatch(Constants, bzx, accounts, linkDaiMa
 
 def test_borrowOrTradeFromPoolLoanParamMismatch(Constants, bzx, accounts, linkDaiMarginParamsId, otherLinkDaiMarginParamsId, LINK, DAI):
 
-    bzx.setLoanPool(
-        [
-            accounts[1],
-        ],
-        [
-            accounts[2]
-        ]
-    )
+    setupLoanPool(Constants, bzx, accounts[1], accounts[2])
     loanTokenSent = 100e18
 
     DAI.mint(
@@ -375,14 +347,7 @@ def test_borrowOrTradeFromPoolLoanParamMismatch(Constants, bzx, accounts, linkDa
 
 def test_borrowOrTradeFromPoolSurplusLoanToken(Constants, bzx, accounts, linkDaiMarginParamsId, LINK, DAI):
 
-    bzx.setLoanPool(
-        [
-            accounts[1],
-        ],
-        [
-            accounts[2]
-        ]
-    )
+    setupLoanPool(Constants, bzx, accounts[1], accounts[2])
     loanTokenSent = 100e18
 
     DAI.mint(
@@ -428,14 +393,7 @@ def test_borrowOrTradeFromPoolSurplusLoanToken(Constants, bzx, accounts, linkDai
 
 def test_borrowOrTradeFromPoolUnhealtyPosition(Constants, bzx, accounts, linkDaiMarginParamsId, LINK, DAI):
 
-    bzx.setLoanPool(
-        [
-            accounts[1],
-        ],
-        [
-            accounts[2]
-        ]
-    )
+    setupLoanPool(Constants, bzx, accounts[1], accounts[2])
     loanTokenSent = 100e18
 
     DAI.mint(

@@ -15,14 +15,6 @@ import "../../connectors/gastoken/GasTokenUser.sol";
 
 contract SwapsExternal is State, VaultController, SwapsUser, GasTokenUser {
 
-    constructor() public {}
-
-    function()
-        external
-    {
-        revert("fallback not allowed");
-    }
-
     function initialize(
         address target)
         external
@@ -99,8 +91,9 @@ contract SwapsExternal is State, VaultController, SwapsUser, GasTokenUser {
         if (msg.value != 0) {
             if (sourceToken == address(0)) {
                 sourceToken = address(wethToken);
+            } else {
+                require(sourceToken == address(wethToken), "sourceToken mismatch");
             }
-            require(sourceToken == address(wethToken), "sourceToken mismatch");
             require(msg.value == sourceTokenAmount, "sourceTokenAmount mismatch");
             wethToken.deposit.value(sourceTokenAmount)();
         } else {

@@ -24,7 +24,7 @@ contract FeesHelper is State, ProtocolTokenUser, FeesEvents {
     {
         return feeTokenAmount
             .mul(tradingFeePercent)
-            .divCeil(10**20);
+            .divCeil(WEI_PERCENT_PRECISION);
     }
 
     // calculate loan origination fee
@@ -36,7 +36,7 @@ contract FeesHelper is State, ProtocolTokenUser, FeesEvents {
     {
         return feeTokenAmount
             .mul(borrowingFeePercent)
-            .divCeil(10**20);
+            .divCeil(WEI_PERCENT_PRECISION);
     }
 
     // settle trading fee
@@ -134,7 +134,7 @@ contract FeesHelper is State, ProtocolTokenUser, FeesEvents {
                 .sub(updatedTimestamp)
                 .mul(loanInterestLocal.owedPerDay)
                 .mul(lendingFeePercent)
-                .div(86400 * 10**20);
+                .div(1 days * WEI_PERCENT_PRECISION);
         }
 
         loanInterestLocal.updatedTimestamp = interestTime;
@@ -158,6 +158,10 @@ contract FeesHelper is State, ProtocolTokenUser, FeesEvents {
         uint256 feeAmount)
         internal
     {
+        // The protocol is designed to allow positions and loans to be closed, if for whatever reason
+        // the price lookup is failing, returning 0, or is otherwise paused. Therefore, we allow this
+        // call to fail silently, rather than revert, to allow the transaction to continue without a
+        // BZRX token reward.
         uint256 rewardAmount;
         address _priceFeeds = priceFeeds;
         (bool success, bytes memory data) = _priceFeeds.staticcall(

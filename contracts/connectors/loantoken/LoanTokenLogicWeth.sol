@@ -81,7 +81,7 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
                 withdrawalAmount
             );
             if (newPrincipal > withdrawalAmount) {
-                _safeTransfer(_loanTokenAddress, bZxContract, newPrincipal - withdrawalAmount, "");
+                _safeTransfer(_loanTokenAddress, bZxContract, newPrincipal - withdrawalAmount, "27");
             }
         } else {
             _safeTransfer(_loanTokenAddress, bZxContract, newPrincipal, "27");

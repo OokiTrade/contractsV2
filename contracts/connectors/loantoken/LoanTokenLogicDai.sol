@@ -12,7 +12,7 @@ import "../../interfaces/IChai.sol";
 
 contract LoanTokenLogicDai is LoanTokenLogicStandard {
 
-    uint256 constant RAY = 10 ** 27;
+    uint256 public constant RAY = 10**27;
 
     // Mainnet
     /*IChai public constant chai = IChai(0x06AF07097C9Eeb7fD685c692751D5C66dB49c215);
@@ -92,13 +92,11 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
         external
         payable
         nonReentrant
+        pausable(msg.sig)
+        settlesInterest
         returns (bytes memory)
     {
         require(borrowAmount != 0, "38");
-
-        _checkPause();
-
-        _settleInterest();
 
         _dsrWithdraw(borrowAmount);
 
@@ -252,11 +250,10 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
         uint256 depositAmount,
         bool withChai)
         internal
+        settlesInterest
         returns (uint256 mintAmount)
     {
         require (depositAmount != 0, "17");
-
-        _settleInterest();
 
         uint256 currentPrice = _tokenPrice(_totalAssetSupply(0));
         uint256 currentChaiPrice;
@@ -279,13 +276,13 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
             // convert to Dai
             depositAmount = depositAmount
                 .mul(currentChaiPrice)
-                .div(10**18);
+                .div(WEI_PRECISION);
         } else {
             _dsrDeposit();
         }
 
         mintAmount = depositAmount
-            .mul(10**18)
+            .mul(WEI_PRECISION)
             .div(currentPrice);
 
         uint256 oldBalance = balances[receiver];
@@ -302,21 +299,21 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
         address receiver,
         bool toChai)
         internal
+        settlesInterest
         returns (uint256 amountPaid)
     {
         require(burnAmount != 0, "19");
 
         if (burnAmount > balanceOf(msg.sender)) {
+            require(burnAmount == uint256(-1), "32");
             burnAmount = balanceOf(msg.sender);
         }
-
-        _settleInterest();
 
         uint256 currentPrice = _tokenPrice(_totalAssetSupply(0));
 
         uint256 loanAmountOwed = burnAmount
             .mul(currentPrice)
-            .div(10**18);
+            .div(WEI_PRECISION);
 
         amountPaid = loanAmountOwed;
 
@@ -454,7 +451,7 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
     function _supplyInterestRate(
         uint256 assetBorrow,
         uint256 assetSupply)
-        public
+        internal
         view
         returns (uint256)
     {
@@ -467,8 +464,12 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
                 assetSupply
                     .sub(localBalance) // DAI not DSR'ed can't be counted
             );
+
+            if (_utilRate > 100 ether) {
+                _utilRate = 100 ether;
+            }
             _dsr = _dsr
-                .mul(SafeMath.sub(100 ether, _utilRate));
+                .mul(100 ether - _utilRate);
 
             if (localBalance != 0) {
                 _utilRate = _utilizationRate(
@@ -479,11 +480,11 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
 
             uint256 rate = _avgBorrowInterestRate(assetBorrow)
                 .mul(_utilRate)
-                .mul(SafeMath.sub(10**20, ProtocolLike(bZxContract).lendingFeePercent()))
-                .div(10**20);
+                .mul(SafeMath.sub(WEI_PERCENT_PRECISION, ProtocolLike(bZxContract).lendingFeePercent()))
+                .div(WEI_PERCENT_PRECISION);
             return rate
                 .add(_dsr)
-                .div(10**20);
+                .div(WEI_PERCENT_PRECISION);
         } else {
             return _dsr;
         }
@@ -538,7 +539,7 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
                 let half := div(base, 2)  // for rounding.
                 for { n := div(n, 2) } n { n := div(n,2) } {
                     let xx := mul(x, x)
-                    if iszero(eq(div(xx, x), x)) { revert(0,0) }
+                    if and(iszero(iszero(x)), iszero(eq(div(xx, x), x))) { revert(0,0) }
                     let xxRound := add(xx, half)
                     if lt(xxRound, xx) { revert(0,0) }
                     x := div(xxRound, base)

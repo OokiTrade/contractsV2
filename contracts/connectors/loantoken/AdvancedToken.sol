@@ -22,6 +22,38 @@ contract AdvancedToken is AdvancedTokenStorage {
         return true;
     }
 
+    function increaseApproval(
+        address _spender,
+        uint256 _addedValue)
+        public
+        returns (bool)
+    {
+        uint256 _allowed = allowed[msg.sender][_spender]
+            .add(_addedValue);
+        allowed[msg.sender][_spender] = _allowed;
+
+        emit Approval(msg.sender, _spender, _allowed);
+        return true;
+    }
+
+    function decreaseApproval(
+        address _spender,
+        uint256 _subtractedValue)
+        public
+        returns (bool)
+    {
+        uint256 _allowed = allowed[msg.sender][_spender];
+        if (_subtractedValue >= _allowed) {
+            _allowed = 0;
+        } else {
+            _allowed -= _subtractedValue;
+        }
+        allowed[msg.sender][_spender] = _allowed;
+
+        emit Approval(msg.sender, _spender, _allowed);
+        return true;
+    }
+
     function _mint(
         address _to,
         uint256 _tokenAmount,
@@ -53,12 +85,10 @@ contract AdvancedToken is AdvancedTokenStorage {
         internal
         returns (uint256)
     {
-        require(_tokenAmount <= balances[_who], "16");
-        // no need to require value <= totalSupply, since that would imply the
-        // sender's balance is greater than the totalSupply, which *should* be an assertion failure
-
-        uint256 _balance = balances[_who].sub(_tokenAmount);
-        if (_balance <= 10) { // we can't leave such small balance quantities
+        uint256 _balance = balances[_who].sub(_tokenAmount, "16");
+        
+        // a rounding error may leave dust behind, so we clear this out
+        if (_balance <= 10) {
             _tokenAmount = _tokenAmount.add(_balance);
             _balance = 0;
         }

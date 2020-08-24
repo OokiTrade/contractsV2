@@ -121,48 +121,22 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
 
         if (vals[1] == 0) {
             vals[1] = vals[0];
-        }
-        require(vals[0] <= vals[1], "sourceAmount larger than max");
-
-        if (loanDataBytes.length == 0) {
-            (destTokenAmountReceived, sourceTokenAmountUsed) = _swapsCall_internal(
-                addrs,
-                vals
-            );
         } else {
-            revert("invalid state");
-            /*
-            //keccak256("Swaps_SwapsImplZeroX")
-            address swapsImplZeroX;
-            assembly {
-                swapsImplZeroX := sload(0x129a6cb350d136ca8d0881f83a9141afd5dc8b3c99057f06df01ab75943df952)
-            }
-            */
-            //revert(string(loanDataBytes));
-            /*
-            vaultWithdraw(
-                addrs[0], // sourceToken
-                address(zeroXConnector),
-                sourceTokenAmount
-            );
-            (destTokenAmountReceived, sourceTokenAmountUsed) = zeroXConnector.swap.value(msg.value)(
-                addrs[0], // sourceToken
-                addrs[1], // destToken
-                addrs[2], // receiver
-                sourceTokenAmount,
-                0,
-                loanDataBytes
-            );
-            */
+            require(vals[0] <= vals[1], "min greater than max");
         }
+
+        require(loanDataBytes.length == 0, "invalid state");
+        (destTokenAmountReceived, sourceTokenAmountUsed) = _swapsCall_internal(
+            addrs,
+            vals
+        );
 
         if (vals[2] == 0) {
-            // there's no minimum destTokenAmount, but all of vals[0] (minSourceTokenAmount) must be spent
+            // there's no minimum destTokenAmount, but all of vals[0] (minSourceTokenAmount) must be spent, and amount spent can't exceed vals[0]
             require(sourceTokenAmountUsed == vals[0], "swap too large to fill");
 
             if (tradingFee != 0) {
-                sourceTokenAmountUsed = sourceTokenAmountUsed
-                    .add(tradingFee);
+                sourceTokenAmountUsed = sourceTokenAmountUsed + tradingFee; // will never overflow
             }
         } else {
             // there's a minimum destTokenAmount required, but sourceTokenAmountUsed won't be greater than vals[1] (maxSourceTokenAmount)
@@ -177,8 +151,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
                     tradingFee
                 );
 
-                destTokenAmountReceived = destTokenAmountReceived
-                    .sub(tradingFee);
+                destTokenAmountReceived = destTokenAmountReceived - tradingFee; // will never overflow
             }
         }
 
@@ -192,7 +165,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
     {
         bytes memory data = abi.encodeWithSelector(
-            ISwapsImpl(swapsImpl).internalSwap.selector,
+            ISwapsImpl(swapsImpl).dexSwap.selector,
             addrs[0], // sourceToken
             addrs[1], // destToken
             addrs[2], // receiverAddress
@@ -206,10 +179,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
         (success, data) = swapsImpl.delegatecall(data);
         require(success, "swap failed");
 
-        assembly {
-            destTokenAmountReceived := mload(add(data, 32))
-            sourceTokenAmountUsed := mload(add(data, 64))
-        }
+        (destTokenAmountReceived, sourceTokenAmountUsed) = abi.decode(data, (uint256, uint256));
     }
 
     function _swapsExpectedReturn(
@@ -226,7 +196,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
                 .sub(tradingFee);
         }
 
-        uint256 sourceToDestRate = ISwapsImpl(swapsImpl).internalExpectedRate(
+        uint256 sourceToDestRate = ISwapsImpl(swapsImpl).dexExpectedRate(
             sourceToken,
             destToken,
             sourceTokenAmount

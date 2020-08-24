@@ -21,7 +21,7 @@ contract SwapsImplKyber is State, ISwapsImpl {
     //address public constant kyberContract = 0x818E6FECD516Ecc3849DAf6845e3EC868087B755; // ropsten
 
 
-    function internalSwap(
+    function dexSwap(
         address sourceTokenAddress,
         address destTokenAddress,
         address receiverAddress,
@@ -43,76 +43,63 @@ contract SwapsImplKyber is State, ISwapsImpl {
             maxSourceTokenAmount,
             requiredDestTokenAmount
         );
+        require(txnData.length != 0, "kyber payload error");
 
-        if (txnData.length != 0) {
-            // re-up the Kyber spend approval if needed
-            uint256 tempAllowance = IERC20(sourceTokenAddress).allowance(address(this), kyberContract);
-            if (tempAllowance < maxSourceTokenAmount) {
-                IERC20(sourceTokenAddress).safeApprove(
-                    kyberContract,
-                    uint256(-1)
-                );
-            }
+        IERC20 sourceToken = IERC20(sourceTokenAddress);
+        address _thisAddress = address(this);
 
-            uint256 sourceBalanceBefore = IERC20(sourceTokenAddress).balanceOf(address(this));
-
-            /* the following code is to allow the Kyber trade to fail silently and not revert if it does, preventing a "bubble up" */
-            (bool success, bytes memory returnData) = kyberContract.call.gas(gasleft())(txnData);
-            require(success, "kyber swap failed");
-
-            assembly {
-                destTokenAmountReceived := mload(add(returnData, 32))
-            }
-            sourceTokenAmountUsed = sourceBalanceBefore.sub(IERC20(sourceTokenAddress).balanceOf(address(this)));
-
-        } else {
-            revert("kyber payload error");
+        // re-up the Kyber spend approval if needed
+        uint256 tempAllowance = sourceToken.allowance(_thisAddress, kyberContract);
+        if (tempAllowance < maxSourceTokenAmount) {
+            sourceToken.safeApprove(
+                kyberContract,
+                uint256(-1)
+            );
         }
 
-        if (returnToSenderAddress != address(this)) {
-            if (sourceTokenAmountUsed < maxSourceTokenAmount) {
-                // send unused source token back
-                IERC20(sourceTokenAddress).safeTransfer(
-                    returnToSenderAddress,
-                    maxSourceTokenAmount-sourceTokenAmountUsed
-                );
-            }
+        uint256 sourceBalanceBefore = sourceToken.balanceOf(_thisAddress);
+
+        /* the following code is to allow the Kyber trade to fail silently and not revert if it does, preventing a "bubble up" */
+        (bool success, bytes memory returnData) = kyberContract.call(txnData);
+        require(success, "kyber swap failed");
+
+        assembly {
+            destTokenAmountReceived := mload(add(returnData, 32))
+        }
+        sourceTokenAmountUsed = sourceBalanceBefore.sub(sourceToken.balanceOf(_thisAddress));
+
+        if (returnToSenderAddress != _thisAddress && sourceTokenAmountUsed < maxSourceTokenAmount) {
+            // send unused source token back
+            sourceToken.safeTransfer(
+                returnToSenderAddress,
+                maxSourceTokenAmount-sourceTokenAmountUsed
+            );
         }
     }
 
-    function internalExpectedRate(
+    function dexExpectedRate(
         address sourceTokenAddress,
         address destTokenAddress,
         uint256 sourceTokenAmount)
         public
         view
-        returns (uint256)
+        returns (uint256 expectedRate)
     {
-        uint256 expectedRate;
         if (sourceTokenAddress == destTokenAddress) {
-            expectedRate = 10**18;
-        } else {
-            if (sourceTokenAmount != 0) {
-                (bool result, bytes memory data) = kyberContract.staticcall(
-                    abi.encodeWithSignature(
-                        "getExpectedRate(address,address,uint256)",
-                        sourceTokenAddress,
-                        destTokenAddress,
-                        sourceTokenAmount
-                    )
-                );
-
-                assembly {
-                    switch result
-                    case 0 {
-                        expectedRate := 0
-                    }
-                    default {
-                        expectedRate := mload(add(data, 32))
-                    }
+            expectedRate = WEI_PRECISION;
+        } else if (sourceTokenAmount != 0) {
+            (bool success, bytes memory data) = kyberContract.staticcall(
+                abi.encodeWithSelector(
+                    0x809a9e55, // keccak("getExpectedRate(address,address,uint256)")
+                    sourceTokenAddress,
+                    destTokenAddress,
+                    sourceTokenAmount
+                )
+            );
+            assembly {
+                if eq(success, 1) {
+                    expectedRate := mload(add(data, 32))
                 }
-            } else {
-                expectedRate = 0;
             }
         }
 
@@ -141,22 +128,22 @@ contract SwapsImplKyber is State, ISwapsImpl {
             }
 
             uint256 bufferMultiplier = sourceBufferPercent
-                .add(10**20);
+                .add(WEI_PERCENT_PRECISION);
 
             estimatedSourceAmount = requiredDestTokenAmount
                 .mul(sourceToDestPrecision)
-                .div(internalExpectedRate(
+                .div(dexExpectedRate(
                     sourceTokenAddress,
                     destTokenAddress,
                     minSourceTokenAmount
                 ));
-            estimatedSourceAmount = estimatedSourceAmount // buffer yields more source
-                .mul(bufferMultiplier)
-                .div(10**20);
-
             if (estimatedSourceAmount == 0) {
                 return "";
             }
+
+            estimatedSourceAmount = estimatedSourceAmount // buffer yields more source
+                .mul(bufferMultiplier)
+                .div(WEI_PERCENT_PRECISION);
 
             if (estimatedSourceAmount > maxSourceTokenAmount) {
                 estimatedSourceAmount = maxSourceTokenAmount;
@@ -165,8 +152,8 @@ contract SwapsImplKyber is State, ISwapsImpl {
             estimatedSourceAmount = minSourceTokenAmount;
         }
 
-        return abi.encodeWithSignature(
-            "tradeWithHint(address,uint256,address,address,uint256,uint256,address,bytes)",
+        return abi.encodeWithSelector(
+            0x29589f61, // keccak("tradeWithHint(address,uint256,address,address,uint256,uint256,address,bytes)")
             sourceTokenAddress,
             estimatedSourceAmount,
             destTokenAddress,

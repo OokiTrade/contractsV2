@@ -15,9 +15,15 @@ import "./IPriceFeedsExt.sol";
 contract PriceFeeds is Constants, Ownable {
     using SafeMath for uint256;
 
+    // 1 gwei = 1000000000
+    uint256 internal constant GWEI_PRECISION = 10**9;
+
+    // address(1) is used as a stand-in for the non-existent token representing the fast-gas price on Chainlink
+    address internal constant FASTGAS_PRICEFEED_ADDRESS = address(1);
+
     event GlobalPricingPaused(
         address indexed sender,
-        bool indexed isPaused
+        bool isPaused
     );
 
     mapping (address => IPriceFeedsExt) public pricesFeeds;     // token => pricefeed
@@ -31,7 +37,6 @@ contract PriceFeeds is Constants, Ownable {
         public
     {
         // set decimals for ether
-        decimals[address(0)] = 18;
         decimals[address(wethToken)] = 18;
     }
 
@@ -58,7 +63,7 @@ contract PriceFeeds is Constants, Ownable {
     {
         return sourceToken != destToken ?
             _getDecimalPrecision(sourceToken, destToken) :
-            10**18;
+            WEI_PRECISION;
     }
 
     //// NOTE: This function returns 0 during a pause, rather than a revert. Ensure calling contracts handle correctly. ///
@@ -109,7 +114,7 @@ contract PriceFeeds is Constants, Ownable {
 
         if (spreadValue != 0) {
             spreadValue = spreadValue
-                .mul(10**20)
+                .mul(WEI_PERCENT_PRECISION)
                 .div(sourceToDestSwapRate);
 
             require(
@@ -166,7 +171,7 @@ contract PriceFeeds is Constants, Ownable {
             .add(
                 loanToCollateralAmount
                     .mul(margin)
-                    .div(10**20)
+                    .div(WEI_PERCENT_PRECISION)
                 );
 
         maxDrawdown = collateralAmount > combined ?
@@ -208,7 +213,7 @@ contract PriceFeeds is Constants, Ownable {
         uint256 collateralToLoanAmount;
         if (collateralToken == loanToken) {
             collateralToLoanAmount = collateralAmount;
-            collateralToLoanRate = 10**18;
+            collateralToLoanRate = WEI_PRECISION;
         } else {
             uint256 collateralToLoanPrecision;
             (collateralToLoanRate, collateralToLoanPrecision) = queryRate(
@@ -217,27 +222,19 @@ contract PriceFeeds is Constants, Ownable {
             );
 
             collateralToLoanRate = collateralToLoanRate
-                .mul(10**18)
+                .mul(WEI_PRECISION)
                 .div(collateralToLoanPrecision);
 
             collateralToLoanAmount = collateralAmount
                 .mul(collateralToLoanRate)
-                .div(10**18);
+                .div(WEI_PRECISION);
         }
 
         if (loanAmount != 0 && collateralToLoanAmount >= loanAmount) {
-            return (
-                collateralToLoanAmount
-                    .sub(loanAmount)
-                    .mul(10**20)
-                    .div(loanAmount),
-                collateralToLoanRate
-            );
-        } else {
-            return (
-                0,
-                collateralToLoanRate
-            );
+            currentMargin = collateralToLoanAmount
+                .sub(loanAmount)
+                .mul(WEI_PERCENT_PRECISION)
+                .div(loanAmount);
         }
     }
 
@@ -343,38 +340,35 @@ contract PriceFeeds is Constants, Ownable {
         returns (uint256 rate, uint256 precision)
     {
         if (sourceToken != destToken) {
-            uint256 sourceRate;
-            if (sourceToken != address(wethToken) && sourceToken != bzrxTokenAddress) {
-                IPriceFeedsExt _sourceFeed = pricesFeeds[sourceToken];
-                require(address(_sourceFeed) != address(0), "unsupported src feed");
-                sourceRate = uint256(_sourceFeed.latestAnswer());
-                require(sourceRate != 0 && (sourceRate >> 128) == 0, "price error");
-            } else {
-                sourceRate = sourceToken == bzrxTokenAddress ?
-                    protocolTokenEthPrice :
-                    10**18;
-            }
-
-            uint256 destRate;
-            if (destToken != address(wethToken) && destToken != bzrxTokenAddress) {
-                IPriceFeedsExt _destFeed = pricesFeeds[destToken];
-                require(address(_destFeed) != address(0), "unsupported dst feed");
-                destRate = uint256(_destFeed.latestAnswer());
-                require(destRate != 0 && (destRate >> 128) == 0, "price error");
-            } else {
-                destRate = destToken == bzrxTokenAddress ?
-                    protocolTokenEthPrice :
-                    10**18;
-            }
+            uint256 sourceRate = _queryRateCall(sourceToken);
+            uint256 destRate = _queryRateCall(destToken);
 
             rate = sourceRate
-                .mul(10**18)
+                .mul(WEI_PRECISION)
                 .div(destRate);
 
             precision = _getDecimalPrecision(sourceToken, destToken);
         } else {
-            rate = 10**18;
-            precision = 10**18;
+            rate = WEI_PRECISION;
+            precision = WEI_PRECISION;
+        }
+    }
+
+    function _queryRateCall(
+        address token)
+        internal
+        view
+        returns (uint256 rate)
+    {
+        if (token != address(wethToken) && token != bzrxTokenAddress) {
+            IPriceFeedsExt _Feed = pricesFeeds[token];
+            require(address(_Feed) != address(0), "unsupported price feed");
+            rate = uint256(_Feed.latestAnswer());
+            require(rate != 0 && (rate >> 128) == 0, "price error");
+        } else {
+            rate = token == bzrxTokenAddress ?
+                protocolTokenEthPrice :
+                WEI_PRECISION;
         }
     }
 
@@ -386,7 +380,7 @@ contract PriceFeeds is Constants, Ownable {
         returns(uint256)
     {
         if (sourceToken == destToken) {
-            return 10**18;
+            return WEI_PRECISION;
         } else {
             uint256 sourceTokenDecimals = decimals[sourceToken];
             if (sourceTokenDecimals == 0)
@@ -408,9 +402,8 @@ contract PriceFeeds is Constants, Ownable {
         view
         returns (uint256 gasPrice)
     {
-        // address(1) is going to reference the feed for FastGasPrice, which doesn't have it's own address
-        gasPrice = uint256(pricesFeeds[address(1)].latestAnswer())
-            .mul(10**9);
+        gasPrice = uint256(pricesFeeds[FASTGAS_PRICEFEED_ADDRESS].latestAnswer())
+            .mul(GWEI_PRECISION);
         require(gasPrice != 0 && (gasPrice >> 128) == 0, "gas price error");
     }
 }

@@ -30,8 +30,8 @@ contract PriceFeedsLocal is PriceFeeds {
         returns (uint256 rate, uint256 precision)
     {
         if (sourceToken == destToken) {
-            rate = 10**18;
-            precision = 10**18;
+            rate = WEI_PRECISION;
+            precision = WEI_PRECISION;
         } else {
             if (sourceToken == bzrxTokenAddress) {
                 // hack for testnet; only returns price in ETH
@@ -45,12 +45,12 @@ contract PriceFeedsLocal is PriceFeeds {
                 } else {
                     uint256 sourceToEther = rates[sourceToken][address(wethToken)] != 0 ?
                         rates[sourceToken][address(wethToken)] :
-                        10**18;
+                        WEI_PRECISION;
                     uint256 etherToDest = rates[address(wethToken)][destToken] != 0 ?
                         rates[address(wethToken)][destToken] :
-                        10**18;
+                        WEI_PRECISION;
 
-                    rate = sourceToEther.mul(etherToDest).div(10**18);
+                    rate = sourceToEther.mul(etherToDest).div(WEI_PRECISION);
                 }
             }
             precision = _getDecimalPrecision(sourceToken, destToken);

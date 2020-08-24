@@ -128,10 +128,10 @@ def test_getLoan(bzx, loanId, DAI, LINK):
     loan = bzx.getLoan(loanId)
     print("loan", loan)
     assert(loan[0] == loanId)
-    assert(loan[1] == DAI)
-    assert(loan[2] == LINK)
-    assert(loan[3] == 101e18)
-    assert(loan[8] == 50e18)
+    assert(loan[2] == DAI)
+    assert(loan[3] == LINK)
+    assert(loan[4] == 101e18)
+    assert(loan[9] == 50e18)
 
 def test_getLoanInterestData(bzx, loanId, DAI):
     interestData = bzx.getLoanInterestData(loanId)
@@ -143,10 +143,10 @@ def test_getUserLoans(bzx, loanId, accounts, DAI, LINK):
     userLoans = bzx.getUserLoans(accounts[1], 0, 1, 0, 0, 0)[0]
     print("userLoans", userLoans)
     assert(userLoans[0] == loanId)
-    assert(userLoans[1] == DAI)
-    assert(userLoans[2] == LINK)
-    assert(userLoans[3] == 101e18)
-    assert(userLoans[8] == 50e18)
+    assert(userLoans[2] == DAI)
+    assert(userLoans[3] == LINK)
+    assert(userLoans[4] == 101e18)
+    assert(userLoans[9] == 50e18)
 
 def test_reduceLoanDuration(bzx, accounts, loanId):
     tx = bzx.reduceLoanDuration(loanId, accounts[1], 1, { "from": accounts[1]})

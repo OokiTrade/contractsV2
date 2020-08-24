@@ -15,14 +15,6 @@ import "../../swaps/SwapsUser.sol";
 
 contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUser, SwapsUser {
 
-    constructor() public {}
-
-    function()
-        external
-    {
-        revert("fallback not allowed");
-    }
-
     function initialize(
         address target)
         external
@@ -120,11 +112,11 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
 
         uint256 owedPerDay = newPrincipal
             .mul(interestRate)
-            .div(365 * 10**20);
+            .div(DAYS_IN_A_YEAR * WEI_PERCENT_PRECISION);
 
         uint256 interestAmountRequired = maxLoanTerm
             .mul(owedPerDay)
-            .div(86400);
+            .div(1 days);
 
         uint256 receivedAmount = _swapsExpectedReturn(
             loanToken,
@@ -182,7 +174,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         if (marginAmount != 0) {
             if (isTorqueLoan) {
                 marginAmount = marginAmount
-                    .add(10**20); // adjust for over-collateralized loan
+                    .add(WEI_PERCENT_PRECISION); // adjust for over-collateralized loan
             }
 
             uint256 collateral = collateralTokenAmount;
@@ -196,7 +188,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
 
             if (loanToken == collateralToken) {
                 borrowAmount = collateral
-                    .mul(10**20)
+                    .mul(WEI_PERCENT_PRECISION)
                     .div(marginAmount);
             } else {
                 (uint256 sourceToDestRate, uint256 sourceToDestPrecision) = IPriceFeeds(priceFeeds).queryRate(
@@ -205,7 +197,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                 );
                 if (sourceToDestPrecision != 0) {
                     borrowAmount = collateral
-                        .mul(10**20)
+                        .mul(WEI_PERCENT_PRECISION)
                         .mul(sourceToDestRate)
                         .div(marginAmount)
                         .div(sourceToDestPrecision);
@@ -244,15 +236,13 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             "invalid interest");
 
         // initialize loan
-        Loan storage loanLocal = loans[
-            _initializeLoan(
-                loanParamsLocal,
-                loanId,
-                initialMargin,
-                sentAddresses,
-                sentValues
-            )
-        ];
+        Loan storage loanLocal = _initializeLoan(
+            loanParamsLocal,
+            loanId,
+            initialMargin,
+            sentAddresses,
+            sentValues
+        );
 
         // get required interest
         uint256 amount = _initializeInterest(
@@ -321,7 +311,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             sentValues[2] = loanLocal.endTimestamp.sub(block.timestamp);
         } else {
             // reclaiming varaible -> entryLeverage = 100 / initialMargin
-            sentValues[2] = SafeMath.div(10**38, initialMargin);
+            sentValues[2] = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, initialMargin);
         }
 
         _finalizeOpen(
@@ -395,7 +385,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             );
         } else {
             // currentLeverage = 100 / currentMargin
-            margin = SafeMath.div(10**38, margin);
+            margin = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, margin);
 
             emit Trade(
                 sentAddresses[1],                               // user (trader)
@@ -472,7 +462,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         address[4] memory sentAddresses,
         uint256[5] memory sentValues)
         internal
-        returns (bytes32)
+        returns (Loan storage sloanLocal)
     {
         require(loanParamsLocal.active, "loanParams disabled");
 
@@ -481,8 +471,6 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         address manager = sentAddresses[3];
         uint256 newPrincipal = sentValues[1];
 
-        Loan memory loanLocal;
-
         if (loanId == 0) {
             loanId = keccak256(abi.encodePacked(
                 loanParamsLocal.id,
@@ -490,34 +478,34 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                 borrower,
                 block.timestamp
             ));
-            require(loans[loanId].id == 0, "loan exists");
 
-            loanLocal = Loan({
-                id: loanId,
-                loanParamsId: loanParamsLocal.id,
-                pendingTradesId: 0,
-                active: true,
-                principal: newPrincipal,
-                collateral: 0, // calculated later
-                startTimestamp: block.timestamp,
-                endTimestamp: 0, // calculated later
-                startMargin: initialMargin,
-                startRate: 0, // queried later
-                borrower: borrower,
-                lender: lender
-            });
+            sloanLocal = loans[loanId];
+            require(sloanLocal.id == 0, "loan exists");
+
+            sloanLocal.id = loanId;
+            sloanLocal.loanParamsId = loanParamsLocal.id;
+            sloanLocal.principal = newPrincipal;
+            sloanLocal.startTimestamp = block.timestamp;
+            sloanLocal.startMargin = initialMargin;
+            sloanLocal.borrower = borrower;
+            sloanLocal.lender = lender;
+            sloanLocal.active = true;
+            //sloanLocal.pendingTradesId = 0;
+            //sloanLocal.collateral = 0; // calculated later
+            //sloanLocal.endTimestamp = 0; // calculated later
+            //sloanLocal.startRate = 0; // queried later
 
             activeLoansSet.addBytes32(loanId);
             lenderLoanSets[lender].addBytes32(loanId);
             borrowerLoanSets[borrower].addBytes32(loanId);
         } else {
-            loanLocal = loans[loanId];
-            require(loanLocal.active && block.timestamp < loanLocal.endTimestamp, "loan has ended");
-            require(loanLocal.borrower == borrower, "borrower mismatch");
-            require(loanLocal.lender == lender, "lender mismatch");
-            require(loanLocal.loanParamsId == loanParamsLocal.id, "loanParams mismatch");
+            sloanLocal = loans[loanId];
+            require(sloanLocal.active && block.timestamp < sloanLocal.endTimestamp, "loan has ended");
+            require(sloanLocal.borrower == borrower, "borrower mismatch");
+            require(sloanLocal.lender == lender, "lender mismatch");
+            require(sloanLocal.loanParamsId == loanParamsLocal.id, "loanParams mismatch");
 
-            loanLocal.principal = loanLocal.principal
+            sloanLocal.principal = sloanLocal.principal
                 .add(newPrincipal);
         }
 
@@ -529,10 +517,6 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                 true
             );
         }
-
-        loans[loanId] = loanLocal;
-
-        return loanId;
     }
 
     function _initializeInterest(
@@ -568,12 +552,12 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             previousDepositRemaining = loanLocal.endTimestamp
                 .sub(block.timestamp) // block.timestamp < endTimestamp was confirmed earlier
                 .mul(loanInterestLocal.owedPerDay)
-                .div(86400);
+                .div(1 days);
         }
 
         uint256 owedPerDay = newPrincipal
             .mul(newRate)
-            .div(365 * 10**20);
+            .div(DAYS_IN_A_YEAR * WEI_PERCENT_PRECISION);
 
         // update stored owedPerDay
         loanInterestLocal.owedPerDay = loanInterestLocal.owedPerDay
@@ -587,7 +571,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             // torqueInterest != 0 was confirmed earlier
             loanLocal.endTimestamp = torqueInterest
                 .add(previousDepositRemaining)
-                .mul(86400)
+                .mul(1 days)
                 .div(loanInterestLocal.owedPerDay)
                 .add(block.timestamp);
 
@@ -595,7 +579,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                 .sub(block.timestamp);
 
             // loan term has to at least be greater than one hour
-            require(maxLoanTerm > 3600, "loan too short");
+            require(maxLoanTerm > 1 hours, "loan too short");
 
             interestAmountRequired = torqueInterest;
         } else {
@@ -609,7 +593,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             interestAmountRequired = loanLocal.endTimestamp
                 .sub(block.timestamp)
                 .mul(owedPerDay)
-                .div(86400);
+                .div(1 days);
         }
 
         loanInterestLocal.depositTotal = loanInterestLocal.depositTotal
@@ -635,7 +619,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         if (loanToken == collateralToken) {
             collateralTokenAmount = newPrincipal
                 .mul(marginAmount)
-                .div(10**20);
+                .div(WEI_PERCENT_PRECISION);
         } else {
             (uint256 sourceToDestRate, uint256 sourceToDestPrecision) = IPriceFeeds(priceFeeds).queryRate(
                 collateralToken,
@@ -646,7 +630,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                     .mul(sourceToDestPrecision)
                     .div(sourceToDestRate)
                     .mul(marginAmount)
-                    .div(10**20);
+                    .div(WEI_PERCENT_PRECISION);
             } else {
                 collateralTokenAmount = 0;
             }
@@ -654,7 +638,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
 
         if (isTorqueLoan && collateralTokenAmount != 0) {
             collateralTokenAmount = collateralTokenAmount
-                .mul(10**20)
+                .mul(WEI_PERCENT_PRECISION)
                 .div(marginAmount)
                 .add(collateralTokenAmount);
         }

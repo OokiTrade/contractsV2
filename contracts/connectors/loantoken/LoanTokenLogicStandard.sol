@@ -14,10 +14,16 @@ import "../gastoken/GasTokenUser.sol";
 
 contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
     using SafeMath for uint256;
+    using SignedSafeMath for int256;
+
+    modifier settlesInterest() {
+        _settleInterest();
+        _;
+    }
 
     address internal target_;
 
-    uint256 public constant VERSION = 5;
+    uint256 public constant VERSION = 6;
     address internal constant arbitraryCaller = 0x000F400e6818158D541C3EBE45FE3AA0d47372FF;
 
     //address public constant bZxContract = 0xAbd9372723C735D426D0a760D047206Fe115ee6d; // mainnet
@@ -25,6 +31,10 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
 
     address public constant bZxContract = 0xAbd9372723C735D426D0a760D047206Fe115ee6d; // kovan
     address public constant wethToken = 0xd0A1E359811322d97991E03f863a0C30C2cF029C; // kovan
+
+    bytes32 internal constant iToken_ProfitSoFar = 0x37aa2b7d583612f016e4a4de4292cb015139b3d7762663d06a53964912ea2fb6;          // keccak256("iToken_ProfitSoFar")
+    bytes32 internal constant iToken_LowerAdminAddress = 0x7ad06df6a0af6bd602d90db766e0d5f253b45187c3717a0f9026ea8b10ff0d4b;    // keccak256("iToken_LowerAdminAddress")
+    bytes32 internal constant iToken_LowerAdminContract = 0x34b31cff1dbd8374124bd4505521fc29cab0f9554a5386ba7d784a4e611c7e31;   // keccak256("iToken_LowerAdminContract")
 
 
     function()
@@ -41,7 +51,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         uint256 depositAmount)
         external
         nonReentrant
-        returns (uint256 mintAmount)
+        returns (uint256) // mintAmount
     {
         return _mintToken(
             receiver,
@@ -74,13 +84,11 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         external
         payable
         nonReentrant
+        pausable(msg.sig)
+        settlesInterest
         returns (bytes memory)
     {
         require(borrowAmount != 0, "38");
-
-        _checkPause();
-
-        _settleInterest();
 
         // save before balances
         uint256 beforeEtherBalance = address(this).balance.sub(msg.value);
@@ -255,9 +263,10 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
             _from,
             _to,
             _value,
-            ProtocolLike(bZxContract).isLoanPool(msg.sender) ?
+            allowed[_from][msg.sender]
+            /*ProtocolLike(bZxContract).isLoanPool(msg.sender) ?
                 uint256(-1) :
-                allowed[_from][msg.sender]
+                allowed[_from][msg.sender]*/
         );
     }
 
@@ -270,20 +279,16 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         returns (bool)
     {
         if (_allowanceAmount != uint256(-1)) {
-            require(_value <= _allowanceAmount, "14");
-            allowed[_from][msg.sender] = _allowanceAmount.sub(_value);
+            allowed[_from][msg.sender] = _allowanceAmount.sub(_value, "14");
         }
 
         uint256 _balancesFrom = balances[_from];
         uint256 _balancesTo = balances[_to];
 
-        require(_value <= _balancesFrom &&
-            _to != address(0),
-            "14"
-        );
+        require(_to != address(0), "15");
 
         uint256 _balancesFromNew = _balancesFrom
-            .sub(_value);
+            .sub(_value, "16");
         balances[_from] = _balancesFromNew;
 
         uint256 _balancesToNew = _balancesTo
@@ -312,7 +317,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
 
     event Debug(
         bytes32 slot,
-        uint256 one,
+        int256 one,
         uint256 two
     );
 
@@ -323,12 +328,11 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         uint256 _currentPrice)
         internal
     {
-        // keccak256("iToken_ProfitSoFar")
         bytes32 slot = keccak256(
-            abi.encodePacked(_user, uint256(0x37aa2b7d583612f016e4a4de4292cb015139b3d7762663d06a53964912ea2fb6))
+            abi.encodePacked(_user, iToken_ProfitSoFar)
         );
 
-        uint256 _currentProfit;
+        int256 _currentProfit;
         if (_oldBalance != 0) {
             _currentProfit = _profitOf(
                 slot,
@@ -361,11 +365,10 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         address user)
         public
         view
-        returns (uint256)
+        returns (int256)
     {
-        // keccak256("iToken_ProfitSoFar")
         bytes32 slot = keccak256(
-            abi.encodePacked(user, uint256(0x37aa2b7d583612f016e4a4de4292cb015139b3d7762663d06a53964912ea2fb6))
+            abi.encodePacked(user, iToken_ProfitSoFar)
         );
 
         return _profitOf(
@@ -383,46 +386,46 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         uint256 _checkpointPrice)
         internal
         view
-        returns (uint256)
+        returns (int256 profitSoFar)
     {
         if (_checkpointPrice == 0) {
             return 0;
         }
 
-        uint256 profitSoFar;
-        uint256 profitDiff;
-
         assembly {
             profitSoFar := sload(slot)
         }
 
-        if (_currentPrice > _checkpointPrice) {
+        int256 profitDiff = int256(_currentPrice)
+            .sub(int256(_checkpointPrice))
+            .mul(int256(_balance))
+            .div(int256(WEI_PRECISION))
+            .add(profitSoFar);
+        /*if (_currentPrice > _checkpointPrice) {
             profitDiff = _balance
                 .mul(_currentPrice - _checkpointPrice)
-                .div(10**18);
+                .div(WEI_PRECISION);
             profitSoFar = profitSoFar
                 .add(profitDiff);
         } else {
             profitDiff = _balance
                 .mul(_checkpointPrice - _currentPrice)
-                .div(10**18);
+                .div(WEI_PRECISION);
             if (profitSoFar > profitDiff) {
                 profitSoFar = profitSoFar - profitDiff;
             } else {
                 profitSoFar = 0;
             }
-        }
-
-        return profitSoFar;
+        }*/
     }
 
     function tokenPrice()
         public
         view
-        returns (uint256 price)
+        returns (uint256) // price
     {
         uint256 interestUnPaid;
-        if (lastSettleTime_ != block.timestamp) {
+        if (lastSettleTime_ != uint88(block.timestamp)) {
             (,interestUnPaid) = _getAllInterest();
         }
 
@@ -433,7 +436,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         address _user)
         public
         view
-        returns (uint256 price)
+        returns (uint256) // price
     {
         return checkpointPrices_[_user];
     }
@@ -446,7 +449,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         uint256 totalSupply = _totalAssetSupply(0);
         uint256 totalBorrow = totalAssetBorrow();
         if (totalSupply > totalBorrow) {
-            return totalSupply.sub(totalBorrow);
+            return totalSupply - totalBorrow;
         }
     }
 
@@ -526,7 +529,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         returns (uint256)
     {
         uint256 interestUnPaid;
-        if (lastSettleTime_ != block.timestamp) {
+        if (lastSettleTime_ != uint88(block.timestamp)) {
             (,interestUnPaid) = _getAllInterest();
         }
 
@@ -539,11 +542,11 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         view
         returns (uint256)
     {
-        uint256 initialMargin = SafeMath.div(10**38, leverageAmount);
+        uint256 initialMargin = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, leverageAmount);
         return marketLiquidity()
             .mul(initialMargin)
             .div(_adjustValue(
-                10**20, // maximum possible interest (100%)
+                WEI_PERCENT_PRECISION, // maximum possible interest (100%)
                 2419200, // 28 day duration for margin trades
                 initialMargin));
     }
@@ -557,7 +560,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
     {
         return balanceOf(_owner)
             .mul(tokenPrice())
-            .div(10**18);
+            .div(WEI_PRECISION);
     }
 
     function getEstimatedMarginDetails(
@@ -606,7 +609,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         address collateralTokenAddress)     // address(0) means ETH
         public
         view
-        returns (uint256 depositAmount)
+        returns (uint256) // depositAmount
     {
         if (borrowAmount != 0) {
             (,,uint256 newBorrowAmount) = _getInterestRateAndBorrowAmount(
@@ -620,7 +623,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
                     loanTokenAddress,
                     collateralTokenAddress != address(0) ? collateralTokenAddress : wethToken,
                     newBorrowAmount,
-                    50 * 10**18, // initialMargin
+                    50 * WEI_PRECISION, // initialMargin
                     true // isTorqueLoan
                 ).add(10); // some dust to compensate for rounding errors
             }
@@ -640,7 +643,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
                 loanTokenAddress,
                 collateralTokenAddress != address(0) ? collateralTokenAddress : wethToken,
                 depositAmount,
-                50 * 10**18, // initialMargin,
+                50 * WEI_PRECISION, // initialMargin,
                 true // isTorqueLoan
             );
 
@@ -663,20 +666,20 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         address receiver,
         uint256 depositAmount)
         internal
+        settlesInterest
         returns (uint256 mintAmount)
     {
         require (depositAmount != 0, "17");
 
-        _settleInterest();
-
         uint256 currentPrice = _tokenPrice(_totalAssetSupply(0));
         mintAmount = depositAmount
-            .mul(10**18)
+            .mul(WEI_PRECISION)
             .div(currentPrice);
 
         if (msg.value == 0) {
             _safeTransferFrom(loanTokenAddress, msg.sender, address(this), depositAmount, "18");
         } else {
+            require(msg.value == depositAmount, "18");
             IWeth(wethToken).deposit.value(depositAmount)();
         }
 
@@ -692,21 +695,21 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
     function _burnToken(
         uint256 burnAmount)
         internal
+        settlesInterest
         returns (uint256 loanAmountPaid)
     {
         require(burnAmount != 0, "19");
 
         if (burnAmount > balanceOf(msg.sender)) {
+            require(burnAmount == uint256(-1), "32");
             burnAmount = balanceOf(msg.sender);
         }
-
-        _settleInterest();
 
         uint256 currentPrice = _tokenPrice(_totalAssetSupply(0));
 
         uint256 loanAmountOwed = burnAmount
             .mul(currentPrice)
-            .div(10**18);
+            .div(WEI_PRECISION);
         uint256 loanAmountAvailableInContract = _underlyingBalance();
 
         loanAmountPaid = loanAmountOwed;
@@ -731,11 +734,11 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         address receiver,
         bytes memory /*loanDataBytes*/) // arbitrary order data (for future use)
         internal
+        pausable(msg.sig)
+        settlesInterest
         returns (uint256, uint256) // returns new principal and new collateral added to loan
     {
         require(withdrawAmount != 0, "6");
-
-        _checkPause();
 
         require(msg.value == 0 || msg.value == collateralTokenSent, "7");
         require(collateralTokenSent != 0 || loanId != 0, "8");
@@ -746,8 +749,6 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         }
         require(collateralTokenAddress != loanTokenAddress, "10");
 
-        _settleInterest();
-
         address[4] memory sentAddresses;
         uint256[5] memory sentAmounts;
 
@@ -756,22 +757,23 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         sentAddresses[2] = receiver;
         //sentAddresses[3] = address(0); // manager
 
-        sentAmounts[1] = withdrawAmount;
+        //sentAmounts[0] = 0; // interestRate (found later)
+        //sentAmounts[1] = 0; // borrowAmount (found later)
+        //sentAmounts[2] = 0; // interestInitialAmount (found later)
+        //sentAmounts[3] = 0; // loanTokenSent
+        sentAmounts[4] = collateralTokenSent;
 
         // interestRate, interestInitialAmount, borrowAmount (newBorrowAmount)
         (sentAmounts[0], sentAmounts[2], sentAmounts[1]) = _getInterestRateAndBorrowAmount(
-            sentAmounts[1],
+            withdrawAmount,
             _totalAssetSupply(0), // interest is settled above
             initialLoanDuration
         );
 
-        //sentAmounts[3] = 0; // loanTokenSent
-        sentAmounts[4] = collateralTokenSent;
-
         return _borrowOrTrade(
             loanId,
             withdrawAmount,
-            2 * 10**18, // leverageAmount (translates to 150% margin for a Torque loan)
+            2 * WEI_PRECISION, // leverageAmount (translates to 150% margin for a Torque loan)
             collateralTokenAddress,
             sentAddresses,
             sentAmounts,
@@ -788,10 +790,10 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         address trader,
         bytes memory loanDataBytes)
         internal
+        pausable(msg.sig)
+        settlesInterest
         returns (uint256, uint256) // returns new principal and new collateral added to trade
     {
-        _checkPause();
-
         if (collateralTokenAddress == address(0)) {
             collateralTokenAddress = wethToken;
         }
@@ -813,16 +815,14 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         //sentAddresses[3] = address(0); // manager
 
         //sentAmounts[0] = 0; // interestRate (found later)
-        sentAmounts[1] = totalDeposit; // total amount of deposit
+        //sentAmounts[1] = 0; // borrowAmount (found later)
         //sentAmounts[2] = 0; // interestInitialAmount (interest is calculated based on fixed-term loan)
         sentAmounts[3] = loanTokenSent;
         sentAmounts[4] = collateralTokenSent;
 
-        _settleInterest();
-
         (sentAmounts[1], sentAmounts[0]) = _getMarginBorrowAmountAndRate( // borrowAmount, interestRate
             leverageAmount,
-            sentAmounts[1] // depositAmount
+            totalDeposit
         );
 
         return _borrowOrTrade(
@@ -839,12 +839,13 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
     function _settleInterest()
         internal
     {
-        if (lastSettleTime_ != block.timestamp) {
+        uint88 ts = uint88(block.timestamp);
+        if (lastSettleTime_ != ts) {
             ProtocolLike(bZxContract).withdrawAccruedInterest(
                 loanTokenAddress
             );
 
-            lastSettleTime_ = block.timestamp;
+            lastSettleTime_ = ts;
         }
     }
 
@@ -862,7 +863,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
                 collateralTokenAddress,
                 loanTokenAddress
             );
-            if (sourceToDestPrecision != 0) {
+            if (sourceToDestRate != 0) {
                 totalDeposit = collateralTokenSent
                     .mul(sourceToDestRate)
                     .div(sourceToDestPrecision)
@@ -884,15 +885,15 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
             assetSupply
         );
 
-        // newBorrowAmount = borrowAmount * 10^18 / (10^18 - interestRate * 7884000 * 10^18 / 31536000 / 10^20)
+        // newBorrowAmount = borrowAmount * 10^18 / (10^18 - (interestRate * initialLoanDuration * 10^18 / (31536000 * 10^20)))
         newBorrowAmount = borrowAmount
-            .mul(10**18)
+            .mul(WEI_PRECISION)
             .div(
-                SafeMath.sub(10**18,
+                SafeMath.sub(WEI_PRECISION,
                     interestRate
                         .mul(initialLoanDuration)
-                        .mul(10**18)
-                        .div(31536000 * 10**20) // 365 * 86400 * 10**20
+                        .mul(WEI_PRECISION)
+                        .div(31536000 * WEI_PERCENT_PRECISION) // 365 * 86400 * WEI_PERCENT_PRECISION
                 )
             );
 
@@ -912,8 +913,6 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         internal
         returns (uint256, uint256)
     {
-        _checkPause();
-
         require (sentAmounts[1] <= _underlyingBalance() && // newPrincipal
             sentAddresses[1] != address(0), // borrower
             "24"
@@ -941,22 +940,22 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
                 .sub(withdrawAmount);
         }
 
+        bool isTorqueLoan = withdrawAmount != 0 ?
+            true :
+            false;
+
         bytes32 loanParamsId = loanParamsIds[uint256(keccak256(abi.encodePacked(
             collateralTokenAddress,
-            withdrawAmount != 0 ? // isTorqueLoan
-                true :
-                false
+            isTorqueLoan
         )))];
 
         // converting to initialMargin
-        leverageAmount = SafeMath.div(10**38, leverageAmount);
+        leverageAmount = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, leverageAmount);
 
         (sentAmounts[1], sentAmounts[4]) = ProtocolLike(bZxContract).borrowOrTradeFromPool.value(msgValue)( // newPrincipal, newCollateral
             loanParamsId,
             loanId,
-            withdrawAmount != 0 ? // isTorqueLoan
-                true :
-                false,
+            isTorqueLoan,
             leverageAmount, // initialMargin
             sentAddresses,
             sentAmounts,
@@ -996,9 +995,9 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         msgValue = msg.value;
 
         if (withdrawalAmount != 0) { // withdrawOnOpen == true
-            _safeTransfer(_loanTokenAddress, receiver, withdrawalAmount, "");
+            _safeTransfer(_loanTokenAddress, receiver, withdrawalAmount, "27");
             if (newPrincipal > withdrawalAmount) {
-                _safeTransfer(_loanTokenAddress, bZxContract, newPrincipal - withdrawalAmount, "");
+                _safeTransfer(_loanTokenAddress, bZxContract, newPrincipal - withdrawalAmount, "27");
             }
         } else {
             _safeTransfer(_loanTokenAddress, bZxContract, newPrincipal, "27");
@@ -1082,7 +1081,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
 
         return totalTokenSupply != 0 ?
             assetSupply
-                .mul(10**18)
+                .mul(WEI_PRECISION)
                 .div(totalTokenSupply) : initialPrice;
     }
 
@@ -1095,7 +1094,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         if (assetBorrow != 0) {
             (uint256 interestOwedPerDay,) = _getAllInterest();
             return interestOwedPerDay
-                .mul(365 * 10**20)
+                .mul(365 * WEI_PERCENT_PRECISION)
                 .div(assetBorrow);
         }
     }
@@ -1104,15 +1103,15 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
     function _supplyInterestRate(
         uint256 assetBorrow,
         uint256 assetSupply)
-        public
+        internal
         view
         returns (uint256)
     {
         if (assetBorrow != 0 && assetSupply >= assetBorrow) {
             return _avgBorrowInterestRate(assetBorrow)
                 .mul(_utilizationRate(assetBorrow, assetSupply))
-                .mul(SafeMath.sub(10**20, ProtocolLike(bZxContract).lendingFeePercent()))
-                .div(10**40);
+                .mul(SafeMath.sub(WEI_PERCENT_PRECISION, ProtocolLike(bZxContract).lendingFeePercent()))
+                .div(WEI_PERCENT_PRECISION * WEI_PERCENT_PRECISION);
         }
     }
 
@@ -1124,7 +1123,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
     {
         uint256 interestUnPaid;
         if (borrowAmount != 0) {
-            if (lastSettleTime_ != block.timestamp) {
+            if (lastSettleTime_ != uint88(block.timestamp)) {
                 (,interestUnPaid) = _getAllInterest();
             }
 
@@ -1158,11 +1157,6 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         uint256 thisBaseRate = baseRate;
         uint256 thisRateMultiplier = rateMultiplier;
 
-        if (utilRate < 80 ether) {
-            // target 80% utilization when utilization is under 80%
-            utilRate = 80 ether;
-        }
-
         if (utilRate > 90 ether) {
             // scale rate proportionally up to 100%
 
@@ -1180,9 +1174,14 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
                 .div(10 ether)
                 .add(maxRate);
         } else {
+            if (utilRate < 80 ether) {
+                // target 80% utilization when utilization is under 80%
+                utilRate = 80 ether;
+            }
+
             nextRate = utilRate
                 .mul(thisRateMultiplier)
-                .div(10**20)
+                .div(WEI_PERCENT_PRECISION)
                 .add(thisBaseRate);
 
             minRate = thisBaseRate;
@@ -1211,8 +1210,8 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         );
 
         interestUnPaid = interestUnPaid
-            .mul(SafeMath.sub(10**20, interestFeePercent))
-            .div(10**20);
+            .mul(SafeMath.sub(WEI_PERCENT_PRECISION, interestFeePercent))
+            .div(WEI_PERCENT_PRECISION);
     }
 
     function _getMarginBorrowAmountAndRate(
@@ -1222,18 +1221,18 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         view
         returns (uint256 borrowAmount, uint256 interestRate)
     {
-        uint256 initialMargin = SafeMath.div(10**38, leverageAmount);
+        uint256 initialMargin = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, leverageAmount);
 
         interestRate = _nextBorrowInterestRate2(
             depositAmount
-                .mul(10**20)
+                .mul(WEI_PERCENT_PRECISION)
                 .div(initialMargin),
             _totalAssetSupply(0)
         );
 
         // assumes that loan, collateral, and interest token are the same
         borrowAmount = depositAmount
-            .mul(10**40)
+            .mul(WEI_PERCENT_PRECISION * WEI_PERCENT_PRECISION)
             .div(_adjustValue(
                 interestRate,
                 2419200, // 28 day duration for margin trades
@@ -1245,7 +1244,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         uint256 interestUnPaid)
         internal
         view
-        returns (uint256 assetSupply)
+        returns (uint256) // assetSupply
     {
         if (totalSupply_ != 0) {
             uint256 assetsBalance = _flTotalAssetSupply; // temporary locked totalAssetSupply during a flash loan transaction
@@ -1259,19 +1258,6 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         }
     }
 
-    function _checkPause()
-        internal
-        view
-    {
-        //keccak256("iToken_FunctionPause")
-        bytes32 slot = keccak256(abi.encodePacked(msg.sig, uint256(0xd46a704bc285dbd6ff5ad3863506260b1df02812f4f857c8cc852317a6ac64f2)));
-        bool isPaused;
-        assembly {
-            isPaused := sload(slot)
-        }
-        require(!isPaused, "unauthorized");
-    }
-
     function _adjustValue(
         uint256 interestRate,
         uint256 maxDuration,
@@ -1282,12 +1268,12 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
     {
         return maxDuration != 0 ?
             interestRate
-                .mul(10**20)
+                .mul(WEI_PERCENT_PRECISION)
                 .mul(maxDuration)
                 .div(31536000) // 86400 * 365
                 .div(marginAmount)
-                .add(10**20) :
-            10**20;
+                .add(WEI_PERCENT_PRECISION) :
+            WEI_PERCENT_PRECISION;
     }
 
     function _utilizationRate(
@@ -1300,7 +1286,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         if (assetBorrow != 0 && assetSupply != 0) {
             // U = total_borrow / total_supply
             return assetBorrow
-                .mul(10**20)
+                .mul(WEI_PERCENT_PRECISION)
                 .div(assetSupply);
         }
     }
@@ -1316,12 +1302,9 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         if (msg.sender != owner()) {
             address _lowerAdmin;
             address _lowerAdminContract;
-
-            //keccak256("iToken_LowerAdminAddress")
-            //keccak256("iToken_LowerAdminContract")
             assembly {
-                _lowerAdmin := sload(0x7ad06df6a0af6bd602d90db766e0d5f253b45187c3717a0f9026ea8b10ff0d4b)
-                _lowerAdminContract := sload(0x34b31cff1dbd8374124bd4505521fc29cab0f9554a5386ba7d784a4e611c7e31)
+                _lowerAdmin := sload(iToken_LowerAdminAddress)
+                _lowerAdminContract := sload(iToken_LowerAdminContract)
             }
             require(msg.sender == _lowerAdmin && settingsTarget == _lowerAdminContract);
         }

@@ -1,16 +1,32 @@
 #!/usr/bin/python3
 
 
+def setupLoanPool(Constants, bzx, pool, asset):
+
+    underlying = bzx.loanPoolToUnderlying(pool)
+    if underlying != asset:
+        if underlying != Constants["ZERO_ADDRESS"]:
+            bzx.setLoanPool(
+                [
+                    pool,
+                ],
+                [
+                    Constants["ZERO_ADDRESS"]
+                ]
+            )
+
+        bzx.setLoanPool(
+            [
+                pool,
+            ],
+            [
+                asset
+            ]
+        )
+
 def getLoanId(Constants, bzx, DAI, LINK, accounts, web3, borrowParamsId):
     ## setup simulated loan pool
-    bzx.setLoanPool(
-        [
-            accounts[1],
-        ],
-        [
-            accounts[2]
-        ]
-    )
+    setupLoanPool(Constants, bzx, accounts[1], accounts[2])
 
     bZxBeforeDAIBalance = DAI.balanceOf(bzx.address)
     print("bZxBeforeDAIBalance", bZxBeforeDAIBalance)
