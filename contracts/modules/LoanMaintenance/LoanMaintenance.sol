@@ -432,7 +432,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         address user,
         uint256 start,
         uint256 count,
-        LoanTypes loanType,
+        LoanType loanType,
         bool isLender,
         bool unsafeOnly)
         external
@@ -481,7 +481,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
     {
         return _getLoan(
             loanId,
-            LoanTypes.All,
+            LoanType.All,
             false // unsafeOnly
         );
     }
@@ -507,7 +507,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             }
             LoanReturnData memory loanData = _getLoan(
                 activeLoansSet.get(i+start-1), // loanId
-                LoanTypes.All,
+                LoanType.All,
                 unsafeOnly
             );
             if (loanData.loanId == 0)
@@ -526,7 +526,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
 
     function _getLoan(
         bytes32 loanId,
-        LoanTypes loanType,
+        LoanType loanType,
         bool unsafeOnly)
         internal
         view
@@ -535,10 +535,10 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         Loan memory loanLocal = loans[loanId];
         LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
-        if (loanType != LoanTypes.All &&
+        if (loanType != LoanType.All &&
             (
-                (loanType == LoanTypes.Margin && loanParamsLocal.maxLoanTerm == 0) ||
-                (loanType == LoanTypes.NonMargin && loanParamsLocal.maxLoanTerm != 0)
+                (loanType == LoanType.Margin && loanParamsLocal.maxLoanTerm == 0) ||
+                (loanType == LoanType.NonMargin && loanParamsLocal.maxLoanTerm != 0)
             )
         ) {
             return loanData;
