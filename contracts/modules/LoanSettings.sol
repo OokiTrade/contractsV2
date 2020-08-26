@@ -95,26 +95,19 @@ contract LoanSettings is State, LoanSettingsEvents {
         returns (bytes32[] memory loanParamsList)
     {
         EnumerableBytes32Set.Bytes32Set storage set = userLoanParamSets[owner];
-
-        uint256 end = count.min256(set.values.length);
-        if (end == 0 || start >= end) {
+        uint256 end = start.add(count).min256(set.length());
+        if (start >= end) {
             return loanParamsList;
         }
+        count = end-start;
 
         loanParamsList = new bytes32[](count);
-        uint256 itemCount;
-        for (uint256 i = end-start; i > 0; i--) {
-            if (itemCount == count) {
+        for (uint256 i = --end; i >= start; i--) {
+            if (i > end) {
+                // handles the overflow in the case of start == 0
                 break;
             }
-            loanParamsList[itemCount] = set.get(i+start-1);
-            itemCount++;
-        }
-
-        if (itemCount < count) {
-            assembly {
-                mstore(loanParamsList, itemCount)
-            }
+            loanParamsList[count--] = set.get(i);
         }
     }
 

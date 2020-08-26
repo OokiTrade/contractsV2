@@ -28,6 +28,8 @@ contract InterestUser is State, VaultController, FeesHelper {
                 .mul(lenderInterestLocal.owedPerDay)
                 .div(1 days);
 
+            lenderInterestLocal.updatedTimestamp = block.timestamp;
+
             if (interestOwedNow > lenderInterestLocal.owedTotal)
 	            interestOwedNow = lenderInterestLocal.owedTotal;
 
@@ -43,9 +45,9 @@ contract InterestUser is State, VaultController, FeesHelper {
                     interestOwedNow
                 );
             }
+        } else {
+            lenderInterestLocal.updatedTimestamp = block.timestamp;
         }
-
-        lenderInterestLocal.updatedTimestamp = block.timestamp;
     }
 
     function _payInterestTransfer(
