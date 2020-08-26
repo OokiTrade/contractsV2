@@ -16,6 +16,12 @@ import "../swaps/SwapsUser.sol";
 
 contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, InterestUser, SwapsUser, LiquidationHelper {
 
+    enum LoanTypes {
+        All,
+        Margin,
+        NonMargin
+    }
+
     struct LoanReturnData {
         bytes32 loanId;
         address loanToken;
@@ -414,15 +420,15 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
     }
 
     // Only returns data for loans that are active
-    // loanType 0: all loans
-    // loanType 1: margin trade loans
-    // loanType 2: non-margin trade loans
+    // All(0): all loans
+    // Margin(1): margin trade loans
+    // NonMargin(2): non-margin trade loans
     // only active loans are returned
     function getUserLoans(
         address user,
         uint256 start,
         uint256 count,
-        uint256 loanType,
+        LoanTypes loanType,
         bool isLender,
         bool unsafeOnly)
         external
@@ -433,32 +439,36 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
             lenderLoanSets[user] :
             borrowerLoanSets[user];
 
-        uint256 end = count.min256(set.values.length);
-        if (end == 0 || start >= end) {
+        uint256 end = start.add(count).min256(set.length());
+        if (start >= end) {
             return loansData;
         }
+        count = end-start;
 
-        loansData = new LoanReturnData[](count);
-        uint256 itemCount;
-        for (uint256 i = end-start; i > 0; i--) {
-            if (itemCount == count) {
+        uint256 idx = count;
+        LoanReturnData memory loanData;
+        loansData = new LoanReturnData[](idx);
+        for (uint256 i = --end; i >= start; i--) {
+            if (i > end) {
+                // handles the overflow in the case of start == 0
                 break;
             }
-            LoanReturnData memory loanData = _getLoan(
-                set.get(i+start-1), // loanId
+
+            loanData = _getLoan(
+                set.get(i), // loanId
                 loanType,
                 unsafeOnly
             );
             if (loanData.loanId == 0)
                 continue;
 
-            loansData[itemCount] = loanData;
-            itemCount++;
+            loansData[--idx] = loanData;
         }
 
-        if (itemCount < count) {
+        if (idx > 0) {
+            count -= idx;
             assembly {
-                mstore(loansData, itemCount)
+                mstore(loansData, count)
             }
         }
     }
@@ -471,7 +481,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
     {
         return _getLoan(
             loanId,
-            0, // loanType
+            LoanTypes.All,
             false // unsafeOnly
         );
     }
@@ -484,39 +494,43 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         view
         returns (LoanReturnData[] memory loansData)
     {
-        uint256 end = count.min256(activeLoansSet.values.length);
-        if (end == 0 || start >= end) {
+        uint256 end = start.add(count).min256(activeLoansSet.length());
+        if (start >= end) {
             return loansData;
         }
+        count = end-start;
 
-        loansData = new LoanReturnData[](count);
-        uint256 itemCount;
-        for (uint256 i = end-start; i > 0; i--) {
-            if (itemCount == count) {
+        uint256 idx = count;
+        LoanReturnData memory loanData;
+        loansData = new LoanReturnData[](idx);
+        for (uint256 i = --end; i >= start; i--) {
+            if (i > end) {
+                // handles the overflow in the case of start == 0
                 break;
             }
-            LoanReturnData memory loanData = _getLoan(
-                activeLoansSet.get(i+start-1), // loanId
-                0, // loanType
+
+            loanData = _getLoan(
+                activeLoansSet.get(i), // loanId
+                LoanTypes.All,
                 unsafeOnly
             );
             if (loanData.loanId == 0)
                 continue;
 
-            loansData[itemCount] = loanData;
-            itemCount++;
+            loansData[--idx] = loanData;
         }
 
-        if (itemCount < count) {
+        if (idx > 0) {
+            count -= idx;
             assembly {
-                mstore(loansData, itemCount)
+                mstore(loansData, count)
             }
         }
     }
 
     function _getLoan(
         bytes32 loanId,
-        uint256 loanType,
+        LoanTypes loanType,
         bool unsafeOnly)
         internal
         view
@@ -525,13 +539,13 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         Loan memory loanLocal = loans[loanId];
         LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
-        if (loanType != 0) {
-            if (!(
-                (loanType == 1 && loanParamsLocal.maxLoanTerm != 0) ||
-                (loanType == 2 && loanParamsLocal.maxLoanTerm == 0)
-            )) {
-                return loanData;
-            }
+        if (loanType != LoanTypes.All &&
+            (
+                (loanType == LoanTypes.Margin && loanParamsLocal.maxLoanTerm == 0) ||
+                (loanType == LoanTypes.NonMargin && loanParamsLocal.maxLoanTerm != 0)
+            )
+        ) {
+            return loanData;
         }
 
         LoanInterest memory loanInterestLocal = loanInterest[loanId];
