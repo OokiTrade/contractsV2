@@ -443,32 +443,36 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             lenderLoanSets[user] :
             borrowerLoanSets[user];
 
-        uint256 end = count.min256(set.values.length);
-        if (end == 0 || start >= end) {
+        uint256 end = start.add(count).min256(set.length());
+        if (start >= end) {
             return loansData;
         }
+        count = end-start;
 
-        loansData = new LoanReturnData[](count);
-        uint256 itemCount;
-        for (uint256 i = end-start; i > 0; i--) {
-            if (itemCount == count) {
+        uint256 idx = count;
+        LoanReturnData memory loanData;
+        loansData = new LoanReturnData[](idx);
+        for (uint256 i = --end; i >= start; i--) {
+            if (i > end) {
+                // handles the overflow in the case of start == 0
                 break;
             }
-            LoanReturnData memory loanData = _getLoan(
-                set.get(i+start-1), // loanId
+
+            loanData = _getLoan(
+                set.get(i), // loanId
                 loanType,
                 unsafeOnly
             );
             if (loanData.loanId == 0)
                 continue;
 
-            loansData[itemCount] = loanData;
-            itemCount++;
+            loansData[--idx] = loanData;
         }
 
-        if (itemCount < count) {
+        if (idx > 0) {
+            count -= idx;
             assembly {
-                mstore(loansData, itemCount)
+                mstore(loansData, count)
             }
         }
     }
@@ -494,32 +498,36 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         view
         returns (LoanReturnData[] memory loansData)
     {
-        uint256 end = count.min256(activeLoansSet.values.length);
-        if (end == 0 || start >= end) {
+        uint256 end = start.add(count).min256(activeLoansSet.length());
+        if (start >= end) {
             return loansData;
         }
+        count = end-start;
 
-        loansData = new LoanReturnData[](count);
-        uint256 itemCount;
-        for (uint256 i = end-start; i > 0; i--) {
-            if (itemCount == count) {
+        uint256 idx = count;
+        LoanReturnData memory loanData;
+        loansData = new LoanReturnData[](idx);
+        for (uint256 i = --end; i >= start; i--) {
+            if (i > end) {
+                // handles the overflow in the case of start == 0
                 break;
             }
-            LoanReturnData memory loanData = _getLoan(
-                activeLoansSet.get(i+start-1), // loanId
+
+            loanData = _getLoan(
+                activeLoansSet.get(i), // loanId
                 LoanType.All,
                 unsafeOnly
             );
             if (loanData.loanId == 0)
                 continue;
 
-            loansData[itemCount] = loanData;
-            itemCount++;
+            loansData[--idx] = loanData;
         }
 
-        if (itemCount < count) {
+        if (idx > 0) {
+            count -= idx;
             assembly {
-                mstore(loansData, itemCount)
+                mstore(loansData, count)
             }
         }
     }

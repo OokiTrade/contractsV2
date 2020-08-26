@@ -29,8 +29,6 @@ contract PriceFeeds is Constants, Ownable {
     mapping (address => IPriceFeedsExt) public pricesFeeds;     // token => pricefeed
     mapping (address => uint256) public decimals;               // decimals of supported tokens
 
-    uint256 public protocolTokenEthPrice = 0.0002 ether;
-
     bool public globalPricingPaused = false;
 
     constructor()
@@ -283,15 +281,6 @@ contract PriceFeeds is Constants, Ownable {
     * Owner functions
     */
 
-    function setProtocolTokenEthPrice(
-        uint256 newPrice)
-        external
-        onlyOwner
-    {
-        require(newPrice != 0, "invalid price");
-        protocolTokenEthPrice = newPrice;
-    }
-
     function setPriceFeed(
         address[] calldata tokens,
         IPriceFeedsExt[] calldata feeds)
@@ -360,15 +349,13 @@ contract PriceFeeds is Constants, Ownable {
         view
         returns (uint256 rate)
     {
-        if (token != address(wethToken) && token != bzrxTokenAddress) {
+        if (token != address(wethToken)) {
             IPriceFeedsExt _Feed = pricesFeeds[token];
             require(address(_Feed) != address(0), "unsupported price feed");
             rate = uint256(_Feed.latestAnswer());
             require(rate != 0 && (rate >> 128) == 0, "price error");
         } else {
-            rate = token == bzrxTokenAddress ?
-                protocolTokenEthPrice :
-                WEI_PRECISION;
+            rate = WEI_PRECISION;
         }
     }
 

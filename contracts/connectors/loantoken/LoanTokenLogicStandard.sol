@@ -401,22 +401,6 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
             .mul(int256(_balance))
             .div(sWEI_PRECISION)
             .add(profitSoFar);
-        /*if (_currentPrice > _checkpointPrice) {
-            profitDiff = _balance
-                .mul(_currentPrice - _checkpointPrice)
-                .div(WEI_PRECISION);
-            profitSoFar = profitSoFar
-                .add(profitDiff);
-        } else {
-            profitDiff = _balance
-                .mul(_checkpointPrice - _currentPrice)
-                .div(WEI_PRECISION);
-            if (profitSoFar > profitDiff) {
-                profitSoFar = profitSoFar - profitDiff;
-            } else {
-                profitSoFar = 0;
-            }
-        }*/
     }
 
     function tokenPrice()
@@ -744,6 +728,9 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         require(collateralTokenSent != 0 || loanId != 0, "8");
         require(collateralTokenAddress != address(0) || msg.value != 0 || loanId != 0, "9");
 
+        // ensures authorized use of existing loan
+        require(loanId == 0 || msg.sender == borrower, "13");
+
         if (collateralTokenAddress == address(0)) {
             collateralTokenAddress = wethToken;
         }
@@ -794,6 +781,9 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         settlesInterest
         returns (uint256, uint256) // returns new principal and new collateral added to trade
     {
+        // ensures authorized use of existing loan
+        require(loanId == 0 || msg.sender == trader, "13");
+
         if (collateralTokenAddress == address(0)) {
             collateralTokenAddress = wethToken;
         }

@@ -46,29 +46,21 @@ contract PriceFeedsTestnets is PriceFeeds {
     {
         if (sourceToken != destToken) {
             if (feedType == FeedTypes.Kyber) {
-                if (sourceToken == bzrxTokenAddress) {
-                    // hack for testnet; only returns price in ETH
-                    rate = protocolTokenEthPrice;
-                } else if (destToken == bzrxTokenAddress) {
-                    // hack for testnet; only returns price in ETH
-                    rate = SafeMath.div(10**36, protocolTokenEthPrice);
-                } else {
-                    (bool result, bytes memory data) = kyberContract.staticcall(
-                        abi.encodeWithSignature(
-                            "getExpectedRate(address,address,uint256)",
-                            sourceToken,
-                            destToken,
-                            10**16
-                        )
-                    );
-                    assembly {
-                        switch result
-                        case 0 {
-                            rate := 0
-                        }
-                        default {
-                            rate := mload(add(data, 32))
-                        }
+                (bool result, bytes memory data) = kyberContract.staticcall(
+                    abi.encodeWithSignature(
+                        "getExpectedRate(address,address,uint256)",
+                        sourceToken,
+                        destToken,
+                        10**16
+                    )
+                );
+                assembly {
+                    switch result
+                    case 0 {
+                        rate := 0
+                    }
+                    default {
+                        rate := mload(add(data, 32))
                     }
                 }
             } else if (feedType == FeedTypes.Chainlink) {
