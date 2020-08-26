@@ -159,12 +159,15 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                 isTorqueLoan
             );
 
-            uint256 fee = isTorqueLoan ?
-                _getBorrowingFee(collateralAmountRequired) :
-                _getTradingFee(collateralAmountRequired);
-            if (fee != 0) {
+            uint256 feePercent = isTorqueLoan ?
+                borrowingFeePercent :
+                tradingFeePercent;
+            if (collateralAmountRequired != 0 && feePercent != 0) {
                 collateralAmountRequired = collateralAmountRequired
-                    .add(fee);
+                    .mul(10**20)
+                    .divCeil(
+                        10**20 - feePercent // never will overflow
+                    );
             }
         }
     }
@@ -185,17 +188,8 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                     .add(10**20); // adjust for over-collateralized loan
             }
 
-            uint256 collateral = collateralTokenAmount;
-            uint256 fee = isTorqueLoan ?
-                _getBorrowingFee(collateral) :
-                _getTradingFee(collateral);
-            if (fee != 0) {
-                collateral = collateral
-                    .sub(fee);
-            }
-
             if (loanToken == collateralToken) {
-                borrowAmount = collateral
+                borrowAmount = collateralTokenAmount
                     .mul(10**20)
                     .div(marginAmount);
             } else {
@@ -204,12 +198,23 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                     loanToken
                 );
                 if (sourceToDestPrecision != 0) {
-                    borrowAmount = collateral
+                    borrowAmount = collateralTokenAmount
                         .mul(10**20)
                         .mul(sourceToDestRate)
                         .div(marginAmount)
                         .div(sourceToDestPrecision);
                 }
+            }
+
+            uint256 feePercent = isTorqueLoan ?
+                borrowingFeePercent :
+                tradingFeePercent;
+            if (borrowAmount != 0 && feePercent != 0) {
+                borrowAmount = borrowAmount
+                    .mul(
+                        10**20 - feePercent // never will overflow
+                    )
+                    .divCeil(10**20);
             }
         }
     }
