@@ -151,6 +151,7 @@ def deployProtocol():
                         "0xFCfA14dBc71beE2a2188431Fa15E1f8D57d93c62", # SUSD
                         "0x8f746eC7ed5Cc265b90e7AF0f5B07b4406C9dDA8", # DAI
                         "0x4C4462C6bca4c92BF41C40f9a4047F35Fd296996", # USDT (Tether)
+                        "0xB54Fc2F2ea17d798Ad5C7Aba2491055BCeb7C6b2", # BZRX
                         "0x0000000000000000000000000000000000000001"  # Fast Gas / Gwei
                     ],
                     [
@@ -167,6 +168,7 @@ def deployProtocol():
                         "0xa353F8b083F7575cfec443b5ad585D42f652E9F7", # SUSD
                         "0x6F47077D3B6645Cb6fb7A29D280277EC1e5fFD90", # DAI
                         "0xCC833A6522721B3252e7578c5BCAF65738B75Fc3", # USDT (Tether)
+                        "0x9aa9da35DC44F93D90436BfE256f465f720c3Ae5", # BZRX
                         "0x07435f5182AAebBB176E58078451Fdd7FCD4EaC7"  # Fast Gas / Gwei
                     ]
                 )
@@ -209,6 +211,7 @@ def deployProtocol():
                         "0x57ab1ec28d129707052df4df418d58a2d46d5f51", # SUSD
                         "0x6b175474e89094c44da98b954eedeac495271d0f", # DAI
                         "0xdac17f958d2ee523a2206206994597c13d831ec7", # USDT (Tether)
+                        "0x56d811088235F11C8920698a204A5010a788f4b3", # BZRX
                         "0x0000000000000000000000000000000000000001"  # Fast Gas / Gwei
                     ],
                     [
@@ -224,6 +227,7 @@ def deployProtocol():
                         "0x8e0b7e6062272B5eF4524250bFFF8e5Bd3497757", # SUSD
                         "0x773616E4d11A78F511299002da57A0a94577F1f4", # DAI
                         "0xEe9F2375b4bdF6387aa8265dD4FB8F16512A1d46"  # USDT (Tether)
+                        "0x8f7C7181Ed1a2BA41cfC3f5d064eF91b67daef66", # BZRX
                         "0x169E633A2D1E6c10dD91238Ba11c4A708dfEF37C"  # Fast Gas / Gwei
                     ]
                 )

@@ -257,120 +257,108 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
     }
 
     function withdrawLendingFees(
-        address token,
-        address receiver,
-        uint256 amount)
+        address[] calldata tokens,
+        address receiver)
         external
-        returns (bool)
+        returns (uint256[] memory amounts)
     {
         require(msg.sender == feesController, "unauthorized");
 
-        uint256 withdrawAmount = amount;
+        amounts = new uint256[](tokens.length);
+        uint256 balance;
+        for (uint256 i = 0; i < tokens.length; i++) {
+            balance = lendingFeeTokensHeld[tokens[i]];
+            if (balance == 0) {
+                continue;
+            }
 
-        uint256 balance = lendingFeeTokensHeld[token];
-        if (withdrawAmount > balance) {
-            withdrawAmount = balance;
+            amounts[i] = balance;
+            lendingFeeTokensHeld[tokens[i]] = 0;
+            lendingFeeTokensPaid[tokens[i]] = lendingFeeTokensPaid[tokens[i]]
+                .add(balance);
+
+            IERC20(tokens[i]).safeTransfer(
+                receiver,
+                balance
+            );
+
+            emit WithdrawLendingFees(
+                msg.sender,
+                tokens[i],
+                receiver,
+                balance
+            );
         }
-        if (withdrawAmount == 0) {
-            return false;
-        }
-
-        lendingFeeTokensHeld[token] = balance
-            .sub(withdrawAmount);
-        lendingFeeTokensPaid[token] = lendingFeeTokensPaid[token]
-            .add(withdrawAmount);
-
-        IERC20(token).safeTransfer(
-            receiver,
-            withdrawAmount
-        );
-
-        emit WithdrawLendingFees(
-            msg.sender,
-            token,
-            receiver,
-            withdrawAmount
-        );
-
-        return true;
     }
 
     function withdrawTradingFees(
-        address token,
-        address receiver,
-        uint256 amount)
+        address[] calldata tokens,
+        address receiver)
         external
-        returns (bool)
+        returns (uint256[] memory amounts)
     {
         require(msg.sender == feesController, "unauthorized");
 
-        uint256 withdrawAmount = amount;
+        amounts = new uint256[](tokens.length);
+        uint256 balance;
+        for (uint256 i = 0; i < tokens.length; i++) {
+            balance = tradingFeeTokensHeld[tokens[i]];
+            if (balance == 0) {
+                continue;
+            }
 
-        uint256 balance = tradingFeeTokensHeld[token];
-        if (withdrawAmount > balance) {
-            withdrawAmount = balance;
+            amounts[i] = balance;
+            tradingFeeTokensHeld[tokens[i]] = 0;
+            tradingFeeTokensPaid[tokens[i]] = tradingFeeTokensPaid[tokens[i]]
+                .add(balance);
+
+            IERC20(tokens[i]).safeTransfer(
+                receiver,
+                balance
+            );
+
+            emit WithdrawTradingFees(
+                msg.sender,
+                tokens[i],
+                receiver,
+                balance
+            );
         }
-        if (withdrawAmount == 0) {
-            return false;
-        }
-
-        tradingFeeTokensHeld[token] = balance
-            .sub(withdrawAmount);
-        tradingFeeTokensPaid[token] = tradingFeeTokensPaid[token]
-            .add(withdrawAmount);
-
-        IERC20(token).safeTransfer(
-            receiver,
-            withdrawAmount
-        );
-
-        emit WithdrawTradingFees(
-            msg.sender,
-            token,
-            receiver,
-            withdrawAmount
-        );
-
-        return true;
     }
 
     function withdrawBorrowingFees(
-        address token,
-        address receiver,
-        uint256 amount)
+        address[] calldata tokens,
+        address receiver)
         external
-        returns (bool)
+        returns (uint256[] memory amounts)
     {
         require(msg.sender == feesController, "unauthorized");
 
-        uint256 withdrawAmount = amount;
+        amounts = new uint256[](tokens.length);
+        uint256 balance;
+        for (uint256 i = 0; i < tokens.length; i++) {
+            balance = borrowingFeeTokensHeld[tokens[i]];
+            if (balance == 0) {
+                continue;
+            }
 
-        uint256 balance = borrowingFeeTokensHeld[token];
-        if (withdrawAmount > balance) {
-            withdrawAmount = balance;
+            amounts[i] = balance;
+            borrowingFeeTokensHeld[tokens[i]] = 0;
+            borrowingFeeTokensPaid[tokens[i]] = borrowingFeeTokensPaid[tokens[i]]
+                .add(balance);
+
+            IERC20(tokens[i]).safeTransfer(
+                receiver,
+                balance
+            );
+
+            emit WithdrawBorrowingFees(
+                msg.sender,
+                tokens[i],
+                receiver,
+                balance
+            );
         }
-        if (withdrawAmount == 0) {
-            return false;
-        }
-
-        borrowingFeeTokensHeld[token] = balance
-            .sub(withdrawAmount);
-        borrowingFeeTokensPaid[token] = borrowingFeeTokensPaid[token]
-            .add(withdrawAmount);
-
-        IERC20(token).safeTransfer(
-            receiver,
-            withdrawAmount
-        );
-
-        emit WithdrawBorrowingFees(
-            msg.sender,
-            token,
-            receiver,
-            withdrawAmount
-        );
-
-        return true;
     }
 
     function withdrawProtocolToken(

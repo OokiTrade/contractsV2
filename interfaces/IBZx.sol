@@ -101,25 +101,22 @@ contract IBZx is
         external;
 
     function withdrawLendingFees(
-        address token,
-        address receiver,
-        uint256 amount)
+        address[] calldata tokens,
+        address receiver)
         external
-        returns (bool);
+        returns (uint256[] memory amounts);
 
     function withdrawTradingFees(
-        address token,
-        address receiver,
-        uint256 amount)
+        address[] calldata tokens,
+        address receiver)
         external
-        returns (bool);
+        returns (uint256[] memory amounts);
 
     function withdrawBorrowingFees(
-        address token,
-        address receiver,
-        uint256 amount)
+        address[] calldata tokens,
+        address receiver)
         external
-        returns (bool);
+        returns (uint256[] memory amounts);
 
     function withdrawProtocolToken(
         address receiver,

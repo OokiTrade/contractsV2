@@ -49,27 +49,27 @@ def test_setLiquidationIncentivePercent(Constants, bzx):
 
 def test_withdrawLendingFees(Constants, bzx, DAI, accounts):
     with reverts("unauthorized"):
-        bzx.withdrawLendingFees(DAI, accounts[0], 1)
+        bzx.withdrawLendingFees([DAI], accounts[0])
 
 def test_withdrawLendingFeesZeroBalance(Constants, bzx, DAI, accounts):
     bzx.setFeesController(accounts[0])
-    success = bzx.withdrawLendingFees.call(DAI, accounts[0], 1)
-    assert(success == False)
+    amounts = bzx.withdrawLendingFees.call([DAI], accounts[0])
+    assert(amounts[0] == 0)
 
 def test_withdrawTradingFees(Constants, bzx, DAI, accounts):
     with reverts("unauthorized"):
-        bzx.withdrawTradingFees(DAI, accounts[0], 1)
+        bzx.withdrawTradingFees([DAI], accounts[0])
 
 def test_withdrawTradingFeesZeroBalance(Constants, bzx, DAI, accounts):
     bzx.setFeesController(accounts[0])
-    success = bzx.withdrawTradingFees.call(DAI, accounts[0], 1)
-    assert(success == False)
+    amounts = bzx.withdrawTradingFees.call([DAI], accounts[0])
+    assert(amounts[0] == 0)
 
 def test_withdrawBorrowingFees(Constants, bzx, DAI, accounts):
     with reverts("unauthorized"):
-        bzx.withdrawTradingFees(DAI, accounts[0], 1)
+        bzx.withdrawTradingFees([DAI], accounts[0])
 
 def test_withdrawBorrowingFeesZeroBalance(Constants, bzx, DAI, accounts):
     bzx.setFeesController(accounts[0])
-    success = bzx.withdrawBorrowingFees.call(DAI, accounts[0], 1)
-    assert(success == False)
+    amounts = bzx.withdrawBorrowingFees.call([DAI], accounts[0])
+    assert(amounts[0] == 0)
