@@ -6,118 +6,23 @@
 pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
-import "../core/State.sol";
-import "../events/LoanClosingsEvents.sol";
-import "../mixins/VaultController.sol";
-import "../mixins/InterestUser.sol";
-import "../mixins/LiquidationHelper.sol";
-import "../swaps/SwapsUser.sol";
-import "../interfaces/ILoanPool.sol";
-import "../connectors/gastoken/GasTokenUser.sol";
+import "../../core/State.sol";
+import "../../events/LoanClosingsEvents.sol";
+import "../../mixins/VaultController.sol";
+import "../../mixins/InterestUser.sol";
+import "../../mixins/LiquidationHelper.sol";
+import "../../swaps/SwapsUser.sol";
+import "../../interfaces/ILoanPool.sol";
+import "../../connectors/gastoken/GasTokenUser.sol";
 
 
-contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUser, GasTokenUser, SwapsUser, LiquidationHelper {
+contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, InterestUser, GasTokenUser, SwapsUser, LiquidationHelper {
 
     enum CloseTypes {
         Deposit,
         Swap,
         Liquidation
     }
-
-    function initialize(
-        address target)
-        external
-        onlyOwner
-    {
-        _setTarget(this.liquidate.selector, target);
-        _setTarget(this.rollover.selector, target);
-        _setTarget(this.closeWithDeposit.selector, target);
-        _setTarget(this.closeWithSwap.selector, target);
-    }
-
-    function liquidate(
-        bytes32 loanId,
-        address receiver,
-        uint256 closeAmount) // denominated in loanToken
-        external
-        payable
-        nonReentrant
-        returns (
-            uint256 loanCloseAmount,
-            uint256 seizedAmount,
-            address seizedToken
-        )
-    {
-        return _liquidate(
-            loanId,
-            receiver,
-            closeAmount
-        );
-    }
-
-    function rollover(
-        bytes32 loanId,
-        bytes calldata /*loanDataBytes*/) // for future use
-        external
-        nonReentrant
-    {
-        uint256 startingGas = 21000 + gasleft() + 16 * msg.data.length;
-
-        // restrict to EOAs to prevent griefing attacks, during interest rate recalculation
-        require(msg.sender == tx.origin, "only EOAs can call");
-
-        return _rollover(
-            loanId,
-            startingGas,
-            "" // loanDataBytes
-        );
-    }
-
-    function closeWithDeposit(
-        bytes32 loanId,
-        address receiver,
-        uint256 depositAmount) // denominated in loanToken
-        public
-        payable
-        usesGasToken
-        nonReentrant
-        returns (
-            uint256 loanCloseAmount,
-            uint256 withdrawAmount,
-            address withdrawToken
-        )
-    {
-        return _closeWithDeposit(
-            loanId,
-            receiver,
-            depositAmount
-        );
-    }
-
-    function closeWithSwap(
-        bytes32 loanId,
-        address receiver,
-        uint256 swapAmount, // denominated in collateralToken
-        bool returnTokenIsCollateral, // true: withdraws collateralToken, false: withdraws loanToken
-        bytes memory /*loanDataBytes*/) // for future use
-        public
-        usesGasToken
-        nonReentrant
-        returns (
-            uint256 loanCloseAmount,
-            uint256 withdrawAmount,
-            address withdrawToken
-        )
-    {
-        return _closeWithSwap(
-            loanId,
-            receiver,
-            swapAmount,
-            returnTokenIsCollateral,
-            "" // loanDataBytes
-        );
-    }
-
 
     function _liquidate(
         bytes32 loanId,
@@ -131,10 +36,9 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
         )
     {
         Loan storage loanLocal = loans[loanId];
-        LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
-
         require(loanLocal.active, "loan is closed");
-        require(loanParamsLocal.id != 0, "loanParams not exists");
+
+        LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
         (uint256 currentMargin, uint256 collateralToLoanRate) = IPriceFeeds(priceFeeds).getCurrentMargin(
             loanParamsLocal.loanToken,
@@ -242,10 +146,7 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
         internal
     {
         Loan storage loanLocal = loans[loanId];
-        LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
-
         require(loanLocal.active, "loan is closed");
-        require(loanParamsLocal.id != 0, "loanParams not exists");
         require(
             block.timestamp > loanLocal.endTimestamp.sub(1 hours),
             "healthy position"
@@ -254,6 +155,8 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
             loanPoolToUnderlying[loanLocal.lender] != address(0),
             "invalid lender"
         );
+
+        LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
         // pay outstanding interest to lender
         _payInterest(
@@ -399,11 +302,13 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
         require(depositAmount != 0, "depositAmount == 0");
 
         Loan storage loanLocal = loans[loanId];
-        LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
         _checkAuthorized(
-            loanLocal,
-            loanParamsLocal
+            loanLocal.id,
+            loanLocal.active,
+            loanLocal.borrower
         );
+
+        LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
         // can't close more than the full principal
         loanCloseAmount = depositAmount > loanLocal.principal ?
@@ -471,11 +376,13 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
         require(swapAmount != 0, "swapAmount == 0");
 
         Loan storage loanLocal = loans[loanId];
-        LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
         _checkAuthorized(
-            loanLocal,
-            loanParamsLocal
+            loanLocal.id,
+            loanLocal.active,
+            loanLocal.borrower
         );
+
+        LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
         if (swapAmount > loanLocal.collateral) {
             swapAmount = loanLocal.collateral;
@@ -582,18 +489,18 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
     }
 
     function _checkAuthorized(
-        Loan memory loanLocal,
-        LoanParams memory loanParamsLocal)
+        bytes32 _id,
+        bool _active,
+        address _borrower)
         internal
         view
     {
-        require(loanLocal.active, "loan is closed");
+        require(_active, "loan is closed");
         require(
-            msg.sender == loanLocal.borrower ||
-            delegatedManagers[loanLocal.id][msg.sender],
+            msg.sender == _borrower ||
+            delegatedManagers[_id][msg.sender],
             "unauthorized"
         );
-        require(loanParamsLocal.id != 0, "loanParams not exists");
     }
 
     function _settleInterestToPrincipal(

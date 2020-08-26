@@ -6,10 +6,11 @@
 pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
-import "../core/State.sol";
-import "../events/ProtocolSettingsEvents.sol";
-import "../openzeppelin/SafeERC20.sol";
-import "../mixins/ProtocolTokenUser.sol";
+import "../../core/State.sol";
+import "../../events/ProtocolSettingsEvents.sol";
+import "../../openzeppelin/SafeERC20.sol";
+import "../../mixins/ProtocolTokenUser.sol";
+import "../../interfaces/IVestingToken.sol";
 
 
 contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
@@ -256,120 +257,108 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
     }
 
     function withdrawLendingFees(
-        address token,
-        address receiver,
-        uint256 amount)
+        address[] calldata tokens,
+        address receiver)
         external
-        returns (bool)
+        returns (uint256[] memory amounts)
     {
         require(msg.sender == feesController, "unauthorized");
 
-        uint256 withdrawAmount = amount;
+        amounts = new uint256[](tokens.length);
+        uint256 balance;
+        for (uint256 i = 0; i < tokens.length; i++) {
+            balance = lendingFeeTokensHeld[tokens[i]];
+            if (balance == 0) {
+                continue;
+            }
 
-        uint256 balance = lendingFeeTokensHeld[token];
-        if (withdrawAmount > balance) {
-            withdrawAmount = balance;
+            amounts[i] = balance;
+            lendingFeeTokensHeld[tokens[i]] = 0;
+            lendingFeeTokensPaid[tokens[i]] = lendingFeeTokensPaid[tokens[i]]
+                .add(balance);
+
+            IERC20(tokens[i]).safeTransfer(
+                receiver,
+                balance
+            );
+
+            emit WithdrawLendingFees(
+                msg.sender,
+                tokens[i],
+                receiver,
+                balance
+            );
         }
-        if (withdrawAmount == 0) {
-            return false;
-        }
-
-        lendingFeeTokensHeld[token] = balance
-            .sub(withdrawAmount);
-        lendingFeeTokensPaid[token] = lendingFeeTokensPaid[token]
-            .add(withdrawAmount);
-
-        IERC20(token).safeTransfer(
-            receiver,
-            withdrawAmount
-        );
-
-        emit WithdrawLendingFees(
-            msg.sender,
-            token,
-            receiver,
-            withdrawAmount
-        );
-
-        return true;
     }
 
     function withdrawTradingFees(
-        address token,
-        address receiver,
-        uint256 amount)
+        address[] calldata tokens,
+        address receiver)
         external
-        returns (bool)
+        returns (uint256[] memory amounts)
     {
         require(msg.sender == feesController, "unauthorized");
 
-        uint256 withdrawAmount = amount;
+        amounts = new uint256[](tokens.length);
+        uint256 balance;
+        for (uint256 i = 0; i < tokens.length; i++) {
+            balance = tradingFeeTokensHeld[tokens[i]];
+            if (balance == 0) {
+                continue;
+            }
 
-        uint256 balance = tradingFeeTokensHeld[token];
-        if (withdrawAmount > balance) {
-            withdrawAmount = balance;
+            amounts[i] = balance;
+            tradingFeeTokensHeld[tokens[i]] = 0;
+            tradingFeeTokensPaid[tokens[i]] = tradingFeeTokensPaid[tokens[i]]
+                .add(balance);
+
+            IERC20(tokens[i]).safeTransfer(
+                receiver,
+                balance
+            );
+
+            emit WithdrawTradingFees(
+                msg.sender,
+                tokens[i],
+                receiver,
+                balance
+            );
         }
-        if (withdrawAmount == 0) {
-            return false;
-        }
-
-        tradingFeeTokensHeld[token] = balance
-            .sub(withdrawAmount);
-        tradingFeeTokensPaid[token] = tradingFeeTokensPaid[token]
-            .add(withdrawAmount);
-
-        IERC20(token).safeTransfer(
-            receiver,
-            withdrawAmount
-        );
-
-        emit WithdrawTradingFees(
-            msg.sender,
-            token,
-            receiver,
-            withdrawAmount
-        );
-
-        return true;
     }
 
     function withdrawBorrowingFees(
-        address token,
-        address receiver,
-        uint256 amount)
+        address[] calldata tokens,
+        address receiver)
         external
-        returns (bool)
+        returns (uint256[] memory amounts)
     {
         require(msg.sender == feesController, "unauthorized");
 
-        uint256 withdrawAmount = amount;
+        amounts = new uint256[](tokens.length);
+        uint256 balance;
+        for (uint256 i = 0; i < tokens.length; i++) {
+            balance = borrowingFeeTokensHeld[tokens[i]];
+            if (balance == 0) {
+                continue;
+            }
 
-        uint256 balance = borrowingFeeTokensHeld[token];
-        if (withdrawAmount > balance) {
-            withdrawAmount = balance;
+            amounts[i] = balance;
+            borrowingFeeTokensHeld[tokens[i]] = 0;
+            borrowingFeeTokensPaid[tokens[i]] = borrowingFeeTokensPaid[tokens[i]]
+                .add(balance);
+
+            IERC20(tokens[i]).safeTransfer(
+                receiver,
+                balance
+            );
+
+            emit WithdrawBorrowingFees(
+                msg.sender,
+                tokens[i],
+                receiver,
+                balance
+            );
         }
-        if (withdrawAmount == 0) {
-            return false;
-        }
-
-        borrowingFeeTokensHeld[token] = balance
-            .sub(withdrawAmount);
-        borrowingFeeTokensPaid[token] = borrowingFeeTokensPaid[token]
-            .add(withdrawAmount);
-
-        IERC20(token).safeTransfer(
-            receiver,
-            withdrawAmount
-        );
-
-        emit WithdrawBorrowingFees(
-            msg.sender,
-            token,
-            receiver,
-            withdrawAmount
-        );
-
-        return true;
     }
 
     function withdrawProtocolToken(
@@ -377,12 +366,31 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
         uint256 amount)
         external
         onlyOwner
-        returns (address, bool)
+        returns (address rewardToken, bool success)
     {
-        return _withdrawProtocolToken(
+        (rewardToken, success) = _withdrawProtocolToken(
             receiver,
             amount
         );
+
+        uint256 totalEmission = IVestingToken(vbzrxTokenAddress).claimedBalanceOf(address(this));
+
+        uint256 totalWithdrawn;
+        // keccak256("BZRX_TotalWithdrawn")
+        bytes32 slot = 0xf0cbcfb4979ecfbbd8f7e7430357fc20e06376d29a69ad87c4f21360f6846545;
+        assembly {
+            totalWithdrawn := sload(slot)
+        }
+
+        if (totalEmission > totalWithdrawn) {
+            IERC20(bzrxTokenAddress).safeTransfer(
+                receiver,
+                totalEmission - totalWithdrawn
+            );
+            assembly {
+                sstore(slot, totalEmission)
+            }
+        }
     }
 
    function depositProtocolToken(
@@ -393,7 +401,7 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
         protocolTokenHeld = protocolTokenHeld
             .add(amount);
 
-        IERC20(protocolTokenAddress).safeTransferFrom(
+        IERC20(vbzrxTokenAddress).safeTransferFrom(
             msg.sender,
             address(this),
             amount

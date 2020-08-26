@@ -3,22 +3,7 @@
 import pytest
 from brownie import Contract, Wei, reverts
 from fixedint import *
-
-@pytest.fixture(scope="module", autouse=True)
-def loanOpenings(LoanOpenings, accounts, bzx, Constants, priceFeeds, swapsImpl):
-    bzx.replaceContract(accounts[0].deploy(LoanOpenings).address)
-
-    bzx.setPriceFeedContract(
-        priceFeeds.address # priceFeeds
-    )
-
-    bzx.setSwapsImplContract(
-        swapsImpl.address # swapsImpl
-    )
-
-@pytest.fixture(scope="module", autouse=True)
-def loanClosings(LoanClosings, accounts, bzx, Constants, priceFeeds, swapsImpl):
-    bzx.replaceContract(accounts[0].deploy(LoanClosings).address)
+from helpers import setupLoanPool
 
 @pytest.fixture(scope="module")
 def LinkDaiMarginParamsId(Constants, LINK, DAI, bzx, accounts):
@@ -55,14 +40,7 @@ def LinkDaiBorrowParamsId(Constants, LINK, DAI, bzx, accounts):
 def test_marginTradeFromPool_sim(Constants, LinkDaiMarginParamsId, bzx, DAI, LINK, accounts, web3):
 
     ## setup simulated loan pool
-    bzx.setLoanPool(
-        [
-            accounts[1],
-        ],
-        [
-            accounts[2]
-        ]
-    )
+    setupLoanPool(Constants, bzx, accounts[1], accounts[2])
 
     bZxBeforeDAIBalance = DAI.balanceOf(bzx.address)
     print("bZxBeforeDAIBalance", bZxBeforeDAIBalance)
@@ -166,14 +144,7 @@ def test_marginTradeFromPool_sim(Constants, LinkDaiMarginParamsId, bzx, DAI, LIN
 def test_borrowFromPool_sim(Constants, LinkDaiBorrowParamsId, bzx, DAI, LINK, accounts, web3):
 
     ## setup simulated loan pool
-    bzx.setLoanPool(
-        [
-            accounts[1],
-        ],
-        [
-            accounts[2]
-        ]
-    )
+    setupLoanPool(Constants, bzx, accounts[1], accounts[2])
 
     bZxBeforeDAIBalance = DAI.balanceOf(bzx.address)
     print("bZxBeforeDAIBalance", bZxBeforeDAIBalance)

@@ -6,39 +6,15 @@
 pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
-import "../core/State.sol";
-import "../events/LoanOpeningsEvents.sol";
-import "../mixins/VaultController.sol";
-import "../mixins/InterestUser.sol";
-import "../mixins/LiquidationHelper.sol";
-import "../swaps/SwapsUser.sol";
+import "../../core/State.sol";
+import "../../events/LoanMaintenanceEvents.sol";
+import "../../mixins/VaultController.sol";
+import "../../mixins/InterestUser.sol";
+import "../../mixins/LiquidationHelper.sol";
+import "../../swaps/SwapsUser.sol";
 
 
-contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, InterestUser, SwapsUser, LiquidationHelper {
-
-    enum LoanTypes {
-        All,
-        Margin,
-        NonMargin
-    }
-
-    struct LoanReturnData {
-        bytes32 loanId;
-        uint96 endTimestamp;
-        address loanToken;
-        address collateralToken;
-        uint256 principal;
-        uint256 collateral;
-        uint256 interestOwedPerDay;
-        uint256 interestDepositRemaining;
-        uint256 startRate; // collateralToLoanRate
-        uint256 startMargin;
-        uint256 maintenanceMargin;
-        uint256 currentMargin;
-        uint256 maxLoanTerm;
-        uint256 maxLiquidatable;
-        uint256 maxSeizable;
-    }
+contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, InterestUser, SwapsUser, LiquidationHelper {
 
     function initialize(
         address target)
@@ -65,18 +41,24 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         nonReentrant
     {
         require(depositAmount != 0, "depositAmount is 0");
+
         Loan storage loanLocal = loans[loanId];
+        require(loanLocal.active, "loan is closed");
+
         LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
-        require(loanLocal.active, "loan is closed");
-        require(msg.value == 0 || loanParamsLocal.collateralToken == address(wethToken), "wrong asset sent");
+        address collateralToken = loanParamsLocal.collateralToken;
+        uint256 collateral = loanLocal.collateral;
 
-        loanLocal.collateral = loanLocal.collateral
+        require(msg.value == 0 || collateralToken == address(wethToken), "wrong asset sent");
+
+        collateral = collateral
             .add(depositAmount);
+        loanLocal.collateral = collateral;
 
         if (msg.value == 0) {
             vaultDeposit(
-                loanParamsLocal.collateralToken,
+                collateralToken,
                 msg.sender,
                 depositAmount
             );
@@ -87,6 +69,13 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
                 msg.value
             );
         }
+
+        emit DepositCollateral(
+            loanLocal.borrower,
+            collateralToken,
+            loanId,
+            depositAmount
+        );
     }
 
     function withdrawCollateral(
@@ -108,11 +97,14 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
             "unauthorized"
         );
 
+        address collateralToken = loanParamsLocal.collateralToken;
+        uint256 collateral = loanLocal.collateral;
+
         uint256 maxDrawdown = IPriceFeeds(priceFeeds).getMaxDrawdown(
             loanParamsLocal.loanToken,
-            loanParamsLocal.collateralToken,
+            collateralToken,
             loanLocal.principal,
-            loanLocal.collateral,
+            collateral,
             loanParamsLocal.maintenanceMargin
         );
 
@@ -122,21 +114,29 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
             actualWithdrawAmount = withdrawAmount;
         }
 
-        loanLocal.collateral = loanLocal.collateral
+        collateral = collateral
             .sub(actualWithdrawAmount, "withdrawAmount too high");
+        loanLocal.collateral = collateral;
 
-        if (loanParamsLocal.collateralToken == address(wethToken)) {
+        if (collateralToken == address(wethToken)) {
             vaultEtherWithdraw(
                 receiver,
                 actualWithdrawAmount
             );
         } else {
             vaultWithdraw(
-                loanParamsLocal.collateralToken,
+                collateralToken,
                 receiver,
                 actualWithdrawAmount
             );
         }
+
+        emit WithdrawCollateral(
+            loanLocal.borrower,
+            collateralToken,
+            loanId,
+            withdrawAmount
+        );
     }
 
     function withdrawAccruedInterest(
@@ -204,8 +204,9 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         }
 
         // deposit interest
+        uint256 collateralUsed;
         if (useCollateral) {
-            _doSwapWithCollateral(
+            collateralUsed = _doSwapWithCollateral(
                 loanLocal,
                 loanParamsLocal,
                 depositAmount
@@ -255,6 +256,15 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
 
         lenderInterest[loanLocal.lender][loanParamsLocal.loanToken].owedTotal = lenderInterest[loanLocal.lender][loanParamsLocal.loanToken].owedTotal
             .add(depositAmount);
+
+        emit ExtendLoanDuration(
+            loanLocal.borrower,
+            loanParamsLocal.loanToken,
+            loanId,
+            depositAmount,
+            collateralUsed,
+            loanLocal.endTimestamp
+        );
     }
 
     function reduceLoanDuration(
@@ -333,6 +343,14 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
 
         lenderInterest[loanLocal.lender][loanParamsLocal.loanToken].owedTotal = lenderInterest[loanLocal.lender][loanParamsLocal.loanToken].owedTotal
             .sub(withdrawAmount);
+
+        emit ReduceLoanDuration(
+            loanLocal.borrower,
+            loanParamsLocal.loanToken,
+            loanId,
+            withdrawAmount,
+            loanLocal.endTimestamp
+        );
     }
 
     /// @dev Gets current lender interest data totals for all loans with a specific oracle and interest token
@@ -414,7 +432,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         address user,
         uint256 start,
         uint256 count,
-        LoanTypes loanType,
+        LoanType loanType,
         bool isLender,
         bool unsafeOnly)
         external
@@ -467,7 +485,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
     {
         return _getLoan(
             loanId,
-            LoanTypes.All,
+            LoanType.All,
             false // unsafeOnly
         );
     }
@@ -497,7 +515,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
 
             loanData = _getLoan(
                 activeLoansSet.get(i), // loanId
-                LoanTypes.All,
+                LoanType.All,
                 unsafeOnly
             );
             if (loanData.loanId == 0)
@@ -516,7 +534,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
 
     function _getLoan(
         bytes32 loanId,
-        LoanTypes loanType,
+        LoanType loanType,
         bool unsafeOnly)
         internal
         view
@@ -525,10 +543,10 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         Loan memory loanLocal = loans[loanId];
         LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
-        if (loanType != LoanTypes.All &&
+        if (loanType != LoanType.All &&
             (
-                (loanType == LoanTypes.Margin && loanParamsLocal.maxLoanTerm == 0) ||
-                (loanType == LoanTypes.NonMargin && loanParamsLocal.maxLoanTerm != 0)
+                (loanType == LoanType.Margin && loanParamsLocal.maxLoanTerm == 0) ||
+                (loanType == LoanType.NonMargin && loanParamsLocal.maxLoanTerm != 0)
             )
         ) {
             return loanData;
@@ -581,6 +599,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         LoanParams memory loanParamsLocal,
         uint256 depositAmount)
         internal
+        returns (uint256)
     {
         // reverts in _loanSwap if amountNeeded can't be bought
         (,uint256 sourceTokenAmountUsed,) = _loanSwap(
@@ -608,5 +627,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
             currentMargin > loanParamsLocal.maintenanceMargin,
             "unhealthy position"
         );
+
+        return sourceTokenAmountUsed;
     }
 }

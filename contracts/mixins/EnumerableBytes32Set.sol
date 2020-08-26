@@ -118,6 +118,21 @@ library EnumerableBytes32Set {
     }
 
     /**
+     * @dev Returns true if the value is in the set. O(1).
+     */
+    function containsAddress(Bytes32Set storage set, address addrvalue)
+        internal
+        view
+        returns (bool)
+    {
+        bytes32 value;
+        assembly {
+            value := addrvalue
+        }
+        return set.index[value] != 0;
+    }
+
+    /**
      * @dev Returns an array with all values in the set. O(N).
      * Note that there are no guarantees on the ordering of values inside the
      * array, and it may change when more values are added or removed.
@@ -169,5 +184,26 @@ library EnumerableBytes32Set {
         returns (bytes32)
     {
         return set.values[index];
+    }
+
+   /** @dev Returns the element stored at position `index` in the set. O(1).
+    * Note that there are no guarantees on the ordering of values inside the
+    * array, and it may change when more values are added or removed.
+    *
+    * Requirements:
+    *
+    * - `index` must be strictly less than {length}.
+    */
+    function getAddress(Bytes32Set storage set, uint256 index)
+        internal
+        view
+        returns (address)
+    {
+        bytes32 value = set.values[index];
+        address addrvalue;
+        assembly {
+            addrvalue := value
+        }
+        return addrvalue;
     }
 }

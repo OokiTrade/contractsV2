@@ -19,6 +19,8 @@ contract LoanTokenBase is ReentrancyGuard, Ownable, Pausable {
     uint256 internal constant WEI_PRECISION = 10**18;
     uint256 internal constant WEI_PERCENT_PRECISION = 10**20;
 
+    int256 internal constant sWEI_PRECISION = 10**18;
+
     string public name;
     string public symbol;
     uint8 public decimals;

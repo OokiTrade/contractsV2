@@ -149,7 +149,7 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
     }
 
     // ***** NOTE: Reentrancy is allowed here to allow flashloan use cases *****
-    function borrow(
+    function _borrow(
         bytes32 loanId,                 // 0 if new loan
         uint256 withdrawAmount,
         uint256 initialLoanDuration,    // duration in seconds
@@ -158,11 +158,10 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
         address borrower,
         address receiver,
         bytes memory /*loanDataBytes*/) // arbitrary order data (for future use)
-        public
-        payable
+        internal
         returns (uint256, uint256) // returns new principal and new collateral added to loan
     {
-        (uint256 newPrincipal, uint256 newCollateral) = super.borrow(
+        (uint256 newPrincipal, uint256 newCollateral) = super._borrow(
             loanId,
             withdrawAmount,
             initialLoanDuration,
@@ -178,9 +177,9 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
         return (newPrincipal, newCollateral);
     }
 
-    // Called to borrow and immediately get into a positions
+    // Called to borrow and immediately get into a position
     // ***** NOTE: Reentrancy is allowed here to allow flashloan use cases *****
-    function marginTrade(
+    function _marginTrade(
         bytes32 loanId,                 // 0 if new loan
         uint256 leverageAmount,
         uint256 loanTokenSent,
@@ -188,11 +187,10 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
         address collateralToken,
         address trader,
         bytes memory loanDataBytes)     // arbitrary order data
-        public
-        payable
+        internal
         returns (uint256, uint256) // returns new principal and new collateral added to trade
     {
-        (uint256 newPrincipal, uint256 newCollateral) = super.marginTrade(
+        (uint256 newPrincipal, uint256 newCollateral) = super._marginTrade(
             loanId,
             leverageAmount,
             loanTokenSent,

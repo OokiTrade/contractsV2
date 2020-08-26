@@ -12,7 +12,7 @@ import "../../../feeds/IPriceFeeds.sol";
 import "../../../testhelpers/TestToken.sol";
 
 
-contract SwapsImplLocal is State, ISwapsImpl {
+contract SwapsImplTestnets is State, ISwapsImpl {
     using SafeERC20 for IERC20;
 
     function dexSwap(
@@ -40,16 +40,20 @@ contract SwapsImplLocal is State, ISwapsImpl {
             sourceTokenAmountUsed = minSourceTokenAmount;
             destTokenAmountReceived = minSourceTokenAmount
                 .mul(tradeRate)
-                .div(precision);
+                .div(precision)
+                .mul(1000) // inject a little swap slippage
+                .div(1005);
         } else {
             destTokenAmountReceived = requiredDestTokenAmount;
             sourceTokenAmountUsed = requiredDestTokenAmount
                 .mul(precision)
-                .div(tradeRate);
-            require(sourceTokenAmountUsed <= minSourceTokenAmount, "destAmount too great");
+                .div(tradeRate)
+                .mul(1005) // inject a little swap slippage
+                .div(1000);
+            require(sourceTokenAmountUsed <= maxSourceTokenAmount, "destAmount too great");
         }
 
-        TestToken(sourceTokenAddress).burn(address(this), sourceTokenAmountUsed);
+        TestToken(sourceTokenAddress).burn(sourceTokenAmountUsed);
         TestToken(destTokenAddress).mint(address(this), destTokenAmountReceived);
 
         if (returnToSenderAddress != address(this)) {
@@ -71,13 +75,39 @@ contract SwapsImplLocal is State, ISwapsImpl {
         view
         returns (uint256)
     {
-        (uint256 sourceToDestRate, uint256 sourceToDestPrecision) = IPriceFeeds(priceFeeds).queryRate(
+        address _priceFeeds = priceFeeds;
+        if (_priceFeeds == address(0)) {
+            //keccak256("TestNet_localPriceFeeds")
+            assembly {
+                _priceFeeds := sload(0x42b587029048e5d48be95db5da189bcafe09be3a4fbb99206a1c8f4ced7d89b4)
+            }
+        }
+        (uint256 expectedRate,) = IPriceFeeds(_priceFeeds).queryRate(
             sourceTokenAddress,
             destTokenAddress
         );
 
-        return sourceTokenAmount
-            .mul(sourceToDestRate)
-            .div(sourceToDestPrecision);
+        return expectedRate;
+    }
+
+    function localPriceFeed()
+        external
+        view
+        returns (address feed)
+    {
+        assembly {
+            feed := sload(0x42b587029048e5d48be95db5da189bcafe09be3a4fbb99206a1c8f4ced7d89b4)
+        }
+    }
+
+    function setLocalPriceFeedContract(
+        address newContract)
+        external
+        onlyOwner
+    {
+        //keccak256("TestNet_localPriceFeeds")
+        assembly {
+            sstore(0x42b587029048e5d48be95db5da189bcafe09be3a4fbb99206a1c8f4ced7d89b4, newContract)
+        }
     }
 }

@@ -10,6 +10,7 @@ import "../contracts/core/State.sol";
 import "../contracts/events/ProtocolSettingsEvents.sol";
 import "../contracts/events/LoanSettingsEvents.sol";
 import "../contracts/events/LoanOpeningsEvents.sol";
+import "../contracts/events/LoanMaintenanceEvents.sol";
 import "../contracts/events/LoanClosingsEvents.sol";
 import "../contracts/events/FeesEvents.sol";
 import "../contracts/events/SwapsEvents.sol";
@@ -20,6 +21,7 @@ contract IBZx is
     ProtocolSettingsEvents,
     LoanSettingsEvents,
     LoanOpeningsEvents,
+    LoanMaintenanceEvents,
     LoanClosingsEvents,
     SwapsEvents {
 
@@ -99,25 +101,22 @@ contract IBZx is
         external;
 
     function withdrawLendingFees(
-        address token,
-        address receiver,
-        uint256 amount)
+        address[] calldata tokens,
+        address receiver)
         external
-        returns (bool);
+        returns (uint256[] memory amounts);
 
     function withdrawTradingFees(
-        address token,
-        address receiver,
-        uint256 amount)
+        address[] calldata tokens,
+        address receiver)
         external
-        returns (bool);
+        returns (uint256[] memory amounts);
 
     function withdrawBorrowingFees(
-        address token,
-        address receiver,
-        uint256 amount)
+        address[] calldata tokens,
+        address receiver)
         external
-        returns (bool);
+        returns (uint256[] memory amounts);
 
     function withdrawProtocolToken(
         address receiver,
@@ -280,6 +279,53 @@ contract IBZx is
             address withdrawToken
         );
 
+    ////// Loan Closings With Gas Token //////
+
+    function liquidateWithGasToken(
+        bytes32 loanId,
+        address receiver,
+        address gasTokenUser,
+        uint256 closeAmount) // denominated in loanToken
+        external
+        payable
+        returns (
+            uint256 loanCloseAmount,
+            uint256 seizedAmount,
+            address seizedToken
+        );
+
+    function rolloverWithGasToken(
+        bytes32 loanId,
+        address gasTokenUser,
+        bytes calldata /*loanDataBytes*/) // for future use
+        external;
+
+    function closeWithDepositWithGasToken(
+        bytes32 loanId,
+        address receiver,
+        address gasTokenUser,
+        uint256 depositAmount) // denominated in loanToken
+        public
+        payable
+        returns (
+            uint256 loanCloseAmount,
+            uint256 withdrawAmount,
+            address withdrawToken
+        );
+
+    function closeWithSwapWithGasToken(
+        bytes32 loanId,
+        address receiver,
+        address gasTokenUser,
+        uint256 swapAmount, // denominated in collateralToken
+        bool returnTokenIsCollateral, // true: withdraws collateralToken, false: withdraws loanToken
+        bytes memory /*loanDataBytes*/) // for future use
+        public
+        returns (
+            uint256 loanCloseAmount,
+            uint256 withdrawAmount,
+            address withdrawToken
+        );
 
     ////// Loan Maintenance //////
 
@@ -296,27 +342,35 @@ contract IBZx is
         external
         returns (uint256 actualWithdrawAmount);
 
-    function extendLoanByInterest(
+    function withdrawAccruedInterest(
+        address loanToken)
+        external;
+
+    function extendLoanDuration(
         bytes32 loanId,
-        address payer,
         uint256 depositAmount,
         bool useCollateral,
-        bytes calldata loanDataBytes)
+        bytes calldata /*loanDataBytes*/) // for future use
         external
         payable
         returns (uint256 secondsExtended);
 
-    function reduceLoanByInterest(
+    function reduceLoanDuration(
         bytes32 loanId,
         address receiver,
         uint256 withdrawAmount)
         external
         returns (uint256 secondsReduced);
 
-    function withdrawAccruedInterest(
-        address loanToken)
-        external;
-
+    /// @dev Gets current lender interest data totals for all loans with a specific oracle and interest token
+    /// @param lender The lender address
+    /// @param loanToken The loan token address
+    /// @return interestPaid The total amount of interest that has been paid to a lender so far
+    /// @return interestPaidDate The date of the last interest pay out, or 0 if no interest has been withdrawn yet
+    /// @return interestOwedPerDay The amount of interest the lender is earning per day
+    /// @return interestUnPaid The total amount of interest the lender is owned and not yet withdrawn
+    /// @return interestFeePercent The fee retained by the protocol before interest is paid to the lender
+    /// @return principalTotal The total amount of outstading principal the lender has loaned
     function getLenderInterestData(
         address lender,
         address loanToken)
@@ -330,6 +384,13 @@ contract IBZx is
             uint256 interestFeePercent,
             uint256 principalTotal);
 
+
+    /// @dev Gets current interest data for a loan
+    /// @param loanId A unique id representing the loan
+    /// @return loanToken The loan token that interest is paid in
+    /// @return interestOwedPerDay The amount of interest the borrower is paying per day
+    /// @return interestDepositTotal The total amount of interest the borrower has deposited
+    /// @return interestDepositRemaining The amount of deposited interest that is not yet owed to a lender
     function getLoanInterestData(
         bytes32 loanId)
         external
@@ -340,29 +401,16 @@ contract IBZx is
             uint256 interestDepositTotal,
             uint256 interestDepositRemaining);
 
-    struct LoanReturnData {
-        bytes32 loanId;
-        address loanToken;
-        address collateralToken;
-        uint256 principal;
-        uint256 collateral;
-        uint256 interestOwedPerDay;
-        uint256 interestDepositRemaining;
-        uint256 startRate; // collateralToLoanRate
-        uint256 startMargin;
-        uint256 maintenanceMargin;
-        uint256 currentMargin;
-        uint256 maxLoanTerm;
-        uint256 endTimestamp;
-        uint256 maxLiquidatable;
-        uint256 maxSeizable;
-    }
-
+    // Only returns data for loans that are active
+    // All(0): all loans
+    // Margin(1): margin trade loans
+    // NonMargin(2): non-margin trade loans
+    // only active loans are returned
     function getUserLoans(
         address user,
         uint256 start,
         uint256 count,
-        uint256 loanType,
+        LoanType loanType,
         bool isLender,
         bool unsafeOnly)
         external
@@ -384,16 +432,38 @@ contract IBZx is
         returns (LoanReturnData[] memory loansData);
 
 
-    ////// Protocol Migration //////
+    ////// Swap External //////
 
-    function setLegacyOracles(
-        address[] calldata refs,
-        address[] calldata oracles)
-        external;
+    function swapExternal(
+        address sourceToken,
+        address destToken,
+        address receiver,
+        address returnToSender,
+        uint256 sourceTokenAmount,
+        uint256 requiredDestTokenAmount,
+        bytes calldata swapData)
+        external
+        payable
+        returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed);
 
-    function getLegacyOracle(
-        address ref)
+    function swapExternalWithGasToken(
+        address sourceToken,
+        address destToken,
+        address receiver,
+        address returnToSender,
+        address gasTokenUser,
+        uint256 sourceTokenAmount,
+        uint256 requiredDestTokenAmount,
+        bytes calldata swapData)
+        external
+        payable
+        returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed);
+
+    function getSwapExpectedReturn(
+        address sourceToken,
+        address destToken,
+        uint256 sourceTokenAmount)
         external
         view
-        returns (address);
+        returns (uint256);
 }

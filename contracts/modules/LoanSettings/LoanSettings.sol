@@ -6,8 +6,8 @@
 pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
-import "../core/State.sol";
-import "../events/LoanSettingsEvents.sol";
+import "../../core/State.sol";
+import "../../events/LoanSettingsEvents.sol";
 
 
 contract LoanSettings is State, LoanSettingsEvents {
@@ -107,7 +107,7 @@ contract LoanSettings is State, LoanSettingsEvents {
                 // handles the overflow in the case of start == 0
                 break;
             }
-            loanParamsList[count--] = set.get(i);
+            loanParamsList[--count] = set.get(i);
         }
     }
 

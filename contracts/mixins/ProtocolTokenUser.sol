@@ -20,22 +20,22 @@ contract ProtocolTokenUser is State {
     {
         uint256 withdrawAmount = amount;
 
-        uint256 balance = protocolTokenHeld;
-        if (withdrawAmount > balance) {
-            withdrawAmount = balance;
+        uint256 tokenBalance = protocolTokenHeld;
+        if (withdrawAmount > tokenBalance) {
+            withdrawAmount = tokenBalance;
         }
         if (withdrawAmount == 0) {
-            return (protocolTokenAddress, false);
+            return (vbzrxTokenAddress, false);
         }
 
-        protocolTokenHeld = balance
+        protocolTokenHeld = tokenBalance
             .sub(withdrawAmount);
 
-        IERC20(protocolTokenAddress).safeTransfer(
+        IERC20(vbzrxTokenAddress).safeTransfer(
             receiver,
             withdrawAmount
         );
 
-        return (protocolTokenAddress, true);
+        return (vbzrxTokenAddress, true);
     }
 }

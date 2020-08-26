@@ -7,6 +7,7 @@ pragma solidity 0.5.17;
 
 
 contract LoanSettingsEvents {
+
     event LoanParamsSetup(
         bytes32 indexed id,
         address owner,
