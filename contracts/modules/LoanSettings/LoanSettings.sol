@@ -107,7 +107,7 @@ contract LoanSettings is State, LoanSettingsEvents {
                 // handles the overflow in the case of start == 0
                 break;
             }
-            loanParamsList[count--] = set.get(i);
+            loanParamsList[--count] = set.get(i);
         }
     }
 
