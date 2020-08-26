@@ -147,6 +147,9 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         require(collateralTokenSent != 0 || loanId != 0, "8");
         require(collateralTokenAddress != address(0) || msg.value != 0 || loanId != 0, "9");
 
+        // ensures authorized use of existing loan
+        require(loanId == 0 || msg.sender == borrower, "13");
+
         if (collateralTokenAddress == address(0)) {
             collateralTokenAddress = wethToken;
         }
@@ -201,6 +204,9 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         returns (uint256, uint256) // returns new principal and new collateral added to trade
     {
         _checkPause();
+
+        // ensures authorized use of existing loan
+        require(loanId == 0 || msg.sender == trader, "13");
 
         if (collateralTokenAddress == address(0)) {
             collateralTokenAddress = wethToken;
