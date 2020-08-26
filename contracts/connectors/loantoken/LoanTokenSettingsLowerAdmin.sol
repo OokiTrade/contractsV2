@@ -45,7 +45,6 @@ contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage {
         bytes32[] memory loanParamsIdList;
         address _loanTokenAddress = loanTokenAddress;
 
-        // setup torque loan params
         for (uint256 i = 0; i < loanParamsList.length; i++) {
             loanParamsList[i].loanToken = _loanTokenAddress;
             loanParamsList[i].maxLoanTerm = areTorqueLoans ? 0 : 28 days;

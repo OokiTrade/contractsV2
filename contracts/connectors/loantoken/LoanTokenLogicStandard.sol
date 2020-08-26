@@ -399,7 +399,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         int256 profitDiff = int256(_currentPrice)
             .sub(int256(_checkpointPrice))
             .mul(int256(_balance))
-            .div(int256(WEI_PRECISION))
+            .div(sWEI_PRECISION)
             .add(profitSoFar);
         /*if (_currentPrice > _checkpointPrice) {
             profitDiff = _balance
