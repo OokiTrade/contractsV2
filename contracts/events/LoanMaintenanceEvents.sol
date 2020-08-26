@@ -39,7 +39,7 @@ contract LoanMaintenanceEvents {
         uint256 newEndTimestamp
     );
 
-    enum LoanTypes {
+    enum LoanType {
         All,
         Margin,
         NonMargin

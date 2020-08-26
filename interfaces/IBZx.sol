@@ -410,7 +410,7 @@ contract IBZx is
         address user,
         uint256 start,
         uint256 count,
-        LoanTypes loanType,
+        LoanType loanType,
         bool isLender,
         bool unsafeOnly)
         external
