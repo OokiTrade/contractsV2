@@ -15,8 +15,8 @@
   },
   "devDependencies": {
     "husky": "^4.2.5",
-    "prettier": "^2.0.5",
-    "prettier-plugin-solidity": "^1.0.0-alpha.49",
+    "prettier": "^2.1.1",
+    "prettier-plugin-solidity": "^1.0.0-alpha.56",
     "solhint": "^3.0.0",
     "solhint-plugin-prettier": "^0.0.4"
   },
