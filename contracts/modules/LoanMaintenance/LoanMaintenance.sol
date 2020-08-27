@@ -466,7 +466,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             if (loanData.loanId == 0)
                 continue;
 
-            loansData[--idx] = loanData;
+            loansData[count-(idx--)] = loanData;
         }
 
         if (idx > 0) {
@@ -521,7 +521,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             if (loanData.loanId == 0)
                 continue;
 
-            loansData[--idx] = loanData;
+            loansData[count-(idx--)] = loanData;
         }
 
         if (idx > 0) {
