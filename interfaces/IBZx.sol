@@ -67,23 +67,17 @@ contract IBZx is
 
 	function setFeesController(address newController) external;
 
-	function withdrawLendingFees(
-		address token,
-		address receiver,
-		uint256 amount
-	) external returns (bool);
+	function withdrawLendingFees(address[] calldata tokens, address receiver)
+		external
+		returns (uint256[] memory amounts);
 
-	function withdrawTradingFees(
-		address token,
-		address receiver,
-		uint256 amount
-	) external returns (bool);
+	function withdrawTradingFees(address[] calldata tokens, address receiver)
+		external
+		returns (uint256[] memory amounts);
 
-	function withdrawBorrowingFees(
-		address token,
-		address receiver,
-		uint256 amount
-	) external returns (bool);
+	function withdrawBorrowingFees(address[] calldata tokens, address receiver)
+		external
+		returns (uint256[] memory amounts);
 
 	function withdrawProtocolToken(address receiver, uint256 amount)
 		external
@@ -341,7 +335,7 @@ contract IBZx is
 		address user,
 		uint256 start,
 		uint256 count,
-		LoanTypes loanType,
+		LoanType loanType,
 		bool isLender,
 		bool unsafeOnly
 	) external view returns (LoanReturnData[] memory loansData);
