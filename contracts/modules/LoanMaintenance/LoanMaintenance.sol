@@ -453,6 +453,11 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         LoanReturnData memory loanData;
         loansData = new LoanReturnData[](idx);
         for (uint256 i = --end; i >= start; i--) {
+            if (i > end) {
+                // handles the overflow in the case of start == 0
+                break;
+            }
+
             loanData = _getLoan(
                 set.get(i), // loanId
                 loanType,
@@ -462,10 +467,6 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
                 continue;
 
             loansData[count-(idx--)] = loanData;
-
-            if (i == 0) {
-                break;
-            }
         }
 
         if (idx != 0) {
@@ -507,6 +508,11 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         LoanReturnData memory loanData;
         loansData = new LoanReturnData[](idx);
         for (uint256 i = --end; i >= start; i--) {
+            if (i > end) {
+                // handles the overflow in the case of start == 0
+                break;
+            }
+
             loanData = _getLoan(
                 activeLoansSet.get(i), // loanId
                 LoanType.All,
@@ -516,10 +522,6 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
                 continue;
 
             loansData[count-(idx--)] = loanData;
-
-            if (i == 0) {
-                break;
-            }
         }
 
         if (idx != 0) {
