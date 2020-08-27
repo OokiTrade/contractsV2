@@ -315,12 +315,6 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         return true;
     }
 
-    event Debug(
-        bytes32 slot,
-        int256 one,
-        uint256 two
-    );
-
     function _updateCheckpoints(
         address _user,
         uint256 _oldBalance,
@@ -333,30 +327,22 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         );
 
         int256 _currentProfit;
-        if (_oldBalance != 0) {
+        if (_newBalance == 0) {
+            _currentPrice = 0;
+        } else if (_oldBalance != 0) {
             _currentProfit = _profitOf(
                 slot,
                 _oldBalance,
                 _currentPrice,
                 checkpointPrices_[_user]
             );
-
-            assembly {
-                sstore(slot, _currentProfit)
-            }
         }
 
-        if (_newBalance == 0) {
-            _currentPrice = 0;
+        assembly {
+            sstore(slot, _currentProfit)
         }
 
         checkpointPrices_[_user] = _currentPrice;
-
-        emit Debug(
-            slot,
-            _currentProfit,
-            _currentPrice
-        );
     }
 
     /* Public View functions */
@@ -667,10 +653,9 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
             IWeth(wethToken).deposit.value(depositAmount)();
         }
 
-        uint256 oldBalance = balances[receiver];
         _updateCheckpoints(
             receiver,
-            oldBalance,
+            balances[receiver],
             _mint(receiver, mintAmount, depositAmount, currentPrice), // newBalance
             currentPrice
         );
@@ -699,10 +684,9 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         loanAmountPaid = loanAmountOwed;
         require(loanAmountPaid <= loanAmountAvailableInContract, "37");
 
-        uint256 oldBalance = balances[msg.sender];
         _updateCheckpoints(
             msg.sender,
-            oldBalance,
+            balances[msg.sender],
             _burn(msg.sender, burnAmount, loanAmountPaid, currentPrice), // newBalance
             currentPrice
         );
