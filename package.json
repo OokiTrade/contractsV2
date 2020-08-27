@@ -15,17 +15,20 @@
   },
   "devDependencies": {
     "husky": "^4.2.5",
-    "solhint": "^3.0.0",
-    "solhint-plugin-prettier": "^0.0.4"
+    "prettier": "^1.19.1",
+    "prettier-plugin-solidity": "^1.0.0-alpha.56",
+    "solhint": "^3.2.0",
+    "solhint-plugin-prettier": "0.0.4"
   },
   "scripts": {
     "analyize-contracts": "slither .",
     "lint-contracts": "solhint contracts/**/*.sol",
-    "test": "brownie test"
+    "test": "brownie test",
+    "prettier:solidity": "./node_modules/.bin/prettier --write contracts/**/*.sol"
   },
   "husky": {
     "hooks": {
-      "pre-commit": "yarn analyize-contracts && yarn lint-contracts && yarn test"
+      "pre-commit1": "yarn analyize-contracts && yarn lint-contracts && yarn test"
     }
   }
 }
