@@ -103,11 +103,11 @@ contract LoanSettings is State, LoanSettingsEvents {
 
         loanParamsList = new bytes32[](count);
         for (uint256 i = --end; i >= start; i--) {
-            if (i > end) {
-                // handles the overflow in the case of start == 0
+            loanParamsList[--count] = set.get(i);
+
+            if (i == 0) {
                 break;
             }
-            loanParamsList[--count] = set.get(i);
         }
     }
 
