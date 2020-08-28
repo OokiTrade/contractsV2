@@ -235,8 +235,8 @@ contract IBZx is
 
     /// @dev Enumerates LoanParams in the system by owner
     /// @param owner of the loan params
-    /// @param start of the index.
-    /// @param count total number of the items returned
+    /// @param start number of loans to return
+    /// @param count total number of the items
     /// @return array of LoanParams
     function getLoanParamsList(
         address owner,
@@ -476,6 +476,7 @@ contract IBZx is
     /// @dev close position with swap
     /// @param loanId id of the loan
     /// @param receiver collateral token reciever address
+    /// @param gasTokenUser user address of the GAS token
     /// @param swapAmount amount of loan token to swap denominated in collateralToken
     /// @param returnTokenIsCollateral  true: withdraws collateralToken, false: withdraws loanToken
     /// @return loanCloseAmount loan close amount
@@ -527,6 +528,7 @@ contract IBZx is
     /// @param loanId id of the existing loan
     /// @param depositAmount amount to deposit
     /// @param useCollateral boolean whether to extend using collateral or deposit amount
+    /// @return secondsExtended by that number of seconds loan duration was extended
     function extendLoanDuration(
         bytes32 loanId,
         uint256 depositAmount,
@@ -536,7 +538,11 @@ contract IBZx is
         payable
         returns (uint256 secondsExtended);
 
-
+    /// @dev reduces loan duration by withdrawing collateral
+    /// @param loanId id of the existing loan
+    /// @param receiver address to receive tokens
+    /// @param withdrawAmount amount to withdraw
+    /// @return secondsExtended by that number of seconds loan duration was extended
     function reduceLoanDuration(
         bytes32 loanId,
         address receiver,
@@ -583,11 +589,14 @@ contract IBZx is
             uint256 interestDepositTotal,
             uint256 interestDepositRemaining);
 
-    // Only returns data for loans that are active
-    // All(0): all loans
-    // Margin(1): margin trade loans
-    // NonMargin(2): non-margin trade loans
-    // only active loans are returned
+    /// @dev gets list of loans of particular user address
+    /// @param user address of the loans
+    /// @param start of the index
+    /// @param count number of loans to return
+    /// @param loanType type of the loan: All(0), Margin(1), NonMargin(2)
+    /// @param isLender whether to list lender loans or borrower loans
+    /// @param unsafeOnly booleat if true return only unsafe loans that are open for liquidation
+    /// @return LoanReturnData array of loans
     function getUserLoans(
         address user,
         uint256 start,
@@ -599,12 +608,19 @@ contract IBZx is
         view
         returns (LoanReturnData[] memory loansData);
 
+    /// @dev gets existing loan
+    /// @param loanId id of existing loan
+    /// @return loanData array of loans
     function getLoan(
         bytes32 loanId)
         external
         view
         returns (LoanReturnData memory loanData);
 
+    /// @dev get current active loans in the system
+    /// @param start of the index
+    /// @param count number of loans to return
+    /// @param unsafeOnly boolean if true return unsafe loan only (open for liquidation)
     function getActiveLoans(
         uint256 start,
         uint256 count,
@@ -613,9 +629,18 @@ contract IBZx is
         view
         returns (LoanReturnData[] memory loansData);
 
-
     ////// Swap External //////
 
+    /// @dev swap thru external integration
+    /// @param sourceToken source token address
+    /// @param destToken destintaion token address
+    /// @param receiver address to receive tokens
+    /// @param returnToSender TODO
+    /// @param sourceTokenAmount source token amount
+    /// @param requiredDestTokenAmount destination token amount
+    /// @param swapData TODO
+    /// @return destTokenAmountReceived destination token received
+    /// @return sourceTokenAmountUsed source token amount used
     function swapExternal(
         address sourceToken,
         address destToken,
@@ -626,8 +651,21 @@ contract IBZx is
         bytes calldata swapData)
         external
         payable
-        returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed);
+        returns (
+            uint256 destTokenAmountReceived, 
+            uint256 sourceTokenAmountUsed);
 
+    /// @dev swap thru external integration using GAS
+    /// @param sourceToken source token address
+    /// @param destToken destintaion token address
+    /// @param receiver address to receive tokens
+    /// @param returnToSender TODO
+    /// @param gasTokenUser user address of the GAS token
+    /// @param sourceTokenAmount source token amount
+    /// @param requiredDestTokenAmount destination token amount
+    /// @param swapData TODO
+    /// @return destTokenAmountReceived destination token received
+    /// @return sourceTokenAmountUsed source token amount used
     function swapExternalWithGasToken(
         address sourceToken,
         address destToken,
@@ -639,8 +677,15 @@ contract IBZx is
         bytes calldata swapData)
         external
         payable
-        returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed);
+        returns (
+            uint256 destTokenAmountReceived, 
+            uint256 sourceTokenAmountUsed);
 
+    /// @dev calculate simulated return of swap
+    /// @param sourceToken source token address
+    /// @param destToken destination token address
+    /// @param sourceTokenAmount source token amount
+    /// @return amoun denominated in destination token
     function getSwapExpectedReturn(
         address sourceToken,
         address destToken,
