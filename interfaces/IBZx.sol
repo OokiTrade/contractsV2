@@ -206,22 +206,34 @@ contract IBZx is
 
     ////// Loan Settings //////
 
+    /// @dev creates new loan param settings
+    /// @param loanParamsList array of LoanParams
+    /// @return array of loan ids created
     function setupLoanParams(
         LoanParams[] calldata loanParamsList)
         external
         returns (bytes32[] memory loanParamsIdList);
 
-    // Deactivates LoanParams for future loans. Active loans using it are unaffected.
+    /// @dev Deactivates LoanParams for future loans. Active loans using it are unaffected.
+    /// @param loanParamsIdList array of loan ids
     function disableLoanParams(
         bytes32[] calldata loanParamsIdList)
         external;
 
+    /// @dev gets array of LoanParams by given ids
+    /// @param loanParamsIdList array of loan ids
+    /// @return array of LoanParams
     function getLoanParams(
         bytes32[] calldata loanParamsIdList)
         external
         view
         returns (LoanParams[] memory loanParamsList);
 
+    /// @dev Enumerates LoanParams in the system by owner
+    /// @param owner of the loan params
+    /// @param start of the index.
+    /// @param count total number of the items returned
+    /// @return array of LoanParams
     function getLoanParamsList(
         address owner,
         uint256 start,
@@ -230,6 +242,9 @@ contract IBZx is
         view
         returns (bytes32[] memory loanParamsList);
 
+    /// @dev returns total loan principal for token address
+    /// @param lender address
+    /// @param loanToken address
     function getTotalPrincipal(
         address lender,
         address loanToken)
