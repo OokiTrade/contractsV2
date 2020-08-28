@@ -53,7 +53,7 @@ contract LoanMaintenanceEvents {
         uint256 principal; // principal amount of the loan
         uint256 collateral; // collateral amount of the loan
         uint256 interestOwedPerDay; // interest owned per day
-        uint256 interestDepositRemaining; // 
+        uint256 interestDepositRemaining; // TODO
         uint256 startRate; // collateralToLoanRate
         uint256 startMargin; // margin with which loan was open
         uint256 maintenanceMargin; // maintenance margin
