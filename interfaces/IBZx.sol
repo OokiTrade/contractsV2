@@ -38,7 +38,8 @@ contract IBZx is
         address target)
         external;
 
-    /// @dev updates all proxy modules addreses and functions signatures. sigsArr and targetsArr should be of equal length
+    /// @dev updates all proxy modules addreses and functions signatures. 
+    /// sigsArr and targetsArr should be of equal length
     /// @param sigsArr array of function signatures
     /// @param targetsArr array of target proxy module addresses
     /// @return boolean success
@@ -110,7 +111,8 @@ contract IBZx is
         uint256 newValue)
         external;
 
-    /// @dev sets liquidation inncetive percent. This is the profit percent that liquidator gets in the process of liquidating.
+    /// @dev sets liquidation inncetive percent. This is the profit percent 
+    /// that liquidator gets in the process of liquidating.
     /// @param newValue liquidation inncetive amount
     function setLiquidationIncentivePercent(
         uint256 newValue)
@@ -255,33 +257,55 @@ contract IBZx is
 
     ////// Loan Openings //////
 
+    /// @dev This is THE function that borrows or trades on the protocol
+    /// @param loanParamsId id of the LoanParam created beforehand by setupLoanParams function
+    /// @param loanId id of existing loan, if 0, start a new loan
+    /// @param isTorqueLoan boolean whether it is toreque or non torque loan
+    /// @param initialMargin in WEI_PERCENT_PRECISION
+    /// @param sentAddresses array of size 4:
+    ///         lender: must match loan if loanId provided
+    ///         borrower: must match loan if loanId provided
+    ///         receiver: receiver of funds (address(0) assumes borrower address)
+    ///         manager: delegated manager of loan unless address(0)
+    /// @param sentValues
+    ///         newRate: new loan interest rate
+    ///         newPrincipal: new loan size (borrowAmount + any borrowed interest)
+    ///         torqueInterest: new amount of interest to escrow for Torque loan (determines initial loan length)
+    ///         loanTokenReceived: total loanToken deposit (amount not sent to borrower in the case of Torque loans)
+    ///         collateralTokenReceived: total collateralToken deposit
+    /// @param loanDataBytes required when sending ether
+    /// @return principal of the loan and collateral amount
     function borrowOrTradeFromPool(
         bytes32 loanParamsId,
-        bytes32 loanId, // if 0, start a new loan
+        bytes32 loanId,
         bool isTorqueLoan,
         uint256 initialMargin,
         address[4] calldata sentAddresses,
-            // lender: must match loan if loanId provided
-            // borrower: must match loan if loanId provided
-            // receiver: receiver of funds (address(0) assumes borrower address)
-            // manager: delegated manager of loan unless address(0)
         uint256[5] calldata sentValues,
-            // newRate: new loan interest rate
-            // newPrincipal: new loan size (borrowAmount + any borrowed interest)
-            // torqueInterest: new amount of interest to escrow for Torque loan (determines initial loan length)
-            // loanTokenReceived: total loanToken deposit (amount not sent to borrower in the case of Torque loans)
-            // collateralTokenReceived: total collateralToken deposit
         bytes calldata loanDataBytes)
         external
         payable
-        returns (uint256);
+        returns (uint256 newPrincipal, 
+                uint256 newCollateral
+        );
 
+    /// @dev sets/disables/enables the delegated manager for the loan
+    /// @param loanId
+    /// @param delegated
+    /// @param toggle
     function setDelegatedManager(
         bytes32 loanId,
         address delegated,
         bool toggle)
         external;
 
+    /// @dev estimates margin exposure of the position
+    /// @param loanToken,
+    /// @param collateralToken
+    /// @param loanTokenSent
+    /// @param collateralTokenSent
+    /// @param interesetRate
+    /// @param newPrincipal
     function getEstimatedMarginExposure(
         address loanToken,
         address collateralToken,
