@@ -289,8 +289,7 @@ contract IBZx is
         external
         payable
         returns (uint256 newPrincipal, 
-                uint256 newCollateral
-        );
+                uint256 newCollateral);
 
     /// @dev sets/disables/enables the delegated manager for the loan
     /// @param loanId id of the loan
@@ -374,8 +373,7 @@ contract IBZx is
         returns (
             uint256 loanCloseAmount,
             uint256 seizedAmount,
-            address seizedToken
-        );
+            address seizedToken);
 
     /// @dev rollover loan
     /// @param loanId id of the loan
@@ -401,8 +399,7 @@ contract IBZx is
         returns (
             uint256 loanCloseAmount,
             uint256 withdrawAmount,
-            address withdrawToken
-        );
+            address withdrawToken);
 
     /// @dev close position with swap
     /// @param loanId id of the loan
@@ -423,8 +420,7 @@ contract IBZx is
         returns (
             uint256 loanCloseAmount,
             uint256 withdrawAmount,
-            address withdrawToken
-        );
+            address withdrawToken);
 
     ////// Loan Closings With Gas Token //////
 
@@ -446,8 +442,7 @@ contract IBZx is
         returns (
             uint256 loanCloseAmount,
             uint256 seizedAmount,
-            address seizedToken
-        );
+            address seizedToken);
 
     /// @dev rollover loan
     /// @param loanId id of the loan
@@ -476,17 +471,16 @@ contract IBZx is
         returns (
             uint256 loanCloseAmount,
             uint256 withdrawAmount,
-            address withdrawToken
-        );
+            address withdrawToken);
 
     /// @dev close position with swap
     /// @param loanId id of the loan
     /// @param receiver collateral token reciever address
     /// @param swapAmount amount of loan token to swap denominated in collateralToken
     /// @param returnTokenIsCollateral  true: withdraws collateralToken, false: withdraws loanToken
-    /// @return loanCloseAmount - loan close amount
-    ///         withdrawAmount - loan token withdraw amount
-    ///         withdrawToken - loan token address
+    /// @return loanCloseAmount loan close amount
+    /// @return withdrawAmount loan token withdraw amount
+    /// @return withdrawToken loan token address
     function closeWithSwapWithGasToken(
         bytes32 loanId,
         address receiver,
@@ -498,17 +492,24 @@ contract IBZx is
         returns (
             uint256 loanCloseAmount,
             uint256 withdrawAmount,
-            address withdrawToken
-        );
+            address withdrawToken);
 
     ////// Loan Maintenance //////
 
+    /// @dev deposit collateral to existing loan
+    /// @param loanId existing loan id
+    /// @param depositAmount amount to deposit which must match msg.value if ether is sent
     function depositCollateral(
         bytes32 loanId,
-        uint256 depositAmount) // must match msg.value if ether is sent
+        uint256 depositAmount)
         external
         payable;
 
+    /// @dev withdraw collateral from existing loan
+    /// @param loanId existing lona id
+    /// @param receiver address of withdrawn tokens
+    /// @param withdrawAmount amount to withdraw
+    /// @return actualWithdrawAmount actual amount withdrawn
     function withdrawCollateral(
         bytes32 loanId,
         address receiver,
@@ -516,10 +517,16 @@ contract IBZx is
         external
         returns (uint256 actualWithdrawAmount);
 
+    /// @dev withdraw accrued interest rate for a loan given token address
+    /// @param loanToken loan token address
     function withdrawAccruedInterest(
         address loanToken)
         external;
 
+    /// @dev extends loan duration by depositing more collateral
+    /// @param loanId id of the existing loan
+    /// @param depositAmount amount to deposit
+    /// @param useCollateral boolean whether to extend using collateral or deposit amount
     function extendLoanDuration(
         bytes32 loanId,
         uint256 depositAmount,
@@ -528,6 +535,7 @@ contract IBZx is
         external
         payable
         returns (uint256 secondsExtended);
+
 
     function reduceLoanDuration(
         bytes32 loanId,
