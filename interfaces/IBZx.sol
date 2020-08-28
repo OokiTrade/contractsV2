@@ -144,7 +144,7 @@ contract IBZx is
     /// @dev withdraws lending fees to receiver. Only can be called by feesController address
     /// @param tokens array of token addresses.
     /// @param receiver fees receiver address
-    /// @return amounts withdrawn
+    /// @return array of amounts withdrawn
     function withdrawLendingFees(
         address[] calldata tokens,
         address receiver)
@@ -175,6 +175,8 @@ contract IBZx is
     /// @dev withdraw protocol token (BZRX) from vesting contract vBZRX
     /// @param receiver address of BZRX tokens claimed
     /// @param amount of BZRX token to be claimed. max is claimed if amount is greater than balance.
+    /// @return reward token address
+    /// @return success
     function withdrawProtocolToken(
         address receiver,
         uint256 amount)
@@ -247,6 +249,7 @@ contract IBZx is
     /// @dev returns total loan principal for token address
     /// @param lender address
     /// @param loanToken address
+    /// @return total principal of the loan
     function getTotalPrincipal(
         address lender,
         address loanToken)
@@ -267,7 +270,7 @@ contract IBZx is
     ///         borrower: must match loan if loanId provided
     ///         receiver: receiver of funds (address(0) assumes borrower address)
     ///         manager: delegated manager of loan unless address(0)
-    /// @param sentValues
+    /// @param sentValues array of size 5:
     ///         newRate: new loan interest rate
     ///         newPrincipal: new loan size (borrowAmount + any borrowed interest)
     ///         torqueInterest: new amount of interest to escrow for Torque loan (determines initial loan length)
@@ -290,22 +293,23 @@ contract IBZx is
         );
 
     /// @dev sets/disables/enables the delegated manager for the loan
-    /// @param loanId
-    /// @param delegated
-    /// @param toggle
+    /// @param loanId id of the loan
+    /// @param delegated delegated manager address
+    /// @param toggle boolean set enabled or disabled
     function setDelegatedManager(
         bytes32 loanId,
         address delegated,
         bool toggle)
         external;
 
-    /// @dev estimates margin exposure of the position
-    /// @param loanToken,
-    /// @param collateralToken
-    /// @param loanTokenSent
-    /// @param collateralTokenSent
-    /// @param interesetRate
-    /// @param newPrincipal
+    /// @dev estimates margin exposure for simulated position
+    /// @param loanToken address of the loan token
+    /// @param collateralToken address of collateral token
+    /// @param loanTokenSent amout of loan token sent
+    /// @param collateralTokenSent amount of collateral token sent
+    /// @param interestRate yearly interest rate
+    /// @param newPrincipal principal amount of the loan
+    /// @return estimated margin exposure amount
     function getEstimatedMarginExposure(
         address loanToken,
         address collateralToken,
@@ -317,6 +321,13 @@ contract IBZx is
         view
         returns (uint256);
 
+    /// @dev calculates required collateral for simulated position
+    /// @param loanToken address of loan token
+    /// @param collateralToken address of collateral token
+    /// @param newPrincipal principal amount of the loan
+    /// @param marginAmount margin amount of the loan
+    /// @param isTorqueLoan boolean torque or non torque loan
+    /// @return collateral amount required
     function getRequiredCollateral(
         address loanToken,
         address collateralToken,
@@ -327,6 +338,13 @@ contract IBZx is
         view
         returns (uint256 collateralAmountRequired);
 
+    /// @dev calculates borrow amount for simulated position
+    /// @param loanToken address of loan token
+    /// @param collateralToken address of collateral token
+    /// @param collateralTokenAmount amount of collateral token sent
+    /// @param marginAmount margin amount
+    /// @param isTorqueLoan boolean torque or non torque loan
+    /// @return possible borrow amount
     function getBorrowAmount(
         address loanToken,
         address collateralToken,
@@ -339,11 +357,18 @@ contract IBZx is
 
 
     ////// Loan Closings //////
-
+    
+    /// @dev liquidates unhealty loans
+    /// @param loanId id of the loan
+    /// @param receiver address receiving liquidated loan collateral
+    /// @param closeAmount amount to close denominated in loanToken
+    /// @return loanCoseAmount amount of the collateral token of the loan
+    /// @return seizedAmount sezied amount in the collateral token
+    /// @return seizedToken loan token address
     function liquidate(
         bytes32 loanId,
         address receiver,
-        uint256 closeAmount) // denominated in loanToken
+        uint256 closeAmount)
         external
         payable
         returns (
@@ -352,11 +377,21 @@ contract IBZx is
             address seizedToken
         );
 
+    /// @dev rollover loan
+    /// @param loanId id of the loan
+    /// @param loanDataBytes reserved for future use. 
     function rollover(
         bytes32 loanId,
         bytes calldata loanDataBytes)
         external;
 
+    /// @dev close position with loan token deposit
+    /// @param loanId id of the loan
+    /// @param receiver collateral token reciever address
+    /// @param depositAmount amount of loan token to deposit
+    /// @return loanCloseAmount loan close amount
+    /// @return withdrawAmount loan token withdraw amount
+    /// @return withdrawToken loan token address
     function closeWithDeposit(
         bytes32 loanId,
         address receiver,
@@ -369,6 +404,15 @@ contract IBZx is
             address withdrawToken
         );
 
+    /// @dev close position with swap
+    /// @param loanId id of the loan
+    /// @param receiver collateral token reciever address
+    /// @param swapAmount amount of loan token to swap
+    /// @param returnTokenIsCollateral boolean whether to return tokens is collateral
+    /// @param loanDataBytes reserved for future use
+    /// @return loanCloseAmount loan close amount
+    /// @return withdrawAmount loan token withdraw amount
+    /// @return withdrawToken loan token address
     function closeWithSwap(
         bytes32 loanId,
         address receiver,
@@ -384,6 +428,14 @@ contract IBZx is
 
     ////// Loan Closings With Gas Token //////
 
+    /// @dev liquidates unhealty loans by using Gas token
+    /// @param loanId id of the loan
+    /// @param receiver address receiving liquidated loan collateral
+    /// @param gasTokenUser user address of the GAS token
+    /// @param closeAmount amount to close denominated in loanToken
+    /// @return loanCloseAmount loan close amount
+    /// @return  withdrawAmount loan token withdraw amount
+    /// @return withdrawToken loan token address
     function liquidateWithGasToken(
         bytes32 loanId,
         address receiver,
@@ -397,17 +449,28 @@ contract IBZx is
             address seizedToken
         );
 
+    /// @dev rollover loan
+    /// @param loanId id of the loan
+    /// @param gasTokenUser user address of the GAS token
     function rolloverWithGasToken(
         bytes32 loanId,
         address gasTokenUser,
-        bytes calldata /*loanDataBytes*/) // for future use
+        bytes calldata /*loanDataBytes*/)
         external;
 
+    /// @dev close position with loan token deposit
+    /// @param loanId id of the loan
+    /// @param receiver collateral token reciever address
+    /// @param gasTokenUser user address of the GAS token
+    /// @param depositAmount amount of loan token to deposit denominated in loanToken
+    /// @return loanCloseAmount loan close amount
+    /// @return withdrawAmount loan token withdraw amount
+    /// @return withdrawToken loan token address
     function closeWithDepositWithGasToken(
         bytes32 loanId,
         address receiver,
         address gasTokenUser,
-        uint256 depositAmount) // denominated in loanToken
+        uint256 depositAmount)
         public
         payable
         returns (
@@ -416,13 +479,21 @@ contract IBZx is
             address withdrawToken
         );
 
+    /// @dev close position with swap
+    /// @param loanId id of the loan
+    /// @param receiver collateral token reciever address
+    /// @param swapAmount amount of loan token to swap denominated in collateralToken
+    /// @param returnTokenIsCollateral  true: withdraws collateralToken, false: withdraws loanToken
+    /// @return loanCloseAmount - loan close amount
+    ///         withdrawAmount - loan token withdraw amount
+    ///         withdrawToken - loan token address
     function closeWithSwapWithGasToken(
         bytes32 loanId,
         address receiver,
         address gasTokenUser,
-        uint256 swapAmount, // denominated in collateralToken
-        bool returnTokenIsCollateral, // true: withdraws collateralToken, false: withdraws loanToken
-        bytes memory /*loanDataBytes*/) // for future use
+        uint256 swapAmount,
+        bool returnTokenIsCollateral,
+        bytes memory /*loanDataBytes*/)
         public
         returns (
             uint256 loanCloseAmount,
