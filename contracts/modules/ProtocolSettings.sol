@@ -377,7 +377,7 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
         uint256 amount)
         external
         onlyOwner
-        returns (address, bool)
+        returns (address, uint256)
     {
         return _withdrawProtocolToken(
             receiver,

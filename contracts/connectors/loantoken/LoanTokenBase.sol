@@ -6,6 +6,7 @@
 pragma solidity 0.5.17;
 
 import "../../openzeppelin/SafeMath.sol";
+import "../../openzeppelin/SignedSafeMath.sol";
 import "../../openzeppelin/ReentrancyGuard.sol";
 import "../../openzeppelin/Ownable.sol";
 import "../../openzeppelin/Address.sol";
@@ -13,6 +14,8 @@ import "../../interfaces/IWethERC20.sol";
 
 
 contract LoanTokenBase is ReentrancyGuard, Ownable {
+
+    int256 internal constant sWEI_PRECISION = 10**18;
 
     string public name;
     string public symbol;

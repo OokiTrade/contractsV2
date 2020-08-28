@@ -16,7 +16,7 @@ contract ProtocolTokenUser is State {
         address receiver,
         uint256 amount)
         internal
-        returns (address, bool)
+        returns (address, uint256)
     {
         uint256 withdrawAmount = amount;
 
@@ -25,7 +25,7 @@ contract ProtocolTokenUser is State {
             withdrawAmount = balance;
         }
         if (withdrawAmount == 0) {
-            return (protocolTokenAddress, false);
+            return (protocolTokenAddress, 0);
         }
 
         protocolTokenHeld = balance
@@ -36,6 +36,6 @@ contract ProtocolTokenUser is State {
             withdrawAmount
         );
 
-        return (protocolTokenAddress, true);
+        return (protocolTokenAddress, withdrawAmount);
     }
 }

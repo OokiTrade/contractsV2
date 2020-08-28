@@ -176,11 +176,11 @@ contract FeesHelper is State, ProtocolTokenUser, FeesEvents {
 
         if (rewardAmount != 0) {
             address rewardToken;
-            (rewardToken, success) = _withdrawProtocolToken(
+            (rewardToken, rewardAmount) = _withdrawProtocolToken(
                 user,
                 rewardAmount
             );
-            if (success) {
+            if (rewardAmount != 0) {
                 protocolTokenPaid = protocolTokenPaid
                     .add(rewardAmount);
 

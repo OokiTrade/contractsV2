@@ -14,6 +14,7 @@ import "../gastoken/GasTokenUser.sol";
 
 contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
     using SafeMath for uint256;
+    using SignedSafeMath for int256;
 
     address internal target_;
 
@@ -25,6 +26,8 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
 
     address public constant bZxContract = 0xAbd9372723C735D426D0a760D047206Fe115ee6d; // kovan
     address public constant wethToken = 0xd0A1E359811322d97991E03f863a0C30C2cF029C; // kovan
+
+    bytes32 internal constant iToken_ProfitSoFar = 0x37aa2b7d583612f016e4a4de4292cb015139b3d7762663d06a53964912ea2fb6;          // keccak256("iToken_ProfitSoFar")
 
 
     function()
@@ -339,9 +342,8 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         uint256 _currentPrice)
         internal
     {
-        // keccak256("iToken_ProfitSoFar")
         bytes32 slot = keccak256(
-            abi.encodePacked(_user, uint256(0x37aa2b7d583612f016e4a4de4292cb015139b3d7762663d06a53964912ea2fb6))
+            abi.encodePacked(_user, iToken_ProfitSoFar)
         );
 
         int256 _currentProfit;
@@ -369,11 +371,10 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         address user)
         public
         view
-        returns (uint256)
+        returns (int256)
     {
-        // keccak256("iToken_ProfitSoFar")
         bytes32 slot = keccak256(
-            abi.encodePacked(user, uint256(0x37aa2b7d583612f016e4a4de4292cb015139b3d7762663d06a53964912ea2fb6))
+            abi.encodePacked(user, iToken_ProfitSoFar)
         );
 
         return _profitOf(
@@ -391,37 +392,21 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         uint256 _checkpointPrice)
         internal
         view
-        returns (uint256)
+        returns (int256 profitSoFar)
     {
         if (_checkpointPrice == 0) {
             return 0;
         }
 
-        uint256 profitSoFar;
-        uint256 profitDiff;
-
         assembly {
             profitSoFar := sload(slot)
         }
 
-        if (_currentPrice > _checkpointPrice) {
-            profitDiff = _balance
-                .mul(_currentPrice - _checkpointPrice)
-                .div(10**18);
-            profitSoFar = profitSoFar
-                .add(profitDiff);
-        } else {
-            profitDiff = _balance
-                .mul(_checkpointPrice - _currentPrice)
-                .div(10**18);
-            if (profitSoFar > profitDiff) {
-                profitSoFar = profitSoFar - profitDiff;
-            } else {
-                profitSoFar = 0;
-            }
-        }
-
-        return profitSoFar;
+        profitSoFar = int256(_currentPrice)
+            .sub(int256(_checkpointPrice))
+            .mul(int256(_balance))
+            .div(sWEI_PRECISION)
+            .add(profitSoFar);
     }
 
     function tokenPrice()
