@@ -463,8 +463,13 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
                 loanType,
                 unsafeOnly
             );
-            if (loanData.loanId == 0)
-                continue;
+            if (loanData.loanId == 0) {
+                if (i == 0) {
+                    break;
+                } else {
+                    continue;
+                }
+            }
 
             loansData[count-(idx--)] = loanData;
         }
@@ -518,8 +523,13 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
                 LoanType.All,
                 unsafeOnly
             );
-            if (loanData.loanId == 0)
-                continue;
+            if (loanData.loanId == 0) {
+                if (i == 0) {
+                    break;
+                } else {
+                    continue;
+                }
+            }
 
             loansData[count-(idx--)] = loanData;
         }
@@ -543,12 +553,8 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         Loan memory loanLocal = loans[loanId];
         LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
-        if (loanType != LoanType.All &&
-            (
-                (loanType == LoanType.Margin && loanParamsLocal.maxLoanTerm == 0) ||
-                (loanType == LoanType.NonMargin && loanParamsLocal.maxLoanTerm != 0)
-            )
-        ) {
+        if ((loanType == LoanType.Margin && loanParamsLocal.maxLoanTerm == 0) ||
+            (loanType == LoanType.NonMargin && loanParamsLocal.maxLoanTerm != 0)) {
             return loanData;
         }
 

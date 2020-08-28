@@ -366,9 +366,9 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
         uint256 amount)
         external
         onlyOwner
-        returns (address rewardToken, bool success)
+        returns (address rewardToken, uint256 withdrawAmount)
     {
-        (rewardToken, success) = _withdrawProtocolToken(
+        (rewardToken, withdrawAmount) = _withdrawProtocolToken(
             receiver,
             amount
         );

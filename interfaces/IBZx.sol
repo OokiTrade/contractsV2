@@ -122,7 +122,7 @@ contract IBZx is
         address receiver,
         uint256 amount)
         external
-        returns (address, bool);
+        returns (address rewardToken, uint256 withdrawAmount);
 
     function depositProtocolToken(
         uint256 amount)
