@@ -38,7 +38,7 @@ contract IBZx is
         address target)
         external;
 
-    /// @dev updates all proxy modules addreses and functions signatures. 
+    /// @dev updates all proxy modules addreses and function signatures. 
     /// sigsArr and targetsArr should be of equal length
     /// @param sigsArr array of function signatures
     /// @param targetsArr array of target proxy module addresses
@@ -59,13 +59,13 @@ contract IBZx is
 
     ////// Protocol Settings //////
 
-    /// @dev sets price feed contract address. The contract on the addres should implement
+    /// @dev sets price feed contract address. The contract on the addres should implement IPriceFeeds interface
     /// @param newContract module address for the IPriceFeeds implementation
     function setPriceFeedContract(
         address newContract)
         external;
 
-    /// @dev sets swaps contract address. The contract on the addres should implement ISwapsImpl
+    /// @dev sets swaps contract address. The contract on the addres should implement ISwapsImpl interface
     /// @param newContract module address for the ISwapsImpl implementation
     function setSwapsImplContract(
         address newContract)
