@@ -62,7 +62,7 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
 
     uint256 public affiliateFeePercent = 30 ether; // 30% fee share                     // fee share for affiliate program
 
-    uint256 public liquidationIncentivePercent = 5 ether; // 5% collateral discount     // discount on collateral for liquidators
+    mapping (address => uint256) public liquidationIncentivePercent;                    // percent discount on collateral for liquidators per collateral asset
 
     mapping (address => address) public loanPoolToUnderlying;                           // loanPool => underlying
     mapping (address => address) public underlyingToLoanPool;                           // underlying => loanPool

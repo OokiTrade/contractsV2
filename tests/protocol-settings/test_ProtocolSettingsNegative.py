@@ -43,9 +43,9 @@ def test_setAffiliateFeePercent(Constants, bzx):
     with reverts("value too high"):
         bzx.setAffiliateFeePercent(11**20)
 
-def test_setLiquidationIncentivePercent(Constants, bzx):
+def test_setLiquidationIncentivePercent(Constants, bzx, DAI):
     with reverts("value too high"):
-        bzx.setLiquidationIncentivePercent(11**20)
+        bzx.setLiquidationIncentivePercent([DAI],[11**20])
 
 def test_withdrawLendingFees(Constants, bzx, DAI, accounts):
     with reverts("unauthorized"):

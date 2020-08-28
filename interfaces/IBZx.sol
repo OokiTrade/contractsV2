@@ -81,7 +81,8 @@ contract IBZx is
         external;
 
     function setLiquidationIncentivePercent(
-        uint256 newAmount)
+        address[] calldata assets,
+        uint256[] calldata amounts)
         external;
 
     function setMaxDisagreement(

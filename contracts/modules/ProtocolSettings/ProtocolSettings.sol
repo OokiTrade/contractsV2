@@ -195,19 +195,25 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
     }
 
     function setLiquidationIncentivePercent(
-        uint256 newValue)
+        address[] calldata assets,
+        uint256[] calldata amounts)
         external
         onlyOwner
     {
-        require(newValue <= WEI_PERCENT_PRECISION, "value too high");
-        uint256 oldValue = liquidationIncentivePercent;
-        liquidationIncentivePercent = newValue;
+        require(assets.length == amounts.length, "count mismatch");
 
-        emit SetLiquidationIncentivePercent(
-            msg.sender,
-            oldValue,
-            newValue
-        );
+        for (uint256 i = 0; i < assets.length; i++) {
+            require(amounts[i] <= WEI_PERCENT_PRECISION, "value too high");
+            uint256 oldValue = liquidationIncentivePercent[assets[i]];
+            liquidationIncentivePercent[assets[i]] = amounts[i];
+
+            emit SetLiquidationIncentivePercent(
+                msg.sender,
+                assets[i],
+                oldValue,
+                amounts[i]
+            );
+        }
     }
 
     function setMaxDisagreement(

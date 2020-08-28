@@ -58,6 +58,7 @@ contract ProtocolSettingsEvents {
 
     event SetLiquidationIncentivePercent(
         address indexed sender,
+        address indexed asset,
         uint256 oldValue,
         uint256 newValue
     );
