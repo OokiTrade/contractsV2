@@ -17,7 +17,7 @@ import "../contracts/events/SwapsEvents.sol";
 
 /// @title A proxy interface for The Protocol
 /// @author bZeroX
-/// @notice You can use this contract for only the most basic simulation
+/// @notice This is just an interface, not to be deployed itself.
 /// @dev This interface is to be used for the protocol interactions.
 contract IBZx is
     State,
