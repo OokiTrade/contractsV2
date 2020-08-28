@@ -458,8 +458,13 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
                 loanType,
                 unsafeOnly
             );
-            if (loanData.loanId == 0)
-                continue;
+            if (loanData.loanId == 0) {
+                if (i == 0) {
+                    break;
+                } else {
+                    continue;
+                }
+            }
 
             loansData[count-(idx--)] = loanData;
 
@@ -512,8 +517,13 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
                 LoanType.All,
                 unsafeOnly
             );
-            if (loanData.loanId == 0)
-                continue;
+            if (loanData.loanId == 0) {
+                if (i == 0) {
+                    break;
+                } else {
+                    continue;
+                }
+            }
 
             loansData[count-(idx--)] = loanData;
 
