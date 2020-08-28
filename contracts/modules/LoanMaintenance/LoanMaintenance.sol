@@ -469,7 +469,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             loansData[count-(idx--)] = loanData;
         }
 
-        if (idx > 0) {
+        if (idx != 0) {
             count -= idx;
             assembly {
                 mstore(loansData, count)
@@ -524,7 +524,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             loansData[count-(idx--)] = loanData;
         }
 
-        if (idx > 0) {
+        if (idx != 0) {
             count -= idx;
             assembly {
                 mstore(loansData, count)
