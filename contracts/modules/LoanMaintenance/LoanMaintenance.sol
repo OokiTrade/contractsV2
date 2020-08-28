@@ -551,12 +551,8 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         Loan memory loanLocal = loans[loanId];
         LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
-        if (loanType != LoanType.All &&
-            (
-                (loanType == LoanType.Margin && loanParamsLocal.maxLoanTerm == 0) ||
-                (loanType == LoanType.NonMargin && loanParamsLocal.maxLoanTerm != 0)
-            )
-        ) {
+        if ((loanType == LoanType.Margin && loanParamsLocal.maxLoanTerm == 0) ||
+            (loanType == LoanType.NonMargin && loanParamsLocal.maxLoanTerm != 0)) {
             return loanData;
         }
 
