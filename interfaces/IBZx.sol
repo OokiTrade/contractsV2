@@ -15,7 +15,10 @@ import "../contracts/events/LoanClosingsEvents.sol";
 import "../contracts/events/FeesEvents.sol";
 import "../contracts/events/SwapsEvents.sol";
 
-
+/// @title A proxy interface for The Protocol
+/// @author bZeroX
+/// @notice You can use this contract for only the most basic simulation
+/// @dev This interface is to be used for the protocol interactions.
 contract IBZx is
     State,
     ProtocolSettingsEvents,
@@ -28,15 +31,24 @@ contract IBZx is
 
     ////// Protocol //////
 
+    /// @dev adds or replaces existing proxy module
+    /// @param target target proxy module address
+    /// @return boolean success
     function replaceContract(
         address target)
         external;
 
+    /// @dev updates all proxy modules addreses and functions signatures. sigsArr and targetsArr should be of equal length
+    /// @param sigsArr array of function signatures
+    /// @param targetsArr array of target proxy module addresses
+    /// @return boolean success
     function setTargets(
         string[] calldata sigsArr,
         address[] calldata targetsArr)
         external;
 
+    /// @dev returns protocol module address given a function signature
+    /// @return module address
     function getTarget(
         string calldata sig)
         external
@@ -46,93 +58,145 @@ contract IBZx is
 
     ////// Protocol Settings //////
 
+    /// @dev sets price feed contract address. The contract on the addres should implement
+    /// @param newContract module address for the IPriceFeeds implementation
     function setPriceFeedContract(
         address newContract)
         external;
 
+    /// @dev sets swaps contract address. The contract on the addres should implement ISwapsImpl
+    /// @param newContract module address for the ISwapsImpl implementation
     function setSwapsImplContract(
         address newContract)
         external;
 
+    /// @dev sets loan pool with assets. Accepts two arrays of equal length
+    /// @param pools array of address of pools
+    /// @param assets array of addresses of assets
     function setLoanPool(
         address[] calldata pools,
         address[] calldata assets)
         external;
 
+    /// @dev updates list of supported tokens, it can be use also to disable or enable particualr token
+    /// @param addrs array of address of pools
+    /// @param toggles array of addresses of assets
     function setSupportedTokens(
         address[] calldata addrs,
         bool[] calldata toggles)
         external;
 
+    /// @dev sets lending fee with WEI_PERCENT_PRECISION
+    /// @param newValue lending fee percent
     function setLendingFeePercent(
         uint256 newValue)
         external;
 
+    /// @dev sets trading fee with WEI_PERCENT_PRECISION
+    /// @param newValue trading fee percent
     function setTradingFeePercent(
         uint256 newValue)
         external;
 
+    /// @dev sets borrowing fee with WEI_PERCENT_PRECISION
+    /// @param newValue borrowing fee percent
     function setBorrowingFeePercent(
         uint256 newValue)
         external;
 
+    /// @dev sets affiliate fee with WEI_PERCENT_PRECISION
+    /// @param newValue affiliate fee percent
     function setAffiliateFeePercent(
         uint256 newValue)
         external;
 
+    /// @dev sets liquidation inncetive percent. This is the profit percent that liquidator gets in the process of liquidating.
+    /// @param newValue liquidation inncetive amount
     function setLiquidationIncentivePercent(
-        uint256 newAmount)
+        uint256 newValue)
         external;
 
+    /// @dev sets max swap rate slippage percent.
+    /// @param newValue max swap rate slippage percent.
     function setMaxDisagreement(
-        uint256 newAmount)
+        uint256 newValue)
         external;
 
+    /// ?
     function setSourceBufferPercent(
         uint256 newAmount)
         external;
 
+    /// @dev sets maximum supported swap size in ETH
+    /// @param newAmount max swap size in ETH.
     function setMaxSwapSize(
         uint256 newAmount)
         external;
 
+    /// @dev sets fee controller address
+    /// @param newController address of the new fees controller
     function setFeesController(
         address newController)
         external;
 
+    /// @dev withdraws lending fees to receiver. Only can be called by feesController address
+    /// @param tokens array of token addresses.
+    /// @param receiver fees receiver address
+    /// @return amounts withdrawn
     function withdrawLendingFees(
         address[] calldata tokens,
         address receiver)
         external
         returns (uint256[] memory amounts);
 
+    /// @dev withdraws trading fees to receiver. Only can be called by feesController address
+    /// @param tokens array of token addresses.
+    /// @param receiver fees receiver address
+    /// @return amounts withdrawn
     function withdrawTradingFees(
         address[] calldata tokens,
         address receiver)
         external
         returns (uint256[] memory amounts);
 
+
+    /// @dev withdraws borrowing fees to receiver. Only can be called by feesController address
+    /// @param tokens array of token addresses.
+    /// @param receiver fees receiver address
+    /// @return amounts withdrawn
     function withdrawBorrowingFees(
         address[] calldata tokens,
         address receiver)
         external
         returns (uint256[] memory amounts);
 
+    /// @dev withdraw protocol token (BZRX) from vesting contract vBZRX
+    /// @param receiver address of BZRX tokens claimed
+    /// @param amount of BZRX token to be claimed. max is claimed if amount is greater than balance.
     function withdrawProtocolToken(
         address receiver,
         uint256 amount)
         external
         returns (address, bool);
 
+    /// @dev depozit protocol token (BZRX)
+    /// @param amount address of BZRX tokens to deposit
     function depositProtocolToken(
         uint256 amount)
         external;
 
+    /// @dev get list of loan pools in the system. Ordering is not guaranteed
+    /// @param start start index
+    /// @param count number of pools to return
+    /// @return array of loan pools
     function getLoanPoolsList(
         uint256 start,
         uint256 count)
-        external;
+        external
+        returns(bytes32[] memory);
 
+    /// @dev checks whether addreess is a loan pool address
+    /// @return boolean 
     function isLoanPool(
         address loanPool)
         external
