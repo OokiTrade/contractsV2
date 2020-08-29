@@ -101,21 +101,10 @@ contract IBZx is
         address newController)
         external;
 
-    function withdrawLendingFees(
+    function withdrawFees(
         address[] calldata tokens,
-        address receiver)
-        external
-        returns (uint256[] memory amounts);
-
-    function withdrawTradingFees(
-        address[] calldata tokens,
-        address receiver)
-        external
-        returns (uint256[] memory amounts);
-
-    function withdrawBorrowingFees(
-        address[] calldata tokens,
-        address receiver)
+        address receiver,
+        FeeType feeType)
         external
         returns (uint256[] memory amounts);
 
@@ -128,6 +117,14 @@ contract IBZx is
     function depositProtocolToken(
         uint256 amount)
         external;
+
+    // NOTE: this doesn't sanitize inputs -> inaccurate values may be returned if there are duplicates tokens input
+    function queryFees(
+        address[] calldata tokens,
+        FeeType feeType)
+        external
+        view
+        returns (uint256[] memory amountsHeld, uint256[] memory amountsPaid);
 
     function getLoanPoolsList(
         uint256 start,

@@ -136,13 +136,10 @@ def test_setFeesController(Constants, bzx, accounts):
 
  
 # WIP
-# def test_withdrawLendingFees(Constants, bzx, accounts, DAI, LINK, FeesHelper):
+# def queryFees(Constants, bzx, accounts, DAI, LINK, FeesHelper):
 #     assert False
 
 # WIP
-# def test_withdrawTradingFees(Constants, bzx):
+# def test_withdrawFees(Constants, bzx):
 #     assert False
 
-# WIP
-# def test_withdrawBorrowingFees(Constants, bzx):
-#     assert False

@@ -95,4 +95,11 @@ contract ProtocolSettingsEvents {
         address indexed receiver,
         uint256 amount
     );
+
+    enum FeeType {
+        All,
+        Lending,
+        Trading,
+        Borrowing
+    }
 }

@@ -49,27 +49,43 @@ def test_setLiquidationIncentivePercent(Constants, bzx, DAI):
 
 def test_withdrawLendingFees(Constants, bzx, DAI, accounts):
     with reverts("unauthorized"):
-        bzx.withdrawLendingFees([DAI], accounts[0])
+        bzx.withdrawFees([DAI], accounts[0], 1)
 
 def test_withdrawLendingFeesZeroBalance(Constants, bzx, DAI, accounts):
     bzx.setFeesController(accounts[0])
-    amounts = bzx.withdrawLendingFees.call([DAI], accounts[0])
+    amountsView = bzx.queryFees.call([DAI], 1)[0]
+    amounts = bzx.withdrawFees.call([DAI], accounts[0], 1)
     assert(amounts[0] == 0)
 
 def test_withdrawTradingFees(Constants, bzx, DAI, accounts):
     with reverts("unauthorized"):
-        bzx.withdrawTradingFees([DAI], accounts[0])
+        bzx.withdrawFees([DAI], accounts[0], 2)
 
 def test_withdrawTradingFeesZeroBalance(Constants, bzx, DAI, accounts):
     bzx.setFeesController(accounts[0])
-    amounts = bzx.withdrawTradingFees.call([DAI], accounts[0])
+    amountsView = bzx.queryFees.call([DAI], 2)[0]
+    amounts = bzx.withdrawFees.call([DAI], accounts[0], 2)
+    assert(amountsView[0] == 0)
     assert(amounts[0] == 0)
 
 def test_withdrawBorrowingFees(Constants, bzx, DAI, accounts):
     with reverts("unauthorized"):
-        bzx.withdrawTradingFees([DAI], accounts[0])
+        bzx.withdrawFees([DAI], accounts[0], 3)
 
 def test_withdrawBorrowingFeesZeroBalance(Constants, bzx, DAI, accounts):
     bzx.setFeesController(accounts[0])
-    amounts = bzx.withdrawBorrowingFees.call([DAI], accounts[0])
+    amountsView = bzx.queryFees.call([DAI], 3)[0]
+    amounts = bzx.withdrawFees.call([DAI], accounts[0], 3)
+    assert(amountsView[0] == 0)
+    assert(amounts[0] == 0)
+
+def test_withdrawAllFees(Constants, bzx, DAI, accounts):
+    with reverts("unauthorized"):
+        bzx.withdrawFees([DAI], accounts[0], 0)
+
+def test_withdrawAllFeesZeroBalance(Constants, bzx, DAI, accounts):
+    bzx.setFeesController(accounts[0])
+    amountsView = bzx.queryFees.call([DAI], 0)[0]
+    amounts = bzx.withdrawFees.call([DAI], accounts[0], 0)
+    assert(amountsView[0] == 0)
     assert(amounts[0] == 0)
