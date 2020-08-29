@@ -16,7 +16,7 @@ import "../swaps/SwapsUser.sol";
 
 contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, InterestUser, SwapsUser, LiquidationHelper {
 
-    enum LoanTypes {
+    enum LoanType {
         All,
         Margin,
         NonMargin
@@ -428,7 +428,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         address user,
         uint256 start,
         uint256 count,
-        LoanTypes loanType,
+        LoanType loanType,
         bool isLender,
         bool unsafeOnly)
         external
@@ -449,23 +449,27 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         LoanReturnData memory loanData;
         loansData = new LoanReturnData[](idx);
         for (uint256 i = --end; i >= start; i--) {
-            if (i > end) {
-                // handles the overflow in the case of start == 0
-                break;
-            }
-
             loanData = _getLoan(
                 set.get(i), // loanId
                 loanType,
                 unsafeOnly
             );
-            if (loanData.loanId == 0)
-                continue;
+            if (loanData.loanId == 0) {
+                if (i == 0) {
+                    break;
+                } else {
+                    continue;
+                }
+            }
 
-            loansData[--idx] = loanData;
+            loansData[count-(idx--)] = loanData;
+
+            if (i == 0) {
+                break;
+            }
         }
 
-        if (idx > 0) {
+        if (idx != 0) {
             count -= idx;
             assembly {
                 mstore(loansData, count)
@@ -481,7 +485,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
     {
         return _getLoan(
             loanId,
-            LoanTypes.All,
+            LoanType.All,
             false // unsafeOnly
         );
     }
@@ -504,23 +508,27 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         LoanReturnData memory loanData;
         loansData = new LoanReturnData[](idx);
         for (uint256 i = --end; i >= start; i--) {
-            if (i > end) {
-                // handles the overflow in the case of start == 0
-                break;
-            }
-
             loanData = _getLoan(
                 activeLoansSet.get(i), // loanId
-                LoanTypes.All,
+                LoanType.All,
                 unsafeOnly
             );
-            if (loanData.loanId == 0)
-                continue;
+            if (loanData.loanId == 0) {
+                if (i == 0) {
+                    break;
+                } else {
+                    continue;
+                }
+            }
 
-            loansData[--idx] = loanData;
+            loansData[count-(idx--)] = loanData;
+
+            if (i == 0) {
+                break;
+            }
         }
 
-        if (idx > 0) {
+        if (idx != 0) {
             count -= idx;
             assembly {
                 mstore(loansData, count)
@@ -530,7 +538,7 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
 
     function _getLoan(
         bytes32 loanId,
-        LoanTypes loanType,
+        LoanType loanType,
         bool unsafeOnly)
         internal
         view
@@ -539,12 +547,8 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
         Loan memory loanLocal = loans[loanId];
         LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
-        if (loanType != LoanTypes.All &&
-            (
-                (loanType == LoanTypes.Margin && loanParamsLocal.maxLoanTerm == 0) ||
-                (loanType == LoanTypes.NonMargin && loanParamsLocal.maxLoanTerm != 0)
-            )
-        ) {
+        if ((loanType == LoanType.Margin && loanParamsLocal.maxLoanTerm == 0) ||
+            (loanType == LoanType.NonMargin && loanParamsLocal.maxLoanTerm != 0)) {
             return loanData;
         }
 
@@ -573,18 +577,18 @@ contract LoanMaintenance is State, LoanOpeningsEvents, VaultController, Interest
 
         return LoanReturnData({
             loanId: loanId,
+            endTimestamp: uint96(loanLocal.endTimestamp),
             loanToken: loanParamsLocal.loanToken,
             collateralToken: loanParamsLocal.collateralToken,
             principal: loanLocal.principal,
             collateral: loanLocal.collateral,
             interestOwedPerDay: loanInterestLocal.owedPerDay,
-            interestDepositRemaining: loanLocal.endTimestamp >= block.timestamp ? loanLocal.endTimestamp.sub(block.timestamp).mul(loanInterestLocal.owedPerDay).div(86400) : 0,
+            interestDepositRemaining: loanLocal.endTimestamp >= block.timestamp ? loanLocal.endTimestamp.sub(block.timestamp).mul(loanInterestLocal.owedPerDay).div(1 days) : 0,
             startRate: loanLocal.startRate,
             startMargin: loanLocal.startMargin,
             maintenanceMargin: loanParamsLocal.maintenanceMargin,
             currentMargin: currentMargin,
             maxLoanTerm: loanParamsLocal.maxLoanTerm,
-            endTimestamp: loanLocal.endTimestamp,
             maxLiquidatable: maxLiquidatable,
             maxSeizable: maxSeizable
         });
