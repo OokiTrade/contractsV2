@@ -114,7 +114,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         uint256 newPrincipal)
         external
         view
-        returns (uint256)
+        returns (uint256 value)
     {
         uint256 maxLoanTerm = 2419200; // 28 days
 
@@ -126,17 +126,15 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             .mul(owedPerDay)
             .div(86400);
 
-        uint256 receivedAmount = _swapsExpectedReturn(
+        value = _swapsExpectedReturn(
             loanToken,
             collateralToken,
             loanTokenSent
                 .sub(interestAmountRequired)
         );
-        if (receivedAmount == 0) {
-            return 0;
-        } else {
+        if (value != 0) {
             return collateralTokenSent
-                .add(receivedAmount);
+                .add(value);
         }
     }
 
@@ -214,7 +212,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                     .mul(
                         10**20 - feePercent // never will overflow
                     )
-                    .divCeil(10**20);
+                    .div(10**20);
             }
         }
     }
@@ -640,7 +638,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         if (loanToken == collateralToken) {
             collateralTokenAmount = newPrincipal
                 .mul(marginAmount)
-                .div(10**20);
+                .divCeil(10**20);
         } else {
             (uint256 sourceToDestRate, uint256 sourceToDestPrecision) = IPriceFeeds(priceFeeds).queryRate(
                 collateralToken,
@@ -649,9 +647,8 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             if (sourceToDestRate != 0) {
                 collateralTokenAmount = newPrincipal
                     .mul(sourceToDestPrecision)
-                    .div(sourceToDestRate)
                     .mul(marginAmount)
-                    .div(10**20);
+                    .divCeil(sourceToDestRate * 10**20);
             } else {
                 collateralTokenAmount = 0;
             }
@@ -660,7 +657,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         if (isTorqueLoan && collateralTokenAmount != 0) {
             collateralTokenAmount = collateralTokenAmount
                 .mul(10**20)
-                .div(marginAmount)
+                .divCeil(marginAmount)
                 .add(collateralTokenAmount);
         }
     }
