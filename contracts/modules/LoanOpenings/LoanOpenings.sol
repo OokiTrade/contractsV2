@@ -106,7 +106,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         uint256 newPrincipal)
         external
         view
-        returns (uint256)
+        returns (uint256 value)
     {
         uint256 maxLoanTerm = 2419200; // 28 days
 
@@ -118,17 +118,15 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             .mul(owedPerDay)
             .div(1 days);
 
-        uint256 receivedAmount = _swapsExpectedReturn(
+        value = _swapsExpectedReturn(
             loanToken,
             collateralToken,
             loanTokenSent
                 .sub(interestAmountRequired)
         );
-        if (receivedAmount == 0) {
-            return 0;
-        } else {
+        if (value != 0) {
             return collateralTokenSent
-                .add(receivedAmount);
+                .add(value);
         }
     }
 
@@ -206,7 +204,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                     .mul(
                         WEI_PERCENT_PRECISION - feePercent // never will overflow
                     )
-                    .divCeil(WEI_PERCENT_PRECISION);
+                    .div(WEI_PERCENT_PRECISION);
             }
         }
     }
@@ -624,7 +622,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         if (loanToken == collateralToken) {
             collateralTokenAmount = newPrincipal
                 .mul(marginAmount)
-                .div(WEI_PERCENT_PRECISION);
+                .divCeil(WEI_PERCENT_PRECISION);
         } else {
             (uint256 sourceToDestRate, uint256 sourceToDestPrecision) = IPriceFeeds(priceFeeds).queryRate(
                 collateralToken,
@@ -633,18 +631,15 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             if (sourceToDestRate != 0) {
                 collateralTokenAmount = newPrincipal
                     .mul(sourceToDestPrecision)
-                    .div(sourceToDestRate)
                     .mul(marginAmount)
-                    .div(WEI_PERCENT_PRECISION);
-            } else {
-                collateralTokenAmount = 0;
+                    .divCeil(sourceToDestRate * WEI_PERCENT_PRECISION);
             }
         }
 
         if (isTorqueLoan && collateralTokenAmount != 0) {
             collateralTokenAmount = collateralTokenAmount
                 .mul(WEI_PERCENT_PRECISION)
-                .div(marginAmount)
+                .divCeil(marginAmount)
                 .add(collateralTokenAmount);
         }
     }
