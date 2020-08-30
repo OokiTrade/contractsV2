@@ -213,10 +213,11 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         }
 
         // update loan end time
-        loanLocal.endTimestamp = loanLocal.endTimestamp
+        uint256 endTimestamp = loanLocal.endTimestamp
             .add(maxDuration);
+        loanLocal.endTimestamp = endTimestamp;
 
-        uint256 interestAmountRequired = loanLocal.endTimestamp
+        uint256 interestAmountRequired = endTimestamp
             .sub(block.timestamp);
         interestAmountRequired = interestAmountRequired
             .mul(loanInterestLocal.owedPerDay);
@@ -287,6 +288,19 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
                 gasRebate
             );
         }
+
+        emit Rollover(
+            loanLocal.borrower,                 // user (borrower)
+            msg.sender,                         // caller
+            loanLocal.id,                       // loanId
+            loanLocal.lender,                   // lender
+            loanParamsLocal.loanToken,          // loanToken
+            loanParamsLocal.collateralToken,    // collateralToken
+            sourceTokenAmountUsed,              // collateralAmountUsed
+            interestAmountRequired,             // interestAmountAdded
+            endTimestamp,                       // loanEndTimestamp
+            gasRebate                           // gasRebate
+        );
     }
 
     function _closeWithDeposit(
