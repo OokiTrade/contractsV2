@@ -317,10 +317,11 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
         }
 
         // update loan end time
-        loanLocal.endTimestamp = loanLocal.endTimestamp
+        uint256 endTimestamp = loanLocal.endTimestamp
             .add(maxDuration);
+        loanLocal.endTimestamp = endTimestamp;
 
-        uint256 interestAmountRequired = loanLocal.endTimestamp
+        uint256 interestAmountRequired = endTimestamp
             .sub(block.timestamp);
         interestAmountRequired = interestAmountRequired
             .mul(loanInterestLocal.owedPerDay);
@@ -385,6 +386,19 @@ contract LoanClosings is State, LoanClosingsEvents, VaultController, InterestUse
         require(
             currentMargin > 3 ether, // ensure there's more than 3% margin remaining
             "unhealthy position"
+        );
+
+        emit Rollover(
+            loanLocal.borrower,                 // user (borrower)
+            msg.sender,                         // caller
+            loanLocal.id,                       // loanId
+            loanLocal.lender,                   // lender
+            loanParamsLocal.loanToken,          // loanToken
+            loanParamsLocal.collateralToken,    // collateralToken
+            sourceTokenAmountUsed,              // collateralAmountUsed
+            interestAmountRequired,             // interestAmountAdded
+            endTimestamp,                       // loanEndTimestamp
+            gasRebate                           // gasRebate
         );
     }
 
