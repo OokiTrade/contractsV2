@@ -133,6 +133,10 @@ library SafeMath {
     * @dev Integer division of two numbers, rounding up and truncating the quotient
     */
     function divCeil(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
+        if (a == 0) {
+            return 0;
+        }
+
         // Solidity only automatically asserts when dividing by 0
         require(b != 0, errorMessage);
         uint256 c = ((a - 1) / b) + 1;
