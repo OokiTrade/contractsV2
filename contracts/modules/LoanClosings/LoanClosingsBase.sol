@@ -668,7 +668,7 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         CloseTypes closeType)
         internal
     {
-       _closeLoan(
+        _closeLoan(
             loanLocal,
             loanCloseAmount
         );
