@@ -87,7 +87,7 @@ def deployProtocol():
             )
         else:
             if thisNetwork == "kovan":
-                feeds = acct.deploy(PriceFeedsTestnets)
+                feeds = acct.deploy(PriceFeeds)
             '''
                 print("Calling setDecimals.")
                 feeds.setDecimals(
@@ -316,6 +316,9 @@ def deployProtocol():
         )
 
         if thisNetwork == "kovan":
+            #swaps = Contract.from_abi("swaps", bzx.swapsImpl(), abi=SwapsImplTestnets.abi, owner=acct)
+            swaps.setLocalPriceFeedContract(bzx.priceFeeds())
+
             print("Calling setLoanPool.")
             '''bzx.setLoanPool(
                 [

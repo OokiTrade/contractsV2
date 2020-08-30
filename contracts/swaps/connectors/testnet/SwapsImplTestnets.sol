@@ -56,14 +56,12 @@ contract SwapsImplTestnets is State, ISwapsImpl {
         TestToken(sourceTokenAddress).burn(sourceTokenAmountUsed);
         TestToken(destTokenAddress).mint(address(this), destTokenAmountReceived);
 
-        if (returnToSenderAddress != address(this)) {
-            if (sourceTokenAmountUsed < maxSourceTokenAmount) {
-                // send unused source token back
-                IERC20(sourceTokenAddress).safeTransfer(
-                    returnToSenderAddress,
-                    maxSourceTokenAmount-sourceTokenAmountUsed
-                );
-            }
+        if (returnToSenderAddress != address(this) && sourceTokenAmountUsed < maxSourceTokenAmount) {
+            // send unused source token back
+            IERC20(sourceTokenAddress).safeTransfer(
+                returnToSenderAddress,
+                maxSourceTokenAmount-sourceTokenAmountUsed
+            );
         }
     }
 
