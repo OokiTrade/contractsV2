@@ -6,36 +6,18 @@
 pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
-import "../openzeppelin/Ownable.sol";
-import "../openzeppelin/SafeMath.sol";
-import "../openzeppelin/SafeERC20.sol";
-import "../mixins/EnumerableBytes32Set.sol";
+import "./StakingState.sol";
 
 
-contract BZRXStakingInterim is Ownable {
-    using SafeMath for uint256;
-    using SafeERC20 for IERC20;
-    using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
+contract StakingInterim is StakingState {
 
     struct RepStakedTokens {
         address wallet;
+        bool isActive;
         uint256 BZRX;
         uint256 vBZRX;
         uint256 LPToken;
     }
-
-    mapping(address => uint256) internal _totalSupplyPerToken;                      // token => value
-    mapping(address => mapping(address => uint256)) internal _balancesPerToken;     // token => account => value
-    mapping(address => mapping(address => uint256)) internal _checkpointPerToken;   // token => account => value
-
-    mapping(address => address) public repDelegate;                                 // user => delegate
-    mapping(address => mapping(address => uint256)) public repStakedPerToken;       // token => wallet => value
-    mapping(address => bool) public reps;                                           // wallet => isActive
-    EnumerableBytes32Set.Bytes32Set internal repStakedSet;
-
-    mapping(address => uint256) public rewardsPerTokenStored;
-    mapping(address => mapping(address => uint256)) public userRewardPerTokenPaid;
-    mapping(address => uint256) public rewards;
 
     event Staked(
         address indexed user,
@@ -50,31 +32,24 @@ contract BZRXStakingInterim is Ownable {
         address indexed newDelegate
     );
 
+    modifier notInit() {
+        require(!isInit, "already init");
+        _;
+    }
+
     modifier checkActive() {
         require(isActive, "not active");
         _;
     }
-
-    address public BZRX;
-    address public vBZRX;
-    address public LPToken;
-
-    uint256 constant public initialCirculatingSupply = 1030000000e18 - 889389933e18;
-
-    uint256 constant public normalizedRewardRate = 1e6;
-
-    address internal constant ZERO_ADDRESS = address(0);
-
-    uint256 public lastUpdateTime;
-
-    bool public isActive;
-
-    constructor(
+ 
+    function init(
         address _BZRX,
         address _vBZRX,
         address _LPToken,
         bool _isActive)
-        public
+        external
+        onlyOwner
+        notInit
         updateReward(address(0))
     {
         BZRX = _BZRX;
@@ -82,6 +57,8 @@ contract BZRXStakingInterim is Ownable {
         LPToken = _LPToken;
 
         isActive = _isActive;
+
+        isInit = true;
     }
 
     function setActive(
@@ -178,8 +155,7 @@ contract BZRXStakingInterim is Ownable {
 
     function getRepVotes(
         uint256 start,
-        uint256 count,
-        bool activeOnly)
+        uint256 count)
         external
         view
         returns (RepStakedTokens[] memory repStakedArr)
@@ -195,16 +171,9 @@ contract BZRXStakingInterim is Ownable {
         repStakedArr = new RepStakedTokens[](idx);
         for (uint256 i = --end; i >= start; i--) {
             wallet = repStakedSet.getAddress(i);
-            if (activeOnly && !reps[wallet]) {
-                if (i == 0) {
-                    break;
-                } else {
-                    continue;
-                }
-            }
-
             repStakedArr[count-(idx--)] = RepStakedTokens({
                 wallet: wallet,
+                isActive: reps[wallet],
                 BZRX: repStakedPerToken[wallet][BZRX],
                 vBZRX: repStakedPerToken[wallet][vBZRX],
                 LPToken: repStakedPerToken[wallet][LPToken]
