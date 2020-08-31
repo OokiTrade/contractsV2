@@ -17,6 +17,13 @@ contract BZRXStakingInterim is Ownable {
     using SafeERC20 for IERC20;
     using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
 
+    struct RepStakedTokens {
+        address wallet;
+        uint256 BZRX;
+        uint256 vBZRX;
+        uint256 LPToken;
+    }
+
     mapping(address => uint256) internal _totalSupplyPerToken;                      // token => value
     mapping(address => mapping(address => uint256)) internal _balancesPerToken;     // token => account => value
     mapping(address => mapping(address => uint256)) internal _checkpointPerToken;   // token => account => value
@@ -54,7 +61,7 @@ contract BZRXStakingInterim is Ownable {
 
     uint256 constant public initialCirculatingSupply = 1030000000e18 - 889389933e18;
 
-    uint256 constant public normalizedRewardRate = 1e9;
+    uint256 constant public normalizedRewardRate = 1e6;
 
     address internal constant ZERO_ADDRESS = address(0);
 
@@ -68,6 +75,7 @@ contract BZRXStakingInterim is Ownable {
         address _LPToken,
         bool _isActive)
         public
+        updateReward(address(0))
     {
         BZRX = _BZRX;
         vBZRX = _vBZRX;
@@ -151,7 +159,6 @@ contract BZRXStakingInterim is Ownable {
                 stakeAmount
             );
 
-            repStakedSet.addAddress(currentDelegate); // will not duplicate
             repStakedPerToken[currentDelegate][token] = repStakedPerToken[currentDelegate][token]
                 .add(stakeAmount);
         }
@@ -162,14 +169,13 @@ contract BZRXStakingInterim is Ownable {
         public
     {
         reps[msg.sender] = _isActive;
+        if (_isActive) {
+            repStakedSet.addAddress(msg.sender);
+        }/* else { // no removals for the rep list in this version
+            repStakedSet.removeAddress(msg.sender);
+        }*/
     }
 
-    struct RepStakedTokens {
-        address wallet;
-        uint256 BZRX;
-        uint256 vBZRX;
-        uint256 LPToken;
-    }
     function getRepVotes(
         uint256 start,
         uint256 count,
