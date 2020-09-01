@@ -33,12 +33,12 @@ contract StakingState is Ownable {
     mapping(address => mapping(address => uint256)) internal _checkpointPerToken;   // token => account => value
 
     mapping(address => address) public delegate;                                    // user => delegate
-    mapping(address => mapping(address => uint256)) public repStakedPerToken;       // token => wallet => value
-    mapping(address => bool) public reps;                                           // wallet => isActive
+    mapping(address => mapping(address => uint256)) public repStakedPerToken;       // token => user => value
+    mapping(address => bool) public reps;                                           // user => isActive
 
     uint256 public rewardPerTokenStored;
-    mapping(address => uint256) public userRewardPerTokenPaid;
-    mapping(address => uint256) public rewards;
+    mapping(address => uint256) public userRewardPerTokenPaid;                      // user => value
+    mapping(address => uint256) public rewards;                                     // user => value
 
     EnumerableBytes32Set.Bytes32Set internal repStakedSet;
 
