@@ -32,10 +32,10 @@ contract StakingInterim is StakingState {
         address indexed newDelegate
     );
 
-    modifier notInit() {
-        require(!isInit, "already init");
-        _;
-    }
+    event RewardAdded(
+        uint256 indexed reward,
+        uint256 duration
+    );
 
     modifier checkActive() {
         require(isActive, "not active");
@@ -49,9 +49,9 @@ contract StakingInterim is StakingState {
         bool _isActive)
         external
         onlyOwner
-        notInit
-        updateReward(address(0))
     {
+        require(!isInit, "already init");
+        
         BZRX = _BZRX;
         vBZRX = _vBZRX;
         LPToken = _LPToken;
@@ -66,6 +66,7 @@ contract StakingInterim is StakingState {
         public
         onlyOwner
     {
+        require(isInit, "not init");
         isActive = _isActive;
     }
 
@@ -111,7 +112,7 @@ contract StakingInterim is StakingState {
     {
         require(tokens.length == values.length, "count mismatch");
 
-        address currentDelegate = _setRepDelegate(delegateToSet);
+        address currentDelegate = _setDelegate(delegateToSet);
 
         address token;
         uint256 stakeAmount;
@@ -148,9 +149,7 @@ contract StakingInterim is StakingState {
         reps[msg.sender] = _isActive;
         if (_isActive) {
             repStakedSet.addAddress(msg.sender);
-        }/* else { // no removals for the rep list in this version
-            repStakedSet.removeAddress(msg.sender);
-        }*/
+        }
     }
 
     function getRepVotes(
@@ -192,74 +191,53 @@ contract StakingInterim is StakingState {
         }
     }
 
+    function lastTimeRewardApplicable()
+        public
+        view
+        returns (uint256)
+    {
+        return periodFinish
+            .min256(_getTimestamp());
+    }
+
     modifier updateReward(address account) {
-        (uint256 bzrxReward,
-         uint256 vbzrxReward,
-         uint256 lptokenReward) = rewardsPerToken();
+        uint256 _rewardsPerToken = rewardsPerToken();
+        rewardPerTokenStored = _rewardsPerToken;
 
-        rewardsPerTokenStored[BZRX] = bzrxReward;
-        rewardsPerTokenStored[vBZRX] = vbzrxReward;
-        rewardsPerTokenStored[LPToken] = lptokenReward;
-
-        lastUpdateTime = block.timestamp;
+        lastUpdateTime = lastTimeRewardApplicable();
 
         if (account != address(0)) {
-            rewards[account] = _earned(account, bzrxReward, vbzrxReward, lptokenReward);
-            userRewardPerTokenPaid[account][BZRX] = bzrxReward;
-            userRewardPerTokenPaid[account][vBZRX] = vbzrxReward;
-            userRewardPerTokenPaid[account][LPToken] = lptokenReward;
+            rewards[account] = _earned(account, _rewardsPerToken);
+            userRewardPerTokenPaid[account] = _rewardsPerToken;
         }
+
         _;
     }
 
     function rewardsPerToken()
         public
         view
-        returns (uint256 bzrxReward, uint256 vbzrxReward, uint256 lptokenReward)
+        returns (uint256)
     {
-        uint256 totalSupplyBZRX = totalSupplyByAsset(BZRX);
-        uint256 totalSupplyVBZRX = totalSupplyByAsset(vBZRX);
-        uint256 totalSupplyLPToken = totalSupplyByAsset(LPToken);
-        
+        uint256 totalSupplyBZRX = totalSupplyByAssetNormed(BZRX);
+        uint256 totalSupplyVBZRX = totalSupplyByAssetNormed(vBZRX);
+        uint256 totalSupplyLPToken = totalSupplyByAssetNormed(LPToken);
+
         uint256 totalTokens = totalSupplyBZRX
             .add(totalSupplyVBZRX)
             .add(totalSupplyLPToken);
-            
+
         if (totalTokens == 0) {
-            return (0, 0, 0);
+            return rewardPerTokenStored;
         }
 
-        uint256 multiplier = block.timestamp
-            .sub(lastUpdateTime)
-            .mul(normalizedRewardRate)
-            .mul(1e18);
-
-        bzrxReward = rewardsPerTokenStored[BZRX];
-        if (totalSupplyBZRX != 0) {
-            bzrxReward = bzrxReward.add(
-                multiplier
-                    .mul(totalSupplyBZRX)
-                    .div(totalTokens)
-            );
-        }
-
-        vbzrxReward = rewardsPerTokenStored[vBZRX];
-        if (totalSupplyVBZRX != 0) {
-            vbzrxReward = vbzrxReward.add(
-                multiplier
-                    .mul(totalSupplyVBZRX)
-                    .div(totalTokens)
-            );
-        }
-
-        lptokenReward = rewardsPerTokenStored[LPToken];
-        if (totalSupplyLPToken != 0) {
-            lptokenReward = lptokenReward.add(
-                multiplier
-                    .mul(totalSupplyLPToken)
-                    .div(totalTokens)
-            );
-        }
+        return rewardPerTokenStored.add(
+            lastTimeRewardApplicable()
+                .sub(lastUpdateTime)
+                .mul(rewardRate)
+                .mul(1e18)
+                .div(totalTokens)
+        );
     }
 
     function earned(
@@ -268,78 +246,73 @@ contract StakingInterim is StakingState {
         view
         returns (uint256)
     {
-        (uint256 bzrxReward,
-         uint256 vbzrxReward,
-         uint256 lptokenReward) = rewardsPerToken();
-        
         return _earned(
             account,
-            bzrxReward,
-            vbzrxReward,
-            lptokenReward
+            rewardsPerToken()
         );
     }
 
     function _earned(
         address account,
-        uint256 bzrxReward,
-        uint256 vbzrxReward,
-        uint256 lptokenReward)
+        uint256 _rewardsPerToken)
         internal
         view
-        returns (uint256 earnedAmount)
+        returns (uint256)
     {
-        uint256 bzrxBalance = balanceOfByAsset(BZRX, account);
-        uint256 vbzrxBalance = balanceOfByAsset(vBZRX, account);
-        
-        // normalizes the LPToken balance
-        uint256 lptokenBalance = _totalSupplyPerToken[LPToken];
-        if (lptokenBalance != 0) {
-            lptokenBalance = totalSupplyByAsset(LPToken)
-                .mul(balanceOfByAsset(LPToken, account))
-                .div(lptokenBalance);
-        }
+        uint256 bzrxBalance = balanceOfByAssetNormed(BZRX, account);
+        uint256 vbzrxBalance = balanceOfByAssetNormed(vBZRX, account);
+        uint256 lptokenBalance = balanceOfByAssetNormed(LPToken, account);
 
         uint256 totalTokens = bzrxBalance
-            .add(vbzrxBalance);
-        totalTokens = totalTokens
+            .add(vbzrxBalance)
             .add(lptokenBalance);
 
-        if (totalTokens == 0) {
-            return 0;
-        }
-
-        uint256 remaining;
-
-        remaining = bzrxReward
-            .sub(userRewardPerTokenPaid[account][BZRX]);
-        earnedAmount = bzrxBalance
-            .mul(remaining);
-        earnedAmount = earnedAmount
-            .div(1e18);
-
-        remaining = vbzrxReward
-            .sub(userRewardPerTokenPaid[account][vBZRX]);
-        earnedAmount = vbzrxBalance
-            .mul(remaining)
+        return totalTokens
+            .mul(_rewardsPerToken.sub(userRewardPerTokenPaid[account]))
             .div(1e18)
-            .add(earnedAmount);
-
-        remaining = lptokenReward
-            .sub(userRewardPerTokenPaid[account][LPToken]);
-        earnedAmount = lptokenBalance
-            .mul(remaining)
-            .div(1e18)
-            .add(earnedAmount);
-
-        earnedAmount = earnedAmount
-            .mul(1e18)
-            .div(totalTokens);
-
-        earnedAmount = earnedAmount
             .add(rewards[account]);
     }
 
+    function notifyRewardAmount(
+        uint256 reward,
+        uint256 duration)
+        external
+        onlyOwner
+        updateReward(address(0))
+    {
+        require(isInit, "not init");
+        require(duration > 1 days && duration < 365 days / 12, "duration outside range");
+
+        if (periodFinish != 0) {
+            if (_getTimestamp() >= periodFinish) {
+                rewardRate = reward
+                    .div(duration);
+            } else {
+                uint256 remaining = periodFinish
+                    .sub(_getTimestamp());
+                uint256 leftover = remaining
+                    .mul(rewardRate);
+                rewardRate = reward
+                    .add(leftover)
+                    .div(duration);
+            }
+
+            lastUpdateTime = _getTimestamp();
+            periodFinish = _getTimestamp()
+                .add(duration);
+        } else {
+            rewardRate = reward
+                .div(duration);
+            lastUpdateTime = _getTimestamp();
+            periodFinish = _getTimestamp()
+                .add(duration);
+        }
+
+        emit RewardAdded(
+            reward,
+            duration
+        );
+    }
 
     function stakeableByAsset(
         address token,
@@ -367,14 +340,58 @@ contract StakingInterim is StakingState {
         returns (uint256)
     {
         return _balancesPerToken[token][account];
-        /*return _balanceOfByAsset(
-            token,
-            account,
-            IERC20(token).balanceOf(account)
-        );*/
+    }
+
+    function balanceOfByAssetNormed(
+        address token,
+        address account)
+        public
+        view
+        returns (uint256)
+    {
+        if (token == LPToken) {
+            // normalizes the LPToken balance
+            uint256 lptokenBalance = totalSupplyByAsset(LPToken);
+            if (lptokenBalance != 0) {
+                return totalSupplyByAssetNormed(LPToken)
+                    .mul(balanceOfByAsset(LPToken, account))
+                    .div(lptokenBalance);
+            }
+        } else {
+            return balanceOfByAsset(token, account);
+        }
+    }
+
+    function totalSupply()
+        public
+        view
+        returns (uint256)
+    {
+        return totalSupplyByAsset(BZRX)
+            .add(totalSupplyByAsset(vBZRX))
+            .add(totalSupplyByAsset(LPToken));
+    }
+
+    function totalSupplyNormed()
+        public
+        view
+        returns (uint256)
+    {
+        return totalSupplyByAssetNormed(BZRX)
+            .add(totalSupplyByAssetNormed(vBZRX))
+            .add(totalSupplyByAssetNormed(LPToken));
     }
 
     function totalSupplyByAsset(
+        address token)
+        public
+        view
+        returns (uint256)
+    {
+        return _totalSupplyPerToken[token];
+    }
+
+    function totalSupplyByAssetNormed(
         address token)
         public
         view
@@ -384,27 +401,27 @@ contract StakingInterim is StakingState {
             uint256 circulatingSupply = initialCirculatingSupply; // + VBZRX.totalVested();
             
             // staked LP tokens are assumed to represent the total unstaked supply (circulated supply - staked BZRX)
-            return _totalSupplyPerToken[LPToken] != 0 ?
-                circulatingSupply - _totalSupplyPerToken[BZRX] :
+            return totalSupplyByAsset(LPToken) != 0 ?
+                circulatingSupply - totalSupplyByAsset(BZRX) :
                 0;
         } else {
-            return _totalSupplyPerToken[token];
+            return totalSupplyByAsset(token);
         }
     }
 
-    function _setRepDelegate(
+    function _setDelegate(
         address delegateToSet)
         internal
         returns (address currentDelegate)
     {
-        currentDelegate = repDelegate[msg.sender];
+        currentDelegate = delegate[msg.sender];
         if (currentDelegate != ZERO_ADDRESS) {
             require(delegateToSet == ZERO_ADDRESS || delegateToSet == currentDelegate, "delegate already set");
         } else {
             if (delegateToSet == ZERO_ADDRESS) {
                 delegateToSet = msg.sender;
             }
-            repDelegate[msg.sender] = delegateToSet;
+            delegate[msg.sender] = delegateToSet;
 
             emit DelegateChanged(
                 msg.sender,
@@ -416,14 +433,11 @@ contract StakingInterim is StakingState {
         }
     }
 
-    /*function _balanceOfByAsset(
-        address token,
-        address account,
-        uint256 walletBalance)
+    function _getTimestamp()
         internal
         view
         returns (uint256)
     {
-        return _balancesPerToken[token][account].min256(walletBalance);
-    }*/
+        return block.timestamp;
+    }
 }
