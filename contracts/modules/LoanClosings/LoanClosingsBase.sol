@@ -134,8 +134,6 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
             CloseTypes.Liquidation
         );
 
-        loans[loanId] = loanLocal;
-
         _closeLoan(
             loanLocal,
             loanCloseAmount
@@ -348,8 +346,6 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
             );
         }
 
-        loans[loanId] = loanLocal;
-
         _finalizeClose(
             loanLocal,
             loanParamsLocal,
@@ -441,8 +437,6 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
                 withdrawAmount
             );
         }
-
-        loans[loanId] = loanLocal;
 
         _finalizeClose(
             loanLocal,
@@ -826,10 +820,10 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         require(maxDrawdown != 0, "unhealthy position");
 
         // gets the gas rebate denominated in collateralToken
-        gasRebate = _gasUsed(startingGas)
-            .mul(
-                IPriceFeeds(priceFeeds).getFastGasPrice(loanParamsLocal.collateralToken) * 2
-            );
+        gasRebate = SafeMath.mul(
+            IPriceFeeds(priceFeeds).getFastGasPrice(loanParamsLocal.collateralToken) * 2,
+            _gasUsed(startingGas)
+        );
 
         // ensures the gas rebate will not drop the current margin below the maintenance level
         gasRebate = gasRebate
