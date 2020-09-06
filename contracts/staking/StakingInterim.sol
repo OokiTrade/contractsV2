@@ -7,9 +7,12 @@ pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
 import "./StakingState.sol";
+import "../interfaces/ILoanPool.sol";
 
 
 contract StakingInterim is StakingState {
+
+    ILoanPool public constant iBZRX = ILoanPool(0x18240BD9C07fA6156Ce3F3f61921cC82b2619157);
 
     struct RepStakedTokens {
         address wallet;
@@ -322,10 +325,9 @@ contract StakingInterim is StakingState {
         returns (uint256)
     {
         uint256 walletBalance = IERC20(token).balanceOf(account);
-        uint256 stakedBalance = balanceOfByAsset(
-            token,
-            account
-        );
+
+        // excludes staking by way of iBZRX
+        uint256 stakedBalance = _balancesPerToken[token][account];
 
         return walletBalance > stakedBalance ?
             walletBalance - stakedBalance :
@@ -337,9 +339,13 @@ contract StakingInterim is StakingState {
         address account)
         public
         view
-        returns (uint256)
+        returns (uint256 balance)
     {
-        return _balancesPerToken[token][account];
+        balance = _balancesPerToken[token][account];
+        if (token == BZRX) {
+            balance = balance
+                .add(iBZRX.assetBalanceOf(account));
+        }
     }
 
     function balanceOfByAssetNormed(
@@ -386,9 +392,13 @@ contract StakingInterim is StakingState {
         address token)
         public
         view
-        returns (uint256)
+        returns (uint256 supply)
     {
-        return _totalSupplyPerToken[token];
+        supply = _totalSupplyPerToken[token];
+        if (token == BZRX) {
+            supply = supply
+                .add(iBZRX.totalAssetSupply());
+        }
     }
 
     function totalSupplyByAssetNormed(
