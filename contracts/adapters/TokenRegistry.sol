@@ -23,7 +23,7 @@ interface TheProtocol{
 }
 
 
-contract TokenizedRegistry is Ownable{
+contract TokenRegistry is Ownable{
     address public bZxContract;
     struct TokenMetadata {
         address token; //iToken
