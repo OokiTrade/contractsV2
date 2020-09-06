@@ -24,9 +24,10 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         _setTarget(this.setDelegatedManager.selector, target);
         _setTarget(this.getEstimatedMarginExposure.selector, target);
         _setTarget(this.getRequiredCollateral.selector, target);
+        _setTarget(this.getRequiredCollateralByParams.selector, target);
         _setTarget(this.getBorrowAmount.selector, target);
+        _setTarget(this.getBorrowAmountByParams.selector, target);
     }
-
 
     // Note: Only callable by loan pools (iTokens)
     function borrowOrTradeFromPool(
@@ -58,6 +59,11 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
 
         LoanParams memory loanParamsLocal = loanParams[loanParamsId];
         require(loanParamsLocal.id != 0, "loanParams not exists");
+
+        if (initialMargin == 0) {
+            require(isTorqueLoan, "initialMargin == 0");
+            initialMargin = loanParamsLocal.minInitialMargin;
+        }
 
         // get required collateral
         uint256 collateralAmountRequired = _getRequiredCollateral(
@@ -162,6 +168,25 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         }
     }
 
+    function getRequiredCollateralByParams(
+        bytes32 loanParamsId,
+        address loanToken,
+        address collateralToken,
+        uint256 newPrincipal,
+        bool isTorqueLoan)
+        public
+        view
+        returns (uint256 collateralAmountRequired)
+    {
+        return getRequiredCollateral(
+            loanToken,
+            collateralToken,
+            newPrincipal,
+            loanParams[loanParamsId].minInitialMargin, // marginAmount
+            isTorqueLoan
+        );
+    }
+
     function getBorrowAmount(
         address loanToken,
         address collateralToken,
@@ -207,6 +232,25 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                     .div(WEI_PERCENT_PRECISION);
             }
         }
+    }
+
+    function getBorrowAmountByParams(
+        bytes32 loanParamsId,
+        address loanToken,
+        address collateralToken,
+        uint256 collateralTokenAmount,
+        bool isTorqueLoan)
+        public
+        view
+        returns (uint256 borrowAmount)
+    {
+        return getBorrowAmount(
+            loanToken,
+            collateralToken,
+            collateralTokenAmount,
+            loanParams[loanParamsId].minInitialMargin, // marginAmount
+            isTorqueLoan
+        );
     }
 
     function _borrowOrTrade(

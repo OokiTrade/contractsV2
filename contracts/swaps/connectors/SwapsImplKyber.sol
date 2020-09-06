@@ -16,8 +16,8 @@ contract SwapsImplKyber is State, ISwapsImpl {
 
     address internal constant feeWallet = 0x13ddAC8d492E463073934E2a101e419481970299;
 
-    //address public constant kyberContract = 0x818E6FECD516Ecc3849DAf6845e3EC868087B755; // mainnet
-    address public constant kyberContract = 0x692f391bCc85cefCe8C237C01e1f636BbD70EA4D; // kovan
+    address public constant kyberContract = 0x818E6FECD516Ecc3849DAf6845e3EC868087B755; // mainnet
+    //address public constant kyberContract = 0x692f391bCc85cefCe8C237C01e1f636BbD70EA4D; // kovan
     //address public constant kyberContract = 0x818E6FECD516Ecc3849DAf6845e3EC868087B755; // ropsten
 
 

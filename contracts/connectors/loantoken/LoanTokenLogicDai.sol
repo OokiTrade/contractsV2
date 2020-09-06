@@ -25,6 +25,12 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
     IERC20 public constant dai = IERC20(0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa);
 
 
+    constructor(
+        address _newOwner)
+        public
+        LoanTokenLogicStandard(_newOwner)
+    {}
+
     /* Public functions */
 
     function mintWithChai(

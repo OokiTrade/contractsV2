@@ -68,21 +68,21 @@ interface ProtocolLike {
         view
         returns (uint256);
 
-    function getRequiredCollateral(
+    function getRequiredCollateralByParams(
+        bytes32 loanParamsId,
         address loanToken,
         address collateralToken,
         uint256 newPrincipal,
-        uint256 marginAmount,
         bool isTorqueLoan)
         external
         view
         returns (uint256 collateralAmountRequired);
 
-    function getBorrowAmount(
+    function getBorrowAmountByParams(
+        bytes32 loanParamsId,
         address loanToken,
         address collateralToken,
         uint256 collateralTokenAmount,
-        uint256 marginAmount,
         bool isTorqueLoan)
         external
         view

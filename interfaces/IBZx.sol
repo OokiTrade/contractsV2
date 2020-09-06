@@ -81,7 +81,8 @@ contract IBZx is
         external;
 
     function setLiquidationIncentivePercent(
-        address[] calldata assets,
+        address[] calldata loanTokens,
+        address[] calldata collateralTokens,
         uint256[] calldata amounts)
         external;
 
@@ -224,11 +225,31 @@ contract IBZx is
         view
         returns (uint256 collateralAmountRequired);
 
+    function getRequiredCollateralByParams(
+        bytes32 loanParamsId,
+        address loanToken,
+        address collateralToken,
+        uint256 newPrincipal,
+        bool isTorqueLoan)
+        external
+        view
+        returns (uint256 collateralAmountRequired);
+
     function getBorrowAmount(
         address loanToken,
         address collateralToken,
         uint256 collateralTokenAmount,
         uint256 marginAmount,
+        bool isTorqueLoan)
+        external
+        view
+        returns (uint256 borrowAmount);
+
+    function getBorrowAmountByParams(
+        bytes32 loanParamsId,
+        address loanToken,
+        address collateralToken,
+        uint256 collateralTokenAmount,
         bool isTorqueLoan)
         external
         view

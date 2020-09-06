@@ -11,6 +11,12 @@ import "./LoanTokenLogicStandard.sol";
 
 contract LoanTokenLogicWeth is LoanTokenLogicStandard {
 
+    constructor(
+        address _newOwner)
+        public
+        LoanTokenLogicStandard(_newOwner)
+    {}
+
     function mintWithEther(
         address receiver)
         external
