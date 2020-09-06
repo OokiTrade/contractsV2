@@ -53,13 +53,13 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
 
         loanCloseAmount = closeAmount;
 
-        (uint256 maxLiquidatable, uint256 maxSeizable,) = _getLiquidationAmounts(
-            loanParamsLocal.collateralToken,
+        (uint256 maxLiquidatable, uint256 maxSeizable) = _getLiquidationAmounts(
             loanLocal.principal,
             loanLocal.collateral,
             currentMargin,
             loanParamsLocal.maintenanceMargin,
-            collateralToLoanRate
+            collateralToLoanRate,
+            liquidationIncentivePercent[loanParamsLocal.loanToken][loanParamsLocal.collateralToken]
         );
 
         if (loanCloseAmount < maxLiquidatable) {

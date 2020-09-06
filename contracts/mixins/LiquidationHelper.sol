@@ -11,21 +11,20 @@ import "../core/State.sol";
 contract LiquidationHelper is State {
 
     function _getLiquidationAmounts(
-        address collateralToken,
         uint256 principal,
         uint256 collateral,
         uint256 currentMargin,
         uint256 maintenanceMargin,
-        uint256 collateralToLoanRate)
+        uint256 collateralToLoanRate,
+        uint256 incentivePercent)
         internal
         view
-        returns (uint256 maxLiquidatable, uint256 maxSeizable, uint256 incentivePercent)
+        returns (uint256 maxLiquidatable, uint256 maxSeizable)
     {
-        incentivePercent = liquidationIncentivePercent[collateralToken];
         if (currentMargin > maintenanceMargin || collateralToLoanRate == 0) {
-            return (maxLiquidatable, maxSeizable, incentivePercent);
+            return (maxLiquidatable, maxSeizable);
         } else if (currentMargin <= incentivePercent) {
-            return (principal, collateral, currentMargin);
+            return (principal, collateral);
         }
 
         uint256 desiredMargin = maintenanceMargin
@@ -65,6 +64,6 @@ contract LiquidationHelper is State {
             maxSeizable = collateral;
         }
 
-        return (maxLiquidatable, maxSeizable, incentivePercent);
+        return (maxLiquidatable, maxSeizable);
     }
 }

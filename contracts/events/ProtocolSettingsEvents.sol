@@ -58,7 +58,8 @@ contract ProtocolSettingsEvents {
 
     event SetLiquidationIncentivePercent(
         address indexed sender,
-        address indexed asset,
+        address indexed loanToken,
+        address indexed collateralToken,
         uint256 oldValue,
         uint256 newValue
     );
