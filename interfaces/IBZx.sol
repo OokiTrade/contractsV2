@@ -130,7 +130,9 @@ contract IBZx is
     function getLoanPoolsList(
         uint256 start,
         uint256 count)
-        external;
+        external
+        view
+        returns(bytes32[] memory);
 
     function isLoanPool(
         address loanPool)
