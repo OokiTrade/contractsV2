@@ -13,9 +13,11 @@ contract LoanToken is AdvancedTokenStorage {
     address internal target_;
 
     constructor(
+        address _newOwner,
         address _newTarget)
         public
     {
+        transferOwnership(_newOwner);
         _setTarget(_newTarget);
     }
 
