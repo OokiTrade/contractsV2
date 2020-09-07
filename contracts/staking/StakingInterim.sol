@@ -119,16 +119,20 @@ contract StakingInterim is StakingState {
 
         address token;
         uint256 stakeAmount;
+        uint256 stakeable;
         for (uint256 i = 0; i < tokens.length; i++) {
             token = tokens[i];
-            stakeAmount = values[i];
+            require(token == BZRX || token == vBZRX || token == LPToken, "invalid token");
 
-            if (stakeAmount == 0) {
+            stakeAmount = values[i];
+            stakeable = stakeableByAsset(token, msg.sender);
+
+            if (stakeAmount == 0 || stakeable == 0) {
                 continue;
             }
-
-            require(token == BZRX || token == vBZRX || token == LPToken, "invalid token");
-            require(stakeAmount <= stakeableByAsset(token, msg.sender), "insufficient balance");
+            if (stakeAmount > stakeable) {
+                stakeAmount = stakeable;
+            }
 
             _balancesPerToken[token][msg.sender] = _balancesPerToken[token][msg.sender].add(stakeAmount);
             _totalSupplyPerToken[token] = _totalSupplyPerToken[token].add(stakeAmount);
@@ -284,7 +288,6 @@ contract StakingInterim is StakingState {
         updateReward(address(0))
     {
         require(isInit, "not init");
-        require(duration > 1 days && duration < 365 days / 12, "duration outside range");
 
         if (periodFinish != 0) {
             if (_getTimestamp() >= periodFinish) {
