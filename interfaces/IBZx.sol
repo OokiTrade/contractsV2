@@ -119,6 +119,12 @@ contract IBZx is
         uint256 amount)
         external;
 
+    function grantRewards(
+        address[] calldata users,
+        uint256[] calldata amounts)
+        external
+        returns (uint256 totalAmount);
+
     // NOTE: this doesn't sanitize inputs -> inaccurate values may be returned if there are duplicates tokens input
     function queryFees(
         address[] calldata tokens,
@@ -132,7 +138,7 @@ contract IBZx is
         uint256 count)
         external
         view
-        returns(bytes32[] memory);
+        returns (address[] memory loanPoolsList);
 
     function isLoanPool(
         address loanPool)
@@ -383,6 +389,17 @@ contract IBZx is
         external
         returns (uint256 secondsReduced);
 
+    function claimRewards(
+        address receiver)
+        external
+        returns (uint256 claimAmount);
+
+    function rewardsBalanceOf(
+        address user)
+        external
+        view
+        returns (uint256 rewardsBalance);
+
     /// @dev Gets current lender interest data totals for all loans with a specific oracle and interest token
     /// @param lender The lender address
     /// @param loanToken The loan token address
@@ -438,6 +455,13 @@ contract IBZx is
         view
         returns (LoanReturnData[] memory loansData);
 
+    function getUserLoansCount(
+        address user,
+        bool isLender)
+        external
+        view
+        returns (uint256);
+
     function getLoan(
         bytes32 loanId)
         external
@@ -451,6 +475,11 @@ contract IBZx is
         external
         view
         returns (LoanReturnData[] memory loansData);
+
+    function getActiveLoansCount()
+        external
+        view
+        returns (uint256);
 
 
     ////// Swap External //////

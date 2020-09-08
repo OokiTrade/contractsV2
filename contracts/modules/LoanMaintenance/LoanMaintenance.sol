@@ -26,11 +26,15 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         _setTarget(this.withdrawAccruedInterest.selector, target);
         _setTarget(this.extendLoanDuration.selector, target);
         _setTarget(this.reduceLoanDuration.selector, target);
+        _setTarget(this.claimRewards.selector, target);
+        _setTarget(this.rewardsBalanceOf.selector, target);
         _setTarget(this.getLenderInterestData.selector, target);
         _setTarget(this.getLoanInterestData.selector, target);
         _setTarget(this.getUserLoans.selector, target);
+        _setTarget(this.getUserLoansCount.selector, target);
         _setTarget(this.getLoan.selector, target);
         _setTarget(this.getActiveLoans.selector, target);
+        _setTarget(this.getActiveLoansCount.selector, target);
     }
 
     function depositCollateral(
@@ -353,6 +357,50 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         );
     }
 
+    function claimRewards(
+        address receiver)
+        external
+        returns (uint256 claimAmount)
+    {
+        bytes32 slot = keccak256(abi.encodePacked(msg.sender, UserRewardsID));
+        assembly {
+            claimAmount := sload(slot)
+        }
+
+        if (claimAmount != 0) {
+            assembly {
+                sstore(slot, 0)
+            }
+
+            protocolTokenPaid = protocolTokenPaid
+                .add(claimAmount);
+
+            IERC20(vbzrxTokenAddress).transfer(
+                receiver,
+                claimAmount
+            );
+
+            emit ClaimReward(
+                msg.sender,
+                receiver,
+                vbzrxTokenAddress,
+                claimAmount
+            );
+        }
+    }
+
+    function rewardsBalanceOf(
+        address user)
+        external
+        view
+        returns (uint256 rewardsBalance)
+    {
+        bytes32 slot = keccak256(abi.encodePacked(user, UserRewardsID));
+        assembly {
+            rewardsBalance := sload(slot)
+        }
+    }
+
     /// @dev Gets current lender interest data totals for all loans with a specific oracle and interest token
     /// @param lender The lender address
     /// @param loanToken The loan token address
@@ -481,6 +529,18 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         }
     }
 
+    function getUserLoansCount(
+        address user,
+        bool isLender)
+        external
+        view
+        returns (uint256)
+    {
+        return isLender ?
+            lenderLoanSets[user].length() :
+            borrowerLoanSets[user].length();
+    }
+
     function getLoan(
         bytes32 loanId)
         external
@@ -538,6 +598,14 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
                 mstore(loansData, count)
             }
         }
+    }
+
+    function getActiveLoansCount()
+        external
+        view
+        returns (uint256)
+    {
+        return activeLoansSet.length();
     }
 
     function _getLoan(

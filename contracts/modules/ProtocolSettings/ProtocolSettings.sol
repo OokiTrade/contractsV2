@@ -9,11 +9,11 @@ pragma experimental ABIEncoderV2;
 import "../../core/State.sol";
 import "../../events/ProtocolSettingsEvents.sol";
 import "../../openzeppelin/SafeERC20.sol";
-import "../../mixins/ProtocolTokenUser.sol";
 import "../../interfaces/IVestingToken.sol";
 
 
-contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
+contract ProtocolSettings is State, ProtocolSettingsEvents {
+    using SafeERC20 for IERC20;
 
     function initialize(
         address target)
@@ -36,6 +36,7 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
         _setTarget(this.withdrawFees.selector, target);
         _setTarget(this.withdrawProtocolToken.selector, target);
         _setTarget(this.depositProtocolToken.selector, target);
+        _setTarget(this.grantRewards.selector, target);
         _setTarget(this.queryFees.selector, target);
         _setTarget(this.getLoanPoolsList.selector, target);
         _setTarget(this.isLoanPool.selector, target);
@@ -341,10 +342,22 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
         onlyOwner
         returns (address rewardToken, uint256 withdrawAmount)
     {
-        (rewardToken, withdrawAmount) = _withdrawProtocolToken(
-            receiver,
-            amount
-        );
+        rewardToken = vbzrxTokenAddress;
+        withdrawAmount = amount;
+
+        uint256 tokenBalance = protocolTokenHeld;
+        if (withdrawAmount > tokenBalance) {
+            withdrawAmount = tokenBalance;
+        }
+        if (withdrawAmount != 0) {
+            protocolTokenHeld = tokenBalance
+                .sub(withdrawAmount);
+
+            IERC20(vbzrxTokenAddress).transfer(
+                receiver,
+                withdrawAmount
+            );
+        }
 
         uint256 totalEmission = IVestingToken(vbzrxTokenAddress).claimedBalanceOf(address(this));
 
@@ -356,7 +369,7 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
         }
 
         if (totalEmission > totalWithdrawn) {
-            IERC20(bzrxTokenAddress).safeTransfer(
+            IERC20(bzrxTokenAddress).transfer(
                 receiver,
                 totalEmission - totalWithdrawn
             );
@@ -374,11 +387,42 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
         protocolTokenHeld = protocolTokenHeld
             .add(amount);
 
-        IERC20(vbzrxTokenAddress).safeTransferFrom(
+        IERC20(vbzrxTokenAddress).transferFrom(
             msg.sender,
             address(this),
             amount
         );
+    }
+
+    function grantRewards(
+        address[] calldata users,
+        uint256[] calldata amounts)
+        external
+        onlyOwner
+        returns (uint256 totalAmount)
+    {
+        require(users.length == amounts.length, "count mismatch");
+
+        uint256 amount;
+        bytes32 slot;
+        for (uint256 i = 0; i < users.length; i++) {
+            amount = amounts[i];
+            totalAmount = totalAmount
+                .add(amount);
+
+            slot = keccak256(abi.encodePacked(users[i], UserRewardsID));
+            assembly {
+                sstore(slot, add(sload(slot), amount))
+            }
+        }
+
+        if (totalAmount != 0) {
+            IERC20(vbzrxTokenAddress).transferFrom(
+                msg.sender,
+                address(this),
+                totalAmount
+            );
+        }
     }
 
     // NOTE: this doesn't sanitize inputs -> inaccurate values may be returned if there are duplicates tokens input
@@ -416,9 +460,23 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
         uint256 count)
         external
         view
-        returns(bytes32[] memory)
+        returns (address[] memory loanPoolsList)
     {
-        return loanPoolsSet.enumerate(start, count);
+        EnumerableBytes32Set.Bytes32Set storage set = loanPoolsSet;
+        uint256 end = start.add(count).min256(set.length());
+        if (start >= end) {
+            return loanPoolsList;
+        }
+        count = end-start;
+
+        loanPoolsList = new address[](count);
+        for (uint256 i = --end; i >= start; i--) {
+            loanPoolsList[--count] = set.getAddress(i);
+
+            if (i == 0) {
+                break;
+            }
+        }
     }
 
     function isLoanPool(

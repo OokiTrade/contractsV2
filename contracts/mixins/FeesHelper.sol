@@ -9,10 +9,9 @@ import "../core/State.sol";
 import "../openzeppelin/SafeERC20.sol";
 import "../feeds/IPriceFeeds.sol";
 import "../events/FeesEvents.sol";
-import "../mixins/ProtocolTokenUser.sol";
 
 
-contract FeesHelper is State, ProtocolTokenUser, FeesEvents {
+contract FeesHelper is State, FeesEvents {
     using SafeERC20 for IERC20;
 
     // calculate trading fee
@@ -149,7 +148,6 @@ contract FeesHelper is State, ProtocolTokenUser, FeesEvents {
         }
     }
 
-
     // pay protocolToken reward to user
     function _payFeeReward(
         address user,
@@ -179,18 +177,22 @@ contract FeesHelper is State, ProtocolTokenUser, FeesEvents {
         }
 
         if (rewardAmount != 0) {
-            address rewardToken;
-            (rewardToken, rewardAmount) = _withdrawProtocolToken(
-                user,
-                rewardAmount
-            );
+            uint256 tokenBalance = protocolTokenHeld;
+            if (rewardAmount > tokenBalance) {
+                rewardAmount = tokenBalance;
+            }
             if (rewardAmount != 0) {
-                protocolTokenPaid = protocolTokenPaid
-                    .add(rewardAmount);
+                protocolTokenHeld = tokenBalance
+                    .sub(rewardAmount);
+
+                bytes32 slot = keccak256(abi.encodePacked(user, UserRewardsID));
+                assembly {
+                    sstore(slot, add(sload(slot), rewardAmount))
+                }
 
                 emit EarnReward(
                     user,
-                    rewardToken,
+                    vbzrxTokenAddress, // rewardToken
                     loanId,
                     rewardAmount
                 );

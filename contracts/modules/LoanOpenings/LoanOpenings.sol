@@ -307,7 +307,8 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         if (isTorqueLoan) {
             require(sentValues[3] == 0, "surplus loan token");
 
-            uint256 borrowingFee = _getBorrowingFee(sentValues[4]);
+            // fee based off required collateral
+            uint256 borrowingFee = _getBorrowingFee(collateralAmountRequired);
             if (borrowingFee != 0) {
                 _payBorrowingFee(
                     sentAddresses[1], // borrower

@@ -39,6 +39,13 @@ contract LoanMaintenanceEvents {
         uint256 newEndTimestamp
     );
 
+    event ClaimReward(
+        address indexed user,
+        address indexed receiver,
+        address indexed token,
+        uint256 amount
+    );
+
     enum LoanType {
         All,
         Margin,
