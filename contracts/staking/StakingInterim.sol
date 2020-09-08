@@ -337,6 +337,24 @@ contract StakingInterim is StakingState {
             0;
     }
 
+    function balanceOfByAssetWalletAware(
+        address token,
+        address account)
+        public
+        view
+        returns (uint256 balance)
+    {
+        uint256 walletBalance = IERC20(token).balanceOf(account);
+
+        balance = _balancesPerToken[token][account]
+            .min256(walletBalance);
+
+        if (token == BZRX) {
+            balance = balance
+                .add(iBZRX.assetBalanceOf(account));
+        }
+    }
+
     function balanceOfByAsset(
         address token,
         address account)
