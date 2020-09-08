@@ -6,7 +6,6 @@
 pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
-import "../openzeppelin/Ownable.sol";
 
 interface TheProtocol{
     function getLoanPoolsList(
@@ -14,7 +13,7 @@ interface TheProtocol{
         uint256 count)
         external
         view
-        returns(bytes32[] memory);
+        returns (address[] memory loanPoolsList);
 
     function loanPoolToUnderlying(address _loanPool)
         external
@@ -22,22 +21,18 @@ interface TheProtocol{
         returns(address);
 }
 
+contract TokenRegistry {
 
-contract TokenRegistry is Ownable{
     address public bZxContract;
+
     struct TokenMetadata {
-        address token; //iToken
-        address asset; //underlying asset
-    }
-    constructor(address _bZxContract)
-        public
-    {
-        updateBZxContract(_bZxContract);
+        address token; // iToken
+        address asset; // underlying asset
     }
 
-    function updateBZxContract(address _bZxContract)
+    constructor(
+        address _bZxContract)
         public
-        onlyOwner 
     {
         bZxContract = _bZxContract;
     }
@@ -45,25 +40,18 @@ contract TokenRegistry is Ownable{
     function getTokens(
         uint256 _start,
         uint256 _count)
-        public
+        external
         view
         returns (TokenMetadata[] memory metadata)
     {
-        bytes32[] memory loanPool;
+        address[] memory loanPool;
         TheProtocol theProtocol = TheProtocol(bZxContract);
         loanPool = theProtocol.getLoanPoolsList(_start, _count);
 
         metadata = new TokenMetadata[](loanPool.length);
         for(uint256 i = 0; i < loanPool.length; i++){
-            
-            bytes32 value = loanPool[i];
-            address addrvalue;
-            assembly {
-                addrvalue := value
-            }
-
-            metadata[i].token = addrvalue;
-            metadata[i].asset = theProtocol.loanPoolToUnderlying(addrvalue);
+            metadata[i].token = loanPool[i];
+            metadata[i].asset = theProtocol.loanPoolToUnderlying(loanPool[i]);
         }
     }
 }
