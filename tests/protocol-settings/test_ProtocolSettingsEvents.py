@@ -104,13 +104,14 @@ def test_setAffiliateFeePercent(Constants, bzx, accounts):
     assert(setAffiliateFeePercent[0]["oldValue"] == affiliateFeePercent)
     assert(setAffiliateFeePercent[0]["newValue"] == newValue)
 
-def test_setLiquidationIncentivePercent(Constants, bzx, accounts):
+def test_setLiquidationIncentivePercent(Constants, bzx, accounts, DAI):
     newValue = 4 * 10**18
-    liquidationIncentivePercent = bzx.liquidationIncentivePercent()
-    tx = bzx.setLiquidationIncentivePercent(newValue)
+    liquidationIncentivePercent = bzx.liquidationIncentivePercent(DAI)
+    tx = bzx.setLiquidationIncentivePercent([DAI],[newValue])
     setLiquidationIncentivePercent = tx.events["SetLiquidationIncentivePercent"]
 
     assert(setLiquidationIncentivePercent[0]["sender"] == accounts[0])
+    assert(setLiquidationIncentivePercent[0]["asset"] == DAI)
     assert(setLiquidationIncentivePercent[0]["oldValue"] == liquidationIncentivePercent)
     assert(setLiquidationIncentivePercent[0]["newValue"] == newValue)
 
@@ -135,13 +136,10 @@ def test_setFeesController(Constants, bzx, accounts):
 
  
 # WIP
-# def test_withdrawLendingFees(Constants, bzx, accounts, DAI, LINK, FeesHelper):
+# def queryFees(Constants, bzx, accounts, DAI, LINK, FeesHelper):
 #     assert False
 
 # WIP
-# def test_withdrawTradingFees(Constants, bzx):
+# def test_withdrawFees(Constants, bzx):
 #     assert False
 
-# WIP
-# def test_withdrawBorrowingFees(Constants, bzx):
-#     assert False

@@ -4,21 +4,18 @@
  */
 
 pragma solidity 0.5.17;
+pragma experimental ABIEncoderV2;
 
-import "./AdvancedTokenStorage.sol";
+import "./StakingState.sol";
 
 
-contract LoanToken is AdvancedTokenStorage {
-
-    address internal target_;
+contract StakingProxy is StakingState {
 
     constructor(
-        address _newOwner,
-        address _newTarget)
+        address _impl)
         public
     {
-        transferOwnership(_newOwner);
-        _setTarget(_newTarget);
+        replaceImplementation(_impl);
     }
 
     function()
@@ -29,10 +26,11 @@ contract LoanToken is AdvancedTokenStorage {
             return;
         }
 
-        address target = target_;
+        address impl = implementation;
+
         bytes memory data = msg.data;
         assembly {
-            let result := delegatecall(gas, target, add(data, 0x20), mload(data), 0, 0)
+            let result := delegatecall(gas, impl, add(data, 0x20), mload(data), 0, 0)
             let size := returndatasize
             let ptr := mload(0x40)
             returndatacopy(ptr, 0, size)
@@ -42,19 +40,12 @@ contract LoanToken is AdvancedTokenStorage {
         }
     }
 
-    function setTarget(
-        address _newTarget)
+    function replaceImplementation(
+        address impl)
         public
         onlyOwner
     {
-        _setTarget(_newTarget);
-    }
-
-    function _setTarget(
-        address _newTarget)
-        internal
-    {
-        require(Address.isContract(_newTarget), "target not a contract");
-        target_ = _newTarget;
+        require(Address.isContract(impl), "not a contract");
+        implementation = impl;
     }
 }

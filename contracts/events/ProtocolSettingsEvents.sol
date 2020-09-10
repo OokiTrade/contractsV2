@@ -58,6 +58,8 @@ contract ProtocolSettingsEvents {
 
     event SetLiquidationIncentivePercent(
         address indexed sender,
+        address indexed loanToken,
+        address indexed collateralToken,
         uint256 oldValue,
         uint256 newValue
     );
@@ -94,4 +96,11 @@ contract ProtocolSettingsEvents {
         address indexed receiver,
         uint256 amount
     );
+
+    enum FeeType {
+        All,
+        Lending,
+        Trading,
+        Borrowing
+    }
 }

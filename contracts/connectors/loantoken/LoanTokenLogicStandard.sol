@@ -26,23 +26,29 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
     uint256 public constant VERSION = 6;
     address internal constant arbitraryCaller = 0x000F400e6818158D541C3EBE45FE3AA0d47372FF;
 
-    //address public constant bZxContract = 0xAbd9372723C735D426D0a760D047206Fe115ee6d; // mainnet
-    //address public constant wethToken = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // mainnet
+    address public constant bZxContract = 0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f; // mainnet
+    address public constant wethToken = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // mainnet
 
-    address public constant bZxContract = 0xAbd9372723C735D426D0a760D047206Fe115ee6d; // kovan
-    address public constant wethToken = 0xd0A1E359811322d97991E03f863a0C30C2cF029C; // kovan
+    //address public constant bZxContract = 0xAbd9372723C735D426D0a760D047206Fe115ee6d; // kovan
+    //address public constant wethToken = 0xd0A1E359811322d97991E03f863a0C30C2cF029C; // kovan
 
     bytes32 internal constant iToken_ProfitSoFar = 0x37aa2b7d583612f016e4a4de4292cb015139b3d7762663d06a53964912ea2fb6;          // keccak256("iToken_ProfitSoFar")
     bytes32 internal constant iToken_LowerAdminAddress = 0x7ad06df6a0af6bd602d90db766e0d5f253b45187c3717a0f9026ea8b10ff0d4b;    // keccak256("iToken_LowerAdminAddress")
     bytes32 internal constant iToken_LowerAdminContract = 0x34b31cff1dbd8374124bd4505521fc29cab0f9554a5386ba7d784a4e611c7e31;   // keccak256("iToken_LowerAdminContract")
 
 
+    constructor(
+        address _newOwner)
+        public
+    {
+        transferOwnership(_newOwner);
+    }
+
     function()
         external
     {
         revert("fallback not allowed");
     }
-
 
     /* Public functions */
 
@@ -589,11 +595,14 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
             );
 
             if (newBorrowAmount <= _underlyingBalance()) {
-                return ProtocolLike(bZxContract).getRequiredCollateral(
+                return ProtocolLike(bZxContract).getRequiredCollateralByParams(
+                    loanParamsIds[uint256(keccak256(abi.encodePacked(
+                        collateralTokenAddress,
+                        true
+                    )))],
                     loanTokenAddress,
                     collateralTokenAddress != address(0) ? collateralTokenAddress : wethToken,
                     newBorrowAmount,
-                    50 * WEI_PRECISION, // initialMargin
                     true // isTorqueLoan
                 ).add(10); // some dust to compensate for rounding errors
             }
@@ -609,11 +618,14 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         returns (uint256 borrowAmount)
     {
         if (depositAmount != 0) {
-            borrowAmount = ProtocolLike(bZxContract).getBorrowAmount(
+            borrowAmount = ProtocolLike(bZxContract).getBorrowAmountByParams(
+                loanParamsIds[uint256(keccak256(abi.encodePacked(
+                    collateralTokenAddress,
+                    true
+                )))],
                 loanTokenAddress,
                 collateralTokenAddress != address(0) ? collateralTokenAddress : wethToken,
                 depositAmount,
-                50 * WEI_PRECISION, // initialMargin,
                 true // isTorqueLoan
             );
 
@@ -744,7 +756,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         return _borrowOrTrade(
             loanId,
             withdrawAmount,
-            2 * WEI_PRECISION, // leverageAmount (translates to 150% margin for a Torque loan)
+            0, // leverageAmount (calculated later)
             collateralTokenAddress,
             sentAddresses,
             sentAmounts,
@@ -924,7 +936,9 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         )))];
 
         // converting to initialMargin
-        leverageAmount = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, leverageAmount);
+        if (leverageAmount != 0) {
+            leverageAmount = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, leverageAmount);
+        }
 
         (sentAmounts[1], sentAmounts[4]) = ProtocolLike(bZxContract).borrowOrTradeFromPool.value(msgValue)( // newPrincipal, newCollateral
             loanParamsId,
@@ -1126,46 +1140,50 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
             assetSupply
         );
 
-        uint256 minRate;
-        uint256 maxRate;
+        uint256 thisMinRate;
+        uint256 thisMaxRate;
         uint256 thisBaseRate = baseRate;
         uint256 thisRateMultiplier = rateMultiplier;
+        uint256 thisTargetLevel = targetLevel;
+        uint256 thisKinkLevel = kinkLevel;
+        uint256 thisMaxScaleRate = maxScaleRate;
 
-        if (utilRate > 90 ether) {
+        if (utilRate < thisTargetLevel) {
+            // target targetLevel utilization when utilization is under targetLevel
+            utilRate = thisTargetLevel;
+        }
+
+        if (utilRate > thisKinkLevel) {
             // scale rate proportionally up to 100%
+            uint256 thisMaxRange = WEI_PERCENT_PRECISION - thisKinkLevel; // will not overflow
 
-            utilRate = utilRate.sub(90 ether);
-            if (utilRate > 10 ether)
-                utilRate = 10 ether;
+            utilRate -= thisKinkLevel;
+            if (utilRate > thisMaxRange)
+                utilRate = thisMaxRange;
 
-            maxRate = thisRateMultiplier
+            thisMaxRate = thisRateMultiplier
                 .add(thisBaseRate)
-                .mul(90)
-                .div(100);
+                .mul(thisKinkLevel)
+                .div(WEI_PERCENT_PRECISION);
 
             nextRate = utilRate
-                .mul(SafeMath.sub(100 ether, maxRate))
-                .div(10 ether)
-                .add(maxRate);
+                .mul(SafeMath.sub(thisMaxScaleRate, thisMaxRate))
+                .div(thisMaxRange)
+                .add(thisMaxRate);
         } else {
-            if (utilRate < 80 ether) {
-                // target 80% utilization when utilization is under 80%
-                utilRate = 80 ether;
-            }
-
             nextRate = utilRate
                 .mul(thisRateMultiplier)
                 .div(WEI_PERCENT_PRECISION)
                 .add(thisBaseRate);
 
-            minRate = thisBaseRate;
-            maxRate = thisRateMultiplier
+            thisMinRate = thisBaseRate;
+            thisMaxRate = thisRateMultiplier
                 .add(thisBaseRate);
 
-            if (nextRate < minRate)
-                nextRate = minRate;
-            else if (nextRate > maxRate)
-                nextRate = maxRate;
+            if (nextRate < thisMinRate)
+                nextRate = thisMinRate;
+            else if (nextRate > thisMaxRate)
+                nextRate = thisMaxRate;
         }
     }
 

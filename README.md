@@ -9,6 +9,9 @@
   <a href='https://github.com/bZxNetwork/contractsV2/blob/master/LICENSE' style="text-decoration:none;">
     <img src='https://img.shields.io/github/license/bZxNetwork/contractsV2' alt='License' />
   </a>
+  <a href='https://docs.openzeppelin.com/' style="text-decoration:none;">
+    <img src='https://img.shields.io/badge/built%20with-OpenZeppelin-3677FF' alt='OpenZeppelin' />
+  </a>
   <br/>
   <a href='https://t.me/b0xNet' style="text-decoration:none;">
     <img src='https://img.shields.io/badge/chat-on%20telegram-9cf.svg?longCache=true' alt='Telegram' />

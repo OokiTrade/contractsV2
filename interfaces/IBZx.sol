@@ -115,13 +115,15 @@ contract IBZx is
     /// that liquidator gets in the process of liquidating.
     /// @param newValue liquidation inncetive amount
     function setLiquidationIncentivePercent(
-        uint256 newValue)
+        address[] calldata loanTokens,
+        address[] calldata collateralTokens,
+        uint256[] calldata amounts)
         external;
 
     /// @dev sets max swap rate slippage percent.
     /// @param newValue max swap rate slippage percent.
     function setMaxDisagreement(
-        uint256 newValue)
+        uint256 newAmount)
         external;
 
     /// TODO
@@ -147,28 +149,8 @@ contract IBZx is
     /// @return array of amounts withdrawn
     function withdrawLendingFees(
         address[] calldata tokens,
-        address receiver)
-        external
-        returns (uint256[] memory amounts);
-
-    /// @dev withdraws trading fees to receiver. Only can be called by feesController address
-    /// @param tokens array of token addresses.
-    /// @param receiver fees receiver address
-    /// @return amounts withdrawn
-    function withdrawTradingFees(
-        address[] calldata tokens,
-        address receiver)
-        external
-        returns (uint256[] memory amounts);
-
-
-    /// @dev withdraws borrowing fees to receiver. Only can be called by feesController address
-    /// @param tokens array of token addresses.
-    /// @param receiver fees receiver address
-    /// @return amounts withdrawn
-    function withdrawBorrowingFees(
-        address[] calldata tokens,
-        address receiver)
+        address receiver,
+        FeeType feeType)
         external
         returns (uint256[] memory amounts);
 
@@ -181,13 +163,27 @@ contract IBZx is
         address receiver,
         uint256 amount)
         external
-        returns (address, bool);
+        returns (address rewardToken, uint256 withdrawAmount);
 
     /// @dev depozit protocol token (BZRX)
     /// @param amount address of BZRX tokens to deposit
     function depositProtocolToken(
         uint256 amount)
         external;
+
+    function grantRewards(
+        address[] calldata users,
+        uint256[] calldata amounts)
+        external
+        returns (uint256 totalAmount);
+
+    // NOTE: this doesn't sanitize inputs -> inaccurate values may be returned if there are duplicates tokens input
+    function queryFees(
+        address[] calldata tokens,
+        FeeType feeType)
+        external
+        view
+        returns (uint256[] memory amountsHeld, uint256[] memory amountsPaid);
 
     /// @dev get list of loan pools in the system. Ordering is not guaranteed
     /// @param start start index
@@ -197,7 +193,8 @@ contract IBZx is
         uint256 start,
         uint256 count)
         external
-        returns(bytes32[] memory);
+        view
+        returns (address[] memory loanPoolsList);
 
     /// @dev checks whether addreess is a loan pool address
     /// @return boolean 
@@ -288,8 +285,7 @@ contract IBZx is
         bytes calldata loanDataBytes)
         external
         payable
-        returns (uint256 newPrincipal, 
-                uint256 newCollateral);
+        returns (uint256);
 
     /// @dev sets/disables/enables the delegated manager for the loan
     /// @param loanId id of the loan
@@ -337,6 +333,16 @@ contract IBZx is
         view
         returns (uint256 collateralAmountRequired);
 
+    function getRequiredCollateralByParams(
+        bytes32 loanParamsId,
+        address loanToken,
+        address collateralToken,
+        uint256 newPrincipal,
+        bool isTorqueLoan)
+        external
+        view
+        returns (uint256 collateralAmountRequired);
+
     /// @dev calculates borrow amount for simulated position
     /// @param loanToken address of loan token
     /// @param collateralToken address of collateral token
@@ -349,6 +355,16 @@ contract IBZx is
         address collateralToken,
         uint256 collateralTokenAmount,
         uint256 marginAmount,
+        bool isTorqueLoan)
+        external
+        view
+        returns (uint256 borrowAmount);
+
+    function getBorrowAmountByParams(
+        bytes32 loanParamsId,
+        address loanToken,
+        address collateralToken,
+        uint256 collateralTokenAmount,
         bool isTorqueLoan)
         external
         view
@@ -550,6 +566,17 @@ contract IBZx is
         external
         returns (uint256 secondsReduced);
 
+    function claimRewards(
+        address receiver)
+        external
+        returns (uint256 claimAmount);
+
+    function rewardsBalanceOf(
+        address user)
+        external
+        view
+        returns (uint256 rewardsBalance);
+
     /// @dev Gets current lender interest data totals for all loans with a specific oracle and interest token
     /// @param lender The lender address
     /// @param loanToken The loan token address
@@ -608,6 +635,13 @@ contract IBZx is
         view
         returns (LoanReturnData[] memory loansData);
 
+    function getUserLoansCount(
+        address user,
+        bool isLender)
+        external
+        view
+        returns (uint256);
+
     /// @dev gets existing loan
     /// @param loanId id of existing loan
     /// @return loanData array of loans
@@ -628,6 +662,12 @@ contract IBZx is
         external
         view
         returns (LoanReturnData[] memory loansData);
+
+    function getActiveLoansCount()
+        external
+        view
+        returns (uint256);
+
 
     ////// Swap External //////
 

@@ -15,7 +15,7 @@ contract ITokenHolderLike {
 contract GasTokenUser {
 
     ITokenHolderLike constant public gasToken = ITokenHolderLike(0x0000000000004946c0e9F43F4Dee607b0eF1fA1c);
-    ITokenHolderLike constant public tokenHolder = ITokenHolderLike(0x2bdfbdd035AA1BaF4192368ef2df35697bf2639F);
+    ITokenHolderLike constant public tokenHolder = ITokenHolderLike(0x55Eb3DD3f738cfdda986B8Eff3fa784477552C61);
 
     modifier usesGasToken(address holder) {
         if (holder == address(0)) {

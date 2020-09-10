@@ -11,4 +11,4 @@ def test_getBorrowAmount(Constants, bzx, accounts, DAI, LINK):
 
     amount = bzx.getBorrowAmount(DAI, LINK, borrowAmount, margin, True)
     print("amount", amount)
-    assert(amount == 380981071063589634)
+    assert(amount == 380981071063589633)

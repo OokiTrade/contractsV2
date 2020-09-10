@@ -25,6 +25,12 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
     IERC20 public constant dai = IERC20(0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa);
 
 
+    constructor(
+        address _newOwner)
+        public
+        LoanTokenLogicStandard(_newOwner)
+    {}
+
     /* Public functions */
 
     function mintWithChai(
@@ -285,10 +291,9 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
             .mul(WEI_PRECISION)
             .div(currentPrice);
 
-        uint256 oldBalance = balances[receiver];
         _updateCheckpoints(
             receiver,
-            oldBalance,
+            balances[receiver],
             _mint(receiver, mintAmount, depositAmount, currentPrice), // newBalance
             currentPrice
         );
@@ -345,10 +350,9 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
         }
         require (success, "37"); // free liquidity of DAI/CHAI insufficient
 
-        uint256 oldBalance = balances[msg.sender];
         _updateCheckpoints(
             msg.sender,
-            oldBalance,
+            balances[msg.sender],
             _burn(msg.sender, burnAmount, loanAmountOwed, currentPrice), // newBalance
             currentPrice
         );

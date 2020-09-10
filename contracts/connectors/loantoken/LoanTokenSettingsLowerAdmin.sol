@@ -13,8 +13,8 @@ import "./interfaces/ProtocolSettingsLike.sol";
 contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage {
     using SafeMath for uint256;
 
-    //address public constant bZxContract = 0xAbd9372723C735D426D0a760D047206Fe115ee6d; // mainnet
-    address public constant bZxContract = 0xAbd9372723C735D426D0a760D047206Fe115ee6d; // kovan
+    address public constant bZxContract = 0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f; // mainnet
+    //address public constant bZxContract = 0xAbd9372723C735D426D0a760D047206Fe115ee6d; // kovan
 
     bytes32 internal constant iToken_LowerAdminAddress = 0x7ad06df6a0af6bd602d90db766e0d5f253b45187c3717a0f9026ea8b10ff0d4b;    // keccak256("iToken_LowerAdminAddress")
 
@@ -85,17 +85,26 @@ contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage {
         uint256 _baseRate,
         uint256 _rateMultiplier,
         uint256 _lowUtilBaseRate,
-        uint256 _lowUtilRateMultiplier)
+        uint256 _lowUtilRateMultiplier,
+        uint256 _targetLevel,
+        uint256 _kinkLevel,
+        uint256 _maxScaleRate)
         public
         onlyAdmin
     {
-        require(_rateMultiplier.add(_baseRate) <= WEI_PERCENT_PRECISION, "params too high");
-        require(_lowUtilRateMultiplier.add(_lowUtilBaseRate) <= WEI_PERCENT_PRECISION, "params too high");
+        require(_rateMultiplier.add(_baseRate) <= WEI_PERCENT_PRECISION, "curve params too high");
+        require(_lowUtilRateMultiplier.add(_lowUtilBaseRate) <= WEI_PERCENT_PRECISION, "curve params too high");
+
+        require(_targetLevel <= WEI_PERCENT_PRECISION && _kinkLevel <= WEI_PERCENT_PRECISION, "levels too high");
 
         baseRate = _baseRate;
         rateMultiplier = _rateMultiplier;
         lowUtilBaseRate = _lowUtilBaseRate;
         lowUtilRateMultiplier = _lowUtilRateMultiplier;
+
+        targetLevel = _targetLevel; // 80 ether
+        kinkLevel = _kinkLevel; // 90 ether
+        maxScaleRate = _maxScaleRate; // 100 ether
     }
 
     function toggleFunctionPause(

@@ -24,9 +24,10 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         _setTarget(this.setDelegatedManager.selector, target);
         _setTarget(this.getEstimatedMarginExposure.selector, target);
         _setTarget(this.getRequiredCollateral.selector, target);
+        _setTarget(this.getRequiredCollateralByParams.selector, target);
         _setTarget(this.getBorrowAmount.selector, target);
+        _setTarget(this.getBorrowAmountByParams.selector, target);
     }
-
 
     // Note: Only callable by loan pools (iTokens)
     function borrowOrTradeFromPool(
@@ -58,6 +59,11 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
 
         LoanParams memory loanParamsLocal = loanParams[loanParamsId];
         require(loanParamsLocal.id != 0, "loanParams not exists");
+
+        if (initialMargin == 0) {
+            require(isTorqueLoan, "initialMargin == 0");
+            initialMargin = loanParamsLocal.minInitialMargin;
+        }
 
         // get required collateral
         uint256 collateralAmountRequired = _getRequiredCollateral(
@@ -106,7 +112,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         uint256 newPrincipal)
         external
         view
-        returns (uint256)
+        returns (uint256 value)
     {
         uint256 maxLoanTerm = 2419200; // 28 days
 
@@ -118,17 +124,15 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             .mul(owedPerDay)
             .div(1 days);
 
-        uint256 receivedAmount = _swapsExpectedReturn(
+        value = _swapsExpectedReturn(
             loanToken,
             collateralToken,
             loanTokenSent
                 .sub(interestAmountRequired)
         );
-        if (receivedAmount == 0) {
-            return 0;
-        } else {
+        if (value != 0) {
             return collateralTokenSent
-                .add(receivedAmount);
+                .add(value);
         }
     }
 
@@ -162,6 +166,25 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                     );
             }
         }
+    }
+
+    function getRequiredCollateralByParams(
+        bytes32 loanParamsId,
+        address loanToken,
+        address collateralToken,
+        uint256 newPrincipal,
+        bool isTorqueLoan)
+        public
+        view
+        returns (uint256 collateralAmountRequired)
+    {
+        return getRequiredCollateral(
+            loanToken,
+            collateralToken,
+            newPrincipal,
+            loanParams[loanParamsId].minInitialMargin, // marginAmount
+            isTorqueLoan
+        );
     }
 
     function getBorrowAmount(
@@ -206,9 +229,28 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                     .mul(
                         WEI_PERCENT_PRECISION - feePercent // never will overflow
                     )
-                    .divCeil(WEI_PERCENT_PRECISION);
+                    .div(WEI_PERCENT_PRECISION);
             }
         }
+    }
+
+    function getBorrowAmountByParams(
+        bytes32 loanParamsId,
+        address loanToken,
+        address collateralToken,
+        uint256 collateralTokenAmount,
+        bool isTorqueLoan)
+        public
+        view
+        returns (uint256 borrowAmount)
+    {
+        return getBorrowAmount(
+            loanToken,
+            collateralToken,
+            collateralTokenAmount,
+            loanParams[loanParamsId].minInitialMargin, // marginAmount
+            isTorqueLoan
+        );
     }
 
     function _borrowOrTrade(
@@ -265,7 +307,8 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         if (isTorqueLoan) {
             require(sentValues[3] == 0, "surplus loan token");
 
-            uint256 borrowingFee = _getBorrowingFee(sentValues[4]);
+            // fee based off required collateral
+            uint256 borrowingFee = _getBorrowingFee(collateralAmountRequired);
             if (borrowingFee != 0) {
                 _payBorrowingFee(
                     sentAddresses[1], // borrower
@@ -624,7 +667,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         if (loanToken == collateralToken) {
             collateralTokenAmount = newPrincipal
                 .mul(marginAmount)
-                .div(WEI_PERCENT_PRECISION);
+                .divCeil(WEI_PERCENT_PRECISION);
         } else {
             (uint256 sourceToDestRate, uint256 sourceToDestPrecision) = IPriceFeeds(priceFeeds).queryRate(
                 collateralToken,
@@ -633,18 +676,15 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             if (sourceToDestRate != 0) {
                 collateralTokenAmount = newPrincipal
                     .mul(sourceToDestPrecision)
-                    .div(sourceToDestRate)
                     .mul(marginAmount)
-                    .div(WEI_PERCENT_PRECISION);
-            } else {
-                collateralTokenAmount = 0;
+                    .divCeil(sourceToDestRate * WEI_PERCENT_PRECISION);
             }
         }
 
         if (isTorqueLoan && collateralTokenAmount != 0) {
             collateralTokenAmount = collateralTokenAmount
                 .mul(WEI_PERCENT_PRECISION)
-                .div(marginAmount)
+                .divCeil(marginAmount)
                 .add(collateralTokenAmount);
         }
     }

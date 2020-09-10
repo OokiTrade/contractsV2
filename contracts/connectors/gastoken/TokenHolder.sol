@@ -22,6 +22,13 @@ contract TokenHolder is Ownable {
 
     mapping (address => bool) public delegatedCallers;
 
+    constructor(
+        address _owner)
+        public
+    {
+        transferOwnership(_owner);
+    }
+
     function freeUpTo(
         uint256 value)
         external

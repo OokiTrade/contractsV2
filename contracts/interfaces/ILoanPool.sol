@@ -21,4 +21,10 @@ interface ILoanPool {
         external
         view
         returns (uint256);
+
+    function assetBalanceOf(
+        address _owner)
+        external
+        view
+        returns (uint256);
 }

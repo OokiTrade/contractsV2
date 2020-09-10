@@ -16,6 +16,8 @@ contract Constants {
     uint256 internal constant DAYS_IN_A_YEAR = 365;
     uint256 internal constant ONE_MONTH = 2628000; // approx. seconds in a month
 
+    string internal constant UserRewardsID = "UserRewards";
+
     //IWethERC20 public constant wethToken = IWethERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // mainnet
     //address public constant bzrxTokenAddress = 0x56d811088235F11C8920698a204A5010a788f4b3; // mainnet
     //address public constant vbzrxTokenAddress = 0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F; // mainnet

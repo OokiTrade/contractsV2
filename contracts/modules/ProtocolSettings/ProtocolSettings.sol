@@ -9,11 +9,11 @@ pragma experimental ABIEncoderV2;
 import "../../core/State.sol";
 import "../../events/ProtocolSettingsEvents.sol";
 import "../../openzeppelin/SafeERC20.sol";
-import "../../mixins/ProtocolTokenUser.sol";
 import "../../interfaces/IVestingToken.sol";
 
 
-contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
+contract ProtocolSettings is State, ProtocolSettingsEvents {
+    using SafeERC20 for IERC20;
 
     function initialize(
         address target)
@@ -33,11 +33,11 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
         _setTarget(this.setSourceBufferPercent.selector, target);
         _setTarget(this.setMaxSwapSize.selector, target);
         _setTarget(this.setFeesController.selector, target);
-        _setTarget(this.withdrawLendingFees.selector, target);
-        _setTarget(this.withdrawTradingFees.selector, target);
-        _setTarget(this.withdrawBorrowingFees.selector, target);
+        _setTarget(this.withdrawFees.selector, target);
         _setTarget(this.withdrawProtocolToken.selector, target);
         _setTarget(this.depositProtocolToken.selector, target);
+        _setTarget(this.grantRewards.selector, target);
+        _setTarget(this.queryFees.selector, target);
         _setTarget(this.getLoanPoolsList.selector, target);
         _setTarget(this.isLoanPool.selector, target);
     }
@@ -195,19 +195,28 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
     }
 
     function setLiquidationIncentivePercent(
-        uint256 newValue)
+        address[] calldata loanTokens,
+        address[] calldata collateralTokens,
+        uint256[] calldata amounts)
         external
         onlyOwner
     {
-        require(newValue <= WEI_PERCENT_PRECISION, "value too high");
-        uint256 oldValue = liquidationIncentivePercent;
-        liquidationIncentivePercent = newValue;
+        require(loanTokens.length == collateralTokens.length && loanTokens.length == amounts.length, "count mismatch");
 
-        emit SetLiquidationIncentivePercent(
-            msg.sender,
-            oldValue,
-            newValue
-        );
+        for (uint256 i = 0; i < loanTokens.length; i++) {
+            require(amounts[i] <= WEI_PERCENT_PRECISION, "value too high");
+
+            uint256 oldValue = liquidationIncentivePercent[loanTokens[i]][collateralTokens[i]];
+            liquidationIncentivePercent[loanTokens[i]][collateralTokens[i]] = amounts[i];
+
+            emit SetLiquidationIncentivePercent(
+                msg.sender,
+                loanTokens[i],
+                collateralTokens[i],
+                oldValue,
+                amounts[i]
+            );
+        }
     }
 
     function setMaxDisagreement(
@@ -256,9 +265,10 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
         );
     }
 
-    function withdrawLendingFees(
+    function withdrawFees(
         address[] calldata tokens,
-        address receiver)
+        address receiver,
+        FeeType feeType)
         external
         returns (uint256[] memory amounts)
     {
@@ -266,98 +276,62 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
 
         amounts = new uint256[](tokens.length);
         uint256 balance;
+        address token;
         for (uint256 i = 0; i < tokens.length; i++) {
-            balance = lendingFeeTokensHeld[tokens[i]];
-            if (balance == 0) {
-                continue;
+            token = tokens[i];
+
+            if (feeType == FeeType.All || feeType == FeeType.Lending) {
+                balance = lendingFeeTokensHeld[token];
+                if (balance != 0) {
+                    amounts[i] = balance;  // will not overflow
+                    lendingFeeTokensHeld[token] = 0;
+                    lendingFeeTokensPaid[token] = lendingFeeTokensPaid[token]
+                        .add(balance);
+                    emit WithdrawLendingFees(
+                        msg.sender,
+                        token,
+                        receiver,
+                        balance
+                    );
+                }
+            }
+            if (feeType == FeeType.All || feeType == FeeType.Trading) {
+                balance = tradingFeeTokensHeld[token];
+                if (balance != 0) {
+                    amounts[i] += balance;  // will not overflow
+                    tradingFeeTokensHeld[token] = 0;
+                    tradingFeeTokensPaid[token] = tradingFeeTokensPaid[token]
+                        .add(balance);
+                    emit WithdrawTradingFees(
+                        msg.sender,
+                        token,
+                        receiver,
+                        balance
+                    );
+                }
+            }
+            if (feeType == FeeType.All || feeType == FeeType.Borrowing) {
+                balance = borrowingFeeTokensHeld[token];
+                if (balance != 0) {
+                    amounts[i] += balance;  // will not overflow
+                    borrowingFeeTokensHeld[token] = 0;
+                    borrowingFeeTokensPaid[token] = borrowingFeeTokensPaid[token]
+                        .add(balance);
+                    emit WithdrawBorrowingFees(
+                        msg.sender,
+                        token,
+                        receiver,
+                        balance
+                    );
+                }
             }
 
-            amounts[i] = balance;
-            lendingFeeTokensHeld[tokens[i]] = 0;
-            lendingFeeTokensPaid[tokens[i]] = lendingFeeTokensPaid[tokens[i]]
-                .add(balance);
-
-            IERC20(tokens[i]).safeTransfer(
-                receiver,
-                balance
-            );
-
-            emit WithdrawLendingFees(
-                msg.sender,
-                tokens[i],
-                receiver,
-                balance
-            );
-        }
-    }
-
-    function withdrawTradingFees(
-        address[] calldata tokens,
-        address receiver)
-        external
-        returns (uint256[] memory amounts)
-    {
-        require(msg.sender == feesController, "unauthorized");
-
-        amounts = new uint256[](tokens.length);
-        uint256 balance;
-        for (uint256 i = 0; i < tokens.length; i++) {
-            balance = tradingFeeTokensHeld[tokens[i]];
-            if (balance == 0) {
-                continue;
+            if (amounts[i] != 0) {
+                IERC20(token).safeTransfer(
+                    receiver,
+                    amounts[i]
+                );
             }
-
-            amounts[i] = balance;
-            tradingFeeTokensHeld[tokens[i]] = 0;
-            tradingFeeTokensPaid[tokens[i]] = tradingFeeTokensPaid[tokens[i]]
-                .add(balance);
-
-            IERC20(tokens[i]).safeTransfer(
-                receiver,
-                balance
-            );
-
-            emit WithdrawTradingFees(
-                msg.sender,
-                tokens[i],
-                receiver,
-                balance
-            );
-        }
-    }
-
-    function withdrawBorrowingFees(
-        address[] calldata tokens,
-        address receiver)
-        external
-        returns (uint256[] memory amounts)
-    {
-        require(msg.sender == feesController, "unauthorized");
-
-        amounts = new uint256[](tokens.length);
-        uint256 balance;
-        for (uint256 i = 0; i < tokens.length; i++) {
-            balance = borrowingFeeTokensHeld[tokens[i]];
-            if (balance == 0) {
-                continue;
-            }
-
-            amounts[i] = balance;
-            borrowingFeeTokensHeld[tokens[i]] = 0;
-            borrowingFeeTokensPaid[tokens[i]] = borrowingFeeTokensPaid[tokens[i]]
-                .add(balance);
-
-            IERC20(tokens[i]).safeTransfer(
-                receiver,
-                balance
-            );
-
-            emit WithdrawBorrowingFees(
-                msg.sender,
-                tokens[i],
-                receiver,
-                balance
-            );
         }
     }
 
@@ -366,12 +340,24 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
         uint256 amount)
         external
         onlyOwner
-        returns (address rewardToken, bool success)
+        returns (address rewardToken, uint256 withdrawAmount)
     {
-        (rewardToken, success) = _withdrawProtocolToken(
-            receiver,
-            amount
-        );
+        rewardToken = vbzrxTokenAddress;
+        withdrawAmount = amount;
+
+        uint256 tokenBalance = protocolTokenHeld;
+        if (withdrawAmount > tokenBalance) {
+            withdrawAmount = tokenBalance;
+        }
+        if (withdrawAmount != 0) {
+            protocolTokenHeld = tokenBalance
+                .sub(withdrawAmount);
+
+            IERC20(vbzrxTokenAddress).transfer(
+                receiver,
+                withdrawAmount
+            );
+        }
 
         uint256 totalEmission = IVestingToken(vbzrxTokenAddress).claimedBalanceOf(address(this));
 
@@ -383,7 +369,7 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
         }
 
         if (totalEmission > totalWithdrawn) {
-            IERC20(bzrxTokenAddress).safeTransfer(
+            IERC20(bzrxTokenAddress).transfer(
                 receiver,
                 totalEmission - totalWithdrawn
             );
@@ -393,7 +379,7 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
         }
     }
 
-   function depositProtocolToken(
+    function depositProtocolToken(
         uint256 amount)
         external
         onlyOwner
@@ -401,11 +387,72 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
         protocolTokenHeld = protocolTokenHeld
             .add(amount);
 
-        IERC20(vbzrxTokenAddress).safeTransferFrom(
+        IERC20(vbzrxTokenAddress).transferFrom(
             msg.sender,
             address(this),
             amount
         );
+    }
+
+    function grantRewards(
+        address[] calldata users,
+        uint256[] calldata amounts)
+        external
+        onlyOwner
+        returns (uint256 totalAmount)
+    {
+        require(users.length == amounts.length, "count mismatch");
+
+        uint256 amount;
+        bytes32 slot;
+        for (uint256 i = 0; i < users.length; i++) {
+            amount = amounts[i];
+            totalAmount = totalAmount
+                .add(amount);
+
+            slot = keccak256(abi.encodePacked(users[i], UserRewardsID));
+            assembly {
+                sstore(slot, add(sload(slot), amount))
+            }
+        }
+
+        if (totalAmount != 0) {
+            IERC20(vbzrxTokenAddress).transferFrom(
+                msg.sender,
+                address(this),
+                totalAmount
+            );
+        }
+    }
+
+    // NOTE: this doesn't sanitize inputs -> inaccurate values may be returned if there are duplicates tokens input
+    function queryFees(
+        address[] calldata tokens,
+        FeeType feeType)
+        external
+        view
+        returns (uint256[] memory amountsHeld, uint256[] memory amountsPaid)
+    {
+        amountsHeld = new uint256[](tokens.length);
+        amountsPaid = new uint256[](tokens.length);
+        address token;
+        for (uint256 i = 0; i < tokens.length; i++) {
+            token = tokens[i];
+            
+            if (feeType == FeeType.Lending) {
+                amountsHeld[i] = lendingFeeTokensHeld[token];
+                amountsPaid[i] = lendingFeeTokensPaid[token];
+            } else if (feeType == FeeType.Trading) {
+                amountsHeld[i] = tradingFeeTokensHeld[token];
+                amountsPaid[i] = tradingFeeTokensPaid[token];
+            } else if (feeType == FeeType.Borrowing) {
+                amountsHeld[i] = borrowingFeeTokensHeld[token];
+                amountsPaid[i] = borrowingFeeTokensPaid[token];
+            } else {
+                amountsHeld[i] = lendingFeeTokensHeld[token] + tradingFeeTokensHeld[token] + borrowingFeeTokensHeld[token]; // will not overflow
+                amountsPaid[i] = lendingFeeTokensPaid[token] + tradingFeeTokensPaid[token] + borrowingFeeTokensPaid[token]; // will not overflow
+            }
+        }
     }
 
     function getLoanPoolsList(
@@ -413,9 +460,23 @@ contract ProtocolSettings is State, ProtocolTokenUser, ProtocolSettingsEvents {
         uint256 count)
         external
         view
-        returns(bytes32[] memory)
+        returns (address[] memory loanPoolsList)
     {
-        return loanPoolsSet.enumerate(start, count);
+        EnumerableBytes32Set.Bytes32Set storage set = loanPoolsSet;
+        uint256 end = start.add(count).min256(set.length());
+        if (start >= end) {
+            return loanPoolsList;
+        }
+        count = end-start;
+
+        loanPoolsList = new address[](count);
+        for (uint256 i = --end; i >= start; i--) {
+            loanPoolsList[--count] = set.getAddress(i);
+
+            if (i == 0) {
+                break;
+            }
+        }
     }
 
     function isLoanPool(
