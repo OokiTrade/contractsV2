@@ -4,7 +4,7 @@ import pytest
 from brownie import Contract, network
 from helpers import setupLoanPool
 
-def test_getTokens(Constants, bzx, accounts, TestContract, TokenRegistry):
+def test_getTokens(Constants, bzx, accounts, TokenRegistry):
     setupLoanPool(Constants, bzx, accounts[1], accounts[2])
     setupLoanPool(Constants, bzx, accounts[3], accounts[4])
     setupLoanPool(Constants, bzx, accounts[3], accounts[5])  # this will overrider asset account[4]

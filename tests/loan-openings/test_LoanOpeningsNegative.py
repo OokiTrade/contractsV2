@@ -107,14 +107,13 @@ def test_borrowOrTradeFromPoolLoanParamsNotExist(Constants, bzx, setLoanPool, ac
             b"", {"from": accounts[1], "value": "0 ether"})
         tx.info()
 
-def test_borrowOrTradeFromPoolCollateralIsZero(Constants, bzx, linkDaiMarginParamsId, accounts):
+def test_borrowOrTradeFromPoolCollateralIsZero(Constants, bzx, linkDaiMarginParamsId, accounts, setLoanPool):
     with reverts("collateral is 0"):
-        tx = bzx.borrowOrTradeFromPool(linkDaiMarginParamsId, 0, 0, 0, 
+        tx = bzx.borrowOrTradeFromPool(linkDaiMarginParamsId, 0, 0, 1, 
             [Constants["ZERO_ADDRESS"], Constants["ZERO_ADDRESS"], Constants["ZERO_ADDRESS"], Constants["ZERO_ADDRESS"]], 
             [0, 0, 0, 0, 0], 
             b"", {"from": accounts[1], "value": "0 ether"})
         tx.info()
-
 
 def test_borrowOrTradeFromPoolCollateralLoanMatch(Constants, bzx, sameTokenParamsId, accounts):
     initialMargin = 10**20
