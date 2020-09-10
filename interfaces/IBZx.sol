@@ -147,7 +147,7 @@ contract IBZx is
     /// @param tokens array of token addresses.
     /// @param receiver fees receiver address
     /// @return array of amounts withdrawn
-    function withdrawLendingFees(
+    function withdrawFees(
         address[] calldata tokens,
         address receiver,
         FeeType feeType)
