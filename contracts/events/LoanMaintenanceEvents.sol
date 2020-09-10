@@ -53,20 +53,20 @@ contract LoanMaintenanceEvents {
     }
 
     struct LoanReturnData {
-        bytes32 loanId;
-        uint96 endTimestamp;
-        address loanToken;
-        address collateralToken;
-        uint256 principal;
-        uint256 collateral;
-        uint256 interestOwedPerDay;
-        uint256 interestDepositRemaining;
+        bytes32 loanId; // id of the loan
+        uint96 endTimestamp; // loan end timestamp
+        address loanToken; // loan token address
+        address collateralToken; // collateral token address
+        uint256 principal; // principal amount of the loan
+        uint256 collateral; // collateral amount of the loan
+        uint256 interestOwedPerDay; // interest owned per day
+        uint256 interestDepositRemaining; // TODO
         uint256 startRate; // collateralToLoanRate
-        uint256 startMargin;
-        uint256 maintenanceMargin;
-        uint256 currentMargin;
-        uint256 maxLoanTerm;
-        uint256 maxLiquidatable;
-        uint256 maxSeizable;
+        uint256 startMargin; // margin with which loan was open
+        uint256 maintenanceMargin; // maintenance margin
+        uint256 currentMargin; /// current margin
+        uint256 maxLoanTerm; // maximum term of the loan
+        uint256 maxLiquidatable; // current max liquidatable
+        uint256 maxSeizable; // current max seizable
     }
 }
