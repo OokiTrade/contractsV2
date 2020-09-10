@@ -113,7 +113,9 @@ contract IBZx is
 
     /// @dev sets liquidation inncetive percent per loan per token. This is the profit percent 
     /// that liquidator gets in the process of liquidating.
-    /// @param newValue liquidation inncetive amount
+    /// @param loanTokens array list of loan tokens
+    /// @param collateralTokens array list of collateral tokens
+    /// @param amounts array list of liquidation inncetive amount
     function setLiquidationIncentivePercent(
         address[] calldata loanTokens,
         address[] calldata collateralTokens,
@@ -121,7 +123,7 @@ contract IBZx is
         external;
 
     /// @dev sets max swap rate slippage percent.
-    /// @param newValue max swap rate slippage percent.
+    /// @param newAmount max swap rate slippage percent.
     function setMaxDisagreement(
         uint256 newAmount)
         external;
