@@ -111,7 +111,7 @@ contract IBZx is
         uint256 newValue)
         external;
 
-    /// @dev sets liquidation inncetive percent. This is the profit percent 
+    /// @dev sets liquidation inncetive percent per loan per token. This is the profit percent 
     /// that liquidator gets in the process of liquidating.
     /// @param newValue liquidation inncetive amount
     function setLiquidationIncentivePercent(
