@@ -307,20 +307,19 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         if (isTorqueLoan) {
             require(sentValues[3] == 0, "surplus loan token");
 
-            // fee based off required collateral
-            uint256 borrowingFee = _getBorrowingFee(collateralAmountRequired);
-            if (borrowingFee != 0) {
+            // fee based off required collateral (amount variable repurposed)
+            amount = _getBorrowingFee(collateralAmountRequired);
+            if (amount != 0) {
                 _payBorrowingFee(
                     sentAddresses[1], // borrower
                     loanLocal.id,
                     loanParamsLocal.collateralToken,
-                    borrowingFee
+                    amount
                 );
-
-                sentValues[4] = sentValues[4] // collateralTokenReceived
-                    .sub(borrowingFee);
             }
         } else {
+            amount = 0; // repurposed
+
             // update collateral after trade
             // sentValues[3] is repurposed to hold loanToCollateralSwapRate to avoid stack too deep error
             uint256 receivedAmount;
@@ -346,13 +345,15 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                 loanLocal,
                 initialMargin,
                 sentValues[4],
-                collateralAmountRequired
+                collateralAmountRequired,
+                amount // borrowingFee
             ),
             "collateral insufficient"
         );
 
         loanLocal.collateral = loanLocal.collateral
-            .add(sentValues[4]);
+            .add(sentValues[4])
+            .sub(amount); // borrowingFee
 
         if (isTorqueLoan) {
             // reclaiming varaible -> interestDuration
@@ -474,7 +475,8 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         Loan memory loanLocal,
         uint256 initialMargin,
         uint256 newCollateral,
-        uint256 collateralAmountRequired)
+        uint256 collateralAmountRequired,
+        uint256 borrowingFee)
         internal
         view
         returns (bool)
@@ -482,7 +484,8 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         // allow at most 2% under-collateralized
         collateralAmountRequired = collateralAmountRequired
             .mul(98 ether)
-            .div(100 ether);
+            .div(100 ether)
+            .add(borrowingFee);
 
         if (newCollateral < collateralAmountRequired) {
             // check that existing collateral is sufficient coverage

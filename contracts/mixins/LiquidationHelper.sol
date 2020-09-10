@@ -18,7 +18,7 @@ contract LiquidationHelper is State {
         uint256 collateralToLoanRate,
         uint256 incentivePercent)
         internal
-        view
+        pure
         returns (uint256 maxLiquidatable, uint256 maxSeizable)
     {
         if (currentMargin > maintenanceMargin || collateralToLoanRate == 0) {
