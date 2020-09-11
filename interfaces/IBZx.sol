@@ -33,7 +33,6 @@ contract IBZx is
 
     /// @dev adds or replaces existing proxy module
     /// @param target target proxy module address
-    /// @return boolean success
     function replaceContract(
         address target)
         external;
@@ -42,7 +41,6 @@ contract IBZx is
     /// sigsArr and targetsArr should be of equal length
     /// @param sigsArr array of function signatures
     /// @param targetsArr array of target proxy module addresses
-    /// @return boolean success
     function setTargets(
         string[] calldata sigsArr,
         address[] calldata targetsArr)
@@ -173,19 +171,31 @@ contract IBZx is
         uint256 amount)
         external;
 
+    /// @dev this function redistributes rewards to users. It is called with the results of of-chain
+    /// calculations of users and rewards
+    /// @param users array of user addresses for reward distribution
+    /// @param amounts array of amounts in vBZRX tokens to distribute
+    /// @return totalAmount total amount allocated for rewards
     function grantRewards(
         address[] calldata users,
         uint256[] calldata amounts)
         external
         returns (uint256 totalAmount);
 
-    // NOTE: this doesn't sanitize inputs -> inaccurate values may be returned if there are duplicates tokens input
+    /// @dev this function returns amountsHeld and amounts paid for a given array of tokens
+    /// NOTE: this doesn't sanitize inputs -> inaccurate values may be returned if there are duplicates tokens input
+    /// @param tokens array of tokens in circulation in the system
+    /// @param feeType type of fee to filter
+    /// @return amountsHeld array of amounts held buy users
+    /// @return amountsPaid array of amounts transfered to users
     function queryFees(
         address[] calldata tokens,
         FeeType feeType)
         external
         view
-        returns (uint256[] memory amountsHeld, uint256[] memory amountsPaid);
+        returns (
+            uint256[] memory amountsHeld,
+            uint256[] memory amountsPaid);
 
     /// @dev get list of loan pools in the system. Ordering is not guaranteed
     /// @param start start index
@@ -335,6 +345,14 @@ contract IBZx is
         view
         returns (uint256 collateralAmountRequired);
 
+
+    /// @dev alculates required collateral for simulated position having loanParamsId
+    /// @param loanParamsId its an id from LoanParamsStruct
+    /// @param loanToken address of loan token
+    /// @param collateralToken address of collateral token
+    /// @param newPrincipal principal amount of the loan
+    /// @param isTorqueLoan boolean torque or non torque loan
+    /// @return collateral amount required
     function getRequiredCollateralByParams(
         bytes32 loanParamsId,
         address loanToken,
@@ -362,6 +380,13 @@ contract IBZx is
         view
         returns (uint256 borrowAmount);
 
+    /// @dev calculates borrow amount for simulated position having loanParamsId
+    /// @param loanParamsId its an id from LoanParamsStruct
+    /// @param loanToken address of loan token
+    /// @param collateralToken address of collateral token
+    /// @param collateralTokenAmount amount of collateral token sent
+    /// @param isTorqueLoan boolean torque or non torque loan
+    /// @return possible borrow amount
     function getBorrowAmountByParams(
         bytes32 loanParamsId,
         address loanToken,
@@ -440,6 +465,7 @@ contract IBZx is
             uint256 withdrawAmount,
             address withdrawToken);
 
+
     ////// Loan Closings With Gas Token //////
 
     /// @dev liquidates unhealty loans by using Gas token
@@ -513,6 +539,7 @@ contract IBZx is
             uint256 withdrawAmount,
             address withdrawToken);
 
+
     ////// Loan Maintenance //////
 
     /// @dev deposit collateral to existing loan
@@ -568,11 +595,17 @@ contract IBZx is
         external
         returns (uint256 secondsReduced);
 
+    /// @dev receive rewards for activity on the protocol
+    /// @param receiver address to receive rewards
+    /// @return amount of tokens claimed
     function claimRewards(
         address receiver)
         external
         returns (uint256 claimAmount);
 
+    /// @dev returns quantity of rewards that user is eligible to
+    /// @param user address of user claiming rewards
+    /// @return balance of unclaimed user rewards
     function rewardsBalanceOf(
         address user)
         external
@@ -637,6 +670,10 @@ contract IBZx is
         view
         returns (LoanReturnData[] memory loansData);
 
+    /// @dev returns count of the user loans
+    /// @param user address of the user
+    /// @param isLender wheter lender or borrower
+    /// @return number of user loans count
     function getUserLoansCount(
         address user,
         bool isLender)
@@ -665,6 +702,8 @@ contract IBZx is
         view
         returns (LoanReturnData[] memory loansData);
 
+    /// @dev returns count of the active user loans
+    /// @return number of active user loans
     function getActiveLoansCount()
         external
         view
