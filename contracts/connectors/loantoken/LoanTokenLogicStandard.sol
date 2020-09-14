@@ -288,15 +288,14 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
             allowed[_from][msg.sender] = _allowanceAmount.sub(_value, "14");
         }
 
-        uint256 _balancesFrom = balances[_from];
-        uint256 _balancesTo = balances[_to];
-
         require(_to != address(0), "15");
 
+        uint256 _balancesFrom = balances[_from];
         uint256 _balancesFromNew = _balancesFrom
             .sub(_value, "16");
         balances[_from] = _balancesFromNew;
 
+        uint256 _balancesTo = balances[_to];
         uint256 _balancesToNew = _balancesTo
             .add(_value);
         balances[_to] = _balancesToNew;
