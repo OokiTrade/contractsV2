@@ -46,8 +46,9 @@ contract AdvancedTokenStorage is LoanTokenBase {
         view
         returns (uint256)
     {
-       if (totalSupply_ != WEI_PRECISION) {
-           return totalSupply_;
+        uint256 _totalSupply_ = totalSupply_;
+        if (_totalSupply_ != WEI_PRECISION) {
+           return _totalSupply_;
         } else {
            return 0;
         }
