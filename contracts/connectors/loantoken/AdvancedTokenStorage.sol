@@ -46,7 +46,7 @@ contract AdvancedTokenStorage is LoanTokenBase {
         view
         returns (uint256)
     {
-        return totalSupply_;
+        return totalSupply_ - WEI_PRECISION;
     }
 
     function balanceOf(
