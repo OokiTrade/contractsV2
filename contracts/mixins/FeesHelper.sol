@@ -78,17 +78,17 @@ contract FeesHelper is State, FeesEvents {
             borrowingFeeTokensHeld[feeToken] = borrowingFeeTokensHeld[feeToken]
                 .add(borrowingFee);
 
-            emit PayBorrowingFee(
-                user,
-                feeToken,
-                loanId,
-                borrowingFee
-            );
-
             _payFeeReward(
                 user,
                 loanId,
                 feeToken,
+                borrowingFee
+            );
+            
+            emit PayBorrowingFee(
+                user,
+                feeToken,
+                loanId,
                 borrowingFee
             );
         }
