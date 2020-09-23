@@ -657,12 +657,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
             .mul(WEI_PRECISION)
             .div(currentPrice);
 
-        if (msg.value == 0) {
-            _safeTransferFrom(loanTokenAddress, msg.sender, address(this), depositAmount, "18");
-        } else {
-            require(msg.value == depositAmount, "18");
-            IWeth(wethToken).deposit.value(depositAmount)();
-        }
+        _safeTransferFrom(loanTokenAddress, msg.sender, address(this), depositAmount, "18");
 
         _updateCheckpoints(
             receiver,
