@@ -37,6 +37,13 @@ contract AdvancedTokenStorage is LoanTokenBase {
         uint256 price
     );
 
+    event FlashLoan(
+        address borrower,
+        address target,
+        address loanToken,
+        uint256 loanAmount
+    );
+
     mapping(address => uint256) internal balances;
     mapping (address => mapping (address => uint256)) internal allowed;
     uint256 internal totalSupply_;
