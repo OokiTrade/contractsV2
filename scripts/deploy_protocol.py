@@ -29,8 +29,8 @@ def deployProtocol():
 
     if thisNetwork == "development":
         acct = accounts[0]
-    elif thisNetwork == "sandbox":
-        acct = accounts.load('mainnet_deployer')
+    elif thisNetwork == "mainnet":
+        acct = accounts.load('deployer1')
     else:
         acct = accounts.load('testnet_deployer')
     print("Loaded account",acct)
@@ -172,7 +172,7 @@ def deployProtocol():
                         "0x07435f5182AAebBB176E58078451Fdd7FCD4EaC7"  # Fast Gas / Gwei
                     ]
                 )
-            elif thisNetwork == "sandbox":
+            elif thisNetwork == "mainnet":
                 feeds = acct.deploy(PriceFeeds)
                 
                 print("Calling setDecimals.")
@@ -192,7 +192,9 @@ def deployProtocol():
                         "0x6b175474e89094c44da98b954eedeac495271d0f", # DAI
                         "0xdac17f958d2ee523a2206206994597c13d831ec7", # USDT (Tether)
                         "0x56d811088235F11C8920698a204A5010a788f4b3", # BZRX
-                        "0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F"  # vBZRX
+                        "0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F", # vBZRX
+                        "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", # YFI
+                        "0x80fB784B7eD66730e8b1DBd9820aFD29931aab03", # LEND
                     ]
                 )
 
@@ -212,6 +214,8 @@ def deployProtocol():
                         "0x6b175474e89094c44da98b954eedeac495271d0f", # DAI
                         "0xdac17f958d2ee523a2206206994597c13d831ec7", # USDT (Tether)
                         "0x56d811088235F11C8920698a204A5010a788f4b3", # BZRX
+                        "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", # YFI
+                        "0x80fB784B7eD66730e8b1DBd9820aFD29931aab03", # LEND
                         "0x0000000000000000000000000000000000000001"  # Fast Gas / Gwei
                     ],
                     [
@@ -226,8 +230,10 @@ def deployProtocol():
                         "0xDC530D9457755926550b59e8ECcdaE7624181557", # LINK
                         "0x8e0b7e6062272B5eF4524250bFFF8e5Bd3497757", # SUSD
                         "0x773616E4d11A78F511299002da57A0a94577F1f4", # DAI
-                        "0xEe9F2375b4bdF6387aa8265dD4FB8F16512A1d46"  # USDT (Tether)
+                        "0xEe9F2375b4bdF6387aa8265dD4FB8F16512A1d46", # USDT (Tether)
                         "0x8f7C7181Ed1a2BA41cfC3f5d064eF91b67daef66", # BZRX
+                        "0x7c5d4F8345e66f68099581Db340cd65B078C41f4", # YFI
+                        "0xc9dDB0E869d931D031B24723132730Ecf3B4F74d", # LEND
                         "0x169E633A2D1E6c10dD91238Ba11c4A708dfEF37C"  # Fast Gas / Gwei
                     ]
                 )
@@ -278,7 +284,7 @@ def deployProtocol():
                     "0xa09dd6ff595041a85d406168a3ee2324e58cffa0",
                 ]
             )
-        elif thisNetwork == "sandbox":
+        elif thisNetwork == "mainnet":
             print("Calling setLegacyOracles.")
             migration.setLegacyOracles(
                 [
@@ -425,36 +431,75 @@ def deployProtocol():
                 ]
             )
 
-        elif thisNetwork == "sandbox":
-            print("Calling setLoanPool.")
-            bzx.setLoanPool(
+            ## 5e18 = 5% collateral discount
+            '''print("Calling setLiquidationIncentivePercent.")
+            bzx.setLiquidationIncentivePercent(
                 [
-                    "0x77f973FCaF871459aa58cd81881Ce453759281bC", # iETH
-                    "0xF013406A0B1d544238083DF0B93ad0d2cBE0f65f", # iUSDC
-                    "0x14094949152EDDBFcd073717200DA82fEd8dC960", # iSAI
-                    "0xBA9262578EFef8b3aFf7F60Cd629d6CC8859C8b5", # iWBTC
-                    "0x1cC9567EA2eB740824a45F8026cCF8e46973234D", # iKNC
-                    "0xBd56E9477Fc6997609Cf45F84795eFbDAC642Ff1", # iREP
-                    "0xA8b65249DE7f85494BC1fe75F525f568aa7dfa39", # iBAT
-                    "0xA7Eb2bc82df18013ecC2A6C533fc29446442EDEe", # iZRX
-                    "0x1D496da96caf6b518b133736beca85D5C4F9cBc5", # iLINK
-                    "0x49f4592e641820e928f9919ef4abd92a719b4b49", # iSUSD
-                    "0x493c57c4763932315a328269e1adad09653b9081", # iDAI
-                    "0x8326645f3aa6de6420102fdb7da9e3a91855045b"  # iUSDT
+                    "0xE65D99a06D0Ded0D318E31dB3AE5D77629c625fc", # WETH
+                    "0x20BdF254Ca63883c3a83424753BB40185AF29cE4", # USDC
+                    "0x7143e05608C4BC7E83a3B72a28De2497f62B7e59", # SAI
+                    "0xc4B7A70c3694cB1d37A18e6c6bD9271828C382A4", # WBTC
+                    "0x4893919982648FFeFE4324538D54402387C20198", # MKR
+                    "0x02357164ba33F299F7654cBB29da29dB38aE1f44", # KNC
+                    "0x39AC2818e08D285aBE548F77a0819651b8B5d213", # REP
+                    "0xAc091Ccf1b0c601182f3CCF3EB20F291ABA39029", # BAT
+                    "0x629B28c5aA5c953Df2511d2E48d316A07eAFb3e3", # ZRX
+                    "0xFB9325e5f4fC9629525427A1c92c0f4D723500Cf", # LINK
+                    "0xFCfA14dBc71beE2a2188431Fa15E1f8D57d93c62", # SUSD
+                    "0x8f746eC7ed5Cc265b90e7AF0f5B07b4406C9dDA8", # DAI
+                    "0x4C4462C6bca4c92BF41C40f9a4047F35Fd296996", # USDT (Tether)
+                    "0xB54Fc2F2ea17d798Ad5C7Aba2491055BCeb7C6b2", # BZRX
+                    "0x6F8304039f34fd6A6acDd511988DCf5f62128a32"  # vBZRX
                 ],
                 [
-                    "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", # WETH
-                    "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", # USDC
-                    "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359", # SAI
-                    "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599", # WBTC
-                    "0xdd974d5c2e2928dea5f71b9825b8b646686bd200", # KNC
-                    "0x1985365e9f78359a9b6ad760e32412f4a445e862", # REP
-                    "0x0d8775f648430679a709e98d2b0cb6250d2887ef", # BAT
-                    "0xe41d2489571d322189246dafa5ebde1f4699f498", # ZRX
-                    "0x514910771af9ca656af840dff83e8264ecf986ca", # LINK
-                    "0x57ab1ec28d129707052df4df418d58a2d46d5f51", # SUSD
+                    5e18,
+                    5e18,
+                    5e18,
+                    5e18,
+                    5e18,
+                    5e18,
+                    5e18,
+                    5e18,
+                    5e18,
+                    5e18,
+                    5e18,
+                    5e18,
+                    5e18,
+                    5e18,
+                    5e18,
+                    5e18
+                ]
+            )'''
+
+        elif thisNetwork == "mainnet":
+            print("Calling setLoanPool.")
+
+            bzx.setLoanPool(
+                [
+                    "0x6b093998d36f2c7f0cc359441fbb24cc629d5ff0", # iDAI
+                    "0xb983e01458529665007ff7e0cddecdb74b967eb6", # iETH
+                    "0x32e4c68b3a4a813b710595aeba7f6b7604ab9c15", # iUSDC
+                    "0x2ffa85f655752fb2acb210287c60b9ef335f5b6e", # iWBTC
+                    "0xab45bf58c6482b87da85d6688c4d9640e093be98", # iLEND
+                    "0x687642347a9282be8fd809d8309910a3f984ac5a", # iKNC
+                    "0x9189c499727f88f8ecc7dc4eea22c828e6aac015", # iMKR
+                    "0x18240bd9c07fa6156ce3f3f61921cc82b2619157", # iBZRX
+                    "0x463538705e7d22aa7f03ebf8ab09b067e1001b54", # iLINK
+                    "0x7f3fe9d492a9a60aebb06d82cba23c6f32cad10b", # iYFI
+                    "0x7e9997a38a439b2be7ed9c9c4628391d3e055d48", # iUSDT
+                ],
+                [
                     "0x6b175474e89094c44da98b954eedeac495271d0f", # DAI
-                    "0xdac17f958d2ee523a2206206994597c13d831ec7"  # USDT (Tether)
+                    "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", # ETH
+                    "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", # USDC
+                    "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599", # WBTC
+                    "0x80fB784B7eD66730e8b1DBd9820aFD29931aab03", # LEND
+                    "0xdd974d5c2e2928dea5f71b9825b8b646686bd200", # KNC
+                    "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2", # MKR
+                    "0x56d811088235F11C8920698a204A5010a788f4b3", # BZRX
+                    "0x514910771AF9Ca656af840dff83E8264EcF986CA", # LINK
+                    "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", # YFI
+                    "0xdac17f958d2ee523a2206206994597c13d831ec7", # USDT
                 ]
             )
 
@@ -475,7 +520,10 @@ def deployProtocol():
                     "0x6b175474e89094c44da98b954eedeac495271d0f", # DAI
                     "0xdac17f958d2ee523a2206206994597c13d831ec7", # USDT (Tether)
                     "0x56d811088235F11C8920698a204A5010a788f4b3", # BZRX
-                    "0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F"  # vBZRX
+                    "0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F", # vBZRX
+                    "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", # YFI
+                    "0x80fB784B7eD66730e8b1DBd9820aFD29931aab03", # LEND
+
                 ],
                 [
                     True, # WETH
@@ -492,9 +540,54 @@ def deployProtocol():
                     True, # DAI
                     True, # USDT (Tether)
                     True, # BZRX
-                    True  # vBZRX
+                    True, # vBZRX
+                    True, # YFI
+                    True, # LEND
                 ]
             )
+
+            ## 5e18 = 5% collateral discount
+            '''print("Calling setLiquidationIncentivePercent.")
+            bzx.setLiquidationIncentivePercent(
+                [
+                    "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", # WETH
+                    "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", # USDC
+                    "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359", # SAI
+                    "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599", # WBTC
+                    "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2", # MKR
+                    "0xdd974d5c2e2928dea5f71b9825b8b646686bd200", # KNC
+                    "0x1985365e9f78359a9b6ad760e32412f4a445e862", # REP
+                    "0x0d8775f648430679a709e98d2b0cb6250d2887ef", # BAT
+                    "0xe41d2489571d322189246dafa5ebde1f4699f498", # ZRX
+                    "0x514910771af9ca656af840dff83e8264ecf986ca", # LINK
+                    "0x57ab1ec28d129707052df4df418d58a2d46d5f51", # SUSD
+                    "0x6b175474e89094c44da98b954eedeac495271d0f", # DAI
+                    "0xdac17f958d2ee523a2206206994597c13d831ec7", # USDT (Tether)
+                    "0x56d811088235F11C8920698a204A5010a788f4b3", # BZRX
+                    "0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F", # vBZRX
+                    "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", # YFI
+                    "0x80fB784B7eD66730e8b1DBd9820aFD29931aab03", # LEND
+                ],
+                [
+                    5e18, # WETH
+                    5e18, # USDC
+                    5e18, # SAI
+                    5e18, # WBTC
+                    5e18, # MKR
+                    5e18, # KNC
+                    5e18, # REP
+                    5e18, # BAT
+                    5e18, # ZRX
+                    5e18, # LINK
+                    5e18, # SUSD
+                    5e18, # DAI
+                    5e18, # USDT (Tether)
+                    5e18, # BZRX
+                    5e18, # vBZRX
+                    5e18, # YFI
+                    5e18, # LEND
+                ]
+            )'''
 
         bzx.setFeesController(acct.address)
 

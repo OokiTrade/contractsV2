@@ -15,9 +15,6 @@ import "./IPriceFeedsExt.sol";
 contract PriceFeeds is Constants, Ownable {
     using SafeMath for uint256;
 
-    // 1 gwei = 1000000000
-    uint256 internal constant GWEI_PRECISION = 10**9;
-
     // address(1) is used as a stand-in for the non-existent token representing the fast-gas price on Chainlink
     address internal constant FASTGAS_PRICEFEED_ADDRESS = address(1);
 
@@ -389,8 +386,7 @@ contract PriceFeeds is Constants, Ownable {
         view
         returns (uint256 gasPrice)
     {
-        gasPrice = uint256(pricesFeeds[FASTGAS_PRICEFEED_ADDRESS].latestAnswer())
-            .mul(GWEI_PRECISION);
+        gasPrice = uint256(pricesFeeds[FASTGAS_PRICEFEED_ADDRESS].latestAnswer());
         require(gasPrice != 0 && (gasPrice >> 128) == 0, "gas price error");
     }
 }
