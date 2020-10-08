@@ -51,6 +51,10 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
             "healthy position"
         );
 
+        if (receiver == address(0)) {
+            receiver = msg.sender;
+        }
+
         loanCloseAmount = closeAmount;
 
         (uint256 maxLiquidatable, uint256 maxSeizable) = _getLiquidationAmounts(
@@ -304,6 +308,10 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
             loanLocal.borrower
         );
 
+        if (receiver == address(0)) {
+            receiver = msg.sender;
+        }
+
         LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
         // can't close more than the full principal
@@ -326,18 +334,12 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
             );
         }
 
+        uint256 withdrawAmount;
         if (loanCloseAmount == loanLocal.principal) {
+            // collateral is only withdrawn if the loan is closed in full
             withdrawAmount = loanLocal.collateral;
-        } else {
-            withdrawAmount = loanLocal.collateral
-                .mul(loanCloseAmount)
-                .div(loanLocal.principal);
-        }
-
-        withdrawToken = loanParamsLocal.collateralToken;
-
-        if (withdrawAmount != 0) {
-            loanLocal.collateral = loanLocal.collateral - withdrawAmount; // overflow not possible
+            withdrawToken = loanParamsLocal.collateralToken;
+            loanLocal.collateral = 0;
 
             _withdrawAsset(
                 withdrawToken,
@@ -377,6 +379,10 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
             loanLocal.active,
             loanLocal.borrower
         );
+
+        if (receiver == address(0)) {
+            receiver = msg.sender;
+        }
 
         LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
 

@@ -594,15 +594,15 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
             );
 
             if (newBorrowAmount <= _underlyingBalance()) {
+                if (collateralTokenAddress == address(0)) {
+                    collateralTokenAddress = wethToken;
+                }
                 return ProtocolLike(bZxContract).getRequiredCollateralByParams(
                     loanParamsIds[uint256(keccak256(abi.encodePacked(
                         collateralTokenAddress,
                         true
                     )))],
-                    loanTokenAddress,
-                    collateralTokenAddress != address(0) ? collateralTokenAddress : wethToken,
-                    newBorrowAmount,
-                    true // isTorqueLoan
+                    newBorrowAmount
                 ).add(10); // some dust to compensate for rounding errors
             }
         }
@@ -617,15 +617,15 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         returns (uint256 borrowAmount)
     {
         if (depositAmount != 0) {
+            if (collateralTokenAddress == address(0)) {
+                collateralTokenAddress = wethToken;
+            }
             borrowAmount = ProtocolLike(bZxContract).getBorrowAmountByParams(
                 loanParamsIds[uint256(keccak256(abi.encodePacked(
                     collateralTokenAddress,
                     true
                 )))],
-                loanTokenAddress,
-                collateralTokenAddress != address(0) ? collateralTokenAddress : wethToken,
-                depositAmount,
-                true // isTorqueLoan
+                depositAmount
             );
 
             (,,borrowAmount) = _getInterestRateAndBorrowAmount(

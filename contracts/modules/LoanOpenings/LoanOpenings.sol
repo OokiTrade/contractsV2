@@ -170,20 +170,20 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
 
     function getRequiredCollateralByParams(
         bytes32 loanParamsId,
-        address loanToken,
-        address collateralToken,
-        uint256 newPrincipal,
-        bool isTorqueLoan)
+        uint256 newPrincipal)
         public
         view
         returns (uint256 collateralAmountRequired)
     {
+        LoanParams memory loanParamsLocal = loanParams[loanParamsId];
         return getRequiredCollateral(
-            loanToken,
-            collateralToken,
+            loanParamsLocal.loanToken,
+            loanParamsLocal.collateralToken,
             newPrincipal,
-            loanParams[loanParamsId].minInitialMargin, // marginAmount
-            isTorqueLoan
+            loanParamsLocal.minInitialMargin, // marginAmount
+            loanParamsLocal.maxLoanTerm == 0 ? // isTorqueLoan
+                true :
+                false
         );
     }
 
@@ -236,20 +236,20 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
 
     function getBorrowAmountByParams(
         bytes32 loanParamsId,
-        address loanToken,
-        address collateralToken,
-        uint256 collateralTokenAmount,
-        bool isTorqueLoan)
+        uint256 collateralTokenAmount)
         public
         view
         returns (uint256 borrowAmount)
     {
+        LoanParams memory loanParamsLocal = loanParams[loanParamsId];
         return getBorrowAmount(
-            loanToken,
-            collateralToken,
+            loanParamsLocal.loanToken,
+            loanParamsLocal.collateralToken,
             collateralTokenAmount,
-            loanParams[loanParamsId].minInitialMargin, // marginAmount
-            isTorqueLoan
+            loanParamsLocal.minInitialMargin, // marginAmount
+            loanParamsLocal.maxLoanTerm == 0 ? // isTorqueLoan
+                true :
+                false
         );
     }
 
