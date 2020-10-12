@@ -37,7 +37,7 @@ contract AdvancedTokenStorage is LoanTokenBase {
         uint256 price
     );
 
-    event FlashLoan(
+    event FlashBorrow(
         address borrower,
         address target,
         address loanToken,
