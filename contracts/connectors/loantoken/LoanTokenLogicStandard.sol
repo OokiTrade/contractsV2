@@ -107,6 +107,8 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         // transfer assets to calling contract
         _safeTransfer(loanTokenAddress, borrower, borrowAmount, "39");
 
+        emit FlashBorrow(borrower, target, loanTokenAddress, borrowAmount);
+
         bytes memory callData;
         if (bytes(signature).length == 0) {
             callData = data;
