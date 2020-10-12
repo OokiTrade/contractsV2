@@ -324,7 +324,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             // sentValues[3] is repurposed to hold loanToCollateralSwapRate to avoid stack too deep error
             uint256 receivedAmount;
             (receivedAmount,,sentValues[3]) = _loanSwap(
-                loanId,
+                loanLocal.id,
                 loanParamsLocal.loanToken,
                 loanParamsLocal.collateralToken,
                 sentAddresses[1], // borrower
