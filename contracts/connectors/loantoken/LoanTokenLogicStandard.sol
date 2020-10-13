@@ -1320,4 +1320,15 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
             return(ptr, size)
         }
     }
+
+    function getMaintenanceMargin(address collateralTokenAddress)
+        external
+        view
+        returns (bytes32)
+    {
+        return
+            loanParamsIds[uint256(
+                keccak256(abi.encodePacked(collateralTokenAddress, true))
+            )];
+    }
 }
