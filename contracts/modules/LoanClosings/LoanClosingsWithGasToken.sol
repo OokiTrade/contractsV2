@@ -51,6 +51,10 @@ contract LoanClosingsWithGasToken is LoanClosingsBase {
         external
         usesGasToken(gasTokenUser)
         nonReentrant
+        returns (
+            address rebateToken,
+            uint256 gasRebate
+        )
     {
         uint256 startingGas = 21000 + gasleft() + 16 * msg.data.length;
 

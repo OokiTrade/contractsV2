@@ -13,8 +13,8 @@ import "./interfaces/ProtocolSettingsLike.sol";
 contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage {
     using SafeMath for uint256;
 
-    address public constant bZxContract = 0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f; // mainnet
-    //address public constant bZxContract = 0xAbd9372723C735D426D0a760D047206Fe115ee6d; // kovan
+    //address public constant bZxContract = 0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f; // mainnet
+    address public constant bZxContract = 0x5cfba2639a3db0D9Cc264Aa27B2E6d134EeA486a; // kovan
 
     bytes32 internal constant iToken_LowerAdminAddress = 0x7ad06df6a0af6bd602d90db766e0d5f253b45187c3717a0f9026ea8b10ff0d4b;    // keccak256("iToken_LowerAdminAddress")
 

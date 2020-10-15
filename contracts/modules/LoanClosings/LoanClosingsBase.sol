@@ -147,8 +147,12 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
     function _rollover(
         bytes32 loanId,
         uint256 startingGas,
-        bytes memory loanDataBytes)
+        bytes memory /*loanDataBytes*/) // for future use
         internal
+        returns (
+            address rebateToken,
+            uint256 gasRebate
+        )
     {
         Loan memory loanLocal = loans[loanId];
         require(loanLocal.active, "loan is closed");
@@ -244,7 +248,7 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
             loanLocal.collateral,
             interestAmountRequired,
             true, // returnTokenIsCollateral
-            loanDataBytes
+            ""
         );
         loanLocal.collateral = loanLocal.collateral
             .sub(sourceTokenAmountUsed);
@@ -259,7 +263,7 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
             );
         }
 
-        uint256 gasRebate = _getRebate(
+        gasRebate = _getRebate(
             loanLocal,
             loanParamsLocal,
             startingGas
@@ -270,22 +274,22 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
             loanLocal.collateral = loanLocal.collateral
                 .sub(gasRebate, "gasRebate too high");
 
+            rebateToken = loanParamsLocal.collateralToken;
+
             _withdrawAsset(
-                loanParamsLocal.collateralToken,
+                rebateToken,
                 msg.sender,
                 gasRebate
             );
         }
 
-        _rolloverEvent(
+        _finalizeRollover(
             loanLocal,
             loanParamsLocal,
             sourceTokenAmountUsed,
             interestAmountRequired,
             gasRebate
         );
-
-        loans[loanId] = loanLocal;
     }
 
     function _closeWithDeposit(
@@ -334,7 +338,6 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
             );
         }
 
-        uint256 withdrawAmount;
         if (loanCloseAmount == loanLocal.principal) {
             // collateral is only withdrawn if the loan is closed in full
             withdrawAmount = loanLocal.collateral;
@@ -836,7 +839,7 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
             .min256(maxDrawdown);
     }
 
-    function _rolloverEvent(
+    function _finalizeRollover(
         Loan memory loanLocal,
         LoanParams memory loanParamsLocal,
         uint256 sourceTokenAmountUsed,
@@ -856,6 +859,8 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
             loanLocal.endTimestamp,             // loanEndTimestamp
             gasRebate                           // gasRebate
         );
+
+        loans[loanLocal.id] = loanLocal;
     }
 
     function _emitClosingEvents(

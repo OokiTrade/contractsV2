@@ -393,7 +393,11 @@ contract IBZx is
     function rollover(
         bytes32 loanId,
         bytes calldata loanDataBytes)
-        external;
+        external
+        returns (
+            address rebateToken,
+            uint256 gasRebate
+        );
 
     /// @dev close position with loan token deposit
     /// @param loanId id of the loan
@@ -463,7 +467,11 @@ contract IBZx is
         bytes32 loanId,
         address gasTokenUser,
         bytes calldata /*loanDataBytes*/)
-        external;
+        external
+        returns (
+            address rebateToken,
+            uint256 gasRebate
+        );
 
     /// @dev close position with loan token deposit
     /// @param loanId id of the loan

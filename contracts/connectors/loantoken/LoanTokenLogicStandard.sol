@@ -29,7 +29,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
     address public constant bZxContract = 0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f; // mainnet
     address public constant wethToken = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // mainnet
 
-    //address public constant bZxContract = 0xAbd9372723C735D426D0a760D047206Fe115ee6d; // kovan
+    //address public constant bZxContract = 0x5cfba2639a3db0D9Cc264Aa27B2E6d134EeA486a; // kovan
     //address public constant wethToken = 0xd0A1E359811322d97991E03f863a0C30C2cF029C; // kovan
 
     bytes32 internal constant iToken_ProfitSoFar = 0x37aa2b7d583612f016e4a4de4292cb015139b3d7762663d06a53964912ea2fb6;          // keccak256("iToken_ProfitSoFar")
@@ -152,6 +152,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         bytes memory /*loanDataBytes*/) // arbitrary order data (for future use)
         public
         payable
+        nonReentrant
         returns (uint256, uint256) // returns new principal and new collateral added to loan
     {
         return _borrow(
@@ -179,6 +180,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         bytes memory /*loanDataBytes*/) // arbitrary order data (for future use)
         public
         payable
+        nonReentrant
         usesGasToken(gasTokenUser)
         returns (uint256, uint256) // returns new principal and new collateral added to loan
     {
@@ -206,6 +208,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         bytes memory loanDataBytes)     // arbitrary order data
         public
         payable
+        nonReentrant
         returns (uint256, uint256) // returns new principal and new collateral added to trade
     {
         return _marginTrade(
@@ -232,6 +235,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         bytes memory loanDataBytes)     // arbitrary order data
         public
         payable
+        nonReentrant
         usesGasToken(gasTokenUser)
         returns (uint256, uint256) // returns new principal and new collateral added to trade
     {

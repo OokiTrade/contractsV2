@@ -122,6 +122,8 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
             borrowAmount
         ), "39");
 
+        emit FlashBorrow(borrower, target, loanTokenAddress, borrowAmount);
+
         bytes memory callData;
         if (bytes(signature).length == 0) {
             callData = data;

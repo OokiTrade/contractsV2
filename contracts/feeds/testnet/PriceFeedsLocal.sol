@@ -55,7 +55,6 @@ contract PriceFeedsLocal is PriceFeeds {
         address destToken,
         uint256 rate)
         public
-        onlyOwner
     {
         if (sourceToken != destToken) {
             rates[sourceToken][destToken] = rate;

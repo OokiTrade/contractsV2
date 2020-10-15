@@ -47,6 +47,10 @@ contract LoanClosings is LoanClosingsBase {
         bytes calldata /*loanDataBytes*/) // for future use
         external
         nonReentrant
+        returns (
+            address rebateToken,
+            uint256 gasRebate
+        )
     {
         uint256 startingGas = 21000 + gasleft() + 16 * msg.data.length;
 
