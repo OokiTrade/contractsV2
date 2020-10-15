@@ -26,13 +26,16 @@ def deployProtocol():
     global deploys, bzx, tokens, constants, addresses, thisNetwork, acct
 
     thisNetwork = network.show_active()
+    pos = thisNetwork.find("-fork")
+    if pos != -1:
+        thisNetwork = thisNetwork[:thisNetwork.find("-fork")]
 
     if thisNetwork == "development":
         acct = accounts[0]
     elif thisNetwork == "mainnet":
         acct = accounts.load('deployer1')
     else:
-        acct = accounts.load('testnet_deployer')
+        acct = accounts.load('testnet_admin')
     print("Loaded account",acct)
 
     constants = shared.Constants()
@@ -87,89 +90,34 @@ def deployProtocol():
             )
         else:
             if thisNetwork == "kovan":
-                feeds = acct.deploy(PriceFeeds)
-            '''
-                print("Calling setDecimals.")
-                feeds.setDecimals(
-                    [
-                        "0xd0A1E359811322d97991E03f863a0C30C2cF029C", # WETH
-                        "0xC4375B7De8af5a38a93548eb8453a498222C4fF2", # SAI
-                        "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa", # DAI
-                        "0xad67cB4d63C9da94AcA37fDF2761AaDF780ff4a2", # KNC
-                        "0xB54Fc2F2ea17d798Ad5C7Aba2491055BCeb7C6b2", # BZRX
-                        "0x6F8304039f34fd6A6acDd511988DCf5f62128a32"  # vBZRX
-                    ]
+                feeds = acct.deploy(PriceFeedsLocal)
+
+                print("Calling setRates x3.")
+                feeds.setRates(
+                    "0xB443f30CDd6076b1A5269dbc08b774F222d4Db4e", # USDC
+                    "0xfBE16bA4e8029B759D3c5ef8844124893f3ae470", # WETH
+                    0.002849070115608566e18
+                )
+                feeds.setRates(
+                    "0xB54Fc2F2ea17d798Ad5C7Aba2491055BCeb7C6b2", # BZRX
+                    "0xfBE16bA4e8029B759D3c5ef8844124893f3ae470", # WETH
+                    0.000333738893662566e18
                 )
 
-                print("Calling setPriceFeed.")
-                feeds.setPriceFeed(
-                    [
-                        "0xC4375B7De8af5a38a93548eb8453a498222C4fF2", # SAI
-                        "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa", # DAI
-                        "0xad67cB4d63C9da94AcA37fDF2761AaDF780ff4a2"  # KNC
-                    ],
-                    [
-                        "0x6F47077D3B6645Cb6fb7A29D280277EC1e5fFD90", # SAI - (sharing DAI feed)
-                        "0x6F47077D3B6645Cb6fb7A29D280277EC1e5fFD90", # DAI
-                        "0x0893AaF58f62279909F9F6FF2E5642f53342e77F"  # KNC
-                    ],
+                feeds.setRates(
+                    "0xB443f30CDd6076b1A5269dbc08b774F222d4Db4e", # WBTC
+                    "0xfBE16bA4e8029B759D3c5ef8844124893f3ae470", # WETH
+                    30.283297741653263000e18
                 )
-            '''
+
                 print("Calling setDecimals.")
                 feeds.setDecimals(
                     [
-                        "0xE65D99a06D0Ded0D318E31dB3AE5D77629c625fc", # WETH
-                        "0x20BdF254Ca63883c3a83424753BB40185AF29cE4", # USDC
-                        "0x7143e05608C4BC7E83a3B72a28De2497f62B7e59", # SAI
-                        "0xc4B7A70c3694cB1d37A18e6c6bD9271828C382A4", # WBTC
-                        "0x4893919982648FFeFE4324538D54402387C20198", # MKR
-                        "0x02357164ba33F299F7654cBB29da29dB38aE1f44", # KNC
-                        "0x39AC2818e08D285aBE548F77a0819651b8B5d213", # REP
-                        "0xAc091Ccf1b0c601182f3CCF3EB20F291ABA39029", # BAT
-                        "0x629B28c5aA5c953Df2511d2E48d316A07eAFb3e3", # ZRX
-                        "0xFB9325e5f4fC9629525427A1c92c0f4D723500Cf", # LINK
-                        "0xFCfA14dBc71beE2a2188431Fa15E1f8D57d93c62", # SUSD
-                        "0x8f746eC7ed5Cc265b90e7AF0f5B07b4406C9dDA8", # DAI
-                        "0x4C4462C6bca4c92BF41C40f9a4047F35Fd296996", # USDT (Tether)
+                        "0xfBE16bA4e8029B759D3c5ef8844124893f3ae470", # WETH
+                        "0xB443f30CDd6076b1A5269dbc08b774F222d4Db4e", # USDC
+                        "0x5aE55494Ccda82f1F7c653BC2b6EbB4aD3C77Dac", # WBTC
                         "0xB54Fc2F2ea17d798Ad5C7Aba2491055BCeb7C6b2", # BZRX
                         "0x6F8304039f34fd6A6acDd511988DCf5f62128a32"  # vBZRX
-                    ]
-                )
-                print("Calling setPriceFeed.")
-                feeds.setPriceFeed(
-                    [
-                        "0xE65D99a06D0Ded0D318E31dB3AE5D77629c625fc", # fWETH
-                        "0x20BdF254Ca63883c3a83424753BB40185AF29cE4", # USDC
-                        "0x7143e05608C4BC7E83a3B72a28De2497f62B7e59", # SAI
-                        "0xc4B7A70c3694cB1d37A18e6c6bD9271828C382A4", # WBTC
-                        "0x4893919982648FFeFE4324538D54402387C20198", # MKR
-                        "0x02357164ba33F299F7654cBB29da29dB38aE1f44", # KNC
-                        "0x39AC2818e08D285aBE548F77a0819651b8B5d213", # REP
-                        "0xAc091Ccf1b0c601182f3CCF3EB20F291ABA39029", # BAT
-                        "0x629B28c5aA5c953Df2511d2E48d316A07eAFb3e3", # ZRX
-                        "0xFB9325e5f4fC9629525427A1c92c0f4D723500Cf", # LINK
-                        "0xFCfA14dBc71beE2a2188431Fa15E1f8D57d93c62", # SUSD
-                        "0x8f746eC7ed5Cc265b90e7AF0f5B07b4406C9dDA8", # DAI
-                        "0x4C4462C6bca4c92BF41C40f9a4047F35Fd296996", # USDT (Tether)
-                        "0xB54Fc2F2ea17d798Ad5C7Aba2491055BCeb7C6b2", # BZRX
-                        "0x0000000000000000000000000000000000000001"  # Fast Gas / Gwei
-                    ],
-                    [
-                        "0x775E76cca1B5bc903c9a8C6f77416A35E5744664", # SNX (stand-in for fWETH)
-                        "0x672c1C0d1130912D83664011E7960a42E8cA05D5", # USDC
-                        "0x6F47077D3B6645Cb6fb7A29D280277EC1e5fFD90", # SAI - (sharing DAI feed)
-                        "0x33E5085E92f5b53E9A193E28ad2f76bF210550BB", # WBTC
-                        "0x14D7714eC44F44ECD0098B39e642b246fB2c38D0", # MKR
-                        "0x0893AaF58f62279909F9F6FF2E5642f53342e77F", # KNC
-                        "0x09F4A94F44c29d4967C761bBdB89f5bD3E2c09E6", # REP
-                        "0x2c8d01771CCDca47c103194C5860dbEA2fE61626", # BAT
-                        "0x2636cfdDB457a6C7A7D60A439F1E5a5a0C3d9c65", # ZRX
-                        "0xf1e71Afd1459C05A2F898502C4025be755aa844A", # LINK
-                        "0xa353F8b083F7575cfec443b5ad585D42f652E9F7", # SUSD
-                        "0x6F47077D3B6645Cb6fb7A29D280277EC1e5fFD90", # DAI
-                        "0xCC833A6522721B3252e7578c5BCAF65738B75Fc3", # USDT (Tether)
-                        "0x9aa9da35DC44F93D90436BfE256f465f720c3Ae5", # BZRX
-                        "0x07435f5182AAebBB176E58078451Fdd7FCD4EaC7"  # Fast Gas / Gwei
                     ]
                 )
             elif thisNetwork == "mainnet":
@@ -260,50 +208,6 @@ def deployProtocol():
         else:
             raise ValueError('SwapsImpl deployment missing!')
 
-
-    '''
-    ## ProtocolMigration
-    if deploys.ProtocolMigration is True:
-        print("Deploying ProtocolMigration.")
-        migration = acct.deploy(ProtocolMigration)
-        print("Calling replaceContract.")
-        bzx.replaceContract(migration.address)
-
-        migration = Contract.from_abi("migration", address=bzx.address, abi=migration.abi, owner=acct)
-        if thisNetwork == "kovan":
-            print("Calling setLegacyOracles.")
-            migration.setLegacyOracles(
-                [
-                    "0xa09dd6ff595041a85d406168a3ee2324e58cffa0",
-                    "0x5d940c359165a8d4647cc8a237dcef8b0c6b60de",
-                    "0x199bc31317a7d1505a5d13d4e4d4433c8644813b",
-                ],
-                [
-                    "0xa09dd6ff595041a85d406168a3ee2324e58cffa0",
-                    "0xa09dd6ff595041a85d406168a3ee2324e58cffa0",
-                    "0xa09dd6ff595041a85d406168a3ee2324e58cffa0",
-                ]
-            )
-        elif thisNetwork == "mainnet":
-            print("Calling setLegacyOracles.")
-            migration.setLegacyOracles(
-                [
-                    "0x7bc672a622620d531f9eb30de89daec31a4240fa",
-                    "0xf257246627f7cb036ae40aa6cfe8d8ce5f0eba63",
-                    "0x4c1974e5ff413c6e061ae217040795aaa1748e8b",
-                    "0xc5c4554dc5ff2076206b5b3e1abdfb77ff74788b",
-                    "0x53ef0Ad05972c348E352E0E22e734F616679Ce54",
-                ],
-                [
-                    "0x7bc672a622620d531f9eb30de89daec31a4240fa",
-                    "0x7bc672a622620d531f9eb30de89daec31a4240fa",
-                    "0x7bc672a622620d531f9eb30de89daec31a4240fa",
-                    "0x7bc672a622620d531f9eb30de89daec31a4240fa",
-                    "0x7bc672a622620d531f9eb30de89daec31a4240fa",
-                ]
-            )
-    '''
-
     ## ProtocolSettings
     if deploys.ProtocolSettings is True:
         print("Deploying ProtocolSettings.")
@@ -326,103 +230,29 @@ def deployProtocol():
             swaps.setLocalPriceFeedContract(bzx.priceFeeds())
 
             print("Calling setLoanPool.")
-            '''bzx.setLoanPool(
-                [
-                    "0x0afBFCe9DB35FFd1dFdF144A788fa196FD08EFe9", # iETH
-                    "0xA1e58F3B1927743393b25f261471E1f2D3D9f0F6", # iSAI
-                    "0xd40C0e7230c5bde65B61B5EDDc3E973f76Aff252", # iDAI
-                    "0x988F40e4B07aC9b5e78533282Ba14a57440827e8"  # iKNC
-                ],
-                [
-                    "0xd0A1E359811322d97991E03f863a0C30C2cF029C", # WETH
-                    "0xC4375B7De8af5a38a93548eb8453a498222C4fF2", # SAI
-                    "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa", # DAI
-                    "0xad67cB4d63C9da94AcA37fDF2761AaDF780ff4a2"  # KNC
-                ]
-            )
-
-            print("Calling setSupportedTokens.")
-            bzx.setSupportedTokens(
-                [
-                    "0xd0A1E359811322d97991E03f863a0C30C2cF029C", # WETH
-                    "0xC4375B7De8af5a38a93548eb8453a498222C4fF2", # SAI
-                    "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa", # DAI
-                    "0xad67cB4d63C9da94AcA37fDF2761AaDF780ff4a2", # KNC
-                    "0xB54Fc2F2ea17d798Ad5C7Aba2491055BCeb7C6b2", # BZRX
-                    "0x6F8304039f34fd6A6acDd511988DCf5f62128a32"  # vBZRX
-                ],
-                [
-                    True,
-                    True,
-                    True,
-                    True,
-                    True,
-                    True
-                ]
-            )'''
             bzx.setLoanPool(
                 [
-                    "0x9D2015Dd5306C08bDd8530605137d26c04DEDBD8", # fiWETH
-                    "0xaaC9822F31e5Aefb32bC228DcF259F23B49B9855", # iUSDC
-                    "0x8D18c5b71348f69733C34Fd32eC8315BdC8222FB", # iSAI
-                    "0x73D4b4AB88Eab2A1e6cE495dE85C2B04c2918B69", # iWBTC
-                    "0x3e72500122C3afD64AfE0306D7fbc7b8bd82b7d2", # iMKR
-                    "0xdE7a60c3581F0D8C8723a71c28579131984A410c", # iKNC
-                    "0x8638B468BF02BDB8fc8C5b33dCA8c2D16c3fD67B", # iREP
-                    "0xb59659564012fA337BB8b9E626b7964b5349f047", # iBAT
-                    "0xbac711d9963F0DB23613F3C338A7a1aF151C0696", # iZRX
-                    "0x76754C763A23e9202CC721584Fbaf6012ecd8FbA", # iLINK
-                    "0x1CAc31ECC90912EEa18cCAdfab15fD9c0e77cbab", # iSUSD
-                    "0x73d0B4834Ba4ADa053d8282c02305eCdAC2304f0", # iDAI
-                    "0x6b9F03e05423cC8D00617497890C0872FF33d4E8", # iUSDT (Tether)
+                    "0xe3d99c2152Fc8eA5F87B733706FAA241C37592f1", # ifWETH
+                    "0x021C5923398168311Ff320902BF8c8C725B4F288", # iUSDC
+                    "0xF6a0690f22da5464924A28a8198E8ecA69ffc47e", # iWBTC
                 ],
                 [
-                    "0xE65D99a06D0Ded0D318E31dB3AE5D77629c625fc", # WETH
-                    "0x20BdF254Ca63883c3a83424753BB40185AF29cE4", # USDC
-                    "0x7143e05608C4BC7E83a3B72a28De2497f62B7e59", # SAI
-                    "0xc4B7A70c3694cB1d37A18e6c6bD9271828C382A4", # WBTC
-                    "0x4893919982648FFeFE4324538D54402387C20198", # MKR
-                    "0x02357164ba33F299F7654cBB29da29dB38aE1f44", # KNC
-                    "0x39AC2818e08D285aBE548F77a0819651b8B5d213", # REP
-                    "0xAc091Ccf1b0c601182f3CCF3EB20F291ABA39029", # BAT
-                    "0x629B28c5aA5c953Df2511d2E48d316A07eAFb3e3", # ZRX
-                    "0xFB9325e5f4fC9629525427A1c92c0f4D723500Cf", # LINK
-                    "0xFCfA14dBc71beE2a2188431Fa15E1f8D57d93c62", # SUSD
-                    "0x8f746eC7ed5Cc265b90e7AF0f5B07b4406C9dDA8", # DAI
-                    "0x4C4462C6bca4c92BF41C40f9a4047F35Fd296996", # USDT (Tether)
+                    "0xfBE16bA4e8029B759D3c5ef8844124893f3ae470", # WETH
+                    "0xB443f30CDd6076b1A5269dbc08b774F222d4Db4e", # USDC
+                    "0x5aE55494Ccda82f1F7c653BC2b6EbB4aD3C77Dac", # WBTC
                 ]
             )
 
             print("Calling setSupportedTokens.")
             bzx.setSupportedTokens(
                 [
-                    "0xE65D99a06D0Ded0D318E31dB3AE5D77629c625fc", # WETH
-                    "0x20BdF254Ca63883c3a83424753BB40185AF29cE4", # USDC
-                    "0x7143e05608C4BC7E83a3B72a28De2497f62B7e59", # SAI
-                    "0xc4B7A70c3694cB1d37A18e6c6bD9271828C382A4", # WBTC
-                    "0x4893919982648FFeFE4324538D54402387C20198", # MKR
-                    "0x02357164ba33F299F7654cBB29da29dB38aE1f44", # KNC
-                    "0x39AC2818e08D285aBE548F77a0819651b8B5d213", # REP
-                    "0xAc091Ccf1b0c601182f3CCF3EB20F291ABA39029", # BAT
-                    "0x629B28c5aA5c953Df2511d2E48d316A07eAFb3e3", # ZRX
-                    "0xFB9325e5f4fC9629525427A1c92c0f4D723500Cf", # LINK
-                    "0xFCfA14dBc71beE2a2188431Fa15E1f8D57d93c62", # SUSD
-                    "0x8f746eC7ed5Cc265b90e7AF0f5B07b4406C9dDA8", # DAI
-                    "0x4C4462C6bca4c92BF41C40f9a4047F35Fd296996", # USDT (Tether)
+                    "0xfBE16bA4e8029B759D3c5ef8844124893f3ae470", # WETH
+                    "0xB443f30CDd6076b1A5269dbc08b774F222d4Db4e", # USDC
                     "0xB54Fc2F2ea17d798Ad5C7Aba2491055BCeb7C6b2", # BZRX
+                    "0x5aE55494Ccda82f1F7c653BC2b6EbB4aD3C77Dac", # WBTC
                     "0x6F8304039f34fd6A6acDd511988DCf5f62128a32"  # vBZRX
                 ],
                 [
-                    True,
-                    True,
-                    True,
-                    True,
-                    True,
-                    True,
-                    True,
-                    True,
-                    True,
-                    True,
                     True,
                     True,
                     True,
@@ -431,45 +261,14 @@ def deployProtocol():
                 ]
             )
 
-            ## 5e18 = 5% collateral discount
-            '''print("Calling setLiquidationIncentivePercent.")
-            bzx.setLiquidationIncentivePercent(
-                [
-                    "0xE65D99a06D0Ded0D318E31dB3AE5D77629c625fc", # WETH
-                    "0x20BdF254Ca63883c3a83424753BB40185AF29cE4", # USDC
-                    "0x7143e05608C4BC7E83a3B72a28De2497f62B7e59", # SAI
-                    "0xc4B7A70c3694cB1d37A18e6c6bD9271828C382A4", # WBTC
-                    "0x4893919982648FFeFE4324538D54402387C20198", # MKR
-                    "0x02357164ba33F299F7654cBB29da29dB38aE1f44", # KNC
-                    "0x39AC2818e08D285aBE548F77a0819651b8B5d213", # REP
-                    "0xAc091Ccf1b0c601182f3CCF3EB20F291ABA39029", # BAT
-                    "0x629B28c5aA5c953Df2511d2E48d316A07eAFb3e3", # ZRX
-                    "0xFB9325e5f4fC9629525427A1c92c0f4D723500Cf", # LINK
-                    "0xFCfA14dBc71beE2a2188431Fa15E1f8D57d93c62", # SUSD
-                    "0x8f746eC7ed5Cc265b90e7AF0f5B07b4406C9dDA8", # DAI
-                    "0x4C4462C6bca4c92BF41C40f9a4047F35Fd296996", # USDT (Tether)
-                    "0xB54Fc2F2ea17d798Ad5C7Aba2491055BCeb7C6b2", # BZRX
-                    "0x6F8304039f34fd6A6acDd511988DCf5f62128a32"  # vBZRX
-                ],
-                [
-                    5e18,
-                    5e18,
-                    5e18,
-                    5e18,
-                    5e18,
-                    5e18,
-                    5e18,
-                    5e18,
-                    5e18,
-                    5e18,
-                    5e18,
-                    5e18,
-                    5e18,
-                    5e18,
-                    5e18,
-                    5e18
-                ]
-            )'''
+            ## 7e18 = 5% collateral discount
+            # handled in setup_pool_params2
+            '''function setLiquidationIncentivePercent(
+                address[] calldata loanTokens,
+                address[] calldata collateralTokens,
+                uint256[] calldata amounts)
+                external
+                onlyOwner'''
 
         elif thisNetwork == "mainnet":
             print("Calling setLoanPool.")
@@ -546,48 +345,14 @@ def deployProtocol():
                 ]
             )
 
-            ## 5e18 = 5% collateral discount
-            '''print("Calling setLiquidationIncentivePercent.")
-            bzx.setLiquidationIncentivePercent(
-                [
-                    "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", # WETH
-                    "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", # USDC
-                    "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359", # SAI
-                    "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599", # WBTC
-                    "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2", # MKR
-                    "0xdd974d5c2e2928dea5f71b9825b8b646686bd200", # KNC
-                    "0x1985365e9f78359a9b6ad760e32412f4a445e862", # REP
-                    "0x0d8775f648430679a709e98d2b0cb6250d2887ef", # BAT
-                    "0xe41d2489571d322189246dafa5ebde1f4699f498", # ZRX
-                    "0x514910771af9ca656af840dff83e8264ecf986ca", # LINK
-                    "0x57ab1ec28d129707052df4df418d58a2d46d5f51", # SUSD
-                    "0x6b175474e89094c44da98b954eedeac495271d0f", # DAI
-                    "0xdac17f958d2ee523a2206206994597c13d831ec7", # USDT (Tether)
-                    "0x56d811088235F11C8920698a204A5010a788f4b3", # BZRX
-                    "0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F", # vBZRX
-                    "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", # YFI
-                    "0x80fB784B7eD66730e8b1DBd9820aFD29931aab03", # LEND
-                ],
-                [
-                    5e18, # WETH
-                    5e18, # USDC
-                    5e18, # SAI
-                    5e18, # WBTC
-                    5e18, # MKR
-                    5e18, # KNC
-                    5e18, # REP
-                    5e18, # BAT
-                    5e18, # ZRX
-                    5e18, # LINK
-                    5e18, # SUSD
-                    5e18, # DAI
-                    5e18, # USDT (Tether)
-                    5e18, # BZRX
-                    5e18, # vBZRX
-                    5e18, # YFI
-                    5e18, # LEND
-                ]
-            )'''
+            ## 7e18 = 5% collateral discount
+            # handled in setup_pool_params2
+            '''function setLiquidationIncentivePercent(
+                address[] calldata loanTokens,
+                address[] calldata collateralTokens,
+                uint256[] calldata amounts)
+                external
+                onlyOwner'''
 
         bzx.setFeesController(acct.address)
 
@@ -620,6 +385,6 @@ def deployProtocol():
         bzx.replaceContract(loanClosings.address)
 
         print("Deploying LoanClosingsWithGasToken.")
-        LoanClosingsWithGasToken = acct.deploy(LoanClosingsWithGasToken)
+        loanClosingsWithGasToken = acct.deploy(LoanClosingsWithGasToken)
         print("Calling replaceContract.")
-        bzx.replaceContract(LoanClosingsWithGasToken.address)
+        bzx.replaceContract(loanClosingsWithGasToken.address)
