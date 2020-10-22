@@ -16,18 +16,21 @@
   "devDependencies": {
     "cross-env": "^7.0.2",
     "husky": "^4.2.5",
-    "prettier": "^2.0.5",
-    "prettier-plugin-solidity": "^1.0.0-alpha.49",
-    "solhint": "^3.0.0",
-    "solhint-plugin-prettier": "^0.0.4"
+    "prettier": "^2.1.2",
+    "prettier-plugin-solidity": "^1.0.0-alpha.59",
+    "solhint": "^3.2.2",
+    "solhint-plugin-prettier": "0.0.5"
   },
   "scripts": {
     "analyize-contracts": "slither .",
+    "prettier": "prettier --write *.sol",
+    "prettier:solidity": "./node_modules/.bin/prettier --write **.sol",
     "lint-contracts": "solhint contracts/**/*.sol",
     "test": "brownie test"
   },
   "husky": {
     "hooks": {
+      "pre-push": "npm run prettier:solidity",
       "pre-commit": "yarn analyize-contracts && yarn lint-contracts && yarn test"
     }
   }
