@@ -23,7 +23,6 @@
   },
   "scripts": {
     "analyize-contracts": "slither .",
-    "prettier": "prettier --write *.sol",
     "prettier:solidity": "./node_modules/.bin/prettier --write **.sol",
     "lint-contracts": "solhint contracts/**/*.sol",
     "test": "brownie test"
