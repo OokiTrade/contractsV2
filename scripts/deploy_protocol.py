@@ -122,7 +122,7 @@ def deployProtocol():
                 )
             elif thisNetwork == "mainnet":
                 feeds = acct.deploy(PriceFeeds)
-                
+
                 print("Calling setDecimals.")
                 feeds.setDecimals(
                     [
@@ -143,6 +143,8 @@ def deployProtocol():
                         "0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F", # vBZRX
                         "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", # YFI
                         "0x80fB784B7eD66730e8b1DBd9820aFD29931aab03", # LEND
+                        "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", # AAVE
+                        "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", # UNI
                     ]
                 )
 
@@ -164,6 +166,8 @@ def deployProtocol():
                         "0x56d811088235F11C8920698a204A5010a788f4b3", # BZRX
                         "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", # YFI
                         "0x80fB784B7eD66730e8b1DBd9820aFD29931aab03", # LEND
+                        "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", # AAVE
+                        "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", # UNI
                         "0x0000000000000000000000000000000000000001"  # Fast Gas / Gwei
                     ],
                     [
@@ -181,7 +185,9 @@ def deployProtocol():
                         "0xEe9F2375b4bdF6387aa8265dD4FB8F16512A1d46", # USDT (Tether)
                         "0x8f7C7181Ed1a2BA41cfC3f5d064eF91b67daef66", # BZRX
                         "0x7c5d4F8345e66f68099581Db340cd65B078C41f4", # YFI
-                        "0xc9dDB0E869d931D031B24723132730Ecf3B4F74d", # LEND
+                        "0xc64F3C3925a216a11Ce0828498133cbC65fA4042", # LEND (old: 0xc9dDB0E869d931D031B24723132730Ecf3B4F74d)
+                        "0x6Df09E975c830ECae5bd4eD9d90f3A95a4f88012", # AAVE
+                        "0xD6aA3D25116d8dA79Ea0246c4826EB951872e02e", # UNI
                         "0x169E633A2D1E6c10dD91238Ba11c4A708dfEF37C"  # Fast Gas / Gwei
                     ]
                 )
@@ -286,6 +292,8 @@ def deployProtocol():
                     "0x463538705e7d22aa7f03ebf8ab09b067e1001b54", # iLINK
                     "0x7f3fe9d492a9a60aebb06d82cba23c6f32cad10b", # iYFI
                     "0x7e9997a38a439b2be7ed9c9c4628391d3e055d48", # iUSDT
+                    "", # iAAVE
+                    "", # iUNI
                 ],
                 [
                     "0x6b175474e89094c44da98b954eedeac495271d0f", # DAI
@@ -299,6 +307,8 @@ def deployProtocol():
                     "0x514910771AF9Ca656af840dff83E8264EcF986CA", # LINK
                     "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", # YFI
                     "0xdac17f958d2ee523a2206206994597c13d831ec7", # USDT
+                    "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", # AAVE
+                    "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", # UNI
                 ]
             )
 
@@ -322,6 +332,8 @@ def deployProtocol():
                     "0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F", # vBZRX
                     "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", # YFI
                     "0x80fB784B7eD66730e8b1DBd9820aFD29931aab03", # LEND
+                    "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", # AAVE
+                    "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", # UNI
 
                 ],
                 [
@@ -342,6 +354,8 @@ def deployProtocol():
                     True, # vBZRX
                     True, # YFI
                     True, # LEND
+                    True, # AAVE
+                    True, # UNI
                 ]
             )
 
