@@ -39,6 +39,11 @@ contract LoanMaintenanceEvents {
         uint256 newEndTimestamp
     );
 
+    event LoanInput(
+        bytes32 indexed loanId,
+        uint256 amount
+    );
+
     event ClaimReward(
         address indexed user,
         address indexed receiver,

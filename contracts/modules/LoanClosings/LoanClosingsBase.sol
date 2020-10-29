@@ -479,6 +479,11 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         assembly {
             sstore(slot, add(sload(slot), amount))
         }
+
+        emit LoanOutput(
+            loanId,
+            amount
+        );
     }
 
     function _checkAuthorized(

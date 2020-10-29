@@ -370,6 +370,11 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         assembly {
             sstore(slot, add(sload(slot), amount))
         }
+
+        emit LoanInput(
+            loanId,
+            amount
+        );
     }
 
     function claimRewards(
