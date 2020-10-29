@@ -26,6 +26,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         _setTarget(this.withdrawAccruedInterest.selector, target);
         _setTarget(this.extendLoanDuration.selector, target);
         _setTarget(this.reduceLoanDuration.selector, target);
+        _setTarget(this.setInputAmount.selector, target);
         _setTarget(this.claimRewards.selector, target);
         _setTarget(this.rewardsBalanceOf.selector, target);
         _setTarget(this.getLenderInterestData.selector, target);
@@ -357,6 +358,20 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         );
     }
 
+    function setInputAmount(
+        bytes32 loanId,
+        uint256 amount) // denominated in loanToken
+        external
+    {
+        // only callable by loan pools
+        require(loanPoolToUnderlying[msg.sender] != address(0), "not authorized");
+
+        bytes32 slot = keccak256(abi.encode(loanId, LoanDepositValueID));
+        assembly {
+            sstore(slot, add(sload(slot), amount))
+        }
+    }
+
     function claimRewards(
         address receiver)
         external
@@ -626,7 +641,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
 
         LoanInterest memory loanInterestLocal = loanInterest[loanId];
 
-        (uint256 currentMargin, uint256 collateralToLoanRate) = IPriceFeeds(priceFeeds).getCurrentMargin(
+        (uint256 currentMargin, uint256 value) = IPriceFeeds(priceFeeds).getCurrentMargin( // currentMargin, collateralToLoanRate
             loanParamsLocal.loanToken,
             loanParamsLocal.collateralToken,
             loanLocal.principal,
@@ -641,11 +656,32 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
                 loanLocal.collateral,
                 currentMargin,
                 loanParamsLocal.maintenanceMargin,
-                collateralToLoanRate,
+                value, // collateralToLoanRate
                 liquidationIncentivePercent[loanParamsLocal.loanToken][loanParamsLocal.collateralToken]
             );
         } else if (unsafeOnly) {
             return loanData;
+        }
+
+        bytes32 slot;
+        uint256 depositValue;
+        uint256 withdrawalValue;
+        slot = keccak256(abi.encode(loanId, LoanDepositValueID));
+        assembly {
+            depositValue := sload(slot)
+        }
+        slot = keccak256(abi.encode(loanId, LoanWithdrawalValueID));
+        assembly {
+            withdrawalValue := sload(slot)
+        }
+
+        if (loanLocal.endTimestamp > block.timestamp) {
+            value = loanLocal.endTimestamp
+                .sub(block.timestamp)
+                .mul(loanInterestLocal.owedPerDay)
+                .div(1 days);
+        } else {
+            value = 0;
         }
 
         return LoanReturnData({
@@ -656,14 +692,16 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             principal: loanLocal.principal,
             collateral: loanLocal.collateral,
             interestOwedPerDay: loanInterestLocal.owedPerDay,
-            interestDepositRemaining: loanLocal.endTimestamp >= block.timestamp ? loanLocal.endTimestamp.sub(block.timestamp).mul(loanInterestLocal.owedPerDay).div(1 days) : 0,
+            interestDepositRemaining: value,
             startRate: loanLocal.startRate,
             startMargin: loanLocal.startMargin,
             maintenanceMargin: loanParamsLocal.maintenanceMargin,
             currentMargin: currentMargin,
             maxLoanTerm: loanParamsLocal.maxLoanTerm,
             maxLiquidatable: maxLiquidatable,
-            maxSeizable: maxSeizable
+            maxSeizable: maxSeizable,
+            depositValue: depositValue,
+            withdrawalValue: withdrawalValue
         });
     }
 

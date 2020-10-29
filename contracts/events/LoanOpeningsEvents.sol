@@ -43,4 +43,10 @@ contract LoanOpeningsEvents {
         address indexed delegated,
         bool isActive
     );
+
+    struct LoanOpenData {
+        bytes32 loanId;
+        uint256 principal;
+        uint256 collateral;
+    }
 }

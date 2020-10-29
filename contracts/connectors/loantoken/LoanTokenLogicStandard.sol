@@ -140,7 +140,6 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         return returnData;
     }
 
-    // ***** NOTE: Reentrancy is allowed here to allow flashloan use cases *****
     function borrow(
         bytes32 loanId,                 // 0 if new loan
         uint256 withdrawAmount,
@@ -153,7 +152,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         public
         payable
         nonReentrant
-        returns (uint256, uint256) // returns new principal and new collateral added to loan
+        returns (ProtocolLike.LoanOpenData memory)
     {
         return _borrow(
             loanId,
@@ -167,7 +166,6 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         );
     }
 
-    // ***** NOTE: Reentrancy is allowed here to allow flashloan use cases *****
     function borrowWithGasToken(
         bytes32 loanId,                 // 0 if new loan
         uint256 withdrawAmount,
@@ -182,7 +180,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         payable
         nonReentrant
         usesGasToken(gasTokenUser)
-        returns (uint256, uint256) // returns new principal and new collateral added to loan
+        returns (ProtocolLike.LoanOpenData memory)
     {
         return _borrow(
             loanId,
@@ -197,7 +195,6 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
     }
 
     // Called to borrow and immediately get into a position
-    // ***** NOTE: Reentrancy is allowed here to allow flashloan use cases *****
     function marginTrade(
         bytes32 loanId,                 // 0 if new loan
         uint256 leverageAmount,
@@ -209,7 +206,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         public
         payable
         nonReentrant
-        returns (uint256, uint256) // returns new principal and new collateral added to trade
+        returns (ProtocolLike.LoanOpenData memory)
     {
         return _marginTrade(
             loanId,
@@ -223,7 +220,6 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
     }
 
     // Called to borrow and immediately get into a position
-    // ***** NOTE: Reentrancy is allowed here to allow flashloan use cases *****
     function marginTradeWithGasToken(
         bytes32 loanId,                 // 0 if new loan
         uint256 leverageAmount,
@@ -237,7 +233,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         payable
         nonReentrant
         usesGasToken(gasTokenUser)
-        returns (uint256, uint256) // returns new principal and new collateral added to trade
+        returns (ProtocolLike.LoanOpenData memory)
     {
         return _marginTrade(
             loanId,
@@ -557,15 +553,11 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
             collateralTokenAddress = wethToken;
         }
 
-        uint256 totalDeposit = _totalDeposit(
+        (principal, interestRate,) = _getPreMarginData(
             collateralTokenAddress,
             collateralTokenSent,
-            loanTokenSent
-        );
-
-        (principal, interestRate) = _getMarginBorrowAmountAndRate(
-            leverageAmount,
-            totalDeposit
+            loanTokenSent,
+            leverageAmount
         );
         if (principal > _underlyingBalance()) {
             return (0, 0, 0);
@@ -721,7 +713,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         internal
         pausable(msg.sig)
         settlesInterest
-        returns (uint256, uint256) // returns new principal and new collateral added to loan
+        returns (ProtocolLike.LoanOpenData memory)
     {
         require(withdrawAmount != 0, "6");
 
@@ -780,7 +772,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         internal
         pausable(msg.sig)
         settlesInterest
-        returns (uint256, uint256) // returns new principal and new collateral added to trade
+        returns (ProtocolLike.LoanOpenData memory loanOpenData)
     {
         // ensures authorized use of existing loan
         require(loanId == 0 || msg.sender == trader, "13");
@@ -789,13 +781,6 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
             collateralTokenAddress = wethToken;
         }
         require(collateralTokenAddress != loanTokenAddress, "11");
-
-        uint256 totalDeposit = _totalDeposit(
-            collateralTokenAddress,
-            collateralTokenSent,
-            loanTokenSent
-        );
-        require(totalDeposit != 0, "12");
 
         address[4] memory sentAddresses;
         uint256[5] memory sentAmounts;
@@ -811,12 +796,16 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         sentAmounts[3] = loanTokenSent;
         sentAmounts[4] = collateralTokenSent;
 
-        (sentAmounts[1], sentAmounts[0]) = _getMarginBorrowAmountAndRate( // borrowAmount, interestRate
-            leverageAmount,
-            totalDeposit
+        uint256 totalDeposit;
+        (sentAmounts[1], sentAmounts[0], totalDeposit) = _getPreMarginData( // borrowAmount, interestRate, totalDeposit
+            collateralTokenAddress,
+            collateralTokenSent,
+            loanTokenSent,
+            leverageAmount
         );
+        require(totalDeposit != 0, "12");
 
-        return _borrowOrTrade(
+        loanOpenData = _borrowOrTrade(
             loanId,
             0, // withdrawAmount
             leverageAmount,
@@ -825,6 +814,13 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
             sentAmounts,
             loanDataBytes
         );
+
+        ProtocolLike(bZxContract).setInputAmount(
+            loanOpenData.loanId,
+            totalDeposit
+        );
+
+        return loanOpenData;
     }
 
     function _settleInterest()
@@ -902,7 +898,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         uint256[5] memory sentAmounts,
         bytes memory loanDataBytes)
         internal
-        returns (uint256, uint256)
+        returns (ProtocolLike.LoanOpenData memory)
     {
         require (sentAmounts[1] <= _underlyingBalance() && // newPrincipal
             sentAddresses[1] != address(0), // borrower
@@ -945,7 +941,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
             leverageAmount = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, leverageAmount);
         }
 
-        (sentAmounts[1], sentAmounts[4]) = ProtocolLike(bZxContract).borrowOrTradeFromPool.value(msgValue)( // newPrincipal, newCollateral
+        return ProtocolLike(bZxContract).borrowOrTradeFromPool.value(msgValue)(
             loanParamsId,
             loanId,
             isTorqueLoan,
@@ -954,9 +950,6 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
             sentAmounts,
             loanDataBytes
         );
-        require (sentAmounts[1] != 0, "25");
-
-        return (sentAmounts[1], sentAmounts[4]); // newPrincipal, newCollateral
     }
 
     // sentAddresses[0]: lender
@@ -1211,24 +1204,32 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
             .div(WEI_PERCENT_PRECISION);
     }
 
-    function _getMarginBorrowAmountAndRate(
-        uint256 leverageAmount,
-        uint256 depositAmount)
+    function _getPreMarginData(
+        address collateralTokenAddress,
+        uint256 collateralTokenSent,
+        uint256 loanTokenSent,
+        uint256 leverageAmount)
         internal
         view
-        returns (uint256 borrowAmount, uint256 interestRate)
+        returns (uint256 borrowAmount, uint256 interestRate, uint256 totalDeposit)
     {
+        totalDeposit = _totalDeposit(
+            collateralTokenAddress,
+            collateralTokenSent,
+            loanTokenSent
+        );
+
         uint256 initialMargin = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, leverageAmount);
 
         interestRate = _nextBorrowInterestRate2(
-            depositAmount
+            totalDeposit
                 .mul(WEI_PERCENT_PRECISION)
                 .div(initialMargin),
             _totalAssetSupply(0)
         );
 
         // assumes that loan, collateral, and interest token are the same
-        borrowAmount = depositAmount
+        borrowAmount = totalDeposit
             .mul(WEI_PERCENT_PRECISION * WEI_PERCENT_PRECISION)
             .div(_adjustValue(
                 interestRate,

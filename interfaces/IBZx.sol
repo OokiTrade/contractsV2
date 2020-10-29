@@ -287,7 +287,7 @@ contract IBZx is
         bytes calldata loanDataBytes)
         external
         payable
-        returns (uint256);
+        returns (LoanOpenData memory);
 
     /// @dev sets/disables/enables the delegated manager for the loan
     /// @param loanId id of the loan
@@ -569,6 +569,11 @@ contract IBZx is
         uint256 withdrawAmount)
         external
         returns (uint256 secondsReduced);
+
+    function setInputAmount(
+        bytes32 loanId,
+        uint256 amount) // denominated in loanToken
+        external;
 
     function claimRewards(
         address receiver)

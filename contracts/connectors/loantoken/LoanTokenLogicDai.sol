@@ -156,25 +156,24 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
         return returnData;
     }
 
-    // ***** NOTE: Reentrancy is allowed here to allow flashloan use cases *****
     function _borrow(
         bytes32 loanId,                 // 0 if new loan
         uint256 withdrawAmount,
         uint256 initialLoanDuration,    // duration in seconds
         uint256 collateralTokenSent,    // if 0, loanId must be provided; any ETH sent must equal this value
-        address collateralToken,        // if address(0), this means ETH and ETH must be sent with the call or loanId must be provided
+        address collateralTokenAddress, // if address(0), this means ETH and ETH must be sent with the call or loanId must be provided
         address borrower,
         address receiver,
         bytes memory /*loanDataBytes*/) // arbitrary order data (for future use)
         internal
-        returns (uint256, uint256) // returns new principal and new collateral added to loan
+        returns (ProtocolLike.LoanOpenData memory loanOpenData)
     {
-        (uint256 newPrincipal, uint256 newCollateral) = super._borrow(
+        loanOpenData = super._borrow(
             loanId,
             withdrawAmount,
             initialLoanDuration,
             collateralTokenSent,
-            collateralToken,
+            collateralTokenAddress,
             borrower,
             receiver,
             "" // loanDataBytes
@@ -182,35 +181,34 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
 
         _dsrDeposit();
 
-        return (newPrincipal, newCollateral);
+        return loanOpenData;
     }
 
     // Called to borrow and immediately get into a position
-    // ***** NOTE: Reentrancy is allowed here to allow flashloan use cases *****
     function _marginTrade(
         bytes32 loanId,                 // 0 if new loan
         uint256 leverageAmount,
         uint256 loanTokenSent,
         uint256 collateralTokenSent,
-        address collateralToken,
+        address collateralTokenAddress,
         address trader,
-        bytes memory loanDataBytes)     // arbitrary order data
+        bytes memory loanDataBytes)
         internal
-        returns (uint256, uint256) // returns new principal and new collateral added to trade
+        returns (ProtocolLike.LoanOpenData memory loanOpenData)
     {
-        (uint256 newPrincipal, uint256 newCollateral) = super._marginTrade(
+        loanOpenData = super._marginTrade(
             loanId,
             leverageAmount,
             loanTokenSent,
             collateralTokenSent,
-            collateralToken,
+            collateralTokenAddress,
             trader,
             loanDataBytes
         );
 
         _dsrDeposit();
 
-        return (newPrincipal, newCollateral);
+        return loanOpenData;
     }
 
 

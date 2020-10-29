@@ -50,7 +50,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         external
         payable
         nonReentrant
-        returns (uint256 newPrincipal, uint256 newCollateral)
+        returns (LoanOpenData memory)
     {
         require(msg.value == 0 || loanDataBytes.length != 0, "loanDataBytes required with ether");
 
@@ -272,7 +272,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             // collateralTokenReceived: total collateralToken deposit
         bytes memory loanDataBytes)
         internal
-        returns (uint256, uint256)
+        returns (LoanOpenData memory)
     {
         require (loanParamsLocal.collateralToken != loanParamsLocal.loanToken, "collateral/loan match");
         require (initialMargin >= loanParamsLocal.minInitialMargin, "initialMargin too low");
@@ -290,6 +290,11 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             sentAddresses,
             sentValues
         );
+
+        if (loanId == 0) {
+            // loanId is defined for new loans
+            loanId = loanLocal.id;
+        }
 
         // get required interest
         uint256 amount = _initializeInterest(
@@ -312,7 +317,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             if (amount != 0) {
                 _payBorrowingFee(
                     sentAddresses[1], // borrower
-                    loanLocal.id,
+                    loanId,
                     loanParamsLocal.collateralToken,
                     amount
                 );
@@ -324,7 +329,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             // sentValues[3] is repurposed to hold loanToCollateralSwapRate to avoid stack too deep error
             uint256 receivedAmount;
             (receivedAmount,,sentValues[3]) = _loanSwap(
-                loanLocal.id,
+                loanId,
                 loanParamsLocal.loanToken,
                 loanParamsLocal.collateralToken,
                 sentAddresses[1], // borrower
@@ -371,7 +376,11 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             isTorqueLoan
         );
 
-        return (sentValues[1], sentValues[4]); // newPrincipal, newCollateral
+        return LoanOpenData({
+            loanId: loanId,
+            principal: sentValues[1],
+            collateral: sentValues[4]
+        });
     }
 
     function _finalizeOpen(

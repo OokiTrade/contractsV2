@@ -60,7 +60,7 @@ contract LoanMaintenanceEvents {
         uint256 principal; // principal amount of the loan
         uint256 collateral; // collateral amount of the loan
         uint256 interestOwedPerDay; // interest owned per day
-        uint256 interestDepositRemaining; // TODO
+        uint256 interestDepositRemaining; // remaining unspent interest
         uint256 startRate; // collateralToLoanRate
         uint256 startMargin; // margin with which loan was open
         uint256 maintenanceMargin; // maintenance margin
@@ -68,5 +68,7 @@ contract LoanMaintenanceEvents {
         uint256 maxLoanTerm; // maximum term of the loan
         uint256 maxLiquidatable; // current max liquidatable
         uint256 maxSeizable; // current max seizable
+        uint256 depositValue; // value of loan opening deposit
+        uint256 withdrawalValue; // value of loan closing withdrawal
     }
 }

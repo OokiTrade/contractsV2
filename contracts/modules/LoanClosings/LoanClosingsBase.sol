@@ -97,16 +97,19 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
 
         if (loanCloseAmount > loanCloseAmountLessInterest) {
             // full interest refund goes to the borrower
-            _withdrawAsset(
+            vaultWithdraw(
                 loanParamsLocal.loanToken,
                 loanLocal.borrower,
+                loanCloseAmount - loanCloseAmountLessInterest
+            );
+
+            _setOutputAmount(
+                loanId,
                 loanCloseAmount - loanCloseAmountLessInterest
             );
         }
 
         if (loanCloseAmountLessInterest != 0) {
-            // The lender always gets back an ERC20 (even WETH), so we call withdraw directly rather than
-            // use the _withdrawAsset helper function
             vaultWithdraw(
                 loanParamsLocal.loanToken,
                 loanLocal.lender,
@@ -421,8 +424,6 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
 
         if (loanCloseAmountLessInterest != 0) {
             // Repays principal to lender
-            // The lender always gets back an ERC20 (even WETH), so we call withdraw directly rather than
-            // use the _withdrawAsset helper function
             vaultWithdraw(
                 loanParamsLocal.loanToken,
                 loanLocal.lender,
@@ -435,9 +436,21 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
                 .sub(usedCollateral);
         }
 
-        withdrawToken = returnTokenIsCollateral ?
-            loanParamsLocal.collateralToken :
-            loanParamsLocal.loanToken;
+        if (returnTokenIsCollateral) {
+            withdrawToken = loanParamsLocal.collateralToken;
+
+            _setOutputAmount(
+                loanId,
+                withdrawAmount.mul(collateralToLoanSwapRate).div(WEI_PRECISION)
+            );
+        } else {
+            withdrawToken = loanParamsLocal.loanToken;
+
+            _setOutputAmount(
+                loanId,
+                withdrawAmount
+            );
+        }
 
         if (withdrawAmount != 0) {
             _withdrawAsset(
@@ -455,6 +468,17 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
             collateralToLoanSwapRate,
             CloseTypes.Swap
         );
+    }
+
+    function _setOutputAmount(
+        bytes32 loanId,
+        uint256 amount) // denominated in loanToken
+        internal
+    {
+        bytes32 slot = keccak256(abi.encode(loanId, LoanWithdrawalValueID));
+        assembly {
+            sstore(slot, add(sload(slot), amount))
+        }
     }
 
     function _checkAuthorized(
@@ -488,6 +512,8 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
             loanCloseAmountLessInterest
         );
 
+        address loanToken = loanParamsLocal.loanToken;
+
         uint256 interestAppliedToPrincipal;
         if (loanCloseAmountLessInterest >= interestRefundToBorrower) {
             // apply all of borrower interest refund torwards principal
@@ -509,18 +535,21 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
             loanCloseAmountLessInterest = 0;
 
             // refund overage
-            _withdrawAsset(
-                loanParamsLocal.loanToken,
+            vaultWithdraw(
+                loanToken,
                 receiver,
+                interestRefundToBorrower
+            );
+
+            _setOutputAmount(
+                loanLocal.id,
                 interestRefundToBorrower
             );
         }
 
         if (interestAppliedToPrincipal != 0) {
-            // The lender always gets back an ERC20 (even WETH), so we call withdraw directly rather than
-            // use the _withdrawAsset helper function
             vaultWithdraw(
-                loanParamsLocal.loanToken,
+                loanToken,
                 loanLocal.lender,
                 interestAppliedToPrincipal
             );
@@ -593,9 +622,14 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         if (returnTokenIsCollateral) {
             if (destTokenAmountReceived > principalNeeded) {
                 // better fill than expected, so send excess to borrower
-                _withdrawAsset(
+                vaultWithdraw(
                     loanParamsLocal.loanToken,
                     loanLocal.borrower,
+                    destTokenAmountReceived - principalNeeded
+                );
+
+                _setOutputAmount(
+                    loanLocal.id,
                     destTokenAmountReceived - principalNeeded
                 );
             }
