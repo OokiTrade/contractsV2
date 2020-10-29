@@ -99,8 +99,12 @@ contract PriceFeeds is Constants, Ownable {
             destToken
         );
 
+        rate = rate
+            .mul(WEI_PRECISION)
+            .div(precision);
+
         sourceToDestSwapRate = destAmount
-            .mul(precision)
+            .mul(WEI_PRECISION)
             .div(sourceAmount);
 
         uint256 spreadValue = sourceToDestSwapRate > rate ?
