@@ -84,7 +84,7 @@ def Addresses():
             "MultiSig": "0x758dae5e06e11322c8be3463578150401cd31165",
             "Timelock": "0xbb536eb24fb89b544d4bd9e9f1f34d9fd902bb96",
             "TokenizedRegistry": "0xd8dc30d298ccf40042991cb4b96a540d8affe73a",
-            "LoanTokenSettings": "0x776fbb4dbfb4af02e9a72d64ea81453cb383874b",
+            "LoanTokenSettings": "0x11ba2b39bc80464c14b7eea54d2ec93d8f60e7b8",
             "LoanTokenSettingsLowerAdmin": "0xcd273a029fB6aaa89ca9A7101C5901b1f429d457",
             "PositionTokenSettingsV2": "0xeD1e4EdF6C020efe4fc520cfEb4084aeBE969111",
             "BZxOracleHelper": "0xee14de2e67e1ec23c8561a6fad2635ff1b618db6",
