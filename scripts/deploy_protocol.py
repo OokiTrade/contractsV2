@@ -94,9 +94,9 @@ def deployProtocol():
 
                 print("Calling setRates x3.")
                 feeds.setRates(
-                    "0xB443f30CDd6076b1A5269dbc08b774F222d4Db4e", # USDC
                     "0xfBE16bA4e8029B759D3c5ef8844124893f3ae470", # WETH
-                    0.002849070115608566e18
+                    "0xB443f30CDd6076b1A5269dbc08b774F222d4Db4e", # USDC
+                    100e18
                 )
                 feeds.setRates(
                     "0xB54Fc2F2ea17d798Ad5C7Aba2491055BCeb7C6b2", # BZRX
@@ -105,7 +105,7 @@ def deployProtocol():
                 )
 
                 feeds.setRates(
-                    "0xB443f30CDd6076b1A5269dbc08b774F222d4Db4e", # WBTC
+                    "0x5aE55494Ccda82f1F7c653BC2b6EbB4aD3C77Dac", # WBTC
                     "0xfBE16bA4e8029B759D3c5ef8844124893f3ae470", # WETH
                     30.283297741653263000e18
                 )
@@ -281,36 +281,14 @@ def deployProtocol():
 
             bzx.setLoanPool(
                 [
-                    "0x6b093998d36f2c7f0cc359441fbb24cc629d5ff0", # iDAI
-                    "0xb983e01458529665007ff7e0cddecdb74b967eb6", # iETH
-                    "0x32e4c68b3a4a813b710595aeba7f6b7604ab9c15", # iUSDC
-                    "0x2ffa85f655752fb2acb210287c60b9ef335f5b6e", # iWBTC
-                    "0xab45bf58c6482b87da85d6688c4d9640e093be98", # iLEND
-                    "0x687642347a9282be8fd809d8309910a3f984ac5a", # iKNC
-                    "0x9189c499727f88f8ecc7dc4eea22c828e6aac015", # iMKR
-                    "0x18240bd9c07fa6156ce3f3f61921cc82b2619157", # iBZRX
-                    "0x463538705e7d22aa7f03ebf8ab09b067e1001b54", # iLINK
-                    "0x7f3fe9d492a9a60aebb06d82cba23c6f32cad10b", # iYFI
-                    "0x7e9997a38a439b2be7ed9c9c4628391d3e055d48", # iUSDT
-                    "", # iAAVE
-                    "", # iUNI
+                    "0x0cae8d91E0b1b7Bd00D906E990C3625b2c220db1", # iAAVE
+                    "0x0a625FceC657053Fe2D9FFFdeb1DBb4e412Cf8A8", # iUNI
                 ],
                 [
-                    "0x6b175474e89094c44da98b954eedeac495271d0f", # DAI
-                    "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", # ETH
-                    "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", # USDC
-                    "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599", # WBTC
-                    "0x80fB784B7eD66730e8b1DBd9820aFD29931aab03", # LEND
-                    "0xdd974d5c2e2928dea5f71b9825b8b646686bd200", # KNC
-                    "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2", # MKR
-                    "0x56d811088235F11C8920698a204A5010a788f4b3", # BZRX
-                    "0x514910771AF9Ca656af840dff83E8264EcF986CA", # LINK
-                    "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", # YFI
-                    "0xdac17f958d2ee523a2206206994597c13d831ec7", # USDT
-                    "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", # AAVE
+                      "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", # AAVE
                     "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", # UNI
                 ]
-            )
+            , {"from": acct, "gas_price": 62e9})
 
             print("Calling setSupportedTokens.")
             bzx.setSupportedTokens(
