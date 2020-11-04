@@ -56,7 +56,8 @@ contract LoanClosingsWithGasToken is LoanClosingsBase {
             uint256 gasRebate
         )
     {
-        uint256 startingGas = 21000 + gasleft() + 16 * msg.data.length;
+        uint256 startingGas = gasleft() +
+            22088; // estimated used gas ignoring loanDataBytes: 21000 + (4+32+32) * 16
 
         // restrict to EOAs to prevent griefing attacks, during interest rate recalculation
         require(msg.sender == tx.origin, "only EOAs can call");

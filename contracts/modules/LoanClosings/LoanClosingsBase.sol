@@ -102,11 +102,6 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
                 loanLocal.borrower,
                 loanCloseAmount - loanCloseAmountLessInterest
             );
-
-            _setOutputAmount(
-                loanId,
-                loanCloseAmount - loanCloseAmountLessInterest
-            );
         }
 
         if (loanCloseAmountLessInterest != 0) {
@@ -436,21 +431,9 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
                 .sub(usedCollateral);
         }
 
-        if (returnTokenIsCollateral) {
-            withdrawToken = loanParamsLocal.collateralToken;
-
-            _setOutputAmount(
-                loanId,
-                withdrawAmount.mul(collateralToLoanSwapRate).div(WEI_PRECISION)
-            );
-        } else {
-            withdrawToken = loanParamsLocal.loanToken;
-
-            _setOutputAmount(
-                loanId,
-                withdrawAmount
-            );
-        }
+        withdrawToken = returnTokenIsCollateral ?
+            loanParamsLocal.collateralToken :
+            loanParamsLocal.loanToken;
 
         if (withdrawAmount != 0) {
             _withdrawAsset(
@@ -472,17 +455,29 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
 
     function _setOutputAmount(
         bytes32 loanId,
-        uint256 amount) // denominated in loanToken
+        uint256 principal,
+        uint256 closeAmount)
         internal
     {
-        bytes32 slot = keccak256(abi.encode(loanId, LoanWithdrawalValueID));
+        uint256 remaining = principal
+            .sub(closeAmount);
+
+        uint256 newInputValue;
+        bytes32 slot = keccak256(abi.encode(loanId, LoanDepositValueID));
         assembly {
-            sstore(slot, add(sload(slot), amount))
+            switch remaining
+            case 0 {
+                sstore(slot, 0)
+            }
+            default {
+                newInputValue := div(mul(sload(slot), remaining), principal)
+                sstore(slot, newInputValue)
+            }
         }
 
-        emit LoanOutput(
+        emit LoanInput(
             loanId,
-            amount
+            newInputValue
         );
     }
 
@@ -543,11 +538,6 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
             vaultWithdraw(
                 loanToken,
                 receiver,
-                interestRefundToBorrower
-            );
-
-            _setOutputAmount(
-                loanLocal.id,
                 interestRefundToBorrower
             );
         }
@@ -632,11 +622,6 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
                     loanLocal.borrower,
                     destTokenAmountReceived - principalNeeded
                 );
-
-                _setOutputAmount(
-                    loanLocal.id,
-                    destTokenAmountReceived - principalNeeded
-                );
             }
             withdrawAmount = swapAmount > sourceTokenAmountUsed ?
                 swapAmount - sourceTokenAmountUsed :
@@ -710,6 +695,12 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         CloseTypes closeType)
         internal
     {
+        _setOutputAmount(
+            loanLocal.id,
+            loanLocal.principal,
+            loanCloseAmount
+        );
+
         _closeLoan(
             loanLocal,
             loanCloseAmount
@@ -870,7 +861,7 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         // gets the gas rebate denominated in collateralToken
         gasRebate = SafeMath.mul(
             IPriceFeeds(priceFeeds).getFastGasPrice(loanParamsLocal.collateralToken) * 2,
-            _gasUsed(startingGas)
+            startingGas - gasleft()
         );
 
         // ensures the gas rebate will not drop the current margin below the maintenance level

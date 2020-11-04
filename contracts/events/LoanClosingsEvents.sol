@@ -60,7 +60,11 @@ contract LoanClosingsEvents {
         uint256 gasRebate
     );
 
-    event LoanOutput(
+    /*event LoanOutput(
+        bytes32 indexed loanId,
+        uint256 amount
+    );*/
+    event LoanInput(
         bytes32 indexed loanId,
         uint256 amount
     );
