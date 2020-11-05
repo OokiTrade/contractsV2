@@ -61,7 +61,8 @@ contract FeesHelper is State, FeesEvents {
                 user,
                 loanId,
                 feeToken,
-                tradingFee
+                tradingFee,
+                FeeType.Trading
             );
         }
     }
@@ -89,7 +90,8 @@ contract FeesHelper is State, FeesEvents {
                 user,
                 loanId,
                 feeToken,
-                borrowingFee
+                borrowingFee,
+                FeeType.Borrowing
             );
         }
     }
@@ -139,11 +141,19 @@ contract FeesHelper is State, FeesEvents {
         loanInterestLocal.updatedTimestamp = interestTime;
 
         if (interestExpenseFee != 0) {
+            emit SettleFeeRewardForInterestExpense(
+                user,
+                feeToken,
+                loanId,
+                interestExpenseFee
+            );
+
             _payFeeReward(
                 user,
                 loanId,
                 feeToken,
-                interestExpenseFee
+                interestExpenseFee,
+                FeeType.SettleInterest
             );
         }
     }
@@ -153,7 +163,8 @@ contract FeesHelper is State, FeesEvents {
         address user,
         bytes32 loanId,
         address feeToken,
-        uint256 feeAmount)
+        uint256 feeAmount,
+        FeeType feeType)
         internal
     {
         // The protocol is designed to allow positions and loans to be closed, if for whatever reason
@@ -192,8 +203,9 @@ contract FeesHelper is State, FeesEvents {
 
                 emit EarnReward(
                     user,
-                    vbzrxTokenAddress, // rewardToken
                     loanId,
+                    feeType,
+                    vbzrxTokenAddress, // rewardToken
                     rewardAmount
                 );
             }
