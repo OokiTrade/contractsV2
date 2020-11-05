@@ -815,6 +815,11 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
             loanDataBytes
         );
 
+        ProtocolLike(bZxContract).setDepositAmount(
+            loanOpenData.loanId,
+            totalDeposit
+        );
+
         return loanOpenData;
     }
 

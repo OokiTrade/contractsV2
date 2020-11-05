@@ -39,7 +39,7 @@ contract LoanMaintenanceEvents {
         uint256 newEndTimestamp
     );
 
-    event LoanInput(
+    event LoanDeposit(
         bytes32 indexed loanId,
         uint256 amount
     );
@@ -73,5 +73,6 @@ contract LoanMaintenanceEvents {
         uint256 maxLoanTerm; // maximum term of the loan
         uint256 maxLiquidatable; // current max liquidatable
         uint256 maxSeizable; // current max seizable
+        uint256 depositValue; // net value of loan deposit
     }
 }

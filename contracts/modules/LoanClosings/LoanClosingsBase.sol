@@ -453,6 +453,34 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         );
     }
 
+    function _updateDepositAmount(
+        bytes32 loanId,
+        uint256 principal,
+        uint256 closeAmount)
+        internal
+    {
+        uint256 remaining = principal
+            .sub(closeAmount);
+
+        uint256 newInputValue;
+        bytes32 slot = keccak256(abi.encode(loanId, LoanDepositValueID));
+        assembly {
+            switch remaining
+            case 0 {
+                sstore(slot, 0)
+            }
+            default {
+                newInputValue := div(mul(sload(slot), remaining), principal)
+                sstore(slot, newInputValue)
+            }
+        }
+
+        emit LoanDeposit(
+            loanId,
+            newInputValue
+        );
+    }
+
     function _checkAuthorized(
         bytes32 _id,
         bool _active,
@@ -667,6 +695,12 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         CloseTypes closeType)
         internal
     {
+        _updateDepositAmount(
+            loanLocal.id,
+            loanLocal.principal,
+            loanCloseAmount
+        );
+
         _closeLoan(
             loanLocal,
             loanCloseAmount
