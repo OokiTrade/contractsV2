@@ -49,11 +49,6 @@ contract ProtocolLike {
         address loanToken)
         external;
 
-    function setInputAmount(
-        bytes32 loanId,
-        uint256 amount) // denominated in loanToken
-        external;
-
     function getTotalPrincipal(
         address lender,
         address loanToken)

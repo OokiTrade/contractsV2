@@ -26,7 +26,6 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         _setTarget(this.withdrawAccruedInterest.selector, target);
         _setTarget(this.extendLoanDuration.selector, target);
         _setTarget(this.reduceLoanDuration.selector, target);
-        _setTarget(this.setInputAmount.selector, target);
         _setTarget(this.claimRewards.selector, target);
         _setTarget(this.rewardsBalanceOf.selector, target);
         _setTarget(this.getLenderInterestData.selector, target);
@@ -358,25 +357,6 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         );
     }
 
-    function setInputAmount(
-        bytes32 loanId,
-        uint256 amount) // denominated in loanToken
-        external
-    {
-        // only callable by loan pools
-        require(loanPoolToUnderlying[msg.sender] != address(0), "not authorized");
-
-        bytes32 slot = keccak256(abi.encode(loanId, LoanDepositValueID));
-        assembly {
-            sstore(slot, add(sload(slot), amount))
-        }
-
-        emit LoanInput(
-            loanId,
-            amount
-        );
-    }
-
     function claimRewards(
         address receiver)
         external
@@ -668,18 +648,6 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             return loanData;
         }
 
-        bytes32 slot;
-        uint256 depositValue;
-        uint256 withdrawalValue;
-        slot = keccak256(abi.encode(loanId, LoanDepositValueID));
-        assembly {
-            depositValue := sload(slot)
-        }
-        slot = keccak256(abi.encode(loanId, LoanWithdrawalValueID));
-        assembly {
-            withdrawalValue := sload(slot)
-        }
-
         if (loanLocal.endTimestamp > block.timestamp) {
             value = loanLocal.endTimestamp
                 .sub(block.timestamp)
@@ -704,9 +672,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             currentMargin: currentMargin,
             maxLoanTerm: loanParamsLocal.maxLoanTerm,
             maxLiquidatable: maxLiquidatable,
-            maxSeizable: maxSeizable,
-            depositValue: depositValue,
-            withdrawalValue: withdrawalValue
+            maxSeizable: maxSeizable
         });
     }
 

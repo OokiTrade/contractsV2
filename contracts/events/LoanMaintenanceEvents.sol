@@ -73,7 +73,5 @@ contract LoanMaintenanceEvents {
         uint256 maxLoanTerm; // maximum term of the loan
         uint256 maxLiquidatable; // current max liquidatable
         uint256 maxSeizable; // current max seizable
-        uint256 depositValue; // value of loan opening deposit
-        uint256 withdrawalValue; // value of loan closing withdrawal
     }
 }
