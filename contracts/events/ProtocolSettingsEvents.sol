@@ -97,7 +97,7 @@ contract ProtocolSettingsEvents {
         uint256 amount
     );
 
-    enum FeeType {
+    enum FeeClaimType {
         All,
         Lending,
         Trading,

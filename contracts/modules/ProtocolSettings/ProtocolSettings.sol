@@ -268,7 +268,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
     function withdrawFees(
         address[] calldata tokens,
         address receiver,
-        FeeType feeType)
+        FeeClaimType feeType)
         external
         returns (uint256[] memory amounts)
     {
@@ -280,7 +280,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         for (uint256 i = 0; i < tokens.length; i++) {
             token = tokens[i];
 
-            if (feeType == FeeType.All || feeType == FeeType.Lending) {
+            if (feeType == FeeClaimType.All || feeType == FeeClaimType.Lending) {
                 balance = lendingFeeTokensHeld[token];
                 if (balance != 0) {
                     amounts[i] = balance;  // will not overflow
@@ -295,7 +295,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
                     );
                 }
             }
-            if (feeType == FeeType.All || feeType == FeeType.Trading) {
+            if (feeType == FeeClaimType.All || feeType == FeeClaimType.Trading) {
                 balance = tradingFeeTokensHeld[token];
                 if (balance != 0) {
                     amounts[i] += balance;  // will not overflow
@@ -310,7 +310,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
                     );
                 }
             }
-            if (feeType == FeeType.All || feeType == FeeType.Borrowing) {
+            if (feeType == FeeClaimType.All || feeType == FeeClaimType.Borrowing) {
                 balance = borrowingFeeTokensHeld[token];
                 if (balance != 0) {
                     amounts[i] += balance;  // will not overflow
@@ -428,7 +428,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
     // NOTE: this doesn't sanitize inputs -> inaccurate values may be returned if there are duplicates tokens input
     function queryFees(
         address[] calldata tokens,
-        FeeType feeType)
+        FeeClaimType feeType)
         external
         view
         returns (uint256[] memory amountsHeld, uint256[] memory amountsPaid)
@@ -439,13 +439,13 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         for (uint256 i = 0; i < tokens.length; i++) {
             token = tokens[i];
             
-            if (feeType == FeeType.Lending) {
+            if (feeType == FeeClaimType.Lending) {
                 amountsHeld[i] = lendingFeeTokensHeld[token];
                 amountsPaid[i] = lendingFeeTokensPaid[token];
-            } else if (feeType == FeeType.Trading) {
+            } else if (feeType == FeeClaimType.Trading) {
                 amountsHeld[i] = tradingFeeTokensHeld[token];
                 amountsPaid[i] = tradingFeeTokensPaid[token];
-            } else if (feeType == FeeType.Borrowing) {
+            } else if (feeType == FeeClaimType.Borrowing) {
                 amountsHeld[i] = borrowingFeeTokensHeld[token];
                 amountsPaid[i] = borrowingFeeTokensPaid[token];
             } else {
