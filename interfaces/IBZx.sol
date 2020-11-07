@@ -572,7 +572,8 @@ contract IBZx is
 
     function setDepositAmount(
         bytes32 loanId,
-        uint256 amount) // denominated in loanToken
+        uint256 depositValueAsLoanToken,
+        uint256 depositValueAsCollateralToken)
         external;
 
     function claimRewards(

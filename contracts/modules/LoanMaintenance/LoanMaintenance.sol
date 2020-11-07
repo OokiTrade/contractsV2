@@ -76,16 +76,17 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         }
 
         // update deposit amount
-        (uint256 sourceToDestRate, uint256 sourceToDestPrecision) = IPriceFeeds(priceFeeds).queryRate(
+        (uint256 collateralToLoanRate, uint256 collateralToLoanPrecision) = IPriceFeeds(priceFeeds).queryRate(
             collateralToken,
             loanParamsLocal.loanToken
         );
-        if (sourceToDestRate != 0) {
+        if (collateralToLoanRate != 0) {
             _setDepositAmount(
                 loanId,
                 depositAmount
-                    .mul(sourceToDestRate)
-                    .div(sourceToDestPrecision),
+                    .mul(collateralToLoanRate)
+                    .div(collateralToLoanPrecision),
+                depositAmount,
                 false // isSubtraction
             );
         }
@@ -152,16 +153,17 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         }
 
         // update deposit amount
-        (uint256 sourceToDestRate, uint256 sourceToDestPrecision) = IPriceFeeds(priceFeeds).queryRate(
+        (uint256 collateralToLoanRate, uint256 collateralToLoanPrecision) = IPriceFeeds(priceFeeds).queryRate(
             collateralToken,
             loanParamsLocal.loanToken
         );
-        if (sourceToDestRate != 0) {
+        if (collateralToLoanRate != 0) {
             _setDepositAmount(
                 loanId,
                 actualWithdrawAmount
-                    .mul(sourceToDestRate)
-                    .div(sourceToDestPrecision),
+                    .mul(collateralToLoanRate)
+                    .div(collateralToLoanPrecision),
+                actualWithdrawAmount,
                 true // isSubtraction
             );
         }
@@ -390,7 +392,8 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
 
     function setDepositAmount(
         bytes32 loanId,
-        uint256 amount) // denominated in loanToken
+        uint256 depositValueAsLoanToken,
+        uint256 depositValueAsCollateralToken)
         external
     {
         // only callable by loan pools
@@ -398,7 +401,8 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
 
         _setDepositAmount(
             loanId,
-            amount,
+            depositValueAsLoanToken,
+            depositValueAsCollateralToken,
             false // isSubtraction
         );
     }
@@ -694,10 +698,12 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             return loanData;
         }
 
-        uint256 depositValue;
+        uint256 depositValueAsLoanToken;
+        uint256 depositValueAsCollateralToken;
         bytes32 slot = keccak256(abi.encode(loanId, LoanDepositValueID));
         assembly {
-            depositValue := sload(slot)
+            depositValueAsLoanToken := sload(slot)
+            depositValueAsCollateralToken := sload(add(slot, 1))
         }
 
         if (loanLocal.endTimestamp > block.timestamp) {
@@ -725,7 +731,8 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             maxLoanTerm: loanParamsLocal.maxLoanTerm,
             maxLiquidatable: maxLiquidatable,
             maxSeizable: maxSeizable,
-            depositValue: depositValue
+            depositValueAsLoanToken: depositValueAsLoanToken,
+            depositValueAsCollateralToken: depositValueAsCollateralToken
         });
     }
 
@@ -770,6 +777,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
                 sourceTokenAmountUsed
                     .mul(collateralToLoanRate)
                     .div(WEI_PRECISION),
+                sourceTokenAmountUsed,
                 true // isSubtraction
             );
         }
@@ -779,7 +787,8 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
 
     function _setDepositAmount(
         bytes32 loanId,
-        uint256 amount,
+        uint256 depositValueAsLoanToken,
+        uint256 depositValueAsCollateralToken,
         bool isSubtraction)
         internal
     {
@@ -788,12 +797,28 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             let val := sload(slot)
             switch isSubtraction
             case 0 {
-                sstore(slot, add(val, amount))
+                sstore(slot, add(val, depositValueAsLoanToken))
             }
             default {
-                switch gt(val, amount)
+                switch gt(val, depositValueAsLoanToken)
                 case 1 {
-                    sstore(slot, sub(val, amount))
+                    sstore(slot, sub(val, depositValueAsLoanToken))
+                }
+                default {
+                    sstore(slot, 0)
+                }
+            }
+
+            slot := add(slot, 1)
+            val := sload(slot)
+            switch isSubtraction
+            case 0 {
+                sstore(slot, add(val, depositValueAsCollateralToken))
+            }
+            default {
+                switch gt(val, depositValueAsCollateralToken)
+                case 1 {
+                    sstore(slot, sub(val, depositValueAsCollateralToken))
                 }
                 default {
                     sstore(slot, 0)
@@ -803,7 +828,8 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
 
         emit LoanDeposit(
             loanId,
-            amount
+            depositValueAsLoanToken,
+            depositValueAsCollateralToken
         );
     }
 }

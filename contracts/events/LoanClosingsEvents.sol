@@ -62,6 +62,7 @@ contract LoanClosingsEvents {
 
     event LoanDeposit(
         bytes32 indexed loanId,
-        uint256 amount
+        uint256 depositValueAsLoanToken,
+        uint256 depositValueAsCollateralToken
     );
 }
