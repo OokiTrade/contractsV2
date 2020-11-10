@@ -848,23 +848,22 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         view
         returns (uint256 totalDeposit, uint256 collateralToLoanRate)
     {
+        uint256 collateralToLoanPrecision;
+        (collateralToLoanRate, collateralToLoanPrecision) = FeedsLike(ProtocolLike(bZxContract).priceFeeds()).queryRate(
+            collateralTokenAddress,
+            loanTokenAddress
+        );
+        require(collateralToLoanRate != 0 && collateralToLoanPrecision != 0, "20");
+        collateralToLoanRate = collateralToLoanRate
+            .mul(WEI_PRECISION)
+            .div(collateralToLoanPrecision);
+
         totalDeposit = loanTokenSent;
         if (collateralTokenSent != 0) {
-            uint256 collateralToLoanPrecision;
-            (collateralToLoanRate, collateralToLoanPrecision) = FeedsLike(ProtocolLike(bZxContract).priceFeeds()).queryRate(
-                collateralTokenAddress,
-                loanTokenAddress
-            );
-            if (collateralToLoanRate != 0) {
-                totalDeposit = collateralTokenSent
-                    .mul(collateralToLoanRate)
-                    .div(collateralToLoanPrecision)
-                    .add(totalDeposit);
-
-                collateralToLoanRate = collateralToLoanRate
-                    .mul(WEI_PRECISION)
-                    .div(collateralToLoanPrecision);
-            }
+            totalDeposit = collateralTokenSent
+                .mul(collateralToLoanRate)
+                .div(WEI_PRECISION)
+                .add(totalDeposit);
         }
     }
 
