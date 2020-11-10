@@ -457,8 +457,7 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
     function _updateDepositAmount(
         bytes32 loanId,
         uint256 principalBefore,
-        uint256 principalAfter,
-        uint256 collateralToLoanRate)
+        uint256 principalAfter)
         internal
     {
         uint256 depositValueAsLoanToken;
@@ -468,19 +467,14 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
             switch principalAfter
             case 0 {
                 sstore(slot, 0)
+                sstore(add(slot, 1), 0)
             }
             default {
                 depositValueAsLoanToken := div(mul(sload(slot), principalAfter), principalBefore)
                 sstore(slot, depositValueAsLoanToken)
-            }
 
-            slot := add(slot, 1)
-            switch depositValueAsLoanToken
-            case 0 {
-                sstore(slot, 0)
-            }
-            default {
-                depositValueAsCollateralToken := div(mul(depositValueAsLoanToken, WEI_PRECISION), collateralToLoanRate)
+                slot := add(slot, 1)
+                depositValueAsCollateralToken := div(mul(sload(slot), principalAfter), principalBefore)
                 sstore(slot, depositValueAsCollateralToken)
             }
         }
@@ -760,8 +754,7 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         _updateDepositAmount(
             loanLocal.id,
             principalBefore,
-            principalAfter,
-            collateralToLoanRate
+            principalAfter
         );
 
         _emitClosingEvents(
