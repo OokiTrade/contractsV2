@@ -66,7 +66,7 @@ def main():
             "0x463538705e7d22aa7f03ebf8ab09b067e1001b54", # iLINK
             "0x7f3fe9d492a9a60aebb06d82cba23c6f32cad10b", # iYFI
             "0x7e9997a38a439b2be7ed9c9c4628391d3e055d48", # iUSDT
-            #"0x0a625FceC657053Fe2D9FFFdeb1DBb4e412Cf8A8", # iUNI
+            "0x0a625FceC657053Fe2D9FFFdeb1DBb4e412Cf8A8", # iUNI
             "0x0cae8d91E0b1b7Bd00D906E990C3625b2c220db1", # iAAVE
         ]
 
@@ -88,7 +88,7 @@ def main():
         return
 
     for loanPoolAddress in itokens:
-        if loanPoolAddress != "0x0a625FceC657053Fe2D9FFFdeb1DBb4e412Cf8A8" and loanPoolAddress != "0x0cae8d91E0b1b7Bd00D906E990C3625b2c220db1":
+        if loanPoolAddress == "0x0a625FceC657053Fe2D9FFFdeb1DBb4e412Cf8A8" or loanPoolAddress == "0x0cae8d91E0b1b7Bd00D906E990C3625b2c220db1":
             continue
 
         if thisNetwork == "development":
@@ -143,6 +143,10 @@ def main():
         for collateralToken in collateralTokens:
             if collateralToken == loanTokenAddress or collateralToken == loanToken.address:
                 continue
+
+            #if collateralToken != "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984" and collateralToken != "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9":
+            #    continue
+
             base_data_copy = base_data.copy()
             base_data_copy[4] = collateralToken ## collateralToken
             base_data_copy[5] = Wei("20 ether") ## minInitialMargin
@@ -153,6 +157,6 @@ def main():
         print(calldata)
         #print("")
         #print(loanToken.updateSettings.encode_input(loanTokenSettings.address, calldata))
-        loanToken.updateSettings(loanTokenSettings.address, calldata, { "from": acct, "gas_price": 62e9 })
+        loanToken.updateSettings(loanTokenSettings.address, calldata, { "from": acct, "gas_price": 60e9 })
 
 

@@ -28,7 +28,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "yarn analyize-contracts && yarn lint-contracts && yarn test"
+      "pre-commit-disabled": "yarn analyize-contracts && yarn lint-contracts && yarn test"
     }
   }
 }
