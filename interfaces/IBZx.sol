@@ -152,7 +152,7 @@ contract IBZx is
     function withdrawFees(
         address[] calldata tokens,
         address receiver,
-        FeeType feeType)
+        FeeClaimType feeType)
         external
         returns (uint256[] memory amounts);
 
@@ -182,7 +182,7 @@ contract IBZx is
     // NOTE: this doesn't sanitize inputs -> inaccurate values may be returned if there are duplicates tokens input
     function queryFees(
         address[] calldata tokens,
-        FeeType feeType)
+        FeeClaimType feeType)
         external
         view
         returns (uint256[] memory amountsHeld, uint256[] memory amountsPaid);

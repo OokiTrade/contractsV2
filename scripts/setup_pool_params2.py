@@ -226,6 +226,16 @@ def main():
             "YFI,BZRX,25000000000000000000,150000000000000000000,145000000000000000000",
             "YFI,LINK,25000000000000000000,150000000000000000000,145000000000000000000",
             "YFI,WBTC,25000000000000000000,150000000000000000000,145000000000000000000",
+
+            "AAVE,ETH,7000000000000000000,20000000000000000000,15000000000000000000",
+            "DAI,AAVE,7000000000000000000,20000000000000000000,15000000000000000000",
+            "USDC,AAVE,7000000000000000000,20000000000000000000,15000000000000000000",
+            "USDT,AAVE,7000000000000000000,20000000000000000000,15000000000000000000",
+
+            "UNI,ETH,7000000000000000000,20000000000000000000,15000000000000000000",
+            "DAI,UNI,7000000000000000000,20000000000000000000,15000000000000000000",
+            "USDC,UNI,7000000000000000000,20000000000000000000,15000000000000000000",
+            "USDT,UNI,7000000000000000000,20000000000000000000,15000000000000000000",
         ]
         
     else:
@@ -284,14 +294,22 @@ def main():
     for c in config:
         spl = c.split(',')
 
+        loanToken = spl[0]
+        collateralToken = spl[1]
+
+        #if loanToken == "UNI" or loanToken == "AAVE":
+        #    continue
+
+        print(loanToken, collateralToken)
+
         base_data_copy = base_data.copy()
-        base_data_copy[4] = tokens[spl[1]] ## collateralToken
+        base_data_copy[4] = tokens[collateralToken] ## collateralToken
         base_data_copy[5] = Wei(spl[3]) ## minInitialMargin
         base_data_copy[6] = Wei(spl[4]) ## maintenanceMargin
         
-        if itokens[spl[0]] not in params:
-            params[itokens[spl[0]]] = []
-        params[itokens[spl[0]]].append(base_data_copy)
+        if itokens[loanToken] not in params:
+            params[itokens[loanToken]] = []
+        params[itokens[loanToken]].append(base_data_copy)
 
     #import pprint
     #pp = pprint.PrettyPrinter(indent=4)
@@ -302,8 +320,8 @@ def main():
     ]
 
     for loanPoolAddress in params:
-        if loanPoolAddress != "0x0a625FceC657053Fe2D9FFFdeb1DBb4e412Cf8A8" and loanPoolAddress != "0x0cae8d91E0b1b7Bd00D906E990C3625b2c220db1":
-            continue
+        #if loanPoolAddress == "0x0a625FceC657053Fe2D9FFFdeb1DBb4e412Cf8A8" or loanPoolAddress == "0x0cae8d91E0b1b7Bd00D906E990C3625b2c220db1":
+        #    continue
 
         if loanPoolAddress in excludes:
             continue

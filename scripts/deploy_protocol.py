@@ -232,6 +232,8 @@ def deployProtocol():
         )
 
         if thisNetwork == "kovan":
+            bzx.setMaxSwapSize(0)
+
             #swaps = Contract.from_abi("swaps", bzx.swapsImpl(), abi=SwapsImplTestnets.abi, owner=acct)
             swaps.setLocalPriceFeedContract(bzx.priceFeeds())
 
