@@ -40,11 +40,12 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
 
         LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
-        (uint256 currentMargin, uint256 collateralToLoanRate) = IPriceFeeds(priceFeeds).getCurrentMargin(
+        (uint256 currentMargin, uint256 collateralToLoanRate) = _getCurrentMargin(
             loanParamsLocal.loanToken,
             loanParamsLocal.collateralToken,
             loanLocal.principal,
-            loanLocal.collateral
+            loanLocal.collateral,
+            false // silentFail
         );
         require(
             currentMargin <= loanParamsLocal.maintenanceMargin,
@@ -453,6 +454,38 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         );
     }
 
+    function _updateDepositAmount(
+        bytes32 loanId,
+        uint256 principalBefore,
+        uint256 principalAfter)
+        internal
+    {
+        uint256 depositValueAsLoanToken;
+        uint256 depositValueAsCollateralToken;
+        bytes32 slot = keccak256(abi.encode(loanId, LoanDepositValueID));
+        assembly {
+            switch principalAfter
+            case 0 {
+                sstore(slot, 0)
+                sstore(add(slot, 1), 0)
+            }
+            default {
+                depositValueAsLoanToken := div(mul(sload(slot), principalAfter), principalBefore)
+                sstore(slot, depositValueAsLoanToken)
+
+                slot := add(slot, 1)
+                depositValueAsCollateralToken := div(mul(sload(slot), principalAfter), principalBefore)
+                sstore(slot, depositValueAsCollateralToken)
+            }
+        }
+
+        emit LoanDeposit(
+            loanId,
+            depositValueAsLoanToken,
+            depositValueAsCollateralToken
+        );
+    }
+
     function _checkAuthorized(
         bytes32 _id,
         bool _active,
@@ -658,6 +691,35 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         }
     }
 
+    function _getCurrentMargin(
+        address loanToken,
+        address collateralToken,
+        uint256 principal,
+        uint256 collateral,
+        bool silentFail)
+        internal
+        returns (uint256 currentMargin, uint256 collateralToLoanRate)
+    {
+        address _priceFeeds = priceFeeds;
+        (bool success, bytes memory data) = _priceFeeds.staticcall(
+            abi.encodeWithSelector(
+                IPriceFeeds(_priceFeeds).getCurrentMargin.selector,
+                loanToken,
+                collateralToken,
+                principal,
+                collateral
+            )
+        );
+        if (success) {
+            assembly {
+                currentMargin := mload(add(data, 32))
+                collateralToLoanRate := mload(add(data, 64))
+            }
+        } else {
+            require(silentFail, "margin query failed");
+        }
+    }
+
     function _finalizeClose(
         Loan memory loanLocal,
         LoanParams memory loanParamsLocal,
@@ -667,37 +729,32 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         CloseTypes closeType)
         internal
     {
-        _closeLoan(
+        (uint256 principalBefore, uint256 principalAfter)  = _closeLoan(
             loanLocal,
             loanCloseAmount
         );
 
-        address _priceFeeds = priceFeeds;
-        uint256 currentMargin;
-        uint256 collateralToLoanRate;
-
         // this is still called even with full loan close to return collateralToLoanRate
-        (bool success, bytes memory data) = _priceFeeds.staticcall(
-            abi.encodeWithSelector(
-                IPriceFeeds(_priceFeeds).getCurrentMargin.selector,
-                loanParamsLocal.loanToken,
-                loanParamsLocal.collateralToken,
-                loanLocal.principal,
-                loanLocal.collateral
-            )
+        (uint256 currentMargin, uint256 collateralToLoanRate) = _getCurrentMargin(
+            loanParamsLocal.loanToken,
+            loanParamsLocal.collateralToken,
+            principalAfter,
+            loanLocal.collateral,
+            true // silentFail
         );
-        assembly {
-            if eq(success, 1) {
-                currentMargin := mload(add(data, 32))
-                collateralToLoanRate := mload(add(data, 64))
-            }
-        }
+
         //// Note: We can safely skip the margin check if closing via closeWithDeposit or if closing the loan in full by any method ////
         require(
             closeType == CloseTypes.Deposit ||
-            loanLocal.principal == 0 || // loan fully closed
+            principalAfter == 0 || // loan fully closed
             currentMargin > loanParamsLocal.maintenanceMargin,
             "unhealthy position"
+        );
+
+        _updateDepositAmount(
+            loanLocal.id,
+            principalBefore,
+            principalAfter
         );
 
         _emitClosingEvents(
@@ -716,11 +773,13 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         Loan memory loanLocal,
         uint256 loanCloseAmount)
         internal
-        returns (uint256)
+        returns (uint256 principalBefore, uint256 principalAfter)
     {
         require(loanCloseAmount != 0, "nothing to close");
 
-        if (loanCloseAmount == loanLocal.principal) {
+        principalBefore = loanLocal.principal;
+
+        if (loanCloseAmount == principalBefore) {
             loanLocal.principal = 0;
             loanLocal.active = false;
             loanLocal.endTimestamp = block.timestamp;
@@ -729,8 +788,9 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
             lenderLoanSets[loanLocal.lender].removeBytes32(loanLocal.id);
             borrowerLoanSets[loanLocal.borrower].removeBytes32(loanLocal.id);
         } else {
-            loanLocal.principal = loanLocal.principal
+            principalAfter = principalBefore
                 .sub(loanCloseAmount);
+            loanLocal.principal = principalAfter;
         }
 
         loans[loanLocal.id] = loanLocal;

@@ -547,20 +547,20 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         address collateralTokenAddress)     // address(0) means ETH
         public
         view
-        returns (uint256 principal, uint256 collateral, uint256 interestRate)
+        returns (uint256 principal, uint256 collateral, uint256 interestRate, uint256 collateralToLoanRate)
     {
         if (collateralTokenAddress == address(0)) {
             collateralTokenAddress = wethToken;
         }
 
-        (principal, interestRate,) = _getPreMarginData(
+        (principal, interestRate,, collateralToLoanRate) = _getPreMarginData(
             collateralTokenAddress,
             collateralTokenSent,
             loanTokenSent,
             leverageAmount
         );
         if (principal > _underlyingBalance()) {
-            return (0, 0, 0);
+            return (0, 0, 0, collateralToLoanRate);
         }
 
         loanTokenSent = loanTokenSent
@@ -797,7 +797,8 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         sentAmounts[4] = collateralTokenSent;
 
         uint256 totalDeposit;
-        (sentAmounts[1], sentAmounts[0], totalDeposit) = _getPreMarginData( // borrowAmount, interestRate, totalDeposit
+        uint256 collateralToLoanRate;
+        (sentAmounts[1], sentAmounts[0], totalDeposit, collateralToLoanRate) = _getPreMarginData( // borrowAmount, interestRate, totalDeposit, collateralToLoanRate
             collateralTokenAddress,
             collateralTokenSent,
             loanTokenSent,
@@ -813,6 +814,14 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
             sentAddresses,
             sentAmounts,
             loanDataBytes
+        );
+
+        ProtocolLike(bZxContract).setDepositAmount(
+            loanOpenData.loanId,
+            totalDeposit,
+            totalDeposit
+                .mul(WEI_PRECISION)
+                .div(collateralToLoanRate)
         );
 
         return loanOpenData;
@@ -837,20 +846,24 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         uint256 loanTokenSent)
         internal
         view
-        returns (uint256 totalDeposit)
+        returns (uint256 totalDeposit, uint256 collateralToLoanRate)
     {
+        uint256 collateralToLoanPrecision;
+        (collateralToLoanRate, collateralToLoanPrecision) = FeedsLike(ProtocolLike(bZxContract).priceFeeds()).queryRate(
+            collateralTokenAddress,
+            loanTokenAddress
+        );
+        require(collateralToLoanRate != 0 && collateralToLoanPrecision != 0, "20");
+        collateralToLoanRate = collateralToLoanRate
+            .mul(WEI_PRECISION)
+            .div(collateralToLoanPrecision);
+
         totalDeposit = loanTokenSent;
         if (collateralTokenSent != 0) {
-            (uint256 sourceToDestRate, uint256 sourceToDestPrecision) = FeedsLike(ProtocolLike(bZxContract).priceFeeds()).queryRate(
-                collateralTokenAddress,
-                loanTokenAddress
-            );
-            if (sourceToDestRate != 0) {
-                totalDeposit = collateralTokenSent
-                    .mul(sourceToDestRate)
-                    .div(sourceToDestPrecision)
-                    .add(totalDeposit);
-            }
+            totalDeposit = collateralTokenSent
+                .mul(collateralToLoanRate)
+                .div(WEI_PRECISION)
+                .add(totalDeposit);
         }
     }
 
@@ -1206,9 +1219,9 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         uint256 leverageAmount)
         internal
         view
-        returns (uint256 borrowAmount, uint256 interestRate, uint256 totalDeposit)
+        returns (uint256 borrowAmount, uint256 interestRate, uint256 totalDeposit, uint256 collateralToLoanRate)
     {
-        totalDeposit = _totalDeposit(
+        (totalDeposit, collateralToLoanRate) = _totalDeposit(
             collateralTokenAddress,
             collateralTokenSent,
             loanTokenSent

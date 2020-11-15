@@ -49,6 +49,12 @@ contract ProtocolLike {
         address loanToken)
         external;
 
+    function setDepositAmount(
+        bytes32 loanId,
+        uint256 depositValueAsLoanToken,
+        uint256 depositValueAsCollateralToken)
+        external;
+
     function getTotalPrincipal(
         address lender,
         address loanToken)

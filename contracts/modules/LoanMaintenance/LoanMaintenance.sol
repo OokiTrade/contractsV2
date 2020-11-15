@@ -26,6 +26,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         _setTarget(this.withdrawAccruedInterest.selector, target);
         _setTarget(this.extendLoanDuration.selector, target);
         _setTarget(this.reduceLoanDuration.selector, target);
+        _setTarget(this.setDepositAmount.selector, target);
         _setTarget(this.claimRewards.selector, target);
         _setTarget(this.rewardsBalanceOf.selector, target);
         _setTarget(this.getLenderInterestData.selector, target);
@@ -71,6 +72,22 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             vaultEtherDeposit(
                 msg.sender,
                 msg.value
+            );
+        }
+
+        // update deposit amount
+        (uint256 collateralToLoanRate, uint256 collateralToLoanPrecision) = IPriceFeeds(priceFeeds).queryRate(
+            collateralToken,
+            loanParamsLocal.loanToken
+        );
+        if (collateralToLoanRate != 0) {
+            _setDepositAmount(
+                loanId,
+                depositAmount
+                    .mul(collateralToLoanRate)
+                    .div(collateralToLoanPrecision),
+                depositAmount,
+                false // isSubtraction
             );
         }
 
@@ -135,11 +152,27 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             );
         }
 
+        // update deposit amount
+        (uint256 collateralToLoanRate, uint256 collateralToLoanPrecision) = IPriceFeeds(priceFeeds).queryRate(
+            collateralToken,
+            loanParamsLocal.loanToken
+        );
+        if (collateralToLoanRate != 0) {
+            _setDepositAmount(
+                loanId,
+                actualWithdrawAmount
+                    .mul(collateralToLoanRate)
+                    .div(collateralToLoanPrecision),
+                actualWithdrawAmount,
+                true // isSubtraction
+            );
+        }
+
         emit WithdrawCollateral(
             loanLocal.borrower,
             collateralToken,
             loanId,
-            withdrawAmount
+            actualWithdrawAmount
         );
     }
 
@@ -354,6 +387,23 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             loanId,
             withdrawAmount,
             loanLocal.endTimestamp
+        );
+    }
+
+    function setDepositAmount(
+        bytes32 loanId,
+        uint256 depositValueAsLoanToken,
+        uint256 depositValueAsCollateralToken)
+        external
+    {
+        // only callable by loan pools
+        require(loanPoolToUnderlying[msg.sender] != address(0), "not authorized");
+
+        _setDepositAmount(
+            loanId,
+            depositValueAsLoanToken,
+            depositValueAsCollateralToken,
+            false // isSubtraction
         );
     }
 
@@ -648,6 +698,14 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             return loanData;
         }
 
+        uint256 depositValueAsLoanToken;
+        uint256 depositValueAsCollateralToken;
+        bytes32 slot = keccak256(abi.encode(loanId, LoanDepositValueID));
+        assembly {
+            depositValueAsLoanToken := sload(slot)
+            depositValueAsCollateralToken := sload(add(slot, 1))
+        }
+
         if (loanLocal.endTimestamp > block.timestamp) {
             value = loanLocal.endTimestamp
                 .sub(block.timestamp)
@@ -672,7 +730,9 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             currentMargin: currentMargin,
             maxLoanTerm: loanParamsLocal.maxLoanTerm,
             maxLiquidatable: maxLiquidatable,
-            maxSeizable: maxSeizable
+            maxSeizable: maxSeizable,
+            depositValueAsLoanToken: depositValueAsLoanToken,
+            depositValueAsCollateralToken: depositValueAsCollateralToken
         });
     }
 
@@ -699,7 +759,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             .sub(sourceTokenAmountUsed);
 
         // ensure the loan is still healthy
-        (uint256 currentMargin,) = IPriceFeeds(priceFeeds).getCurrentMargin(
+        (uint256 currentMargin, uint256 collateralToLoanRate) = IPriceFeeds(priceFeeds).getCurrentMargin(
             loanParamsLocal.loanToken,
             loanParamsLocal.collateralToken,
             loanLocal.principal,
@@ -710,6 +770,66 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             "unhealthy position"
         );
 
+        // update deposit amount
+        if (sourceTokenAmountUsed != 0 && collateralToLoanRate != 0) {
+            _setDepositAmount(
+                loanLocal.id,
+                sourceTokenAmountUsed
+                    .mul(collateralToLoanRate)
+                    .div(WEI_PRECISION),
+                sourceTokenAmountUsed,
+                true // isSubtraction
+            );
+        }
+
         return sourceTokenAmountUsed;
+    }
+
+    function _setDepositAmount(
+        bytes32 loanId,
+        uint256 depositValueAsLoanToken,
+        uint256 depositValueAsCollateralToken,
+        bool isSubtraction)
+        internal
+    {
+        bytes32 slot = keccak256(abi.encode(loanId, LoanDepositValueID));
+        assembly {
+            let val := sload(slot)
+            switch isSubtraction
+            case 0 {
+                sstore(slot, add(val, depositValueAsLoanToken))
+            }
+            default {
+                switch gt(val, depositValueAsLoanToken)
+                case 1 {
+                    sstore(slot, sub(val, depositValueAsLoanToken))
+                }
+                default {
+                    sstore(slot, 0)
+                }
+            }
+
+            slot := add(slot, 1)
+            val := sload(slot)
+            switch isSubtraction
+            case 0 {
+                sstore(slot, add(val, depositValueAsCollateralToken))
+            }
+            default {
+                switch gt(val, depositValueAsCollateralToken)
+                case 1 {
+                    sstore(slot, sub(val, depositValueAsCollateralToken))
+                }
+                default {
+                    sstore(slot, 0)
+                }
+            }
+        }
+
+        emit LoanDeposit(
+            loanId,
+            depositValueAsLoanToken,
+            depositValueAsCollateralToken
+        );
     }
 }

@@ -570,6 +570,12 @@ contract IBZx is
         external
         returns (uint256 secondsReduced);
 
+    function setDepositAmount(
+        bytes32 loanId,
+        uint256 depositValueAsLoanToken,
+        uint256 depositValueAsCollateralToken)
+        external;
+
     function claimRewards(
         address receiver)
         external
