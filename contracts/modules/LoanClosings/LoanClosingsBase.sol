@@ -872,6 +872,7 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         LoanParams memory loanParamsLocal,
         uint256 startingGas)
         internal
+        view
         returns (uint256 gasRebate)
     {
         // the amount of collateral drop needed to reach the maintenanceMargin level of the loan
