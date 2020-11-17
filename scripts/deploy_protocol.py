@@ -146,7 +146,7 @@ def deployProtocol():
                         "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", # AAVE
                         "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", # UNI
                     ]
-                )
+                , {"from": acct, "gas_price": 38e9})
 
                 print("Calling setPriceFeed.")
                 feeds.setPriceFeed(
@@ -190,7 +190,7 @@ def deployProtocol():
                         "0xD6aA3D25116d8dA79Ea0246c4826EB951872e02e", # UNI
                         "0x169E633A2D1E6c10dD91238Ba11c4A708dfEF37C"  # Fast Gas / Gwei
                     ]
-                )
+                , {"from": acct, "gas_price": 34e9})
 
     else:
         if "PriceFeeds" in addresses[thisNetwork]:
