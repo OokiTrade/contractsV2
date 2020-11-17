@@ -6,11 +6,11 @@
 pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
-import "./StakingState.sol";
-import "../interfaces/ILoanPool.sol";
+import "./StakingInterimState.sol";
+import "../../interfaces/ILoanPool.sol";
 
 
-contract StakingInterim is StakingState {
+contract StakingInterim is StakingInterimState {
 
     ILoanPool public constant iBZRX = ILoanPool(0x18240BD9C07fA6156Ce3F3f61921cC82b2619157);
 
