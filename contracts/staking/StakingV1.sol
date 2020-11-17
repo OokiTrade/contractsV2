@@ -635,6 +635,7 @@ contract StakingV1 is StakingState {
         IERC20(USDT).safeApprove(address(curve3pool), uint256(-1));
     }
 
+    // TODO: reward caller with gas rebate or tiny portion of fees?
     function sweepFees(
         address[] memory assets)
         public
