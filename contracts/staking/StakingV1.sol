@@ -31,6 +31,12 @@ contract StakingV1 is StakingState {
     ICurve3Pool public constant curve3pool = ICurve3Pool(0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7);
     IBZxPartial public constant bZx = IBZxPartial(0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f);
 
+    uint256 public constant cliffDuration =                15768000; // 86400 * 365 * 0.5
+    uint256 public constant vestingDuration =              126144000; // 86400 * 365 * 4
+    uint256 internal constant vestingDurationAfterCliff =  110376000; // 86400 * 365 * 3.5
+    uint256 internal constant vestingStartTimestamp =      1594648800; // start_time
+    uint256 internal constant vestingCliffTimestamp =      vestingStartTimestamp + cliffDuration;
+    uint256 internal constant vestingEndTimestamp =        vestingStartTimestamp + vestingDuration;
 
     struct RepStakedTokens {
         address user;
@@ -56,6 +62,7 @@ contract StakingV1 is StakingState {
     );
 
     event RewardAdded(
+        address indexed sender,
         uint256 bzrxAmount,
         uint256 stableCoinAmount
     );
@@ -89,6 +96,13 @@ contract StakingV1 is StakingState {
     {
         isPaused = false;
     }
+    function setFundsWallet(
+        address _fundsWallet)
+        external
+        onlyOwner
+    {
+        fundsWallet = _fundsWallet;
+    }
 
     function stake(
         address[] memory tokens,
@@ -116,6 +130,7 @@ contract StakingV1 is StakingState {
 
         address token;
         uint256 stakeAmount;
+        uint256 tokenBalance;
         for (uint256 i = 0; i < tokens.length; i++) {
             token = tokens[i];
             require(token == BZRX || token == vBZRX || token == iBZRX || token == LPToken, "invalid token");
@@ -125,8 +140,23 @@ contract StakingV1 is StakingState {
                 continue;
             }
 
-            _balancesPerToken[token][msg.sender] = _balancesPerToken[token][msg.sender].add(stakeAmount);
+            tokenBalance = _balancesPerToken[token][msg.sender];
+
+            /*
+            TODO
+            if (token == vBZRX) {
+                _vestedBalance(
+                    tokenBalance,
+                    _vBZRXDepositTime[msg.sender]
+                );
+            }*/
+
+            _balancesPerToken[token][msg.sender] = tokenBalance.add(stakeAmount);
             _totalSupplyPerToken[token] = _totalSupplyPerToken[token].add(stakeAmount);
+
+            repStakedPerToken[currentDelegate][token] = repStakedPerToken[currentDelegate][token]
+                .add(stakeAmount);
+
             IERC20(token).safeTransferFrom(msg.sender, address(this), stakeAmount);
 
             emit Staked(
@@ -135,11 +165,41 @@ contract StakingV1 is StakingState {
                 currentDelegate,
                 stakeAmount
             );
-
-            repStakedPerToken[currentDelegate][token] = repStakedPerToken[currentDelegate][token]
-                .add(stakeAmount);
         }
     }
+
+    /*function _vestedBalance(
+        uint256 tokenBalance,
+        uint256 lastDepositTime)
+        address user)
+        internal
+    {
+        uint256 timestamp = _getTimestamp();
+        if (lastDeposit < timestamp) {
+
+            uint256 timestamp = _getTimestamp();
+
+            if (timestamp <= vestingCliffTimestamp ||
+                lastDepositTime >= vestingEndTimestamp ||
+                timestamp > vestingLastClaimTimestamp) {
+                // time cannot be before vesting starts
+                // OR all vested token has already been claimed
+                // OR time cannot be after last claim date
+                return 0;
+            }
+            if (lastDepositTime < vestingCliffTimestamp) {
+                // vesting starts at the cliff timestamp
+                lastDepositTime = vestingCliffTimestamp;
+            }
+            if (timestamp > vestingEndTimestamp) {
+                // vesting ends at the end timestamp
+                timestamp = vestingEndTimestamp;
+            }
+
+            uint256 timeSinceClaim = sub(timestamp, lastDepositTime);
+            return mul(tokenBalance, timeSinceClaim) / vestingDurationAfterCliff; // will never divide by 0
+        }
+    }*/
 
     // TODO: handle removing delegated votes from current rep
     function unStake(
@@ -404,21 +464,12 @@ contract StakingV1 is StakingState {
         );
     }
 
-    function setFeesController(
-        address _feesController)
-        external
-        onlyOwner
-    {
-        feesController = _feesController;
-    }
-
+    // note: anyone can contribute rewards to the contract
     function addRewards(
         uint256 newBZRX,
         uint256 newStableCoin)
         external
-        onlyOwner
     {
-        require(msg.sender == feesController, "Unauthorized");
         if (newBZRX != 0 || newStableCoin != 0) {
             _addRewards(newBZRX, newStableCoin);
             if (newBZRX != 0) {
@@ -460,6 +511,7 @@ contract StakingV1 is StakingState {
         periodFinish = _timestamp + 1;
 
         emit RewardAdded(
+            msg.sender,
             newBZRX,
             newStableCoin
         );
@@ -646,23 +698,30 @@ contract StakingV1 is StakingState {
         (bzrxRewards, crv3Rewards) = distributeFees();
     }
 
-    // TODO: add claim for insurance fund assets
     function withdrawFees(
         address[] memory assets)
         public
         returns (uint256[] memory)
     {
+        uint256 rewardAmount;
+        address _fundsWallet = fundsWallet;
         uint256[] memory amounts = bZx.withdrawFees(assets, address(this), IBZxPartial.FeeClaimType.All);
         for (uint256 i = 0; i < assets.length; i++) {
             if (amounts[i] == 0) {
                 continue;
             }
 
-            amounts[i] = amounts[i]
+            rewardAmount = amounts[i]
                 .mul(rewardPercent)
-                .div(1e20)
-                .add(stakingRewards[assets[i]]);
-            stakingRewards[assets[i]] = amounts[i];
+                .div(1e20);
+
+            stakingRewards[assets[i]] = stakingRewards[assets[i]]
+                .add(rewardAmount);
+
+            IERC20(assets[i]).transfer(
+                _fundsWallet,
+                amounts[i] - rewardAmount
+            );
         }
         return amounts;
     }
@@ -774,7 +833,7 @@ contract StakingV1 is StakingState {
         }
     }
 
-    // TODO: Prevent excessive curve slippage
+    // TODO: Do we need to prevent excessive curve slippage?
     function _convertFeesWithCurve(
         uint256 daiAmount,
         uint256 usdcAmount,

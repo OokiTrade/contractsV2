@@ -30,7 +30,7 @@ contract StakingState is Ownable {
 
     bool public isPaused;
 
-    address public feesController;
+    address public fundsWallet;
 
     mapping(address => uint256) internal _totalSupplyPerToken;                      // token => value
     mapping(address => mapping(address => uint256)) internal _balancesPerToken;     // token => account => value
@@ -55,6 +55,7 @@ contract StakingState is Ownable {
     uint256 public lastUpdateTime;
     uint256 public periodFinish;
 
+    mapping(address => uint256) internal vBZRXDepositDate;
 
     mapping(address => address[]) public swapPaths;
     mapping(address => uint256) public stakingRewards;
