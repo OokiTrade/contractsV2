@@ -19,6 +19,7 @@ contract TmpAdmin is State {
         _setTarget(this.tmpLoanWithdraw.selector, target);
         _setTarget(this.tmpReduceToMarginLevel.selector, target);
         _setTarget(this.tmpUpdateStorageBatch.selector, target);
+        _setTarget(this.tmpModifyLoan.selector, target);
     }
 
     function tmpWithdrawToken(IERC20 token, uint256 amount) external onlyOwner {
