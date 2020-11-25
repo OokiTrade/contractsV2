@@ -38,6 +38,11 @@ contract StakingV1 is StakingState {
     uint256 internal constant vestingCliffTimestamp =      vestingStartTimestamp + cliffDuration;
     uint256 internal constant vestingEndTimestamp =        vestingStartTimestamp + vestingDuration;
 
+    modifier onlyEOA() {
+        require(msg.sender == tx.origin, "unauthorized");
+        _;
+    }
+
     struct RepStakedTokens {
         address user;
         bool isActive;
@@ -142,15 +147,6 @@ contract StakingV1 is StakingState {
 
             tokenBalance = _balancesPerToken[token][msg.sender];
 
-            /*
-            TODO
-            if (token == vBZRX) {
-                _vestedBalance(
-                    tokenBalance,
-                    _vBZRXDepositTime[msg.sender]
-                );
-            }*/
-
             _balancesPerToken[token][msg.sender] = tokenBalance.add(stakeAmount);
             _totalSupplyPerToken[token] = _totalSupplyPerToken[token].add(stakeAmount);
 
@@ -158,6 +154,20 @@ contract StakingV1 is StakingState {
                 .add(stakeAmount);
 
             IERC20(token).safeTransferFrom(msg.sender, address(this), stakeAmount);
+
+            // the below comes after the transfer of vBZRX, which settles vested BZRX locally
+            if (token == vBZRX && tokenBalance != 0) {
+                (uint256 vested, uint256 timestamp) = _vestedBalance(
+                    tokenBalance,
+                    _vBZRXDepositTime[msg.sender]
+                );
+
+                _vBZRXDepositTime[msg.sender] = timestamp;
+
+                if (vested != 0) {
+                    IERC20(BZRX).transfer(msg.sender, vested);
+                }
+            }
 
             emit Staked(
                 msg.sender,
@@ -168,24 +178,20 @@ contract StakingV1 is StakingState {
         }
     }
 
-    /*function _vestedBalance(
+    function _vestedBalance(
         uint256 tokenBalance,
         uint256 lastDepositTime)
-        address user)
         internal
+        view
+        returns (uint256 vested, uint256 timestamp)
     {
-        uint256 timestamp = _getTimestamp();
-        if (lastDeposit < timestamp) {
-
-            uint256 timestamp = _getTimestamp();
-
+        timestamp = _getTimestamp();
+        if (lastDepositTime < timestamp) {
             if (timestamp <= vestingCliffTimestamp ||
-                lastDepositTime >= vestingEndTimestamp ||
-                timestamp > vestingLastClaimTimestamp) {
+                lastDepositTime >= vestingEndTimestamp) {
                 // time cannot be before vesting starts
                 // OR all vested token has already been claimed
-                // OR time cannot be after last claim date
-                return 0;
+                return (0, timestamp);
             }
             if (lastDepositTime < vestingCliffTimestamp) {
                 // vesting starts at the cliff timestamp
@@ -196,10 +202,10 @@ contract StakingV1 is StakingState {
                 timestamp = vestingEndTimestamp;
             }
 
-            uint256 timeSinceClaim = sub(timestamp, lastDepositTime);
-            return mul(tokenBalance, timeSinceClaim) / vestingDurationAfterCliff; // will never divide by 0
+            uint256 timeSinceClaim = timestamp.sub(lastDepositTime);
+            vested = tokenBalance.mul(timeSinceClaim) / vestingDurationAfterCliff; // will never divide by 0
         }
-    }*/
+    }
 
     // TODO: handle removing delegated votes from current rep
     function unStake(
@@ -231,7 +237,22 @@ contract StakingV1 is StakingState {
 
             _balancesPerToken[token][msg.sender] = stakedAmount - unstakeAmount; // will not overflow
             _totalSupplyPerToken[token] = _totalSupplyPerToken[token] - unstakeAmount; // will not overflow
+
             IERC20(token).safeTransfer(msg.sender, unstakeAmount);
+
+           // the below comes after the transfer of vBZRX, which settles vested BZRX locally
+            if (token == vBZRX && unstakeAmount != 0) {
+                (uint256 vested, uint256 timestamp) = _vestedBalance(
+                    unstakeAmount,
+                    _vBZRXDepositTime[msg.sender]
+                );
+
+                _vBZRXDepositTime[msg.sender] = timestamp;
+
+                if (vested != 0) {
+                    IERC20(BZRX).transfer(msg.sender, vested);
+                }
+            }
 
             emit Unstaked(
                 msg.sender,
@@ -319,7 +340,7 @@ contract StakingV1 is StakingState {
     {
         reps[msg.sender] = _isActive;
         if (_isActive) {
-            repStakedSet.addAddress(msg.sender);
+            _repStakedSet.addAddress(msg.sender);
         }
     }
 
@@ -330,7 +351,7 @@ contract StakingV1 is StakingState {
         view
         returns (RepStakedTokens[] memory repStakedArr)
     {
-        uint256 end = start.add(count).min256(repStakedSet.length());
+        uint256 end = start.add(count).min256(_repStakedSet.length());
         if (start >= end) {
             return repStakedArr;
         }
@@ -340,7 +361,7 @@ contract StakingV1 is StakingState {
         address user;
         repStakedArr = new RepStakedTokens[](idx);
         for (uint256 i = --end; i >= start; i--) {
-            user = repStakedSet.getAddress(i);
+            user = _repStakedSet.getAddress(i);
             repStakedArr[count-(idx--)] = RepStakedTokens({
                 user: user,
                 isActive: reps[user],
@@ -438,7 +459,6 @@ contract StakingV1 is StakingState {
         );
     }
 
-    // TODO: account for BZRX vesting from vBZRX
     function _earned(
         address account,
         uint256 _bzrxPerToken,
@@ -447,11 +467,7 @@ contract StakingV1 is StakingState {
         view
         returns (uint256, uint256) // bzrxRewardsEarned, stableCoinRewardsEarned
     {
-        uint256 totalTokens = balanceOfByAssetNormed(BZRX, account)
-            .add(balanceOfByAssetNormed(vBZRX, account))
-            .add(balanceOfByAssetNormed(iBZRX, account))
-            .add(balanceOfByAssetNormed(LPToken, account));
-
+        uint256 totalTokens = balanceOf(account);
         return (
             totalTokens
                 .mul(_bzrxPerToken.sub(bzrxRewardsPerTokenPaid[account]))
@@ -515,6 +531,29 @@ contract StakingV1 is StakingState {
             newBZRX,
             newStableCoin
         );
+    }
+
+    // TODO: account for BZRX vesting from vBZRX (vBZRX discounted and BZRX credited as vesting occurs)
+    function balanceOf(
+        address account)
+        public
+        view
+        returns (uint256)
+    {
+        uint256 BZRXBalance = balanceOfByAssetNormed(BZRX, account);
+        uint256 vBZRXBalance = balanceOfByAssetNormed(vBZRX, account);
+
+        /*if (vBZRXBalance) {
+            (uint256 vested, uint256 timestamp) = _vestedBalance(
+                vBZRXBalance,
+                _vBZRXDepositTime[msg.sender]
+            );
+        }*/
+
+        return BZRXBalance
+            .add(vBZRXBalance)
+            .add(balanceOfByAssetNormed(iBZRX, account))
+            .add(balanceOfByAssetNormed(LPToken, account));
     }
 
     function balanceOfByAsset(
@@ -671,13 +710,15 @@ contract StakingV1 is StakingState {
     function setUniswapApproval(
         IERC20 asset)
         public
+        onlyOwner
     {
         asset.safeApprove(address(uniswapRouter), 0);
         asset.safeApprove(address(uniswapRouter), uint256(-1));
     }
 
     function setCurveApproval()
-        public
+        external
+        onlyOwner
     {
         IERC20(DAI).safeApprove(address(curve3pool), 0);
         IERC20(DAI).safeApprove(address(curve3pool), uint256(-1));
@@ -687,20 +728,47 @@ contract StakingV1 is StakingState {
         IERC20(USDT).safeApprove(address(curve3pool), uint256(-1));
     }
 
-    // TODO: reward caller with gas rebate or tiny portion of fees?
     function sweepFees(
-        address[] memory assets)
-        public
+        address[] calldata assets)
+        external
+        onlyEOA
         returns (uint256 bzrxRewards, uint256 crv3Rewards)
     {
-        uint256[] memory amounts = withdrawFees(assets);
-        convertFees(assets, amounts);
-        (bzrxRewards, crv3Rewards) = distributeFees();
+        uint256[] memory amounts = _withdrawFees(assets);
+        _convertFees(assets, amounts);
+        (bzrxRewards, crv3Rewards) = _distributeFees();
     }
 
     function withdrawFees(
+        address[] calldata assets)
+        external
+        onlyOwner
+        returns (uint256[] memory)
+    {
+        return _withdrawFees(assets);
+    }
+
+    function convertFees(
+        address[] calldata assets,
+        uint256[] calldata amounts)
+        external
+        onlyOwner
+        returns (uint256 bzrxOuput, uint256 crv3Output)
+    {
+        return _convertFees(assets, amounts);
+    }
+
+    function distributeFees()
+        external
+        onlyOwner
+        returns (uint256 bzrxRewards, uint256 crv3Rewards)
+    {
+        return _distributeFees();
+    }
+
+    function _withdrawFees(
         address[] memory assets)
-        public
+        internal
         returns (uint256[] memory)
     {
         uint256 rewardAmount;
@@ -726,10 +794,10 @@ contract StakingV1 is StakingState {
         return amounts;
     }
 
-    function convertFees(
+    function _convertFees(
         address[] memory assets,
         uint256[] memory amounts)
-        public
+        internal
         returns (uint256 bzrxOuput, uint256 crv3Output)
     {
         require(assets.length == amounts.length, "count mismatch");
@@ -778,19 +846,34 @@ contract StakingV1 is StakingState {
         }
     }
 
-    function distributeFees()
-        public
+    function _distributeFees()
+        internal
         returns (uint256 bzrxRewards, uint256 crv3Rewards)
     {
         bzrxRewards = stakingRewards[BZRX];
         crv3Rewards = stakingRewards[address(curve3Crv)];
         if (bzrxRewards != 0 || crv3Rewards != 0) {
-            _addRewards(bzrxRewards, crv3Rewards);
-
-            if (bzrxRewards != 0)
+            uint256 callerReward;
+            if (bzrxRewards != 0) {
                 stakingRewards[BZRX] = 0;
-            if (crv3Rewards != 0)
+
+                callerReward = bzrxRewards / 100;
+                bzrxRewards = bzrxRewards
+                    .sub(callerReward);
+
+                IERC20(BZRX).transfer(msg.sender, callerReward);
+            }
+            if (crv3Rewards != 0) {
                 stakingRewards[address(curve3Crv)] = 0;
+
+                callerReward = crv3Rewards / 100;
+                crv3Rewards = crv3Rewards
+                    .sub(callerReward);
+
+                curve3Crv.transfer(msg.sender, callerReward);
+            }
+
+            _addRewards(bzrxRewards, crv3Rewards);
         }
     }
 

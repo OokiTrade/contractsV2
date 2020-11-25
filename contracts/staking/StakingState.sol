@@ -50,12 +50,12 @@ contract StakingState is Ownable {
     mapping(address => uint256) public stableCoinRewardsPerTokenPaid;               // user => value
     mapping(address => uint256) public stableCoinRewards;                           // user => value
 
-    EnumerableBytes32Set.Bytes32Set internal repStakedSet;
+    EnumerableBytes32Set.Bytes32Set internal _repStakedSet;
 
     uint256 public lastUpdateTime;
     uint256 public periodFinish;
 
-    mapping(address => uint256) internal vBZRXDepositDate;
+    mapping(address => uint256) internal _vBZRXDepositTime;
 
     mapping(address => address[]) public swapPaths;
     mapping(address => uint256) public stakingRewards;
