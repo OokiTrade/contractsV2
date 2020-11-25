@@ -257,13 +257,15 @@ contract PriceFeeds is Constants, Ownable {
         return currentMargin <= maintenanceMargin;
     }
 
+    // returns per unit gas cost denominated in payToken * 1e36
     function getFastGasPrice(
         address payToken)
         external
         view
         returns (uint256)
     {
-        uint256 gasPrice = _getFastGasPrice();
+        uint256 gasPrice = _getFastGasPrice()
+            .mul(WEI_PRECISION * WEI_PRECISION);
         if (payToken != address(wethToken) && payToken != address(0)) {
             require(!globalPricingPaused, "pricing is paused");
             (uint256 rate, uint256 precision) = _queryRate(
