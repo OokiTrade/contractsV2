@@ -262,24 +262,26 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
             );
         }
 
-        gasRebate = _getRebate(
-            loanLocal,
-            loanParamsLocal,
-            startingGas
-        );
-        if (gasRebate != 0) {
-            // pay out gas rebate to caller
-            // the preceeding logic should ensure gasRebate <= collateral, but just in case, will use SafeMath here
-            loanLocal.collateral = loanLocal.collateral
-                .sub(gasRebate, "gasRebate too high");
-
-            rebateToken = loanParamsLocal.collateralToken;
-
-            _withdrawAsset(
-                rebateToken,
-                msg.sender,
-                gasRebate
+        if (msg.sender != loanLocal.borrower) {
+            gasRebate = _getRebate(
+                loanParamsLocal.collateralToken,
+                loanLocal.collateral,
+                startingGas
             );
+            if (gasRebate != 0) {
+                // pay out gas rebate to caller
+                // the preceeding logic should ensure gasRebate <= collateral, but just in case, will use SafeMath here
+                loanLocal.collateral = loanLocal.collateral
+                    .sub(gasRebate, "gasRebate too high");
+
+                rebateToken = loanParamsLocal.collateralToken;
+
+                _withdrawAsset(
+                    rebateToken,
+                    msg.sender,
+                    gasRebate
+                );
+            }
         }
 
         _finalizeRollover(
@@ -868,32 +870,22 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
     }
 
     function _getRebate(
-        Loan memory loanLocal,
-        LoanParams memory loanParamsLocal,
+        address collateralToken,
+        uint256 collateral,
         uint256 startingGas)
         internal
         view
         returns (uint256 gasRebate)
     {
-        // the amount of collateral drop needed to reach the maintenanceMargin level of the loan
-        uint256 maxDrawdown = IPriceFeeds(priceFeeds).getMaxDrawdown(
-            loanParamsLocal.loanToken,
-            loanParamsLocal.collateralToken,
-            loanLocal.principal,
-            loanLocal.collateral,
-            loanParamsLocal.maintenanceMargin
-        );
-        require(maxDrawdown != 0, "unhealthy position");
-
         // gets the gas rebate denominated in collateralToken
         gasRebate = SafeMath.mul(
-            IPriceFeeds(priceFeeds).getFastGasPrice(loanParamsLocal.collateralToken) * 2,
+            IPriceFeeds(priceFeeds).getFastGasPrice(collateralToken) * 2,
             startingGas - gasleft()
-        );
+        ).div(WEI_PRECISION * WEI_PRECISION);
 
-        // ensures the gas rebate will not drop the current margin below the maintenance level
+        // gas rebate cannot exceed available collateral
         gasRebate = gasRebate
-            .min256(maxDrawdown);
+            .min256(collateral);
     }
 
     function _finalizeRollover(
