@@ -90,6 +90,26 @@ def deployProtocol():
             )
         else:
             if thisNetwork == "kovan":
+                '''
+                feedsOld = Contract.from_abi("feeds", bzx.priceFeeds(), abi=PriceFeedsLocal.abi, owner=acct)
+                feeds = acct.deploy(PriceFeedsLocal)
+                feeds.setRates(
+                    "0xfBE16bA4e8029B759D3c5ef8844124893f3ae470", # WETH
+                    "0xB443f30CDd6076b1A5269dbc08b774F222d4Db4e", # USDC
+                    feedsOld.rates("0xfBE16bA4e8029B759D3c5ef8844124893f3ae470", "0xB443f30CDd6076b1A5269dbc08b774F222d4Db4e")
+                )
+                feeds.setRates(
+                    "0xB54Fc2F2ea17d798Ad5C7Aba2491055BCeb7C6b2", # BZRX
+                    "0xfBE16bA4e8029B759D3c5ef8844124893f3ae470", # WETH
+                    feedsOld.rates("0xB54Fc2F2ea17d798Ad5C7Aba2491055BCeb7C6b2", "0xfBE16bA4e8029B759D3c5ef8844124893f3ae470")
+                )
+
+                feeds.setRates(
+                    "0x5aE55494Ccda82f1F7c653BC2b6EbB4aD3C77Dac", # WBTC
+                    "0xfBE16bA4e8029B759D3c5ef8844124893f3ae470", # WETH
+                    feedsOld.rates("0x5aE55494Ccda82f1F7c653BC2b6EbB4aD3C77Dac", "0xfBE16bA4e8029B759D3c5ef8844124893f3ae470")
+                )
+                '''
                 feeds = acct.deploy(PriceFeedsLocal)
 
                 print("Calling setRates x3.")
