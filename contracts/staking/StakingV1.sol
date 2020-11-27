@@ -85,7 +85,7 @@ contract StakingV1 is StakingState {
     );
 
     modifier checkPause() {
-        require(isPaused, "paused");
+        require(!isPaused, "paused");
         _;
     }
 
