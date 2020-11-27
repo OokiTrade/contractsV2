@@ -268,13 +268,33 @@ contract StakingV1 is StakingState {
 
     function claim()
         public
+        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
     {
         return _claim(false);
     }
 
     function claimAndRestake()
         public
+        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
     {
+        return _claim(true);
+    }
+
+    function claimWithUpdate(
+        address[] calldata assets)
+        external
+        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
+    {
+        sweepFees(assets);
+        return _claim(false);
+    }
+
+    function claimAndRestakeWithUpdate(
+        address[] calldata assets)
+        external
+        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
+    {
+        sweepFees(assets);
         return _claim(true);
     }
 
@@ -282,8 +302,9 @@ contract StakingV1 is StakingState {
         bool restake)
         internal
         updateRewards(msg.sender)
+        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
     {
-        (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned) = earned(msg.sender);
+        (bzrxRewardsEarned, stableCoinRewardsEarned) = earned(msg.sender);
         if (bzrxRewardsEarned != 0) {
             bzrxRewards[msg.sender] = 0;
             if (restake) {
@@ -317,7 +338,7 @@ contract StakingV1 is StakingState {
     }
 
     function exit()
-        external
+        public
     {
         address[] memory tokens = new address[](4);
         uint256[] memory values = new uint256[](4);
@@ -332,6 +353,14 @@ contract StakingV1 is StakingState {
         
         unStake(tokens, values);
         claim();
+    }
+
+    function exitWithUpdate(
+        address[] calldata assets)
+        external
+    {
+        sweepFees(assets);
+        exit();
     }
 
     function setRepActive(
@@ -457,6 +486,16 @@ contract StakingV1 is StakingState {
             _bzrxPerToken,
             _stableCoinPerToken
         );
+    }
+
+    function earnedWithUpdate(
+        address account,
+        address[] calldata assets)
+        external
+        returns (uint256, uint256) // bzrxRewardsEarned, stableCoinRewardsEarned
+    {
+        sweepFees(assets);
+        return earned(account);
     }
 
     function _earned(
@@ -729,8 +768,8 @@ contract StakingV1 is StakingState {
     }
 
     function sweepFees(
-        address[] calldata assets)
-        external
+        address[] memory assets)
+        public
         onlyEOA
         returns (uint256 bzrxRewards, uint256 crv3Rewards)
     {
