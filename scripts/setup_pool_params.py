@@ -68,6 +68,9 @@ def main():
             "0x7e9997a38a439b2be7ed9c9c4628391d3e055d48", # iUSDT
             "0x0a625FceC657053Fe2D9FFFdeb1DBb4e412Cf8A8", # iUNI
             "0x0cae8d91E0b1b7Bd00D906E990C3625b2c220db1", # iAAVE
+            "0x6d29903BC2c4318b59B35d97Ab98ab9eC08Ed70D", # iCOMP
+            "0x3dA0e01472Dee3746b4D324a65D7EdFaECa9Aa4f", # iLRC
+            "0x88183Ec0054F40D344e40EC934D5a9E2749a61d4", # iBNB
         ]
 
         collateralTokens = [
@@ -79,17 +82,20 @@ def main():
             "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2", # MKR
             #"0x56d811088235F11C8920698a204A5010a788f4b3", # BZRX <-- not supported on Fulcrum yet
             "0x514910771AF9Ca656af840dff83E8264EcF986CA", # LINK
-            #"0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", # YFI <-- not supported on Fulcrum yet
+            "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", # YFI
             "0xdac17f958d2ee523a2206206994597c13d831ec7", # USDT
             "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", # UNI
             "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", # AAVE
+            "0xc00e94Cb662C3520282E6f5717214004A7f26888", # COMP
+            "0xBBbbCA6A901c926F240b89EacB641d8Aec7AEafD", # LRC
+            "0xB8c77482e45F1F44dE1745F52C74426C631bDD52", # BNB
         ]
     else:
         return
 
     for loanPoolAddress in itokens:
-        if loanPoolAddress == "0x0a625FceC657053Fe2D9FFFdeb1DBb4e412Cf8A8" or loanPoolAddress == "0x0cae8d91E0b1b7Bd00D906E990C3625b2c220db1":
-            continue
+        #if loanPoolAddress == "0x0a625FceC657053Fe2D9FFFdeb1DBb4e412Cf8A8" or loanPoolAddress == "0x0cae8d91E0b1b7Bd00D906E990C3625b2c220db1":
+        #    continue
 
         if thisNetwork == "development":
             raise Exception("Development netowrk unsupported")
@@ -144,8 +150,17 @@ def main():
             if collateralToken == loanTokenAddress or collateralToken == loanToken.address:
                 continue
 
-            #if collateralToken != "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984" and collateralToken != "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9":
-            #    continue
+            if not (
+                loanPoolAddress == "0x7f3fe9d492a9a60aebb06d82cba23c6f32cad10b" or
+                loanPoolAddress == "0x6d29903BC2c4318b59B35d97Ab98ab9eC08Ed70D" or
+                loanPoolAddress == "0x3dA0e01472Dee3746b4D324a65D7EdFaECa9Aa4f" or
+                loanPoolAddress == "0x88183Ec0054F40D344e40EC934D5a9E2749a61d4" or
+
+                collateralToken == "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e" or
+                collateralToken == "0xc00e94Cb662C3520282E6f5717214004A7f26888" or
+                collateralToken == "0xBBbbCA6A901c926F240b89EacB641d8Aec7AEafD" or
+                collateralToken == "0xB8c77482e45F1F44dE1745F52C74426C631bDD52"):
+                continue
 
             base_data_copy = base_data.copy()
             base_data_copy[4] = collateralToken ## collateralToken
@@ -157,6 +172,6 @@ def main():
         print(calldata)
         #print("")
         #print(loanToken.updateSettings.encode_input(loanTokenSettings.address, calldata))
-        loanToken.updateSettings(loanTokenSettings.address, calldata, { "from": acct, "gas_price": 60e9 })
+        loanToken.updateSettings(loanTokenSettings.address, calldata, { "from": acct, "gas_price": 18e9 })
 
 
