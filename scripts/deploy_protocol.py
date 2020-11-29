@@ -142,6 +142,7 @@ def deployProtocol():
                 )
             elif thisNetwork == "mainnet":
                 feeds = acct.deploy(PriceFeeds)
+                #feeds = Contract.from_abi("feeds", address=bzx.priceFeeds(), abi=PriceFeeds.abi, owner=acct)
 
                 print("Calling setDecimals.")
                 feeds.setDecimals(
@@ -165,8 +166,11 @@ def deployProtocol():
                         "0x80fB784B7eD66730e8b1DBd9820aFD29931aab03", # LEND
                         "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", # AAVE
                         "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", # UNI
+                        "0xc00e94Cb662C3520282E6f5717214004A7f26888", # COMP
+                        "0xBBbbCA6A901c926F240b89EacB641d8Aec7AEafD", # LRC
+                        "0xB8c77482e45F1F44dE1745F52C74426C631bDD52", # BNB
                     ]
-                , {"from": acct, "gas_price": 38e9})
+                , {"from": acct, "gas_price": 22e9})
 
                 print("Calling setPriceFeed.")
                 feeds.setPriceFeed(
@@ -188,6 +192,9 @@ def deployProtocol():
                         "0x80fB784B7eD66730e8b1DBd9820aFD29931aab03", # LEND
                         "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", # AAVE
                         "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", # UNI
+                        "0xc00e94Cb662C3520282E6f5717214004A7f26888", # COMP
+                        "0xBBbbCA6A901c926F240b89EacB641d8Aec7AEafD", # LRC
+                        "0xB8c77482e45F1F44dE1745F52C74426C631bDD52", # BNB
                         "0x0000000000000000000000000000000000000001"  # Fast Gas / Gwei
                     ],
                     [
@@ -208,9 +215,12 @@ def deployProtocol():
                         "0xc64F3C3925a216a11Ce0828498133cbC65fA4042", # LEND (old: 0xc9dDB0E869d931D031B24723132730Ecf3B4F74d)
                         "0x6Df09E975c830ECae5bd4eD9d90f3A95a4f88012", # AAVE
                         "0xD6aA3D25116d8dA79Ea0246c4826EB951872e02e", # UNI
+                        "0x1B39Ee86Ec5979ba5C322b826B3ECb8C79991699", # COMP
+                        "0x160AC928A16C93eD4895C2De6f81ECcE9a7eB7b4", # LRC
+                        "", # BNB
                         "0x169E633A2D1E6c10dD91238Ba11c4A708dfEF37C"  # Fast Gas / Gwei
                     ]
-                , {"from": acct, "gas_price": 34e9})
+                , {"from": acct, "gas_price": 22e9})
 
     else:
         if "PriceFeeds" in addresses[thisNetwork]:
@@ -303,14 +313,42 @@ def deployProtocol():
 
             bzx.setLoanPool(
                 [
+                    "0x6b093998d36f2c7f0cc359441fbb24cc629d5ff0", # iDAI
+                    "0xb983e01458529665007ff7e0cddecdb74b967eb6", # iETH
+                    "0x32e4c68b3a4a813b710595aeba7f6b7604ab9c15", # iUSDC
+                    "0x2ffa85f655752fb2acb210287c60b9ef335f5b6e", # iWBTC
+                    "0xab45bf58c6482b87da85d6688c4d9640e093be98", # iLEND
+                    "0x687642347a9282be8fd809d8309910a3f984ac5a", # iKNC
+                    "0x9189c499727f88f8ecc7dc4eea22c828e6aac015", # iMKR
+                    "0x18240bd9c07fa6156ce3f3f61921cc82b2619157", # iBZRX
+                    "0x463538705e7d22aa7f03ebf8ab09b067e1001b54", # iLINK
+                    "0x7f3fe9d492a9a60aebb06d82cba23c6f32cad10b", # iYFI
+                    "0x7e9997a38a439b2be7ed9c9c4628391d3e055d48", # iUSDT
                     "0x0cae8d91E0b1b7Bd00D906E990C3625b2c220db1", # iAAVE
                     "0x0a625FceC657053Fe2D9FFFdeb1DBb4e412Cf8A8", # iUNI
+                    "0x6d29903BC2c4318b59B35d97Ab98ab9eC08Ed70D", # iCOMP
+                    "0x3dA0e01472Dee3746b4D324a65D7EdFaECa9Aa4f", # iLRC
+                    #"0x88183Ec0054F40D344e40EC934D5a9E2749a61d4", # iBNB
                 ],
                 [
-                      "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", # AAVE
+                    "0x6b175474e89094c44da98b954eedeac495271d0f", # DAI
+                    "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", # ETH
+                    "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", # USDC
+                    "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599", # WBTC
+                    "0x80fB784B7eD66730e8b1DBd9820aFD29931aab03", # LEND
+                    "0xdd974d5c2e2928dea5f71b9825b8b646686bd200", # KNC
+                    "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2", # MKR
+                    "0x56d811088235F11C8920698a204A5010a788f4b3", # BZRX
+                    "0x514910771AF9Ca656af840dff83E8264EcF986CA", # LINK
+                    "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", # YFI
+                    "0xdac17f958d2ee523a2206206994597c13d831ec7", # USDT
+                    "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", # AAVE
                     "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", # UNI
+                    "0xc00e94Cb662C3520282E6f5717214004A7f26888", # COMP
+                    "0xBBbbCA6A901c926F240b89EacB641d8Aec7AEafD", # LRC
+                    #"0xB8c77482e45F1F44dE1745F52C74426C631bDD52", # BNB
                 ]
-            , {"from": acct, "gas_price": 62e9})
+            , {"from": acct, "gas_price": 22e9})
 
             print("Calling setSupportedTokens.")
             bzx.setSupportedTokens(
@@ -334,7 +372,9 @@ def deployProtocol():
                     "0x80fB784B7eD66730e8b1DBd9820aFD29931aab03", # LEND
                     "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", # AAVE
                     "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984", # UNI
-
+                    "0xc00e94Cb662C3520282E6f5717214004A7f26888", # COMP
+                    "0xBBbbCA6A901c926F240b89EacB641d8Aec7AEafD", # LRC
+                    #"0xB8c77482e45F1F44dE1745F52C74426C631bDD52", # BNB
                 ],
                 [
                     True, # WETH
@@ -356,8 +396,11 @@ def deployProtocol():
                     True, # LEND
                     True, # AAVE
                     True, # UNI
+                    True, # COMP
+                    True, # LRC
+                    #True, # BNB
                 ]
-            )
+            , {"from": acct, "gas_price": 22e9})
 
             ## 7e18 = 5% collateral discount
             # handled in setup_pool_params2
