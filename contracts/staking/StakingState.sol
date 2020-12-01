@@ -40,12 +40,12 @@ contract StakingState is Ownable {
     mapping(address => mapping(address => uint256)) public repStakedPerToken;       // token => user => value
     mapping(address => bool) public reps;                                           // user => isActive
 
-    uint256 public bzrxRewardRate;
+    uint256 public bzrxRewardSet;
     uint256 public bzrxPerTokenStored;
     mapping(address => uint256) public bzrxRewardsPerTokenPaid;                     // user => value
     mapping(address => uint256) public bzrxRewards;                                 // user => value
 
-    uint256 public stableCoinRewardRate;
+    uint256 public stableCoinRewardSet;
     uint256 public stableCoinPerTokenStored;
     mapping(address => uint256) public stableCoinRewardsPerTokenPaid;               // user => value
     mapping(address => uint256) public stableCoinRewards;                           // user => value
@@ -53,12 +53,14 @@ contract StakingState is Ownable {
     EnumerableBytes32Set.Bytes32Set internal _repStakedSet;
 
     uint256 public lastUpdateTime;
-    uint256 public periodFinish;
+    uint256 public lastRewardsUpdateTime;
 
-    mapping(address => uint256) internal _vBZRXDepositTime;
+    mapping(address => uint256) internal _vBZRXLastUpdate;
 
     mapping(address => address[]) public swapPaths;
     mapping(address => uint256) public stakingRewards;
     uint256 public rewardPercent = 50e18;
     uint256 public maxAllowedDisagreement = 3 ether;
+
+    address[] public currentFeeTokens;
 }
