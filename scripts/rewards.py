@@ -10,16 +10,16 @@ import numpy as np
 
 
 def getUSDTValue(symbol, principal):
-    ETHPrice = 506.11
-    WBTCPrice = 16679
+    ETHPrice = 611.29
+    WBTCPrice = 19.355
     LENDPrice = 0.6511
-    KNCPrice = 0.952
-    MKRPrice = 513.36
-    BZRXPrice = 0.2129
-    LINKPrice = 12.2396
-    YFIPrice = 21116
-    UNIPrice = 3.2299
-    AAVEPrice = 59.158
+    KNCPrice = 1.011
+    MKRPrice = 588.76
+    BZRXPrice = 0.2920
+    LINKPrice = 13.90
+    YFIPrice = 29210
+    UNIPrice = 3.877
+    AAVEPrice = 91.75
 
     if symbol == 'ETH':
         return principal * ETHPrice
@@ -47,7 +47,7 @@ def getUSDTValue(symbol, principal):
         raise ValueError("unhandled symbol", symbol)
 
 
-filePath = './query31.csv'
+filePath = './week13.csv'
 num_lines = sum(1 for line in open(filePath))
 with open(filePath, newline='') as csvfile:
 
@@ -55,8 +55,8 @@ with open(filePath, newline='') as csvfile:
     next(transactions)  # skip header
 
     # Tom if you are going to change below you have to rerun sql
-    lastWeekRewardBlock = 1605839741 
-    thisWeekRewardBlockEnd = 1606422331  # block 11336208 
+    lastWeekRewardBlock = 1606422331  # block 11336208 
+    thisWeekRewardBlockEnd = 1607022382 # block 11381463
 
     prevUserAddress = 0
     prevBlockTime = 0
@@ -88,7 +88,7 @@ with open(filePath, newline='') as csvfile:
             #     totalPrincipalSumUntillLastWeekInUSDT, decimals=2)
 
             # if (totalPrincipalSumUntillLastWeekInUSDT > 0):
-            if (totalPrincipalSumOverTimeFromLastWeekInUSDT == 0 and totalPrincipalSumUntillLastWeekInUSDT > 0):
+            if (totalPrincipalSumOverTimeFromLastWeekInUSDT > 0 or totalPrincipalSumUntillLastWeekInUSDT > 0):
                 # this week user didn't have any action but he has principal from last week
                 timeBetweenActions = thisWeekRewardBlockEnd - block_time
                 totalPrincipalSumOverTimeFromLastWeekInUSDT = totalPrincipalSumOverTimeFromLastWeekInUSDT + \
@@ -126,7 +126,14 @@ with open(filePath, newline='') as csvfile:
                     getUSDTValue(tokensymbol, float(newprincipaldecimal))
         else:
             # calculate form last week onwards counting time as well
+            if prevBlockTime < lastWeekRewardBlock:
+                prevBlockTime = lastWeekRewardBlock
+            
             timeBetweenActions = block_time - prevBlockTime
+
+            if (timeBetweenActions == 0):
+                timeBetweenActions = 1
+            # print("wer;re here", useraddress, timeBetweenActions, totalPrincipalSumUntillLastWeekInUSDT, block_time , prevBlockTime, paymenttype, newprincipaldecimal)
 
             totalPrincipalSumOverTimeFromLastWeekInUSDT = totalPrincipalSumOverTimeFromLastWeekInUSDT + \
                 totalPrincipalSumUntillLastWeekInUSDT * timeBetweenActions
@@ -138,12 +145,15 @@ with open(filePath, newline='') as csvfile:
                 totalPrincipalSumUntillLastWeekInUSDT = totalPrincipalSumUntillLastWeekInUSDT - \
                     getUSDTValue(tokensymbol, float(newprincipaldecimal))
 
-        # if (useraddress == '00000000000000000000000073eb7a4756ef34b903d8f0d320138fa4f2e4ec5b'):
+
+
+
+        # if (useraddress == '00000000000000000000000095494598be091c63f90543abab37fb2594ad7670'):
         #     if (block_time < lastWeekRewardBlock):
         #         print("before week", useraddress)
         #     else:
         #         print("after", useraddress)
-        #     print("debug",useraddress, totalPrincipalSumUntillLastWeekInUSDT, paymenttype, totalPrincipalSumOverTimeFromLastWeekInUSDT, block_time, lastWeekRewardBlock)
+        #     print("debug",useraddress, float(newprincipaldecimal), totalPrincipalSumUntillLastWeekInUSDT, paymenttype, totalPrincipalSumOverTimeFromLastWeekInUSDT, block_time, lastWeekRewardBlock, thisWeekRewardBlockEnd)
 
 
 print("number of addresses eligible for rewards", len(overallResults))
