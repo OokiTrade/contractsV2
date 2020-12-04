@@ -11,7 +11,7 @@ import numpy as np
 
 def getUSDTValue(symbol, principal):
     ETHPrice = 611.29
-    WBTCPrice = 19.355
+    WBTCPrice = 19355
     LENDPrice = 0.6511
     KNCPrice = 1.011
     MKRPrice = 588.76
