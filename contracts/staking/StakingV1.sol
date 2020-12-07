@@ -47,7 +47,7 @@ contract StakingV1 is StakingState, StakingConstants {
     {
         require(tokens.length == values.length, "count mismatch");
 
-        address currentDelegate = _setDelegate(delegateToSet);
+        address currentDelegate = _changeDelegate(delegateToSet);
 
         address token;
         uint256 stakeAmount;
@@ -73,10 +73,8 @@ contract StakingV1 is StakingState, StakingConstants {
 
             // the below comes after the transfer of vBZRX, which settles vested BZRX locally for previously held amount
             if (token == vBZRX) {
-                uint256 vested;
-                uint256 timestamp;
                 if (tokenBalance != 0) {
-                    (vested, timestamp) = _vestedBalance(
+                    uint256 vested = _vestedBalance(
                         tokenBalance,
                         _vBZRXLastUpdate[msg.sender]
                     );
@@ -96,11 +94,9 @@ contract StakingV1 is StakingState, StakingConstants {
                             vested
                         );
                     }
-                } else {
-                    timestamp = block.timestamp;
                 }
 
-                _vBZRXLastUpdate[msg.sender] = timestamp;
+                _vBZRXLastUpdate[msg.sender] = block.timestamp;
             }
 
             emit Staked(
@@ -120,7 +116,7 @@ contract StakingV1 is StakingState, StakingConstants {
     {
         uint256 balance = _balancesPerToken[vBZRX][account];
         if (balance != 0) {
-            (vested,) = _vestedBalance(
+            vested = _vestedBalance(
                 _balancesPerToken[vBZRX][account],
                 _vBZRXLastUpdate[account]
             );
@@ -132,15 +128,15 @@ contract StakingV1 is StakingState, StakingConstants {
         uint256 lastUpdateTime)
         internal
         view
-        returns (uint256 vested, uint256 timestamp)
+        returns (uint256 vested)
     {
-        timestamp = block.timestamp;
+        uint256 timestamp = block.timestamp;
         if (lastUpdateTime < timestamp) {
             if (timestamp <= vestingCliffTimestamp ||
                 lastUpdateTime >= vestingEndTimestamp) {
                 // time cannot be before vesting starts
                 // OR all vested token has already been claimed
-                return (0, timestamp);
+                return 0;
             }
             if (lastUpdateTime < vestingCliffTimestamp) {
                 // vesting starts at the cliff timestamp
@@ -156,7 +152,6 @@ contract StakingV1 is StakingState, StakingConstants {
         }
     }
 
-    // TODO: handle removing delegated votes from current rep
     function unStake(
         address[] memory tokens,
         uint256[] memory values)
@@ -165,8 +160,7 @@ contract StakingV1 is StakingState, StakingConstants {
     {
         require(tokens.length == values.length, "count mismatch");
 
-        //address currentDelegate = _setDelegate(delegateToSet);
-        address currentDelegate = msg.sender;
+        address currentDelegate = delegate[msg.sender];
 
         address token;
         uint256 unstakeAmount;
@@ -187,16 +181,19 @@ contract StakingV1 is StakingState, StakingConstants {
             _balancesPerToken[token][msg.sender] = stakedAmount - unstakeAmount; // will not overflow
             _totalSupplyPerToken[token] = _totalSupplyPerToken[token] - unstakeAmount; // will not overflow
 
+            repStakedPerToken[currentDelegate][token] = repStakedPerToken[currentDelegate][token]
+                .sub(unstakeAmount);
+
             IERC20(token).safeTransfer(msg.sender, unstakeAmount);
 
            // the below comes after the transfer of vBZRX, which settles vested BZRX locally for previously held amount
             if (token == vBZRX && unstakeAmount != 0) {
-                (uint256 vested, uint256 timestamp) = _vestedBalance(
+                uint256 vested = _vestedBalance(
                     unstakeAmount,
                     _vBZRXLastUpdate[msg.sender]
                 );
 
-                _vBZRXLastUpdate[msg.sender] = timestamp;
+                _vBZRXLastUpdate[msg.sender] = block.timestamp;
 
                 if (vested != 0) {
                     // withdraw vested amount
@@ -210,10 +207,14 @@ contract StakingV1 is StakingState, StakingConstants {
                 currentDelegate,
                 unstakeAmount
             );
-
-            //repStakedPerToken[currentDelegate][token] = repStakedPerToken[currentDelegate][token]
-            //    .add(stakeAmount);
         }
+    }
+
+    function changeDelegate(
+        address delegateToSet)
+        external
+    {
+        _changeDelegate(delegateToSet);
     }
 
     function claim()
@@ -532,7 +533,7 @@ contract StakingV1 is StakingState, StakingConstants {
             balance = balanceOfByAsset(vBZRX, account);
             if (balance != 0) {
                 balance = balance
-                    .mul(startingVBZRXBalance_ - IVestingToken(vBZRX).totalVested()) // overflow not possible
+                    .mul(startingVBZRXBalance_ - _vestedBalance(startingVBZRXBalance_, 0)) // overflow not possible
                     .div(startingVBZRXBalance_);
             }
         } else if (token == iBZRX) {
@@ -543,8 +544,7 @@ contract StakingV1 is StakingState, StakingConstants {
                     .div(10**18);
             }
         } else if (token == BZRX) {
-            // TODO: account for vested BZRX not yet attributed to the user (vestedBalance(address))
-            balance = balanceOfByAsset(token, account);
+            balance = balanceOfByAsset(token, account) + _vestedBalance(balanceOfByAsset(vBZRX, account), _vBZRXLastUpdate[account]);
         }
     }
 
@@ -575,7 +575,7 @@ contract StakingV1 is StakingState, StakingConstants {
         returns (uint256 supply)
     {
         if (token == LPToken) {
-            uint256 circulatingSupply = initialCirculatingSupply + IVestingToken(vBZRX).totalVested();
+            uint256 circulatingSupply = initialCirculatingSupply + _vestedBalance(startingVBZRXBalance_, 0);
             
             // staked LP tokens are assumed to represent the total unstaked supply (circulated supply - staked BZRX - staked iBZRX)
             supply = totalSupplyByAsset(LPToken) != 0 ?
@@ -585,7 +585,7 @@ contract StakingV1 is StakingState, StakingConstants {
             supply = totalSupplyByAsset(vBZRX);
             if (supply != 0) {
                 supply = initialCirculatingSupply
-                    .mul(startingVBZRXBalance_ - IVestingToken(vBZRX).totalVested()) // overflow not possible
+                    .mul(startingVBZRXBalance_ - _vestedBalance(startingVBZRXBalance_, 0)) // overflow not possible
                     .div(startingVBZRXBalance_);
             }
         } else if (token == iBZRX) {
@@ -595,24 +595,57 @@ contract StakingV1 is StakingState, StakingConstants {
                     .mul(ILoanPool(iBZRX).tokenPrice())
                     .div(10**18);
             }
-        } else {
-            return totalSupplyByAsset(token);
+        } else if (token == BZRX) {
+            return totalSupplyByAsset(BZRX) + IVestingToken(vBZRX).vestedBalanceOf(address(this));
         }
     }
 
-    // TODO: allow changing of existing delegate (transfer old votes)
-    function _setDelegate(
+    function _changeDelegate(
         address delegateToSet)
         internal
         returns (address currentDelegate)
     {
         currentDelegate = delegate[msg.sender];
-        if (currentDelegate != ZERO_ADDRESS) {
-            require(delegateToSet == ZERO_ADDRESS || delegateToSet == currentDelegate, "delegate already set");
-        } else {
-            if (delegateToSet == ZERO_ADDRESS) {
-                delegateToSet = msg.sender;
+        if (delegateToSet == ZERO_ADDRESS) {
+            require(currentDelegate != ZERO_ADDRESS, "invalid delegate");
+            delegateToSet = currentDelegate;
+        }
+
+        if (delegateToSet != currentDelegate) {
+            if (currentDelegate != ZERO_ADDRESS) {
+                uint256 balance = _balancesPerToken[BZRX][msg.sender];
+                if (balance != 0) {
+                    repStakedPerToken[currentDelegate][BZRX] = repStakedPerToken[currentDelegate][BZRX]
+                        .sub(balance);
+                    repStakedPerToken[delegateToSet][BZRX] = repStakedPerToken[delegateToSet][BZRX]
+                        .add(balance);
+                }
+
+                balance = _balancesPerToken[vBZRX][msg.sender];
+                if (balance != 0) {
+                    repStakedPerToken[currentDelegate][vBZRX] = repStakedPerToken[currentDelegate][vBZRX]
+                        .sub(balance);
+                    repStakedPerToken[delegateToSet][vBZRX] = repStakedPerToken[delegateToSet][vBZRX]
+                        .add(balance);
+                }
+
+                balance = _balancesPerToken[iBZRX][msg.sender];
+                if (balance != 0) {
+                    repStakedPerToken[currentDelegate][iBZRX] = repStakedPerToken[currentDelegate][iBZRX]
+                        .sub(balance);
+                    repStakedPerToken[delegateToSet][iBZRX] = repStakedPerToken[delegateToSet][iBZRX]
+                        .add(balance);
+                }
+
+                balance = _balancesPerToken[LPToken][msg.sender];
+                if (balance != 0) {
+                    repStakedPerToken[currentDelegate][LPToken] = repStakedPerToken[currentDelegate][LPToken]
+                        .sub(balance);
+                    repStakedPerToken[delegateToSet][LPToken] = repStakedPerToken[delegateToSet][LPToken]
+                        .add(balance);
+                }
             }
+
             delegate[msg.sender] = delegateToSet;
 
             emit DelegateChanged(
@@ -624,7 +657,6 @@ contract StakingV1 is StakingState, StakingConstants {
             currentDelegate = delegateToSet;
         }
     }
-
 
     // Fee Conversion Logic //
 
@@ -666,11 +698,16 @@ contract StakingV1 is StakingState, StakingConstants {
             stakingRewards[assets[i]] = stakingRewards[assets[i]]
                 .add(rewardAmount);
 
-            IERC20(assets[i]).transfer(
+            IERC20(assets[i]).safeTransfer(
                 _fundsWallet,
                 amounts[i] - rewardAmount
             );
         }
+
+        emit WithdrawFees(
+            msg.sender
+        );
+
         return amounts;
     }
 
@@ -678,7 +715,7 @@ contract StakingV1 is StakingState, StakingConstants {
         address[] memory assets,
         uint256[] memory amounts)
         internal
-        returns (uint256 bzrxOuput, uint256 crv3Output)
+        returns (uint256 bzrxOutput, uint256 crv3Output)
     {
         require(assets.length == amounts.length, "count mismatch");
  
@@ -709,11 +746,11 @@ contract StakingV1 is StakingState, StakingConstants {
             }
 
             if (amounts[i] != 0) {
-                bzrxOuput += _convertFeeWithUniswap(asset, amounts[i], priceFeeds, bzrxRate, maxDisagreement);
+                bzrxOutput += _convertFeeWithUniswap(asset, amounts[i], priceFeeds, bzrxRate, maxDisagreement);
             }
         }
-        if (bzrxOuput != 0) {
-            stakingRewards[BZRX] += bzrxOuput;
+        if (bzrxOutput != 0) {
+            stakingRewards[BZRX] += bzrxOutput;
         }
 
         if (daiAmount != 0 || usdcAmount != 0 || usdtAmount != 0) {
@@ -724,6 +761,12 @@ contract StakingV1 is StakingState, StakingConstants {
             );
             stakingRewards[address(curve3Crv)] += crv3Output;
         }
+
+        emit ConvertFees(
+            msg.sender,
+            bzrxOutput,
+            crv3Output
+        );
     }
 
     function _distributeFees()
@@ -755,6 +798,12 @@ contract StakingV1 is StakingState, StakingConstants {
 
             _addRewards(bzrxRewards, crv3Rewards);
         }
+
+        emit DistributeFees(
+            msg.sender,
+            bzrxRewards,
+            crv3Rewards
+        );
     }
 
     function _convertFeeWithUniswap(
@@ -847,13 +896,12 @@ contract StakingV1 is StakingState, StakingConstants {
     }    
 
     
-    // TODO: for debugging, remove later
-    event CheckUniDisagreement(
+    /*event CheckUniDisagreement(
         uint256 rate,
         uint256 sourceToDestSwapRate,
         uint256 spreadValue,
         uint256 maxDisagreement
-    );
+    );*/
 
     function _checkUniDisagreement(
         address asset,
@@ -882,12 +930,12 @@ contract StakingV1 is StakingState, StakingConstants {
             sourceToDestSwapRate - rate :
             rate - sourceToDestSwapRate;
 
-        emit CheckUniDisagreement(
+        /*emit CheckUniDisagreement(
             rate,
             sourceToDestSwapRate,
             spreadValue,
             maxDisagreement
-        );
+        );*/
 
         if (spreadValue != 0) {
             spreadValue = spreadValue
@@ -902,6 +950,8 @@ contract StakingV1 is StakingState, StakingConstants {
     }
 
 
+
+    // OnlyOwner functions
 
     function pause()
         external
@@ -979,33 +1029,4 @@ contract StakingV1 is StakingState, StakingConstants {
         IERC20(USDT).safeApprove(address(curve3pool), 0);
         IERC20(USDT).safeApprove(address(curve3pool), uint256(-1));
     }
-
-    function withdrawFees(
-        address[] calldata assets)
-        external
-        onlyOwner
-        returns (uint256[] memory)
-    {
-        return _withdrawFees(assets);
-    }
-
-    function convertFees(
-        address[] calldata assets,
-        uint256[] calldata amounts)
-        external
-        onlyOwner
-        returns (uint256 bzrxOuput, uint256 crv3Output)
-    {
-        return _convertFees(assets, amounts);
-    }
-
-    function distributeFees()
-        external
-        onlyOwner
-        returns (uint256 bzrxRewards, uint256 crv3Rewards)
-    {
-        return _distributeFees();
-    }
-
-
 }

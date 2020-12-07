@@ -75,4 +75,20 @@ contract StakingConstants {
         address indexed oldDelegate,
         address indexed newDelegate
     );
+
+    event WithdrawFees(
+        address indexed sender
+    );
+
+    event ConvertFees(
+        address indexed sender,
+        uint256 bzrxOutput,
+        uint256 stableCoinOutput
+    );
+
+    event DistributeFees(
+        address indexed sender,
+        uint256 bzrxRewards,
+        uint256 stableCoinRewards
+    );
 }
