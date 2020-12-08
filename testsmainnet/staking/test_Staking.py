@@ -201,7 +201,7 @@ def testStake_SweeepFees(requireMainnetFork, stakingV1, bzx, setFeesController, 
 
 
 def testStake_BZRXProfit(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
-
+    assert False
     stakingV1.sweepFees()
 
     earnedAmounts = stakingV1.earned(accounts[0])
@@ -252,6 +252,7 @@ def testStake_BZRXProfit(requireMainnetFork, stakingV1, bzx, setFeesController, 
         '0x40a75ae5f7a5336e75f7c7977e12c4b46a9ac0f30de01a2d5b6c1a4f4af63587', txBorrow.events)
     payLendingFeeAmount = int(str(payLendingFeeEvent['data']), 0)
 
+    assert False
     txSweep = stakingV1.sweepFees()
 
     borrowFee = txSweep.events['WithdrawBorrowingFees'][0]
@@ -266,6 +267,7 @@ def testStake_BZRXProfit(requireMainnetFork, stakingV1, bzx, setFeesController, 
     assert(lendingFee['sender'], stakingV1)
     assert(lendingFee['amount'], payLendingFeeAmount)
 
+    assert False
     bzrxRewards = txSweep.events['RewardAdded'][0]['bzrxAmount']
     stableCoinAmount = txSweep.events['RewardAdded'][0]['stableCoinAmount']
 
