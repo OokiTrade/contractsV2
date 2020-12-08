@@ -71,31 +71,8 @@ contract StakingV1 is StakingState, StakingConstants {
 
             IERC20(token).safeTransferFrom(msg.sender, address(this), stakeAmount);
 
-            // the below comes after the transfer of vBZRX, which settles vested BZRX locally for previously held amount
             if (token == vBZRX) {
-                if (tokenBalance != 0) {
-                    uint256 vested = _vestedBalance(
-                        tokenBalance,
-                        _vBZRXLastUpdate[msg.sender]
-                    );
-
-                    if (vested != 0) {
-                        // auto-stake vested BZRX
-                        _balancesPerToken[BZRX][msg.sender] = _balancesPerToken[BZRX][msg.sender].add(vested);
-                        _totalSupplyPerToken[BZRX] = _totalSupplyPerToken[BZRX].add(vested);
-
-                        repStakedPerToken[currentDelegate][BZRX] = repStakedPerToken[currentDelegate][BZRX]
-                            .add(vested);
-
-                        emit Staked(
-                            msg.sender,
-                            BZRX,
-                            currentDelegate,
-                            vested
-                        );
-                    }
-                }
-
+                // used for settling vesting BZRX
                 _vBZRXLastUpdate[msg.sender] = block.timestamp;
             }
 
@@ -105,50 +82,6 @@ contract StakingV1 is StakingState, StakingConstants {
                 currentDelegate,
                 stakeAmount
             );
-        }
-    }
-
-    function vestedBalance(
-        address account)
-        external
-        view
-        returns (uint256 vested)
-    {
-        uint256 balance = _balancesPerToken[vBZRX][account];
-        if (balance != 0) {
-            vested = _vestedBalance(
-                _balancesPerToken[vBZRX][account],
-                _vBZRXLastUpdate[account]
-            );
-        }
-    }
-
-    function _vestedBalance(
-        uint256 tokenBalance,
-        uint256 lastUpdateTime)
-        internal
-        view
-        returns (uint256 vested)
-    {
-        uint256 timestamp = block.timestamp;
-        if (lastUpdateTime < timestamp) {
-            if (timestamp <= vestingCliffTimestamp ||
-                lastUpdateTime >= vestingEndTimestamp) {
-                // time cannot be before vesting starts
-                // OR all vested token has already been claimed
-                return 0;
-            }
-            if (lastUpdateTime < vestingCliffTimestamp) {
-                // vesting starts at the cliff timestamp
-                lastUpdateTime = vestingCliffTimestamp;
-            }
-            if (timestamp > vestingEndTimestamp) {
-                // vesting ends at the end timestamp
-                timestamp = vestingEndTimestamp;
-            }
-
-            uint256 timeSinceClaim = timestamp.sub(lastUpdateTime);
-            vested = tokenBalance.mul(timeSinceClaim) / vestingDurationAfterCliff; // will never divide by 0
         }
     }
 
@@ -186,19 +119,9 @@ contract StakingV1 is StakingState, StakingConstants {
 
             IERC20(token).safeTransfer(msg.sender, unstakeAmount);
 
-           // the below comes after the transfer of vBZRX, which settles vested BZRX locally for previously held amount
-            if (token == vBZRX && unstakeAmount != 0) {
-                uint256 vested = _vestedBalance(
-                    unstakeAmount,
-                    _vBZRXLastUpdate[msg.sender]
-                );
-
+            if (token == vBZRX) {
+                // used for settling vesting BZRX
                 _vBZRXLastUpdate[msg.sender] = block.timestamp;
-
-                if (vested != 0) {
-                    // withdraw vested amount
-                    IERC20(BZRX).transfer(msg.sender, vested);
-                }
             }
 
             emit Unstaked(
@@ -253,7 +176,7 @@ contract StakingV1 is StakingState, StakingConstants {
         updateRewards(msg.sender)
         returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
     {
-        (bzrxRewardsEarned, stableCoinRewardsEarned) = earned(msg.sender);
+        (bzrxRewardsEarned, stableCoinRewardsEarned) = _earned(msg.sender, bzrxPerTokenStored, stableCoinPerTokenStored);
         if (bzrxRewardsEarned != 0) {
             bzrxRewards[msg.sender] = 0;
             if (restake) {
@@ -362,71 +285,43 @@ contract StakingV1 is StakingState, StakingConstants {
     }
 
     modifier updateRewards(address account) {
-        (uint256 _bzrxPerToken, uint256 _stableCoinPerToken) = rewardsPerToken();
-        bzrxPerTokenStored = _bzrxPerToken;
-        stableCoinPerTokenStored = _stableCoinPerToken;
+        uint256 _bzrxPerTokenStored = bzrxPerTokenStored;
+        uint256 _stableCoinPerTokenStored = stableCoinPerTokenStored;
 
-        lastUpdateTime = block.timestamp;
+        (bzrxRewards[account], stableCoinRewards[account]) = _earned(account, _bzrxPerTokenStored, _stableCoinPerTokenStored);
+        bzrxRewardsPerTokenPaid[account] = _bzrxPerTokenStored;
+        stableCoinRewardsPerTokenPaid[account] = _stableCoinPerTokenStored;
 
-        if (account != address(0)) {
-            (bzrxRewards[account], stableCoinRewards[account]) = _earned(account, _bzrxPerToken, _stableCoinPerToken);
-            bzrxRewardsPerTokenPaid[account] = _bzrxPerToken;
-            stableCoinRewardsPerTokenPaid[account] = _stableCoinPerToken;
+        // The below handles vBZRX settlement
+        uint256 vBZRXBalance = _balancesPerToken[vBZRX][account];
+        if (vBZRXBalance != 0) {
+            uint256 vested = _vestedBalance(
+                vBZRXBalance,
+                _vBZRXLastUpdate[account]
+            );
+            if (vested != 0) {
+                // add vested BZRX to rewards balance
+                bzrxRewards[account] = bzrxRewards[account]
+                    .add(vested);
+            }
+            _vBZRXLastUpdate[account] = block.timestamp;
         }
 
         _;
-    }
-
-    function rewardsPerToken()
-        public
-        view
-        returns (uint256, uint256)
-    {
-        uint256 totalTokens = totalSupply();
-        if (totalTokens == 0) {
-            return (bzrxPerTokenStored, stableCoinPerTokenStored);
-        }
-
-        uint256 timestamp = block.timestamp;
-        uint256 _lastRewardsUpdateTime = lastRewardsUpdateTime;
-
-        uint256 totalDuration = timestamp
-            .sub(_lastRewardsUpdateTime);
-        if (totalDuration == 0 || _lastRewardsUpdateTime == 0) {
-            return (bzrxPerTokenStored, stableCoinPerTokenStored);
-        }
-
-        uint256 applicableDuration = timestamp
-            .sub(lastUpdateTime);
-
-        return (
-            bzrxPerTokenStored.add(
-                bzrxRewardSet
-                    .mul(applicableDuration)
-                    .mul(1e18)
-                    .div(totalDuration)
-                    .div(totalTokens)),
-            stableCoinPerTokenStored.add(
-                stableCoinRewardSet
-                    .mul(applicableDuration)
-                    .mul(1e18)
-                    .div(totalDuration)
-                    .div(totalTokens))
-        );
     }
 
     function earned(
         address account)
         public
         view
-        returns (uint256, uint256) // bzrxRewardsEarned, stableCoinRewardsEarned
+        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
     {
-        (uint256 _bzrxPerToken, uint256 _stableCoinPerToken) = rewardsPerToken();
-        return _earned(
+        (bzrxRewardsEarned, stableCoinRewardsEarned) = _earned(
             account,
-            _bzrxPerToken,
-            _stableCoinPerToken
+            bzrxPerTokenStored,
+            stableCoinPerTokenStored
         );
+        bzrxRewardsEarned = bzrxRewardsEarned.add(vestedBalance(account)); // handles vested BZRX from staked vBZRX
     }
 
     function earnedWithUpdate(
@@ -446,13 +341,13 @@ contract StakingV1 is StakingState, StakingConstants {
         view
         returns (uint256, uint256) // bzrxRewardsEarned, stableCoinRewardsEarned
     {
-        uint256 totalTokens = balanceOf(account);
+        uint256 _balanceOfStored = balanceOfStored(account);
         return (
-            totalTokens
+            _balanceOfStored
                 .mul(_bzrxPerToken.sub(bzrxRewardsPerTokenPaid[account]))
                 .div(1e18)
                 .add(bzrxRewards[account]),
-            totalTokens
+            _balanceOfStored
                 .mul(_stableCoinPerToken.sub(stableCoinRewardsPerTokenPaid[account]))
                 .div(1e18)
                 .add(stableCoinRewards[account])
@@ -480,11 +375,22 @@ contract StakingV1 is StakingState, StakingConstants {
         uint256 newBZRX,
         uint256 newStableCoin)
         internal
-        updateRewards(address(0))
     {
-        bzrxRewardSet = newBZRX;
-        stableCoinRewardSet = newStableCoin;
-        lastRewardsUpdateTime = block.timestamp;
+        (vBZRXWeightStored, iBZRXWeightStored, LPTokenWeightStored) = getVariableWeights();
+
+        uint256 totalTokens = totalSupplyStored();
+        require(totalTokens != 0, "nothing staked");
+
+        bzrxPerTokenStored = bzrxPerTokenStored.add(
+                newBZRX
+                    .mul(1e18)
+                    .div(totalTokens));
+        stableCoinPerTokenStored = stableCoinPerTokenStored.add(
+                newStableCoin
+                    .mul(1e18)
+                    .div(totalTokens));
+
+        lastRewardsAddTime = block.timestamp;
 
         emit RewardAdded(
             msg.sender,
@@ -493,16 +399,29 @@ contract StakingV1 is StakingState, StakingConstants {
         );
     }
 
-    function balanceOf(
-        address account)
+    function getVariableWeights()
         public
         view
-        returns (uint256)
+        returns (uint256 vBZRXWeight, uint256 iBZRXWeight, uint256 LPTokenWeight)
     {
-        return balanceOfByAssetNormed(BZRX, account)
-            .add(balanceOfByAssetNormed(vBZRX, account))
-            .add(balanceOfByAssetNormed(iBZRX, account))
-            .add(balanceOfByAssetNormed(LPToken, account));
+        uint256 totalVested = _vestedBalance(startingVBZRXBalance_, 0);
+
+        vBZRXWeight = SafeMath.mul(startingVBZRXBalance_ - totalVested, 10**18) // overflow not possible
+            .div(startingVBZRXBalance_);
+
+        iBZRXWeight = ILoanPool(iBZRX).tokenPrice();
+
+        uint256 lpTokenSupply = totalSupplyByAsset(LPToken);
+        if (lpTokenSupply != 0) {
+            // staked LP tokens are assumed to represent the total unstaked supply (circulated supply - staked BZRX)
+            uint256 normalizedLPTokenSupply = initialCirculatingSupply +
+                totalVested -
+                totalSupplyByAsset(BZRX);
+
+            LPTokenWeight = normalizedLPTokenSupply
+                .mul(10**18)
+                .div(lpTokenSupply);
+        }
     }
 
     function balanceOfByAsset(
@@ -515,48 +434,29 @@ contract StakingV1 is StakingState, StakingConstants {
         return _balancesPerToken[token][account];
     }
 
-    function balanceOfByAssetNormed(
-        address token,
+    function balanceOfStored(
         address account)
         public
         view
         returns (uint256 balance)
     {
-        if (token == LPToken) {
-            balance = totalSupplyByAsset(LPToken);
-            if (balance != 0) {
-                balance = totalSupplyByAssetNormed(LPToken)
-                    .mul(balanceOfByAsset(LPToken, account))
-                    .div(balance);
-            }
-        } else if (token == vBZRX) {
-            balance = balanceOfByAsset(vBZRX, account);
-            if (balance != 0) {
-                balance = balance
-                    .mul(startingVBZRXBalance_ - _vestedBalance(startingVBZRXBalance_, 0)) // overflow not possible
-                    .div(startingVBZRXBalance_);
-            }
-        } else if (token == iBZRX) {
-            balance = balanceOfByAsset(iBZRX, account);
-            if (balance != 0) {
-                balance = balance
-                    .mul(ILoanPool(iBZRX).tokenPrice())
-                    .div(10**18);
-            }
-        } else if (token == BZRX) {
-            balance = balanceOfByAsset(token, account) + _vestedBalance(balanceOfByAsset(vBZRX, account), _vBZRXLastUpdate[account]);
-        }
-    }
+        // BZRXWeightStored is always 10**18
+        balance = balanceOfByAsset(BZRX, account);
 
-    function totalSupply()
-        public
-        view
-        returns (uint256)
-    {
-        return totalSupplyByAssetNormed(BZRX)
-            .add(totalSupplyByAssetNormed(vBZRX))
-            .add(totalSupplyByAssetNormed(iBZRX))
-            .add(totalSupplyByAssetNormed(LPToken));
+        balance = balanceOfByAsset(vBZRX, account)
+            .mul(vBZRXWeightStored)
+            .div(10**18)
+            .add(balance);
+
+        balance = balanceOfByAsset(iBZRX, account)
+            .mul(iBZRXWeightStored)
+            .div(10**18)
+            .add(balance);
+
+        balance = balanceOfByAsset(LPToken, account)
+            .mul(LPTokenWeightStored)
+            .div(10**18)
+            .add(balance);
     }
 
     function totalSupplyByAsset(
@@ -568,35 +468,72 @@ contract StakingV1 is StakingState, StakingConstants {
         return _totalSupplyPerToken[token];
     }
 
-    function totalSupplyByAssetNormed(
-        address token)
+    function totalSupplyStored()
         public
         view
         returns (uint256 supply)
     {
-        if (token == LPToken) {
-            uint256 circulatingSupply = initialCirculatingSupply + _vestedBalance(startingVBZRXBalance_, 0);
-            
-            // staked LP tokens are assumed to represent the total unstaked supply (circulated supply - staked BZRX - staked iBZRX)
-            supply = totalSupplyByAsset(LPToken) != 0 ?
-                circulatingSupply - totalSupplyByAsset(BZRX) - totalSupplyByAsset(iBZRX) :
-                0;
-        } else if (token == vBZRX) {
-            supply = totalSupplyByAsset(vBZRX);
-            if (supply != 0) {
-                supply = initialCirculatingSupply
-                    .mul(startingVBZRXBalance_ - _vestedBalance(startingVBZRXBalance_, 0)) // overflow not possible
-                    .div(startingVBZRXBalance_);
+        // BZRXWeightStored is always 10**18
+        supply = totalSupplyByAsset(BZRX);
+
+        supply = totalSupplyByAsset(vBZRX)
+            .mul(vBZRXWeightStored)
+            .div(10**18)
+            .add(supply);
+
+        supply = totalSupplyByAsset(iBZRX)
+            .mul(iBZRXWeightStored)
+            .div(10**18)
+            .add(supply);
+
+        supply = totalSupplyByAsset(LPToken)
+            .mul(LPTokenWeightStored)
+            .div(10**18)
+            .add(supply);
+    }
+
+    // BZRX vested from vBZRX staked by the user
+    function vestedBalance(
+        address account)
+        public
+        view
+        returns (uint256 vested)
+    {
+        uint256 balance = _balancesPerToken[vBZRX][account];
+        if (balance != 0) {
+            vested = _vestedBalance(
+                _balancesPerToken[vBZRX][account],
+                _vBZRXLastUpdate[account]
+            );
+        }
+    }
+
+    function _vestedBalance(
+        uint256 tokenBalance,
+        uint256 lastUpdate)
+        internal
+        view
+        returns (uint256 vested)
+    {
+        uint256 timestamp = block.timestamp;
+        if (lastUpdate < timestamp) {
+            if (timestamp <= vestingCliffTimestamp ||
+                lastUpdate >= vestingEndTimestamp) {
+                // time cannot be before vesting starts
+                // OR all vested token has already been claimed
+                return 0;
             }
-        } else if (token == iBZRX) {
-            supply = totalSupplyByAsset(iBZRX);
-            if (supply != 0) {
-                supply = supply
-                    .mul(ILoanPool(iBZRX).tokenPrice())
-                    .div(10**18);
+            if (lastUpdate < vestingCliffTimestamp) {
+                // vesting starts at the cliff timestamp
+                lastUpdate = vestingCliffTimestamp;
             }
-        } else if (token == BZRX) {
-            return totalSupplyByAsset(BZRX) + IVestingToken(vBZRX).vestedBalanceOf(address(this));
+            if (timestamp > vestingEndTimestamp) {
+                // vesting ends at the end timestamp
+                timestamp = vestingEndTimestamp;
+            }
+
+            uint256 timeSinceClaim = timestamp.sub(lastUpdate);
+            vested = tokenBalance.mul(timeSinceClaim) / vestingDurationAfterCliff; // will never divide by 0
         }
     }
 
