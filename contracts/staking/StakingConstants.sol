@@ -35,6 +35,8 @@ contract StakingConstants {
     uint256 internal constant vestingEndTimestamp =        vestingStartTimestamp + vestingDuration;
     uint256 internal constant startingVBZRXBalance_ =      889389933e18; // 889,389,933 BZRX
 
+    uint256 public constant BZRXWeightStored = 10**18;
+
     struct RepStakedTokens {
         address user;
         bool isActive;
