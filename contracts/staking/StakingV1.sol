@@ -180,17 +180,8 @@ contract StakingV1 is StakingState, StakingConstants {
         if (bzrxRewardsEarned != 0) {
             bzrxRewards[msg.sender] = 0;
             if (restake) {
-                address currentDelegate = delegate[msg.sender];
-                _balancesPerToken[BZRX][msg.sender] = _balancesPerToken[BZRX][msg.sender].add(bzrxRewardsEarned);
-                _totalSupplyPerToken[BZRX] = _totalSupplyPerToken[BZRX].add(bzrxRewardsEarned);
-
-                repStakedPerToken[currentDelegate][BZRX] = repStakedPerToken[currentDelegate][BZRX]
-                    .add(bzrxRewardsEarned);
-
-                emit Staked(
+                _restakeBZRX(
                     msg.sender,
-                    BZRX,
-                    currentDelegate,
                     bzrxRewardsEarned
                 );
             } else {
@@ -206,6 +197,29 @@ contract StakingV1 is StakingState, StakingConstants {
             msg.sender,
             bzrxRewardsEarned,
             stableCoinRewardsEarned
+        );
+    }
+
+    function _restakeBZRX(
+        address account,
+        uint256 amount)
+        internal
+    {
+        address currentDelegate = delegate[account];
+        _balancesPerToken[BZRX][account] = _balancesPerToken[BZRX][account]
+            .add(amount);
+
+        _totalSupplyPerToken[BZRX] = _totalSupplyPerToken[BZRX]
+            .add(amount);
+
+        repStakedPerToken[currentDelegate][BZRX] = repStakedPerToken[currentDelegate][BZRX]
+            .add(amount);
+
+        emit Staked(
+            account,
+            BZRX,
+            currentDelegate,
+            amount
         );
     }
 
@@ -284,6 +298,12 @@ contract StakingV1 is StakingState, StakingConstants {
         }
     }
 
+/*
+            uint256 vested = _vestedBalance(
+                _balancesPerToken[vBZRX][account],
+                _vBZRXLastUpdate[account]
+            );
+*/
     modifier updateRewards(address account) {
         uint256 _bzrxPerTokenStored = bzrxPerTokenStored;
         uint256 _stableCoinPerTokenStored = stableCoinPerTokenStored;
@@ -300,9 +320,11 @@ contract StakingV1 is StakingState, StakingConstants {
                 _vBZRXLastUpdate[account]
             );
             if (vested != 0) {
-                // add vested BZRX to rewards balance
-                bzrxRewards[account] = bzrxRewards[account]
-                    .add(vested);
+                // automatically stake vested amount
+                _restakeBZRX(
+                    account,
+                    vested
+                );
             }
             _vBZRXLastUpdate[account] = block.timestamp;
         }
@@ -352,6 +374,30 @@ contract StakingV1 is StakingState, StakingConstants {
                 .div(1e18)
                 .add(stableCoinRewards[account])
         );
+    }
+
+    // note: anyone can contribute rewards to the contract
+    function addDirectRewards(
+        address[] calldata accounts,
+        uint256[] calldata bzrxAmounts,
+        uint256[] calldata stableCoinAmounts)
+        external
+        returns (uint256 bzrxTotal, uint256 stableCoinTotal)
+    {
+        require(accounts.length == bzrxAmounts.length && accounts.length == stableCoinAmounts.length, "count mismatch");
+
+        for (uint256 i = 0; i < accounts.length; i++) {
+            bzrxRewards[accounts[i]] = bzrxRewards[accounts[i]].add(bzrxAmounts[i]);
+            bzrxTotal = bzrxTotal.add(bzrxAmounts[i]);
+            stableCoinRewards[accounts[i]] = stableCoinRewards[accounts[i]].add(stableCoinAmounts[i]);
+            stableCoinTotal = stableCoinTotal.add(stableCoinAmounts[i]);
+        }
+        if (bzrxTotal != 0) {
+            IERC20(BZRX).transferFrom(msg.sender, address(this), bzrxTotal);
+        }
+        if (stableCoinTotal != 0) {
+            curve3Crv.transferFrom(msg.sender, address(this), stableCoinTotal);
+        }
     }
 
     // note: anyone can contribute rewards to the contract
