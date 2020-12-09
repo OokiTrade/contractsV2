@@ -51,7 +51,7 @@ contract StakingV1 is StakingState, StakingConstants {
 
         address token;
         uint256 stakeAmount;
-        uint256 tokenBalance;
+
         for (uint256 i = 0; i < tokens.length; i++) {
             token = tokens[i];
             require(token == BZRX || token == vBZRX || token == iBZRX || token == LPToken, "invalid token");
@@ -61,9 +61,7 @@ contract StakingV1 is StakingState, StakingConstants {
                 continue;
             }
 
-            tokenBalance = _balancesPerToken[token][msg.sender];
-
-            _balancesPerToken[token][msg.sender] = tokenBalance.add(stakeAmount);
+            _balancesPerToken[token][msg.sender] = _balancesPerToken[token][msg.sender].add(stakeAmount);
             _totalSupplyPerToken[token] = _totalSupplyPerToken[token].add(stakeAmount);
 
             repStakedPerToken[currentDelegate][token] = repStakedPerToken[currentDelegate][token]
@@ -647,7 +645,7 @@ contract StakingV1 is StakingState, StakingConstants {
         public
         returns (uint256 bzrxRewards, uint256 crv3Rewards)
     {
-        sweepFeesByAsset(currentFeeTokens);
+        return sweepFeesByAsset(currentFeeTokens);
     }
 
     function sweepFeesByAsset(
@@ -894,6 +892,7 @@ contract StakingV1 is StakingState, StakingConstants {
         uint256 bzrxRate,
         uint256 maxDisagreement)
         internal
+        view
     {
         (uint256 rate, uint256 precision) = priceFeeds.queryRate(
             asset,
