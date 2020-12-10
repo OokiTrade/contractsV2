@@ -33,7 +33,7 @@ contract StakingConstants {
     uint256 internal constant vestingStartTimestamp =      1594648800; // start_time
     uint256 internal constant vestingCliffTimestamp =      vestingStartTimestamp + cliffDuration;
     uint256 internal constant vestingEndTimestamp =        vestingStartTimestamp + vestingDuration;
-    uint256 internal constant startingVBZRXBalance_ =      889389933e18; // 889,389,933 BZRX
+    uint256 internal constant _startingVBZRXBalance =      889389933e18; // 889,389,933 BZRX
 
     uint256 public constant BZRXWeightStored = 10**18;
 

@@ -474,13 +474,13 @@ contract StakingV1 is StakingState, StakingConstants {
         returns (uint256 vBZRXWeight, uint256 iBZRXWeight, uint256 LPTokenWeight)
     {
         uint256 totalVested = _vestedBalance(
-            startingVBZRXBalance_,
+            _startingVBZRXBalance,
             0,
             block.timestamp
         );
 
-        vBZRXWeight = SafeMath.mul(startingVBZRXBalance_ - totalVested, 10**18) // overflow not possible
-            .div(startingVBZRXBalance_);
+        vBZRXWeight = SafeMath.mul(_startingVBZRXBalance - totalVested, 10**18) // overflow not possible
+            .div(_startingVBZRXBalance);
 
         iBZRXWeight = ILoanPool(iBZRX).tokenPrice();
 
