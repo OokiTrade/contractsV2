@@ -26,22 +26,10 @@ contract StakingV1 is StakingState, StakingConstants {
     }
 
     function stake(
-        address[] memory tokens,
-        uint256[] memory values)
-        public
-    {
-        stakeWithDelegate(
-            tokens,
-            values,
-            ZERO_ADDRESS
-        );
-    }
-
-    function stakeWithDelegate(
-        address[] memory tokens,
-        uint256[] memory values,
+        address[] calldata tokens,
+        uint256[] calldata values,
         address delegateToSet)
-        public
+        external
         checkPause
         updateRewards(msg.sender)
     {
@@ -174,7 +162,10 @@ contract StakingV1 is StakingState, StakingConstants {
         updateRewards(msg.sender)
         returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
     {
-        (bzrxRewardsEarned, stableCoinRewardsEarned) = _earned(msg.sender, bzrxPerTokenStored, stableCoinPerTokenStored);
+        (bzrxRewardsEarned, stableCoinRewardsEarned,,) = _earned(msg.sender, bzrxPerTokenStored, stableCoinPerTokenStored);
+
+        lastClaimTime[msg.sender] = block.timestamp;
+
         if (bzrxRewardsEarned != 0) {
             bzrxRewards[msg.sender] = 0;
             if (restake) {
@@ -300,7 +291,11 @@ contract StakingV1 is StakingState, StakingConstants {
         uint256 _bzrxPerTokenStored = bzrxPerTokenStored;
         uint256 _stableCoinPerTokenStored = stableCoinPerTokenStored;
 
-        (bzrxRewards[account], stableCoinRewards[account]) = _earned(account, _bzrxPerTokenStored, _stableCoinPerTokenStored);
+        (bzrxRewards[account], stableCoinRewards[account], bzrxVesting[account], stableCoinVesting[account]) = _earned(
+            account,
+            _bzrxPerTokenStored,
+            _stableCoinPerTokenStored
+        );
         bzrxRewardsPerTokenPaid[account] = _bzrxPerTokenStored;
         stableCoinRewardsPerTokenPaid[account] = _stableCoinPerTokenStored;
 
@@ -332,9 +327,9 @@ contract StakingV1 is StakingState, StakingConstants {
         address account)
         public
         view
-        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
+        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned, uint256 bzrxRewardsVesting, uint256 stableCoinRewardsVesting)
     {
-        (bzrxRewardsEarned, stableCoinRewardsEarned) = _earned(
+        (bzrxRewardsEarned, stableCoinRewardsEarned, bzrxRewardsVesting, stableCoinRewardsVesting) = _earned(
             account,
             bzrxPerTokenStored,
             stableCoinPerTokenStored
@@ -344,7 +339,7 @@ contract StakingV1 is StakingState, StakingConstants {
     function earnedWithUpdate(
         address account)
         external
-        returns (uint256, uint256) // bzrxRewardsEarned, stableCoinRewardsEarned
+        returns (uint256, uint256, uint256, uint256) // bzrxRewardsEarned, stableCoinRewardsEarned, bzrxRewardsVesting, stableCoinRewardsVesting
     {
         sweepFees();
         return earned(account);
@@ -356,19 +351,52 @@ contract StakingV1 is StakingState, StakingConstants {
         uint256 _stableCoinPerToken)
         internal
         view
-        returns (uint256, uint256) // bzrxRewardsEarned, stableCoinRewardsEarned
+        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned, uint256 bzrxRewardsVesting, uint256 stableCoinRewardsVesting)
     {
-        uint256 _balanceOfStored = balanceOfStored(account);
-        return (
-            _balanceOfStored
-                .mul(_bzrxPerToken.sub(bzrxRewardsPerTokenPaid[account]))
-                .div(1e18)
-                .add(bzrxRewards[account]),
-            _balanceOfStored
-                .mul(_stableCoinPerToken.sub(stableCoinRewardsPerTokenPaid[account]))
-                .div(1e18)
-                .add(stableCoinRewards[account])
+        (uint256 vestedBalance, uint256 vestingBalance) = balanceOfStored(account);
+
+        uint256 bzrxPerTokenUnpaid = _bzrxPerToken.sub(bzrxRewardsPerTokenPaid[account]);
+        uint256 stableCoinPerTokenUnpaid = _stableCoinPerToken.sub(stableCoinRewardsPerTokenPaid[account]);
+
+        bzrxRewardsEarned = vestedBalance
+            .mul(bzrxPerTokenUnpaid)
+            .div(1e18)
+            .add(bzrxRewards[account]);
+
+        stableCoinRewardsEarned = vestedBalance
+            .mul(stableCoinPerTokenUnpaid)
+            .div(1e18)
+            .add(stableCoinRewards[account]);
+
+        bzrxRewardsVesting = vestingBalance
+            .mul(bzrxPerTokenUnpaid)
+            .div(1e18)
+            .add(bzrxVesting[account]);
+
+        stableCoinRewardsVesting = vestingBalance
+            .mul(stableCoinPerTokenUnpaid)
+            .div(1e18)
+            .add(stableCoinVesting[account]);
+
+
+        // add vested fees to rewards balances
+        uint256 _lastClaimTime = lastClaimTime[account];
+
+        uint256 rewardsVested = _vestedBalance(
+            bzrxRewardsVesting,
+            _lastClaimTime,
+            block.timestamp
         );
+        bzrxRewardsVesting -= rewardsVested;
+        bzrxRewardsEarned += rewardsVested;
+
+        rewardsVested = _vestedBalance(
+            stableCoinRewardsVesting,
+            _lastClaimTime,
+            block.timestamp
+        );
+        stableCoinRewardsVesting -= rewardsVested;
+        stableCoinRewardsEarned += rewardsVested;
     }
 
     // note: anyone can contribute rewards to the contract
@@ -490,33 +518,37 @@ contract StakingV1 is StakingState, StakingConstants {
         address account)
         public
         view
-        returns (uint256 balance)
+        returns (uint256 vestedBalance, uint256 vestingBalance)
     {
         uint256 vBZRXBalance = _balancesPerToken[vBZRX][account];
-        balance = vBZRXBalance
-            .mul(vBZRXWeightStored)
-            .div(10**18);
+        if (vBZRXBalance != 0) {
+            vestingBalance = vBZRXBalance
+                .mul(vBZRXWeightStored)
+                .div(10**18);
 
-        // BZRXWeightStored is always 10**18
-        balance = _balancesPerToken[BZRX][account]
-            .add(
+            uint256 _lastRewardsAddTime = lastRewardsAddTime;
+            if (_lastRewardsAddTime != 0) {
                 // user is attributed to a staked balance of vested BZRX up to the time rewards were last added
-                _vestedBalance(
+                vestedBalance = _vestedBalance(
                     vBZRXBalance,
                     _vBZRXLastUpdate[account],
                     lastRewardsAddTime
-                )
-            ).add(balance);
+                );
+            }
+        }
 
-        balance = _balancesPerToken[iBZRX][account]
+        vestedBalance = _balancesPerToken[BZRX][account]
+            .add(vestedBalance);
+
+        vestedBalance = _balancesPerToken[iBZRX][account]
             .mul(iBZRXWeightStored)
             .div(10**18)
-            .add(balance);
+            .add(vestedBalance);
 
-        balance = _balancesPerToken[LPToken][account]
+        vestedBalance = _balancesPerToken[LPToken][account]
             .mul(LPTokenWeightStored)
             .div(10**18)
-            .add(balance);
+            .add(vestedBalance);
     }
 
     function totalSupplyByAsset(
@@ -534,20 +566,24 @@ contract StakingV1 is StakingState, StakingConstants {
         returns (uint256 supply)
     {
         uint256 vBZRXSupply = _totalSupplyPerToken[vBZRX];
-        supply = vBZRXSupply
-            .mul(vBZRXWeightStored)
-            .div(10**18);
+        if (vBZRXSupply != 0) {
+            supply = vBZRXSupply
+                .mul(vBZRXWeightStored)
+                .div(10**18);
 
-        // BZRXWeightStored is always 10**18
-        supply = _totalSupplyPerToken[BZRX]
-            .add(
-                // treat vested vBZRX as part of the staked BZRX supply
-                _vestedBalance(
+            uint256 _lastRewardsAddTime = lastRewardsAddTime;
+            if (_lastRewardsAddTime != 0) {
+                // treat vested BZRX as part of the staked BZRX supply
+                supply = _vestedBalance(
                     vBZRXSupply,
                     lastRewardsAddTime,
                     block.timestamp
-                )
-            ).add(supply);
+                ).add(supply);
+            }
+        }
+
+        supply = _totalSupplyPerToken[BZRX]
+            .add(supply);
 
         supply = _totalSupplyPerToken[iBZRX]
             .mul(iBZRXWeightStored)
@@ -597,7 +633,7 @@ contract StakingV1 is StakingState, StakingConstants {
     {
         currentDelegate = delegate[msg.sender];
         if (delegateToSet == ZERO_ADDRESS) {
-            require(currentDelegate != ZERO_ADDRESS, "invalid delegate");
+            require(currentDelegate != ZERO_ADDRESS, "delegate not specified");
             delegateToSet = currentDelegate;
         }
 
@@ -835,7 +871,6 @@ contract StakingV1 is StakingState, StakingConstants {
         }
     }
 
-    // TODO: Do we need to prevent excessive curve slippage?
     function _convertFeesWithCurve(
         uint256 daiAmount,
         uint256 usdcAmount,
