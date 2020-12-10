@@ -481,20 +481,24 @@ contract StakingV1 is StakingState, StakingConstants {
         returns (uint256 balance)
     {
         uint256 vBZRXBalance = _balancesPerToken[vBZRX][account];
-        balance = vBZRXBalance
-            .mul(vBZRXWeightStored)
-            .div(10**18);
+        if (vBZRXBalance != 0) {
+            balance = vBZRXBalance
+                .mul(vBZRXWeightStored)
+                .div(10**18);
 
-        // BZRXWeightStored is always 10**18
-        balance = _balancesPerToken[BZRX][account]
-            .add(
+            uint256 _lastRewardsAddTime = lastRewardsAddTime;
+            if (_lastRewardsAddTime != 0) {
                 // user is attributed to a staked balance of vested BZRX up to the time rewards were last added
-                _vestedBalance(
+                balance = _vestedBalance(
                     vBZRXBalance,
                     _vBZRXLastUpdate[account],
                     lastRewardsAddTime
-                )
-            ).add(balance);
+                ).add(balance);
+            }
+        }
+
+        balance = _balancesPerToken[BZRX][account]
+            .add(balance);
 
         balance = _balancesPerToken[iBZRX][account]
             .mul(iBZRXWeightStored)
@@ -522,20 +526,24 @@ contract StakingV1 is StakingState, StakingConstants {
         returns (uint256 supply)
     {
         uint256 vBZRXSupply = _totalSupplyPerToken[vBZRX];
-        supply = vBZRXSupply
-            .mul(vBZRXWeightStored)
-            .div(10**18);
+        if (vBZRXSupply != 0) {
+            supply = vBZRXSupply
+                .mul(vBZRXWeightStored)
+                .div(10**18);
 
-        // BZRXWeightStored is always 10**18
-        supply = _totalSupplyPerToken[BZRX]
-            .add(
-                // treat vested vBZRX as part of the staked BZRX supply
-                _vestedBalance(
+            uint256 _lastRewardsAddTime = lastRewardsAddTime;
+            if (_lastRewardsAddTime != 0) {
+                // treat vested BZRX as part of the staked BZRX supply
+                supply = _vestedBalance(
                     vBZRXSupply,
                     lastRewardsAddTime,
                     block.timestamp
-                )
-            ).add(supply);
+                ).add(supply);
+            }
+        }
+
+        supply = _totalSupplyPerToken[BZRX]
+            .add(supply);
 
         supply = _totalSupplyPerToken[iBZRX]
             .mul(iBZRXWeightStored)
