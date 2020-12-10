@@ -9,6 +9,9 @@ import "./IERC20.sol";
 
 
 contract IVestingToken is IERC20 {
+    function claim()
+        external;
+
     function vestedBalanceOf(
         address _owner)
         external
