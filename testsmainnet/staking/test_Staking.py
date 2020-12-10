@@ -6,7 +6,8 @@ from brownie import network, Contract, Wei
 
 @pytest.fixture(scope="module")
 def requireMainnetFork():
-    assert network.show_active() == "mainnet-fork"
+    assert (network.show_active() == "mainnet-fork"
+            or network.show_active() == "mainnet-fork-alchemy")
 
 
 @pytest.fixture(scope="module")
@@ -97,7 +98,8 @@ def testStake_UnStake(requireMainnetFork, stakingV1, bzx, setFeesController, BZR
     iBZRX.approve(stakingV1, balanceOfiBZRX, {'from': accounts[0]})
     tokens = [BZRX, vBZRX, iBZRX]
     amounts = [balanceOfBZRX, balanceOfvBZRX, balanceOfiBZRX]
-    tx = stakingV1.stake(tokens, amounts)
+    tx = stakingV1.stakeWithDelegate(
+        tokens, amounts, accounts[0]) 
     # tx.info()
     # print("tx", tx.events)
 
@@ -197,7 +199,7 @@ def testStake_UnStake_WithDelegate(requireMainnetFork, stakingV1, bzx, setFeesCo
     for index, unStakedEvent in enumerate(unStakedEvents, 0):
         assert(unStakedEvent['user'] == accounts[0])
         assert(unStakedEvent['token'] == tokens[index])
-        assert(unStakedEvent['delegate'] == accounts[0])
+        assert(unStakedEvent['delegate'] == accounts[1])
         assert(unStakedEvent['amount'] == amounts[index])
 
     transferEvents = tx.events['Transfer']
@@ -246,16 +248,16 @@ def testStake_BZRXProfit(requireMainnetFork, stakingV1, bzx, setFeesController, 
     txSweep = stakingV1.sweepFees()
 
     borrowFee = txSweep.events['WithdrawBorrowingFees'][0]
-    assert(borrowFee['sender'], stakingV1)
-    assert(borrowFee['token'], WETH)
-    assert(borrowFee['sender'], stakingV1)
-    assert(borrowFee['amount'], payBorrowingFeeAmount)
+    assert(borrowFee['sender'] == stakingV1)
+    assert(borrowFee['token'] == WETH)
+    assert(borrowFee['sender'] == stakingV1)
+    assert(borrowFee['amount'] == payBorrowingFeeAmount)
 
     lendingFee = txSweep.events['WithdrawLendingFees'][0]
-    assert(lendingFee['sender'], stakingV1)
-    assert(lendingFee['token'], USDC)
-    assert(lendingFee['sender'], stakingV1)
-    assert(lendingFee['amount'], payLendingFeeAmount)
+    assert(lendingFee['sender'] == stakingV1)
+    assert(lendingFee['token'] == USDC)
+    assert(lendingFee['sender'] == stakingV1)
+    assert(lendingFee['amount'] == payLendingFeeAmount)
 
     assert(txSweep.events['RewardAdded'][0]['sender'] == accounts[0])
     bzrxAmount = txSweep.events['RewardAdded'][0]['bzrxAmount']
@@ -308,3 +310,28 @@ def filterEvents(topic, events):
                     payBorrowingFeeEvent = event
                     break
     return payBorrowingFeeEvent
+
+
+def testStake_Vesting(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
+
+    balanceOfvBZRX = vBZRX.balanceOf(accounts[0])
+    vBZRX.approve(stakingV1, balanceOfvBZRX, {'from': accounts[0]})
+    stakingV1.stakeWithDelegate([vBZRX], [balanceOfvBZRX], accounts[0])
+
+
+    # borrowing to make fees
+    borrowAmount = 100*10**6
+    borrowTime = 7884000
+    collateralAmount = 1*10**18
+    collateralAddress = "0x0000000000000000000000000000000000000000"
+    txBorrow = iUSDC.borrow("", borrowAmount, borrowTime, collateralAmount, collateralAddress,
+                            accounts[0], accounts[0], b"", {'from': accounts[0], 'value': Wei(collateralAmount)})
+
+    # stakingV1
+
+    # moving time
+    # chain.sleep(vBZRX.vestingCliffTimestamp() - chain.time())
+
+
+
+    assert False
