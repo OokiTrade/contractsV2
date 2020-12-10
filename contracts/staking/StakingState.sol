@@ -43,10 +43,14 @@ contract StakingState is Ownable {
     uint256 public bzrxPerTokenStored;
     mapping(address => uint256) public bzrxRewardsPerTokenPaid;                     // user => value
     mapping(address => uint256) public bzrxRewards;                                 // user => value
+    mapping(address => uint256) public bzrxVesting;                                 // user => value
 
     uint256 public stableCoinPerTokenStored;
     mapping(address => uint256) public stableCoinRewardsPerTokenPaid;               // user => value
     mapping(address => uint256) public stableCoinRewards;                           // user => value
+    mapping(address => uint256) public stableCoinVesting;                           // user => value
+
+    mapping(address => uint256) public lastClaimTime;                               // user => value
 
     uint256 public vBZRXWeightStored;
     uint256 public iBZRXWeightStored;
