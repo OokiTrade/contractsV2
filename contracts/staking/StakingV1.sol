@@ -871,7 +871,6 @@ contract StakingV1 is StakingState, StakingConstants {
         }
     }
 
-    // TODO: Do we need to prevent excessive curve slippage?
     function _convertFeesWithCurve(
         uint256 daiAmount,
         uint256 usdcAmount,
