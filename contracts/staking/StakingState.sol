@@ -65,7 +65,8 @@ contract StakingState is Ownable {
     mapping(address => address[]) public swapPaths;
     mapping(address => uint256) public stakingRewards;
     uint256 public rewardPercent = 50e18;
-    uint256 public maxAllowedDisagreement = 3 ether;
+    uint256 public maxAllowedDisagreement = 3e18;
+    uint256 public callerRewardDivisor = 100;
 
     address[] public currentFeeTokens;
 }

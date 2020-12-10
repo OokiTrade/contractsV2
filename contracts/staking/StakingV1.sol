@@ -806,7 +806,7 @@ contract StakingV1 is StakingState, StakingConstants {
             if (bzrxRewards != 0) {
                 stakingRewards[BZRX] = 0;
 
-                callerReward = bzrxRewards / 100;
+                callerReward = bzrxRewards / callerRewardDivisor;
                 bzrxRewards = bzrxRewards
                     .sub(callerReward);
 
@@ -815,7 +815,7 @@ contract StakingV1 is StakingState, StakingConstants {
             if (crv3Rewards != 0) {
                 stakingRewards[address(curve3Crv)] = 0;
 
-                callerReward = crv3Rewards / 100;
+                callerReward = crv3Rewards / callerRewardDivisor;
                 crv3Rewards = crv3Rewards
                     .sub(callerReward);
 
@@ -1054,5 +1054,30 @@ contract StakingV1 is StakingState, StakingConstants {
         IERC20(USDC).safeApprove(address(curve3pool), uint256(-1));
         IERC20(USDT).safeApprove(address(curve3pool), 0);
         IERC20(USDT).safeApprove(address(curve3pool), uint256(-1));
+    }
+
+    function setRewardPercent(
+        uint256 _rewardPercent)
+        external
+        onlyOwner
+    {
+        require(_rewardPercent <= 1e20, "value too high");
+        rewardPercent = _rewardPercent;
+    }
+
+    function setMaxAllowedDisagreement(
+        uint256 _maxAllowedDisagreement)
+        external
+        onlyOwner
+    {
+        maxAllowedDisagreement = _maxAllowedDisagreement;
+    }
+
+    function setCallerRewardDivisor(
+        uint256 _callerRewardDivisor)
+        external
+        onlyOwner
+    {
+        callerRewardDivisor = _callerRewardDivisor;
     }
 }
