@@ -26,22 +26,10 @@ contract StakingV1 is StakingState, StakingConstants {
     }
 
     function stake(
-        address[] memory tokens,
-        uint256[] memory values)
-        public
-    {
-        stakeWithDelegate(
-            tokens,
-            values,
-            ZERO_ADDRESS
-        );
-    }
-
-    function stakeWithDelegate(
-        address[] memory tokens,
-        uint256[] memory values,
+        address[] calldata tokens,
+        uint256[] calldata values,
         address delegateToSet)
-        public
+        external
         checkPause
         updateRewards(msg.sender)
     {
@@ -597,7 +585,7 @@ contract StakingV1 is StakingState, StakingConstants {
     {
         currentDelegate = delegate[msg.sender];
         if (delegateToSet == ZERO_ADDRESS) {
-            require(currentDelegate != ZERO_ADDRESS, "invalid delegate");
+            require(currentDelegate != ZERO_ADDRESS, "delegate not specified");
             delegateToSet = currentDelegate;
         }
 
