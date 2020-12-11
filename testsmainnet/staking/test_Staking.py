@@ -83,6 +83,7 @@ def loadContractFromEtherscan(address, alias):
         contract.set_alias(alias)
         return contract
 
+
 def loadContractFromAbi(address, alias, abi):
     try:
         return Contract(alias)
@@ -373,7 +374,6 @@ def testStake_VestingFees(requireMainnetFork, stakingV1, bzx, setFeesController,
     assert True
 
 
-
 def testStake_VestingFeesUnstakeFeesStillClaimable(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
 
     balanceOfvBZRX = vBZRX.balanceOf(accounts[0])
@@ -435,8 +435,8 @@ def testStake_vestingClaimBZRX(requireMainnetFork, stakingV1, bzx, setFeesContro
     vBZRX.transfer(accounts[1], 1000*10**18, {'from': vBZRX.address})
     balanceOfvBZRX = vBZRX.balanceOf(accounts[1])
     vBZRX.approve(stakingV1, balanceOfvBZRX, {'from': accounts[1]})
-    stakingV1.stake([vBZRX], [balanceOfvBZRX], accounts[1], {'from': accounts[1]})
-
+    stakingV1.stake([vBZRX], [balanceOfvBZRX],
+                    accounts[1], {'from': accounts[1]})
 
     # moving time to somewhere 1000 sec after vesting start
     chain.sleep(vBZRX.vestingCliffTimestamp() - chain.time() + 1000)
@@ -444,6 +444,8 @@ def testStake_vestingClaimBZRX(requireMainnetFork, stakingV1, bzx, setFeesContro
 
     # BZRX.balanceOf+ vBZRX.balanceOf_bzrx_remaining  should be equal to 1000
 
-    # stakingV1.exit()
+    stakingV1.exit()
+
+    assert(BZRX.balanceOf(accounts[1]) > 0)
 
     assert False
