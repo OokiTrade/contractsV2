@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import pytest
+import time
 from brownie import Contract, network
 from brownie.network.contract import InterfaceContainer
 from brownie.network.state import _add_contract, _remove_contract
@@ -19,16 +20,16 @@ def stakingV1(bzx, StakingProxy, StakingV1, accounts):
             "0x56d811088235F11C8920698a204A5010a788f4b3"],  # WETH -> BZRX
         ["0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
             "0x56d811088235F11C8920698a204A5010a788f4b3"],  # WBTC -> WETH -> BZRX
-        ["0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-            "0x56d811088235F11C8920698a204A5010a788f4b3"],  # AAVE -> WETH -> BZRX
-        ["0xdd974D5C2e2928deA5F71b9825b8b646686BD200", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-            "0x56d811088235F11C8920698a204A5010a788f4b3"],  # KNC -> WETH -> BZRX
-        ["0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-            "0x56d811088235F11C8920698a204A5010a788f4b3"],  # MKR -> WETH -> BZRX
-        ["0x514910771AF9Ca656af840dff83E8264EcF986CA", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-            "0x56d811088235F11C8920698a204A5010a788f4b3"],  # LINK -> WETH -> BZRX
-        ["0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-            "0x56d811088235F11C8920698a204A5010a788f4b3"],  # YFI -> WETH -> BZRX
+        # ["0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        #     "0x56d811088235F11C8920698a204A5010a788f4b3"],  # AAVE -> WETH -> BZRX
+        # ["0xdd974D5C2e2928deA5F71b9825b8b646686BD200", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        #     "0x56d811088235F11C8920698a204A5010a788f4b3"],  # KNC -> WETH -> BZRX
+        # ["0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        #     "0x56d811088235F11C8920698a204A5010a788f4b3"],  # MKR -> WETH -> BZRX
+        # ["0x514910771AF9Ca656af840dff83E8264EcF986CA", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        #     "0x56d811088235F11C8920698a204A5010a788f4b3"],  # LINK -> WETH -> BZRX
+        # ["0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        #     "0x56d811088235F11C8920698a204A5010a788f4b3"],  # YFI -> WETH -> BZRX
     ])
 
     staking.setCurveApproval()
@@ -49,6 +50,7 @@ def stakingV1(bzx, StakingProxy, StakingV1, accounts):
     
     for address in assets:
         staking.setUniswapApproval(address)
+        time.sleep(1)
     staking.setFeeTokens(assets)
     staking.setFundsWallet(accounts[9])
     # bzx.withdrawFees(assets, accounts[8], 0, {'from': stakingV1})
