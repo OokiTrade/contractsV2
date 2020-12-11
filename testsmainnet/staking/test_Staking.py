@@ -30,47 +30,46 @@ def setFeesController(bzx, stakingV1, accounts):
 
 
 @pytest.fixture(scope="module")
-def vBZRX(accounts):
-    vBZRX = loadContractFromEtherscan(
-        "0xb72b31907c1c95f3650b64b2469e08edacee5e8f", "vBZRX")
+def vBZRX(accounts, BZRXVestingToken):
+    vBZRX = loadContractFromAbi(
+        "0xb72b31907c1c95f3650b64b2469e08edacee5e8f", "vBZRX", BZRXVestingToken.abi)
     vBZRX.transfer(accounts[0], 1000*10**18, {'from': vBZRX.address})
     return vBZRX
 
 
 @pytest.fixture(scope="module")
-def iUSDC(accounts):
-    iUSDC = loadContractFromEtherscan(
-        "0x32E4c68B3A4a813b710595AebA7f6B7604Ab9c15", "iUSDC")
+def iUSDC(accounts, LoanTokenLogicStandard):
+    iUSDC = loadContractFromAbi(
+        "0x32E4c68B3A4a813b710595AebA7f6B7604Ab9c15", "iUSDC", LoanTokenLogicStandard.abi)
     return iUSDC
 
 
 @pytest.fixture(scope="module")
-def WETH(accounts):
-    WETH = loadContractFromEtherscan(
-        "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", "WETH")
+def WETH(accounts, TestWeth):
+    WETH = loadContractFromAbi(
+        "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", "WETH", TestWeth.abi)
     return WETH
 
 
 @pytest.fixture(scope="module")
-def USDC(accounts):
-    USDC = loadContractFromEtherscan(
-        "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", "USDC")
+def USDC(accounts, TestToken):
+    USDC = loadContractFromAbi(
+        "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", "USDC", TestToken.abi)
     return USDC
 
 
 @pytest.fixture(scope="module")
-def BZRX(accounts):
-    BZRX = loadContractFromEtherscan(
-        "0x56d811088235F11C8920698a204A5010a788f4b3", "BZRX")
+def BZRX(accounts, TestToken):
+    BZRX = loadContractFromAbi(
+        "0x56d811088235F11C8920698a204A5010a788f4b3", "BZRX", TestToken.abi)
     BZRX.transfer(accounts[0], 1000*10**18, {'from': BZRX.address})
     return BZRX
 
 
 @pytest.fixture(scope="module")
-def iBZRX(accounts, BZRX):
-    iBZRX = loadContractFromEtherscan(
-        "0x18240BD9C07fA6156Ce3F3f61921cC82b2619157", "iBZRX")
-
+def iBZRX(accounts, BZRX, LoanTokenLogicStandard):
+    iBZRX = loadContractFromAbi(
+        "0x18240BD9C07fA6156Ce3F3f61921cC82b2619157", "iBZRX", LoanTokenLogicStandard.abi)
     BZRX.approve(iBZRX, 10*10**50, {'from': accounts[0]})
     iBZRX.mint(accounts[0], 100*10**18, {'from': accounts[0]})
     return iBZRX
@@ -82,6 +81,13 @@ def loadContractFromEtherscan(address, alias):
     except ValueError:
         contract = Contract.from_explorer(address)
         contract.set_alias(alias)
+        return contract
+
+def loadContractFromAbi(address, alias, abi):
+    try:
+        return Contract(alias)
+    except ValueError:
+        contract = Contract.from_abi(alias, address=address, abi=abi)
         return contract
 
 
