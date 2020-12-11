@@ -98,8 +98,8 @@ def testStake_UnStake(requireMainnetFork, stakingV1, bzx, setFeesController, BZR
     iBZRX.approve(stakingV1, balanceOfiBZRX, {'from': accounts[0]})
     tokens = [BZRX, vBZRX, iBZRX]
     amounts = [balanceOfBZRX, balanceOfvBZRX, balanceOfiBZRX]
-    tx = stakingV1.stakeWithDelegate(
-        tokens, amounts, accounts[0]) 
+    tx = stakingV1.stake(
+        tokens, amounts, accounts[0])
     # tx.info()
     # print("tx", tx.events)
 
@@ -161,7 +161,7 @@ def testStake_UnStake_WithDelegate(requireMainnetFork, stakingV1, bzx, setFeesCo
     iBZRX.approve(stakingV1, balanceOfiBZRX, {'from': accounts[0]})
     tokens = [BZRX, vBZRX, iBZRX]
     amounts = [balanceOfBZRX, balanceOfvBZRX, balanceOfiBZRX]
-    tx = stakingV1.stakeWithDelegate(tokens, amounts, accounts[1])
+    tx = stakingV1.stake(tokens, amounts, accounts[1])
     # tx.info()
     # print("tx", tx.events)
 
@@ -219,7 +219,7 @@ def testStake_SweeepFees(requireMainnetFork, stakingV1, bzx, setFeesController, 
 def testStake_BZRXProfit(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
 
     earnedAmounts = stakingV1.earned(accounts[0])
-    assert(earnedAmounts == (0, 0))
+    assert(earnedAmounts == (0, 0, 0, 0))
     print("earnedAmounts", earnedAmounts)
     balanceOfBZRX = BZRX.balanceOf(accounts[0])
 
@@ -227,7 +227,7 @@ def testStake_BZRXProfit(requireMainnetFork, stakingV1, bzx, setFeesController, 
 
     tokens = [BZRX, vBZRX, iBZRX]
     amounts = [balanceOfBZRX, 0, 0]
-    tx = stakingV1.stakeWithDelegate(tokens, amounts, accounts[1])
+    tx = stakingV1.stake(tokens, amounts, accounts[1])
 
     # iUSDC.borrow(0, 100*10**18, 1*10**18, "0x0000000000000000000000000000000000000000", accounts[0], accounts[0], {'value': Wei("1 ether")})
     borrowAmount = 100*10**6
@@ -278,7 +278,7 @@ def testStake_BZRXProfit(requireMainnetFork, stakingV1, bzx, setFeesController, 
 
     # second user staking. he should get zero rewards if he just staked
     earnedAmounts = stakingV1.earned(accounts[1])
-    assert(earnedAmounts == (0, 0))
+    assert(earnedAmounts == (0, 0, 0, 0))
     BZRX.transfer(accounts[1], 1000*10**18, {'from': BZRX.address})
 
     balanceOfBZRX = BZRX.balanceOf(accounts[1])
@@ -287,11 +287,11 @@ def testStake_BZRXProfit(requireMainnetFork, stakingV1, bzx, setFeesController, 
 
     tokens = [BZRX, vBZRX, iBZRX]
     amounts = [balanceOfBZRX, 0, 0]
-    tx = stakingV1.stakeWithDelegate(
+    tx = stakingV1.stake(
         tokens, amounts, accounts[1], {'from': accounts[1]})
 
     earnedAmounts = stakingV1.earned(accounts[1])
-    assert(earnedAmounts == (0, 0))
+    assert(earnedAmounts == (0, 0, 0, 0))
 
     txBorrow = iUSDC.borrow("", borrowAmount, borrowTime, collateralAmount, collateralAddress,
                             accounts[0], accounts[0], b"", {'from': accounts[0], 'value': Wei(collateralAmount)})
@@ -316,8 +316,7 @@ def testStake_Vesting(requireMainnetFork, stakingV1, bzx, setFeesController, BZR
 
     balanceOfvBZRX = vBZRX.balanceOf(accounts[0])
     vBZRX.approve(stakingV1, balanceOfvBZRX, {'from': accounts[0]})
-    stakingV1.stakeWithDelegate([vBZRX], [balanceOfvBZRX], accounts[0])
-
+    stakingV1.stake([vBZRX], [balanceOfvBZRX], accounts[0])
 
     # borrowing to make fees
     borrowAmount = 100*10**6
@@ -331,7 +330,5 @@ def testStake_Vesting(requireMainnetFork, stakingV1, bzx, setFeesController, BZR
 
     # moving time
     # chain.sleep(vBZRX.vestingCliffTimestamp() - chain.time())
-
-
 
     assert False
