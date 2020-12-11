@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import pytest
-from brownie import network, Contract, Wei
+from brownie import network, Contract, Wei, chain
 
 
 @pytest.fixture(scope="module")
@@ -213,6 +213,7 @@ def testStake_UnStake_WithDelegate(requireMainnetFork, stakingV1, bzx, setFeesCo
 
 def testStake_SweeepFees(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC):
     tx = stakingV1.sweepFees()
+    assert False
     # events = tx.events[]
 
 
@@ -273,7 +274,7 @@ def testStake_BZRXProfit(requireMainnetFork, stakingV1, bzx, setFeesController, 
 
     # we have roundings for last 3 digits
     assert(bzrxRewards - earned[0] < 1000)
-    # we have roundings for last 3 digits
+    # we have roundings for last 3 digits`
     assert(stableCoinAmount - earned[1] < 1000)
 
     # second user staking. he should get zero rewards if he just staked
@@ -312,7 +313,7 @@ def filterEvents(topic, events):
     return payBorrowingFeeEvent
 
 
-def testStake_Vesting(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
+def testStake_VestingFees(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
 
     balanceOfvBZRX = vBZRX.balanceOf(accounts[0])
     vBZRX.approve(stakingV1, balanceOfvBZRX, {'from': accounts[0]})
@@ -326,9 +327,117 @@ def testStake_Vesting(requireMainnetFork, stakingV1, bzx, setFeesController, BZR
     txBorrow = iUSDC.borrow("", borrowAmount, borrowTime, collateralAmount, collateralAddress,
                             accounts[0], accounts[0], b"", {'from': accounts[0], 'value': Wei(collateralAmount)})
 
-    # stakingV1
+    sweepTx = stakingV1.sweepFees()
 
-    # moving time
-    # chain.sleep(vBZRX.vestingCliffTimestamp() - chain.time())
+    # moving time just before vesting start
+    chain.sleep(vBZRX.vestingCliffTimestamp() - chain.time() - 100)
+    chain.mine()
+
+    earnings = stakingV1.earned(accounts[0])
+    assert(earnings[0] == 0)
+    assert(earnings[1] == 0)
+    assert(earnings[2] > 0)
+    assert(earnings[3] > 0)
+    totalVestingFeesBzrx = earnings[2]
+    totalVestingFees3Poll = earnings[3]
+
+    # moving time to after vesting started
+    chain.sleep(vBZRX.vestingCliffTimestamp() - chain.time() + 1000)
+    chain.mine()
+
+    earnings = stakingV1.earned(accounts[0])
+    assert(earnings[0] > 0)
+    assert(earnings[1] > 0)
+    assert(earnings[2] > 0)
+    assert(earnings[3] > 0)
+    assert(earnings[0] + earnings[2] == totalVestingFeesBzrx)
+    assert(earnings[1] + earnings[3] == totalVestingFees3Poll)
+
+    # moving time after vesting end
+    chain.sleep(vBZRX.vestingEndTimestamp() - chain.time() + 100)
+    chain.mine()
+    earnings = stakingV1.earned(accounts[0])
+    assert(earnings[0] > 0)
+    assert(earnings[1] > 0)
+    assert(earnings[2] == 0)
+    assert(earnings[3] == 0)
+    assert(earnings[0] == totalVestingFeesBzrx)
+    assert(earnings[1] == totalVestingFees3Poll)
+
+    assert True
+
+
+
+def testStake_VestingFeesUnstakeFeesStillClaimable(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
+
+    balanceOfvBZRX = vBZRX.balanceOf(accounts[0])
+    vBZRX.approve(stakingV1, balanceOfvBZRX, {'from': accounts[0]})
+    stakingV1.stake([vBZRX], [balanceOfvBZRX], accounts[0])
+
+    # borrowing to make fees
+    borrowAmount = 100*10**6
+    borrowTime = 7884000
+    collateralAmount = 1*10**18
+    collateralAddress = "0x0000000000000000000000000000000000000000"
+    txBorrow = iUSDC.borrow("", borrowAmount, borrowTime, collateralAmount, collateralAddress,
+                            accounts[0], accounts[0], b"", {'from': accounts[0], 'value': Wei(collateralAmount)})
+
+    sweepTx = stakingV1.sweepFees()
+
+    stakingV1.exit()
+
+    # moving time just before vesting start
+    chain.sleep(vBZRX.vestingCliffTimestamp() - chain.time() - 100)
+    chain.mine()
+
+    earnings = stakingV1.earned(accounts[0])
+    assert(earnings[0] == 0)
+    assert(earnings[1] == 0)
+    assert(earnings[2] > 0)
+    assert(earnings[3] > 0)
+    totalVestingFeesBzrx = earnings[2]
+    totalVestingFees3Poll = earnings[3]
+
+    # moving time to after vesting started
+    chain.sleep(vBZRX.vestingCliffTimestamp() - chain.time() + 1000)
+    chain.mine()
+
+    earnings = stakingV1.earned(accounts[0])
+    assert(earnings[0] > 0)
+    assert(earnings[1] > 0)
+    assert(earnings[2] > 0)
+    assert(earnings[3] > 0)
+    assert(earnings[0] + earnings[2] == totalVestingFeesBzrx)
+    assert(earnings[1] + earnings[3] == totalVestingFees3Poll)
+
+    # moving time after vesting end
+    chain.sleep(vBZRX.vestingEndTimestamp() - chain.time() + 100)
+    chain.mine()
+    earnings = stakingV1.earned(accounts[0])
+    assert(earnings[0] > 0)
+    assert(earnings[1] > 0)
+    assert(earnings[2] == 0)
+    assert(earnings[3] == 0)
+    assert(earnings[0] == totalVestingFeesBzrx)
+    assert(earnings[1] == totalVestingFees3Poll)
+
+    assert True
+
+
+def testStake_vestingClaimBZRX(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
+
+    vBZRX.transfer(accounts[1], 1000*10**18, {'from': vBZRX.address})
+    balanceOfvBZRX = vBZRX.balanceOf(accounts[1])
+    vBZRX.approve(stakingV1, balanceOfvBZRX, {'from': accounts[1]})
+    stakingV1.stake([vBZRX], [balanceOfvBZRX], accounts[1], {'from': accounts[1]})
+
+
+    # moving time to somewhere 1000 sec after vesting start
+    chain.sleep(vBZRX.vestingCliffTimestamp() - chain.time() + 1000)
+    chain.mine()
+
+    # BZRX.balanceOf+ vBZRX.balanceOf_bzrx_remaining  should be equal to 1000
+
+    # stakingV1.exit()
 
     assert False
