@@ -450,14 +450,15 @@ contract StakingV1 is StakingState, StakingConstants {
         uint256 totalTokens = totalSupplyStored();
         require(totalTokens != 0, "nothing staked");
 
-        bzrxPerTokenStored = bzrxPerTokenStored.add(
-                newBZRX
-                    .mul(1e18)
-                    .div(totalTokens));
-        stableCoinPerTokenStored = stableCoinPerTokenStored.add(
-                newStableCoin
-                    .mul(1e18)
-                    .div(totalTokens));
+        bzrxPerTokenStored = newBZRX
+            .mul(1e18)
+            .div(totalTokens)
+            .add(bzrxPerTokenStored);
+
+        stableCoinPerTokenStored = newStableCoin
+            .mul(1e18)
+            .div(totalTokens)
+            .add(stableCoinPerTokenStored);
 
         lastRewardsAddTime = block.timestamp;
 
@@ -506,7 +507,7 @@ contract StakingV1 is StakingState, StakingConstants {
     {
         balance = _balancesPerToken[token][account];
         if (token == BZRX) {
-            _vestedBalance(
+            balance = _vestedBalance(
                 _balancesPerToken[vBZRX][account],
                 _vBZRXLastUpdate[account],
                 block.timestamp

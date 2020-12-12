@@ -83,7 +83,6 @@ def loadContractFromEtherscan(address, alias):
         contract.set_alias(alias)
         return contract
 
-
 def loadContractFromAbi(address, alias, abi):
     try:
         return Contract(alias)
@@ -220,7 +219,6 @@ def testStake_UnStake_WithDelegate(requireMainnetFork, stakingV1, bzx, setFeesCo
 
 def testStake_SweeepFees(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC):
     tx = stakingV1.sweepFees()
-    assert False
     # events = tx.events[]
 
 
@@ -280,9 +278,16 @@ def testStake_BZRXProfit(requireMainnetFork, stakingV1, bzx, setFeesController, 
     earned = stakingV1.earned(accounts[0])
 
     # we have roundings for last 3 digits
+    print("roundings bzrx", str(bzrxRewards), str(earned[0]))
     assert(bzrxRewards - earned[0] < 1000)
-    # we have roundings for last 3 digits`
+    # we have roundings for last 3 digits
+    print("roundings stableCoin", str(stableCoinAmount), str(earned[1]))
     assert(stableCoinAmount - earned[1] < 1000)
+
+
+    #stakingV1.claim({'from': accounts[0]})
+    #earned = stakingV1.earned(accounts[0])
+
 
     # second user staking. he should get zero rewards if he just staked
     earnedAmounts = stakingV1.earned(accounts[1])
@@ -294,17 +299,32 @@ def testStake_BZRXProfit(requireMainnetFork, stakingV1, bzx, setFeesController, 
     BZRX.approve(stakingV1, balanceOfBZRX, {'from': accounts[1]})
 
     tokens = [BZRX, vBZRX, iBZRX]
-    amounts = [balanceOfBZRX, 0, 0]
+    amounts2 = [balanceOfBZRX, 0, 0]
     tx = stakingV1.stake(
-        tokens, amounts, accounts[1], {'from': accounts[1]})
+        tokens, amounts2, accounts[1], {'from': accounts[1]})
 
     earnedAmounts = stakingV1.earned(accounts[1])
+    print(str(earnedAmounts))
     assert(earnedAmounts == (0, 0, 0, 0))
 
     txBorrow = iUSDC.borrow("", borrowAmount, borrowTime, collateralAmount, collateralAddress,
                             accounts[0], accounts[0], b"", {'from': accounts[0], 'value': Wei(collateralAmount)})
 
     txSweepSecondAcc = stakingV1.sweepFees()
+
+    print(str(amounts), str(amounts2))
+    assert(amounts[0] == amounts2[0])
+    assert(stakingV1.balanceOfStored(accounts[0]) == stakingV1.balanceOfStored(accounts[1]))
+
+    '''
+    earnedAfter = stakingV1.earned(accounts[0])
+    earned1After = stakingV1.earned(accounts[1])
+    print("account[0] before", str(earned[0]))
+    print("account[0] after", str(earnedAfter[0] - earned[0]))
+    print("account[1] after", str(earned1After[0]))
+    print("diff", str(earned1After[0] - earnedAfter[0] + earned[0]))
+    '''
+
 
     # TODO fees to not match here @Tom
     assert False
