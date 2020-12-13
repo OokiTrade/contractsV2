@@ -360,22 +360,22 @@ contract StakingV1 is StakingState, StakingConstants {
 
         bzrxRewardsEarned = vestedBalance
             .mul(bzrxPerTokenUnpaid)
-            .div(1e18)
+            .div(1e36)
             .add(bzrxRewards[account]);
 
         stableCoinRewardsEarned = vestedBalance
             .mul(stableCoinPerTokenUnpaid)
-            .div(1e18)
+            .div(1e36)
             .add(stableCoinRewards[account]);
 
         bzrxRewardsVesting = vestingBalance
             .mul(bzrxPerTokenUnpaid)
-            .div(1e18)
+            .div(1e36)
             .add(bzrxVesting[account]);
 
         stableCoinRewardsVesting = vestingBalance
             .mul(stableCoinPerTokenUnpaid)
-            .div(1e18)
+            .div(1e36)
             .add(stableCoinVesting[account]);
 
 
@@ -451,12 +451,12 @@ contract StakingV1 is StakingState, StakingConstants {
         require(totalTokens != 0, "nothing staked");
 
         bzrxPerTokenStored = newBZRX
-            .mul(1e18)
+            .mul(1e36)
             .div(totalTokens)
             .add(bzrxPerTokenStored);
 
         stableCoinPerTokenStored = newStableCoin
-            .mul(1e18)
+            .mul(1e36)
             .div(totalTokens)
             .add(stableCoinPerTokenStored);
 
@@ -480,7 +480,7 @@ contract StakingV1 is StakingState, StakingConstants {
             block.timestamp
         );
 
-        vBZRXWeight = SafeMath.mul(_startingVBZRXBalance - totalVested, 10**18) // overflow not possible
+        vBZRXWeight = SafeMath.mul(_startingVBZRXBalance - totalVested, 1e18) // overflow not possible
             .div(_startingVBZRXBalance);
 
         iBZRXWeight = ILoanPool(iBZRX).tokenPrice();
@@ -493,7 +493,7 @@ contract StakingV1 is StakingState, StakingConstants {
                 _totalSupplyPerToken[BZRX];
 
             LPTokenWeight = normalizedLPTokenSupply
-                .mul(10**18)
+                .mul(1e18)
                 .div(lpTokenSupply);
         }
     }
@@ -525,7 +525,7 @@ contract StakingV1 is StakingState, StakingConstants {
         if (vBZRXBalance != 0) {
             vestingBalance = vBZRXBalance
                 .mul(vBZRXWeightStored)
-                .div(10**18);
+                .div(1e18);
 
             uint256 _lastRewardsAddTime = lastRewardsAddTime;
             if (_lastRewardsAddTime != 0) {
@@ -543,12 +543,12 @@ contract StakingV1 is StakingState, StakingConstants {
 
         vestedBalance = _balancesPerToken[iBZRX][account]
             .mul(iBZRXWeightStored)
-            .div(10**18)
+            .div(1e18)
             .add(vestedBalance);
 
         vestedBalance = _balancesPerToken[LPToken][account]
             .mul(LPTokenWeightStored)
-            .div(10**18)
+            .div(1e18)
             .add(vestedBalance);
     }
 
@@ -570,7 +570,7 @@ contract StakingV1 is StakingState, StakingConstants {
         if (vBZRXSupply != 0) {
             supply = vBZRXSupply
                 .mul(vBZRXWeightStored)
-                .div(10**18);
+                .div(1e18);
 
             uint256 _lastRewardsAddTime = lastRewardsAddTime;
             if (_lastRewardsAddTime != 0) {
@@ -588,12 +588,12 @@ contract StakingV1 is StakingState, StakingConstants {
 
         supply = _totalSupplyPerToken[iBZRX]
             .mul(iBZRXWeightStored)
-            .div(10**18)
+            .div(1e18)
             .add(supply);
 
         supply = _totalSupplyPerToken[LPToken]
             .mul(LPTokenWeightStored)
-            .div(10**18)
+            .div(1e18)
             .add(supply);
     }
 
@@ -945,12 +945,12 @@ contract StakingV1 is StakingState, StakingConstants {
         );
 
         rate = rate
-            .mul(WEI_PRECISION * WEI_PRECISION)
+            .mul(1e36)
             .div(precision)
             .div(bzrxRate);
 
         uint256 sourceToDestSwapRate = bzrxAmount
-            .mul(WEI_PRECISION)
+            .mul(1e18)
             .div(assetAmount);
 
         uint256 spreadValue = sourceToDestSwapRate > rate ?
@@ -966,7 +966,7 @@ contract StakingV1 is StakingState, StakingConstants {
 
         if (spreadValue != 0) {
             spreadValue = spreadValue
-                .mul(WEI_PERCENT_PRECISION)
+                .mul(1e20)
                 .div(sourceToDestSwapRate);
 
             require(
@@ -1028,7 +1028,7 @@ contract StakingV1 is StakingState, StakingConstants {
             );
             
             // check that the path exists
-            uint256[] memory amountsOut = uniswapRouter.getAmountsOut(10**10, path);
+            uint256[] memory amountsOut = uniswapRouter.getAmountsOut(1e10, path);
             require(amountsOut[amountsOut.length - 1] != 0, "path does not exist");
             
             swapPaths[path[0]] = path;

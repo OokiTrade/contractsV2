@@ -232,7 +232,7 @@ def testStake_BZRXProfit(requireMainnetFork, stakingV1, bzx, setFeesController, 
     BZRX.approve(stakingV1, balanceOfBZRX, {'from': accounts[0]})
 
     tokens = [BZRX, vBZRX, iBZRX]
-    amounts = [balanceOfBZRX, 0, 0]
+    amounts = [100*10**18, 0, 0]
     tx = stakingV1.stake(tokens, amounts, accounts[1])
 
     # iUSDC.borrow(0, 100*10**18, 1*10**18, "0x0000000000000000000000000000000000000000", accounts[0], accounts[0], {'value': Wei("1 ether")})
@@ -277,12 +277,12 @@ def testStake_BZRXProfit(requireMainnetFork, stakingV1, bzx, setFeesController, 
     assert(stableCoinAmount == stableCoinRewards)
     earned = stakingV1.earned(accounts[0])
 
-    # we have roundings for last 3 digits
+    # we have roundings for last 1 digit
     print("roundings bzrx", str(bzrxRewards), str(earned[0]))
-    assert(bzrxRewards - earned[0] < 1000)
-    # we have roundings for last 3 digits
+    assert(bzrxRewards - earned[0] <= 1)
+    # we have roundings for last 1 digit
     print("roundings stableCoin", str(stableCoinAmount), str(earned[1]))
-    assert(stableCoinAmount - earned[1] < 1000)
+    assert(stableCoinAmount - earned[1] <= 1)
 
 
     #stakingV1.claim({'from': accounts[0]})
@@ -299,7 +299,7 @@ def testStake_BZRXProfit(requireMainnetFork, stakingV1, bzx, setFeesController, 
     BZRX.approve(stakingV1, balanceOfBZRX, {'from': accounts[1]})
 
     tokens = [BZRX, vBZRX, iBZRX]
-    amounts2 = [balanceOfBZRX, 0, 0]
+    amounts2 = [100*10**18, 0, 0]
     tx = stakingV1.stake(
         tokens, amounts2, accounts[1], {'from': accounts[1]})
 
@@ -326,7 +326,7 @@ def testStake_BZRXProfit(requireMainnetFork, stakingV1, bzx, setFeesController, 
     '''
 
 
-    # TODO fees to not match here @Tom
+    # TODO Continue here, above issue fixed
     assert False
 
 
