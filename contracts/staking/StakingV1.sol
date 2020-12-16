@@ -491,7 +491,7 @@ contract StakingV1 is StakingState, StakingConstants {
     function balanceOfByAsset(
         address token,
         address account)
-        external
+        public
         view
         returns (uint256 balance)
     {
@@ -503,6 +503,25 @@ contract StakingV1 is StakingState, StakingConstants {
                 block.timestamp
             ).add(balance);
         }
+    }
+
+    function balanceOfByAssets(
+        address account)
+        external
+        view
+        returns (
+            uint256 bzrxBalance,
+            uint256 iBZRXBalance,
+            uint256 vBZRXBalance,
+            uint256 LPTokenBalance
+        )
+    {
+        return (
+            balanceOfByAsset(BZRX, account),
+            balanceOfByAsset(iBZRX, account),
+            balanceOfByAsset(vBZRX, account),
+            balanceOfByAsset(LPToken, account)
+        );
     }
 
     function balanceOfStored(
