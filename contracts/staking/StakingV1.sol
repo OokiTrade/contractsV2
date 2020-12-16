@@ -529,7 +529,7 @@ contract StakingV1 is StakingState, StakingConstants {
             uint256 bzrxBalance,
             uint256 ibzrxBalance,
             uint256 vbzrxBalance,
-            uint256 bptBalance
+            uint256 LPTBalance
         )
     {
         return (
