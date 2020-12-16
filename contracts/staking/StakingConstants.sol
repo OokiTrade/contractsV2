@@ -16,6 +16,7 @@ contract StakingConstants {
     address public constant BZRX = 0x56d811088235F11C8920698a204A5010a788f4b3;
     address public constant vBZRX = 0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F;
     address public constant iBZRX = 0x18240BD9C07fA6156Ce3F3f61921cC82b2619157;
+    address public constant LPToken = 0xe26A220a341EAca116bDa64cF9D5638A935ae629;
     IERC20 public constant curve3Crv = IERC20(0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490);
 
     address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
@@ -35,15 +36,15 @@ contract StakingConstants {
     uint256 internal constant vestingEndTimestamp =        vestingStartTimestamp + vestingDuration;
     uint256 internal constant _startingVBZRXBalance =      889389933e18; // 889,389,933 BZRX
 
-    uint256 public constant BZRXWeightStored = 10**18;
+    uint256 public constant BZRXWeightStored = 1e18;
 
-    struct RepStakedTokens {
+    struct DelegatedTokens {
         address user;
-        bool isActive;
         uint256 BZRX;
         uint256 vBZRX;
         uint256 iBZRX;
         uint256 LPToken;
+        uint256 totalVotes;
     }
 
     event Staked(

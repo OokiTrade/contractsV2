@@ -19,10 +19,6 @@ contract StakingState is Ownable {
     uint256 public constant initialCirculatingSupply = 1030000000e18 - 889389933e18;
     address internal constant ZERO_ADDRESS = address(0);
 
-    address public BZRX;
-    address public vBZRX;
-    address public LPToken;
-
     address public implementation;
 
     bool public isPaused;
@@ -34,8 +30,7 @@ contract StakingState is Ownable {
     mapping(address => mapping(address => uint256)) internal _checkpointPerToken;   // token => account => value
 
     mapping(address => address) public delegate;                                    // user => delegate
-    mapping(address => mapping(address => uint256)) public repStakedPerToken;       // token => user => value
-    mapping(address => bool) public reps;                                           // user => isActive
+    mapping(address => mapping(address => uint256)) public delegatedPerToken;       // token => user => value
 
     uint256 public bzrxPerTokenStored;
     mapping(address => uint256) public bzrxRewardsPerTokenPaid;                     // user => value
@@ -53,7 +48,7 @@ contract StakingState is Ownable {
     uint256 public iBZRXWeightStored;
     uint256 public LPTokenWeightStored;
 
-    EnumerableBytes32Set.Bytes32Set internal _repStakedSet;
+    EnumerableBytes32Set.Bytes32Set internal _delegatedSet;
 
     uint256 public lastRewardsAddTime;
 

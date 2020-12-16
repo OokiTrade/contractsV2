@@ -35,7 +35,7 @@ contract StakingV1 is StakingState, StakingConstants {
     {
         require(tokens.length == values.length, "count mismatch");
 
-        address currentDelegate = _changeDelegate(delegateToSet);
+        address currentDelegate = delegate[msg.sender];
 
         address token;
         uint256 stakeAmount;
@@ -52,7 +52,7 @@ contract StakingV1 is StakingState, StakingConstants {
             _balancesPerToken[token][msg.sender] = _balancesPerToken[token][msg.sender].add(stakeAmount);
             _totalSupplyPerToken[token] = _totalSupplyPerToken[token].add(stakeAmount);
 
-            repStakedPerToken[currentDelegate][token] = repStakedPerToken[currentDelegate][token]
+            delegatedPerToken[currentDelegate][token] = delegatedPerToken[currentDelegate][token]
                 .add(stakeAmount);
 
             IERC20(token).safeTransferFrom(msg.sender, address(this), stakeAmount);
@@ -100,7 +100,7 @@ contract StakingV1 is StakingState, StakingConstants {
             _balancesPerToken[token][msg.sender] = stakedAmount - unstakeAmount; // will not overflow
             _totalSupplyPerToken[token] = _totalSupplyPerToken[token] - unstakeAmount; // will not overflow
 
-            repStakedPerToken[currentDelegate][token] = repStakedPerToken[currentDelegate][token]
+            delegatedPerToken[currentDelegate][token] = delegatedPerToken[currentDelegate][token]
                 .sub(unstakeAmount);
 
             IERC20(token).safeTransfer(msg.sender, unstakeAmount);
@@ -201,7 +201,7 @@ contract StakingV1 is StakingState, StakingConstants {
         _totalSupplyPerToken[BZRX] = _totalSupplyPerToken[BZRX]
             .add(amount);
 
-        repStakedPerToken[currentDelegate][BZRX] = repStakedPerToken[currentDelegate][BZRX]
+        delegatedPerToken[currentDelegate][BZRX] = delegatedPerToken[currentDelegate][BZRX]
             .add(amount);
 
         emit Staked(
@@ -217,10 +217,10 @@ contract StakingV1 is StakingState, StakingConstants {
     {
         address[] memory tokens = new address[](4);
         uint256[] memory values = new uint256[](4);
-        tokens[0] = BZRX;
-        tokens[1] = vBZRX;
-        tokens[2] = iBZRX;
-        tokens[3] = LPToken;
+        tokens[0] = iBZRX;
+        tokens[1] = LPToken;
+        tokens[2] = vBZRX;
+        tokens[3] = BZRX;
         values[0] = uint256(-1);
         values[1] = uint256(-1);
         values[2] = uint256(-1);
@@ -237,41 +237,31 @@ contract StakingV1 is StakingState, StakingConstants {
         exit();
     }
 
-    function setRepActive(
-        bool _isActive)
-        public
-    {
-        reps[msg.sender] = _isActive;
-        if (_isActive) {
-            _repStakedSet.addAddress(msg.sender);
-        }
-    }
-
-    function getRepVotes(
+    function getDelegateVotes(
         uint256 start,
         uint256 count)
         external
         view
-        returns (RepStakedTokens[] memory repStakedArr)
+        returns (DelegatedTokens[] memory delegateArr)
     {
-        uint256 end = start.add(count).min256(_repStakedSet.length());
+        uint256 end = start.add(count).min256(_delegatedSet.length());
         if (start >= end) {
-            return repStakedArr;
+            return delegateArr;
         }
         count = end-start;
 
         uint256 idx = count;
         address user;
-        repStakedArr = new RepStakedTokens[](idx);
+        delegateArr = new DelegatedTokens[](idx);
         for (uint256 i = --end; i >= start; i--) {
-            user = _repStakedSet.getAddress(i);
-            repStakedArr[count-(idx--)] = RepStakedTokens({
+            user = _delegatedSet.getAddress(i);
+            delegateArr[count-(idx--)] = DelegatedTokens({
                 user: user,
-                isActive: reps[user],
-                BZRX: repStakedPerToken[user][BZRX],
-                vBZRX: repStakedPerToken[user][vBZRX],
-                iBZRX: repStakedPerToken[user][iBZRX],
-                LPToken: repStakedPerToken[user][LPToken]
+                BZRX: delegatedPerToken[user][BZRX],
+                vBZRX: delegatedPerToken[user][vBZRX],
+                iBZRX: delegatedPerToken[user][iBZRX],
+                LPToken: delegatedPerToken[user][LPToken],
+                totalVotes: delegateBalanceOf(user)
             });
 
             if (i == 0) {
@@ -282,7 +272,7 @@ contract StakingV1 is StakingState, StakingConstants {
         if (idx != 0) {
             count -= idx;
             assembly {
-                mstore(repStakedArr, count)
+                mstore(delegateArr, count)
             }
         }
     }
@@ -552,6 +542,40 @@ contract StakingV1 is StakingState, StakingConstants {
             .add(vestedBalance);
     }
 
+    function delegateBalanceOf(
+        address account)
+        public
+        view
+        returns (uint256 totalVotes)
+    {
+        uint256 vBZRXBalance = _balancesPerToken[vBZRX][account];
+        if (vBZRXBalance != 0) {
+            // staked vBZRX counts has 1/2 a vote
+            totalVotes = vBZRXBalance / 2;
+
+            // user is attributed to a staked balance of vested BZRX, from their last update to the present
+            totalVotes = _vestedBalance(
+                vBZRXBalance,
+                _vBZRXLastUpdate[account],
+                block.timestamp
+            ).add(totalVotes);
+        }
+
+        totalVotes = _balancesPerToken[BZRX][account]
+            .add(totalVotes);
+
+        totalVotes = _balancesPerToken[iBZRX][account]
+            .mul(ILoanPool(iBZRX).tokenPrice())
+            .div(1e18)
+            .add(totalVotes);
+
+        // LPToken votes are measured based on amount of underlying BZRX staked
+        totalVotes = IERC20(BZRX).balanceOf(LPToken)
+            .mul(_balancesPerToken[LPToken][account])
+            .div(IERC20(LPToken).totalSupply())
+            .add(totalVotes);
+    }
+
     function totalSupplyByAsset(
         address token)
         external
@@ -605,7 +629,7 @@ contract StakingV1 is StakingState, StakingConstants {
         view
         returns (uint256 vested)
     {
-        uint256 vestingTimeNow = vestingTimeNow.min256(block.timestamp);
+        vestingTimeNow = vestingTimeNow.min256(block.timestamp);
         if (vestingTimeNow > lastUpdate) {
             if (vestingTimeNow <= vestingCliffTimestamp ||
                 lastUpdate >= vestingEndTimestamp) {
@@ -630,45 +654,43 @@ contract StakingV1 is StakingState, StakingConstants {
     function _changeDelegate(
         address delegateToSet)
         internal
-        returns (address currentDelegate)
     {
-        currentDelegate = delegate[msg.sender];
         if (delegateToSet == ZERO_ADDRESS) {
-            require(currentDelegate != ZERO_ADDRESS, "delegate not specified");
-            delegateToSet = currentDelegate;
+            delegateToSet = msg.sender;
         }
 
+        address currentDelegate = delegate[msg.sender];
         if (delegateToSet != currentDelegate) {
             if (currentDelegate != ZERO_ADDRESS) {
                 uint256 balance = _balancesPerToken[BZRX][msg.sender];
                 if (balance != 0) {
-                    repStakedPerToken[currentDelegate][BZRX] = repStakedPerToken[currentDelegate][BZRX]
+                    delegatedPerToken[currentDelegate][BZRX] = delegatedPerToken[currentDelegate][BZRX]
                         .sub(balance);
-                    repStakedPerToken[delegateToSet][BZRX] = repStakedPerToken[delegateToSet][BZRX]
+                    delegatedPerToken[delegateToSet][BZRX] = delegatedPerToken[delegateToSet][BZRX]
                         .add(balance);
                 }
 
                 balance = _balancesPerToken[vBZRX][msg.sender];
                 if (balance != 0) {
-                    repStakedPerToken[currentDelegate][vBZRX] = repStakedPerToken[currentDelegate][vBZRX]
+                    delegatedPerToken[currentDelegate][vBZRX] = delegatedPerToken[currentDelegate][vBZRX]
                         .sub(balance);
-                    repStakedPerToken[delegateToSet][vBZRX] = repStakedPerToken[delegateToSet][vBZRX]
+                    delegatedPerToken[delegateToSet][vBZRX] = delegatedPerToken[delegateToSet][vBZRX]
                         .add(balance);
                 }
 
                 balance = _balancesPerToken[iBZRX][msg.sender];
                 if (balance != 0) {
-                    repStakedPerToken[currentDelegate][iBZRX] = repStakedPerToken[currentDelegate][iBZRX]
+                    delegatedPerToken[currentDelegate][iBZRX] = delegatedPerToken[currentDelegate][iBZRX]
                         .sub(balance);
-                    repStakedPerToken[delegateToSet][iBZRX] = repStakedPerToken[delegateToSet][iBZRX]
+                    delegatedPerToken[delegateToSet][iBZRX] = delegatedPerToken[delegateToSet][iBZRX]
                         .add(balance);
                 }
 
                 balance = _balancesPerToken[LPToken][msg.sender];
                 if (balance != 0) {
-                    repStakedPerToken[currentDelegate][LPToken] = repStakedPerToken[currentDelegate][LPToken]
+                    delegatedPerToken[currentDelegate][LPToken] = delegatedPerToken[currentDelegate][LPToken]
                         .sub(balance);
-                    repStakedPerToken[delegateToSet][LPToken] = repStakedPerToken[delegateToSet][LPToken]
+                    delegatedPerToken[delegateToSet][LPToken] = delegatedPerToken[delegateToSet][LPToken]
                         .add(balance);
                 }
             }
