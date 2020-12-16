@@ -27,8 +27,7 @@ contract StakingV1 is StakingState, StakingConstants {
 
     function stake(
         address[] calldata tokens,
-        uint256[] calldata values,
-        address delegateToSet)
+        uint256[] calldata values)
         external
         checkPause
         updateRewards(msg.sender)
@@ -36,6 +35,10 @@ contract StakingV1 is StakingState, StakingConstants {
         require(tokens.length == values.length, "count mismatch");
 
         address currentDelegate = delegate[msg.sender];
+        if (currentDelegate == address(0)) {
+            currentDelegate = msg.sender;
+            delegate[msg.sender] = currentDelegate;
+        }
 
         address token;
         uint256 stakeAmount;
@@ -62,7 +65,7 @@ contract StakingV1 is StakingState, StakingConstants {
                 _vBZRXLastUpdate[msg.sender] = block.timestamp;
             }
 
-            emit Staked(
+            emit Stake(
                 msg.sender,
                 token,
                 currentDelegate,
@@ -71,7 +74,7 @@ contract StakingV1 is StakingState, StakingConstants {
         }
     }
 
-    function unStake(
+    function unstake(
         address[] memory tokens,
         uint256[] memory values)
         public
@@ -110,7 +113,7 @@ contract StakingV1 is StakingState, StakingConstants {
                 _vBZRXLastUpdate[msg.sender] = block.timestamp;
             }
 
-            emit Unstaked(
+            emit Unstake(
                 msg.sender,
                 token,
                 currentDelegate,
@@ -123,7 +126,56 @@ contract StakingV1 is StakingState, StakingConstants {
         address delegateToSet)
         external
     {
-        _changeDelegate(delegateToSet);
+        if (delegateToSet == ZERO_ADDRESS) {
+            delegateToSet = msg.sender;
+        }
+
+        address currentDelegate = delegate[msg.sender];
+        if (delegateToSet != currentDelegate) {
+            if (currentDelegate != ZERO_ADDRESS) {
+                uint256 balance = _balancesPerToken[BZRX][msg.sender];
+                if (balance != 0) {
+                    delegatedPerToken[currentDelegate][BZRX] = delegatedPerToken[currentDelegate][BZRX]
+                        .sub(balance);
+                    delegatedPerToken[delegateToSet][BZRX] = delegatedPerToken[delegateToSet][BZRX]
+                        .add(balance);
+                }
+
+                balance = _balancesPerToken[vBZRX][msg.sender];
+                if (balance != 0) {
+                    delegatedPerToken[currentDelegate][vBZRX] = delegatedPerToken[currentDelegate][vBZRX]
+                        .sub(balance);
+                    delegatedPerToken[delegateToSet][vBZRX] = delegatedPerToken[delegateToSet][vBZRX]
+                        .add(balance);
+                }
+
+                balance = _balancesPerToken[iBZRX][msg.sender];
+                if (balance != 0) {
+                    delegatedPerToken[currentDelegate][iBZRX] = delegatedPerToken[currentDelegate][iBZRX]
+                        .sub(balance);
+                    delegatedPerToken[delegateToSet][iBZRX] = delegatedPerToken[delegateToSet][iBZRX]
+                        .add(balance);
+                }
+
+                balance = _balancesPerToken[LPToken][msg.sender];
+                if (balance != 0) {
+                    delegatedPerToken[currentDelegate][LPToken] = delegatedPerToken[currentDelegate][LPToken]
+                        .sub(balance);
+                    delegatedPerToken[delegateToSet][LPToken] = delegatedPerToken[delegateToSet][LPToken]
+                        .add(balance);
+                }
+            }
+
+            delegate[msg.sender] = delegateToSet;
+
+            emit ChangeDelegate(
+                msg.sender,
+                currentDelegate,
+                delegateToSet
+            );
+
+            currentDelegate = delegateToSet;
+        }
     }
 
     function claim()
@@ -182,7 +234,7 @@ contract StakingV1 is StakingState, StakingConstants {
             curve3Crv.transfer(msg.sender, stableCoinRewardsEarned);
         }
 
-        emit RewardPaid(
+        emit Claim(
             msg.sender,
             bzrxRewardsEarned,
             stableCoinRewardsEarned
@@ -204,7 +256,7 @@ contract StakingV1 is StakingState, StakingConstants {
         delegatedPerToken[currentDelegate][BZRX] = delegatedPerToken[currentDelegate][BZRX]
             .add(amount);
 
-        emit Staked(
+        emit Stake(
             account,
             BZRX,
             currentDelegate,
@@ -226,7 +278,7 @@ contract StakingV1 is StakingState, StakingConstants {
         values[2] = uint256(-1);
         values[3] = uint256(-1);
         
-        unStake(tokens, values);
+        unstake(tokens, values);
         claim();
     }
 
@@ -452,7 +504,7 @@ contract StakingV1 is StakingState, StakingConstants {
 
         lastRewardsAddTime = block.timestamp;
 
-        emit RewardAdded(
+        emit AddRewards(
             msg.sender,
             newBZRX,
             newStableCoin
@@ -670,61 +722,6 @@ contract StakingV1 is StakingState, StakingConstants {
         }
     }
 
-    function _changeDelegate(
-        address delegateToSet)
-        internal
-    {
-        if (delegateToSet == ZERO_ADDRESS) {
-            delegateToSet = msg.sender;
-        }
-
-        address currentDelegate = delegate[msg.sender];
-        if (delegateToSet != currentDelegate) {
-            if (currentDelegate != ZERO_ADDRESS) {
-                uint256 balance = _balancesPerToken[BZRX][msg.sender];
-                if (balance != 0) {
-                    delegatedPerToken[currentDelegate][BZRX] = delegatedPerToken[currentDelegate][BZRX]
-                        .sub(balance);
-                    delegatedPerToken[delegateToSet][BZRX] = delegatedPerToken[delegateToSet][BZRX]
-                        .add(balance);
-                }
-
-                balance = _balancesPerToken[vBZRX][msg.sender];
-                if (balance != 0) {
-                    delegatedPerToken[currentDelegate][vBZRX] = delegatedPerToken[currentDelegate][vBZRX]
-                        .sub(balance);
-                    delegatedPerToken[delegateToSet][vBZRX] = delegatedPerToken[delegateToSet][vBZRX]
-                        .add(balance);
-                }
-
-                balance = _balancesPerToken[iBZRX][msg.sender];
-                if (balance != 0) {
-                    delegatedPerToken[currentDelegate][iBZRX] = delegatedPerToken[currentDelegate][iBZRX]
-                        .sub(balance);
-                    delegatedPerToken[delegateToSet][iBZRX] = delegatedPerToken[delegateToSet][iBZRX]
-                        .add(balance);
-                }
-
-                balance = _balancesPerToken[LPToken][msg.sender];
-                if (balance != 0) {
-                    delegatedPerToken[currentDelegate][LPToken] = delegatedPerToken[currentDelegate][LPToken]
-                        .sub(balance);
-                    delegatedPerToken[delegateToSet][LPToken] = delegatedPerToken[delegateToSet][LPToken]
-                        .add(balance);
-                }
-            }
-
-            delegate[msg.sender] = delegateToSet;
-
-            emit DelegateChanged(
-                msg.sender,
-                currentDelegate,
-                delegateToSet
-            );
-
-            currentDelegate = delegateToSet;
-        }
-    }
 
     // Fee Conversion Logic //
 
