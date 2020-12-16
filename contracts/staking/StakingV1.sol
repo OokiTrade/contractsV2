@@ -498,10 +498,9 @@ contract StakingV1 is StakingState, StakingConstants {
         }
     }
 
-    function balanceOfByAsset(
-        address token,
-        address account)
-        external
+
+    function _balanceOfByAsset(address token, address account)
+        internal
         view
         returns (uint256 balance)
     {
@@ -513,6 +512,32 @@ contract StakingV1 is StakingState, StakingConstants {
                 block.timestamp
             ).add(balance);
         }
+    }
+
+    function balanceOfByAsset(address token, address account)
+        external
+        view
+        returns (uint256 balance)
+    {
+        return _balanceOfByAsset(token, account);
+    }
+
+    function balanceOfByAssetTotal()
+        external
+        view
+        returns (
+            uint256 bzrxBalance,
+            uint256 ibzrxBalance,
+            uint256 vbzrxBalance,
+            uint256 bptBalance
+        )
+    {
+        return (
+            _balanceOfByAsset(BZRX, msg.sender),
+            _balanceOfByAsset(iBZRX, msg.sender),
+            _balanceOfByAsset(vBZRX, msg.sender),
+            _balanceOfByAsset(LPToken, msg.sender)
+        );
     }
 
     function balanceOfStored(
