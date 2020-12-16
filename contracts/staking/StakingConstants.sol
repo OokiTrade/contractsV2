@@ -47,33 +47,33 @@ contract StakingConstants {
         uint256 totalVotes;
     }
 
-    event Staked(
+    event Stake(
         address indexed user,
         address indexed token,
         address indexed delegate,
         uint256 amount
     );
 
-    event Unstaked(
+    event Unstake(
         address indexed user,
         address indexed token,
         address indexed delegate,
         uint256 amount
     );
 
-    event RewardAdded(
+    event AddRewards(
         address indexed sender,
         uint256 bzrxAmount,
         uint256 stableCoinAmount
     );
 
-    event RewardPaid(
+    event Claim(
         address indexed user,
         uint256 bzrxAmount,
         uint256 stableCoinAmount
     );
 
-    event DelegateChanged(
+    event ChangeDelegate(
         address indexed user,
         address indexed oldDelegate,
         address indexed newDelegate
