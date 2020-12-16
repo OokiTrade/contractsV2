@@ -88,9 +88,8 @@ CURVE3POOL = loadContractFromEtherscan(
 CURVE3CRV = loadContractFromEtherscan(
     "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490", "CURVE3CRV")
 
-BPT = loadContractFromEtherscan(
-    "0xe26A220a341EAca116bDa64cF9D5638A935ae629", "BPT")
+LPT = loadContractFromEtherscan(
+    "0xe26A220a341EAca116bDa64cF9D5638A935ae629", "LPT")
 
+# Run command below
 # exec(open("./scripts/staking-fork.py").read())
-
-# TODO BPT token address @Tom
