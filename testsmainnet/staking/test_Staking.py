@@ -30,6 +30,13 @@ def setFeesController(bzx, stakingV1, accounts):
 
 
 @pytest.fixture(scope="module")
+def LPT(accounts):
+    LPT = loadContractFromEtherscan(
+        "0xe26A220a341EAca116bDa64cF9D5638A935ae629", "LPT")
+    return LPT
+
+
+@pytest.fixture(scope="module")
 def vBZRX(accounts, BZRXVestingToken):
     vBZRX = loadContractFromAbi(
         "0xb72b31907c1c95f3650b64b2469e08edacee5e8f", "vBZRX", BZRXVestingToken.abi)
@@ -452,3 +459,34 @@ def testStake_vestingClaimBZRX(requireMainnetFork, stakingV1, bzx, setFeesContro
     assert(BZRX.balanceOf(accounts[1]) > 0)
 
     assert True
+
+
+def testStake_vBZRXVotingRigthsShouldDiminishOverTime(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, LPT, accounts, iUSDC, USDC, WETH):
+
+
+    # mint some for testing
+    BZRX.transfer(accounts[1], 200e18, {'from': BZRX})
+    BZRX.approve(iBZRX, 100e18, {'from': accounts[1]})
+    iBZRX.mint(accounts[1], 100e18, {'from': accounts[1]})
+
+    vBZRX.transfer(accounts[1], 100e18, {'from': vBZRX})
+    LPT.transfer(accounts[1], 100e18, {
+        'from': "0x7d9048a13a96657b12dd69bbd8999e1be1c7d97c"})
+
+    balanceOfBZRX = BZRX.balanceOf(accounts[1])
+    balanceOfvBZRX = vBZRX.balanceOf(accounts[1])
+    balanceOfiBZRX = iBZRX.balanceOf(accounts[1])
+    balanceOfLPT = LPT.balanceOf(accounts[1])
+
+    BZRX.approve(stakingV1, balanceOfBZRX, {'from': accounts[1]})
+    vBZRX.approve(stakingV1, balanceOfvBZRX, {'from': accounts[1]})
+    iBZRX.approve(stakingV1, balanceOfiBZRX, {'from': accounts[1]})
+    LPT.approve(stakingV1, balanceOfLPT, {'from': accounts[1]})
+
+    tokens = [BZRX, vBZRX, iBZRX, LPT]
+    amounts = [balanceOfBZRX, balanceOfvBZRX, balanceOfiBZRX, balanceOfLPT]
+    tx = stakingV1.stake(tokens, amounts, {'from': accounts[1]})
+    assert False
+
+
+    # TODO check votest over time, especially vbzrx
