@@ -198,11 +198,22 @@ def test_EarnRewardEvent(Constants, bzx, accounts, LinkDaiTradeParamsId, LINK, D
 
     loanId = tradeEvent['loanId']
 
-    payTradingFeeEvent = tx.events[0][0]
+    # payTradingFeeEvent = tx.events[0][0]
     # kessak of PayTradinfFee event
-    assert(payTradingFeeEvent['topic1'] ==
+    event = filterEvents("0xb23479169712c443e6b00fb0cec3506a5f5926f541df4243d313e11c8c5c71ed", tx.events)
+    assert(event['topic1'] ==
            '0xb23479169712c443e6b00fb0cec3506a5f5926f541df4243d313e11c8c5c71ed')
-    assert('0X' + payTradingFeeEvent['topic2'][26:66] == accounts[1])
-    assert(('0X' + payTradingFeeEvent['topic3']
+    assert('0X' + event['topic2'][26:66] == accounts[1])
+    assert(('0X' + event['topic3']
             [26:66].upper()) == DAI.address.upper())
-    assert(payTradingFeeEvent['topic4'] == loanId)
+    assert(event['topic4'] == loanId)
+
+
+def filterEvents(topic, events):
+    for event in events:
+        for key in event.keys():
+            if key == 'topic1':
+                if event[key] == topic:
+                    payBorrowingFeeEvent = event
+                    break
+    return payBorrowingFeeEvent
