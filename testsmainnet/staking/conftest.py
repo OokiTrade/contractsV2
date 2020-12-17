@@ -67,3 +67,7 @@ def stakingV1(bzx, StakingProxy, StakingV1, accounts):
 def bzx(accounts, LoanTokenLogicStandard, interface):
     return Contract.from_abi("bzx", address="0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f",  abi=interface.IBZx.abi, owner=accounts[0])
     # return Contract.from_explorer("0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f")
+
+@pytest.fixture(scope="function", autouse=True)
+def isolate(fn_isolation):
+    pass

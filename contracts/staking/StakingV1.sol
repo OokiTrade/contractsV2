@@ -78,6 +78,7 @@ contract StakingV1 is StakingState, StakingConstants {
         address[] memory tokens,
         uint256[] memory values)
         public
+        checkPause
         updateRewards(msg.sender)
     {
         require(tokens.length == values.length, "count mismatch");
@@ -125,6 +126,7 @@ contract StakingV1 is StakingState, StakingConstants {
     function changeDelegate(
         address delegateToSet)
         external
+        checkPause
     {
         if (delegateToSet == ZERO_ADDRESS) {
             delegateToSet = msg.sender;
@@ -179,14 +181,16 @@ contract StakingV1 is StakingState, StakingConstants {
     }
 
     function claim()
-        public
+        external
+        checkPause
         returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
     {
         return _claim(false);
     }
 
     function claimAndRestake()
-        public
+        external
+        checkPause
         returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
     {
         return _claim(true);
@@ -194,6 +198,7 @@ contract StakingV1 is StakingState, StakingConstants {
 
     function claimWithUpdate()
         external
+        // sweepFees() does checkPause
         returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
     {
         sweepFees();
@@ -202,6 +207,7 @@ contract StakingV1 is StakingState, StakingConstants {
 
     function claimAndRestakeWithUpdate()
         external
+        // sweepFees() does checkPause
         returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
     {
         sweepFees();
@@ -266,6 +272,7 @@ contract StakingV1 is StakingState, StakingConstants {
 
     function exit()
         public
+        // unstake() does a checkPause
     {
         address[] memory tokens = new address[](4);
         uint256[] memory values = new uint256[](4);
@@ -279,11 +286,12 @@ contract StakingV1 is StakingState, StakingConstants {
         values[3] = uint256(-1);
         
         unstake(tokens, values);
-        claim();
+        _claim(false);
     }
 
     function exitWithUpdate()
         external
+        // sweepFees() does checkPause
     {
         sweepFees();
         exit();
@@ -381,6 +389,7 @@ contract StakingV1 is StakingState, StakingConstants {
     function earnedWithUpdate(
         address account)
         external
+        // sweepFees() does checkPause
         returns (uint256, uint256, uint256, uint256) // bzrxRewardsEarned, stableCoinRewardsEarned, bzrxRewardsVesting, stableCoinRewardsVesting
     {
         sweepFees();
@@ -447,6 +456,7 @@ contract StakingV1 is StakingState, StakingConstants {
         uint256[] calldata bzrxAmounts,
         uint256[] calldata stableCoinAmounts)
         external
+        checkPause
         returns (uint256 bzrxTotal, uint256 stableCoinTotal)
     {
         require(accounts.length == bzrxAmounts.length && accounts.length == stableCoinAmounts.length, "count mismatch");
@@ -470,6 +480,7 @@ contract StakingV1 is StakingState, StakingConstants {
         uint256 newBZRX,
         uint256 newStableCoin)
         external
+        checkPause
     {
         if (newBZRX != 0 || newStableCoin != 0) {
             _addRewards(newBZRX, newStableCoin);
@@ -727,6 +738,7 @@ contract StakingV1 is StakingState, StakingConstants {
 
     function sweepFees()
         public
+        checkPause
         returns (uint256 bzrxRewards, uint256 crv3Rewards)
     {
         return sweepFeesByAsset(currentFeeTokens);
@@ -735,6 +747,7 @@ contract StakingV1 is StakingState, StakingConstants {
     function sweepFeesByAsset(
         address[] memory assets)
         public
+        checkPause
         onlyEOA
         returns (uint256 bzrxRewards, uint256 crv3Rewards)
     {

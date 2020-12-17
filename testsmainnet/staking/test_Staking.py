@@ -30,6 +30,13 @@ def setFeesController(bzx, stakingV1, accounts):
 
 
 @pytest.fixture(scope="module")
+def LPT(accounts):
+    LPT = loadContractFromEtherscan(
+        "0xe26A220a341EAca116bDa64cF9D5638A935ae629", "LPT")
+    return LPT
+
+
+@pytest.fixture(scope="module")
 def vBZRX(accounts, BZRXVestingToken):
     vBZRX = loadContractFromAbi(
         "0xb72b31907c1c95f3650b64b2469e08edacee5e8f", "vBZRX", BZRXVestingToken.abi)
@@ -83,6 +90,7 @@ def loadContractFromEtherscan(address, alias):
         contract.set_alias(alias)
         return contract
 
+
 def loadContractFromAbi(address, alias, abi):
     try:
         return Contract(alias)
@@ -105,7 +113,7 @@ def testStake_UnStake(requireMainnetFork, stakingV1, bzx, setFeesController, BZR
     tokens = [BZRX, vBZRX, iBZRX]
     amounts = [balanceOfBZRX, balanceOfvBZRX, balanceOfiBZRX]
     tx = stakingV1.stake(
-        tokens, amounts, accounts[0])
+        tokens, amounts)
     # tx.info()
     # print("tx", tx.events)
 
@@ -117,13 +125,7 @@ def testStake_UnStake(requireMainnetFork, stakingV1, bzx, setFeesController, BZR
     assert(balanceOfvBZRXAfter == 0)
     assert(balanceOfiBZRXAfter == 0)
 
-    delegateChanged = stakedEvents = tx.events['DelegateChanged']
-    assert(delegateChanged['user'] == accounts[0])
-    assert(delegateChanged['oldDelegate'] ==
-           '0x0000000000000000000000000000000000000000')
-    assert(delegateChanged['newDelegate'] == accounts[0])
-
-    stakedEvents = tx.events['Staked']
+    stakedEvents = tx.events['Stake']
     for index, stakedEvent in enumerate(stakedEvents, 0):
         assert(stakedEvent['user'] == accounts[0])
         assert(stakedEvent['token'] == tokens[index])
@@ -136,10 +138,10 @@ def testStake_UnStake(requireMainnetFork, stakingV1, bzx, setFeesController, BZR
         assert(transferEvent['to'] == stakingV1)
         assert(transferEvent['value'] == amounts[index])
 
-    tx = stakingV1.unStake(tokens, amounts)
+    tx = stakingV1.unstake(tokens, amounts)
     # tx.info()
 
-    unStakedEvents = tx.events['Unstaked']
+    unStakedEvents = tx.events['Unstake']
     for index, unStakedEvent in enumerate(unStakedEvents, 0):
         assert(unStakedEvent['user'] == accounts[0])
         assert(unStakedEvent['token'] == tokens[index])
@@ -167,41 +169,20 @@ def testStake_UnStake_WithDelegate(requireMainnetFork, stakingV1, bzx, setFeesCo
     iBZRX.approve(stakingV1, balanceOfiBZRX, {'from': accounts[0]})
     tokens = [BZRX, vBZRX, iBZRX]
     amounts = [balanceOfBZRX, balanceOfvBZRX, balanceOfiBZRX]
-    tx = stakingV1.stake(tokens, amounts, accounts[1])
-    # tx.info()
-    # print("tx", tx.events)
+    tx = stakingV1.stake(tokens, amounts)
 
-    balanceOfBZRXAfter = BZRX.balanceOf(accounts[0])
-    balanceOfvBZRXAfter = vBZRX.balanceOf(accounts[0])
-    balanceOfiBZRXAfter = iBZRX.balanceOf(accounts[0])
+    tx = stakingV1.changeDelegate(accounts[1])
 
-    assert(balanceOfBZRXAfter == 0)
-    assert(balanceOfvBZRXAfter == 0)
-    assert(balanceOfiBZRXAfter == 0)
-
-    delegateChanged = tx.events['DelegateChanged']
+    delegateChanged = tx.events['ChangeDelegate']
     assert(delegateChanged['user'] == accounts[0])
     assert(delegateChanged['oldDelegate'] ==
-           '0x0000000000000000000000000000000000000000')
+           accounts[0])
     assert(delegateChanged['newDelegate'] == accounts[1])
 
-    stakedEvents = tx.events['Staked']
-    for index, stakedEvent in enumerate(stakedEvents, 0):
-        assert(stakedEvent['user'] == accounts[0])
-        assert(stakedEvent['token'] == tokens[index])
-        assert(stakedEvent['delegate'] == accounts[1])
-        assert(stakedEvent['amount'] == amounts[index])
-
-    transferEvents = tx.events['Transfer']
-    for index, transferEvent in enumerate(transferEvents, 0):
-        assert(transferEvent['from'] == accounts[0])
-        assert(transferEvent['to'] == stakingV1)
-        assert(transferEvent['value'] == amounts[index])
-
-    tx = stakingV1.unStake(tokens, amounts)
+    tx = stakingV1.unstake(tokens, amounts)
     # tx.info()
 
-    unStakedEvents = tx.events['Unstaked']
+    unStakedEvents = tx.events['Unstake']
     for index, unStakedEvent in enumerate(unStakedEvents, 0):
         assert(unStakedEvent['user'] == accounts[0])
         assert(unStakedEvent['token'] == tokens[index])
@@ -214,12 +195,26 @@ def testStake_UnStake_WithDelegate(requireMainnetFork, stakingV1, bzx, setFeesCo
         assert(transferEvent['to'] == accounts[0])
         assert(transferEvent['value'] == amounts[index])
 
+    balances = stakingV1.balanceOfByAssets.call(accounts[0])
+    assert(balances[0] == 0)
+    assert(balances[1] == 0)
+    assert(balances[2] == 0)
+    assert(balances[3] == 0)
     assert True
 
 
 def testStake_SweeepFees(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC):
     tx = stakingV1.sweepFees()
-    # events = tx.events[]
+    withdrawFeesEvent = tx.events['WithdrawFees']
+    assert(withdrawFeesEvent[0]['sender'] == accounts[0])
+
+    convertFeesEvent = tx.events['ConvertFees']
+    assert(convertFeesEvent[0]['sender'] == accounts[0])
+
+    distributeFeesEvent = tx.events['DistributeFees']
+    assert(distributeFeesEvent[0]['sender'] == accounts[0])
+
+    assert True
 
 
 def testStake_BZRXProfit(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
@@ -233,7 +228,7 @@ def testStake_BZRXProfit(requireMainnetFork, stakingV1, bzx, setFeesController, 
 
     tokens = [BZRX, vBZRX, iBZRX]
     amounts = [100*10**18, 0, 0]
-    tx = stakingV1.stake(tokens, amounts, accounts[1])
+    tx = stakingV1.stake(tokens, amounts)
 
     # iUSDC.borrow(0, 100*10**18, 1*10**18, "0x0000000000000000000000000000000000000000", accounts[0], accounts[0], {'value': Wei("1 ether")})
     borrowAmount = 100*10**6
@@ -265,9 +260,9 @@ def testStake_BZRXProfit(requireMainnetFork, stakingV1, bzx, setFeesController, 
     assert(lendingFee['sender'] == stakingV1)
     assert(lendingFee['amount'] == payLendingFeeAmount)
 
-    assert(txSweep.events['RewardAdded'][0]['sender'] == accounts[0])
-    bzrxAmount = txSweep.events['RewardAdded'][0]['bzrxAmount']
-    stableCoinAmount = txSweep.events['RewardAdded'][0]['stableCoinAmount']
+    assert(txSweep.events['AddRewards'][0]['sender'] == accounts[0])
+    bzrxAmount = txSweep.events['AddRewards'][0]['bzrxAmount']
+    stableCoinAmount = txSweep.events['AddRewards'][0]['stableCoinAmount']
 
     assert(txSweep.events['DistributeFees'][0]['sender'] == accounts[0])
     bzrxRewards = txSweep.events['DistributeFees'][0]['bzrxRewards']
@@ -284,10 +279,8 @@ def testStake_BZRXProfit(requireMainnetFork, stakingV1, bzx, setFeesController, 
     print("roundings stableCoin", str(stableCoinAmount), str(earned[1]))
     assert(stableCoinAmount - earned[1] <= 1)
 
-
     #stakingV1.claim({'from': accounts[0]})
     #earned = stakingV1.earned(accounts[0])
-
 
     # second user staking. he should get zero rewards if he just staked
     earnedAmounts = stakingV1.earned(accounts[1])
@@ -301,7 +294,7 @@ def testStake_BZRXProfit(requireMainnetFork, stakingV1, bzx, setFeesController, 
     tokens = [BZRX, vBZRX, iBZRX]
     amounts2 = [100*10**18, 0, 0]
     tx = stakingV1.stake(
-        tokens, amounts2, accounts[1], {'from': accounts[1]})
+        tokens, amounts2, {'from': accounts[1]})
 
     earnedAmounts = stakingV1.earned(accounts[1])
     print(str(earnedAmounts))
@@ -314,7 +307,8 @@ def testStake_BZRXProfit(requireMainnetFork, stakingV1, bzx, setFeesController, 
 
     print(str(amounts), str(amounts2))
     assert(amounts[0] == amounts2[0])
-    assert(stakingV1.balanceOfStored(accounts[0]) == stakingV1.balanceOfStored(accounts[1]))
+    assert(stakingV1.balanceOfStored(
+        accounts[0]) == stakingV1.balanceOfStored(accounts[1]))
 
     '''
     earnedAfter = stakingV1.earned(accounts[0])
@@ -325,9 +319,7 @@ def testStake_BZRXProfit(requireMainnetFork, stakingV1, bzx, setFeesController, 
     print("diff", str(earned1After[0] - earnedAfter[0] + earned[0]))
     '''
 
-
-    # TODO Continue here, above issue fixed
-    assert False
+    assert True
 
 
 def filterEvents(topic, events):
@@ -341,10 +333,9 @@ def filterEvents(topic, events):
 
 
 def testStake_VestingFees(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
-
     balanceOfvBZRX = vBZRX.balanceOf(accounts[0])
     vBZRX.approve(stakingV1, balanceOfvBZRX, {'from': accounts[0]})
-    stakingV1.stake([vBZRX], [balanceOfvBZRX], accounts[0])
+    stakingV1.stake([vBZRX], [balanceOfvBZRX])
 
     # borrowing to make fees
     borrowAmount = 100*10**6
@@ -357,7 +348,7 @@ def testStake_VestingFees(requireMainnetFork, stakingV1, bzx, setFeesController,
     sweepTx = stakingV1.sweepFees()
 
     # moving time just before vesting start
-    chain.sleep(vBZRX.vestingCliffTimestamp() - chain.time() - 100)
+    chain.sleep(vBZRX.vestingCliffTimestamp() - chain.time() - 1000)
     chain.mine()
 
     earnings = stakingV1.earned(accounts[0])
@@ -398,7 +389,7 @@ def testStake_VestingFeesUnstakeFeesStillClaimable(requireMainnetFork, stakingV1
 
     balanceOfvBZRX = vBZRX.balanceOf(accounts[0])
     vBZRX.approve(stakingV1, balanceOfvBZRX, {'from': accounts[0]})
-    stakingV1.stake([vBZRX], [balanceOfvBZRX], accounts[0])
+    stakingV1.stake([vBZRX], [balanceOfvBZRX])
 
     # borrowing to make fees
     borrowAmount = 100*10**6
@@ -455,8 +446,7 @@ def testStake_vestingClaimBZRX(requireMainnetFork, stakingV1, bzx, setFeesContro
     vBZRX.transfer(accounts[1], 1000*10**18, {'from': vBZRX.address})
     balanceOfvBZRX = vBZRX.balanceOf(accounts[1])
     vBZRX.approve(stakingV1, balanceOfvBZRX, {'from': accounts[1]})
-    stakingV1.stake([vBZRX], [balanceOfvBZRX],
-                    accounts[1], {'from': accounts[1]})
+    stakingV1.stake([vBZRX], [balanceOfvBZRX], {'from': accounts[1]})
 
     # moving time to somewhere 1000 sec after vesting start
     chain.sleep(vBZRX.vestingCliffTimestamp() - chain.time() + 1000)
@@ -464,8 +454,39 @@ def testStake_vestingClaimBZRX(requireMainnetFork, stakingV1, bzx, setFeesContro
 
     # BZRX.balanceOf+ vBZRX.balanceOf_bzrx_remaining  should be equal to 1000
 
-    stakingV1.exit()
+    stakingV1.exit({'from': accounts[1]})
 
     assert(BZRX.balanceOf(accounts[1]) > 0)
 
+    assert True
+
+
+def testStake_vBZRXVotingRigthsShouldDiminishOverTime(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, LPT, accounts, iUSDC, USDC, WETH):
+
+
+    # mint some for testing
+    BZRX.transfer(accounts[1], 200e18, {'from': BZRX})
+    BZRX.approve(iBZRX, 100e18, {'from': accounts[1]})
+    iBZRX.mint(accounts[1], 100e18, {'from': accounts[1]})
+
+    vBZRX.transfer(accounts[1], 100e18, {'from': vBZRX})
+    LPT.transfer(accounts[1], 100e18, {
+        'from': "0x7d9048a13a96657b12dd69bbd8999e1be1c7d97c"})
+
+    balanceOfBZRX = BZRX.balanceOf(accounts[1])
+    balanceOfvBZRX = vBZRX.balanceOf(accounts[1])
+    balanceOfiBZRX = iBZRX.balanceOf(accounts[1])
+    balanceOfLPT = LPT.balanceOf(accounts[1])
+
+    BZRX.approve(stakingV1, balanceOfBZRX, {'from': accounts[1]})
+    vBZRX.approve(stakingV1, balanceOfvBZRX, {'from': accounts[1]})
+    iBZRX.approve(stakingV1, balanceOfiBZRX, {'from': accounts[1]})
+    LPT.approve(stakingV1, balanceOfLPT, {'from': accounts[1]})
+
+    tokens = [BZRX, vBZRX, iBZRX, LPT]
+    amounts = [balanceOfBZRX, balanceOfvBZRX, balanceOfiBZRX, balanceOfLPT]
+    tx = stakingV1.stake(tokens, amounts, {'from': accounts[1]})
     assert False
+
+
+    # TODO check votest over time, especially vbzrx
