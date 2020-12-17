@@ -10,16 +10,16 @@ import numpy as np
 
 
 def getUSDTValue(symbol, principal):
-    ETHPrice = 562.33
-    WBTCPrice = 18342
+    ETHPrice = 653.77
+    WBTCPrice = 23120
 
-    KNCPrice = 0.863
-    MKRPrice = 519
-    BZRXPrice = 0.2086
-    LINKPrice = 12.11
-    YFIPrice = 24954
-    UNIPrice = 3.2653
-    AAVEPrice = 78.219
+    KNCPrice = 0.95
+    MKRPrice = 540.45
+    BZRXPrice = 0.2432
+    LINKPrice = 13.82
+    YFIPrice = 27268
+    UNIPrice = 3.8686
+    AAVEPrice = 85.551
 
     if symbol == 'ETH':
         return principal * ETHPrice
@@ -56,8 +56,8 @@ with open(filePath, newline='') as csvfile:
     next(transactions)  # skip header
 
     # Tom if you are going to change below you have to rerun sql
-    lastWeekRewardBlock = 1607022382 # block 11381463
-    thisWeekRewardBlockEnd = 1607630820 # block 11427236
+    lastWeekRewardBlock = 1607630820 # block 11427236
+    thisWeekRewardBlockEnd = 1608233705 # block 11472580
 
     prevUserAddress = 0
     prevBlockTime = 0
