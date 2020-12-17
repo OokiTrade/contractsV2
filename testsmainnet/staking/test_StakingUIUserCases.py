@@ -388,12 +388,61 @@ def testStake_IWantToUnstakeMyTokens(requireMainnetFork, stakingV1, bzx, setFees
     assert True
 
 
-def testStake_IWantToUnstakeAllMyStakedTokens(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
+def testStake_IWantToUnstakeAllMyStakedTokens(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, LPT, accounts, iUSDC, USDC, WETH):
 
-    assert False
+    # mint some for testing
+    BZRX.transfer(accounts[1], 200e18, {'from': BZRX})
+    BZRX.approve(iBZRX, 100e18, {'from': accounts[1]})
+    iBZRX.mint(accounts[1], 100e18, {'from': accounts[1]})
+
+    vBZRX.transfer(accounts[1], 100e18, {'from': vBZRX})
+    LPT.transfer(accounts[1], 100e18, {
+        'from': "0x7d9048a13a96657b12dd69bbd8999e1be1c7d97c"})
+
+    balanceOfBZRX = BZRX.balanceOf(accounts[1])
+    balanceOfvBZRX = vBZRX.balanceOf(accounts[1])
+    balanceOfiBZRX = iBZRX.balanceOf(accounts[1])
+    balanceOfLPT = LPT.balanceOf(accounts[1])
+
+    BZRX.approve(stakingV1, balanceOfBZRX, {'from': accounts[1]})
+    vBZRX.approve(stakingV1, balanceOfvBZRX, {'from': accounts[1]})
+    iBZRX.approve(stakingV1, balanceOfiBZRX, {'from': accounts[1]})
+    LPT.approve(stakingV1, balanceOfLPT, {'from': accounts[1]})
+
+    tokens = [BZRX, vBZRX, iBZRX, LPT]
+    amounts = [balanceOfBZRX, balanceOfvBZRX, balanceOfiBZRX, balanceOfLPT]
+    tx = stakingV1.stake(tokens, amounts, {'from': accounts[1]})
+
+    balances = stakingV1.balanceOfByAssets(accounts[1])
+
+    assert(balances[0] == 100e18)
+    assert(balances[1] == 100e18)
+    assert(balances[2] == 100e18)
+    assert(balances[3] == 100e18)
+
+    stakingV1.exit({'from': accounts[1]})
+
+    balancesAfter = stakingV1.balanceOfByAssets(accounts[1])
+
+    assert(balancesAfter[0] == 0)
+    assert(balancesAfter[1] == 0)
+    assert(balancesAfter[2] == 0)
+    assert(balancesAfter[3] == 0)
+
+    balanceOfBZRX = BZRX.balanceOf(accounts[1])
+    balanceOfvBZRX = vBZRX.balanceOf(accounts[1])
+    balanceOfiBZRX = iBZRX.balanceOf(accounts[1])
+    balanceOfLPT = LPT.balanceOf(accounts[1])
+
+    assert(balanceOfBZRX == 100e18)
+    assert(balanceOfvBZRX == 100e18)
+    assert(balanceOfiBZRX == 100e18)
+    assert(balanceOfLPT == 100e18)
+
+    assert True
 
 
-def testStake_UserStory8_StakedFirstTime(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
+def testStake_IWantToFindARepresentative(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
 
     assert False
 
