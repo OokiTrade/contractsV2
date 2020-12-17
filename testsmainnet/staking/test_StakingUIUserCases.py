@@ -45,6 +45,13 @@ def LPT(accounts):
 
 
 @pytest.fixture(scope="module")
+def POOL3(accounts):
+    POOL3 = loadContractFromEtherscan(
+        "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490", "POOL3")
+    return POOL3
+
+
+@pytest.fixture(scope="module")
 def iUSDC(accounts, LoanTokenLogicStandard):
     iUSDC = loadContractFromAbi(
         "0x32E4c68B3A4a813b710595AebA7f6B7604Ab9c15", "iUSDC", LoanTokenLogicStandard.abi)
@@ -118,24 +125,23 @@ def testStake_UserStory1_StakedFirstTime(requireMainnetFork, stakingV1, bzx, set
     BZRX.approve(stakingV1, balanceOfBZRX, {'from': accounts[1]})
     vBZRX.approve(stakingV1, balanceOfvBZRX, {'from': accounts[1]})
     iBZRX.approve(stakingV1, balanceOfiBZRX, {'from': accounts[1]})
-    # LPT.approve(stakingV1, balanceOfLPT, {'from': accounts[1]})
+    LPT.approve(stakingV1, balanceOfLPT, {'from': accounts[1]})
 
-    tokens = [BZRX, vBZRX, iBZRX]
-    amounts = [balanceOfBZRX, balanceOfvBZRX, balanceOfiBZRX]
-    tx = stakingV1.stake(tokens, amounts, accounts[1], {'from': accounts[1]})
+    tokens = [BZRX, vBZRX, iBZRX, LPT]
+    amounts = [balanceOfBZRX, balanceOfvBZRX, balanceOfiBZRX, balanceOfLPT]
+    tx = stakingV1.stake(tokens, amounts, {'from': accounts[1]})
 
-    balances = stakingV1.balanceOfByAssetTotal({'from': accounts[1]})
+    balances = stakingV1.balanceOfByAssets(accounts[1])
     assert(balances[0] == 100e18)
     assert(balances[1] == 100e18)
     assert(balances[2] == 100e18)
-    assert(balances[3] == 0)
-    
+    assert(balances[3] == 100e18)
+
     assert True
 
 
 def testStake_UserStory2_StakedMoreTokens(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
 
-
     # mint some for testing
     BZRX.transfer(accounts[1], 200e18, {'from': BZRX})
     BZRX.approve(iBZRX, 100e18, {'from': accounts[1]})
@@ -157,54 +163,14 @@ def testStake_UserStory2_StakedMoreTokens(requireMainnetFork, stakingV1, bzx, se
 
     tokens = [BZRX, vBZRX, iBZRX]
     amounts = [balanceOfBZRX, balanceOfvBZRX, balanceOfiBZRX]
-    tx = stakingV1.stake(tokens, amounts, accounts[1], {'from': accounts[1]})
+    tx = stakingV1.stake(tokens, amounts, {'from': accounts[1]})
 
-    balances = stakingV1.balanceOfByAssetTotal({'from': accounts[1]})
+    balances = stakingV1.balanceOfByAssets(accounts[1])
     assert(balances[0] == 100e18)
     assert(balances[1] == 100e18)
     assert(balances[2] == 100e18)
     assert(balances[3] == 0)
 
-
-        # mint some for testing
-    BZRX.transfer(accounts[1], 200e18, {'from': BZRX})
-    BZRX.approve(iBZRX, 100e18, {'from': accounts[1]})
-    iBZRX.mint(accounts[1], 100e18, {'from': accounts[1]})
-
-    vBZRX.transfer(accounts[1], 100e18, {'from': vBZRX})
-    # LPT.transferFrom("0x7d9048a13a96657b12dd69bbd8999e1be1c7d97c", accounts[1], 100e18, {
-    #                  'from': "0x7d9048a13a96657b12dd69bbd8999e1be1c7d97c"})
-
-    balanceOfBZRX = BZRX.balanceOf(accounts[1])
-    balanceOfvBZRX = vBZRX.balanceOf(accounts[1])
-    balanceOfiBZRX = iBZRX.balanceOf(accounts[1])
-    # balanceOfLPT = LPT.balanceOf(accounts[1])
-
-    BZRX.approve(stakingV1, balanceOfBZRX, {'from': accounts[1]})
-    vBZRX.approve(stakingV1, balanceOfvBZRX, {'from': accounts[1]})
-    iBZRX.approve(stakingV1, balanceOfiBZRX, {'from': accounts[1]})
-    # LPT.approve(stakingV1, balanceOfLPT, {'from': accounts[1]})
-
-    tokens = [BZRX, vBZRX, iBZRX]
-    amounts = [balanceOfBZRX, balanceOfvBZRX, balanceOfiBZRX]
-    tx = stakingV1.stake(tokens, amounts, accounts[1], {'from': accounts[1]})
-
-    balances = stakingV1.balanceOfByAssetTotal({'from': accounts[1]})
-    assert(balances[0] == 200e18)
-    assert(balances[1] == 200e18)
-    assert(balances[2] == 200e18)
-    assert(balances[3] == 0)
-
-
-    assert True
-
-
-def testStake_UserStory3_IClaimMyIncentiveRewards(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
-    # TODO @Tom
-    assert False
-
-
-def testStake_UserStory4_IClaimMyStakingRewards(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
     # mint some for testing
     BZRX.transfer(accounts[1], 200e18, {'from': BZRX})
     BZRX.approve(iBZRX, 100e18, {'from': accounts[1]})
@@ -226,9 +192,47 @@ def testStake_UserStory4_IClaimMyStakingRewards(requireMainnetFork, stakingV1, b
 
     tokens = [BZRX, vBZRX, iBZRX]
     amounts = [balanceOfBZRX, balanceOfvBZRX, balanceOfiBZRX]
-    tx = stakingV1.stake(tokens, amounts, accounts[1], {'from': accounts[1]})
+    tx = stakingV1.stake(tokens, amounts,  {'from': accounts[1]})
 
-    balances = stakingV1.balanceOfByAssetTotal({'from': accounts[1]})
+    balances = stakingV1.balanceOfByAssets(accounts[1])
+    assert(balances[0] == 200e18)
+    assert(balances[1] == 200e18)
+    assert(balances[2] == 200e18)
+    assert(balances[3] == 0)
+
+    assert True
+
+
+def testStake_UserStory3_IClaimMyIncentiveRewards(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
+    # those extracted from protocol directly not from staking
+    assert True
+
+
+def testStake_UserStory4_IClaimMyStakingRewards(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, POOL3, accounts, iUSDC, USDC, WETH):
+    # mint some for testing
+    BZRX.transfer(accounts[1], 200e18, {'from': BZRX})
+    BZRX.approve(iBZRX, 100e18, {'from': accounts[1]})
+    iBZRX.mint(accounts[1], 100e18, {'from': accounts[1]})
+
+    vBZRX.transfer(accounts[1], 100e18, {'from': vBZRX})
+    # LPT.transferFrom("0x7d9048a13a96657b12dd69bbd8999e1be1c7d97c", accounts[1], 100e18, {
+    #                  'from': "0x7d9048a13a96657b12dd69bbd8999e1be1c7d97c"})
+
+    balanceOfBZRX = BZRX.balanceOf(accounts[1])
+    balanceOfvBZRX = vBZRX.balanceOf(accounts[1])
+    balanceOfiBZRX = iBZRX.balanceOf(accounts[1])
+    # balanceOfLPT = LPT.balanceOf(accounts[1])
+
+    BZRX.approve(stakingV1, balanceOfBZRX, {'from': accounts[1]})
+    vBZRX.approve(stakingV1, balanceOfvBZRX, {'from': accounts[1]})
+    iBZRX.approve(stakingV1, balanceOfiBZRX, {'from': accounts[1]})
+    # LPT.approve(stakingV1, balanceOfLPT, {'from': accounts[1]})
+
+    tokens = [BZRX, vBZRX, iBZRX]
+    amounts = [balanceOfBZRX, balanceOfvBZRX, balanceOfiBZRX]
+    tx = stakingV1.stake(tokens, amounts, {'from': accounts[1]})
+
+    balances = stakingV1.balanceOfByAssets(accounts[1])
     assert(balances[0] == 100e18)
     assert(balances[1] == 100e18)
     assert(balances[2] == 100e18)
@@ -244,10 +248,26 @@ def testStake_UserStory4_IClaimMyStakingRewards(requireMainnetFork, stakingV1, b
 
     txSweep = stakingV1.sweepFees()
 
-    earnings = stakingV1.earned.call(accounts[0])
+    earnings = stakingV1.earned.call(accounts[1])
 
+    assert(earnings[0] > 0)
+    assert(earnings[1] > 0)
+    assert(earnings[2] > 0)
+    assert(earnings[3] > 0)
 
-    assert False
+    stakingV1.claim({'from': accounts[1]})
+
+    assert(earnings[0] == BZRX.balanceOf(accounts[1]))
+    assert(earnings[1] == POOL3.balanceOf(accounts[1]))
+
+    earningsAfterClaim = stakingV1.earned.call(accounts[1])
+
+    assert(earningsAfterClaim[0] == 0)
+    assert(earningsAfterClaim[1] == 0)
+    assert(earningsAfterClaim[2] == earnings[2])
+    assert(earningsAfterClaim[3] == earnings[3])
+
+    assert True
 
 
 def testStake_UserStory5_StakedFirstTime(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
