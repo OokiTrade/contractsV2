@@ -388,7 +388,7 @@ def testStake_IWantToUnstakeMyTokens(requireMainnetFork, stakingV1, bzx, setFees
     assert True
 
 
-def testStake_UserStory7_StakedFirstTime(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
+def testStake_IWantToUnstakeAllMyStakedTokens(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
 
     assert False
 
