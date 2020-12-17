@@ -337,9 +337,55 @@ def testStake_UserStory5_IClaimAndRestakeMyStakingRewards(requireMainnetFork, st
     assert True
 
 
-def testStake_UserStory6_StakedFirstTime(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
+def testStake_IWantToUnstakeMyTokens(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, LPT, accounts, iUSDC, USDC, WETH):
 
-    assert False
+    # mint some for testing
+    BZRX.transfer(accounts[1], 200e18, {'from': BZRX})
+    BZRX.approve(iBZRX, 100e18, {'from': accounts[1]})
+    iBZRX.mint(accounts[1], 100e18, {'from': accounts[1]})
+
+    vBZRX.transfer(accounts[1], 100e18, {'from': vBZRX})
+    LPT.transfer(accounts[1], 100e18, {
+        'from': "0x7d9048a13a96657b12dd69bbd8999e1be1c7d97c"})
+
+    balanceOfBZRX = BZRX.balanceOf(accounts[1])
+    balanceOfvBZRX = vBZRX.balanceOf(accounts[1])
+    balanceOfiBZRX = iBZRX.balanceOf(accounts[1])
+    balanceOfLPT = LPT.balanceOf(accounts[1])
+
+    BZRX.approve(stakingV1, balanceOfBZRX, {'from': accounts[1]})
+    vBZRX.approve(stakingV1, balanceOfvBZRX, {'from': accounts[1]})
+    iBZRX.approve(stakingV1, balanceOfiBZRX, {'from': accounts[1]})
+    LPT.approve(stakingV1, balanceOfLPT, {'from': accounts[1]})
+
+    tokens = [BZRX, vBZRX, iBZRX, LPT]
+    amounts = [balanceOfBZRX, balanceOfvBZRX, balanceOfiBZRX, balanceOfLPT]
+    tx = stakingV1.stake(tokens, amounts, {'from': accounts[1]})
+
+    balances = stakingV1.balanceOfByAssets(accounts[1])
+    assert(balances[0] == 100e18)
+    assert(balances[1] == 100e18)
+    assert(balances[2] == 100e18)
+    assert(balances[3] == 100e18)
+
+    # unstake half
+    amounts = [balanceOfBZRX/2, balanceOfvBZRX /
+               2, balanceOfiBZRX/2, balanceOfLPT/2]
+    tx = stakingV1.unstake(tokens, amounts, {'from': accounts[1]})
+
+    balanceOfBZRXAfter = BZRX.balanceOf(accounts[1])
+    balanceOfvBZRXAfter = vBZRX.balanceOf(accounts[1])
+    balanceOfiBZRXAfter = iBZRX.balanceOf(accounts[1])
+    balanceOfLPTAfter = LPT.balanceOf(accounts[1])
+
+    stakedBalance = stakingV1.balanceOfByAssets(accounts[1])
+
+    assert(balanceOfBZRXAfter == stakedBalance[0])
+    assert(balanceOfvBZRXAfter == stakedBalance[1])
+    assert(balanceOfiBZRXAfter == stakedBalance[2])
+    assert(balanceOfLPTAfter == stakedBalance[3])
+
+    assert True
 
 
 def testStake_UserStory7_StakedFirstTime(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
