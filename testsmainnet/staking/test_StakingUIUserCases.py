@@ -442,7 +442,34 @@ def testStake_IWantToUnstakeAllMyStakedTokens(requireMainnetFork, stakingV1, bzx
     assert True
 
 
-def testStake_IWantToFindARepresentative(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
+def testStake_IWantToFindARepresentative(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, LPT, accounts, iUSDC, USDC, WETH):
+
+    for i in range(9):
+        # mint some for testing
+        BZRX.transfer(accounts[i], 200e18, {'from': BZRX})
+        BZRX.approve(iBZRX, 100e18, {'from': accounts[i]})
+        iBZRX.mint(accounts[i], 100e18, {'from': accounts[i]})
+
+        vBZRX.transfer(accounts[i], 100e18, {'from': vBZRX})
+        LPT.transfer(accounts[i], 100e18, {
+            'from': "0x7d9048a13a96657b12dd69bbd8999e1be1c7d97c"})
+
+        balanceOfBZRX = BZRX.balanceOf(accounts[i])
+        balanceOfvBZRX = vBZRX.balanceOf(accounts[i])
+        balanceOfiBZRX = iBZRX.balanceOf(accounts[i])
+        balanceOfLPT = LPT.balanceOf(accounts[i])
+
+        BZRX.approve(stakingV1, balanceOfBZRX, {'from': accounts[i]})
+        vBZRX.approve(stakingV1, balanceOfvBZRX, {'from': accounts[i]})
+        iBZRX.approve(stakingV1, balanceOfiBZRX, {'from': accounts[i]})
+        LPT.approve(stakingV1, balanceOfLPT, {'from': accounts[i]})
+
+        tokens = [BZRX, vBZRX, iBZRX, LPT]
+        amounts = [balanceOfBZRX, balanceOfvBZRX, balanceOfiBZRX, balanceOfLPT]
+        tx = stakingV1.stake(tokens, amounts, {'from': accounts[i]})
+        stakingV1.changeDelegate(accounts[i+1], {'from': accounts[i]})
+
+
 
     assert False
 
