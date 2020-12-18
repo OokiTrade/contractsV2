@@ -38,6 +38,7 @@ contract StakingV1 is StakingState, StakingConstants {
         if (currentDelegate == address(0)) {
             currentDelegate = msg.sender;
             delegate[msg.sender] = currentDelegate;
+            _delegatedSet.addAddress(msg.sender);
         }
 
         address token;
@@ -169,6 +170,7 @@ contract StakingV1 is StakingState, StakingConstants {
             }
 
             delegate[msg.sender] = delegateToSet;
+            _delegatedSet.addAddress(delegateToSet);
 
             emit ChangeDelegate(
                 msg.sender,
@@ -632,8 +634,15 @@ contract StakingV1 is StakingState, StakingConstants {
     {
         uint256 vBZRXBalance = _balancesPerToken[vBZRX][account];
         if (vBZRXBalance != 0) {
-            // staked vBZRX counts has 1/2 a vote
-            totalVotes = vBZRXBalance / 2;
+            // staked vBZRX counts has 1/2 a vote, that's prorated based on total vested
+            totalVotes = vBZRXBalance
+                .mul(_startingVBZRXBalance -
+                    _vestedBalance( // overflow not possible
+                        _startingVBZRXBalance,
+                        0,
+                        block.timestamp
+                    )
+                ).div(_startingVBZRXBalance) / 2;
 
             // user is attributed to a staked balance of vested BZRX, from their last update to the present
             totalVotes = _vestedBalance(
