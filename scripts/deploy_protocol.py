@@ -176,6 +176,7 @@ def deployProtocol():
                 feeds.setPriceFeed(
                     [
                         "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", # USDC
+                        "0xdac17f958d2ee523a2206206994597c13d831ec7", # USDT (Tether)
                         "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359", # SAI
                         "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599", # WBTC
                         "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2", # MKR
@@ -186,7 +187,6 @@ def deployProtocol():
                         "0x514910771af9ca656af840dff83e8264ecf986ca", # LINK
                         "0x57ab1ec28d129707052df4df418d58a2d46d5f51", # SUSD
                         "0x6b175474e89094c44da98b954eedeac495271d0f", # DAI
-                        "0xdac17f958d2ee523a2206206994597c13d831ec7", # USDT (Tether)
                         "0x56d811088235F11C8920698a204A5010a788f4b3", # BZRX
                         "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", # YFI
                         "0x80fB784B7eD66730e8b1DBd9820aFD29931aab03", # LEND
@@ -199,6 +199,7 @@ def deployProtocol():
                     ],
                     [
                         "0x986b5E1e1755e3C2440e960477f25201B0a8bbD4", # USDC
+                        "0x986b5E1e1755e3C2440e960477f25201B0a8bbD4", # USDT (sharing USDC feed, old: 0xEe9F2375b4bdF6387aa8265dD4FB8F16512A1d46
                         "0x773616E4d11A78F511299002da57A0a94577F1f4", # SAI - (sharing DAI feed)
                         "0xdeb288F737066589598e9214E782fa5A8eD689e8", # WBTC
                         "0x24551a8Fb2A7211A25a17B1481f043A8a8adC7f2", # MKR
@@ -209,7 +210,6 @@ def deployProtocol():
                         "0xDC530D9457755926550b59e8ECcdaE7624181557", # LINK
                         "0x8e0b7e6062272B5eF4524250bFFF8e5Bd3497757", # SUSD
                         "0x773616E4d11A78F511299002da57A0a94577F1f4", # DAI
-                        "0xEe9F2375b4bdF6387aa8265dD4FB8F16512A1d46", # USDT (Tether)
                         "0x8f7C7181Ed1a2BA41cfC3f5d064eF91b67daef66", # BZRX
                         "0x7c5d4F8345e66f68099581Db340cd65B078C41f4", # YFI
                         "0xc64F3C3925a216a11Ce0828498133cbC65fA4042", # LEND (old: 0xc9dDB0E869d931D031B24723132730Ecf3B4F74d)
