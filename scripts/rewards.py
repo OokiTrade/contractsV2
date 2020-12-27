@@ -10,16 +10,17 @@ import numpy as np
 
 
 def getUSDTValue(symbol, principal):
-    ETHPrice = 653.77
-    WBTCPrice = 23120
-
-    KNCPrice = 0.95
-    MKRPrice = 540.45
-    BZRXPrice = 0.2432
-    LINKPrice = 13.82
-    YFIPrice = 27268
-    UNIPrice = 3.8686
-    AAVEPrice = 85.551
+    ETHPrice = 618.15
+    WBTCPrice = 24340.70
+    KNCPrice = 0.83
+    MKRPrice = 534.47
+    BZRXPrice = 0.1644
+    LINKPrice = 11.49
+    YFIPrice = 23302
+    UNIPrice = 3.46
+    AAVEPrice = 76.93
+    COMPPrice = 136.08
+    LRCPrice = 0.1515
 
     if symbol == 'ETH':
         return principal * ETHPrice
@@ -42,13 +43,17 @@ def getUSDTValue(symbol, principal):
         return principal * UNIPrice
     elif (symbol == 'AAVE'):
         return principal * AAVEPrice
+    elif (symbol == 'COMP'):
+        return principal * COMPPrice
+    elif (symbol == 'LRC'):
+        return principal * LRCPrice
     elif (symbol == 'USDT' or symbol == 'USDC' or symbol == 'DAI'):
         return principal
     else:
         raise ValueError("unhandled symbol", symbol)
 
 
-filePath = './week15.csv'
+filePath = './week16.csv'
 num_lines = sum(1 for line in open(filePath))
 with open(filePath, newline='') as csvfile:
 
@@ -56,8 +61,8 @@ with open(filePath, newline='') as csvfile:
     next(transactions)  # skip header
 
     # Tom if you are going to change below you have to rerun sql
-    lastWeekRewardBlock = 1607630820 # block 11427236
-    thisWeekRewardBlockEnd = 1608233705 # block 11472580
+    lastWeekRewardBlock = 1608233705 # block 11472580
+    thisWeekRewardBlockEnd = 1608832073 # block 11517746
 
     prevUserAddress = 0
     prevBlockTime = 0
@@ -74,14 +79,12 @@ with open(filePath, newline='') as csvfile:
 
     for row in transactions:
         useraddress = row[0]
-        tokensymbol = row[1]
-
-        newprincipaldecimal = np.around(float(row[2]), decimals=5)
-
-        index = row[3]
-        loantoken = row[4]
+        loantoken = row[1]
+        tokensymbol = row[2]
+        block_time = int(row[3])
+        index = row[4]
         paymenttype = row[5]
-        block_time = int(row[6])
+        newprincipaldecimal = np.around(float(row[6]), decimals=5)
 
         if (prevUserAddress != useraddress or num_lines == transactions.line_num):  # count last result as well
 
@@ -176,5 +179,5 @@ for row in overallResults:
 
 print("results:")
 for row in overallResults:
-    # print(row[0], '{0:.4f}'.format(row[3] * 927000), '{0:.0f}'.format(row[3] * 927000 * 1000000000000000000))
-    print('0x'+row[0][24:], '{0:.4f}'.format(row[3] * 927000), '{0:.0f}'.format(row[3] * 927000 * 1000000000000000000))
+    # print(row[0], '{0:.4f}'.format(row[3] * 695250), '{0:.0f}'.format(row[3] * 695250 * 1000000000000000000))
+    print('0x'+row[0][24:], '{0:.4f}'.format(row[3] * 695250), '{0:.0f}'.format(row[3] * 695250 * 1000000000000000000))
