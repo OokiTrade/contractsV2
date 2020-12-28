@@ -57,42 +57,12 @@ def testStakeCountMismatch(requireMainnetFork, stakingV1, bzx, setFeesController
 
 def testUnStakeCountMismatch(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX):
     with reverts("count mismatch"):
-        stakingV1.unStake([BZRX], [1, 2])
+        stakingV1.unstake([BZRX], [1, 2])
 
 
 def testStakeInvalidToken(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX):
     with reverts("count mismatch"):
         stakingV1.stake([stakingV1], [1, 2])
-
-
-def testStake_UnStake_PersistDelegate(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts):
-    # tx =
-    # tx.info()
-    balanceOfBZRX = BZRX.balanceOf(accounts[0])
-    balanceOfvBZRX = vBZRX.balanceOf(accounts[0])
-    balanceOfiBZRX = iBZRX.balanceOf(accounts[0])
-
-    BZRX.approve(stakingV1, 2 * balanceOfBZRX, {'from': accounts[0]})
-    vBZRX.approve(stakingV1, 2 * balanceOfvBZRX, {'from': accounts[0]})
-    iBZRX.approve(stakingV1, 2 * balanceOfiBZRX, {'from': accounts[0]})
-    tokens = [BZRX, vBZRX, iBZRX]
-    amounts = [balanceOfBZRX, balanceOfvBZRX, balanceOfiBZRX]
-
-    tx = stakingV1.stakeWithDelegate(tokens, amounts, accounts[1])
-    tx = stakingV1.unStake(tokens, amounts)
-
-    tx = stakingV1.stake(tokens, amounts)
-    tx.info()
-
-    try:
-        tx.events['DelegateChanged']
-        assert False
-    except Exception:
-        assert True
-
-
-
-    assert True
 
 
 
@@ -109,7 +79,7 @@ def testStake_UnStake_NothingStaked(requireMainnetFork, stakingV1, bzx, setFeesC
     tokens = [BZRX, vBZRX, iBZRX]
     amounts = [balanceOfBZRX, balanceOfvBZRX, balanceOfiBZRX]
 
-    tx = stakingV1.unStake(tokens, amounts)
+    tx = stakingV1.unstake(tokens, amounts)
 
     assert(len(tx.events) == 0)
     assert True

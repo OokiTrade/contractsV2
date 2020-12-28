@@ -469,9 +469,9 @@ def testStake_IWantToFindARepresentative(requireMainnetFork, stakingV1, bzx, set
         tx = stakingV1.stake(tokens, amounts, {'from': accounts[i]})
         stakingV1.changeDelegate(accounts[i+1], {'from': accounts[i]})
 
-
-
-    assert False
+    
+    assert(len(stakingV1.getDelegateVotes(0, 20)) > 0)
+    assert True
 
 
 def testStake_UserStory9_StakedFirstTime(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
