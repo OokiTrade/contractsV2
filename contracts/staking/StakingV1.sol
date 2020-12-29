@@ -981,14 +981,6 @@ contract StakingV1 is StakingState, StakingConstants {
         returnAmount = curve3Crv.balanceOf(address(this)) - beforeBalance;
     }    
 
-    
-    /*event CheckUniDisagreement(
-        uint256 rate,
-        uint256 sourceToDestSwapRate,
-        uint256 spreadValue,
-        uint256 maxDisagreement
-    );*/
-
     function _checkUniDisagreement(
         address asset,
         uint256 assetAmount,
@@ -1016,13 +1008,6 @@ contract StakingV1 is StakingState, StakingConstants {
         uint256 spreadValue = sourceToDestSwapRate > rate ?
             sourceToDestSwapRate - rate :
             rate - sourceToDestSwapRate;
-
-        /*emit CheckUniDisagreement(
-            rate,
-            sourceToDestSwapRate,
-            spreadValue,
-            maxDisagreement
-        );*/
 
         if (spreadValue != 0) {
             spreadValue = spreadValue
