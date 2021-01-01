@@ -10,17 +10,17 @@ import numpy as np
 
 
 def getUSDTValue(symbol, principal):
-    ETHPrice = 618.15
-    WBTCPrice = 24340.70
-    KNCPrice = 0.83
-    MKRPrice = 534.47
-    BZRXPrice = 0.1644
-    LINKPrice = 11.49
-    YFIPrice = 23302
-    UNIPrice = 3.46
-    AAVEPrice = 76.93
-    COMPPrice = 136.08
-    LRCPrice = 0.1515
+    ETHPrice = 726.61
+    WBTCPrice = 29111.99
+    KNCPrice = 0.79
+    MKRPrice = 575.85
+    BZRXPrice = 0.1595
+    LINKPrice = 11.83
+    YFIPrice = 21874.96
+    UNIPrice = 4.82
+    AAVEPrice = 87.36
+    COMPPrice = 143.71
+    LRCPrice = 0.1751
 
     if symbol == 'ETH':
         return principal * ETHPrice
@@ -53,7 +53,7 @@ def getUSDTValue(symbol, principal):
         raise ValueError("unhandled symbol", symbol)
 
 
-filePath = './week16.csv'
+filePath = './week17.csv'
 num_lines = sum(1 for line in open(filePath))
 with open(filePath, newline='') as csvfile:
 
@@ -61,8 +61,8 @@ with open(filePath, newline='') as csvfile:
     next(transactions)  # skip header
 
     # Tom if you are going to change below you have to rerun sql
-    lastWeekRewardBlock = 1608233705 # block 11472580
-    thisWeekRewardBlockEnd = 1608832073 # block 11517746
+    lastWeekRewardBlock = 1608832073 # block 11517746
+    thisWeekRewardBlockEnd = 1609530862 # block 11570468
 
     prevUserAddress = 0
     prevBlockTime = 0
@@ -78,13 +78,24 @@ with open(filePath, newline='') as csvfile:
 	# useraddress,loantoken,tokensymbol,block_time,index,paymenttype,newprincipaldecimal
 
     for row in transactions:
+
+        # Tom csv Parser
+        # useraddress = row[0]
+        # loantoken = row[1]
+        # tokensymbol = row[2]
+        # block_time = int(row[3])
+        # index = row[4]
+        # paymenttype = row[5]
+        # newprincipaldecimal = np.around(float(row[6]), decimals=5)
+
+        # Roman csvParser
         useraddress = row[0]
-        loantoken = row[1]
-        tokensymbol = row[2]
-        block_time = int(row[3])
-        index = row[4]
+        tokensymbol = row[1]
+        newprincipaldecimal = np.around(float(row[2]), decimals=5)
+        index = row[3]
+        loantoken = row[4]
         paymenttype = row[5]
-        newprincipaldecimal = np.around(float(row[6]), decimals=5)
+        block_time = int(row[6])
 
         if (prevUserAddress != useraddress or num_lines == transactions.line_num):  # count last result as well
 
@@ -179,5 +190,5 @@ for row in overallResults:
 
 print("results:")
 for row in overallResults:
-    # print(row[0], '{0:.4f}'.format(row[3] * 695250), '{0:.0f}'.format(row[3] * 695250 * 1000000000000000000))
-    print('0x'+row[0][24:], '{0:.4f}'.format(row[3] * 695250), '{0:.0f}'.format(row[3] * 695250 * 1000000000000000000))
+    # print(row[0], '{0:.4f}'.format(row[3] * 521438), '{0:.0f}'.format(row[3] * 521438 * 1000000000000000000))
+    print('0x'+row[0][24:], '{0:.4f}'.format(row[3] * 521438), '{0:.0f}'.format(row[3] * 521438 * 1000000000000000000))
