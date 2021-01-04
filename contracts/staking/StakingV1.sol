@@ -200,7 +200,7 @@ contract StakingV1 is StakingState, StakingConstants {
 
     function claimWithUpdate()
         external
-        // sweepFees() does checkPause
+        // sweepFeesByAsset() does checkPause
         returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
     {
         sweepFees();
@@ -209,7 +209,7 @@ contract StakingV1 is StakingState, StakingConstants {
 
     function claimAndRestakeWithUpdate()
         external
-        // sweepFees() does checkPause
+        // sweepFeesByAsset() does checkPause
         returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
     {
         sweepFees();
@@ -293,7 +293,7 @@ contract StakingV1 is StakingState, StakingConstants {
 
     function exitWithUpdate()
         external
-        // sweepFees() does checkPause
+        // sweepFeesByAsset() does checkPause
     {
         sweepFees();
         exit();
@@ -391,7 +391,7 @@ contract StakingV1 is StakingState, StakingConstants {
     function earnedWithUpdate(
         address account)
         external
-        // sweepFees() does checkPause
+        // sweepFeesByAsset() does checkPause
         returns (uint256, uint256, uint256, uint256) // bzrxRewardsEarned, stableCoinRewardsEarned, bzrxRewardsVesting, stableCoinRewardsVesting
     {
         sweepFees();
@@ -603,7 +603,7 @@ contract StakingV1 is StakingState, StakingConstants {
 
             uint256 _lastRewardsAddTime = lastRewardsAddTime;
             if (_lastRewardsAddTime != 0) {
-                // user is attributed to a staked balance of vested BZRX up to the time rewards were last added
+                // user is attributed a staked balance of vested BZRX up to the time rewards were last added
                 vestedBalance = _vestedBalance(
                     vBZRXBalance,
                     _vBZRXLastUpdate[account],
@@ -644,7 +644,7 @@ contract StakingV1 is StakingState, StakingConstants {
                     )
                 ).div(_startingVBZRXBalance) / 2;
 
-            // user is attributed to a staked balance of vested BZRX, from their last update to the present
+            // user is attributed a staked balance of vested BZRX, from their last update to the present
             totalVotes = _vestedBalance(
                 vBZRXBalance,
                 _vBZRXLastUpdate[account],
@@ -747,7 +747,7 @@ contract StakingV1 is StakingState, StakingConstants {
 
     function sweepFees()
         public
-        checkPause
+        // sweepFeesByAsset() does checkPause
         returns (uint256 bzrxRewards, uint256 crv3Rewards)
     {
         return sweepFeesByAsset(currentFeeTokens);
@@ -981,14 +981,6 @@ contract StakingV1 is StakingState, StakingConstants {
         returnAmount = curve3Crv.balanceOf(address(this)) - beforeBalance;
     }    
 
-    
-    /*event CheckUniDisagreement(
-        uint256 rate,
-        uint256 sourceToDestSwapRate,
-        uint256 spreadValue,
-        uint256 maxDisagreement
-    );*/
-
     function _checkUniDisagreement(
         address asset,
         uint256 assetAmount,
@@ -1016,13 +1008,6 @@ contract StakingV1 is StakingState, StakingConstants {
         uint256 spreadValue = sourceToDestSwapRate > rate ?
             sourceToDestSwapRate - rate :
             rate - sourceToDestSwapRate;
-
-        /*emit CheckUniDisagreement(
-            rate,
-            sourceToDestSwapRate,
-            spreadValue,
-            maxDisagreement
-        );*/
 
         if (spreadValue != 0) {
             spreadValue = spreadValue
