@@ -403,7 +403,11 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         );
 
         if (loanLocal.startTimestamp == block.timestamp) {
-            loanLocal.startRate = collateralToLoanRate;
+            if (isTorqueLoan) {
+                loanLocal.startRate = collateralToLoanRate;
+            } else {
+                loanLocal.startRate = sentValues[3]; // loanToCollateralSwapRate
+            }
         }
 
         _emitOpeningEvents(
