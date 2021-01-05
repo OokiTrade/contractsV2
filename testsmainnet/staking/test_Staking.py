@@ -463,30 +463,61 @@ def testStake_vestingClaimBZRX(requireMainnetFork, stakingV1, bzx, setFeesContro
 
 def testStake_vBZRXVotingRigthsShouldDiminishOverTime(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, LPT, accounts, iUSDC, USDC, WETH):
 
-
-    # mint some for testing
-    BZRX.transfer(accounts[1], 200e18, {'from': BZRX})
-    BZRX.approve(iBZRX, 100e18, {'from': accounts[1]})
-    iBZRX.mint(accounts[1], 100e18, {'from': accounts[1]})
-
     vBZRX.transfer(accounts[1], 100e18, {'from': vBZRX})
-    LPT.transfer(accounts[1], 100e18, {
-        'from': "0x7d9048a13a96657b12dd69bbd8999e1be1c7d97c"})
-
-    balanceOfBZRX = BZRX.balanceOf(accounts[1])
+ 
     balanceOfvBZRX = vBZRX.balanceOf(accounts[1])
-    balanceOfiBZRX = iBZRX.balanceOf(accounts[1])
-    balanceOfLPT = LPT.balanceOf(accounts[1])
+ 
 
-    BZRX.approve(stakingV1, balanceOfBZRX, {'from': accounts[1]})
     vBZRX.approve(stakingV1, balanceOfvBZRX, {'from': accounts[1]})
-    iBZRX.approve(stakingV1, balanceOfiBZRX, {'from': accounts[1]})
-    LPT.approve(stakingV1, balanceOfLPT, {'from': accounts[1]})
-
-    tokens = [BZRX, vBZRX, iBZRX, LPT]
-    amounts = [balanceOfBZRX, balanceOfvBZRX, balanceOfiBZRX, balanceOfLPT]
+ 
+    tokens = [vBZRX]
+    amounts = [balanceOfvBZRX]
     tx = stakingV1.stake(tokens, amounts, {'from': accounts[1]})
-    assert False
+    votingPower = stakingV1.delegateBalanceOf(accounts[1])
+    assert(votingPower == balanceOfvBZRX/2)
+
+    # moving time to somewhere 1000 sec after vesting start
+    chain.sleep(vBZRX.vestingCliffTimestamp() - chain.time() + 1000)
+    chain.mine()
+
+    votingPower = stakingV1.delegateBalanceOf(accounts[1])
+    assert(votingPower > balanceOfvBZRX/2)
+
+    # moving time after vesting end
+    chain.sleep(vBZRX.vestingEndTimestamp() - chain.time() + 100)
+    chain.mine()
+
+    votingPower = stakingV1.delegateBalanceOf(accounts[1])
+    assert(votingPower == balanceOfvBZRX)
+    assert True
 
 
-    # TODO check votest over time, especially vbzrx
+    def testStake_vBZRXVotingRigthsShouldDiminishOverTime(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, LPT, accounts, iUSDC, USDC, WETH):
+
+        vBZRX.transfer(accounts[1], 100e18, {'from': vBZRX})
+    
+        balanceOfvBZRX = vBZRX.balanceOf(accounts[1])
+    
+
+        vBZRX.approve(stakingV1, balanceOfvBZRX, {'from': accounts[1]})
+    
+        tokens = [vBZRX]
+        amounts = [balanceOfvBZRX]
+        tx = stakingV1.stake(tokens, amounts, {'from': accounts[1]})
+        votingPower = stakingV1.delegateBalanceOf(accounts[1])
+        assert(votingPower == balanceOfvBZRX/2)
+
+        # moving time to somewhere 1000 sec after vesting start
+        chain.sleep(vBZRX.vestingCliffTimestamp() - chain.time() + 1000)
+        chain.mine()
+
+        votingPower = stakingV1.delegateBalanceOf(accounts[1])
+        assert(votingPower > balanceOfvBZRX/2)
+
+        # moving time after vesting end
+        chain.sleep(vBZRX.vestingEndTimestamp() - chain.time() + 100)
+        chain.mine()
+
+        votingPower = stakingV1.delegateBalanceOf(accounts[1])
+        assert(votingPower == balanceOfvBZRX)
+        assert True

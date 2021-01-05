@@ -47,7 +47,7 @@ def LPT(accounts):
 @pytest.fixture(scope="module")
 def POOL3(accounts):
     POOL3 = loadContractFromEtherscan(
-        "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490", "POOL3")
+        "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490", "3Crv")
     return POOL3
 
 
@@ -469,21 +469,55 @@ def testStake_IWantToFindARepresentative(requireMainnetFork, stakingV1, bzx, set
         tx = stakingV1.stake(tokens, amounts, {'from': accounts[i]})
         stakingV1.changeDelegate(accounts[i+1], {'from': accounts[i]})
 
+    
+    assert(len(stakingV1.getDelegateVotes(0, 20)) > 0)
+    assert True
 
 
-    assert False
+def testStake_IShuldBeAbleToUpdateStakingRewards(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, LPT, accounts, iUSDC, USDC, WETH):
 
 
-def testStake_UserStory9_StakedFirstTime(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
+        # mint some for testing
+    BZRX.transfer(accounts[1], 200e18, {'from': BZRX})
+    BZRX.approve(iBZRX, 100e18, {'from': accounts[1]})
+    iBZRX.mint(accounts[1], 100e18, {'from': accounts[1]})
 
-    assert False
+    vBZRX.transfer(accounts[1], 100e18, {'from': vBZRX})
+    LPT.transfer(accounts[1], 100e18, {
+        'from': "0x7d9048a13a96657b12dd69bbd8999e1be1c7d97c"})
+
+    balanceOfBZRX = BZRX.balanceOf(accounts[1])
+    balanceOfvBZRX = vBZRX.balanceOf(accounts[1])
+    balanceOfiBZRX = iBZRX.balanceOf(accounts[1])
+    balanceOfLPT = LPT.balanceOf(accounts[1])
+
+    BZRX.approve(stakingV1, balanceOfBZRX, {'from': accounts[1]})
+    vBZRX.approve(stakingV1, balanceOfvBZRX, {'from': accounts[1]})
+    iBZRX.approve(stakingV1, balanceOfiBZRX, {'from': accounts[1]})
+    LPT.approve(stakingV1, balanceOfLPT, {'from': accounts[1]})
+
+    tokens = [BZRX, vBZRX, iBZRX, LPT]
+    amounts = [balanceOfBZRX, balanceOfvBZRX, balanceOfiBZRX, balanceOfLPT]
+    tx = stakingV1.stake(tokens, amounts, {'from': accounts[1]})
 
 
-def testStake_UserStory10_StakedFirstTime(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
+        # create some fees
+    borrowAmount = 100*10**6
+    borrowTime = 7884000
+    collateralAmount = 1*10**18
+    collateralAddress = "0x0000000000000000000000000000000000000000"
+    txBorrow = iUSDC.borrow("", borrowAmount, borrowTime, collateralAmount, collateralAddress,
+                            accounts[0], accounts[0], b"", {'from': accounts[0], 'value': Wei(collateralAmount)})
 
-    assert False
+    txSweep = stakingV1.sweepFees()
 
 
-def testStake_UserStory11_StakedFirstTime(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
+    earnings = stakingV1.earned.call(accounts[1])
 
-    assert False
+    assert(earnings[0] > 0)
+    assert(earnings[1] > 0)
+    assert(earnings[2] > 0)
+    assert(earnings[3] > 0)
+
+
+ 

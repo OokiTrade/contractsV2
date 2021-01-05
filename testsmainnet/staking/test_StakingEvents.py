@@ -14,22 +14,3 @@ def setFeesController(bzx, stakingV1):
     bzx.setFeesController(stakingV1, {"from": bzx.owner()})
 
 
-
-def testRepStakedTokensEvent(requireMainnetFork, stakingV1, bzx, setFeesController):
-    assert False
-
-def testStakedEvent(requireMainnetFork):
-    assert False
-
-def testUnstakedEvent(requireMainnetFork):
-    assert False
-
-def testRewardAddedEvent(requireMainnetFork):
-    assert False
-
-
-def testRewardPaidEvent(requireMainnetFork):
-    assert False
-
-def testDelegateChangedEvent(requireMainnetFork):
-    assert False
