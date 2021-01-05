@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2020, bZeroX, LLC. All Rights Reserved.
+ * Copyright 2017-2021, bZeroX, LLC. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -403,7 +403,11 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         );
 
         if (loanLocal.startTimestamp == block.timestamp) {
-            loanLocal.startRate = collateralToLoanRate;
+            if (isTorqueLoan) {
+                loanLocal.startRate = collateralToLoanRate;
+            } else {
+                loanLocal.startRate = sentValues[3]; // loanToCollateralSwapRate
+            }
         }
 
         _emitOpeningEvents(
