@@ -47,7 +47,7 @@ def LPT(accounts):
 @pytest.fixture(scope="module")
 def POOL3(accounts):
     POOL3 = loadContractFromEtherscan(
-        "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490", "POOL3")
+        "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490", "3Crv")
     return POOL3
 
 
