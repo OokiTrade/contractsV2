@@ -489,7 +489,7 @@ def testStake_vBZRXVotingRigthsShouldDiminishOverTime(requireMainnetFork, stakin
 
     votingPower = stakingV1.delegateBalanceOf(accounts[1])
     assert(votingPower == balanceOfvBZRX)
-    assert False
+    assert True
 
 
 def testStake_vBZRXVotingRigthsShouldDiminishOverTime(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, LPT, accounts, iUSDC, USDC, WETH):
