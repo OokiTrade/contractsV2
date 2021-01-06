@@ -489,35 +489,35 @@ def testStake_vBZRXVotingRigthsShouldDiminishOverTime(requireMainnetFork, stakin
 
     votingPower = stakingV1.delegateBalanceOf(accounts[1])
     assert(votingPower == balanceOfvBZRX)
+    assert False
+
+
+def testStake_vBZRXVotingRigthsShouldDiminishOverTime(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, LPT, accounts, iUSDC, USDC, WETH):
+
+    vBZRX.transfer(accounts[1], 100e18, {'from': vBZRX})
+
+    balanceOfvBZRX = vBZRX.balanceOf(accounts[1])
+
+
+    vBZRX.approve(stakingV1, balanceOfvBZRX, {'from': accounts[1]})
+
+    tokens = [vBZRX]
+    amounts = [balanceOfvBZRX]
+    tx = stakingV1.stake(tokens, amounts, {'from': accounts[1]})
+    votingPower = stakingV1.delegateBalanceOf(accounts[1])
+    assert(votingPower == balanceOfvBZRX/2)
+
+    # moving time to somewhere 1000 sec after vesting start
+    chain.sleep(vBZRX.vestingCliffTimestamp() - chain.time() + 1000)
+    chain.mine()
+
+    votingPower = stakingV1.delegateBalanceOf(accounts[1])
+    assert(votingPower > balanceOfvBZRX/2)
+
+    # moving time after vesting end
+    chain.sleep(vBZRX.vestingEndTimestamp() - chain.time() + 100)
+    chain.mine()
+
+    votingPower = stakingV1.delegateBalanceOf(accounts[1])
+    assert(votingPower == balanceOfvBZRX)
     assert True
-
-
-    def testStake_vBZRXVotingRigthsShouldDiminishOverTime(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, LPT, accounts, iUSDC, USDC, WETH):
-
-        vBZRX.transfer(accounts[1], 100e18, {'from': vBZRX})
-    
-        balanceOfvBZRX = vBZRX.balanceOf(accounts[1])
-    
-
-        vBZRX.approve(stakingV1, balanceOfvBZRX, {'from': accounts[1]})
-    
-        tokens = [vBZRX]
-        amounts = [balanceOfvBZRX]
-        tx = stakingV1.stake(tokens, amounts, {'from': accounts[1]})
-        votingPower = stakingV1.delegateBalanceOf(accounts[1])
-        assert(votingPower == balanceOfvBZRX/2)
-
-        # moving time to somewhere 1000 sec after vesting start
-        chain.sleep(vBZRX.vestingCliffTimestamp() - chain.time() + 1000)
-        chain.mine()
-
-        votingPower = stakingV1.delegateBalanceOf(accounts[1])
-        assert(votingPower > balanceOfvBZRX/2)
-
-        # moving time after vesting end
-        chain.sleep(vBZRX.vestingEndTimestamp() - chain.time() + 100)
-        chain.mine()
-
-        votingPower = stakingV1.delegateBalanceOf(accounts[1])
-        assert(votingPower == balanceOfvBZRX)
-        assert True
