@@ -14,6 +14,7 @@
     "url": "https://github.com/bZxNetwork/contractsV2/issues"
   },
   "devDependencies": {
+    "@openzeppelin/contracts": "^3.3.0",
     "cross-env": "^7.0.2",
     "husky": "^4.2.5",
     "prettier": "^2.0.5",
