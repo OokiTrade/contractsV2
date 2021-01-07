@@ -10,17 +10,17 @@ import numpy as np
 
 
 def getUSDTValue(symbol, principal):
-    ETHPrice = 726.61
-    WBTCPrice = 29111.99
-    KNCPrice = 0.79
-    MKRPrice = 575.85
-    BZRXPrice = 0.1595
-    LINKPrice = 11.83
-    YFIPrice = 21874.96
-    UNIPrice = 4.82
-    AAVEPrice = 87.36
-    COMPPrice = 143.71
-    LRCPrice = 0.1751
+    ETHPrice = 1256
+    WBTCPrice = 39650
+    KNCPrice = 1.09
+    MKRPrice = 1090
+    BZRXPrice = 0.2253
+    LINKPrice = 16.25
+    YFIPrice = 34816
+    UNIPrice = 6.46
+    AAVEPrice = 119.47
+    COMPPrice = 179.78
+    LRCPrice = 0.37
 
     if symbol == 'ETH':
         return principal * ETHPrice
@@ -50,10 +50,11 @@ def getUSDTValue(symbol, principal):
     elif (symbol == 'USDT' or symbol == 'USDC' or symbol == 'DAI'):
         return principal
     else:
-        raise ValueError("unhandled symbol", symbol)
+        print("principal", principal)
+        raise ValueError("unhandled symbol:" + symbol)
 
 
-filePath = './week17.csv'
+filePath = './week18.csv'
 num_lines = sum(1 for line in open(filePath))
 with open(filePath, newline='') as csvfile:
 
@@ -61,8 +62,8 @@ with open(filePath, newline='') as csvfile:
     next(transactions)  # skip header
 
     # Tom if you are going to change below you have to rerun sql
-    lastWeekRewardBlock = 1608832073 # block 11517746
-    thisWeekRewardBlockEnd = 1609530862 # block 11570468
+    lastWeekRewardBlock = 1609530862 # block 11570468
+    thisWeekRewardBlockEnd = 1610057164 # block 11610119
 
     prevUserAddress = 0
     prevBlockTime = 0
@@ -191,4 +192,4 @@ for row in overallResults:
 print("results:")
 for row in overallResults:
     # print(row[0], '{0:.4f}'.format(row[3] * 521438), '{0:.0f}'.format(row[3] * 521438 * 1000000000000000000))
-    print('0x'+row[0][24:], '{0:.4f}'.format(row[3] * 521438), '{0:.0f}'.format(row[3] * 521438 * 1000000000000000000))
+    print('0x'+row[0][24:], '{0:.4f}'.format(row[3] * 521438), '{0:.0f}'.format(row[3] * 391080 * 1000000000000000000))

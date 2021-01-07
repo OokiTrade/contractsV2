@@ -23,7 +23,7 @@ WITH PREPARE AS
 
    FROM ethereum."logs"
    WHERE contract_address ='\xd8ee69652e4e4838f2531732a46d1f7f584f0b7f' 
-   AND block_number < 11336208
+   AND block_number < 11610119
 
      AND (topic1 = '\x7bd8cbb7ba34b33004f3deda0fd36c92fc0360acbd97843360037b467a538f90' -- kessak(Borrow(address,address,bytes32,address,address,uint256,uint256,uint256,uint256,uint256,uint256))
 
@@ -123,7 +123,9 @@ WITH PREPARE AS
               WHEN CONCAT('0x', ENCODE(SUBSTRING(loanToken, 13, 20), 'hex')) = LOWER('0xdac17f958d2ee523a2206206994597c13d831ec7') THEN 'USDT' 
               WHEN CONCAT('0x', ENCODE(SUBSTRING(loanToken, 13, 20), 'hex')) = LOWER('0xb72b31907c1c95f3650b64b2469e08edacee5e8f') THEN 'vBZRX' 
               WHEN CONCAT('0x', ENCODE(SUBSTRING(loanToken, 13, 20), 'hex')) = LOWER('0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984') THEN 'UNI' 
-              WHEN CONCAT('0x', ENCODE(SUBSTRING(loanToken, 13, 20), 'hex')) = LOWER('0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9') THEN 'AAVE' 
+              WHEN CONCAT('0x', ENCODE(SUBSTRING(loanToken, 13, 20), 'hex')) = LOWER('0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9') THEN 'AAVE'
+              WHEN CONCAT('0x', ENCODE(SUBSTRING(loanToken, 13, 20), 'hex')) = LOWER('0xBBbbCA6A901c926F240b89EacB641d8Aec7AEafD') THEN 'LRC'
+              
           END AS tokenSymbol, 
           *
    FROM populateEvents), 
@@ -150,5 +152,4 @@ ORDER BY userAddress,
         --  loanToken,
          block_time
         --  INDEX;
-
 
