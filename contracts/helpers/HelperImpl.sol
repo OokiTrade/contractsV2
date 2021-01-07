@@ -19,7 +19,7 @@ contract HelperImpl is Ownable {
     {
         balances = new uint256[](tokens.length);
         for (uint256 i = 0; i < tokens.length; i++) {
-            balances[0] = tokens[i].balanceOf(wallet);
+            balances[i] = tokens[i].balanceOf(wallet);
         }
     }
 
@@ -29,7 +29,7 @@ contract HelperImpl is Ownable {
     {
         prices = new uint256[](tokens.length);
         for (uint256 i = 0; i < tokens.length; i++) {
-            prices[0] = tokens[i].tokenPrice();
+            prices[i] = tokens[i].tokenPrice();
         }
     }
 
@@ -39,7 +39,7 @@ contract HelperImpl is Ownable {
     {
         rates = new uint256[](tokens.length);
         for (uint256 i = 0; i < tokens.length; i++) {
-            rates[0] = tokens[i].supplyInterestRate();
+            rates[i] = tokens[i].supplyInterestRate();
         }
     }
 
@@ -49,7 +49,7 @@ contract HelperImpl is Ownable {
     {
         rates = new uint256[](tokens.length);
         for (uint256 i = 0; i < tokens.length; i++) {
-            rates[0] = tokens[i].borrowInterestRate();
+            rates[i] = tokens[i].borrowInterestRate();
         }
     }
 
@@ -59,7 +59,7 @@ contract HelperImpl is Ownable {
     {
         balances = new uint256[](tokens.length);
         for (uint256 i = 0; i < tokens.length; i++) {
-            balances[0] = tokens[i].assetBalanceOf(wallet);
+            balances[i] = tokens[i].assetBalanceOf(wallet);
         }
     }
 
@@ -69,7 +69,7 @@ contract HelperImpl is Ownable {
     {
         profits = new int256[](tokens.length);
         for (uint256 i = 0; i < tokens.length; i++) {
-            profits[0] = tokens[i].profitOf(wallet);
+            profits[i] = tokens[i].profitOf(wallet);
         }
     }
 
@@ -79,7 +79,7 @@ contract HelperImpl is Ownable {
     {
         liquidity = new uint256[](tokens.length);
         for (uint256 i = 0; i < tokens.length; i++) {
-            liquidity[0] = tokens[i].marketLiquidity();
+            liquidity[i] = tokens[i].marketLiquidity();
         }
     }
 }
