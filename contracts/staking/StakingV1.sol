@@ -11,9 +11,10 @@ import "./StakingConstants.sol";
 import "../interfaces/IVestingToken.sol";
 import "../interfaces/ILoanPool.sol";
 import "../feeds/IPriceFeeds.sol";
+import "../connectors/gastoken/GasTokenUser.sol";
 
 
-contract StakingV1 is StakingState, StakingConstants {
+contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
 
     modifier onlyEOA() {
         require(msg.sender == tx.origin, "unauthorized");
@@ -752,6 +753,19 @@ contract StakingV1 is StakingState, StakingConstants {
     {
         return sweepFeesByAsset(currentFeeTokens);
     }
+
+    function sweepFeesWithGasToken(
+        address gasTokenUser)
+        external
+        usesGasToken(gasTokenUser)
+        returns (
+            uint256 bzrxRewards,
+            uint256 crv3Rewards
+        )
+    {
+        return sweepFees();
+    }
+
 
     function sweepFeesByAsset(
         address[] memory assets)
