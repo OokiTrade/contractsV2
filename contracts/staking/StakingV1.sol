@@ -822,13 +822,13 @@ contract StakingV1 is StakingState, StakingConstants {
             if (asset == BZRX) {
                 continue;
             } else if (asset == DAI) {
-                daiAmount = amounts[i];
+                daiAmount = daiAmount.add(amounts[i]);
                 continue;
             } else if (asset == USDC) {
-                usdcAmount = amounts[i];
+                usdcAmount = usdcAmount.add(amounts[i]);
                 continue;
             } else if (asset == USDT) {
-                usdtAmount = amounts[i];
+                usdtAmount = usdtAmount.add(amounts[i]);
                 continue;
             }
 
@@ -965,8 +965,8 @@ contract StakingV1 is StakingState, StakingConstants {
             }
         }
         if (usdtAmount != 0) {
+            stakingReward = stakingRewards[USDT];
             if (stakingReward != 0) {
-                stakingReward = stakingRewards[USDT];
                 if (usdtAmount > stakingReward) {
                     usdtAmount = stakingReward;
                 }
@@ -1116,6 +1116,7 @@ contract StakingV1 is StakingState, StakingConstants {
         external
         onlyOwner
     {
+        require(_maxAllowedDisagreement != 0, "invalid param");
         maxAllowedDisagreement = _maxAllowedDisagreement;
     }
 
@@ -1124,6 +1125,7 @@ contract StakingV1 is StakingState, StakingConstants {
         external
         onlyOwner
     {
+        require(_callerRewardDivisor != 0, "invalid param");
         callerRewardDivisor = _callerRewardDivisor;
     }
 }

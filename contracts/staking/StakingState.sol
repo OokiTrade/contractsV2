@@ -27,7 +27,6 @@ contract StakingState is Ownable {
 
     mapping(address => uint256) internal _totalSupplyPerToken;                      // token => value
     mapping(address => mapping(address => uint256)) internal _balancesPerToken;     // token => account => value
-    mapping(address => mapping(address => uint256)) internal _checkpointPerToken;   // token => account => value
 
     mapping(address => address) public delegate;                                    // user => delegate
     mapping(address => mapping(address => uint256)) public delegatedPerToken;       // token => user => value
