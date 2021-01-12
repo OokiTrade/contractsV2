@@ -199,23 +199,23 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
         return _claim(true);
     }
 
-    function claimWithUpdate()
-        external
-        // sweepFeesByAsset() does checkPause
-        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
-    {
-        sweepFees();
-        return _claim(false);
-    }
+    // function claimWithUpdate()
+    //     external
+    //     // sweepFeesByAsset() does checkPause
+    //     returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
+    // {
+    //     sweepFees();
+    //     return _claim(false);
+    // }
 
-    function claimAndRestakeWithUpdate()
-        external
-        // sweepFeesByAsset() does checkPause
-        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
-    {
-        sweepFees();
-        return _claim(true);
-    }
+    // function claimAndRestakeWithUpdate()
+    //     external
+    //     // sweepFeesByAsset() does checkPause
+    //     returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
+    // {
+    //     sweepFees();
+    //     return _claim(true);
+    // }
 
     function _claim(
         bool restake)
@@ -273,32 +273,32 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
         );
     }
 
-    function exit()
-        public
-        // unstake() does a checkPause
-    {
-        address[] memory tokens = new address[](4);
-        uint256[] memory values = new uint256[](4);
-        tokens[0] = iBZRX;
-        tokens[1] = LPToken;
-        tokens[2] = vBZRX;
-        tokens[3] = BZRX;
-        values[0] = uint256(-1);
-        values[1] = uint256(-1);
-        values[2] = uint256(-1);
-        values[3] = uint256(-1);
+    // function exit()
+    //     public
+    //     // unstake() does a checkPause
+    // {
+    //     address[] memory tokens = new address[](4);
+    //     uint256[] memory values = new uint256[](4);
+    //     tokens[0] = iBZRX;
+    //     tokens[1] = LPToken;
+    //     tokens[2] = vBZRX;
+    //     tokens[3] = BZRX;
+    //     values[0] = uint256(-1);
+    //     values[1] = uint256(-1);
+    //     values[2] = uint256(-1);
+    //     values[3] = uint256(-1);
         
-        unstake(tokens, values);
-        _claim(false);
-    }
+    //     unstake(tokens, values);
+    //     _claim(false);
+    // }
 
-    function exitWithUpdate()
-        external
-        // sweepFeesByAsset() does checkPause
-    {
-        sweepFees();
-        exit();
-    }
+    // function exitWithUpdate()
+    //     external
+    //     // sweepFeesByAsset() does checkPause
+    // {
+    //     sweepFees();
+    //     exit();
+    // }
 
     function getDelegateVotes(
         uint256 start,
@@ -389,15 +389,15 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
         );
     }
 
-    function earnedWithUpdate(
-        address account)
-        external
-        // sweepFeesByAsset() does checkPause
-        returns (uint256, uint256, uint256, uint256) // bzrxRewardsEarned, stableCoinRewardsEarned, bzrxRewardsVesting, stableCoinRewardsVesting
-    {
-        sweepFees();
-        return earned(account);
-    }
+    // function earnedWithUpdate(
+    //     address account)
+    //     external
+    //     // sweepFeesByAsset() does checkPause
+    //     returns (uint256, uint256, uint256, uint256) // bzrxRewardsEarned, stableCoinRewardsEarned, bzrxRewardsVesting, stableCoinRewardsVesting
+    // {
+    //     sweepFees();
+    //     return earned(account);
+    // }
 
     function _earned(
         address account,
@@ -763,7 +763,7 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
             uint256 crv3Rewards
         )
     {
-        return sweepFees();
+        return sweepFeesByAsset(currentFeeTokens);
     }
 
 
