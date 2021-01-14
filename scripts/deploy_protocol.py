@@ -200,8 +200,8 @@ def deployProtocol():
                         "0x0000000000000000000000000000000000000001"  # Fast Gas / Gwei
                     ],
                     [
-                        "0x986b5E1e1755e3C2440e960477f25201B0a8bbD4", # USDC
-                        "0x986b5E1e1755e3C2440e960477f25201B0a8bbD4", # USDT (sharing USDC feed, old: 0xEe9F2375b4bdF6387aa8265dD4FB8F16512A1d46
+                        "0xA9F9F897dD367C416e350c33a92fC12e53e1Cee5", # USDC (DollarPegFeed)
+                        "0xA9F9F897dD367C416e350c33a92fC12e53e1Cee5", # USDT (DollarPegFeed)
                         "0x773616E4d11A78F511299002da57A0a94577F1f4", # SAI - (sharing DAI feed)
                         "0xdeb288F737066589598e9214E782fa5A8eD689e8", # WBTC
                         "0x24551a8Fb2A7211A25a17B1481f043A8a8adC7f2", # MKR
