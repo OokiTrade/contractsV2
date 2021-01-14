@@ -65,13 +65,18 @@ assets = [
 ]
 
 for address in assets:
+    print("4", address)
     staking.setUniswapApproval(address)
     time.sleep(1)
+print("4.1")
 staking.setFeeTokens(assets)
+print("4.2")
 staking.setFundsWallet(accounts[9])
 # bzx.withdrawFees(assets, accounts[8], 0, {'from': stakingV1})
 bzx = Contract.from_abi("bzx", address="0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f",  abi=interface.IBZx.abi, owner=accounts[0])
+print("4.3")
 bzx.setFeesController(staking, {'from': bzx.owner()})
+print("4.4")
 staking.unPause()
 print("5")
 
@@ -86,10 +91,10 @@ iBZRX = loadContractFromAbi(
     "0x18240BD9C07fA6156Ce3F3f61921cC82b2619157", "iBZRX", LoanTokenLogicStandard.abi)
 print("8")
 CURVE3POOL = loadContractFromAbi(
-    "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7", "CURVE3POOL", TestToken.ab)
+    "0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7", "CURVE3POOL", TestToken.abi)
 print("9")
 CURVE3CRV = loadContractFromAbi(
-    "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490", "CURVE3CRV", TestToken.ab)
+    "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490", "CURVE3CRV", TestToken.abi)
 print("10")
 LPT = loadContractFromAbi(
     "0xe26A220a341EAca116bDa64cF9D5638A935ae629", "LPT", TestToken.abi)
@@ -100,3 +105,13 @@ print("11")
 
 # ganache-cli --accounts 10 --hardfork istanbul --fork https://eth-mainnet.alchemyapi.io/v2/1-sHvdVH_hHp9jvOiVp4LqqXg0_sGhPK --gasLimit 12000000 --mnemonic brownie --port 8545 --chainId 1 -h 0.0.0.0 -v -u "0xB7F72028D9b502Dc871C444363a7aC5A52546608"
 # https://eth-mainnet.alchemyapi.io/v2/Cim1KnSYjNWTExhMWHMpewQUyatTbmfE
+
+# ganache-cli --accounts 10 --hardfork istanbul --fork https://eth-mainnet.alchemyapi.io/v2/Cim1KnSYjNWTExhMWHMpewQUyatTbmfE --gasLimit 12000000 --mnemonic brownie --port 5458 --chainId 1 -h 0.0.0.0 \
+#     -u 0xB7F72028D9b502Dc871C444363a7aC5A52546608\
+#     -u 0xb72b31907c1c95f3650b64b2469e08edacee5e8f\
+#     -u 0x56d811088235F11C8920698a204A5010a788f4b3\
+#     -u 0x18240BD9C07fA6156Ce3F3f61921cC82b2619157\
+#     -u 0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7\
+#     -u 0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490\
+#     -u 0xe26A220a341EAca116bDa64cF9D5638A935ae629\
+#     -u 0xBE0eB53F46cd790Cd13851d5EFf43D12404d33E8
