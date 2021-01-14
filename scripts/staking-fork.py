@@ -99,3 +99,4 @@ print("11")
 # brownie networks add Ethereum staging chainid=1 host=http://35.174.43.93:5458
 
 # ganache-cli --accounts 10 --hardfork istanbul --fork https://eth-mainnet.alchemyapi.io/v2/1-sHvdVH_hHp9jvOiVp4LqqXg0_sGhPK --gasLimit 12000000 --mnemonic brownie --port 8545 --chainId 1 -h 0.0.0.0 -v -u "0xB7F72028D9b502Dc871C444363a7aC5A52546608"
+# https://eth-mainnet.alchemyapi.io/v2/Cim1KnSYjNWTExhMWHMpewQUyatTbmfE
