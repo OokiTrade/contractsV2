@@ -23,6 +23,27 @@ contract HelperImpl is Ownable {
         }
     }
 
+    function totalSupply(IERC20[] calldata tokens)
+        public
+        returns (uint256[] memory totalSupply)
+    {
+        totalSupply = new uint256[](tokens.length);
+        for (uint256 i = 0; i < tokens.length; i++) {
+            totalSupply[i] = tokens[i].totalSupply();
+        }
+    }
+
+    function allowance(
+        IERC20[] calldata tokens,
+        address owner,
+        address spender
+    ) public returns (uint256[] memory allowances) {
+        allowances = new uint256[](tokens.length);
+        for (uint256 i = 0; i < tokens.length; i++) {
+            allowances[i] = tokens[i].allowance(owner, spender);
+        }
+    }
+
     function tokenPrice(IToken[] calldata tokens)
         public
         returns (uint256[] memory prices)
