@@ -5,21 +5,19 @@
 
 pragma solidity 0.5.17;
 
-import "../openzeppelin/Ownable.sol";
+import "./StakingUpgradeable.sol";
 import "../openzeppelin/SafeMath.sol";
 import "../openzeppelin/SafeERC20.sol";
 import "../mixins/EnumerableBytes32Set.sol";
 
 
-contract StakingState is Ownable {
+contract StakingState is StakingUpgradeable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
     using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
 
     uint256 public constant initialCirculatingSupply = 1030000000e18 - 889389933e18;
     address internal constant ZERO_ADDRESS = address(0);
-
-    address public implementation;
 
     bool public isPaused;
 

@@ -4,12 +4,12 @@
  */
 
 pragma solidity 0.5.17;
-pragma experimental ABIEncoderV2;
 
-import "./StakingState.sol";
+import "./StakingUpgradeable.sol";
+import "../openzeppelin/Address.sol";
 
 
-contract StakingProxy is StakingState {
+contract StakingProxy is StakingUpgradeable {
 
     constructor(
         address _impl)
