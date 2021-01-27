@@ -11,4 +11,9 @@ interface ICurve3Pool {
         uint256[3] calldata amounts,
         uint256 min_mint_amount)
         external;
+
+    function get_virtual_price()
+        external
+        view
+        returns (uint256);
 }

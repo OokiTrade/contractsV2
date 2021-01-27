@@ -124,7 +124,7 @@ contract StakingV1 is StakingState, StakingConstants {
         }
     }
 
-    function changeDelegate(
+    /*function changeDelegate(
         address delegateToSet)
         external
         checkPause
@@ -180,7 +180,7 @@ contract StakingV1 is StakingState, StakingConstants {
 
             currentDelegate = delegateToSet;
         }
-    }
+    }*/
 
     function claim()
         external
@@ -811,7 +811,7 @@ contract StakingV1 is StakingState, StakingConstants {
             BZRX,
             WETH
         );
-        uint256 maxDisagreement = maxAllowedDisagreement;
+        uint256 maxDisagreement = maxUniswapDisagreement;
 
         address asset;
         uint256 daiAmount;
@@ -940,8 +940,9 @@ contract StakingV1 is StakingState, StakingConstants {
         returns (uint256 returnAmount)
     {
         uint256[3] memory curveAmounts;
+        uint256 curveTotal;
         uint256 stakingReward;
-        
+
         if (daiAmount != 0) {
             stakingReward = stakingRewards[DAI];
             if (stakingReward != 0) {
@@ -951,6 +952,7 @@ contract StakingV1 is StakingState, StakingConstants {
                 stakingRewards[DAI] = stakingReward
                     .sub(daiAmount);
                 curveAmounts[0] = daiAmount;
+                curveTotal = daiAmount;
             }
         }
         if (usdcAmount != 0) {
@@ -962,6 +964,7 @@ contract StakingV1 is StakingState, StakingConstants {
                 stakingRewards[USDC] = stakingReward
                     .sub(usdcAmount);
                 curveAmounts[1] = usdcAmount;
+                curveTotal = curveTotal.add(usdcAmount);
             }
         }
         if (usdtAmount != 0) {
@@ -973,12 +976,21 @@ contract StakingV1 is StakingState, StakingConstants {
                 stakingRewards[USDT] = stakingReward
                     .sub(usdtAmount);
                 curveAmounts[2] = usdtAmount;
+                curveTotal = curveTotal.add(usdtAmount);
             }
         }
 
         uint256 beforeBalance = curve3Crv.balanceOf(address(this));
         curve3pool.add_liquidity(curveAmounts, 0);
+
         returnAmount = curve3Crv.balanceOf(address(this)) - beforeBalance;
+
+        // will revert if disagreement found
+        _checkCurveDisagreement(
+            curveTotal,
+            returnAmount,
+            maxCurveDisagreement
+        );
     }    
 
     function _checkUniDisagreement(
@@ -1021,7 +1033,32 @@ contract StakingV1 is StakingState, StakingConstants {
         }
     }
 
+    function _checkCurveDisagreement(
+        uint256 sendAmount, // deposit tokens
+        uint256 actualReturn, // returned lp token
+        uint256 maxDisagreement)
+        internal
+        view
+    {
+        uint256 expectedReturn = sendAmount
+            .mul(1e18)
+            .div(curve3pool.get_virtual_price());
 
+        uint256 spreadValue = actualReturn > expectedReturn ?
+            actualReturn - expectedReturn :
+            expectedReturn - actualReturn;
+
+        if (spreadValue != 0) {
+            spreadValue = spreadValue
+                .mul(1e20)
+                .div(actualReturn);
+
+            require(
+                spreadValue <= maxDisagreement,
+                "price disagreement"
+            );
+        }
+    }
 
     // OnlyOwner functions
 
@@ -1111,13 +1148,22 @@ contract StakingV1 is StakingState, StakingConstants {
         rewardPercent = _rewardPercent;
     }
 
-    function setMaxAllowedDisagreement(
-        uint256 _maxAllowedDisagreement)
+    function setMaxUniswapDisagreement(
+        uint256 _maxUniswapDisagreement)
         external
         onlyOwner
     {
-        require(_maxAllowedDisagreement != 0, "invalid param");
-        maxAllowedDisagreement = _maxAllowedDisagreement;
+        require(_maxUniswapDisagreement != 0, "invalid param");
+        maxUniswapDisagreement = _maxUniswapDisagreement;
+    }
+
+    function setMaxCurveDisagreement(
+        uint256 _maxCurveDisagreement)
+        external
+        onlyOwner
+    {
+        require(_maxCurveDisagreement != 0, "invalid param");
+        maxCurveDisagreement = _maxCurveDisagreement;
     }
 
     function setCallerRewardDivisor(
