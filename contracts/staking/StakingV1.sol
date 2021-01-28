@@ -61,11 +61,6 @@ contract StakingV1 is StakingState, StakingConstants {
 
             IERC20(token).safeTransferFrom(msg.sender, address(this), stakeAmount);
 
-            if (token == vBZRX) {
-                // used for settling vesting BZRX
-                _vBZRXLastUpdate[msg.sender] = block.timestamp;
-            }
-
             emit Stake(
                 msg.sender,
                 token,
@@ -109,11 +104,6 @@ contract StakingV1 is StakingState, StakingConstants {
                 .sub(unstakeAmount);
 
             IERC20(token).safeTransfer(msg.sender, unstakeAmount);
-
-            if (token == vBZRX) {
-                // used for settling vesting BZRX
-                _vBZRXLastUpdate[msg.sender] = block.timestamp;
-            }
 
             emit Unstake(
                 msg.sender,
@@ -222,9 +212,12 @@ contract StakingV1 is StakingState, StakingConstants {
         updateRewards(msg.sender)
         returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
     {
-        (bzrxRewardsEarned, stableCoinRewardsEarned,,) = _earned(msg.sender, bzrxPerTokenStored, stableCoinPerTokenStored);
-
-        lastClaimTime[msg.sender] = block.timestamp;
+        (bzrxRewardsEarned, stableCoinRewardsEarned,,) = _earned(
+            msg.sender,
+            bzrxPerTokenStored,
+            stableCoinPerTokenStored,
+            0 // vesting BZRX already handled in updateRewards
+        );
 
         if (bzrxRewardsEarned != 0) {
             bzrxRewards[msg.sender] = 0;
@@ -343,31 +336,18 @@ contract StakingV1 is StakingState, StakingConstants {
         uint256 _bzrxPerTokenStored = bzrxPerTokenStored;
         uint256 _stableCoinPerTokenStored = stableCoinPerTokenStored;
 
+        uint256 vBZRXBalance = _balancesPerToken[vBZRX][account];
         (bzrxRewards[account], stableCoinRewards[account], bzrxVesting[account], stableCoinVesting[account]) = _earned(
             account,
             _bzrxPerTokenStored,
-            _stableCoinPerTokenStored
+            _stableCoinPerTokenStored,
+            vBZRXBalance
         );
         bzrxRewardsPerTokenPaid[account] = _bzrxPerTokenStored;
         stableCoinRewardsPerTokenPaid[account] = _stableCoinPerTokenStored;
+        _vestingLastSync[account] = block.timestamp;
 
-        // The below handles vested BZRX settlement
-        uint256 vBZRXBalance = _balancesPerToken[vBZRX][account];
         if (vBZRXBalance != 0) {
-            uint256 vested = _vestedBalance(
-                vBZRXBalance,
-                _vBZRXLastUpdate[account],
-                block.timestamp
-            );
-            if (vested != 0) {
-                // automatically stake vested amount
-                _restakeBZRX(
-                    account,
-                    vested
-                );
-            }
-            _vBZRXLastUpdate[account] = block.timestamp;
-
             // make sure claim is up to date
             IVestingToken(vBZRX).claim();
         }
@@ -384,7 +364,8 @@ contract StakingV1 is StakingState, StakingConstants {
         (bzrxRewardsEarned, stableCoinRewardsEarned, bzrxRewardsVesting, stableCoinRewardsVesting) = _earned(
             account,
             bzrxPerTokenStored,
-            stableCoinPerTokenStored
+            stableCoinPerTokenStored,
+            _balancesPerToken[vBZRX][account]
         );
     }
 
@@ -401,7 +382,8 @@ contract StakingV1 is StakingState, StakingConstants {
     function _earned(
         address account,
         uint256 _bzrxPerToken,
-        uint256 _stableCoinPerToken)
+        uint256 _stableCoinPerToken,
+        uint256 _vBZRXBalance)
         internal
         view
         returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned, uint256 bzrxRewardsVesting, uint256 stableCoinRewardsVesting)
@@ -433,23 +415,40 @@ contract StakingV1 is StakingState, StakingConstants {
 
 
         // add vested fees to rewards balances
-        uint256 _lastClaimTime = lastClaimTime[account];
+        uint256 rewardsVested;
+        uint256 _lastVestingSync = _vestingLastSync[account];
 
-        uint256 rewardsVested = _vestedBalance(
-            bzrxRewardsVesting,
-            _lastClaimTime,
-            block.timestamp
-        );
-        bzrxRewardsVesting -= rewardsVested;
-        bzrxRewardsEarned += rewardsVested;
+        if (_lastVestingSync != block.timestamp) {
+            if (bzrxRewardsVesting != 0) {
+                rewardsVested = _vestedBalance(
+                    bzrxRewardsVesting,
+                    _lastVestingSync,
+                    block.timestamp
+                );
+                bzrxRewardsVesting -= rewardsVested;
+                bzrxRewardsEarned += rewardsVested;
+            }
 
-        rewardsVested = _vestedBalance(
-            stableCoinRewardsVesting,
-            _lastClaimTime,
-            block.timestamp
-        );
-        stableCoinRewardsVesting -= rewardsVested;
-        stableCoinRewardsEarned += rewardsVested;
+            if (stableCoinRewardsVesting != 0) {
+                rewardsVested = _vestedBalance(
+                    stableCoinRewardsVesting,
+                    _lastVestingSync,
+                    block.timestamp
+                );
+                stableCoinRewardsVesting -= rewardsVested;
+                stableCoinRewardsEarned += rewardsVested;
+            }
+
+            if (_vBZRXBalance != 0) {
+                // add vested BZRX to rewards balance
+                rewardsVested = _vestedBalance(
+                    _vBZRXBalance,
+                    _lastVestingSync,
+                    block.timestamp
+                );
+                bzrxRewardsEarned += rewardsVested;
+            }
+        }
     }
 
     // note: anyone can contribute rewards to the contract
@@ -561,13 +560,6 @@ contract StakingV1 is StakingState, StakingConstants {
         returns (uint256 balance)
     {
         balance = _balancesPerToken[token][account];
-        if (token == BZRX) {
-            balance = _vestedBalance(
-                _balancesPerToken[vBZRX][account],
-                _vBZRXLastUpdate[account],
-                block.timestamp
-            ).add(balance);
-        }
     }
 
     function balanceOfByAssets(
@@ -595,25 +587,11 @@ contract StakingV1 is StakingState, StakingConstants {
         view
         returns (uint256 vestedBalance, uint256 vestingBalance)
     {
-        uint256 vBZRXBalance = _balancesPerToken[vBZRX][account];
-        if (vBZRXBalance != 0) {
-            vestingBalance = vBZRXBalance
+        vestingBalance = _balancesPerToken[vBZRX][account]
                 .mul(vBZRXWeightStored)
                 .div(1e18);
 
-            uint256 _lastRewardsAddTime = lastRewardsAddTime;
-            if (_lastRewardsAddTime != 0) {
-                // user is attributed a staked balance of vested BZRX up to the time rewards were last added
-                vestedBalance = _vestedBalance(
-                    vBZRXBalance,
-                    _vBZRXLastUpdate[account],
-                    lastRewardsAddTime
-                );
-            }
-        }
-
-        vestedBalance = _balancesPerToken[BZRX][account]
-            .add(vestedBalance);
+        vestedBalance = _balancesPerToken[BZRX][account];
 
         vestedBalance = _balancesPerToken[iBZRX][account]
             .mul(iBZRXWeightStored)
@@ -647,12 +625,13 @@ contract StakingV1 is StakingState, StakingConstants {
             // user is attributed a staked balance of vested BZRX, from their last update to the present
             totalVotes = _vestedBalance(
                 vBZRXBalance,
-                _vBZRXLastUpdate[account],
+                _vestingLastSync[account],
                 block.timestamp
             ).add(totalVotes);
         }
 
         totalVotes = _balancesPerToken[BZRX][account]
+            .add(bzrxRewards[account]) // unclaimed BZRX rewards count as votes
             .add(totalVotes);
 
         totalVotes = _balancesPerToken[iBZRX][account]
@@ -686,16 +665,6 @@ contract StakingV1 is StakingState, StakingConstants {
             supply = vBZRXSupply
                 .mul(vBZRXWeightStored)
                 .div(1e18);
-
-            uint256 _lastRewardsAddTime = lastRewardsAddTime;
-            if (_lastRewardsAddTime != 0) {
-                // treat vested BZRX as part of the staked BZRX supply
-                supply = _vestedBalance(
-                    vBZRXSupply,
-                    lastRewardsAddTime,
-                    block.timestamp
-                ).add(supply);
-            }
         }
 
         supply = _totalSupplyPerToken[BZRX]

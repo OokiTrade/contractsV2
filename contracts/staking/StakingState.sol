@@ -39,8 +39,6 @@ contract StakingState is StakingUpgradeable {
     mapping(address => uint256) public stableCoinRewards;                           // user => value
     mapping(address => uint256) public stableCoinVesting;                           // user => value
 
-    mapping(address => uint256) public lastClaimTime;                               // user => value
-
     uint256 public vBZRXWeightStored;
     uint256 public iBZRXWeightStored;
     uint256 public LPTokenWeightStored;
@@ -49,7 +47,7 @@ contract StakingState is StakingUpgradeable {
 
     uint256 public lastRewardsAddTime;
 
-    mapping(address => uint256) internal _vBZRXLastUpdate;
+    mapping(address => uint256) internal _vestingLastSync;
 
     mapping(address => address[]) public swapPaths;
     mapping(address => uint256) public stakingRewards;
