@@ -320,7 +320,7 @@ def testStake_UserStory5_IClaimAndRestakeMyStakingRewards(requireMainnetFork, st
     stakingV1.claimAndRestake({'from': accounts[1]})
 
     assert(0 <= BZRX.balanceOf(accounts[1]))
-    assert(earnings[1] < POOL3.balanceOf(accounts[1]))
+    assert(earnings[1] <= POOL3.balanceOf(accounts[1]))
     balanceAfterClaim = stakingV1.balanceOfByAssets.call(accounts[1])
     earningsAfterClaim = stakingV1.earned.call(accounts[1])
 
