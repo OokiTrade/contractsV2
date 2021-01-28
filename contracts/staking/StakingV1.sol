@@ -736,25 +736,11 @@ contract StakingV1 is StakingState, StakingConstants {
         internal
         returns (uint256[] memory)
     {
-        uint256 rewardAmount;
-        address _fundsWallet = fundsWallet;
         uint256[] memory amounts = bZx.withdrawFees(assets, address(this), IBZxPartial.FeeClaimType.All);
+
         for (uint256 i = 0; i < assets.length; i++) {
-            if (amounts[i] == 0) {
-                continue;
-            }
-
-            rewardAmount = amounts[i]
-                .mul(rewardPercent)
-                .div(1e20);
-
             stakingRewards[assets[i]] = stakingRewards[assets[i]]
-                .add(rewardAmount);
-
-            IERC20(assets[i]).safeTransfer(
-                _fundsWallet,
-                amounts[i] - rewardAmount
-            );
+                .add(amounts[i]);
         }
 
         emit WithdrawFees(
@@ -829,24 +815,48 @@ contract StakingV1 is StakingState, StakingConstants {
         bzrxRewards = stakingRewards[BZRX];
         crv3Rewards = stakingRewards[address(curve3Crv)];
         if (bzrxRewards != 0 || crv3Rewards != 0) {
+            address _fundsWallet = fundsWallet;
+            uint256 rewardAmount;
             uint256 callerReward;
             if (bzrxRewards != 0) {
                 stakingRewards[BZRX] = 0;
 
+                rewardAmount = bzrxRewards
+                    .mul(rewardPercent)
+                    .div(1e20);
+                IERC20(BZRX).transfer(
+                    _fundsWallet,
+                    bzrxRewards - rewardAmount
+                );
+                bzrxRewards = rewardAmount;
+
                 callerReward = bzrxRewards / callerRewardDivisor;
+                IERC20(BZRX).transfer(
+                    msg.sender,
+                    callerReward
+                );
                 bzrxRewards = bzrxRewards
                     .sub(callerReward);
-
-                IERC20(BZRX).transfer(msg.sender, callerReward);
             }
             if (crv3Rewards != 0) {
                 stakingRewards[address(curve3Crv)] = 0;
 
+                rewardAmount = crv3Rewards
+                    .mul(rewardPercent)
+                    .div(1e20);
+                curve3Crv.transfer(
+                    _fundsWallet,
+                    crv3Rewards - rewardAmount
+                );
+                crv3Rewards = rewardAmount;
+
                 callerReward = crv3Rewards / callerRewardDivisor;
+                curve3Crv.transfer(
+                    msg.sender,
+                    callerReward
+                );
                 crv3Rewards = crv3Rewards
                     .sub(callerReward);
-
-                curve3Crv.transfer(msg.sender, callerReward);
             }
 
             _addRewards(bzrxRewards, crv3Rewards);
