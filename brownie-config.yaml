@@ -38,7 +38,8 @@ compiler:
         optimizer:
             enabled: true
             runs: 200
-        remappings: null
+        remappings: 
+            - "@openzeppelin=./node_modules/@openzeppelin/"
 
 console:
     show_colors: true

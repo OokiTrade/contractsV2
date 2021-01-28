@@ -208,7 +208,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             delegatedManagers[loanLocal.id][msg.sender],
             "unauthorized"
         );
-        require(loanParamsLocal.maxLoanTerm == 0, "indefinite-term only");
+
         require(msg.value == 0 || (!useCollateral && loanParamsLocal.loanToken == address(wethToken)), "wrong asset sent");
 
         // pay outstanding interest to lender
@@ -322,7 +322,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             delegatedManagers[loanLocal.id][msg.sender],
             "unauthorized"
         );
-        require(loanParamsLocal.maxLoanTerm == 0, "indefinite-term only");
+
         require(loanLocal.endTimestamp > block.timestamp, "loan term has ended");
 
         // pay outstanding interest to lender
