@@ -11,9 +11,10 @@ import "./StakingConstants.sol";
 import "../interfaces/IVestingToken.sol";
 import "../interfaces/ILoanPool.sol";
 import "../feeds/IPriceFeeds.sol";
+import "../connectors/gastoken/GasTokenUser.sol";
 
 
-contract StakingV1 is StakingState, StakingConstants {
+contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
 
     modifier onlyEOA() {
         require(msg.sender == tx.origin, "unauthorized");
@@ -188,23 +189,23 @@ contract StakingV1 is StakingState, StakingConstants {
         return _claim(true);
     }
 
-    function claimWithUpdate()
+    /*function claimWithUpdate()
         external
         // sweepFeesByAsset() does checkPause
         returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
     {
         sweepFees();
         return _claim(false);
-    }
+    }*/
 
-    function claimAndRestakeWithUpdate()
+    /*function claimAndRestakeWithUpdate()
         external
         // sweepFeesByAsset() does checkPause
         returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
     {
         sweepFees();
         return _claim(true);
-    }
+    }*/
 
     function _claim(
         bool restake)
@@ -284,15 +285,15 @@ contract StakingV1 is StakingState, StakingConstants {
         _claim(false);
     }
 
-    function exitWithUpdate()
+    /*function exitWithUpdate()
         external
         // sweepFeesByAsset() does checkPause
     {
         sweepFees();
         exit();
-    }
+    }*/
 
-    function getDelegateVotes(
+    /*function getDelegateVotes(
         uint256 start,
         uint256 count)
         external
@@ -330,7 +331,7 @@ contract StakingV1 is StakingState, StakingConstants {
                 mstore(delegateArr, count)
             }
         }
-    }
+    }*/
 
     modifier updateRewards(address account) {
         uint256 _bzrxPerTokenStored = bzrxPerTokenStored;
@@ -369,7 +370,7 @@ contract StakingV1 is StakingState, StakingConstants {
         );
     }
 
-    function earnedWithUpdate(
+    /*function earnedWithUpdate(
         address account)
         external
         // sweepFeesByAsset() does checkPause
@@ -377,7 +378,7 @@ contract StakingV1 is StakingState, StakingConstants {
     {
         sweepFees();
         return earned(account);
-    }
+    }*/
 
     function _earned(
         address account,
@@ -719,6 +720,16 @@ contract StakingV1 is StakingState, StakingConstants {
         return sweepFeesByAsset(currentFeeTokens);
     }
 
+    function sweepFeesWithGasToken(
+        address gasTokenUser)
+        public
+        // sweepFeesByAsset() does checkPause
+        usesGasToken(gasTokenUser)
+        returns (uint256 bzrxRewards, uint256 crv3Rewards)
+    {
+        return sweepFeesByAsset(currentFeeTokens);
+    }
+
     function sweepFeesByAsset(
         address[] memory assets)
         public
@@ -729,6 +740,17 @@ contract StakingV1 is StakingState, StakingConstants {
         uint256[] memory amounts = _withdrawFees(assets);
         _convertFees(assets, amounts);
         (bzrxRewards, crv3Rewards) = _distributeFees();
+    }
+
+    function sweepFeesByAssetWithGasToken(
+        address[] memory assets,
+        address gasTokenUser)
+        public
+        // sweepFeesByAsset() does checkPause
+        usesGasToken(gasTokenUser)
+        returns (uint256 bzrxRewards, uint256 crv3Rewards)
+    {
+        return sweepFeesByAsset(assets);
     }
 
     function _withdrawFees(
