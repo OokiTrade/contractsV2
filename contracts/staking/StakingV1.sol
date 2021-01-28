@@ -660,12 +660,9 @@ contract StakingV1 is StakingState, StakingConstants {
         view
         returns (uint256 supply)
     {
-        uint256 vBZRXSupply = _totalSupplyPerToken[vBZRX];
-        if (vBZRXSupply != 0) {
-            supply = vBZRXSupply
-                .mul(vBZRXWeightStored)
-                .div(1e18);
-        }
+        supply = _totalSupplyPerToken[vBZRX]
+            .mul(vBZRXWeightStored)
+            .div(1e18);
 
         supply = _totalSupplyPerToken[BZRX]
             .add(supply);
