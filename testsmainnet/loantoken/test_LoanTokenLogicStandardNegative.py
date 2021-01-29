@@ -10,19 +10,26 @@ def requireMainnetFork():
     assert network.show_active() == "mainnet-fork"
 
 
-def loadContractFromEtherscan(address, alias):
+# def loadContractFromEtherscan(address, alias):
+#     try:
+#         return Contract(alias)
+#     except ValueError:
+#         contract = Contract.from_explorer(address)
+#         contract.set_alias(alias)
+#         return contract
+
+
+def loadContractFromAbi(address, alias, abi):
     try:
         return Contract(alias)
     except ValueError:
-        contract = Contract.from_explorer(address)
-        contract.set_alias(alias)
+        contract = Contract.from_abi(alias, address=address, abi=abi)
         return contract
-
 
 @pytest.fixture(scope="module")
 def iDAI(accounts, LoanTokenLogicStandard):
     # return Contract.from_abi("iDAI", address="0x6b093998d36f2c7f0cc359441fbb24cc629d5ff0",  abi=LoanTokenLogicStandard.abi, owner=accounts[0])
-    return loadContractFromEtherscan("0x6b093998d36f2c7f0cc359441fbb24cc629d5ff0", "iDAI")
+    return loadContractFromAbi("0x6b093998d36f2c7f0cc359441fbb24cc629d5ff0", "iDAI", LoanTokenLogicStandard.abi)
 
 
 @pytest.fixture(scope="module")
@@ -34,13 +41,13 @@ def bzx(accounts, LoanTokenLogicStandard, interface):
 @pytest.fixture(scope="module")
 def DAI(accounts, LoanTokenLogicStandard, TestToken):
     # return Contract.from_abi("DAI", address="0x6B175474E89094C44Da98b954EedeAC495271d0F",  abi=TestToken.abi, owner=accounts[0])
-    return loadContractFromEtherscan("0x6b175474e89094c44da98b954eedeac495271d0f", "DAI")
+    return loadContractFromAbi("0x6b175474e89094c44da98b954eedeac495271d0f", "DAI", LoanTokenLogicStandard.abi)
 
 
 @pytest.fixture(scope="module")
 def WETH(accounts, LoanTokenLogicStandard):
     # return Contract.from_abi("WETH", address="0x2956356cd2a2bf3202f771f50d3d14a367b48070",  abi=TestToken.abi, owner=accounts[0])
-    return loadContractFromEtherscan("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", "WETH")
+    return loadContractFromAbi("0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", "WETH", LoanTokenLogicStandard.abi)
 
 
 @pytest.fixture(scope="module")

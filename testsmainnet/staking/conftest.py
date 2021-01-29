@@ -57,10 +57,17 @@ def stakingV1(bzx, StakingProxy, StakingV1, accounts):
     bzx.setFeesController(staking, {'from': bzx.owner()})
     staking.unPause()
 
+
+    staking.setMaxUniswapDisagreement(100*10**18, {'from': "0x66aB6D9362d4F35596279692F0251Db635165871", "allow_revert": 1})
+    staking.setMaxCurveDisagreement(100*10**18, {'from': "0x66aB6D9362d4F35596279692F0251Db635165871", "allow_revert": 1})
+    staking.setRewardPercent(50e18)
+    staking.setCallerRewardDivisor(100)
+
     return staking
     # print("bzx owner", bzx.owner())
     # acct = accounts.at(bzx.owner(), force = True)
     # bzx.setFeesController(staking,  {'from': bzx.owner()})
+    
 
 
 @pytest.fixture(scope="module")
