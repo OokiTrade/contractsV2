@@ -257,15 +257,15 @@ def testStake_UserStory4_IClaimMyStakingRewards(requireMainnetFork, stakingV1, b
 
     stakingV1.claim({'from': accounts[1]})
 
-    assert(earnings[0] < BZRX.balanceOf(accounts[1]))
-    assert(earnings[1] < POOL3.balanceOf(accounts[1]))
+    assert(earnings[0] <= BZRX.balanceOf(accounts[1]))
+    assert(earnings[1] <= POOL3.balanceOf(accounts[1]))
 
     earningsAfterClaim = stakingV1.earned.call(accounts[1])
 
     assert(earningsAfterClaim[0] == 0)
     assert(earningsAfterClaim[1] == 0)
-    assert(earningsAfterClaim[2] < earnings[2])
-    assert(earningsAfterClaim[3] < earnings[3])
+    assert(earningsAfterClaim[2] <= earnings[2])
+    assert(earningsAfterClaim[3] <= earnings[3])
 
     assert True
 
@@ -326,10 +326,10 @@ def testStake_UserStory5_IClaimAndRestakeMyStakingRewards(requireMainnetFork, st
 
     assert(earningsAfterClaim[0] == 0)
     assert(earningsAfterClaim[1] == 0)
-    assert(earningsAfterClaim[2] < earnings[2])
-    assert(earningsAfterClaim[3] < earnings[3])
+    assert(earningsAfterClaim[2] <= earnings[2])
+    assert(earningsAfterClaim[3] <= earnings[3])
 
-    assert(balanceAfterClaim[0] > balance[0] + earnings[0])
+    assert(balanceAfterClaim[0] >= balance[0] + earnings[0])
     assert(balanceAfterClaim[1] == balance[1])
     assert(balanceAfterClaim[2] == balance[2])
     assert(balanceAfterClaim[3] == balance[3])
