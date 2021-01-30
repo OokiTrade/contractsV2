@@ -104,6 +104,11 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
             delegatedPerToken[currentDelegate][token] = delegatedPerToken[currentDelegate][token]
                 .sub(unstakeAmount);
 
+            if (token == BZRX && IERC20(BZRX).balanceOf(address(this)) < unstakeAmount) {
+                // settle vested BZRX only if needed
+                IVestingToken(vBZRX).claim();
+            }
+
             IERC20(token).safeTransfer(msg.sender, unstakeAmount);
 
             emit Unstake(
@@ -228,6 +233,11 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
                     bzrxRewardsEarned
                 );
             } else {
+                if (IERC20(BZRX).balanceOf(address(this)) < bzrxRewardsEarned) {
+                    // settle vested BZRX only if needed
+                    IVestingToken(vBZRX).claim();
+                }
+
                 IERC20(BZRX).transfer(msg.sender, bzrxRewardsEarned);
             }
         }
@@ -348,11 +358,6 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
         stableCoinRewardsPerTokenPaid[account] = _stableCoinPerTokenStored;
         _vestingLastSync[account] = block.timestamp;
 
-        if (vBZRXBalance != 0) {
-            // make sure claim is up to date
-            IVestingToken(vBZRX).claim();
-        }
-
         _;
     }
 
@@ -426,7 +431,6 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
                     _lastVestingSync,
                     block.timestamp
                 );
-                bzrxRewardsVesting -= rewardsVested;
                 bzrxRewardsEarned += rewardsVested;
             }
 
@@ -436,7 +440,6 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
                     _lastVestingSync,
                     block.timestamp
                 );
-                stableCoinRewardsVesting -= rewardsVested;
                 stableCoinRewardsEarned += rewardsVested;
             }
 
