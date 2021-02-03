@@ -151,7 +151,7 @@ def testStake_Multiple_People(requireMainnetFork, stakingV1, bzx, setFeesControl
     # approximately account4 has to have half revenue of accounts 1 2 3
     assert abs(earned3After[0]/10**18 - earned4After[0] * 2/10**18) < 1
 
-    assert False
+    #assert False
 
 
 
@@ -183,15 +183,21 @@ def testStake_Multiple_VestiesMoveTime(requireMainnetFork, stakingV1, bzx, setFe
     stakingV1.unstake([vBZRX], [1000e18], {'from': accounts[3]})
     stakingV1.unstake([vBZRX], [500e18], {'from': accounts[4]})
 
+    print(BZRX.balanceOf(stakingV1))
+    print(stakingV1.earned(accounts[1]))
+    print(stakingV1.earned(accounts[2]))
+    print(stakingV1.earned(accounts[3]))
+    print(stakingV1.earned(accounts[4]))
+
     stakingV1.claim({'from': accounts[1]})
     stakingV1.claim({'from': accounts[2]})
     stakingV1.claim({'from': accounts[3]})
     stakingV1.claim({'from': accounts[4]})
 
-    # stakingV1.exit({'from': accounts[1]})
-    # stakingV1.exit({'from': accounts[2]})
-    # stakingV1.exit({'from': accounts[3]})
-    # stakingV1.exit({'from': accounts[4]})
+    #stakingV1.exit({'from': accounts[1]})
+    #stakingV1.exit({'from': accounts[2]})
+    #stakingV1.exit({'from': accounts[3]})
+    #stakingV1.exit({'from': accounts[4]})
 
     # math rounding lefties
     assert BZRX.balanceOf(stakingV1)/10**18 < 1 
@@ -201,7 +207,7 @@ def testStake_Multiple_VestiesMoveTime(requireMainnetFork, stakingV1, bzx, setFe
     # chain.sleep(1665604800 - chain.time())
     # chain.mine()
 
-    assert False
+    #assert False
 
 
 
@@ -261,12 +267,17 @@ def testStake_Multiple_VestiesMoveMultipleTime(requireMainnetFork, stakingV1, bz
     # math rounding lefties
     assert BZRX.balanceOf(stakingV1)/10**18 < 1 
 
+    print(BZRX.balanceOf(stakingV1))
+    print(stakingV1.earned(accounts[1]))
+    print(stakingV1.earned(accounts[2]))
+    print(stakingV1.earned(accounts[3]))
+    print(stakingV1.earned(accounts[4]))
 
     #half way thru vesting
     # chain.sleep(1665604800 - chain.time())
     # chain.mine()
 
-    assert False
+    #ssert False
 
 def makeSomeFees(BZRX, accounts, iUSDC, stakingV1):
     BZRX.transfer(accounts[0], 1000000e18, {
