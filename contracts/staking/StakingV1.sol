@@ -218,13 +218,7 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
         updateRewards(msg.sender)
         returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
     {
-        (bzrxRewardsEarned, stableCoinRewardsEarned,,) = _earned(
-            msg.sender,
-            bzrxPerTokenStored,
-            stableCoinPerTokenStored,
-            0 // vesting BZRX already handled in updateRewards
-        );
-
+        bzrxRewardsEarned = bzrxRewards[msg.sender];
         if (bzrxRewardsEarned != 0) {
             bzrxRewards[msg.sender] = 0;
             if (restake) {
@@ -241,6 +235,8 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
                 IERC20(BZRX).transfer(msg.sender, bzrxRewardsEarned);
             }
         }
+
+        stableCoinRewardsEarned = stableCoinRewards[msg.sender];
         if (stableCoinRewardsEarned != 0) {
             stableCoinRewards[msg.sender] = 0;
             curve3Crv.transfer(msg.sender, stableCoinRewardsEarned);
@@ -347,15 +343,25 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
         uint256 _bzrxPerTokenStored = bzrxPerTokenStored;
         uint256 _stableCoinPerTokenStored = stableCoinPerTokenStored;
 
-        uint256 vBZRXBalance = _balancesPerToken[vBZRX][account];
-        (bzrxRewards[account], stableCoinRewards[account], bzrxVesting[account], stableCoinVesting[account]) = _earned(
+        (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned, uint256 bzrxRewardsVesting, uint256 stableCoinRewardsVesting) = _earned(
             account,
             _bzrxPerTokenStored,
-            _stableCoinPerTokenStored,
-            vBZRXBalance
+            _stableCoinPerTokenStored
         );
         bzrxRewardsPerTokenPaid[account] = _bzrxPerTokenStored;
         stableCoinRewardsPerTokenPaid[account] = _stableCoinPerTokenStored;
+
+        // vesting amounts get updated before sync
+        bzrxVesting[account] = bzrxRewardsVesting;
+        stableCoinVesting[account] = stableCoinRewardsVesting;
+
+        (bzrxRewards[account], stableCoinRewards[account],,) = _syncVesting(
+            account,
+            bzrxRewardsEarned,
+            stableCoinRewardsEarned,
+            bzrxRewardsVesting,
+            stableCoinRewardsVesting
+        );
         _vestingLastSync[account] = block.timestamp;
 
         _;
@@ -370,8 +376,15 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
         (bzrxRewardsEarned, stableCoinRewardsEarned, bzrxRewardsVesting, stableCoinRewardsVesting) = _earned(
             account,
             bzrxPerTokenStored,
-            stableCoinPerTokenStored,
-            _balancesPerToken[vBZRX][account]
+            stableCoinPerTokenStored
+        );
+
+        (bzrxRewardsEarned, stableCoinRewardsEarned, bzrxRewardsVesting, stableCoinRewardsVesting) = _syncVesting(
+            account,
+            bzrxRewardsEarned,
+            stableCoinRewardsEarned,
+            bzrxRewardsVesting,
+            stableCoinRewardsVesting
         );
     }
 
@@ -388,71 +401,91 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
     function _earned(
         address account,
         uint256 _bzrxPerToken,
-        uint256 _stableCoinPerToken,
-        uint256 _vBZRXBalance)
+        uint256 _stableCoinPerToken)
         internal
         view
         returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned, uint256 bzrxRewardsVesting, uint256 stableCoinRewardsVesting)
     {
-        (uint256 vestedBalance, uint256 vestingBalance) = balanceOfStored(account);
-
         uint256 bzrxPerTokenUnpaid = _bzrxPerToken.sub(bzrxRewardsPerTokenPaid[account]);
         uint256 stableCoinPerTokenUnpaid = _stableCoinPerToken.sub(stableCoinRewardsPerTokenPaid[account]);
 
-        bzrxRewardsEarned = vestedBalance
-            .mul(bzrxPerTokenUnpaid)
-            .div(1e36)
-            .add(bzrxRewards[account]);
+        bzrxRewardsEarned = bzrxRewards[account];
+        stableCoinRewardsEarned = stableCoinRewards[account];
+        bzrxRewardsVesting = bzrxVesting[account];
+        stableCoinRewardsVesting = stableCoinVesting[account];
 
-        stableCoinRewardsEarned = vestedBalance
-            .mul(stableCoinPerTokenUnpaid)
-            .div(1e36)
-            .add(stableCoinRewards[account]);
+        if (bzrxPerTokenUnpaid != 0 || stableCoinPerTokenUnpaid != 0) {
+            (uint256 vestedBalance, uint256 vestingBalance) = balanceOfStored(account);
 
-        bzrxRewardsVesting = vestingBalance
-            .mul(bzrxPerTokenUnpaid)
-            .div(1e36)
-            .add(bzrxVesting[account]);
+            bzrxRewardsEarned = vestedBalance
+                .mul(bzrxPerTokenUnpaid)
+                .div(1e36)
+                .add(bzrxRewardsEarned);
 
-        stableCoinRewardsVesting = vestingBalance
-            .mul(stableCoinPerTokenUnpaid)
-            .div(1e36)
-            .add(stableCoinVesting[account]);
+            stableCoinRewardsEarned = vestedBalance
+                .mul(stableCoinPerTokenUnpaid)
+                .div(1e36)
+                .add(stableCoinRewardsEarned);
 
+            bzrxRewardsVesting = vestingBalance
+                .mul(bzrxPerTokenUnpaid)
+                .div(1e36)
+                .add(bzrxRewardsVesting);
 
-        // add vested fees to rewards balances
-        uint256 rewardsVested;
-        uint256 _lastVestingSync = _vestingLastSync[account];
+            stableCoinRewardsVesting = vestingBalance
+                .mul(stableCoinPerTokenUnpaid)
+                .div(1e36)
+                .add(stableCoinRewardsVesting);
+        }
+    }
 
-        if (_lastVestingSync != block.timestamp) {
+    function _syncVesting(
+        address account,
+        uint256 bzrxRewardsEarned,
+        uint256 stableCoinRewardsEarned,
+        uint256 bzrxRewardsVesting,
+        uint256 stableCoinRewardsVesting)
+        internal
+        view
+        returns (uint256, uint256, uint256, uint256)
+    {
+        uint256 lastVestingSync = _vestingLastSync[account];
+
+        if (lastVestingSync != block.timestamp) {
+            uint256 rewardsVested;
+            uint256 multiplier = _vestedBalance(
+                1e36,
+                lastVestingSync,
+                block.timestamp
+            );
+
             if (bzrxRewardsVesting != 0) {
-                rewardsVested = _vestedBalance(
-                    bzrxRewardsVesting,
-                    _lastVestingSync,
-                    block.timestamp
-                );
+                rewardsVested = bzrxRewardsVesting
+                    .mul(multiplier)
+                    .div(1e36);
                 bzrxRewardsEarned += rewardsVested;
+                bzrxRewardsVesting -= rewardsVested;
             }
 
             if (stableCoinRewardsVesting != 0) {
-                rewardsVested = _vestedBalance(
-                    stableCoinRewardsVesting,
-                    _lastVestingSync,
-                    block.timestamp
-                );
+                rewardsVested = stableCoinRewardsVesting
+                    .mul(multiplier)
+                    .div(1e36);
                 stableCoinRewardsEarned += rewardsVested;
+                stableCoinRewardsVesting -= rewardsVested;
             }
 
-            if (_vBZRXBalance != 0) {
+            uint256 vBZRXBalance = _balancesPerToken[vBZRX][account];
+            if (vBZRXBalance != 0) {
                 // add vested BZRX to rewards balance
-                rewardsVested = _vestedBalance(
-                    _vBZRXBalance,
-                    _lastVestingSync,
-                    block.timestamp
-                );
+                rewardsVested = vBZRXBalance
+                    .mul(multiplier)
+                    .div(1e36);
                 bzrxRewardsEarned += rewardsVested;
             }
         }
+
+        return (bzrxRewardsEarned, stableCoinRewardsEarned, bzrxRewardsVesting, stableCoinRewardsVesting);
     }
 
     // note: anyone can contribute rewards to the contract
@@ -591,21 +624,30 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
         view
         returns (uint256 vestedBalance, uint256 vestingBalance)
     {
-        vestingBalance = _balancesPerToken[vBZRX][account]
-                .mul(vBZRXWeightStored)
-                .div(1e18);
+        uint256 balance = _balancesPerToken[vBZRX][account];
+        if (balance != 0) {
+            vestingBalance = _balancesPerToken[vBZRX][account]
+                    .mul(vBZRXWeightStored)
+                    .div(1e18);
+        }
 
         vestedBalance = _balancesPerToken[BZRX][account];
 
-        vestedBalance = _balancesPerToken[iBZRX][account]
-            .mul(iBZRXWeightStored)
-            .div(1e18)
-            .add(vestedBalance);
+        balance = _balancesPerToken[iBZRX][account];
+        if (balance != 0) {
+            vestedBalance = balance
+                .mul(iBZRXWeightStored)
+                .div(1e18)
+                .add(vestedBalance);
+        }
 
-        vestedBalance = _balancesPerToken[LPToken][account]
-            .mul(LPTokenWeightStored)
-            .div(1e18)
-            .add(vestedBalance);
+        balance = _balancesPerToken[LPToken][account];
+        if (balance != 0) {
+            vestedBalance = balance
+                .mul(LPTokenWeightStored)
+                .div(1e18)
+                .add(vestedBalance);
+        }
     }
 
     function delegateBalanceOf(
