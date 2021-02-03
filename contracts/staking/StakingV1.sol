@@ -186,6 +186,32 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
         return _claim(false);
     }
 
+    function claimBzrx()
+        external
+        checkPause
+        returns (uint256 bzrxRewardsEarned)
+    {
+        bzrxRewardsEarned = _claimBzrx(false);
+        emit Claim(
+            msg.sender,
+            bzrxRewardsEarned,
+            0
+        );
+    }
+
+    function claim3Crv()
+        external
+        checkPause
+        returns (uint256 stableCoinRewardsEarned)
+    {
+        stableCoinRewardsEarned = _claim3Crv();
+        emit Claim(
+            msg.sender,
+            0,
+            stableCoinRewardsEarned
+        );
+    }
+
     function claimAndRestake()
         external
         checkPause
@@ -218,6 +244,16 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
         updateRewards(msg.sender)
         returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
     {
+        bzrxRewardsEarned = _claimBzrx(restake);
+        stableCoinRewardsEarned = _claim3Crv();
+        emit Claim(
+            msg.sender,
+            bzrxRewardsEarned,
+            stableCoinRewardsEarned
+        );
+    }
+
+    function _claimBzrx(bool restake) internal returns(uint256 bzrxRewardsEarned){
         bzrxRewardsEarned = bzrxRewards[msg.sender];
         if (bzrxRewardsEarned != 0) {
             bzrxRewards[msg.sender] = 0;
@@ -235,18 +271,16 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
                 IERC20(BZRX).transfer(msg.sender, bzrxRewardsEarned);
             }
         }
+    }
 
+    function _claim3Crv()
+        internal 
+        returns(uint256 stableCoinRewardsEarned){
         stableCoinRewardsEarned = stableCoinRewards[msg.sender];
         if (stableCoinRewardsEarned != 0) {
             stableCoinRewards[msg.sender] = 0;
             curve3Crv.transfer(msg.sender, stableCoinRewardsEarned);
         }
-
-        emit Claim(
-            msg.sender,
-            bzrxRewardsEarned,
-            stableCoinRewardsEarned
-        );
     }
 
     function _restakeBZRX(
