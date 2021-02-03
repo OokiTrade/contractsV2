@@ -372,10 +372,10 @@ def testStake_VestingFees(requireMainnetFork, stakingV1, bzx, setFeesController,
     earnings = stakingV1.earned(accounts[0])
     assert(earnings[0] > 0)
     assert(earnings[1] > 0)
-    assert(earnings[2] > 0)
-    assert(earnings[3] > 0)
-    assert(earnings[0] < totalVestingFeesBzrx)
-    assert(earnings[1] < totalVestingFees3Poll)
+    assert(earnings[2] == 0)
+    assert(earnings[3] == 0)
+    assert(earnings[0] >= totalVestingFeesBzrx)
+    assert(earnings[1] >=totalVestingFees3Poll)
 
     assert False  # disscuss with Tom
 
