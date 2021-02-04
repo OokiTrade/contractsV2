@@ -436,16 +436,16 @@ contract StakingV1 is StakingState, StakingConstants {
 
             (uint256 vestedBalance, uint256 vestingBalance) = balanceOfStored(account);
 
-            bzrxRewardsEarned = vestedBalance
+            value = vestedBalance
                 .mul(bzrxPerTokenUnpaid);
-            bzrxRewardsEarned /= 1e36;
-            bzrxRewardsEarned = bzrxRewardsEarned
+            value /= 1e36;
+            bzrxRewardsEarned = value
                 .add(bzrxRewardsEarned);
 
-            stableCoinRewardsEarned = vestedBalance
+            value = vestedBalance
                 .mul(stableCoinPerTokenUnpaid);
-            stableCoinRewardsEarned /= 1e36;
-            stableCoinRewardsEarned = stableCoinRewardsEarned
+            value /= 1e36;
+            stableCoinRewardsEarned = value
                 .add(stableCoinRewardsEarned);
 
             if (vestingBalance != 0 && bzrxPerTokenUnpaid != 0) {
