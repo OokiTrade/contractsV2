@@ -114,8 +114,8 @@ def testStake_UserStory1_StakedFirstTime(requireMainnetFork, stakingV1, bzx, set
     iBZRX.mint(accounts[1], 100e18, {'from': accounts[1]})
 
     vBZRX.transfer(accounts[1], 100e18, {'from': vBZRX})
-    LPT.transferFrom("0x4085e9fb679dd2f60c2e64afe9533107fa1c18f2", accounts[1], 100e18, {
-                     'from': "0x4085e9fb679dd2f60c2e64afe9533107fa1c18f2"})
+    LPT.transferFrom("0xe95ebce2b02ee07def5ed6b53289801f7fc137a4", accounts[1], 100e18, {
+                     'from': "0xe95ebce2b02ee07def5ed6b53289801f7fc137a4"})
 
     balanceOfBZRX = BZRX.balanceOf(accounts[1])
     balanceOfvBZRX = vBZRX.balanceOf(accounts[1])
@@ -148,8 +148,8 @@ def testStake_UserStory2_StakedMoreTokens(requireMainnetFork, stakingV1, bzx, se
     iBZRX.mint(accounts[1], 100e18, {'from': accounts[1]})
 
     vBZRX.transfer(accounts[1], 100e18, {'from': vBZRX})
-    # LPT.transferFrom("0x4085e9fb679dd2f60c2e64afe9533107fa1c18f2", accounts[1], 100e18, {
-    #                  'from': "0x4085e9fb679dd2f60c2e64afe9533107fa1c18f2"})
+    # LPT.transferFrom("0xe95ebce2b02ee07def5ed6b53289801f7fc137a4", accounts[1], 100e18, {
+    #                  'from': "0xe95ebce2b02ee07def5ed6b53289801f7fc137a4"})
 
     balanceOfBZRX = BZRX.balanceOf(accounts[1])
     balanceOfvBZRX = vBZRX.balanceOf(accounts[1])
@@ -177,8 +177,8 @@ def testStake_UserStory2_StakedMoreTokens(requireMainnetFork, stakingV1, bzx, se
     iBZRX.mint(accounts[1], 100e18, {'from': accounts[1]})
 
     vBZRX.transfer(accounts[1], 100e18, {'from': vBZRX})
-    # LPT.transferFrom("0x4085e9fb679dd2f60c2e64afe9533107fa1c18f2", accounts[1], 100e18, {
-    #                  'from': "0x4085e9fb679dd2f60c2e64afe9533107fa1c18f2"})
+    # LPT.transferFrom("0xe95ebce2b02ee07def5ed6b53289801f7fc137a4", accounts[1], 100e18, {
+    #                  'from': "0xe95ebce2b02ee07def5ed6b53289801f7fc137a4"})
 
     balanceOfBZRX = BZRX.balanceOf(accounts[1])
     balanceOfvBZRX = vBZRX.balanceOf(accounts[1])
@@ -215,8 +215,8 @@ def testStake_UserStory4_IClaimMyStakingRewards(requireMainnetFork, stakingV1, b
     iBZRX.mint(accounts[1], 100e18, {'from': accounts[1]})
 
     vBZRX.transfer(accounts[1], 100e18, {'from': vBZRX})
-    # LPT.transferFrom("0x4085e9fb679dd2f60c2e64afe9533107fa1c18f2", accounts[1], 100e18, {
-    #                  'from': "0x4085e9fb679dd2f60c2e64afe9533107fa1c18f2"})
+    # LPT.transferFrom("0xe95ebce2b02ee07def5ed6b53289801f7fc137a4", accounts[1], 100e18, {
+    #                  'from': "0xe95ebce2b02ee07def5ed6b53289801f7fc137a4"})
 
     balanceOfBZRX = BZRX.balanceOf(accounts[1])
     balanceOfvBZRX = vBZRX.balanceOf(accounts[1])
@@ -264,8 +264,8 @@ def testStake_UserStory4_IClaimMyStakingRewards(requireMainnetFork, stakingV1, b
 
     assert(earningsAfterClaim[0] == 0)
     assert(earningsAfterClaim[1] == 0)
-    assert(earningsAfterClaim[2] <= earnings[2])
-    assert(earningsAfterClaim[3] <= earnings[3])
+    assert(earningsAfterClaim[2] >= earnings[2])
+    assert(earningsAfterClaim[3] >= earnings[3])
 
     assert True
 
@@ -278,7 +278,7 @@ def testStake_UserStory5_IClaimAndRestakeMyStakingRewards(requireMainnetFork, st
 
     vBZRX.transfer(accounts[1], 100e18, {'from': vBZRX})
     LPT.transfer(accounts[1], 100e18, {
-        'from': "0x4085e9fb679dd2f60c2e64afe9533107fa1c18f2"})
+        'from': "0xe95ebce2b02ee07def5ed6b53289801f7fc137a4"})
 
     balanceOfBZRX = BZRX.balanceOf(accounts[1])
     balanceOfvBZRX = vBZRX.balanceOf(accounts[1])
@@ -326,8 +326,8 @@ def testStake_UserStory5_IClaimAndRestakeMyStakingRewards(requireMainnetFork, st
 
     assert(earningsAfterClaim[0] == 0)
     assert(earningsAfterClaim[1] == 0)
-    assert(earningsAfterClaim[2] <= earnings[2])
-    assert(earningsAfterClaim[3] <= earnings[3])
+    assert(earningsAfterClaim[2] >= earnings[2])
+    assert(earningsAfterClaim[3] >= earnings[3])
 
     assert(balanceAfterClaim[0] >= balance[0] + earnings[0])
     assert(balanceAfterClaim[1] == balance[1])
@@ -346,7 +346,7 @@ def testStake_IWantToUnstakeMyTokens(requireMainnetFork, stakingV1, bzx, setFees
 
     vBZRX.transfer(accounts[1], 100e18, {'from': vBZRX})
     LPT.transfer(accounts[1], 100e18, {
-        'from': "0x4085e9fb679dd2f60c2e64afe9533107fa1c18f2"})
+        'from': "0xe95ebce2b02ee07def5ed6b53289801f7fc137a4"})
 
     balanceOfBZRX = BZRX.balanceOf(accounts[1])
     balanceOfvBZRX = vBZRX.balanceOf(accounts[1])
@@ -397,7 +397,7 @@ def testStake_IWantToUnstakeAllMyStakedTokens(requireMainnetFork, stakingV1, bzx
 
     vBZRX.transfer(accounts[1], 100e18, {'from': vBZRX})
     LPT.transfer(accounts[1], 100e18, {
-        'from': "0x4085e9fb679dd2f60c2e64afe9533107fa1c18f2"})
+        'from': "0xe95ebce2b02ee07def5ed6b53289801f7fc137a4"})
 
     balanceOfBZRX = BZRX.balanceOf(accounts[1])
     balanceOfvBZRX = vBZRX.balanceOf(accounts[1])
@@ -452,7 +452,7 @@ def testStake_IWantToUnstakeAllMyStakedTokens(requireMainnetFork, stakingV1, bzx
 
 #         vBZRX.transfer(accounts[i], 100e18, {'from': vBZRX})
 #         LPT.transfer(accounts[i], 100e18, {
-#             'from': "0x4085e9fb679dd2f60c2e64afe9533107fa1c18f2"})
+#             'from': "0xe95ebce2b02ee07def5ed6b53289801f7fc137a4"})
 
 #         balanceOfBZRX = BZRX.balanceOf(accounts[i])
 #         balanceOfvBZRX = vBZRX.balanceOf(accounts[i])
@@ -484,7 +484,7 @@ def testStake_IShuldBeAbleToUpdateStakingRewards(requireMainnetFork, stakingV1, 
 
     vBZRX.transfer(accounts[1], 100e18, {'from': vBZRX})
     LPT.transfer(accounts[1], 100e18, {
-        'from': "0x4085e9fb679dd2f60c2e64afe9533107fa1c18f2"})
+        'from': "0xe95ebce2b02ee07def5ed6b53289801f7fc137a4"})
 
     balanceOfBZRX = BZRX.balanceOf(accounts[1])
     balanceOfvBZRX = vBZRX.balanceOf(accounts[1])

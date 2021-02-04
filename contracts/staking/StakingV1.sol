@@ -11,10 +11,9 @@ import "./StakingConstants.sol";
 import "../interfaces/IVestingToken.sol";
 import "../interfaces/ILoanPool.sol";
 import "../feeds/IPriceFeeds.sol";
-import "../connectors/gastoken/GasTokenUser.sol";
 
 
-contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
+contract StakingV1 is StakingState, StakingConstants {
 
     modifier onlyEOA() {
         require(msg.sender == tx.origin, "unauthorized");
@@ -220,24 +219,6 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
         return _claim(true);
     }
 
-    /*function claimWithUpdate()
-        external
-        // sweepFeesByAsset() does checkPause
-        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
-    {
-        sweepFees();
-        return _claim(false);
-    }*/
-
-    /*function claimAndRestakeWithUpdate()
-        external
-        // sweepFeesByAsset() does checkPause
-        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
-    {
-        sweepFees();
-        return _claim(true);
-    }*/
-
     function _claim(
         bool restake)
         internal
@@ -325,14 +306,6 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
         _claim(false);
     }
 
-    /*function exitWithUpdate()
-        external
-        // sweepFeesByAsset() does checkPause
-    {
-        sweepFees();
-        exit();
-    }*/
-
     /*function getDelegateVotes(
         uint256 start,
         uint256 count)
@@ -389,7 +362,7 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
         bzrxVesting[account] = bzrxRewardsVesting;
         stableCoinVesting[account] = stableCoinRewardsVesting;
 
-        (bzrxRewards[account], stableCoinRewards[account],,) = _syncVesting(
+        (bzrxRewards[account], stableCoinRewards[account]) = _syncVesting(
             account,
             bzrxRewardsEarned,
             stableCoinRewardsEarned,
@@ -403,7 +376,7 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
 
     function earned(
         address account)
-        public
+        external
         view
         returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned, uint256 bzrxRewardsVesting, uint256 stableCoinRewardsVesting)
     {
@@ -413,24 +386,31 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
             stableCoinPerTokenStored
         );
 
-        (bzrxRewardsEarned, stableCoinRewardsEarned, bzrxRewardsVesting, stableCoinRewardsVesting) = _syncVesting(
+        (bzrxRewardsEarned, stableCoinRewardsEarned) = _syncVesting(
             account,
             bzrxRewardsEarned,
             stableCoinRewardsEarned,
             bzrxRewardsVesting,
             stableCoinRewardsVesting
         );
-    }
 
-    /*function earnedWithUpdate(
-        address account)
-        external
-        // sweepFeesByAsset() does checkPause
-        returns (uint256, uint256, uint256, uint256) // bzrxRewardsEarned, stableCoinRewardsEarned, bzrxRewardsVesting, stableCoinRewardsVesting
-    {
-        sweepFees();
-        return earned(account);
-    }*/
+        // discount vesting amounts for vesting time
+        uint256 multiplier = vestedBalanceForAmount(
+            1e36,
+            0,
+            block.timestamp
+        );
+        bzrxRewardsVesting = bzrxRewardsVesting
+            .sub(bzrxRewardsVesting
+                .mul(multiplier)
+                .div(1e36)
+            );
+        stableCoinRewardsVesting = stableCoinRewardsVesting
+            .sub(stableCoinRewardsVesting
+                .mul(multiplier)
+                .div(1e36)
+            );
+    }
 
     function _earned(
         address account,
@@ -449,27 +429,68 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
         stableCoinRewardsVesting = stableCoinVesting[account];
 
         if (bzrxPerTokenUnpaid != 0 || stableCoinPerTokenUnpaid != 0) {
+            uint256 value;
+            uint256 multiplier;
+            uint256 lastSync;
+
             (uint256 vestedBalance, uint256 vestingBalance) = balanceOfStored(account);
 
             bzrxRewardsEarned = vestedBalance
-                .mul(bzrxPerTokenUnpaid)
-                .div(1e36)
+                .mul(bzrxPerTokenUnpaid);
+            bzrxRewardsEarned /= 1e36;
+            bzrxRewardsEarned = bzrxRewardsEarned
                 .add(bzrxRewardsEarned);
 
             stableCoinRewardsEarned = vestedBalance
-                .mul(stableCoinPerTokenUnpaid)
-                .div(1e36)
+                .mul(stableCoinPerTokenUnpaid);
+            stableCoinRewardsEarned /= 1e36;
+            stableCoinRewardsEarned = stableCoinRewardsEarned
                 .add(stableCoinRewardsEarned);
 
-            bzrxRewardsVesting = vestingBalance
-                .mul(bzrxPerTokenUnpaid)
-                .div(1e36)
-                .add(bzrxRewardsVesting);
+            if (vestingBalance != 0 && bzrxPerTokenUnpaid != 0) {
+                // add new vesting amount for BZRX
+                value = vestingBalance
+                    .mul(bzrxPerTokenUnpaid);
+                value /= 1e36;
+                bzrxRewardsVesting = bzrxRewardsVesting
+                    .add(value);
 
-            stableCoinRewardsVesting = vestingBalance
-                .mul(stableCoinPerTokenUnpaid)
-                .div(1e36)
-                .add(stableCoinRewardsVesting);
+                // true up earned amount to vBZRX vesting schedule
+                lastSync = _vestingLastSync[account];
+                multiplier = vestedBalanceForAmount(
+                    1e36,
+                    0,
+                    lastSync
+                );
+                value = value
+                    .mul(multiplier);
+                value /= 1e36;
+                bzrxRewardsEarned = bzrxRewardsEarned
+                    .add(value);
+            }
+            if (vestingBalance != 0 && stableCoinPerTokenUnpaid != 0) {
+                // add new vesting amount for 3crv
+                value = vestingBalance
+                    .mul(stableCoinPerTokenUnpaid);
+                value /= 1e36;
+                stableCoinRewardsVesting = stableCoinRewardsVesting
+                    .add(value);
+
+                // true up earned amount to vBZRX vesting schedule
+                if (lastSync == 0) {
+                    lastSync = _vestingLastSync[account];
+                    multiplier = vestedBalanceForAmount(
+                        1e36,
+                        0,
+                        lastSync
+                    );
+                }
+                value = value
+                    .mul(multiplier);
+                value /= 1e36;
+                stableCoinRewardsEarned = stableCoinRewardsEarned
+                    .add(value);
+            }
         }
     }
 
@@ -481,13 +502,13 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
         uint256 stableCoinRewardsVesting)
         internal
         view
-        returns (uint256, uint256, uint256, uint256)
+        returns (uint256, uint256)
     {
         uint256 lastVestingSync = _vestingLastSync[account];
 
         if (lastVestingSync != block.timestamp) {
             uint256 rewardsVested;
-            uint256 multiplier = _vestedBalance(
+            uint256 multiplier = vestedBalanceForAmount(
                 1e36,
                 lastVestingSync,
                 block.timestamp
@@ -498,7 +519,6 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
                     .mul(multiplier)
                     .div(1e36);
                 bzrxRewardsEarned += rewardsVested;
-                bzrxRewardsVesting -= rewardsVested;
             }
 
             if (stableCoinRewardsVesting != 0) {
@@ -506,7 +526,6 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
                     .mul(multiplier)
                     .div(1e36);
                 stableCoinRewardsEarned += rewardsVested;
-                stableCoinRewardsVesting -= rewardsVested;
             }
 
             uint256 vBZRXBalance = _balancesPerToken[vBZRX][account];
@@ -519,7 +538,7 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
             }
         }
 
-        return (bzrxRewardsEarned, stableCoinRewardsEarned, bzrxRewardsVesting, stableCoinRewardsVesting);
+        return (bzrxRewardsEarned, stableCoinRewardsEarned);
     }
 
     // note: anyone can contribute rewards to the contract
@@ -599,7 +618,7 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
         view
         returns (uint256 vBZRXWeight, uint256 iBZRXWeight, uint256 LPTokenWeight)
     {
-        uint256 totalVested = _vestedBalance(
+        uint256 totalVested = vestedBalanceForAmount(
             _startingVBZRXBalance,
             0,
             block.timestamp
@@ -695,7 +714,7 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
             // staked vBZRX counts has 1/2 a vote, that's prorated based on total vested
             totalVotes = vBZRXBalance
                 .mul(_startingVBZRXBalance -
-                    _vestedBalance( // overflow not possible
+                    vestedBalanceForAmount( // overflow not possible
                         _startingVBZRXBalance,
                         0,
                         block.timestamp
@@ -703,7 +722,7 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
                 ).div(_startingVBZRXBalance) / 2;
 
             // user is attributed a staked balance of vested BZRX, from their last update to the present
-            totalVotes = _vestedBalance(
+            totalVotes = vestedBalanceForAmount(
                 vBZRXBalance,
                 _vestingLastSync[account],
                 block.timestamp
@@ -758,17 +777,17 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
             .add(supply);
     }
 
-    function _vestedBalance(
+    function vestedBalanceForAmount(
         uint256 tokenBalance,
         uint256 lastUpdate,
-        uint256 vestingTimeNow)
-        internal
+        uint256 vestingEndTime)
+        public
         view
         returns (uint256 vested)
     {
-        vestingTimeNow = vestingTimeNow.min256(block.timestamp);
-        if (vestingTimeNow > lastUpdate) {
-            if (vestingTimeNow <= vestingCliffTimestamp ||
+        vestingEndTime = vestingEndTime.min256(block.timestamp);
+        if (vestingEndTime > lastUpdate) {
+            if (vestingEndTime <= vestingCliffTimestamp ||
                 lastUpdate >= vestingEndTimestamp) {
                 // time cannot be before vesting starts
                 // OR all vested token has already been claimed
@@ -778,12 +797,12 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
                 // vesting starts at the cliff timestamp
                 lastUpdate = vestingCliffTimestamp;
             }
-            if (vestingTimeNow > vestingEndTimestamp) {
+            if (vestingEndTime > vestingEndTimestamp) {
                 // vesting ends at the end timestamp
-                vestingTimeNow = vestingEndTimestamp;
+                vestingEndTime = vestingEndTimestamp;
             }
 
-            uint256 timeSinceClaim = vestingTimeNow.sub(lastUpdate);
+            uint256 timeSinceClaim = vestingEndTime.sub(lastUpdate);
             vested = tokenBalance.mul(timeSinceClaim) / vestingDurationAfterCliff; // will never divide by 0
         }
     }
@@ -799,16 +818,6 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
         return sweepFeesByAsset(currentFeeTokens);
     }
 
-    function sweepFeesWithGasToken(
-        address gasTokenUser)
-        public
-        // sweepFeesByAsset() does checkPause
-        usesGasToken(gasTokenUser)
-        returns (uint256 bzrxRewards, uint256 crv3Rewards)
-    {
-        return sweepFeesByAsset(currentFeeTokens);
-    }
-
     function sweepFeesByAsset(
         address[] memory assets)
         public
@@ -819,17 +828,6 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
         uint256[] memory amounts = _withdrawFees(assets);
         _convertFees(assets, amounts);
         (bzrxRewards, crv3Rewards) = _distributeFees();
-    }
-
-    function sweepFeesByAssetWithGasToken(
-        address[] memory assets,
-        address gasTokenUser)
-        public
-        // sweepFeesByAsset() does checkPause
-        usesGasToken(gasTokenUser)
-        returns (uint256 bzrxRewards, uint256 crv3Rewards)
-    {
-        return sweepFeesByAsset(assets);
     }
 
     function _withdrawFees(
@@ -1139,18 +1137,12 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
 
     // OnlyOwner functions
 
-    function pause()
+    function togglePause(
+        bool _isPaused)
         external
         onlyOwner
     {
-        isPaused = true;
-    }
-
-    function unPause()
-        external
-        onlyOwner
-    {
-        isPaused = false;
+        isPaused = _isPaused;
     }
 
     function setFundsWallet(
@@ -1191,17 +1183,9 @@ contract StakingV1 is StakingState, StakingConstants, GasTokenUser {
             require(amountsOut[amountsOut.length - 1] != 0, "path does not exist");
             
             swapPaths[path[0]] = path;
-            setUniswapApproval(IERC20(path[0]));
+            IERC20(path[0]).safeApprove(address(uniswapRouter), 0);
+            IERC20(path[0]).safeApprove(address(uniswapRouter), uint256(-1));
         }
-    }
-
-    function setUniswapApproval(
-        IERC20 asset)
-        public
-        onlyOwner
-    {
-        asset.safeApprove(address(uniswapRouter), 0);
-        asset.safeApprove(address(uniswapRouter), uint256(-1));
     }
 
     function setCurveApproval()

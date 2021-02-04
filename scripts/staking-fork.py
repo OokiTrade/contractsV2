@@ -117,14 +117,16 @@ mintAddresses = ["0x81b9284090501255C3a271c90100744Da99CC828",
                  "0xddAd23Dd65ac23f3e6b4E2706575A90D50349Eb3",
                  "0xB78A81cd4FB3d727CD267d773491F5fC43BB3929",
                  "0x1F9b46f3D89FEc66c09511d14bf1A813bCc96200"]
+
+# accounts[0].transfer(user, Wei('1 ether'))
 for user in mintAddresses:
     print("mining for user:", user)
     BZRX.transfer(user, 1000e18, {
                   'from': "0xBE0eB53F46cd790Cd13851d5EFf43D12404d33E8"})
     vBZRX.transfer(user, 1000e18, {
                    'from': "0x95beec2457838108089fcd0e059659a4e60b091a"})
-    iBZRX.transfer(user, 1000e18, {
-                   'from': "0xfe36046f6193d691f99e2c90153003f8938cfc41"})
+    iBZRX.transfer( user, 1000e18, {
+                   'from': "0xC02AbB7359bD145bf45ea01ebf8B64590d5b8992"})
     BPT.transfer(user, 100e18, {
                  'from': "0x42a3FDad947807f9FA84B8c869680A3B7A46bEe7"})
     accounts[0].transfer(user, Wei('1 ether'))
