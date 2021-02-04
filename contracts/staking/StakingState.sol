@@ -47,7 +47,7 @@ contract StakingState is StakingUpgradeable {
 
     uint256 public lastRewardsAddTime;
 
-    mapping(address => uint256) internal _vestingLastSync;
+    mapping(address => uint256) public vestingLastSync;
 
     mapping(address => address[]) public swapPaths;
     mapping(address => uint256) public stakingRewards;

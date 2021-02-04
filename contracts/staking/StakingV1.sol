@@ -370,7 +370,7 @@ contract StakingV1 is StakingState, StakingConstants {
             bzrxRewardsVesting,
             stableCoinRewardsVesting
         );
-        _vestingLastSync[account] = block.timestamp;
+        vestingLastSync[account] = block.timestamp;
 
         _;
     }
@@ -457,7 +457,7 @@ contract StakingV1 is StakingState, StakingConstants {
                     .add(value);
 
                 // true up earned amount to vBZRX vesting schedule
-                lastSync = _vestingLastSync[account];
+                lastSync = vestingLastSync[account];
                 multiplier = vestedBalanceForAmount(
                     1e36,
                     0,
@@ -479,7 +479,7 @@ contract StakingV1 is StakingState, StakingConstants {
 
                 // true up earned amount to vBZRX vesting schedule
                 if (lastSync == 0) {
-                    lastSync = _vestingLastSync[account];
+                    lastSync = vestingLastSync[account];
                     multiplier = vestedBalanceForAmount(
                         1e36,
                         0,
@@ -505,7 +505,7 @@ contract StakingV1 is StakingState, StakingConstants {
         view
         returns (uint256, uint256)
     {
-        uint256 lastVestingSync = _vestingLastSync[account];
+        uint256 lastVestingSync = vestingLastSync[account];
 
         if (lastVestingSync != block.timestamp) {
             uint256 rewardsVested;
@@ -725,7 +725,7 @@ contract StakingV1 is StakingState, StakingConstants {
             // user is attributed a staked balance of vested BZRX, from their last update to the present
             totalVotes = vestedBalanceForAmount(
                 vBZRXBalance,
-                _vestingLastSync[account],
+                vestingLastSync[account],
                 block.timestamp
             ).add(totalVotes);
         }
