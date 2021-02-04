@@ -6,8 +6,7 @@ from brownie import network, Contract, Wei, chain
 
 @pytest.fixture(scope="module")
 def requireMainnetFork():
-    assert (network.show_active() == "mainnet-fork"
-            or network.show_active() == "mainnet-fork-alchemy")
+    assert (network.show_active() == "mainnet-fork" or network.show_active() == "mainnet-fork-alchemy")
 
 
 @pytest.fixture(scope="module")
@@ -255,7 +254,7 @@ def testStake_UserStory4_IClaimMyStakingRewards(requireMainnetFork, stakingV1, b
     assert(earnings[2] > 0)
     assert(earnings[3] > 0)
 
-    stakingV1.claim({'from': accounts[1]})
+    stakingV1.claim(False, {'from': accounts[1]})
 
     assert(earnings[0] <= BZRX.balanceOf(accounts[1]))
     assert(earnings[1] <= POOL3.balanceOf(accounts[1]))
@@ -317,7 +316,7 @@ def testStake_UserStory5_IClaimAndRestakeMyStakingRewards(requireMainnetFork, st
     assert(earnings[2] > 0)
     assert(earnings[3] > 0)
 
-    stakingV1.claimAndRestake({'from': accounts[1]})
+    stakingV1.claim(True, {'from': accounts[1]})
 
     assert(0 <= BZRX.balanceOf(accounts[1]))
     assert(earnings[1] <= POOL3.balanceOf(accounts[1]))

@@ -6,8 +6,7 @@ from brownie import network, Contract, Wei, chain
 
 @pytest.fixture(scope="module")
 def requireMainnetFork():
-    assert (network.show_active() == "mainnet-fork"
-            or network.show_active() == "mainnet-fork-alchemy")
+    assert (network.show_active() == "mainnet-fork" or network.show_active() == "mainnet-fork-alchemy")
 
 
 @pytest.fixture(scope="module")
@@ -288,7 +287,7 @@ def testStake_BZRXProfit(requireMainnetFork, stakingV1, bzx, setFeesController, 
     print("roundings stableCoin", str(stableCoinAmount), str(earned[1]))
     assert(stableCoinAmount - earned[1] <= 1)
 
-    #stakingV1.claim({'from': accounts[0]})
+    #stakingV1.claim(False, {'from': accounts[0]})
     #earned = stakingV1.earned(accounts[0])
 
     # second user staking. he should get zero rewards if he just staked
@@ -375,7 +374,7 @@ def testStake_VestingFees(requireMainnetFork, stakingV1, bzx, setFeesController,
     assert(earnings[2] == 0)
     assert(earnings[3] == 0)
     assert(earnings[0] >= totalVestingFeesBzrx)
-    assert(earnings[1] >=totalVestingFees3Poll)
+    assert(earnings[1] >= totalVestingFees3Poll)
 
     assert False  # disscuss with Tom
 
@@ -430,7 +429,7 @@ def testStake_vBZRXVotingRigthsShouldDiminishOverTime(requireMainnetFork, stakin
     assert True
 
 
-def testStake_vBZRXVotingRigthsShouldDiminishOverTime(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, LPT, accounts, iUSDC, USDC, WETH):
+def testStake_vBZRXVotingRigthsShouldDiminishOverTime2(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, LPT, accounts, iUSDC, USDC, WETH):
 
     vBZRX.transfer(accounts[1], 100e18, {'from': vBZRX})
 
