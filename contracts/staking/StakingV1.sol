@@ -177,12 +177,13 @@ contract StakingV1 is StakingState, StakingConstants {
         }
     }*/
 
-    function claim()
+    function claim(
+        bool restake)
         external
         checkPause
         returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
     {
-        return _claim(false);
+        return _claim(restake);
     }
 
     function claimBzrx()
@@ -191,6 +192,7 @@ contract StakingV1 is StakingState, StakingConstants {
         returns (uint256 bzrxRewardsEarned)
     {
         bzrxRewardsEarned = _claimBzrx(false);
+
         emit Claim(
             msg.sender,
             bzrxRewardsEarned,
@@ -204,19 +206,12 @@ contract StakingV1 is StakingState, StakingConstants {
         returns (uint256 stableCoinRewardsEarned)
     {
         stableCoinRewardsEarned = _claim3Crv();
+
         emit Claim(
             msg.sender,
             0,
             stableCoinRewardsEarned
         );
-    }
-
-    function claimAndRestake()
-        external
-        checkPause
-        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
-    {
-        return _claim(true);
     }
 
     function _claim(
@@ -227,6 +222,7 @@ contract StakingV1 is StakingState, StakingConstants {
     {
         bzrxRewardsEarned = _claimBzrx(restake);
         stableCoinRewardsEarned = _claim3Crv();
+
         emit Claim(
             msg.sender,
             bzrxRewardsEarned,
@@ -234,7 +230,11 @@ contract StakingV1 is StakingState, StakingConstants {
         );
     }
 
-    function _claimBzrx(bool restake) internal returns(uint256 bzrxRewardsEarned){
+    function _claimBzrx(
+        bool restake)
+        internal
+        returns (uint256 bzrxRewardsEarned)
+    {
         bzrxRewardsEarned = bzrxRewards[msg.sender];
         if (bzrxRewardsEarned != 0) {
             bzrxRewards[msg.sender] = 0;
@@ -256,7 +256,8 @@ contract StakingV1 is StakingState, StakingConstants {
 
     function _claim3Crv()
         internal 
-        returns(uint256 stableCoinRewardsEarned){
+        returns (uint256 stableCoinRewardsEarned)
+    {
         stableCoinRewardsEarned = stableCoinRewards[msg.sender];
         if (stableCoinRewardsEarned != 0) {
             stableCoinRewards[msg.sender] = 0;
