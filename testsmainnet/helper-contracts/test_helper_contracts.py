@@ -6,8 +6,7 @@ from brownie import network, Contract, Wei, chain
 
 @pytest.fixture(scope="module")
 def requireMainnetFork():
-    assert (network.show_active() == "mainnet-fork"
-            or network.show_active() == "mainnet-fork-alchemy")
+    assert (network.show_active() == "mainnet-fork" or network.show_active() == "mainnet-fork-alchemy")
 
 
 @pytest.fixture(scope="module")

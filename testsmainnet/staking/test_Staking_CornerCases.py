@@ -6,8 +6,7 @@ from brownie import network, Contract, Wei, chain
 
 @pytest.fixture(scope="module")
 def requireMainnetFork():
-    assert (network.show_active() == "mainnet-fork"
-            or network.show_active() == "mainnet-fork-alchemy")
+    assert (network.show_active() == "mainnet-fork" or network.show_active() == "mainnet-fork-alchemy")
 
 
 @pytest.fixture(scope="module")
@@ -144,16 +143,28 @@ def testStake_Multiple_People(requireMainnetFork, stakingV1, bzx, setFeesControl
 
     ## people who stake the same amounts first have slightly more earned and slightly less vested
     assert earned1After[0] >= earned2After[0] >= earned3After[0] >= earned4After[0]
-    assert earned1After[1] >= earned2After[1] >= earned3After[1] >= earned4After[1]
-    assert earned3After[2] >= earned2After[2] >= earned1After[2] >= earned4After[2]
-    assert earned3After[3] >= earned2After[3] >= earned1After[3] >= earned4After[3]
+    assert(checkSmallDiff(earned1After[0], earned2After[0]))
+    assert(checkSmallDiff(earned1After[0], earned3After[0]))
+
+    assert(checkSmallDiff(earned1After[1], earned2After[1]))
+    assert(checkSmallDiff(earned1After[1], earned3After[1]))
+    assert earned1After[1] >= earned4After[1]
+
+    assert(checkSmallDiff(earned1After[2], earned2After[2]))
+    assert(checkSmallDiff(earned1After[2], earned3After[2]))
+    assert earned1After[2] >= earned4After[2]
+
+    assert(checkSmallDiff(earned1After[3], earned2After[3]))
+    assert(checkSmallDiff(earned1After[3], earned3After[3]))
+    assert earned1After[3] >= earned4After[3]
 
     # approximately account4 has to have half revenue of accounts 1 2 3
     assert abs(earned3After[0]/10**18 - earned4After[0] * 2/10**18) < 1
 
     #assert False
 
-
+def checkSmallDiff(a, b, precision=18):
+    return abs(a - b) < 10**precision
 
 def testStake_Multiple_VestiesMoveTime(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC):
     vBZRX.transfer(accounts[1], 1000e18, {
@@ -189,10 +200,10 @@ def testStake_Multiple_VestiesMoveTime(requireMainnetFork, stakingV1, bzx, setFe
     print(stakingV1.earned(accounts[3]))
     print(stakingV1.earned(accounts[4]))
 
-    stakingV1.claim({'from': accounts[1]})
-    stakingV1.claim({'from': accounts[2]})
-    stakingV1.claim({'from': accounts[3]})
-    stakingV1.claim({'from': accounts[4]})
+    stakingV1.claim(False, {'from': accounts[1]})
+    stakingV1.claim(False, {'from': accounts[2]})
+    stakingV1.claim(False, {'from': accounts[3]})
+    stakingV1.claim(False, {'from': accounts[4]})
 
     #stakingV1.exit({'from': accounts[1]})
     #stakingV1.exit({'from': accounts[2]})
@@ -259,10 +270,10 @@ def testStake_Multiple_VestiesMoveMultipleTime(requireMainnetFork, stakingV1, bz
     stakingV1.unstake([vBZRX], [1000e18], {'from': accounts[3]})
     stakingV1.unstake([vBZRX], [500e18], {'from': accounts[4]})
 
-    stakingV1.claim({'from': accounts[1]})
-    stakingV1.claim({'from': accounts[2]})
-    stakingV1.claim({'from': accounts[3]})
-    stakingV1.claim({'from': accounts[4]})
+    stakingV1.claim(False, {'from': accounts[1]})
+    stakingV1.claim(False, {'from': accounts[2]})
+    stakingV1.claim(False, {'from': accounts[3]})
+    stakingV1.claim(False, {'from': accounts[4]})
 
     # math rounding lefties
     assert BZRX.balanceOf(stakingV1)/10**18 < 1 

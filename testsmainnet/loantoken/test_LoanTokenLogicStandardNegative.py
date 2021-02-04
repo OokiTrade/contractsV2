@@ -7,7 +7,7 @@ from brownie.network.contract import InterfaceContainer
 
 @pytest.fixture(scope="module")
 def requireMainnetFork():
-    assert network.show_active() == "mainnet-fork"
+    assert (network.show_active() == "mainnet-fork" or network.show_active() == "mainnet-fork-alchemy")
 
 
 # def loadContractFromEtherscan(address, alias):

@@ -48,14 +48,14 @@ def stakingV1(bzx, StakingProxy, StakingV1, accounts):
         "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",  # YFI
     ]
     
-    for address in assets:
-        staking.setUniswapApproval(address)
-        time.sleep(1)
+    # for address in assets:
+    #     staking.setUniswapApproval(address)
+    #     time.sleep(1)
     staking.setFeeTokens(assets)
     staking.setFundsWallet(accounts[9])
     # bzx.withdrawFees(assets, accounts[8], 0, {'from': stakingV1})
     bzx.setFeesController(staking, {'from': bzx.owner()})
-    staking.unPause()
+    staking.togglePause(False)
 
 
     staking.setMaxUniswapDisagreement(100*10**18, {'from': "0x66aB6D9362d4F35596279692F0251Db635165871", "allow_revert": 1})
