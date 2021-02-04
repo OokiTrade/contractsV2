@@ -128,7 +128,7 @@ def testStake_Multiple_People(requireMainnetFork, stakingV1, bzx, setFeesControl
     earned4 = stakingV1.earned(accounts[4])
 
     # due to staking and stake block difference, people who stake first have more vesties inside
-    assert earned1[0] > earned2[0] > earned3[0] > earned4[0]
+    assert earned1[0] >= earned2[0] >= earned3[0] >= earned4[0]
 
     makeSomeFees(BZRX, accounts, iUSDC, stakingV1)
 
@@ -143,10 +143,10 @@ def testStake_Multiple_People(requireMainnetFork, stakingV1, bzx, setFeesControl
     print(earned4After)
 
     ## people who stake the same amounts first have slightly more earned and slightly less vested
-    assert earned1After[0] > earned2After[0] > earned3After[0] > earned4After[0]
-    assert earned1After[1] > earned2After[1] > earned3After[1] > earned4After[1]
-    assert earned3After[2] > earned2After[2] > earned1After[2] > earned4After[2]
-    assert earned3After[3] > earned2After[3] > earned1After[3] > earned4After[3]
+    assert earned1After[0] >= earned2After[0] >= earned3After[0] >= earned4After[0]
+    assert earned1After[1] >= earned2After[1] >= earned3After[1] >= earned4After[1]
+    assert earned3After[2] >= earned2After[2] >= earned1After[2] >= earned4After[2]
+    assert earned3After[3] >= earned2After[3] >= earned1After[3] >= earned4After[3]
 
     # approximately account4 has to have half revenue of accounts 1 2 3
     assert abs(earned3After[0]/10**18 - earned4After[0] * 2/10**18) < 1
