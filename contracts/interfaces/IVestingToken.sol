@@ -23,14 +23,4 @@ contract IVestingToken is IERC20 {
         external
         view
         returns (uint256);
-
-    function totalVested()
-        external
-        view
-        returns (uint256);
-
-    function totalClaimed()
-        external
-        view
-        returns (uint256);
 }
