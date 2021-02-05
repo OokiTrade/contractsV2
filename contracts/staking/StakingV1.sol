@@ -619,13 +619,9 @@ contract StakingV1 is StakingState, StakingConstants {
         view
         returns (uint256 vBZRXWeight, uint256 iBZRXWeight, uint256 LPTokenWeight)
     {
-        uint256 totalVested = vestedBalanceForAmount(
-            _startingVBZRXBalance,
-            0,
-            block.timestamp
-        );
+        uint256 totalClaimed = IVestingToken(vBZRX).totalClaimed();
 
-        vBZRXWeight = SafeMath.mul(_startingVBZRXBalance - totalVested, 1e18) // overflow not possible
+        vBZRXWeight = SafeMath.mul(_startingVBZRXBalance - totalClaimed, 1e18) // overflow not possible
             .div(_startingVBZRXBalance);
 
         iBZRXWeight = ILoanPool(iBZRX).tokenPrice();
@@ -634,7 +630,7 @@ contract StakingV1 is StakingState, StakingConstants {
         if (lpTokenSupply != 0) {
             // staked LP tokens are assumed to represent the total unstaked supply (circulated supply - staked BZRX)
             uint256 normalizedLPTokenSupply = initialCirculatingSupply +
-                totalVested -
+                totalClaimed -
                 _totalSupplyPerToken[BZRX];
 
             LPTokenWeight = normalizedLPTokenSupply
@@ -1040,7 +1036,7 @@ contract StakingV1 is StakingState, StakingConstants {
                 stakingRewards[USDC] = stakingReward
                     .sub(usdcAmount);
                 curveAmounts[1] = usdcAmount;
-                curveTotal = curveTotal.add(usdcAmount);
+                curveTotal = curveTotal.add(usdcAmount.mul(1e12)); // normalize to 18 decimals
             }
         }
         if (usdtAmount != 0) {
@@ -1052,7 +1048,7 @@ contract StakingV1 is StakingState, StakingConstants {
                 stakingRewards[USDT] = stakingReward
                     .sub(usdtAmount);
                 curveAmounts[2] = usdtAmount;
-                curveTotal = curveTotal.add(usdtAmount);
+                curveTotal = curveTotal.add(usdtAmount.mul(1e12)); // normalize to 18 decimals
             }
         }
 
@@ -1104,7 +1100,7 @@ contract StakingV1 is StakingState, StakingConstants {
 
             require(
                 spreadValue <= maxDisagreement,
-                "price disagreement"
+                "uniswap price disagreement"
             );
         }
     }
@@ -1131,7 +1127,7 @@ contract StakingV1 is StakingState, StakingConstants {
 
             require(
                 spreadValue <= maxDisagreement,
-                "price disagreement"
+                "curve price disagreement"
             );
         }
     }
