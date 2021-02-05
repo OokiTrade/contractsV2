@@ -619,9 +619,13 @@ contract StakingV1 is StakingState, StakingConstants {
         view
         returns (uint256 vBZRXWeight, uint256 iBZRXWeight, uint256 LPTokenWeight)
     {
-        uint256 totalClaimed = IVestingToken(vBZRX).totalClaimed();
+        uint256 totalVested = vestedBalanceForAmount(
+            _startingVBZRXBalance,
+            0,
+            block.timestamp
+        );
 
-        vBZRXWeight = SafeMath.mul(_startingVBZRXBalance - totalClaimed, 1e18) // overflow not possible
+        vBZRXWeight = SafeMath.mul(_startingVBZRXBalance - totalVested, 1e18) // overflow not possible
             .div(_startingVBZRXBalance);
 
         iBZRXWeight = ILoanPool(iBZRX).tokenPrice();
@@ -630,7 +634,7 @@ contract StakingV1 is StakingState, StakingConstants {
         if (lpTokenSupply != 0) {
             // staked LP tokens are assumed to represent the total unstaked supply (circulated supply - staked BZRX)
             uint256 normalizedLPTokenSupply = initialCirculatingSupply +
-                totalClaimed -
+                totalVested -
                 _totalSupplyPerToken[BZRX];
 
             LPTokenWeight = normalizedLPTokenSupply
