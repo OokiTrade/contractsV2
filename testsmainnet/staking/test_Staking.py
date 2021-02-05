@@ -376,7 +376,7 @@ def testStake_VestingFees(requireMainnetFork, stakingV1, bzx, setFeesController,
     assert(earnings[0] >= totalVestingFeesBzrx)
     assert(earnings[1] >= totalVestingFees3Poll)
 
-    # assert False  # disscuss with Tom
+    # assert False
 
 
 def testStake_vestingClaimBZRX(requireMainnetFork, stakingV1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
