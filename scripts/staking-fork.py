@@ -66,10 +66,10 @@ assets = [
     "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",  # YFI
 ]
 
-for address in assets:
-    print("4", address)
-    staking.setUniswapApproval(address)
-    time.sleep(1)
+# for address in assets:
+#     print("4", address)
+#     staking.setUniswapApproval(address)
+#     time.sleep(1)
 print("4.1")
 staking.setFeeTokens(assets)
 print("4.2")
@@ -79,8 +79,6 @@ bzx = Contract.from_abi("bzx", address="0xD8Ee69652E4e4838f2531732a46d1f7F584F0b
                         abi=interface.IBZx.abi, owner=accounts[0])
 print("4.3")
 bzx.setFeesController(staking, {'from': bzx.owner()})
-print("4.4")
-staking.unPause()
 print("5")
 
 global iBZRX, BZRX, vBZRX, CURVE3POOL, CURVE3CRV
@@ -128,7 +126,7 @@ for user in mintAddresses:
     iBZRX.transfer( user, 1000e18, {
                    'from': "0xC02AbB7359bD145bf45ea01ebf8B64590d5b8992"})
     BPT.transfer(user, 100e18, {
-                 'from': "0x42a3FDad947807f9FA84B8c869680A3B7A46bEe7"})
+                 'from': "0x4d99acd7888832d78bf7d6adc5325ecc79578e43"})
     accounts[0].transfer(user, Wei('1 ether'))
 # BZRX.transfer("0x9B5dFE7965C4A30eAB764ff7abf81b3fa96847Fe", 1000e18, {'from': "0xBE0eB53F46cd790Cd13851d5EFf43D12404d33E8"})
 # BZRX.transfer("0xF69D58D756f2c9b2D37fB50a62736E92253F1c7f", 1000e18, {'from': "0xBE0eB53F46cd790Cd13851d5EFf43D12404d33E8"})
