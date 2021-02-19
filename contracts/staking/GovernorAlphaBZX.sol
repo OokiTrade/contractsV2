@@ -22,7 +22,7 @@ contract GovernorAlphaBZX {
     function votingPeriod() public pure returns (uint) { return 17280; } // ~3 days in blocks (assuming 15s blocks)
 
     /// @notice The address of the protocol Timelock
-    TimelockInterface public timelock;
+    TimelockInterface public constant timelock = TimelockInterface(0xBB536EB24Fb89B544d4Bd9e9F1f34D9Fd902bb96);
 
     /// @notice The address of the staking contract
     StakingInterface public staking;
@@ -128,10 +128,9 @@ contract GovernorAlphaBZX {
     /// @notice An event emitted when a proposal has been executed in the Timelock
     event ProposalExecuted(uint id);
 
-    constructor(address timelock_, address staking_, address guardian_) public {
-        timelock = TimelockInterface(timelock_);
+    constructor(address staking_) public {
         staking = StakingInterface(staking_);
-        guardian = guardian_;
+        guardian = msg.sender;
     }
 
     function propose(address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas, string memory description) public returns (uint) {
