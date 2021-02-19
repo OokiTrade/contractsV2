@@ -34,12 +34,12 @@ contract StakingV1 is StakingState, StakingConstants {
     {
         require(tokens.length == values.length, "count mismatch");
 
-        address currentDelegate = delegate[msg.sender];
+        /*address currentDelegate = delegate[msg.sender];
         if (currentDelegate == address(0)) {
             currentDelegate = msg.sender;
             delegate[msg.sender] = currentDelegate;
             _delegatedSet.addAddress(msg.sender);
-        }
+        }*/
 
         address token;
         uint256 stakeAmount;
@@ -56,15 +56,15 @@ contract StakingV1 is StakingState, StakingConstants {
             _balancesPerToken[token][msg.sender] = _balancesPerToken[token][msg.sender].add(stakeAmount);
             _totalSupplyPerToken[token] = _totalSupplyPerToken[token].add(stakeAmount);
 
-            delegatedPerToken[currentDelegate][token] = delegatedPerToken[currentDelegate][token]
-                .add(stakeAmount);
+            /*delegatedPerToken[currentDelegate][token] = delegatedPerToken[currentDelegate][token]
+                .add(stakeAmount);*/
 
             IERC20(token).safeTransferFrom(msg.sender, address(this), stakeAmount);
 
             emit Stake(
                 msg.sender,
                 token,
-                currentDelegate,
+                msg.sender, //currentDelegate,
                 stakeAmount
             );
         }
@@ -79,7 +79,7 @@ contract StakingV1 is StakingState, StakingConstants {
     {
         require(tokens.length == values.length, "count mismatch");
 
-        address currentDelegate = delegate[msg.sender];
+        //address currentDelegate = delegate[msg.sender];
 
         address token;
         uint256 unstakeAmount;
@@ -100,8 +100,8 @@ contract StakingV1 is StakingState, StakingConstants {
             _balancesPerToken[token][msg.sender] = stakedAmount - unstakeAmount; // will not overflow
             _totalSupplyPerToken[token] = _totalSupplyPerToken[token] - unstakeAmount; // will not overflow
 
-            delegatedPerToken[currentDelegate][token] = delegatedPerToken[currentDelegate][token]
-                .sub(unstakeAmount);
+            /*delegatedPerToken[currentDelegate][token] = delegatedPerToken[currentDelegate][token]
+                .sub(unstakeAmount);*/
 
             if (token == BZRX && IERC20(BZRX).balanceOf(address(this)) < unstakeAmount) {
                 // settle vested BZRX only if needed
@@ -113,7 +113,7 @@ contract StakingV1 is StakingState, StakingConstants {
             emit Unstake(
                 msg.sender,
                 token,
-                currentDelegate,
+                msg.sender, //currentDelegate,
                 unstakeAmount
             );
         }
@@ -270,20 +270,20 @@ contract StakingV1 is StakingState, StakingConstants {
         uint256 amount)
         internal
     {
-        address currentDelegate = delegate[account];
+        //address currentDelegate = delegate[account];
         _balancesPerToken[BZRX][account] = _balancesPerToken[BZRX][account]
             .add(amount);
 
         _totalSupplyPerToken[BZRX] = _totalSupplyPerToken[BZRX]
             .add(amount);
 
-        delegatedPerToken[currentDelegate][BZRX] = delegatedPerToken[currentDelegate][BZRX]
-            .add(amount);
+        /*delegatedPerToken[currentDelegate][BZRX] = delegatedPerToken[currentDelegate][BZRX]
+            .add(amount);*/
 
         emit Stake(
             account,
             BZRX,
-            currentDelegate,
+            account, //currentDelegate,
             amount
         );
     }
@@ -628,7 +628,7 @@ contract StakingV1 is StakingState, StakingConstants {
         vBZRXWeight = SafeMath.mul(_startingVBZRXBalance - totalVested, 1e18) // overflow not possible
             .div(_startingVBZRXBalance);
 
-        iBZRXWeight = ILoanPool(iBZRX).tokenPrice();
+        iBZRXWeight = _calcIBZRXWeight();
 
         uint256 lpTokenSupply = _totalSupplyPerToken[LPToken];
         if (lpTokenSupply != 0) {
@@ -641,6 +641,16 @@ contract StakingV1 is StakingState, StakingConstants {
                 .mul(1e18)
                 .div(lpTokenSupply);
         }
+    }
+
+    function _calcIBZRXWeight()
+        internal
+        view
+        returns (uint256)
+    {
+        return IERC20(BZRX).balanceOf(iBZRX)
+            .mul(1e50)
+            .div(IERC20(iBZRX).totalSupply());
     }
 
     function balanceOfByAsset(
@@ -681,8 +691,8 @@ contract StakingV1 is StakingState, StakingConstants {
         uint256 balance = _balancesPerToken[vBZRX][account];
         if (balance != 0) {
             vestingBalance = _balancesPerToken[vBZRX][account]
-                    .mul(vBZRXWeightStored)
-                    .div(1e18);
+                .mul(vBZRXWeightStored)
+                .div(1e18);
         }
 
         vestedBalance = _balancesPerToken[BZRX][account];
@@ -691,7 +701,7 @@ contract StakingV1 is StakingState, StakingConstants {
         if (balance != 0) {
             vestedBalance = balance
                 .mul(iBZRXWeightStored)
-                .div(1e18)
+                .div(1e50)
                 .add(vestedBalance);
         }
 
@@ -702,48 +712,6 @@ contract StakingV1 is StakingState, StakingConstants {
                 .div(1e18)
                 .add(vestedBalance);
         }
-    }
-
-    function delegateBalanceOf(
-        address account)
-        public
-        view
-        returns (uint256 totalVotes)
-    {
-        uint256 vBZRXBalance = _balancesPerToken[vBZRX][account];
-        if (vBZRXBalance != 0) {
-            // staked vBZRX counts has 1/2 a vote, that's prorated based on total vested
-            totalVotes = vBZRXBalance
-                .mul(_startingVBZRXBalance -
-                    vestedBalanceForAmount( // overflow not possible
-                        _startingVBZRXBalance,
-                        0,
-                        block.timestamp
-                    )
-                ).div(_startingVBZRXBalance) / 2;
-
-            // user is attributed a staked balance of vested BZRX, from their last update to the present
-            totalVotes = vestedBalanceForAmount(
-                vBZRXBalance,
-                vestingLastSync[account],
-                block.timestamp
-            ).add(totalVotes);
-        }
-
-        totalVotes = _balancesPerToken[BZRX][account]
-            .add(bzrxRewards[account]) // unclaimed BZRX rewards count as votes
-            .add(totalVotes);
-
-        totalVotes = _balancesPerToken[iBZRX][account]
-            .mul(ILoanPool(iBZRX).tokenPrice())
-            .div(1e18)
-            .add(totalVotes);
-
-        // LPToken votes are measured based on amount of underlying BZRX staked
-        totalVotes = IERC20(BZRX).balanceOf(LPToken)
-            .mul(_balancesPerToken[LPToken][account])
-            .div(IERC20(LPToken).totalSupply())
-            .add(totalVotes);
     }
 
     function totalSupplyByAsset(
@@ -769,7 +737,7 @@ contract StakingV1 is StakingState, StakingConstants {
 
         supply = _totalSupplyPerToken[iBZRX]
             .mul(iBZRXWeightStored)
-            .div(1e18)
+            .div(1e50)
             .add(supply);
 
         supply = _totalSupplyPerToken[LPToken]
@@ -806,6 +774,103 @@ contract StakingV1 is StakingState, StakingConstants {
             uint256 timeSinceClaim = vestingEndTime.sub(lastUpdate);
             vested = tokenBalance.mul(timeSinceClaim) / vestingDurationAfterCliff; // will never divide by 0
         }
+    }
+
+
+    // Governance Logic //
+
+    function votingBalanceOf(
+        address account,
+        uint256 proposalId)
+        public
+        view
+        returns (uint256 totalVotes)
+    {
+        return _votingBalanceOf(account, _proposalState[proposalId]);
+    }
+
+    function votingBalanceOfNow(
+        address account)
+        public
+        view
+        returns (uint256 totalVotes)
+    {
+        return _votingBalanceOf(account, _getProposalState());
+    }
+
+    function _setProposalVals(
+        address account,
+        uint256 proposalId)
+        public
+        returns (uint256)
+    {
+        require(msg.sender == governor, "unauthorized");
+        require(_proposalState[proposalId].proposalTime == 0, "proposal exists");
+        ProposalState memory newProposal = _getProposalState();
+        _proposalState[proposalId] = newProposal;
+
+        return _votingBalanceOf(account, newProposal);
+    }
+
+    function _getProposalState()
+        internal
+        view
+        returns (ProposalState memory)
+    {
+        return ProposalState({
+            proposalTime: block.timestamp - 1,
+            iBZRXWeight: _calcIBZRXWeight(),
+            lpBZRXBalance: IERC20(BZRX).balanceOf(LPToken),
+            lpTotalSupply: IERC20(LPToken).totalSupply()
+        });
+    }
+
+    function _votingBalanceOf(
+        address account,
+        ProposalState memory proposal)
+        internal
+        view
+        returns (uint256 totalVotes)
+    {
+        uint256 _vestingLastSync = vestingLastSync[account];
+        if (proposal.proposalTime == 0 || _vestingLastSync > proposal.proposalTime - 1) {
+            return 0;
+        }
+
+        uint256 _vBZRXBalance = _balancesPerToken[vBZRX][account];
+        if (_vBZRXBalance != 0) {
+            // staked vBZRX counts has 1/2 a vote, that's prorated based on total vested
+            totalVotes = _vBZRXBalance
+                .mul(_startingVBZRXBalance -
+                    vestedBalanceForAmount( // overflow not possible
+                        _startingVBZRXBalance,
+                        0,
+                        proposal.proposalTime
+                    )
+                ).div(_startingVBZRXBalance) / 2;
+
+            // user is attributed a staked balance of vested BZRX, from their last update to the present
+            totalVotes = vestedBalanceForAmount(
+                _vBZRXBalance,
+                _vestingLastSync,
+                proposal.proposalTime
+            ).add(totalVotes);
+        }
+
+        totalVotes = _balancesPerToken[BZRX][account]
+            .add(bzrxRewards[account]) // unclaimed BZRX rewards count as votes
+            .add(totalVotes);
+
+        totalVotes = _balancesPerToken[iBZRX][account]
+            .mul(proposal.iBZRXWeight)
+            .div(1e50)
+            .add(totalVotes);
+
+        // LPToken votes are measured based on amount of underlying BZRX staked
+        totalVotes = proposal.lpBZRXBalance
+            .mul(_balancesPerToken[LPToken][account])
+            .div(proposal.lpTotalSupply)
+            .add(totalVotes);
     }
 
 
@@ -1152,6 +1217,14 @@ contract StakingV1 is StakingState, StakingConstants {
         onlyOwner
     {
         fundsWallet = _fundsWallet;
+    }
+
+    function setGovernor(
+        address _governor)
+        external
+        onlyOwner
+    {
+        governor = _governor;
     }
 
     function setFeeTokens(
