@@ -22,6 +22,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
     {
         _setTarget(this.borrowOrTradeFromPool.selector, target);
         _setTarget(this.setDelegatedManager.selector, target);
+        _setTarget(this.setLoanRewardsDelegate.selector, target);
         _setTarget(this.getEstimatedMarginExposure.selector, target);
         _setTarget(this.getRequiredCollateral.selector, target);
         _setTarget(this.getRequiredCollateralByParams.selector, target);
@@ -75,6 +76,15 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         );
         require(collateralAmountRequired != 0, "collateral is 0");
 
+        if (loanDataBytes.length >= 64) {
+            (address delegated) = abi.decode(loanDataBytes, (address));
+            _setLoanRewardsDelegate(
+                loanId,
+                sentAddresses[1], // borrower
+                delegated
+            );
+        }
+
         return _borrowOrTrade(
             loanParamsLocal,
             loanId,
@@ -100,6 +110,20 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             msg.sender,
             delegated,
             toggle
+        );
+    }
+
+    function setLoanRewardsDelegate(
+        bytes32 loanId,
+        address delegated)
+        external
+    {
+        require(loans[loanId].borrower == msg.sender, "unauthorized");
+
+        _setLoanRewardsDelegate(
+            loanId,
+            msg.sender,
+            delegated
         );
     }
 
@@ -480,6 +504,24 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             delegator,
             delegated,
             toggle
+        );
+    }
+
+    function _setLoanRewardsDelegate(
+        bytes32 loanId,
+        address delegator,
+        address delegated)
+        internal
+    {
+        bytes32 slot = keccak256(abi.encodePacked(loanId, LoanRewardsDelegateID));
+        assembly {
+            sstore(slot, delegated)
+        }
+
+        emit LoanRewardsDelegateSet(
+            loanId,
+            delegator,
+            delegated
         );
     }
 

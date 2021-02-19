@@ -196,13 +196,22 @@ contract FeesHelper is State, FeesEvents {
                 protocolTokenHeld = tokenBalance
                     .sub(rewardAmount);
 
-                bytes32 slot = keccak256(abi.encodePacked(user, UserRewardsID));
+                bytes32 slot = keccak256(abi.encodePacked(loanId, LoanRewardsDelegateID));
+                address loanRewardsDelegate;
+                assembly {
+                    loanRewardsDelegate := sload(slot)
+                }
+                if (loanRewardsDelegate == address(0)) {
+                    loanRewardsDelegate = user;
+                }
+
+                slot = keccak256(abi.encodePacked(loanRewardsDelegate, UserRewardsID));
                 assembly {
                     sstore(slot, add(sload(slot), rewardAmount))
                 }
 
                 emit EarnReward(
-                    user,
+                    loanRewardsDelegate,
                     loanId,
                     feeType,
                     vbzrxTokenAddress, // rewardToken

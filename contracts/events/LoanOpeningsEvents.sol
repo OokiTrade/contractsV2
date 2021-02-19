@@ -44,6 +44,12 @@ contract LoanOpeningsEvents {
         bool isActive
     );
 
+    event LoanRewardsDelegateSet(
+        bytes32 indexed loanId,
+        address indexed delegator,
+        address indexed delegated
+    );
+
     struct LoanOpenData {
         bytes32 loanId;
         uint256 principal;
