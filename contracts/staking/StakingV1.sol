@@ -181,6 +181,7 @@ contract StakingV1 is StakingState, StakingConstants {
         bool restake)
         external
         checkPause
+        updateRewards(msg.sender)
         returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
     {
         return _claim(restake);
@@ -189,6 +190,7 @@ contract StakingV1 is StakingState, StakingConstants {
     function claimBzrx()
         external
         checkPause
+        updateRewards(msg.sender)
         returns (uint256 bzrxRewardsEarned)
     {
         bzrxRewardsEarned = _claimBzrx(false);
@@ -203,6 +205,7 @@ contract StakingV1 is StakingState, StakingConstants {
     function claim3Crv()
         external
         checkPause
+        updateRewards(msg.sender)
         returns (uint256 stableCoinRewardsEarned)
     {
         stableCoinRewardsEarned = _claim3Crv();
@@ -217,7 +220,6 @@ contract StakingV1 is StakingState, StakingConstants {
     function _claim(
         bool restake)
         internal
-        updateRewards(msg.sender)
         returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
     {
         bzrxRewardsEarned = _claimBzrx(restake);
@@ -303,7 +305,7 @@ contract StakingV1 is StakingState, StakingConstants {
         values[2] = uint256(-1);
         values[3] = uint256(-1);
         
-        unstake(tokens, values);
+        unstake(tokens, values); // calls updateRewards
         _claim(false);
     }
 
