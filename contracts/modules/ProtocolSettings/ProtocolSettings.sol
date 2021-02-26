@@ -113,7 +113,8 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
 
     function setSupportedTokens(
         address[] calldata addrs,
-        bool[] calldata toggles)
+        bool[] calldata toggles,
+        bool withApprovals)
         external
         onlyOwner
     {
@@ -127,6 +128,15 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
                 addrs[i],
                 toggles[i]
             );
+        }
+
+        if (withApprovals) {
+            bytes memory data = abi.encodeWithSelector(
+                0x4a99e3a1, // setSwapApprovals(address[])
+                addrs
+            );
+            (bool success,) = swapsImpl.delegatecall(data);
+            require(success, "approval calls failed");
         }
     }
 
