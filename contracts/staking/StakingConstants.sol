@@ -6,7 +6,7 @@
 pragma solidity 0.5.17;
 
 import "../interfaces/IERC20.sol";
-import "./interfaces/IUniswapV2Router.sol";
+import "../interfaces/IUniswapV2Router.sol";
 import "./interfaces/ICurve3Pool.sol";
 import "./interfaces/IBZxPartial.sol";
 
