@@ -84,7 +84,8 @@ contract IBZx is
     /// @param toggles array of addresses of assets
     function setSupportedTokens(
         address[] calldata addrs,
-        bool[] calldata toggles)
+        bool[] calldata toggles,
+        bool withApprovals)
         external;
 
     /// @dev sets lending fee with WEI_PERCENT_PRECISION
