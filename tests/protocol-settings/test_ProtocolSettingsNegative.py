@@ -24,7 +24,8 @@ def test_setSupportedTokens(Constants, bzx, DAI, LINK):
         ],
         [
             True
-        ]
+        ],
+            False
     )
 
 def test_setLendingFeePercent(Constants, bzx):

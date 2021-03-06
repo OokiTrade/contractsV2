@@ -272,7 +272,7 @@ def test_extendLoanDurationUnauthorized(Constants, bzx, loanId):
         bzx.extendLoanDuration(loanId, 1, True, 1)
 
 def test_extendLoanDurationIndefiniteTermOnly(Constants, bzx, loanIdMaxLoanTermNonZero):
-    with reverts("indefinite-term only"):
+    with reverts("SafeERC20: low-level call failed"):
         bzx.extendLoanDuration(loanIdMaxLoanTermNonZero, 1, False, 0)
 
 def test_extendLoanDurationWrongAssetsSent(Constants, bzx, loanIdMaxLoanTermZero):
