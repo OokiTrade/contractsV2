@@ -88,6 +88,13 @@ contract SwapsImplTestnets is State, ISwapsImpl {
         return expectedRate;
     }
 
+    function setSwapApprovals(
+        address[] calldata tokens)
+        external
+    {
+    
+    }
+
     function localPriceFeed()
         external
         view
