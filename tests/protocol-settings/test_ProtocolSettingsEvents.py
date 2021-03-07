@@ -52,7 +52,8 @@ def test_setSupportedTokens(Constants, bzx, DAI, LINK, accounts):
         [
             True,
             False
-        ]
+        ],
+        False
     )   
     print("tx.events", tx.events)
     setSupportedTokens = tx.events["SetSupportedTokens"]
