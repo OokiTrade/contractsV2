@@ -131,10 +131,10 @@ def testStake_UserStory1_StakedFirstTime(requireMainnetFork, stakingV1, bzx, set
     tx = stakingV1.stake(tokens, amounts, {'from': accounts[1]})
 
     balances = stakingV1.balanceOfByAssets(accounts[1])
-    assert(balances[0] == 100e18)
-    assert(balances[1] == 100e18)
-    assert(balances[2] == 100e18)
-    assert(balances[3] == 100e18)
+    assert(balances[0] == balanceOfBZRX)
+    assert(balances[1] == balanceOfiBZRX)
+    assert(balances[2] == balanceOfvBZRX)
+    assert(balances[3] == balanceOfLPT)
 
     assert True
 
@@ -165,9 +165,9 @@ def testStake_UserStory2_StakedMoreTokens(requireMainnetFork, stakingV1, bzx, se
     tx = stakingV1.stake(tokens, amounts, {'from': accounts[1]})
 
     balances = stakingV1.balanceOfByAssets(accounts[1])
-    assert(balances[0] == 100e18)
-    assert(balances[1] == 100e18)
-    assert(balances[2] == 100e18)
+    assert(balances[0] == balanceOfBZRX)
+    assert(balances[1] == balanceOfiBZRX)
+    assert(balances[2] == balanceOfvBZRX)
     assert(balances[3] == 0)
 
     # mint some for testing
@@ -179,24 +179,24 @@ def testStake_UserStory2_StakedMoreTokens(requireMainnetFork, stakingV1, bzx, se
     # LPT.transferFrom("0xe95ebce2b02ee07def5ed6b53289801f7fc137a4", accounts[1], 100e18, {
     #                  'from': "0xe95ebce2b02ee07def5ed6b53289801f7fc137a4"})
 
-    balanceOfBZRX = BZRX.balanceOf(accounts[1])
-    balanceOfvBZRX = vBZRX.balanceOf(accounts[1])
-    balanceOfiBZRX = iBZRX.balanceOf(accounts[1])
+    balanceOfBZRXAfter = BZRX.balanceOf(accounts[1])
+    balanceOfvBZRXAfter = vBZRX.balanceOf(accounts[1])
+    balanceOfiBZRXAfter = iBZRX.balanceOf(accounts[1])
     # balanceOfLPT = LPT.balanceOf(accounts[1])
 
-    BZRX.approve(stakingV1, balanceOfBZRX, {'from': accounts[1]})
-    vBZRX.approve(stakingV1, balanceOfvBZRX, {'from': accounts[1]})
-    iBZRX.approve(stakingV1, balanceOfiBZRX, {'from': accounts[1]})
+    BZRX.approve(stakingV1, balanceOfBZRXAfter, {'from': accounts[1]})
+    vBZRX.approve(stakingV1, balanceOfvBZRXAfter, {'from': accounts[1]})
+    iBZRX.approve(stakingV1, balanceOfiBZRXAfter, {'from': accounts[1]})
     # LPT.approve(stakingV1, balanceOfLPT, {'from': accounts[1]})
 
     tokens = [BZRX, vBZRX, iBZRX]
-    amounts = [balanceOfBZRX, balanceOfvBZRX, balanceOfiBZRX]
+    amounts = [balanceOfBZRXAfter, balanceOfvBZRXAfter, balanceOfiBZRXAfter]
     tx = stakingV1.stake(tokens, amounts,  {'from': accounts[1]})
 
     balances = stakingV1.balanceOfByAssets(accounts[1])
-    assert(balances[0] >= 200e18) # some has vested
-    assert(balances[1] == 200e18)
-    assert(balances[2] == 200e18)
+    assert(balances[0] == balanceOfBZRX + balanceOfBZRXAfter) # some has vested
+    assert(balances[1] == balanceOfiBZRX + balanceOfiBZRXAfter)
+    assert(balances[2] == balanceOfvBZRX + balanceOfvBZRXAfter)
     assert(balances[3] == 0)
 
     assert True
@@ -232,9 +232,9 @@ def testStake_UserStory4_IClaimMyStakingRewards(requireMainnetFork, stakingV1, b
     tx = stakingV1.stake(tokens, amounts, {'from': accounts[1]})
 
     balances = stakingV1.balanceOfByAssets(accounts[1])
-    assert(balances[0] == 100e18)
-    assert(balances[1] == 100e18)
-    assert(balances[2] == 100e18)
+    assert(balances[0] == balanceOfBZRX)
+    assert(balances[1] == balanceOfiBZRX)
+    assert(balances[2] == balanceOfvBZRX)
     assert(balances[3] == 0)
 
     # create some fees
@@ -294,10 +294,10 @@ def testStake_UserStory5_IClaimAndRestakeMyStakingRewards(requireMainnetFork, st
     tx = stakingV1.stake(tokens, amounts, {'from': accounts[1]})
 
     balances = stakingV1.balanceOfByAssets(accounts[1])
-    assert(balances[0] == 100e18)
-    assert(balances[1] == 100e18)
-    assert(balances[2] == 100e18)
-    assert(balances[3] == 100e18)
+    assert(balances[0] == balanceOfBZRX)
+    assert(balances[1] == balanceOfiBZRX)
+    assert(balances[2] == balanceOfvBZRX)
+    assert(balances[3] == balanceOfLPT)
 
     # create some fees
     borrowAmount = 100*10**6
@@ -362,14 +362,13 @@ def testStake_IWantToUnstakeMyTokens(requireMainnetFork, stakingV1, bzx, setFees
     tx = stakingV1.stake(tokens, amounts, {'from': accounts[1]})
 
     balances = stakingV1.balanceOfByAssets(accounts[1])
-    assert(balances[0] == 100e18)
-    assert(balances[1] == 100e18)
-    assert(balances[2] == 100e18)
-    assert(balances[3] == 100e18)
+    assert(balances[0] == balanceOfBZRX)
+    assert(balances[1] == balanceOfiBZRX)
+    assert(balances[2] == balanceOfvBZRX)
+    assert(balances[3] == balanceOfLPT)
 
     # unstake half
-    amounts = [balanceOfBZRX/2, balanceOfvBZRX /
-               2, balanceOfiBZRX/2, balanceOfLPT/2]
+    amounts = [balanceOfBZRX - 10, balanceOfvBZRX - 10, balanceOfiBZRX - 10, balanceOfLPT - 10]
     tx = stakingV1.unstake(tokens, amounts, {'from': accounts[1]})
 
     balanceOfBZRXAfter = BZRX.balanceOf(accounts[1])
@@ -379,10 +378,10 @@ def testStake_IWantToUnstakeMyTokens(requireMainnetFork, stakingV1, bzx, setFees
 
     stakedBalance = stakingV1.balanceOfByAssets(accounts[1])
 
-    assert(balanceOfBZRXAfter >= stakedBalance[0])
-    assert(balanceOfvBZRXAfter == stakedBalance[1])
-    assert(balanceOfiBZRXAfter == stakedBalance[2])
-    assert(balanceOfLPTAfter == stakedBalance[3])
+    assert(balanceOfBZRXAfter >= balanceOfBZRX - stakedBalance[0])
+    assert(balanceOfvBZRXAfter == balanceOfvBZRX - stakedBalance[1])
+    assert(balanceOfiBZRXAfter == balanceOfiBZRX - stakedBalance[2])
+    assert(balanceOfLPTAfter == balanceOfLPT - stakedBalance[3])
 
     assert True
 
@@ -414,10 +413,10 @@ def testStake_IWantToUnstakeAllMyStakedTokens(requireMainnetFork, stakingV1, bzx
 
     balances = stakingV1.balanceOfByAssets(accounts[1])
 
-    assert(balances[0] == 100e18)
-    assert(balances[1] == 100e18)
-    assert(balances[2] == 100e18)
-    assert(balances[3] == 100e18)
+    assert(balances[0] == balanceOfBZRX)
+    assert(balances[1] == balanceOfiBZRX)
+    assert(balances[2] == balanceOfvBZRX)
+    assert(balances[3] == balanceOfLPT)
 
     stakingV1.exit({'from': accounts[1]})
 
@@ -433,10 +432,10 @@ def testStake_IWantToUnstakeAllMyStakedTokens(requireMainnetFork, stakingV1, bzx
     balanceOfiBZRX = iBZRX.balanceOf(accounts[1])
     balanceOfLPT = LPT.balanceOf(accounts[1])
 
-    assert(balanceOfBZRX >= 100e18)
-    assert(balanceOfvBZRX == 100e18)
-    assert(balanceOfiBZRX == 100e18)
-    assert(balanceOfLPT == 100e18)
+    assert(balanceOfBZRX >= balances[0])
+    assert(balanceOfvBZRX == balances[2])
+    assert(balanceOfiBZRX == balances[1])
+    assert(balanceOfLPT == balances[3])
 
     assert True
 
