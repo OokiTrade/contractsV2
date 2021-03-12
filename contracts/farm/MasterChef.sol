@@ -8,19 +8,19 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./BGovToken.sol";
 
 interface IMigratorChef {
-    // Perform LP token migration from legacy UniswapV2 to SushiSwap.
+    // Perform LP token migration from legacy UniswapV2 to BgovSwap.
     // Take the current LP token address and return the new LP token address.
     // Migrator should have full access to the caller's LP token.
     // Return the new LP token address.
     //
     // XXX Migrator must have allowance access to UniswapV2 LP tokens.
-    // SushiSwap must mint EXACTLY the same amount of SushiSwap LP tokens or
+    // BgovSwap must mint EXACTLY the same amount of BgovSwap LP tokens or
     // else something bad will happen. Traditional UniswapV2 does not
     // do that so be careful!
     function migrate(IERC20 token) external returns (IERC20);
 }
 
-// MasterChef is the master of Sushi. He can make Sushi and he is a fair guy.
+// MasterChef is the master of Bgov. He can make Bgov and he is a fair guy.
 //
 // Note that it's ownable and the owner wields tremendous power. The ownership
 // will be transferred to a governance smart contract once BGOV is sufficiently
@@ -173,7 +173,7 @@ contract MasterChef is Ownable {
     }
 
     // View function to see pending BGOVs on frontend.
-    function pendingSushi(uint256 _pid, address _user)
+    function pendingBgov(uint256 _pid, address _user)
         external
         view
         returns (uint256)
@@ -238,7 +238,7 @@ contract MasterChef is Ownable {
                 user.amount.mul(pool.accBgovPerShare).div(1e12).sub(
                     user.rewardDebt
                 );
-            safeSushiTransfer(msg.sender, pending);
+            safeBgovTransfer(msg.sender, pending);
         }
         pool.lpToken.safeTransferFrom(
             address(msg.sender),
@@ -260,7 +260,7 @@ contract MasterChef is Ownable {
             user.amount.mul(pool.accBgovPerShare).div(1e12).sub(
                 user.rewardDebt
             );
-        safeSushiTransfer(msg.sender, pending);
+        safeBgovTransfer(msg.sender, pending);
         user.amount = user.amount.sub(_amount);
         user.rewardDebt = user.amount.mul(pool.accBgovPerShare).div(1e12);
         pool.lpToken.safeTransfer(address(msg.sender), _amount);
@@ -278,7 +278,7 @@ contract MasterChef is Ownable {
     }
 
     // Safe bgov transfer function, just in case if rounding error causes pool to not have enough BGOVs.
-    function safeSushiTransfer(address _to, uint256 _amount) internal {
+    function safeBgovTransfer(address _to, uint256 _amount) internal {
         uint256 bgovBal = bgov.balanceOf(address(this));
         if (_amount > bgovBal) {
             bgov.transfer(_to, bgovBal);
