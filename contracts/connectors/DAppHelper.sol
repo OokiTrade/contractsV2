@@ -48,33 +48,9 @@ contract DAppHelper_FeedsLike {
 
 contract DAppHelper {
 
-    //address public constant legacyVault = 0x8B3d70d628Ebd30D4A2ea82DB95bA2e906c71633; // mainnet
-    //address public constant legacyVault = 0xcE069b35AE99762BEe444C81DeC1728AA99AFd4B; // kovan
-    //address public constant legacyVault = 0xbAB325Bc2E78ea080F46c1A2bf9BF25F8A3c4d69; // ropsten
-
-    address public owner;
-    address public bZxProtocol;
-    address public legacyVault;
-
-    constructor(
-        address _bZxProtocol,
-        address _legacyVault)
-        public
-    {
-        owner = msg.sender;
-        bZxProtocol = _bZxProtocol;
-        legacyVault = _legacyVault;
-    }
-
-    function setAddresses(
-        address _bZxProtocol,
-        address _legacyVault)
-        external
-    {
-        require(msg.sender == owner, "unauthorized");
-        bZxProtocol = _bZxProtocol;
-        legacyVault = _legacyVault;
-    }
+    address public constant bZxProtocol = 0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f; // mainnet
+    //address public constant bZxProtocol = 0x5cfba2639a3db0D9Cc264Aa27B2E6d134EeA486a; // kovan
+    //address public constant bZxProtocol = 0xC47812857A74425e2039b57891a3DFcF51602d5d; // bsc
 
     function assetRates(
         address usdTokenAddress,
@@ -137,9 +113,6 @@ contract DAppHelper {
 
             address loanToken = token.loanTokenAddress();
             vaultBalance[i] = DAppHelper_TokenLike(loanToken).balanceOf(bZxProtocol);
-            if (legacyVault != address(0)) {
-                vaultBalance[i] += DAppHelper_TokenLike(loanToken).balanceOf(legacyVault);
-            }
         }
     }
 }

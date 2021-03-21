@@ -12,14 +12,13 @@ import "../../openzeppelin/SafeERC20.sol";
 import "../ISwapsImpl.sol";
 
 
-contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
+contract SwapsImplUniswapV2_BSC is State, ISwapsImpl {
     using SafeERC20 for IERC20;
 
-    // mainnet
-    address public constant uniswapRouter = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
-    address public constant dai = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
-    address public constant usdc = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-    address public constant usdt = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+    // bsc (PancakeSwap)
+    address public constant uniswapRouter = 0x05fF2B0DB69458A0750badebc4f9e13aDd608C7F;
+    address public constant busd = 0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56;
+    address public constant usdt = 0x55d398326f99059fF775485246999027B3197955;
 
     function dexSwap(
         address sourceTokenAddress,
@@ -112,21 +111,12 @@ contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
                 }
             }
 
-            if (sourceTokenAddress != dai && destTokenAddress != dai) {
-                path[1] = dai;
+            if (sourceTokenAddress != busd && destTokenAddress != busd) {
+                path[1] = busd;
                 tmpValue = _getAmountOut(amountIn, path);
                 if (tmpValue > amountOut) {
                     amountOut = tmpValue;
-                    midToken = dai;
-                }
-            }
-
-            if (sourceTokenAddress != usdc && destTokenAddress != usdc) {
-                path[1] = usdc;
-                tmpValue = _getAmountOut(amountIn, path);
-                if (tmpValue > amountOut) {
-                    amountOut = tmpValue;
-                    midToken = usdc;
+                    midToken = busd;
                 }
             }
 
@@ -172,21 +162,12 @@ contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
                 }
             }
 
-            if (sourceTokenAddress != dai && destTokenAddress != dai) {
-                path[1] = dai;
+            if (sourceTokenAddress != busd && destTokenAddress != busd) {
+                path[1] = busd;
                 tmpValue = _getAmountIn(amountOut, path);
                 if (tmpValue < amountIn) {
                     amountIn = tmpValue;
-                    midToken = dai;
-                }
-            }
-
-            if (sourceTokenAddress != usdc && destTokenAddress != usdc) {
-                path[1] = usdc;
-                tmpValue = _getAmountIn(amountOut, path);
-                if (tmpValue < amountIn) {
-                    amountIn = tmpValue;
-                    midToken = usdc;
+                    midToken = busd;
                 }
             }
 

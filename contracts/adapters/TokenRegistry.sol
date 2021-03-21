@@ -23,18 +23,13 @@ interface TheProtocol{
 
 contract TokenRegistry {
 
-    address public bZxContract;
+    address public constant bZxContract = 0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f; // mainnet
+    //address public constant bZxContract = 0x5cfba2639a3db0D9Cc264Aa27B2E6d134EeA486a; // kovan
+    //address public constant bZxContract = 0xC47812857A74425e2039b57891a3DFcF51602d5d; // bsc
 
     struct TokenMetadata {
         address token; // iToken
         address asset; // underlying asset
-    }
-
-    constructor(
-        address _bZxContract)
-        public
-    {
-        bZxContract = _bZxContract;
     }
 
     function getTokens(
