@@ -298,7 +298,8 @@ def deployProtocol():
                     True,
                     True,
                     True
-                ]
+                ],
+                True
             )
 
             ## 7e18 = 5% collateral discount
@@ -401,7 +402,8 @@ def deployProtocol():
                     True, # COMP
                     True, # LRC
                     #True, # BNB
-                ]
+                ],
+                True
             , {"from": acct, "gas_price": 22e9})
 
             ## 7e18 = 5% collateral discount

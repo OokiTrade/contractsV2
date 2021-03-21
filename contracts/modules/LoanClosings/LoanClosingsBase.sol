@@ -13,10 +13,9 @@ import "../../mixins/InterestUser.sol";
 import "../../mixins/LiquidationHelper.sol";
 import "../../swaps/SwapsUser.sol";
 import "../../interfaces/ILoanPool.sol";
-import "../../connectors/gastoken/GasTokenUser.sol";
 
 
-contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, InterestUser, GasTokenUser, SwapsUser, LiquidationHelper {
+contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, InterestUser, SwapsUser, LiquidationHelper {
 
     enum CloseTypes {
         Deposit,
