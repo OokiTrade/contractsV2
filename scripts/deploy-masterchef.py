@@ -33,6 +33,7 @@ iUSDT = Contract.from_abi("iUSDT", address=iUSDTAddress, abi=LoanTokenLogicStand
 
 
 bgovToken = accounts[0].deploy(BGovToken)
+bgovToken.transferOwnership(masterChef)
 
 # TODO @Tom farm configuration
 devAccount = accounts[0]
