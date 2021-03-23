@@ -33,7 +33,7 @@ iUSDT = Contract.from_abi("iUSDT", address=iUSDTAddress, abi=LoanTokenLogicStand
 
 
 bgovToken = accounts[0].deploy(BGovToken)
-bgovToken.transferOwnership(masterChef)
+
 
 # TODO @Tom farm configuration
 devAccount = accounts[0]
@@ -42,7 +42,7 @@ bonusEndBlock = 100
 startBlock = chain.height
 
 masterChef = accounts[0].deploy(MasterChef, bgovToken, devAccount, bgovPerBlock, bonusEndBlock,  startBlock)
-
+bgovToken.transferOwnership(masterChef)
 # TODO @Tom all pools equal allocation point right now
 # from chef: // Total allocation poitns. Must be the sum of all allocation points in all pools.
 
