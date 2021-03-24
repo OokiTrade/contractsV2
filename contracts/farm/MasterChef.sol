@@ -250,6 +250,10 @@ contract MasterChef is Ownable {
         emit Deposit(msg.sender, _pid, _amount);
     }
 
+    function claimReward(uint256 _pid) public {
+        deposit(_pid, 0);
+    }
+
     // Withdraw LP tokens from MasterChef.
     function withdraw(uint256 _pid, uint256 _amount) public {
         PoolInfo storage pool = poolInfo[_pid];

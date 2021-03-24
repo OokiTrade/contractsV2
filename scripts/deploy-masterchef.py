@@ -45,6 +45,7 @@ masterChef = accounts[0].deploy(MasterChef, bgovToken, devAccount, bgovPerBlock,
 bgovToken.transferOwnership(masterChef)
 # TODO @Tom all pools equal allocation point right now
 # from chef: // Total allocation poitns. Must be the sum of all allocation points in all pools.
+# aloso allocation points should consider price difference. depositing 1 iWBTC should be approximately equal to depositing 55k iBUSD
 
 allocPoint = 1 
 masterChef.add(allocPoint, iWBNB, 1)
