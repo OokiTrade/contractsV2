@@ -37,17 +37,17 @@ bgovToken = accounts[0].deploy(BGovToken)
 
 # TODO @Tom farm configuration
 devAccount = accounts[0]
-bgovPerBlock = 100
-bonusEndBlock = 100
+bgovPerBlock = 100*10**18
+bonusEndBlock = chain.height + 1*10**6
 startBlock = chain.height
 
-masterChef = accounts[0].deploy(MasterChef, bgovToken, devAccount, bgovPerBlock, bonusEndBlock,  startBlock)
+masterChef = accounts[0].deploy(MasterChef, bgovToken, devAccount, bgovPerBlock, startBlock, bonusEndBlock)
 bgovToken.transferOwnership(masterChef)
 # TODO @Tom all pools equal allocation point right now
 # from chef: // Total allocation poitns. Must be the sum of all allocation points in all pools.
 # aloso allocation points should consider price difference. depositing 1 iWBTC should be approximately equal to depositing 55k iBUSD
 
-allocPoint = 1 
+allocPoint = 100
 masterChef.add(allocPoint, iWBNB, 1)
 masterChef.add(allocPoint, iETH, 1)
 masterChef.add(allocPoint, iBUSD, 1)
