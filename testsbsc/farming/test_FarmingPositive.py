@@ -12,15 +12,16 @@ def testFarming_deposit(requireBscFork, BUSD,iBUSD, accounts, masterChef, bgovTo
     #Precondition
     amount = 10000*10**18;
     depositAmount = 10*10**18
+    approveAmount = 100*10**18;
     BUSD.transfer(account1, amount, {'from': "0x7c9e73d4c71dae564d41f78d56439bb4ba87592f"})
-    BUSD.approve(iBUSD, 100*10**18, {'from': account1})
-    iBUSD.mint(account1, 100*10**18, {'from': account1})
+    BUSD.approve(iBUSD, approveAmount, {'from': account1})
+    iBUSD.mint(account1, approveAmount, {'from': account1})
     iBUSD.approve(masterChef,iBUSD.balanceOf(account1), {'from': account1})
     ibusdBalance1 = iBUSD.balanceOf(account1)
 
     BUSD.transfer(account2, amount, {'from': "0x7c9e73d4c71dae564d41f78d56439bb4ba87592f"})
-    BUSD.approve(iBUSD, 100*10**18, {'from': account2})
-    iBUSD.mint(account2, 100*10**18, {'from': account2})
+    BUSD.approve(iBUSD, approveAmount, {'from': account2})
+    iBUSD.mint(account2, approveAmount, {'from': account2})
     iBUSD.approve(masterChef,iBUSD.balanceOf(account2), {'from': account2})
     ibusdBalance2 = iBUSD.balanceOf(account2)
 
@@ -53,9 +54,10 @@ def testFarming_withdraw(requireBscFork, BUSD, iBUSD, accounts, masterChef, bgov
     #Precondition
     amount = 10000*10**18;
     depositAmount = 10*10**18
+    approveAmount = 100*10**18;
     BUSD.transfer(account1, amount, {'from': "0x7c9e73d4c71dae564d41f78d56439bb4ba87592f"})
-    BUSD.approve(iBUSD, 100*10**18, {'from': account1})
-    iBUSD.mint(account1, 100*10**18, {'from': account1})
+    BUSD.approve(iBUSD, approveAmount, {'from': account1})
+    iBUSD.mint(account1, approveAmount, {'from': account1})
     iBUSD.approve(masterChef,iBUSD.balanceOf(account1), {'from': account1})
     tx1 = masterChef.deposit(2,depositAmount,{'from':account1})
     masterChefLPBalanceBefore = iBUSD.balanceOf(masterChef);
@@ -79,9 +81,10 @@ def testFarming_claim_reward(requireBscFork, BUSD, iBUSD, accounts, masterChef, 
     #Precondition
     amount = 10000*10**18;
     depositAmount = 10*10**18
+    approveAmount = 100*10**18;
     BUSD.transfer(account1, amount, {'from': "0x7c9e73d4c71dae564d41f78d56439bb4ba87592f"})
-    BUSD.approve(iBUSD, 100*10**18, {'from': account1})
-    iBUSD.mint(account1, 100*10**18, {'from': account1})
+    BUSD.approve(iBUSD, approveAmount, {'from': account1})
+    iBUSD.mint(account1, approveAmount, {'from': account1})
     iBUSD.approve(masterChef,iBUSD.balanceOf(account1), {'from': account1})
     tx1 = masterChef.deposit(2,depositAmount,{'from':account1})
     masterChefLPBalanceBefore = iBUSD.balanceOf(masterChef);
