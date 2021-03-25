@@ -59,6 +59,7 @@ myAccout = accounts[0]
 
 # mint iWBNB
 amount = 10000*10**18
+accounts[1].transfer(to=myAccout, amount=Wei('100 ether'))
 iWBNB.mintWithEther(myAccout, {'from': myAccout, 'value': Wei('90 ether')})
 iWBNB.approve(masterChef, 2**256-1, {'from': myAccout})
 masterChef.deposit(0, 10*10**18, {'from': myAccout})
