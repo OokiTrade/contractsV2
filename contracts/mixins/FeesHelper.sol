@@ -167,6 +167,11 @@ contract FeesHelper is State, FeesEvents {
         FeeType feeType)
         internal
     {
+        if (vbzrxTokenAddress == address(0)) {
+            // deploy network doesn't support vBZRX
+            return;
+        }
+
         // The protocol is designed to allow positions and loans to be closed, if for whatever reason
         // the price lookup is failing, returning 0, or is otherwise paused. Therefore, we allow this
         // call to fail silently, rather than revert, to allow the transaction to continue without a

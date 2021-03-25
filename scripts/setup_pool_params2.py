@@ -304,6 +304,7 @@ def main():
             "BNB,LRC,25000000000000000000,150000000000000000000,145000000000000000000",
             "BNB,YFI,25000000000000000000,150000000000000000000,145000000000000000000",
 
+            "BZRX,ETH,7000000000000000000,20000000000000000000,15000000000000000000",
 
             "AAVE,ETH,7000000000000000000,20000000000000000000,15000000000000000000",
             "DAI,AAVE,7000000000000000000,20000000000000000000,15000000000000000000",
@@ -400,15 +401,16 @@ def main():
         collateralToken = spl[1]
 
         if not (
-            loanToken == "YFI" or
-            loanToken == "COMP" or
-            loanToken == "LRC" or
-            loanToken == "BNB" or
+            loanToken == "BZRX" and
 
-            collateralToken == "YFI" or
-            collateralToken == "COMP" or
-            collateralToken == "LRC" or
-            collateralToken == "BNB"):
+            (collateralToken == "DAI" or
+            collateralToken == "ETH" or
+            collateralToken == "KNC" or
+            collateralToken == "LINK" or
+            collateralToken == "MKR" or
+            collateralToken == "USDC" or
+            collateralToken == "USDT" or
+            collateralToken == "WBTC")):
             continue
 
         print(loanToken, collateralToken)
@@ -464,4 +466,4 @@ def main():
             print("SKIPPED!")
             continue'''
 
-        loanToken.updateSettings(loanTokenSettings.address, calldata, { "from": acct, "gas_price": 20e9 })
+        #loanToken.updateSettings(loanTokenSettings.address, calldata, { "from": acct, "gas_price": 160e9, "required_confs": 0 })

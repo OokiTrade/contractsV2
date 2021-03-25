@@ -7,9 +7,10 @@ pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
 import "./LoanClosingsBase.sol";
+import "../../connectors/gastoken/GasTokenUser.sol";
 
 
-contract LoanClosingsWithGasToken is LoanClosingsBase {
+contract LoanClosingsWithGasToken is LoanClosingsBase, GasTokenUser {
 
     function initialize(
         address target)

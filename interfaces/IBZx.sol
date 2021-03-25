@@ -82,6 +82,7 @@ contract IBZx is
     /// @dev updates list of supported tokens, it can be use also to disable or enable particualr token
     /// @param addrs array of address of pools
     /// @param toggles array of addresses of assets
+    /// @param withApprovals resets tokens to unlimited approval with the swaps integration (kyber, etc.)
     function setSupportedTokens(
         address[] calldata addrs,
         bool[] calldata toggles,
