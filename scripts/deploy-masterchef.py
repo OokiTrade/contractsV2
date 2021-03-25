@@ -14,7 +14,6 @@ WBTC = Contract.from_abi("USDT", "0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c", T
 USDT = Contract.from_abi("USDT", "0x55d398326f99059ff775485246999027b3197955", TestToken.abi)
 
 
-
 bzx = Contract.from_abi("bzx", address="0xc47812857a74425e2039b57891a3dfcf51602d5d",
                         abi=interface.IBZx.abi, owner=accounts[0])
 
@@ -26,7 +25,7 @@ iUSDTAddress = bzx.underlyingToLoanPool(USDT)
 
 
 iWBNB = Contract.from_abi("iWBNB", address=iWBNBAddress, abi=LoanTokenLogicWeth.abi, owner=accounts[0])
-iETH = Contract.from_abi("iETH", address=iETHAddress , abi=LoanTokenLogicStandard.abi, owner=accounts[0])
+iETH = Contract.from_abi("iETH", address=iETHAddress, abi=LoanTokenLogicStandard.abi, owner=accounts[0])
 iBUSD = Contract.from_abi("iBUSD", address=iBUSDAddress, abi=LoanTokenLogicStandard.abi, owner=accounts[0])
 iWBTC = Contract.from_abi("iWBTC", address=iWBTCAddress, abi=LoanTokenLogicStandard.abi, owner=accounts[0])
 iUSDT = Contract.from_abi("iUSDT", address=iUSDTAddress, abi=LoanTokenLogicStandard.abi, owner=accounts[0])
@@ -36,7 +35,7 @@ bgovToken = accounts[0].deploy(BGovToken)
 
 
 # TODO @Tom farm configuration
-devAccount = accounts[0]
+devAccount = accounts[0]  # @Tom this account will receive small fees check updatePool() func
 bgovPerBlock = 100*10**18
 bonusEndBlock = chain.height + 1*10**6
 startBlock = chain.height
