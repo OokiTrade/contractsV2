@@ -1,4 +1,7 @@
 pragma solidity 0.6.12;
+pragma experimental ABIEncoderV2;
+
+/// SPDX-License-Identifier: MIT
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
@@ -295,5 +298,25 @@ contract MasterChef is Ownable {
     function dev(address _devaddr) public {
         require(msg.sender == devaddr, "dev: wut?");
         devaddr = _devaddr;
+    }
+
+
+    // Custom logic
+
+
+    function getPoolInfos() external view returns(PoolInfo[] memory poolInfos){
+        uint256 length = poolInfo.length;
+        poolInfos = new PoolInfo[](length);
+        for (uint256 pid = 0; pid < length; ++pid) {
+            poolInfos[pid] = poolInfo[pid];
+        }
+    }
+
+    function getUserInfos(address _wallet) external view returns(UserInfo[] memory userInfos){
+        uint256 length = poolInfo.length;
+        userInfos = new UserInfo[](length);
+        for (uint256 pid = 0; pid < length; ++pid) {
+            userInfos[pid] = userInfo[pid][_wallet];
+        }
     }
 }
