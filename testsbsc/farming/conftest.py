@@ -95,3 +95,12 @@ def tokens(accounts, chain, MasterChef, iWBNB, WBNB, iBUSD, BUSD):
         'WBNB': WBNB,
         'BUSD': BUSD
     }
+
+
+def initBalance(account, token, lpToken, addBalance):
+    if(lpToken.symbol() == 'iBNB'):
+        lpToken.mintWithEther(account, {'from': account, 'value': addBalance})
+    if(lpToken.symbol() == 'iBUSD'):
+        token.transfer(account, addBalance, {'from': '0x7c9e73d4c71dae564d41f78d56439bb4ba87592f'})
+        token.approve(lpToken, addBalance, {'from': account})
+        lpToken.mint(account, addBalance, {'from': account})
