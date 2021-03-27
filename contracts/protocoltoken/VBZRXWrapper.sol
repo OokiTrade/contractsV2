@@ -105,11 +105,15 @@ contract VBZRXWrapper {
     }
 
     function claimable(address account) external view returns (uint256) {
+        uint256 _totalSupply = totalSupply;
+        if (_totalSupply == 0) {
+            return 0;
+        }
         return _claimable(
             account,
             vBZRX.vestedBalanceOf(address(this))
                 .mul(1e36)
-                .div(totalSupply)
+                .div(_totalSupply)
                 .add(bzrxPerTokenStored)
         );
     }
