@@ -12,6 +12,9 @@ ETH = Contract.from_abi("USDT", "0x2170ed0880ac9a755fd29b2688956bd959f933f8", Te
 BUSD = Contract.from_abi("BUSD", "0xe9e7cea3dedca5984780bafc599bd69add087d56", TestToken.abi)
 WBTC = Contract.from_abi("USDT", "0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c", TestToken.abi)
 USDT = Contract.from_abi("USDT", "0x55d398326f99059ff775485246999027b3197955", TestToken.abi)
+BZRX = Contract.from_abi("BZRX", "0x4b87642AEDF10b642BE4663Db842Ecc5A88bf5ba", TestToken.abi)
+# two sided
+BZRX_wBNB = Contract.from_abi("BZRX", "0x091A7065306fa5F91a378e8D6858996C20868611", interface.IPancakePair.abi)
 
 
 bzx = Contract.from_abi("bzx", address="0xc47812857a74425e2039b57891a3dfcf51602d5d",
@@ -22,14 +25,14 @@ iETHAddress = bzx.underlyingToLoanPool(ETH)
 iBUSDAddress = bzx.underlyingToLoanPool(BUSD)
 iWBTCAddress = bzx.underlyingToLoanPool(WBTC)
 iUSDTAddress = bzx.underlyingToLoanPool(USDT)
-
+iBZRXAddress = bzx.underlyingToLoanPool(BZRX)
 
 iWBNB = Contract.from_abi("iWBNB", address=iWBNBAddress, abi=LoanTokenLogicWeth.abi, owner=accounts[0])
 iETH = Contract.from_abi("iETH", address=iETHAddress, abi=LoanTokenLogicStandard.abi, owner=accounts[0])
 iBUSD = Contract.from_abi("iBUSD", address=iBUSDAddress, abi=LoanTokenLogicStandard.abi, owner=accounts[0])
 iWBTC = Contract.from_abi("iWBTC", address=iWBTCAddress, abi=LoanTokenLogicStandard.abi, owner=accounts[0])
 iUSDT = Contract.from_abi("iUSDT", address=iUSDTAddress, abi=LoanTokenLogicStandard.abi, owner=accounts[0])
-
+iBZRX = Contract.from_abi("iBZRX", address=iBZRXAddress, abi=LoanTokenLogicStandard.abi, owner=accounts[0])
 
 bgovToken = accounts[0].deploy(BGovToken)
 
@@ -52,3 +55,7 @@ masterChef.add(allocPoint, iETH, 1)
 masterChef.add(allocPoint, iBUSD, 1)
 masterChef.add(allocPoint, iWBTC, 1)
 masterChef.add(allocPoint, iUSDT, 1)
+masterChef.add(allocPoint, iBZRX, 1)
+
+# two sided
+masterChef.add(allocPoint, BZRX_wBNB, 1)

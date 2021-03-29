@@ -7,30 +7,6 @@ from brownie.network.contract import InterfaceContainer
 from brownie.network.state import _add_contract, _remove_contract
 
 
-WBNB = Contract.from_abi("USDT", "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c", TestToken.abi)
-ETH = Contract.from_abi("USDT", "0x2170ed0880ac9a755fd29b2688956bd959f933f8", TestToken.abi)
-BUSD = Contract.from_abi("BUSD", "0xe9e7cea3dedca5984780bafc599bd69add087d56", TestToken.abi)
-WBTC = Contract.from_abi("USDT", "0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c", TestToken.abi)
-USDT = Contract.from_abi("USDT", "0x55d398326f99059ff775485246999027b3197955", TestToken.abi)
-
-
-bzx = Contract.from_abi("bzx", address="0xc47812857a74425e2039b57891a3dfcf51602d5d",
-                        abi=interface.IBZx.abi, owner=accounts[0])
-
-iWBNBAddress = bzx.underlyingToLoanPool(WBNB)
-iETHAddress = bzx.underlyingToLoanPool(ETH)
-iBUSDAddress = bzx.underlyingToLoanPool(BUSD)
-iWBTCAddress = bzx.underlyingToLoanPool(WBTC)
-iUSDTAddress = bzx.underlyingToLoanPool(USDT)
-
-
-iWBNB = Contract.from_abi("iWBNB", address=iWBNBAddress, abi=LoanTokenLogicWeth.abi, owner=accounts[0])
-iETH = Contract.from_abi("iETH", address=iETHAddress, abi=LoanTokenLogicStandard.abi, owner=accounts[0])
-iBUSD = Contract.from_abi("iBUSD", address=iBUSDAddress, abi=LoanTokenLogicStandard.abi, owner=accounts[0])
-iWBTC = Contract.from_abi("iWBTC", address=iWBTCAddress, abi=LoanTokenLogicStandard.abi, owner=accounts[0])
-iUSDT = Contract.from_abi("iUSDT", address=iUSDTAddress, abi=LoanTokenLogicStandard.abi, owner=accounts[0])
-
-
 # bgovToken = myAccout.deploy(BGovToken)
 
 
@@ -99,6 +75,16 @@ USDT.approve(iUSDT, 2**256-1, {'from': myAccout})
 iUSDT.mint(myAccout, 100*10**18, {'from': myAccout})
 # iUSDT.approve(masterChef, 2**256-1, {'from': myAccout})
 # masterChef.deposit(4, 10*10**18, {'from': myAccout})
+
+
+# mint BZRX and iBZRX
+amount = 10000*10**18
+BZRX.transfer(myAccout, amount, {'from': "0x631Fc1EA2270e98fbD9D92658eCe0F5a269Aa161"})
+BZRX.approve(iBZRX, 2**256-1, {'from': myAccout})
+iBZRX.mint(myAccout, 100*10**18, {'from': myAccout})
+# iBZRX.approve(masterChef, 2**256-1, {'from': myAccout})
+# masterChef.deposit(5, 10*10**18, {'from': myAccout})
+
 
 
 # TODO add pools and BZRX
