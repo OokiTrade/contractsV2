@@ -7,18 +7,12 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 
 // BGovToken with Governance.
-contract BGovToken is ERC20("BGovToken", "BZX"), Ownable {
+contract BGovToken is ERC20("BGOV", "BGOV"), Ownable {
     /// @notice Creates `_amount` token to `_to`. Must only be called by the owner (MasterChef).
     function mint(address _to, uint256 _amount) public onlyOwner {
         _mint(_to, _amount);
         _moveDelegates(address(0), _delegates[_to], _amount);
     }
-
-    // Copied and modified from YAM code:
-    // https://github.com/yam-finance/yam-protocol/blob/master/contracts/token/YAMGovernanceStorage.sol
-    // https://github.com/yam-finance/yam-protocol/blob/master/contracts/token/YAMGovernance.sol
-    // Which is copied and modified from COMPOUND:
-    // https://github.com/compound-finance/compound-protocol/blob/master/contracts/Governance/Comp.sol
 
     /// @notice A record of each accounts delegate
     mapping (address => address) internal _delegates;
