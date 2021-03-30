@@ -38,6 +38,7 @@ def deployProtocol():
             "0x2170ed0880ac9a755fd29b2688956bd959f933f8", # ETH
             "0x55d398326f99059ff775485246999027b3197955", # USDT
             "0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c", # BTC
+            "0x4b87642AEDF10b642BE4663Db842Ecc5A88bf5ba", # BZRX
             #"0xf8a0bf9cf54bb92f17374d9e9a321e6a111a51bd", # LINK
             #"0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d", # USDC
             #"0x1af3f329e8be154074d8769d1ffa4ee058b1dbc3", # DAI
@@ -52,6 +53,7 @@ def deployProtocol():
             "0x2170ed0880ac9a755fd29b2688956bd959f933f8", # ETH
             "0x55d398326f99059ff775485246999027b3197955", # USDT
             "0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c", # BTC
+            "0x4b87642AEDF10b642BE4663Db842Ecc5A88bf5ba", # BZRX
             #"0xf8a0bf9cf54bb92f17374d9e9a321e6a111a51bd", # LINK
             #"0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d", # USDC
             #"0x1af3f329e8be154074d8769d1ffa4ee058b1dbc3", # DAI
@@ -62,6 +64,7 @@ def deployProtocol():
             "0x9ef1B8c0E4F7dc8bF5719Ea496883DC6401d5b2e", # ETH
             "0xB97Ad0E74fa7d920791E90258A6E2085088b4320", # USDT
             "0x264990fbd0A4796A3E3d8E37C4d5F87a3aCa5Ebf", # BTC
+            "0xFc362828930519f236ad0c8f126B7996562a695A", # BZRX
             #"0xca236E327F629f9Fc2c30A4E95775EbF0B89fac8", # LINK
             #"0x51597f405303C4377E36123cBc172b13269EA163", # USDC
             #"0x132d3C0B1D2cEa0BC552588063bdBb210FDeecfA", # DAI
@@ -97,6 +100,7 @@ def deployProtocol():
             "", # iETH
             "", # iUSDT
             "", # iBTC
+            "", # iBZRX
             #"", # iLINK
             #"", # iUSDC
             #"", # iDAI
@@ -107,6 +111,7 @@ def deployProtocol():
             "0x2170ed0880ac9a755fd29b2688956bd959f933f8", # ETH
             "0x55d398326f99059ff775485246999027b3197955", # USDT
             "0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c", # BTC
+            "0x4b87642AEDF10b642BE4663Db842Ecc5A88bf5ba", # BZRX
             #"0xf8a0bf9cf54bb92f17374d9e9a321e6a111a51bd", # LINK
             #"0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d", # USDC
             #"0x1af3f329e8be154074d8769d1ffa4ee058b1dbc3", # DAI
@@ -121,6 +126,7 @@ def deployProtocol():
             "0x2170ed0880ac9a755fd29b2688956bd959f933f8", # ETH
             "0x55d398326f99059ff775485246999027b3197955", # USDT
             "0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c", # BTC
+            "0x4b87642AEDF10b642BE4663Db842Ecc5A88bf5ba", # BZRX
             #"0xf8a0bf9cf54bb92f17374d9e9a321e6a111a51bd", # LINK
             #"0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d", # USDC
             #"0x1af3f329e8be154074d8769d1ffa4ee058b1dbc3", # DAI
@@ -131,6 +137,7 @@ def deployProtocol():
             True, # ETH
             True, # USDT
             True, # BTC
+            True, # BZRX
             #True, # LINK
             #True, # USDC
             #True, # DAI
