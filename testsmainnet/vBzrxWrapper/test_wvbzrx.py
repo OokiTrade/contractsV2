@@ -63,7 +63,7 @@ def test_mainflow(requireMainnetFork, bzrx, vbzrx, chain, accounts, wrapper):
     assert vbzrx.vestedBalanceOf(account2)  == 0
     chain.mine()
     assert vbzrx.vestedBalanceOf(account2)  > 0
-    assert wrapper.claimable(account2) == 0
+    assert wrapper.claimable(account2)  > 0
 
 
 def test_exit(requireMainnetFork, bzrx, vbzrx, chain, accounts, wrapper):
