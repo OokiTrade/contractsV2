@@ -24,7 +24,7 @@ contract VBZRXWrapper {
     mapping (address => uint256)                      public balanceOf;
     mapping (address => mapping (address => uint256)) public allowance;
 
-    uint256 public bzrxPerTokenStored;
+    uint256 public bzrxVestiesPerTokenStored;
     mapping(address => uint256) public bzrxVestiesPerTokenPaid;
     mapping(address => uint256) public bzrxVesties;
 
@@ -40,12 +40,24 @@ contract VBZRXWrapper {
     }
 
     function transferFrom(address src, address dst, uint256 value) public returns (bool) {
-        require(balanceOf[src] >= value, "vBZRXWrapper/insufficient-balance");
+        settleVesting(src);
+        settleVesting(dst);
+
+        uint256 srcBalance = balanceOf[src];
+        require(srcBalance >= value, "vBZRXWrapper/insufficient-balance");
         if (src != msg.sender && allowance[src][msg.sender] != uint256(-1)) {
             require(allowance[src][msg.sender] >= value, "vBZRXWrapper/insufficient-allowance");
             allowance[src][msg.sender] -= value;
         }
-        balanceOf[src] -= value;
+
+        // move proportional vesties to dst
+        uint256 moveAmount = bzrxVesties[src]
+            .mul(value)
+            .div(srcBalance);
+        bzrxVesties[src] -= moveAmount;
+        bzrxVesties[dst] += moveAmount;
+
+        balanceOf[src] = srcBalance - value;
         balanceOf[dst] += value;
         emit Transfer(src, dst, value);
         return true;
@@ -59,29 +71,27 @@ contract VBZRXWrapper {
 
     // --- Custom Logic ---
 
-    modifier settleVesting {
-        uint256 _bzrxPerTokenStored = bzrxPerTokenStored;
+    function settleVesting(address account) internal {
+        uint256 _bzrxVestiesPerTokenStored = bzrxVestiesPerTokenStored;
         uint256 _totalSupply = totalSupply;
         if (_totalSupply != 0) {
             uint256 balanceBefore = BZRX.balanceOf(address(this));
             
             vBZRX.claim();
 
-            _bzrxPerTokenStored = BZRX.balanceOf(address(this))
+            _bzrxVestiesPerTokenStored = BZRX.balanceOf(address(this))
                 .sub(balanceBefore)
                 .mul(1e36)
                 .div(_totalSupply)
-                .add(_bzrxPerTokenStored);
+                .add(_bzrxVestiesPerTokenStored);
         }
 
-        bzrxVesties[msg.sender] = _claimable(
-            msg.sender,
-            _bzrxPerTokenStored
+        bzrxVesties[account] = _claimable(
+            account,
+            _bzrxVestiesPerTokenStored
         );
-        bzrxPerTokenStored = _bzrxPerTokenStored;
-        bzrxVestiesPerTokenPaid[msg.sender] = _bzrxPerTokenStored;
-
-        _;
+        bzrxVestiesPerTokenStored = _bzrxVestiesPerTokenStored;
+        bzrxVestiesPerTokenPaid[account] = _bzrxVestiesPerTokenStored;
     }
 
     function _claimable(address account, uint256 _bzrxPerToken) internal view returns (uint256 bzrxVestiesClaimable) {
@@ -107,18 +117,19 @@ contract VBZRXWrapper {
     function claimable(address account) external view returns (uint256) {
         uint256 _totalSupply = totalSupply;
         if (_totalSupply == 0) {
-            return 0;
+            return bzrxVesties[account];
         }
         return _claimable(
             account,
             vBZRX.vestedBalanceOf(address(this))
                 .mul(1e36)
                 .div(_totalSupply)
-                .add(bzrxPerTokenStored)
+                .add(bzrxVestiesPerTokenStored)
         );
     }
 
-    function claim() external settleVesting returns (uint256) {
+    function claim() external returns (uint256) {
+        settleVesting(msg.sender);
         return _claim();
     }
 
@@ -127,7 +138,8 @@ contract VBZRXWrapper {
         _claim();
     }
 
-    function deposit(uint256 value) external settleVesting {
+    function deposit(uint256 value) external {
+        settleVesting(msg.sender);
         vBZRX.transferFrom(msg.sender, address(this), value);
         balanceOf[msg.sender] += value;
         totalSupply += value;
@@ -135,7 +147,8 @@ contract VBZRXWrapper {
         emit Deposit(msg.sender, value);
     }
 
-    function withdraw(uint256 value) public settleVesting {
+    function withdraw(uint256 value) public {
+        settleVesting(msg.sender);
         uint256 balance = balanceOf[msg.sender];
         if (value > balance) {
             value = balance;
