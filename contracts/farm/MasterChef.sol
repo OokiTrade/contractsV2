@@ -175,9 +175,9 @@ contract MasterChef is Ownable {
         }
     }
 
-    // View function to see pending BGOVs on frontend.
-    function pendingBgov(uint256 _pid, address _user)
-        external
+    
+    function _pendingBgov(uint256 _pid, address _user)
+        internal
         view
         returns (uint256)
     {
@@ -198,6 +198,17 @@ contract MasterChef is Ownable {
         }
         return user.amount.mul(accBgovPerShare).div(1e12).sub(user.rewardDebt);
     }
+
+
+    // View function to see pending BGOVs on frontend.
+    function pendingBgov(uint256 _pid, address _user)
+        external
+        view
+        returns (uint256)
+    {
+        return _pendingBgov(_pid, _user);
+    }
+
 
     // Update reward vairables for all pools. Be careful of gas spending!
     function massUpdatePools() public {
@@ -301,7 +312,7 @@ contract MasterChef is Ownable {
     }
 
 
-    // Custom logic
+    // Custom logic - helpers
 
 
     function getPoolInfos() external view returns(PoolInfo[] memory poolInfos){
@@ -317,6 +328,14 @@ contract MasterChef is Ownable {
         userInfos = new UserInfo[](length);
         for (uint256 pid = 0; pid < length; ++pid) {
             userInfos[pid] = userInfo[pid][_wallet];
+        }
+    }
+
+    function getPendingBgov(address _user) external view returns(uint256[] memory pending){
+        uint256 length = poolInfo.length;
+        pending = new uint256[](length);
+        for (uint256 pid = 0; pid < length; ++pid) {
+            pending[pid] = _pendingBgov(pid, _user);
         }
     }
 }
