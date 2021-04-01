@@ -323,6 +323,16 @@ contract MasterChef is Ownable {
         }
     }
 
+    function getOptimisedUserInfos(address _user) external view returns(uint256[2][] memory userInfos){
+        uint256 length = poolInfo.length;
+        userInfos = new uint256[2][](length);
+        for (uint256 pid = 0; pid < length; ++pid) {
+            userInfos[pid][0] = userInfo[pid][_user].amount;
+            userInfos[pid][1] = _pendingBgov(pid, _user);
+
+        }
+    }
+
     function getUserInfos(address _wallet) external view returns(UserInfo[] memory userInfos){
         uint256 length = poolInfo.length;
         userInfos = new UserInfo[](length);
@@ -338,4 +348,5 @@ contract MasterChef is Ownable {
             pending[pid] = _pendingBgov(pid, _user);
         }
     }
+
 }
