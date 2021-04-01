@@ -31,7 +31,7 @@ contract VBZRXWrapper {
     event Approval(address indexed owner, address indexed spender, uint256 value);
     event Transfer(address indexed src, address indexed dst, uint256 value);
     event Deposit(address indexed dst, uint256 value);
-    event Withdrawal(address indexed src, uint256 value);
+    event Withdraw(address indexed src, uint256 value);
     event Claim(address indexed owner, uint256 value);
 
     // --- Token ---
@@ -157,6 +157,6 @@ contract VBZRXWrapper {
         totalSupply -= value;
         vBZRX.transfer(msg.sender, value);
         emit Transfer(msg.sender, address(0), value);
-        emit Withdrawal(msg.sender, value);
+        emit Withdraw(msg.sender, value);
     }
 }

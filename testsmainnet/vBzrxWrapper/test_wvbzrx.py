@@ -105,7 +105,7 @@ def test_events(requireMainnetFork, bzrx, vbzrx, chain, accounts, wrapper):
     depositEvent = tx2.events['Deposit']
     assert depositEvent['value'] == INITIAL_LP_TOKEN_ACCOUNT_AMOUNT
     tx3 = wrapper.exit({"from": account1})
-    withdrawal = tx3.events['Withdrawal']
+    withdrawal = tx3.events['Withdraw']
     assert withdrawal['value'] == INITIAL_LP_TOKEN_ACCOUNT_AMOUNT
 
 
