@@ -7,7 +7,7 @@ from brownie.network.contract import InterfaceContainer
 from brownie.network.state import _add_contract, _remove_contract
 
 
-WBNB = Contract.from_abi("USDT", "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c", TestToken.abi)
+WBNB = Contract.from_abi("USDT", "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c", interface.IWBNB.abi)
 ETH = Contract.from_abi("USDT", "0x2170ed0880ac9a755fd29b2688956bd959f933f8", TestToken.abi)
 BUSD = Contract.from_abi("BUSD", "0xe9e7cea3dedca5984780bafc599bd69add087d56", TestToken.abi)
 WBTC = Contract.from_abi("USDT", "0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c", TestToken.abi)

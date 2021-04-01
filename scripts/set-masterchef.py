@@ -86,5 +86,17 @@ iBZRX.mint(myAccout, 100*10**18, {'from': myAccout})
 # masterChef.deposit(5, 10*10**18, {'from': myAccout})
 
 
+# mint WBNB
+WBNB.deposit({'from': myAccout, 'value': Wei('50 ether')})
 
-# TODO add pools and BZRX
+
+ROUTER = Contract.from_abi("router", "0x05fF2B0DB69458A0750badebc4f9e13aDd608C7F", interface.IPancakeRouter02.abi)
+
+BZRX.approve(ROUTER, 2**256-1, {'from': myAccout})
+WBNB.approve(ROUTER, 2**256-1, {'from': myAccout})
+
+quote = ROUTER.quote(1000*10**18, BZRX.address, WBNB.address)
+quote1 = ROUTER.quote(10*10**18, WBNB.address, BZRX.address)
+
+ROUTER.addLiquidity(BZRX, WBNB, quote1, 10*10**18, 0, 0,  myAccout, 10000000000000000000000000, {'from': myAccout})
+# ROUTER.addLiquidity(BZRX, WBNB,4032502992322709085, 10*10**18, quote, 0,  accounts[0], 10000000000000000000000000, {'from': myAccout})
