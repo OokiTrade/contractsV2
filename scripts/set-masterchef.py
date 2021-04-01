@@ -36,6 +36,8 @@ myAccount = accounts[0]
 # mint iWBNB
 amount = 10000*10**18
 accounts[1].transfer(to=myAccount, amount=Wei('100 ether'))
+accounts[2].transfer(to=myAccount, amount=Wei('100 ether'))
+accounts[3].transfer(to=myAccount, amount=Wei('100 ether'))
 iWBNB.mintWithEther(myAccount, {'from': myAccount, 'value': Wei('90 ether')})
 iWBNB.approve(masterChef, 2**256-1, {'from': myAccount})
 masterChef.deposit(0, 10*10**18, {'from': myAccount})
@@ -102,5 +104,5 @@ ROUTER.addLiquidity(BZRX, WBNB, quote1, 10*10**18, 0, 0,  myAccount, 10000000000
 # ROUTER.addLiquidity(BZRX, WBNB,4032502992322709085, 10*10**18, quote, 0,  accounts[0], 10000000000000000000000000, {'from': myAccount})
 
 BZRX_wBNB.approve(masterChef, 2**256-1, {'from': myAccount})
-masterChef.deposit(6, BZRX_wBNB.balanceOf(myAccout)/2, {'from': myAccount})
+masterChef.deposit(6, BZRX_wBNB.balanceOf(myAccount)/2, {'from': myAccount})
 
