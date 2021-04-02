@@ -8,22 +8,22 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./BGovToken.sol";
+import "./BGOVToken.sol";
 
 interface IMigratorChef {
-    // Perform LP token migration from legacy UniswapV2 to BgovSwap.
+    // Perform LP token migration from legacy UniswapV2 to BGOVSwap.
     // Take the current LP token address and return the new LP token address.
     // Migrator should have full access to the caller's LP token.
     // Return the new LP token address.
     //
     // XXX Migrator must have allowance access to UniswapV2 LP tokens.
-    // BgovSwap must mint EXACTLY the same amount of BgovSwap LP tokens or
+    // BGOVSwap must mint EXACTLY the same amount of BGOVSwap LP tokens or
     // else something bad will happen. Traditional UniswapV2 does not
     // do that so be careful!
     function migrate(IERC20 token) external returns (IERC20);
 }
 
-// MasterChef is the master of Bgov. He can make Bgov and he is a fair guy.
+// MasterChef is the master of BGOV. He can make BGOV and he is a fair guy.
 //
 // Note that it's ownable and the owner wields tremendous power. The ownership
 // will be transferred to a governance smart contract once BGOV is sufficiently
@@ -41,10 +41,10 @@ contract MasterChef is Ownable {
         // We do some fancy math here. Basically, any point in time, the amount of BGOVs
         // entitled to a user but is pending to be distributed is:
         //
-        //   pending reward = (user.amount * pool.accBgovPerShare) - user.rewardDebt
+        //   pending reward = (user.amount * pool.accBGOVPerShare) - user.rewardDebt
         //
         // Whenever a user deposits or withdraws LP tokens to a pool. Here's what happens:
-        //   1. The pool's `accBgovPerShare` (and `lastRewardBlock`) gets updated.
+        //   1. The pool's `accBGOVPerShare` (and `lastRewardBlock`) gets updated.
         //   2. User receives the pending reward sent to his/her address.
         //   3. User's `amount` gets updated.
         //   4. User's `rewardDebt` gets updated.
@@ -54,17 +54,17 @@ contract MasterChef is Ownable {
         IERC20 lpToken; // Address of LP token contract.
         uint256 allocPoint; // How many allocation points assigned to this pool. BGOVs to distribute per block.
         uint256 lastRewardBlock; // Last block number that BGOVs distribution occurs.
-        uint256 accBgovPerShare; // Accumulated BGOVs per share, times 1e12. See below.
+        uint256 accBGOVPerShare; // Accumulated BGOVs per share, times 1e12. See below.
     }
     // The BGOV TOKEN!
-    BGovToken public bgov;
+    BGOVToken public BGOV;
     // Dev address.
     address public devaddr;
     // Block number when bonus BGOV period ends.
     uint256 public bonusEndBlock;
     // BGOV tokens created per block.
-    uint256 public bgovPerBlock;
-    // Bonus muliplier for early bgov makers.
+    uint256 public BGOVPerBlock;
+    // Bonus muliplier for early BGOV makers.
     uint256 public constant BONUS_MULTIPLIER = 10;
     // The migrator contract. It has a lot of power. Can only be set through governance (owner).
     IMigratorChef public migrator;
@@ -85,15 +85,15 @@ contract MasterChef is Ownable {
     );
 
     constructor(
-        BGovToken _bgov,
+        BGOVToken _BGOV,
         address _devaddr,
-        uint256 _bgovPerBlock,
+        uint256 _BGOVPerBlock,
         uint256 _startBlock,
         uint256 _bonusEndBlock
     ) public {
-        bgov = _bgov;
+        BGOV = _BGOV;
         devaddr = _devaddr;
-        bgovPerBlock = _bgovPerBlock;
+        BGOVPerBlock = _BGOVPerBlock;
         bonusEndBlock = _bonusEndBlock;
         startBlock = _startBlock;
     }
@@ -120,7 +120,7 @@ contract MasterChef is Ownable {
                 lpToken: _lpToken,
                 allocPoint: _allocPoint,
                 lastRewardBlock: lastRewardBlock,
-                accBgovPerShare: 0
+                accBGOVPerShare: 0
             })
         );
     }
@@ -176,37 +176,37 @@ contract MasterChef is Ownable {
     }
 
     
-    function _pendingBgov(uint256 _pid, address _user)
+    function _pendingBGOV(uint256 _pid, address _user)
         internal
         view
         returns (uint256)
     {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
-        uint256 accBgovPerShare = pool.accBgovPerShare;
+        uint256 accBGOVPerShare = pool.accBGOVPerShare;
         uint256 lpSupply = pool.lpToken.balanceOf(address(this));
         if (block.number > pool.lastRewardBlock && lpSupply != 0) {
             uint256 multiplier =
                 getMultiplier(pool.lastRewardBlock, block.number);
-            uint256 bgovReward =
-                multiplier.mul(bgovPerBlock).mul(pool.allocPoint).div(
+            uint256 BGOVReward =
+                multiplier.mul(BGOVPerBlock).mul(pool.allocPoint).div(
                     totalAllocPoint
                 );
-            accBgovPerShare = accBgovPerShare.add(
-                bgovReward.mul(1e12).div(lpSupply)
+            accBGOVPerShare = accBGOVPerShare.add(
+                BGOVReward.mul(1e12).div(lpSupply)
             );
         }
-        return user.amount.mul(accBgovPerShare).div(1e12).sub(user.rewardDebt);
+        return user.amount.mul(accBGOVPerShare).div(1e12).sub(user.rewardDebt);
     }
 
 
     // View function to see pending BGOVs on frontend.
-    function pendingBgov(uint256 _pid, address _user)
+    function pendingBGOV(uint256 _pid, address _user)
         external
         view
         returns (uint256)
     {
-        return _pendingBgov(_pid, _user);
+        return _pendingBGOV(_pid, _user);
     }
 
 
@@ -230,14 +230,14 @@ contract MasterChef is Ownable {
             return;
         }
         uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
-        uint256 bgovReward =
-            multiplier.mul(bgovPerBlock).mul(pool.allocPoint).div(
+        uint256 BGOVReward =
+            multiplier.mul(BGOVPerBlock).mul(pool.allocPoint).div(
                 totalAllocPoint
             );
-        bgov.mint(devaddr, bgovReward.div(10));
-        bgov.mint(address(this), bgovReward);
-        pool.accBgovPerShare = pool.accBgovPerShare.add(
-            bgovReward.mul(1e12).div(lpSupply)
+        BGOV.mint(devaddr, BGOVReward.div(10));
+        BGOV.mint(address(this), BGOVReward);
+        pool.accBGOVPerShare = pool.accBGOVPerShare.add(
+            BGOVReward.mul(1e12).div(lpSupply)
         );
         pool.lastRewardBlock = block.number;
     }
@@ -249,10 +249,10 @@ contract MasterChef is Ownable {
         updatePool(_pid);
         if (user.amount > 0) {
             uint256 pending =
-                user.amount.mul(pool.accBgovPerShare).div(1e12).sub(
+                user.amount.mul(pool.accBGOVPerShare).div(1e12).sub(
                     user.rewardDebt
                 );
-            safeBgovTransfer(msg.sender, pending);
+            safeBGOVTransfer(msg.sender, pending);
         }
         pool.lpToken.safeTransferFrom(
             address(msg.sender),
@@ -260,7 +260,7 @@ contract MasterChef is Ownable {
             _amount
         );
         user.amount = user.amount.add(_amount);
-        user.rewardDebt = user.amount.mul(pool.accBgovPerShare).div(1e12);
+        user.rewardDebt = user.amount.mul(pool.accBGOVPerShare).div(1e12);
         emit Deposit(msg.sender, _pid, _amount);
     }
 
@@ -275,12 +275,12 @@ contract MasterChef is Ownable {
         require(user.amount >= _amount, "withdraw: not good");
         updatePool(_pid);
         uint256 pending =
-            user.amount.mul(pool.accBgovPerShare).div(1e12).sub(
+            user.amount.mul(pool.accBGOVPerShare).div(1e12).sub(
                 user.rewardDebt
             );
-        safeBgovTransfer(msg.sender, pending);
+        safeBGOVTransfer(msg.sender, pending);
         user.amount = user.amount.sub(_amount);
-        user.rewardDebt = user.amount.mul(pool.accBgovPerShare).div(1e12);
+        user.rewardDebt = user.amount.mul(pool.accBGOVPerShare).div(1e12);
         pool.lpToken.safeTransfer(address(msg.sender), _amount);
         emit Withdraw(msg.sender, _pid, _amount);
     }
@@ -295,13 +295,13 @@ contract MasterChef is Ownable {
         user.rewardDebt = 0;
     }
 
-    // Safe bgov transfer function, just in case if rounding error causes pool to not have enough BGOVs.
-    function safeBgovTransfer(address _to, uint256 _amount) internal {
-        uint256 bgovBal = bgov.balanceOf(address(this));
-        if (_amount > bgovBal) {
-            bgov.transfer(_to, bgovBal);
+    // Safe BGOV transfer function, just in case if rounding error causes pool to not have enough BGOVs.
+    function safeBGOVTransfer(address _to, uint256 _amount) internal {
+        uint256 BGOVBal = BGOV.balanceOf(address(this));
+        if (_amount > BGOVBal) {
+            BGOV.transfer(_to, BGOVBal);
         } else {
-            bgov.transfer(_to, _amount);
+            BGOV.transfer(_to, _amount);
         }
     }
 
@@ -331,11 +331,11 @@ contract MasterChef is Ownable {
         }
     }
 
-    function getPendingBgov(address _user) external view returns(uint256[] memory pending){
+    function getPendingBGOV(address _user) external view returns(uint256[] memory pending){
         uint256 length = poolInfo.length;
         pending = new uint256[](length);
         for (uint256 pid = 0; pid < length; ++pid) {
-            pending[pid] = _pendingBgov(pid, _user);
+            pending[pid] = _pendingBGOV(pid, _user);
         }
     }
 }
