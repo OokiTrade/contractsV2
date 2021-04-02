@@ -45,7 +45,7 @@ def testFarming_withdrawal(requireBscFork, tokens, tokenName, lpTokenName, pid, 
     lpToken.approve(masterChef, lpBalance1, {'from': account1})
     tx1 = masterChef.deposit(pid, depositAmount, {'from': account1})
     masterChef.updatePool(pid)  # trigger calculate pending tokens
-    assert masterChef.pendingBgov(pid, account1) > 0
+    assert masterChef.pendingBGOV(pid, account1) > 0
     lpToken.approve(masterChef, INITIAL_LP_TOKEN_ACCOUNT_AMOUNT + 1, {'from': account1})
 
     # withdraw more than have
@@ -53,7 +53,7 @@ def testFarming_withdrawal(requireBscFork, tokens, tokenName, lpTokenName, pid, 
         masterChef.withdraw(pid, depositAmount + 1, {'from': account1})
 
     # withdraw invalid pool
-    with reverts("invalid opcode"):
+    with reverts("Index out of range"):
         masterChef.withdraw(1000, depositAmount, {'from': account1})
 
 
