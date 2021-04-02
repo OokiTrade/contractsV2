@@ -39,23 +39,39 @@ bgovToken = accounts[0].deploy(BGovToken)
 
 # TODO @Tom farm configuration
 devAccount = accounts[0]  # @Tom this account will receive small fees check updatePool() func
-bgovPerBlock = 100*10**18
-bonusEndBlock = chain.height + 1*10**6
+bgovPerBlock = 25*10**18
+bonusEndBlock = chain.height + 400000
 startBlock = chain.height
 
 masterChef = accounts[0].deploy(MasterChef, bgovToken, devAccount, bgovPerBlock, startBlock, bonusEndBlock)
 bgovToken.transferOwnership(masterChef)
-# TODO @Tom all pools equal allocation point right now
+
+BGOV_WBNB = "TODO"
+
 # from chef: // Total allocation poitns. Must be the sum of all allocation points in all pools.
 # aloso allocation points should consider price difference. depositing 1 iWBTC should be approximately equal to depositing 55k iBUSD
 
-allocPoint = 100
-masterChef.add(allocPoint, iWBNB, 1)
-masterChef.add(allocPoint, iETH, 1)
-masterChef.add(allocPoint, iBUSD, 1)
-masterChef.add(allocPoint, iWBTC, 1)
-masterChef.add(allocPoint, iUSDT, 1)
-masterChef.add(allocPoint, iBZRX, 1)
+# adding allocation points according to what was disscussed
+
+# Here are the params and initial pool weights for our starting farms:
+# _BGOVPerBlock: 25000000000000000000
+# _startBlock: TBD (early next week)
+# _bonusEndBlock: _startBlock + 400000
+
+# allocPoints per pool:
+# 12500 - iBNB, iBUSD, iBTC, iUSDT, iETH  
+# 87500 - iBZRX
+# 100000 - BGOV/BNB
+
+masterChef.add(12500, iWBNB, 1)
+masterChef.add(12500, iETH, 1)
+masterChef.add(12500, iBUSD, 1)
+masterChef.add(12500, iWBTC, 1)
+masterChef.add(12500, iUSDT, 1)
+masterChef.add(87500, iBZRX, 1)
 
 # two sided
-masterChef.add(allocPoint, BZRX_wBNB, 1)
+masterChef.add(100000, BZRX_wBNB, 1)
+
+# TODO below is real BGOV_WBNB
+# masterChef.add(100000, BGOV_WBNB, 1)

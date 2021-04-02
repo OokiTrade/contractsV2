@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./BGOVToken.sol";
+import "./BGovToken.sol";
 
 interface IMigratorChef {
     // Perform LP token migration from legacy UniswapV2 to BGOVSwap.
@@ -57,7 +57,7 @@ contract MasterChef is Ownable {
         uint256 accBGOVPerShare; // Accumulated BGOVs per share, times 1e12. See below.
     }
     // The BGOV TOKEN!
-    BGOVToken public BGOV;
+    BGovToken public BGOV;
     // Dev address.
     address public devaddr;
     // Block number when bonus BGOV period ends.
@@ -66,7 +66,7 @@ contract MasterChef is Ownable {
     uint256 public BGOVPerBlock;
     // Bonus muliplier for early BGOV makers.
     uint256 public constant BONUS_MULTIPLIER = 10;
-    // The migrator contract. It has a lot of power. Can only be set through governance (owner).
+    // The migrator contract. It has a lot of power. Can only be set througgith governance (owner).
     IMigratorChef public migrator;
     // Info of each pool.
     PoolInfo[] public poolInfo;
@@ -85,7 +85,7 @@ contract MasterChef is Ownable {
     );
 
     constructor(
-        BGOVToken _BGOV,
+        BGovToken _BGOV,
         address _devaddr,
         uint256 _BGOVPerBlock,
         uint256 _startBlock,
@@ -328,7 +328,7 @@ contract MasterChef is Ownable {
         userInfos = new uint256[2][](length);
         for (uint256 pid = 0; pid < length; ++pid) {
             userInfos[pid][0] = userInfo[pid][_user].amount;
-            userInfos[pid][1] = _pendingBgov(pid, _user);
+            userInfos[pid][1] = _pendingBGOV(pid, _user);
 
         }
     }
