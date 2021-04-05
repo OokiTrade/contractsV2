@@ -17,8 +17,6 @@
     "@openzeppelin/contracts": "^3.3.0",
     "cross-env": "^7.0.2",
     "husky": "^4.2.5",
-    "openzeppelin-3.3.0": "npm:@openzeppelin/contracts@^3.3.0",
-    "openzeppelin-v4.0.0": "npm:@openzeppelin/contracts@^4.0.0",
     "prettier": "^2.0.5",
     "prettier-plugin-solidity": "^1.0.0-alpha.49",
     "solhint": "^3.0.0",

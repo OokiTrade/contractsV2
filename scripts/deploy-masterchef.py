@@ -34,10 +34,8 @@ iWBTC = Contract.from_abi("iWBTC", address=iWBTCAddress, abi=LoanTokenLogicStand
 iUSDT = Contract.from_abi("iUSDT", address=iUSDTAddress, abi=LoanTokenLogicStandard.abi, owner=accounts[0])
 iBZRX = Contract.from_abi("iBZRX", address=iBZRXAddress, abi=LoanTokenLogicStandard.abi, owner=accounts[0])
 
-bgovImpl = accounts[0].deploy(BGovToken)
-bgovProxy = accounts[0].deploy(Proxy1, bgovImpl, accounts[9])
-bgovToken = Contract.from_abi("bgovToken", address=bgovProxy, abi=BGovToken.abi, owner=accounts[0])
-bgovToken.initialize()
+bgovToken = accounts[0].deploy(BGovToken)
+
 
 # TODO @Tom farm configuration
 devAccount = accounts[0]  # @Tom this account will receive small fees check updatePool() func
@@ -45,12 +43,7 @@ bgovPerBlock = 25*10**18
 bonusEndBlock = chain.height + 400000
 startBlock = chain.height
 
-masterChefImpl = accounts[0].deploy(MasterChef)
-masterChefProxy = accounts[0].deploy(Proxy1, masterChefImpl, accounts[9])
-masterChef = Contract.from_abi("masterChef", address=masterChefProxy, abi=MasterChef.abi, owner=accounts[0])
-
-masterChef.initialize(bgovToken, devAccount, bgovPerBlock, startBlock, bonusEndBlock)
-
+masterChef = accounts[0].deploy(MasterChef, bgovToken, devAccount, bgovPerBlock, startBlock, bonusEndBlock)
 bgovToken.transferOwnership(masterChef)
 
 BGOV_WBNB = "TODO"
@@ -66,7 +59,7 @@ BGOV_WBNB = "TODO"
 # _bonusEndBlock: _startBlock + 400000
 
 # allocPoints per pool:
-# 12500 - iBNB, iBUSD, iBTC, iUSDT, iETH
+# 12500 - iBNB, iBUSD, iBTC, iUSDT, iETH  
 # 87500 - iBZRX
 # 100000 - BGOV/BNB
 

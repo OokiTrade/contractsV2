@@ -1,15 +1,13 @@
-pragma solidity 0.8.0;
+pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
 /// SPDX-License-Identifier: MIT
 
-import "@openzeppelin-v4.0.0/token/ERC20/IERC20.sol";
-import "@openzeppelin-v4.0.0/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin-v4.0.0/utils/structs/EnumerableSet.sol";
-import "@openzeppelin-v4.0.0/utils/math/SafeMath.sol";
-import "@openzeppelin-v4.0.0/access/Ownable.sol";
-import "@openzeppelin-v4.0.0/proxy/utils/Initializable.sol";
-
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/EnumerableSet.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./BGovToken.sol";
 
 interface IMigratorChef {
@@ -32,7 +30,7 @@ interface IMigratorChef {
 // distributed and the community can show to govern itself.
 //
 // Have fun reading it. Hopefully it's bug-free. God bless.
-contract MasterChef is Ownable, Initializable {
+contract MasterChef is Ownable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
     // Info of each user.
@@ -68,7 +66,7 @@ contract MasterChef is Ownable, Initializable {
     uint256 public BGOVPerBlock;
     // Bonus muliplier for early BGOV makers.
     uint256 public constant BONUS_MULTIPLIER = 10;
-    // The migrator contract. It has a lot of power. Can only be set through governance (owner).
+    // The migrator contract. It has a lot of power. Can only be set througgith governance (owner).
     IMigratorChef public migrator;
     // Info of each pool.
     PoolInfo[] public poolInfo;
@@ -86,13 +84,13 @@ contract MasterChef is Ownable, Initializable {
         uint256 amount
     );
 
-    function initialize(
+    constructor(
         BGovToken _BGOV,
         address _devaddr,
         uint256 _BGOVPerBlock,
         uint256 _startBlock,
         uint256 _bonusEndBlock
-    ) public payable initializer {
+    ) public {
         BGOV = _BGOV;
         devaddr = _devaddr;
         BGOVPerBlock = _BGOVPerBlock;
