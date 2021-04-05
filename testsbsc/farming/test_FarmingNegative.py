@@ -53,7 +53,7 @@ def testFarming_withdrawal(requireBscFork, tokens, tokenName, lpTokenName, pid, 
         masterChef.withdraw(pid, depositAmount + 1, {'from': account1})
 
     # withdraw invalid pool
-    with reverts("invalid opcode"):
+    with reverts("Index out of range"):
         masterChef.withdraw(1000, depositAmount, {'from': account1})
 
 
