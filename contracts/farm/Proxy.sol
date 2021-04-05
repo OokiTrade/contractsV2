@@ -2,14 +2,11 @@ pragma solidity 0.6.12;
 
 /// SPDX-License-Identifier: MIT
 
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-// import "./MasterChef.sol";
+import "./Upgradeable.sol";
 
 
-contract Proxy is Ownable {
-
-    address public implementation;
+contract Proxy is Upgradeable {
 
     constructor(address _impl) public payable {
         replaceImplementation(_impl);
