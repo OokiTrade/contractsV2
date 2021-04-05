@@ -5,9 +5,8 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "./Upgradeable.sol";
 import "./BGovToken.sol";
 
 interface IMigratorChef {
@@ -30,9 +29,10 @@ interface IMigratorChef {
 // distributed and the community can show to govern itself.
 //
 // Have fun reading it. Hopefully it's bug-free. God bless.
-contract MasterChef is Ownable {
+contract MasterChef is Upgradeable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
+
     // Info of each user.
     struct UserInfo {
         uint256 amount; // How many LP tokens the user has provided.
@@ -84,13 +84,14 @@ contract MasterChef is Ownable {
         uint256 amount
     );
 
-    constructor(
+    function initialize(
         BGovToken _BGOV,
         address _devaddr,
         uint256 _BGOVPerBlock,
         uint256 _startBlock,
         uint256 _bonusEndBlock
-    ) public {
+    ) public onlyOwner {
+        require(address(BGOV) == address(0), "unauthorized");
         BGOV = _BGOV;
         devaddr = _devaddr;
         BGOVPerBlock = _BGOVPerBlock;

@@ -1,4 +1,5 @@
 
+from brownie.network import account
 import pytest
 import time
 from brownie import *
@@ -43,8 +44,14 @@ bgovPerBlock = 25*10**18
 bonusEndBlock = chain.height + 400000
 startBlock = chain.height
 
-masterChef = accounts[0].deploy(MasterChef, bgovToken, devAccount, bgovPerBlock, startBlock, bonusEndBlock)
+masterChefImpl = accounts[0].deploy(MasterChef)
+masterChefProxy = accounts[0].deploy(Proxy, masterChefImpl)
+masterChef = Contract.from_abi("masterChef", address=masterChefProxy, abi=MasterChef.abi, owner=accounts[0])
+
+masterChef.initialize(bgovToken, devAccount, bgovPerBlock, startBlock, bonusEndBlock)
+
 bgovToken.transferOwnership(masterChef)
+
 
 BGOV_WBNB = "TODO"
 

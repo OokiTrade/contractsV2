@@ -14,7 +14,7 @@ contract BGovToken is ERC20("BGOV Token", "BGOV"), Ownable {
         _moveDelegates(address(0), _delegates[_to], _amount);
     }
 
-    /// @notice A record of each accounts delegate
+    // A record of each accounts delegate
     mapping (address => address) internal _delegates;
 
     /// @notice A checkpoint for marking number of votes from a given block
