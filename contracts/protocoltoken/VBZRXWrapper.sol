@@ -7,10 +7,14 @@ pragma solidity 0.5.17;
 
 import "../openzeppelin/SafeMath.sol";
 import "../interfaces/IVestingToken.sol";
+import "../openzeppelin/Ownable.sol";
 
 
-contract VBZRXWrapper {
+contract VBZRXWrapper is Ownable {
     using SafeMath for uint256;
+    //
+
+    address public implementation;
 
     // --- ERC20 Data ---
     string  public constant name     = "Wrapped vBZRX";
