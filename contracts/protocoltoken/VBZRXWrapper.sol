@@ -7,9 +7,10 @@ pragma solidity 0.5.17;
 
 import "../openzeppelin/SafeMath.sol";
 import "../interfaces/IVestingToken.sol";
+import "./Upgradeable_0_5.sol";
 
 
-contract VBZRXWrapper {
+contract VBZRXWrapper is Upgradeable_0_5 {
     using SafeMath for uint256;
 
     // --- ERC20 Data ---
