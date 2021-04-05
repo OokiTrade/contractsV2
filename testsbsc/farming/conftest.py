@@ -68,14 +68,19 @@ def bgovToken(accounts, BGovToken):
     return accounts[0].deploy(BGovToken);
 
 @pytest.fixture(scope="class", autouse=True)
-def masterChef(accounts, chain, MasterChef, iWBNB, iETH, iBUSD, iWBTC, iUSDT, bgovToken):
+def masterChef(accounts, chain, MasterChef, iWBNB, iETH, iBUSD, iWBTC, iUSDT, bgovToken, Proxy):
     devAccount = accounts[0]
     bgovPerBlock = 100*10**18
     bonusEndBlock = chain.height + 1*10**6
 
     startBlock = chain.height
 
-    masterChef = accounts[0].deploy(MasterChef, bgovToken, devAccount, bgovPerBlock, startBlock, bonusEndBlock)
+    masterChefImpl = accounts[0].deploy(MasterChef)
+    masterChefProxy = accounts[0].deploy(Proxy, masterChefImpl)
+    masterChef = Contract.from_abi("masterChef", address=masterChefProxy, abi=MasterChef.abi, owner=accounts[0])
+
+    masterChef.initialize(bgovToken, devAccount, bgovPerBlock, startBlock, bonusEndBlock)
+
     allocPoint = 1
     bgovToken.transferOwnership(masterChef);
     masterChef.add(allocPoint, iWBNB, 1)
