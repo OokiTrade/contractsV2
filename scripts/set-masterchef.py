@@ -33,10 +33,10 @@ if(bgovToken.owner() != masterChef.owner()):
 # masterChef.add(allocPoint, iUSDT, 1)
 
 arr = [
-    # "0x736C4B5F62e4A9504D43900A5c4ddB0075eA6F45",
+    "0x736C4B5F62e4A9504D43900A5c4ddB0075eA6F45",
     "0xf4361E664fC26f1c5E1dEfcA4811c396c0C30017",
-    # "0x1F9b46f3D89FEc66c09511d14bf1A813bCc96200",
-    # "0x9B5dFE7965C4A30eAB764ff7abf81b3fa96847Fe"
+    "0x1F9b46f3D89FEc66c09511d14bf1A813bCc96200",
+    "0x9B5dFE7965C4A30eAB764ff7abf81b3fa96847Fe"
 ]
 # -u 0x736C4B5F62e4A9504D43900A5c4ddB0075eA6F45 -u 0xf4361E664fC26f1c5E1dEfcA4811c396c0C30017 -u 0x1F9b46f3D89FEc66c09511d14bf1A813bCc96200 -u 0xf508fcd89b8bd15579dc79a6827cb4686a3592c8 -u 0x9B5dFE7965C4A30eAB764ff7abf81b3fa96847Fe     -u 0x7c9e73d4c71dae564d41f78d56439bb4ba87592f -u 0x7c9e73d4c71dae564d41f78d56439bb4ba87592f -u 0x882c173bc7ff3b7786ca16dfed3dfffb9ee7847b -u 0xfd5840cd36d94d7229439859c0112a4185bc0255 -u 0x631Fc1EA2270e98fbD9D92658eCe0F5a269Aa161 -u 0x05fF2B0DB69458A0750badebc4f9e13aDd608C7F -u 0xb1256d6b31e4ae87da1d56e5890c66be7f1c038e -u 0x631fc1ea2270e98fbd9d92658ece0f5a269aa161 -u 0x631fc1ea2270e98fbd9d92658ece0f5a269aa161
 
@@ -93,7 +93,7 @@ for address in arr:
     # masterChef.deposit(5, 4*10**18, {'from': myAccount})
 
     # mint WBNB
-    WBNB.deposit({'from': myAccount, 'value': Wei('50 ether')})
+    WBNB.deposit({'from': myAccount, 'value': Wei('5 ether')})
 
     ROUTER = Contract.from_abi("router", "0x05fF2B0DB69458A0750badebc4f9e13aDd608C7F", interface.IPancakeRouter02.abi)
 
