@@ -52,7 +52,6 @@ masterChef.initialize(bgovToken, devAccount, bgovPerBlock, startBlock, bonusEndB
 
 BGOV_wBNB = Contract.from_abi("BGOV_wBNB", "0xEcd0aa12A453AE356Aba41f62483EDc35f2290ed", interface.IPancakePair.abi)
 
-
 # from chef: // Total allocation poitns. Must be the sum of all allocation points in all pools.
 # aloso allocation points should consider price difference. depositing 1 iWBTC should be approximately equal to depositing 55k iBUSD
 

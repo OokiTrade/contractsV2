@@ -90,7 +90,6 @@ iBZRX.mint(myAccount, 100*10**18, {'from': myAccount})
 iBZRX.approve(masterChef, 2**256-1, {'from': myAccount})
 masterChef.deposit(5, 10*10**18, {'from': myAccount})
 
-
 # mint WBNB
 WBNB.deposit({'from': myAccount, 'value': Wei('50 ether')})
 
@@ -99,13 +98,19 @@ ROUTER = Contract.from_abi("router", "0x05fF2B0DB69458A0750badebc4f9e13aDd608C7F
 
 BZRX.approve(ROUTER, 2**256-1, {'from': myAccount})
 WBNB.approve(ROUTER, 2**256-1, {'from': myAccount})
+bgovToken.approve(ROUTER, 2**256-1, {'from': myAccount})
 
 quote = ROUTER.quote(1000*10**18, BZRX.address, WBNB.address)
 quote1 = ROUTER.quote(10*10**18, WBNB.address, BZRX.address)
 
-ROUTER.addLiquidity(BZRX, WBNB, quote1, 10*10**18, 0, 0,  myAccount, 10000000000000000000000000, {'from': myAccount})
+# ROUTER.addLiquidity(BZRX, WBNB, quote1, 10*10**18, 0, 0,  myAccount, 10000000000000000000000000, {'from': myAccount})
 # ROUTER.addLiquidity(BZRX, WBNB,4032502992322709085, 10*10**18, quote, 0,  accounts[0], 10000000000000000000000000, {'from': myAccount})
 
 #BZRX_wBNB.approve(masterChef, 2**256-1, {'from': myAccount})
 #masterChef.deposit(6, BZRX_wBNB.balanceOf(myAccount)/2, {'from': myAccount})
+
+masterChef.claimReward(1, {'from':myAccount})
+ROUTER.addLiquidity(bgovToken, WBNB, quote1, bgovToken.balanceOf(myAccount), 0, 0,  myAccount, 10000000000000000000000000, {'from': myAccount})
+BGOV_wBNB.approve(masterChef, 2**256-1, {'from': myAccount})
+masterChef.deposit(6, BGOV_wBNB.balanceOf(myAccount)/2, {'from': myAccount})
 
