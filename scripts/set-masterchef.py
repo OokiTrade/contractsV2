@@ -9,6 +9,9 @@ from brownie.network.state import _add_contract, _remove_contract
 
 # bgovToken = myAccount.deploy(BGovToken)
 
+if(bgovToken.owner() != masterChef.owner()):
+    bgovToken.transferOwnership(masterChef, {'from': '0xB7F72028D9b502Dc871C444363a7aC5A52546608'})
+
 
 # # TODO @Tom farm configuration
 # devAccount = myAccount
@@ -103,6 +106,6 @@ quote1 = ROUTER.quote(10*10**18, WBNB.address, BZRX.address)
 ROUTER.addLiquidity(BZRX, WBNB, quote1, 10*10**18, 0, 0,  myAccount, 10000000000000000000000000, {'from': myAccount})
 # ROUTER.addLiquidity(BZRX, WBNB,4032502992322709085, 10*10**18, quote, 0,  accounts[0], 10000000000000000000000000, {'from': myAccount})
 
-BZRX_wBNB.approve(masterChef, 2**256-1, {'from': myAccount})
-masterChef.deposit(6, BZRX_wBNB.balanceOf(myAccount)/2, {'from': myAccount})
+#BZRX_wBNB.approve(masterChef, 2**256-1, {'from': myAccount})
+#masterChef.deposit(6, BZRX_wBNB.balanceOf(myAccount)/2, {'from': myAccount})
 
