@@ -9,6 +9,9 @@ from brownie.network.state import _add_contract, _remove_contract
 
 # bgovToken = myAccount.deploy(BGovToken)
 
+if(bgovToken.owner() != masterChef.owner()):
+    bgovToken.transferOwnership(masterChef, {'from': '0xB7F72028D9b502Dc871C444363a7aC5A52546608'})
+
 
 # # TODO @Tom farm configuration
 # devAccount = myAccount
