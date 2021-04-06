@@ -35,8 +35,8 @@ iWBTC = Contract.from_abi("iWBTC", address=iWBTCAddress, abi=LoanTokenLogicStand
 iUSDT = Contract.from_abi("iUSDT", address=iUSDTAddress, abi=LoanTokenLogicStandard.abi, owner=accounts[0])
 iBZRX = Contract.from_abi("iBZRX", address=iBZRXAddress, abi=LoanTokenLogicStandard.abi, owner=accounts[0])
 
-bgovToken = accounts[0].deploy(BGovToken)
-
+bgovToken = Contract.from_abi("BGOV", address="0xf8E026dC4C0860771f691EcFFBbdfe2fa51c77CF",
+                                     abi=BGovToken.abi, owner=accounts[0]);
 
 # TODO @Tom farm configuration
 devAccount = accounts[0]  # @Tom this account will receive small fees check updatePool() func
@@ -50,10 +50,11 @@ masterChef = Contract.from_abi("masterChef", address=masterChefProxy, abi=Master
 
 masterChef.initialize(bgovToken, devAccount, bgovPerBlock, startBlock, bonusEndBlock)
 
-bgovToken.transferOwnership(masterChef)
+if(bgovToken.owner() != masterChef.owner()):
+    bgovToken.transferOwnership(masterChef, {'from': '0xB7F72028D9b502Dc871C444363a7aC5A52546608'})
 
+BGOV_wBNB = Contract.from_abi("BGOV_wBNB", "0xEcd0aa12A453AE356Aba41f62483EDc35f2290ed", interface.IPancakePair.abi)
 
-BGOV_WBNB = "TODO"
 
 # from chef: // Total allocation poitns. Must be the sum of all allocation points in all pools.
 # aloso allocation points should consider price difference. depositing 1 iWBTC should be approximately equal to depositing 55k iBUSD
@@ -78,7 +79,5 @@ masterChef.add(12500, iUSDT, 1)
 masterChef.add(87500, iBZRX, 1)
 
 # two sided
-masterChef.add(100000, BZRX_wBNB, 1)
-
-# TODO below is real BGOV_WBNB
-# masterChef.add(100000, BGOV_WBNB, 1)
+#masterChef.add(100000, BZRX_wBNB, 1)
+masterChef.add(100000, BGOV_wBNB, 1)
