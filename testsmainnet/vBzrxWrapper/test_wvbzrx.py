@@ -21,9 +21,9 @@ def vbzrx(accounts, BZRXVestingToken):
                              owner=accounts[0])
 
 @pytest.fixture(scope="module")
-def wvbzrxProxy(accounts, VBZRXWrapper, HelperProxy):
+def wvbzrxProxy(accounts, VBZRXWrapper, Proxy_0_5):
     impl = VBZRXWrapper.deploy({"from": accounts[0]})
-    return HelperProxy.deploy(impl, {'from': accounts[0]})
+    return Proxy_0_5.deploy(impl, {'from': accounts[0]})
 
 
 @pytest.fixture(scope="module")
@@ -138,7 +138,7 @@ def test_mainflowChangeProxy(requireMainnetFork, bzrx, vbzrx, chain, accounts, w
 def test_replaceImplementationUnderNonOwner(requireMainnetFork, bzrx, vbzrx, chain, accounts, wrapper, VBZRXWrapper, wvbzrxProxy):
     impl = VBZRXWrapper.deploy({"from": accounts[9]})
 
-    with reverts("Ownable: caller is not the owner"):
+    with reverts("unauthorized"):
         wvbzrxProxy.replaceImplementation(impl, {"from": accounts[9]})
 
 def test_exit(requireMainnetFork, bzrx, vbzrx, chain, accounts, wrapper):
