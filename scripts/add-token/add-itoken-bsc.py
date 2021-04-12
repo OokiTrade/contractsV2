@@ -24,11 +24,11 @@ def main():
     #demandCurve()
 
 def deployment():
-    underlyingSymbol = "BTC"
+    underlyingSymbol = "LINK"
     iTokenSymbol = "i{}".format(underlyingSymbol)
     iTokenName = "Fulcrum {} iToken ({})".format(underlyingSymbol, iTokenSymbol)  
 
-    loanTokenAddress = "0x7130d2a12b9bcbfae4f2634d864a1ee1ce3ead9c"
+    loanTokenAddress = "0xf8a0bf9cf54bb92f17374d9e9a321e6a111a51bd"
 
     #LoanTokenLogicStandard deployed at: 0xa9651b36101E00E43dA389A2b491E94Ca9F807b6
     loanTokenLogicStandard = Contract.from_abi(
@@ -115,6 +115,14 @@ def marginSettings():
             if collateralTokenAddress == existingITokenLoanTokenAddress:
                 continue
 
+            ## skipping BZRX for now
+            if existingITokenLoanTokenAddress == "0x4b87642AEDF10b642BE4663Db842Ecc5A88bf5ba" or collateralTokenAddress == "0x4b87642AEDF10b642BE4663Db842Ecc5A88bf5ba":
+                continue
+
+            ## only LINK params
+            if (existingITokenLoanTokenAddress != "0xf8a0bf9cf54bb92f17374d9e9a321e6a111a51bd" and collateralTokenAddress != "0xf8a0bf9cf54bb92f17374d9e9a321e6a111a51bd"):
+                continue
+
             base_data_copy = base_data.copy()
             base_data_copy[3] = existingITokenLoanTokenAddress
             base_data_copy[4] = collateralTokenAddress # pair is iToken, Underlying
@@ -134,11 +142,12 @@ def marginSettings():
             collateralTokensArr.append(collateralTokenAddress)
             amountsArr.append(7*10**18)
 
-        calldata = loanTokenSettingsLowerAdmin.setupLoanParams.encode_input(params, True)
-        existingIToken.updateSettings(loanTokenSettingsLowerAdmin.address, calldata, {"from": acct})
+        if (len(params) != 0):
+            calldata = loanTokenSettingsLowerAdmin.setupLoanParams.encode_input(params, True)
+            existingIToken.updateSettings(loanTokenSettingsLowerAdmin.address, calldata, {"from": acct})
 
-        calldata = loanTokenSettingsLowerAdmin.setupLoanParams.encode_input(params, False)
-        existingIToken.updateSettings(loanTokenSettingsLowerAdmin.address, calldata, {"from": acct})
+            calldata = loanTokenSettingsLowerAdmin.setupLoanParams.encode_input(params, False)
+            existingIToken.updateSettings(loanTokenSettingsLowerAdmin.address, calldata, {"from": acct})
 
         bzx.setLiquidationIncentivePercent(loanTokensArr, collateralTokensArr, amountsArr)
 
@@ -153,8 +162,12 @@ def demandCurve():
 
     for tokenAssetPairA in supportedTokenAssetsPairs:
         
+        ## no BZRX params
+        if (tokenAssetPairA[0] == "0xA726F2a7B200b03beB41d1713e6158e0bdA8731F"):
+            continue
+
         existingIToken = Contract.from_abi("existingIToken", address=tokenAssetPairA[0], abi=LoanTokenLogicStandard.abi, owner=acct)
         print("itoken", existingIToken.name())
         
-        calldata = loanTokenSettingsLowerAdmin.setDemandCurve.encode_input(0, 23.75*10**18, 0, 0, 80*10**18, 80*10**18, 120*10**18)
+        calldata = loanTokenSettingsLowerAdmin.setDemandCurve.encode_input(0, 10*10**18, 0, 0, 80*10**18, 80*10**18, 120*10**18)
         existingIToken.updateSettings(loanTokenSettingsLowerAdmin.address, calldata, {"from": acct})
