@@ -7,7 +7,7 @@ pragma solidity 0.5.17;
 
 import "../openzeppelin/SafeMath.sol";
 import "../interfaces/IVestingToken.sol";
-import "./Upgradeable_0_5.sol";
+import "../proxies/0_5/Upgradeable_0_5.sol";
 
 
 contract VBZRXWrapper is Upgradeable_0_5 {
