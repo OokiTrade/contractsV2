@@ -8,28 +8,10 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./Upgradeable.sol";
 import "./BGovToken.sol";
+import "./MintCoordinator_BSC.sol";
 
-interface IMigratorChef {
-    // Perform LP token migration from legacy UniswapV2 to BGOVSwap.
-    // Take the current LP token address and return the new LP token address.
-    // Migrator should have full access to the caller's LP token.
-    // Return the new LP token address.
-    //
-    // XXX Migrator must have allowance access to UniswapV2 LP tokens.
-    // BGOVSwap must mint EXACTLY the same amount of BGOVSwap LP tokens or
-    // else something bad will happen. Traditional UniswapV2 does not
-    // do that so be careful!
-    function migrate(IERC20 token) external returns (IERC20);
-}
 
-// MasterChef is the master of BGOV. He can make BGOV and he is a fair guy.
-//
-// Note that it's ownable and the owner wields tremendous power. The ownership
-// will be transferred to a governance smart contract once BGOV is sufficiently
-// distributed and the community can show to govern itself.
-//
-// Have fun reading it. Hopefully it's bug-free. God bless.
-contract MasterChef is Upgradeable {
+contract MasterChef_BSC is Upgradeable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -66,8 +48,8 @@ contract MasterChef is Upgradeable {
     uint256 public BGOVPerBlock;
     // Bonus muliplier for early BGOV makers.
     uint256 public constant BONUS_MULTIPLIER = 10;
-    // The migrator contract. It has a lot of power. Can only be set througgith governance (owner).
-    IMigratorChef public migrator;
+    // unused
+    address public migrator;
     // Info of each pool.
     PoolInfo[] public poolInfo;
     // Info of each user that stakes LP tokens.
@@ -83,6 +65,9 @@ contract MasterChef is Upgradeable {
         uint256 indexed pid,
         uint256 amount
     );
+
+    MintCoordinator public constant coordinator = MintCoordinator(0x68d57B33Fe3B691Ef96dFAf19EC8FA794899f2ac);
+
 
     function initialize(
         BGovToken _BGOV,
@@ -105,11 +90,10 @@ contract MasterChef is Upgradeable {
 
     // Add a new lp to the pool. Can only be called by the owner.
     // XXX DO NOT add the same LP token more than once. Rewards will be messed up if you do.
-    function add(
-        uint256 _allocPoint,
-        IERC20 _lpToken,
-        bool _withUpdate
-    ) public onlyOwner {
+    function add(uint256 _allocPoint, IERC20 _lpToken, bool _withUpdate)
+        public
+        onlyOwner
+    {
         if (_withUpdate) {
             massUpdatePools();
         }
@@ -127,11 +111,10 @@ contract MasterChef is Upgradeable {
     }
 
     // Update the given pool's BGOV allocation point. Can only be called by the owner.
-    function set(
-        uint256 _pid,
-        uint256 _allocPoint,
-        bool _withUpdate
-    ) public onlyOwner {
+    function set(uint256 _pid, uint256 _allocPoint, bool _withUpdate)
+        public
+        onlyOwner
+    {
         if (_withUpdate) {
             massUpdatePools();
         }
@@ -141,41 +124,96 @@ contract MasterChef is Upgradeable {
         poolInfo[_pid].allocPoint = _allocPoint;
     }
 
-    // Set the migrator contract. Can only be called by the owner.
-    function setMigrator(IMigratorChef _migrator) public onlyOwner {
-        migrator = _migrator;
+
+    function transferTokenOwnership(address newOwner)
+        public
+        onlyOwner
+    {
+        BGOV.transferOwnership(newOwner);
     }
 
-    // Migrate lp token to another lp contract. Can be called by anyone. We trust that migrator contract is good.
-    function migrate(uint256 _pid) public {
-        require(address(migrator) != address(0), "migrate: no migrator");
-        PoolInfo storage pool = poolInfo[_pid];
-        IERC20 lpToken = pool.lpToken;
-        uint256 bal = lpToken.balanceOf(address(this));
-        lpToken.safeApprove(address(migrator), bal);
-        IERC20 newLpToken = migrator.migrate(lpToken);
-        require(bal == newLpToken.balanceOf(address(this)), "migrate: bad");
-        pool.lpToken = newLpToken;
-    }
 
-    // Return reward multiplier over the given _from to _to block.
     function getMultiplier(uint256 _from, uint256 _to)
         public
         view
         returns (uint256)
     {
-        if (_to <= bonusEndBlock) {
-            return _to.sub(_from).mul(BONUS_MULTIPLIER);
-        } else if (_from >= bonusEndBlock) {
-            return _to.sub(_from);
+        return getMultiplierPrecise(_from, _to).div(1e18);
+    }
+
+    function getMultiplierNow()
+        public
+        view
+        returns (uint256)
+    {
+        return getMultiplierPrecise(block.number - 1, block.number);
+    }
+
+    function getMultiplierPrecise(uint256 _from, uint256 _to)
+        public
+        view
+        returns (uint256)
+    {
+        uint256 _bonusEndBlock = bonusEndBlock;
+        if (_to <= _bonusEndBlock) {
+            return _to.sub(_from).mul(BONUS_MULTIPLIER).mul(1e18);
+        } else if (_from >= _bonusEndBlock) {
+            return _getDecliningMultipler(_from, _to, _bonusEndBlock);
         } else {
             return
-                bonusEndBlock.sub(_from).mul(BONUS_MULTIPLIER).add(
-                    _to.sub(bonusEndBlock)
+                _bonusEndBlock.sub(_from).mul(BONUS_MULTIPLIER).mul(1e18).add(
+                    _getDecliningMultipler(_bonusEndBlock, _to, _bonusEndBlock)
                 );
         }
     }
 
+    function _getDecliningMultipler(uint256 _from, uint256 _to, uint256 _bonusStartBlock)
+        internal
+        view
+        returns (uint256)
+    {
+        // _periodBlocks = 864000 = 60 * 60 * 24 * 30 / 3 = blocks_in_30_days
+        uint256 _bonusEndBlock = _bonusStartBlock + 864000;
+
+        // multiplier = 7.64e18 = BONUS_MULTIPLIER * 191 / 250 * 10^18
+        // declinePerBlock = 7685185185185 = (7.64e18 - 1e18) / _periodBlocks
+
+        uint256 _startMultipler;
+        uint256 _endMultipler;
+        uint256 _avgMultiplier;
+
+        if (_to <= _bonusEndBlock) {
+            _startMultipler = SafeMath.sub(7.64e18,
+                _from.sub(_bonusStartBlock)
+                    .mul(7685185185185)
+            );
+
+            _endMultipler = SafeMath.sub(7.64e18,
+                _to.sub(_bonusStartBlock)
+                    .mul(7685185185185)
+            );
+
+            _avgMultiplier = (_startMultipler + _endMultipler) / 2;
+
+            return _to.sub(_from).mul(_avgMultiplier);
+        } else if (_from >= _bonusEndBlock) {
+            return _to.sub(_from).mul(1e18);
+        } else {
+
+            _startMultipler = SafeMath.sub(7.64e18,
+                _from.sub(_bonusStartBlock)
+                    .mul(7685185185185)
+            );
+
+            _endMultipler = 1e18;
+
+            _avgMultiplier = (_startMultipler + _endMultipler) / 2;
+
+            return _bonusEndBlock.sub(_from).mul(_avgMultiplier).add(
+                    _to.sub(_bonusEndBlock).mul(1e18)
+                );
+        }
+    }
     
     function _pendingBGOV(uint256 _pid, address _user)
         internal
@@ -184,11 +222,11 @@ contract MasterChef is Upgradeable {
     {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
-        uint256 accBGOVPerShare = pool.accBGOVPerShare;
+        uint256 accBGOVPerShare = pool.accBGOVPerShare.mul(1e18);
         uint256 lpSupply = pool.lpToken.balanceOf(address(this));
         if (block.number > pool.lastRewardBlock && lpSupply != 0) {
             uint256 multiplier =
-                getMultiplier(pool.lastRewardBlock, block.number);
+                getMultiplierPrecise(pool.lastRewardBlock, block.number);
             uint256 BGOVReward =
                 multiplier.mul(BGOVPerBlock).mul(pool.allocPoint).div(
                     totalAllocPoint
@@ -197,7 +235,7 @@ contract MasterChef is Upgradeable {
                 BGOVReward.mul(1e12).div(lpSupply)
             );
         }
-        return user.amount.mul(accBGOVPerShare).div(1e12).sub(user.rewardDebt);
+        return user.amount.mul(accBGOVPerShare).div(1e30).sub(user.rewardDebt);
     }
 
 
@@ -230,15 +268,15 @@ contract MasterChef is Upgradeable {
             pool.lastRewardBlock = block.number;
             return;
         }
-        uint256 multiplier = getMultiplier(pool.lastRewardBlock, block.number);
+        uint256 multiplier = getMultiplierPrecise(pool.lastRewardBlock, block.number);
         uint256 BGOVReward =
             multiplier.mul(BGOVPerBlock).mul(pool.allocPoint).div(
                 totalAllocPoint
             );
-        BGOV.mint(devaddr, BGOVReward.div(10));
-        BGOV.mint(address(this), BGOVReward);
+        coordinator.mint(devaddr, BGOVReward.div(1e19));
+        coordinator.mint(address(this), BGOVReward.div(1e18));
         pool.accBGOVPerShare = pool.accBGOVPerShare.add(
-            BGOVReward.mul(1e12).div(lpSupply)
+            BGOVReward.div(1e6).div(lpSupply)
         );
         pool.lastRewardBlock = block.number;
     }
