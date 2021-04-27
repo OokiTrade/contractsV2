@@ -28,14 +28,17 @@ def test_main_flow(requireBscFork, accounts, BGOV, BZX, FEE_EXTRACTOR_BSC):
 
    FEE_EXTRACTOR_BSC.setFeeTokens(tokens,  {'from':accounts[0]})
    BZX.setFeesController(FEE_EXTRACTOR_BSC, {'from':accounts[0]})
+
    balanceBefore = accounts[0].balance();
    assert (balanceBefore/1e18 == 100)
    assert (accounts[1].balance()/1e18 == 100)
 
-   tx1 = FEE_EXTRACTOR_BSC.sweepFees(20e18, {'from': accounts[0]})
-   assert (accounts[0].balance() > balanceBefore)
+   tx1 = FEE_EXTRACTOR_BSC.sweepFees(50e18, {'from': accounts[0]})
+   fees50 = accounts[0].balance() - balanceBefore
+   tx1 = FEE_EXTRACTOR_BSC.sweepFees(100e18, {'from': accounts[0]})
+   fees100 = (accounts[0].balance() - balanceBefore)
+   assert (round(fees50/1e18) == round(fees100/1e18/2))
    assert (accounts[1].balance()/1e18 == 100)
-   balanceBefore = accounts[0].balance();
 
    FEE_EXTRACTOR_BSC.togglePause(False)
    tx2 = FEE_EXTRACTOR_BSC.sweepFees(50e18, {'from': accounts[1]})
