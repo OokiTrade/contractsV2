@@ -9,7 +9,6 @@ pragma experimental ABIEncoderV2;
 import "../proxies/0_5/Upgradeable_0_5.sol";
 import "../openzeppelin/SafeMath.sol";
 import "../openzeppelin/SafeERC20.sol";
-import "../interfaces/IERC20.sol";
 import "../interfaces/IWethERC20.sol";
 import "../interfaces/IUniswapV2Router.sol";
 import "./interfaces/IBZxPartial.sol";
@@ -58,7 +57,7 @@ contract FeeExtractor_BSC is Upgradeable_0_5 {
 
 
     function sweepFees(
-        uint256 fraction) // 1e18 == 100%
+        uint256 fraction) // 0 or 1e20 == 100%
         public
         // sweepFeesByAsset() does checkPause
         returns (uint256 burnAmount)
