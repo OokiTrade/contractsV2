@@ -129,7 +129,7 @@ contract FeeExtractor_BSC is Upgradeable_0_5 {
 
             // burn baby burn
             IERC20(BGOV).transfer(
-                address(1),
+                0x000000000000000000000000000000000000dEaD,
                 burnAmount
             );
 
