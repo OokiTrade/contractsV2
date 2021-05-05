@@ -100,9 +100,14 @@ contract StakingV1 is StakingState, StakingConstants {
             _balancesPerToken[token][msg.sender] = stakedAmount - unstakeAmount; // will not overflow
             _totalSupplyPerToken[token] = _totalSupplyPerToken[token] - unstakeAmount; // will not overflow
 
-            delegatedPerToken[currentDelegate][token] = delegatedPerToken[currentDelegate][token]
-                .sub(unstakeAmount);
+            uint256 delegateAmount = delegatedPerToken[currentDelegate][token];
+            if (delegateAmount > unstakeAmount ){
+                delegatedPerToken[currentDelegate][token] = delegateAmount.sub(delegateAmount);
+            } else{
+                delegatedPerToken[currentDelegate][token] = 0;
+            }
 
+            
             if (token == BZRX && IERC20(BZRX).balanceOf(address(this)) < unstakeAmount) {
                 // settle vested BZRX only if needed
                 IVestingToken(vBZRX).claim();
@@ -352,7 +357,6 @@ contract StakingV1 is StakingState, StakingConstants {
     modifier updateRewards(address account) {
         uint256 _bzrxPerTokenStored = bzrxPerTokenStored;
         uint256 _stableCoinPerTokenStored = stableCoinPerTokenStored;
-
         (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned, uint256 bzrxRewardsVesting, uint256 stableCoinRewardsVesting) = _earned(
             account,
             _bzrxPerTokenStored,
@@ -360,11 +364,9 @@ contract StakingV1 is StakingState, StakingConstants {
         );
         bzrxRewardsPerTokenPaid[account] = _bzrxPerTokenStored;
         stableCoinRewardsPerTokenPaid[account] = _stableCoinPerTokenStored;
-
         // vesting amounts get updated before sync
         bzrxVesting[account] = bzrxRewardsVesting;
         stableCoinVesting[account] = stableCoinRewardsVesting;
-
         (bzrxRewards[account], stableCoinRewards[account]) = _syncVesting(
             account,
             bzrxRewardsEarned,
