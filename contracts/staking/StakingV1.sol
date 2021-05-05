@@ -100,14 +100,13 @@ contract StakingV1 is StakingState, StakingConstants {
             _balancesPerToken[token][msg.sender] = stakedAmount - unstakeAmount; // will not overflow
             _totalSupplyPerToken[token] = _totalSupplyPerToken[token] - unstakeAmount; // will not overflow
 
-            uint256 delegateAmount = delegatedPerToken[currentDelegate][token];
-            if (delegateAmount > unstakeAmount ){
-                delegatedPerToken[currentDelegate][token] = delegateAmount.sub(delegateAmount);
-            } else{
+            uint256 delegatedAmount = delegatedPerToken[currentDelegate][token];
+            if (delegatedAmount > unstakeAmount) {
+                delegatedPerToken[currentDelegate][token] = delegatedAmount - unstakeAmount;
+            } else {
                 delegatedPerToken[currentDelegate][token] = 0;
             }
 
-            
             if (token == BZRX && IERC20(BZRX).balanceOf(address(this)) < unstakeAmount) {
                 // settle vested BZRX only if needed
                 IVestingToken(vBZRX).claim();
