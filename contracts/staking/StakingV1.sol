@@ -357,6 +357,7 @@ contract StakingV1 is StakingState, StakingConstants {
     modifier updateRewards(address account) {
         uint256 _bzrxPerTokenStored = bzrxPerTokenStored;
         uint256 _stableCoinPerTokenStored = stableCoinPerTokenStored;
+
         (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned, uint256 bzrxRewardsVesting, uint256 stableCoinRewardsVesting) = _earned(
             account,
             _bzrxPerTokenStored,
@@ -364,9 +365,11 @@ contract StakingV1 is StakingState, StakingConstants {
         );
         bzrxRewardsPerTokenPaid[account] = _bzrxPerTokenStored;
         stableCoinRewardsPerTokenPaid[account] = _stableCoinPerTokenStored;
+
         // vesting amounts get updated before sync
         bzrxVesting[account] = bzrxRewardsVesting;
         stableCoinVesting[account] = stableCoinRewardsVesting;
+
         (bzrxRewards[account], stableCoinRewards[account]) = _syncVesting(
             account,
             bzrxRewardsEarned,
