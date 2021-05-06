@@ -16,7 +16,9 @@ contract SwapsImplUniswapV2_BSC is State, ISwapsImpl {
     using SafeERC20 for IERC20;
 
     // bsc (PancakeSwap)
-    address public constant uniswapRouter = 0x05fF2B0DB69458A0750badebc4f9e13aDd608C7F;
+    //address public constant uniswapRouter = 0x05fF2B0DB69458A0750badebc4f9e13aDd608C7F; // PancakeSwap v1
+    address public constant uniswapRouter = 0x10ED43C718714eb63d5aA57B78B54704E256024E; // PancakeSwap v2
+
     address public constant busd = 0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56;
     address public constant usdt = 0x55d398326f99059fF775485246999027B3197955;
 
