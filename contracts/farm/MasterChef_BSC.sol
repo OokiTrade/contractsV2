@@ -68,6 +68,11 @@ contract MasterChef_BSC is Upgradeable {
 
     MintCoordinator public constant coordinator = MintCoordinator(0x68d57B33Fe3B691Ef96dFAf19EC8FA794899f2ac);
 
+    mapping(IERC20 => bool) public poolExists;
+    modifier nonDuplicated(IERC20 _lpToken) {
+        require(!poolExists[_lpToken], "pool exists");
+        _;
+    }
 
     function initialize(
         BGovToken _BGOV,
@@ -89,10 +94,10 @@ contract MasterChef_BSC is Upgradeable {
     }
 
     // Add a new lp to the pool. Can only be called by the owner.
-    // XXX DO NOT add the same LP token more than once. Rewards will be messed up if you do.
     function add(uint256 _allocPoint, IERC20 _lpToken, bool _withUpdate)
         public
         onlyOwner
+        nonDuplicated(_lpToken)
     {
         if (_withUpdate) {
             massUpdatePools();
@@ -100,6 +105,7 @@ contract MasterChef_BSC is Upgradeable {
         uint256 lastRewardBlock =
             block.number > startBlock ? block.number : startBlock;
         totalAllocPoint = totalAllocPoint.add(_allocPoint);
+        poolExists[_lpToken] = true;
         poolInfo.push(
             PoolInfo({
                 lpToken: _lpToken,
@@ -123,7 +129,6 @@ contract MasterChef_BSC is Upgradeable {
         );
         poolInfo[_pid].allocPoint = _allocPoint;
     }
-
 
     function transferTokenOwnership(address newOwner)
         public
