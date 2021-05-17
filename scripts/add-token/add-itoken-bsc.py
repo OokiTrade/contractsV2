@@ -22,14 +22,14 @@ def main():
 
     #deployment()
     #marginSettings()
-    demandCurve()
+    #demandCurve()
 
 def deployment():
-    underlyingSymbol = "DOGE"
+    underlyingSymbol = "AUTO"
     iTokenSymbol = "i{}".format(underlyingSymbol)
     iTokenName = "Fulcrum {} iToken ({})".format(underlyingSymbol, iTokenSymbol)  
 
-    loanTokenAddress = "0xbA2aE424d960c26247Dd6c32edC70B295c744C43"
+    loanTokenAddress = "0xa184088a740c695E156F91f5cC086a06bb78b827"
 
     #LoanTokenLogicStandard deployed at: 0xa9651b36101E00E43dA389A2b491E94Ca9F807b6
     loanTokenLogicStandard = Contract.from_abi(
@@ -41,7 +41,7 @@ def deployment():
 
     # Deployment
 
-    iTokenProxy = acct.deploy(LoanToken, acct, loanTokenLogicStandard)
+    iTokenProxy = LoanToken.deploy(acct, loanTokenLogicStandard, {"from": acct, "gas_price": 10e9})
 
     #loanTokenSettings = acct.deploy(LoanTokenSettings)
     #LoanTokenSettingsLowerAdmin deployed at: 0xA1988005a5D6e68a3572F43a18460708CB29ABe0
@@ -58,7 +58,7 @@ def deployment():
                             iTokenProxy, LoanTokenLogicStandard.abi, acct)
 
 
-    iToken.updateSettings(loanTokenSettings, calldata)
+    iToken.updateSettings(loanTokenSettings, calldata, {"from": acct, "gas_price": 10e9})
 
 
 
@@ -68,7 +68,7 @@ def deployment():
     #priceFeed.setPriceFeed([loanTokenAddress], [chainlinkFeedAddress], {'from': acct})
 
 
-    bzx.setLoanPool([iToken], [loanTokenAddress])
+    bzx.setLoanPool([iToken, "0xc438dfC7e92ee18730E0C71697B0a3E7a11f9Ea4"], [loanTokenAddress], {"from": acct, "gas_price": 10e9})
     #bzx.setSupportedTokens([loanTokenAddress], [True])
 
 
@@ -109,6 +109,10 @@ def marginSettings():
         existingITokenLoanTokenAddress = existingIToken.loanTokenAddress()
         print("itoken", existingIToken.name(), existingITokenLoanTokenAddress)
 
+        ## only AUTO
+        if existingITokenLoanTokenAddress != "0xa184088a740c695E156F91f5cC086a06bb78b827":
+            continue
+
         for tokenAssetPairB in supportedTokenAssetsPairs:
 
             collateralTokenAddress = tokenAssetPairB[1]
@@ -125,11 +129,11 @@ def marginSettings():
                         "0xbA2aE424d960c26247Dd6c32edC70B295c744C43", # DOGE
             '''
             ## only CAKE, AUTO, or DOGE params
-            if (
+            '''if (
                 (existingITokenLoanTokenAddress != "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82" and collateralTokenAddress != "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82") and
                 (existingITokenLoanTokenAddress != "0xa184088a740c695E156F91f5cC086a06bb78b827" and collateralTokenAddress != "0xa184088a740c695E156F91f5cC086a06bb78b827")):
                 #(existingITokenLoanTokenAddress != "0xbA2aE424d960c26247Dd6c32edC70B295c744C43" and collateralTokenAddress != "0xbA2aE424d960c26247Dd6c32edC70B295c744C43")):
-                continue
+                continue'''
 
             base_data_copy = base_data.copy()
             base_data_copy[3] = existingITokenLoanTokenAddress
@@ -150,6 +154,7 @@ def marginSettings():
             collateralTokensArr.append(collateralTokenAddress)
             amountsArr.append(7*10**18)
 
+        #print(params)
         if (len(params) != 0):
             ## Torque loans
             calldata = loanTokenSettingsLowerAdmin.setupLoanParams.encode_input(params, True)
@@ -176,18 +181,21 @@ def demandCurve():
         if (tokenAssetPairA[0] == "0xA726F2a7B200b03beB41d1713e6158e0bdA8731F"):
             continue
 
+        if (tokenAssetPairA[0] != "0xda4f261f26c82766408dcf6ba1b510fa8e64efe9" and tokenAssetPairA[0] != "0xC5b6cC0A9D61600BE42e83d8fA1331dB9E29e48C"):
+            continue
+
         existingITokenLoanTokenAddress = tokenAssetPairA[1]
         collateralTokenAddress = tokenAssetPairA[1]
 
         ## only CAKE, AUTO, or DOGE params
-        if (
+        '''if (
             (existingITokenLoanTokenAddress != "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82" and collateralTokenAddress != "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82") and
             (existingITokenLoanTokenAddress != "0xa184088a740c695E156F91f5cC086a06bb78b827" and collateralTokenAddress != "0xa184088a740c695E156F91f5cC086a06bb78b827") and
             (existingITokenLoanTokenAddress != "0xbA2aE424d960c26247Dd6c32edC70B295c744C43" and collateralTokenAddress != "0xbA2aE424d960c26247Dd6c32edC70B295c744C43")):
-            continue
+            continue'''
 
         existingIToken = Contract.from_abi("existingIToken", address=tokenAssetPairA[0], abi=LoanTokenLogicStandard.abi, owner=acct)
         print("itoken", existingIToken.name())
         
         calldata = loanTokenSettingsLowerAdmin.setDemandCurve.encode_input(0, 20*10**18, 0, 0, 60*10**18, 80*10**18, 120*10**18)
-        existingIToken.updateSettings(loanTokenSettingsLowerAdmin.address, calldata, {"from": acct})
+        existingIToken.updateSettings(loanTokenSettingsLowerAdmin.address, calldata, {"from": acct, "gas_price": 10e9})
