@@ -8,8 +8,8 @@ pragma solidity 0.6.12;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../interfaces/GovTokenLike.sol";
 
-// bsc: 0x68d57B33Fe3B691Ef96dFAf19EC8FA794899f2ac
-contract MintCoordinator is Ownable {
+// polygon: 0xfffffffffffffffffffffffffffffff
+contract MintCoordinator_POLYGON is Ownable {
 
     GovTokenLike public constant govToken = GovTokenLike(0xf8E026dC4C0860771f691EcFFBbdfe2fa51c77CF);
 
