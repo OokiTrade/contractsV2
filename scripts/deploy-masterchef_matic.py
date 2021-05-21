@@ -74,5 +74,7 @@ masterChef.add(12500, itokens.dai, 1)
 masterChef.add(87500, itokens.wmatic, 1)
 masterChef.add(87500, itokens.link, 1)
 
+print("masterChef: ", masterChef.address)
+
 # two sided
 #masterChef.add(100000, PGOV_wMATIC, 1)

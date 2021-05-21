@@ -327,8 +327,22 @@ def deployProtocol():
             chainlinkFeeds.link
         ]
         , {"from": acct})
+    tokenHolder = acct.deploy(TokenHolder, acct)
+    helperImpl = acct.deploy(HelperImpl)
+    dappHelper = acct.deploy(DAppHelper)
+    print("bZx protocol: ", bzxProtocol)
+    print("tokenHolder: ", tokenHolder.address)
+    print("helperImpl: ", helperImpl.address)
+    print("dappHelper: ", dappHelper.address)
+    print("tokens: ")
+    for token in tokens.keys():
+        print(f"{token}: {tokens[token]}")
 
+    print("itokens: ")
+    for token in itokens.keys():
+        print(f"{token}: {itokens[token]}")
 
+    exec(open("./scripts/deploy-masterchef_matic.py").read())
 
 
 
