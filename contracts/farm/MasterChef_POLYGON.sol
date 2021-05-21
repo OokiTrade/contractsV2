@@ -11,6 +11,7 @@ import "./PGovToken.sol";
 import "./MintCoordinator_POLYGON.sol";
 
 
+//ToDo create MasterChef interface
 contract MasterChef_POLYGON is Upgradeable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -66,7 +67,9 @@ contract MasterChef_POLYGON is Upgradeable {
         uint256 amount
     );
 
-    MintCoordinator public constant coordinator = MintCoordinator(0xfffffffffffffffffffffffffffffff);
+    //ToDo move Coordinator to interface
+    //ToDo change address coordinator be deployed on polygon
+    MintCoordinator_POLYGON public constant coordinator = MintCoordinator_POLYGON(0x68d57B33Fe3B691Ef96dFAf19EC8FA794899f2ac);
 
     mapping(IERC20 => bool) public poolExists;
     modifier nonDuplicated(IERC20 _lpToken) {
