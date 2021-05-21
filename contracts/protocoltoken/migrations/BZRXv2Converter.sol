@@ -18,8 +18,6 @@ contract BZRXv2Converter is Ownable {
         uint256 amount
     );
 
-    event Logger(string name, uint256 amount);
-    event LoggerAddress(string name, address amount);
 
     // event ConvertvBZRX(
     //     address indexed sender,
@@ -41,9 +39,6 @@ contract BZRXv2Converter is Ownable {
         uint256 _tokenAmount)
         external
     {
-        emit LoggerAddress("msg.sender", msg.sender);
-        emit Logger("amount", _tokenAmount);
-        emit Logger("balance", BZRXv1.balanceOf(msg.sender));
         BZRXv1.transferFrom(
             msg.sender,
             DEAD, // burn address, since transfers to address(0) are not allowed by the token
