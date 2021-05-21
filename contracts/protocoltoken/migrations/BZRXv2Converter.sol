@@ -18,12 +18,6 @@ contract BZRXv2Converter is Ownable {
         uint256 amount
     );
 
-
-    // event ConvertvBZRX(
-    //     address indexed sender,
-    //     uint256 amount
-    // );
-
     IERC20 public constant BZRXv1 = IERC20(0x56d811088235F11C8920698a204A5010a788f4b3);
     // IERC20 public constant vBZRXv1 = IERC20(0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F);
     BZRXv2Token public BZRXv2;
@@ -56,28 +50,6 @@ contract BZRXv2Converter is Ownable {
             _tokenAmount
         );
     }
-
-
-    // function convertvBZRX(
-    //     uint256 _tokenAmount)
-    //     external
-    // {
-    //     // vBZRXv1.transferFrom(
-    //     //     msg.sender,
-    //     //     address(this), 
-    //     //     _tokenAmount
-    //     // );
-
-    //     vBZRXv2.deposit(msg.sender, _tokenAmount);
-
-    //     // overflow condition cannot be reached since the above will throw for bad amounts
-    //     totalVestingConverted += _tokenAmount;
-
-    //     emit ConvertvBZRX(
-    //         msg.sender,
-    //         _tokenAmount
-    //     );
-    // }
 
     // open convert tool to the public
     function initialize(BZRXv2Token _BZRXv2 /*, VBZRXv2VestingToken _vBZRXv2*/)
