@@ -66,6 +66,13 @@ contract MasterChef_BSC is Upgradeable {
         uint256 amount
     );
 
+    uint256 internal constant BGOV_POOL_ID = 7;
+    event AddExternalReward(
+        address indexed sender,
+        uint256 indexed pid,
+        uint256 amount
+    );
+
     MintCoordinator public constant coordinator = MintCoordinator(0x68d57B33Fe3B691Ef96dFAf19EC8FA794899f2ac);
 
     mapping(IERC20 => bool) public poolExists;
@@ -284,6 +291,28 @@ contract MasterChef_BSC is Upgradeable {
             BGOVReward.div(1e6).div(lpSupply)
         );
         pool.lastRewardBlock = block.number;
+    }
+
+    // Anyone can contribute BGOV to a given pool
+    function addExternalReward(uint256 _amount) public {
+        PoolInfo storage pool = poolInfo[BGOV_POOL_ID];
+        require(block.number > pool.lastRewardBlock, "rewards not started");
+
+        uint256 lpSupply = pool.lpToken.balanceOf(address(this));
+        require(lpSupply != 0, "no deposits");
+
+        updatePool(BGOV_POOL_ID);
+
+        BGOV.transferFrom(
+            address(msg.sender),
+            address(this),
+            _amount
+        );
+        pool.accBGOVPerShare = pool.accBGOVPerShare.add(
+            _amount.mul(1e12).div(lpSupply)
+        );
+
+        emit AddExternalReward(msg.sender, BGOV_POOL_ID, _amount);
     }
 
     // Deposit LP tokens to MasterChef for BGOV allocation.
