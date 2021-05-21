@@ -8,6 +8,7 @@ pragma solidity 0.6.12;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./VBZRXv2VestingToken.sol";
+import "./BZRXv2Token.sol";
 
 
 contract BZRXv2Converter is Ownable {
@@ -17,15 +18,18 @@ contract BZRXv2Converter is Ownable {
         uint256 amount
     );
 
-    event ConvertvBZRX(
-        address indexed sender,
-        uint256 amount
-    );
+    event Logger(string name, uint256 amount);
+    event LoggerAddress(string name, address amount);
+
+    // event ConvertvBZRX(
+    //     address indexed sender,
+    //     uint256 amount
+    // );
 
     IERC20 public constant BZRXv1 = IERC20(0x56d811088235F11C8920698a204A5010a788f4b3);
-    IERC20 public constant vBZRXv1 = IERC20(0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F);
-    IERC20 public BZRXv2;
-    VBZRXv2VestingToken public vBZRXv2;
+    // IERC20 public constant vBZRXv1 = IERC20(0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F);
+    BZRXv2Token public BZRXv2;
+    // VBZRXv2VestingToken public vBZRXv2;
     address constant DEAD = 0x000000000000000000000000000000000000dEaD;
 
     uint256 public totalConverted;
@@ -33,60 +37,62 @@ contract BZRXv2Converter is Ownable {
     uint256 public terminationTimestamp;
 
     function convert(
+        address receiver,
         uint256 _tokenAmount)
         external
     {
+        emit LoggerAddress("msg.sender", msg.sender);
+        emit Logger("amount", _tokenAmount);
+        emit Logger("balance", BZRXv1.balanceOf(msg.sender));
         BZRXv1.transferFrom(
             msg.sender,
             DEAD, // burn address, since transfers to address(0) are not allowed by the token
             _tokenAmount
         );
 
-        BZRXv2.transfer(
-            msg.sender,
-            _tokenAmount
-        );
+        // we mint burned amount
+        BZRXv2.mint(receiver, _tokenAmount);
 
         // overflow condition cannot be reached since the above will throw for bad amounts
         totalConverted += _tokenAmount;
 
         emit ConvertBZRX(
-            msg.sender,
+            receiver,
             _tokenAmount
         );
     }
 
 
-    function convertvBZRX(
-        uint256 _tokenAmount)
-        external
-    {
-        // vBZRXv1.transferFrom(
-        //     msg.sender,
-        //     address(this), 
-        //     _tokenAmount
-        // );
+    // function convertvBZRX(
+    //     uint256 _tokenAmount)
+    //     external
+    // {
+    //     // vBZRXv1.transferFrom(
+    //     //     msg.sender,
+    //     //     address(this), 
+    //     //     _tokenAmount
+    //     // );
 
-        vBZRXv2.deposit(msg.sender, _tokenAmount);
+    //     vBZRXv2.deposit(msg.sender, _tokenAmount);
 
-        // overflow condition cannot be reached since the above will throw for bad amounts
-        totalVestingConverted += _tokenAmount;
+    //     // overflow condition cannot be reached since the above will throw for bad amounts
+    //     totalVestingConverted += _tokenAmount;
 
-        emit ConvertvBZRX(
-            msg.sender,
-            _tokenAmount
-        );
-    }
+    //     emit ConvertvBZRX(
+    //         msg.sender,
+    //         _tokenAmount
+    //     );
+    // }
 
     // open convert tool to the public
-    function initialize(IERC20 _BZRXv2, VBZRXv2VestingToken _vBZRXv2)
+    function initialize(BZRXv2Token _BZRXv2 /*, VBZRXv2VestingToken _vBZRXv2*/)
         external
         onlyOwner
     {
         require(terminationTimestamp == 0, "already initialized");
         terminationTimestamp = _getTimestamp() + 60 * 60 * 24 * 365; // one year from now
         BZRXv2 = _BZRXv2;
-        vBZRXv2 = _vBZRXv2;
+        // vBZRXv2 = _vBZRXv2;
     }
 
     // funds unclaimed after one year can be rescued

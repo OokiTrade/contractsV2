@@ -6,13 +6,15 @@
 pragma solidity 0.6.12;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "./IVestingToken.sol";
 import "./Upgradeable_6.sol";
-
+import "./BZRXv2Token.sol";
+import "./BZRXv2Converter.sol";
 
 contract VBZRXv2VestingToken is Upgradeable_6{
     using SafeMath for uint256;
-
+    using SafeERC20 for IERC20;
     // --- ERC20 Data ---
     string  public name     = "vBZRXv2 Token";
     string  public symbol   = "vBZRXv2";
@@ -20,6 +22,7 @@ contract VBZRXv2VestingToken is Upgradeable_6{
     uint256 public totalSupply;
 
     IERC20 public constant BZRX = IERC20(0x56d811088235F11C8920698a204A5010a788f4b3);
+    BZRXv2Converter public CONVERTER;
     IVestingToken public constant vBZRX = IVestingToken(0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F);
 
     mapping (address => uint256)                      public balanceOf;
@@ -28,20 +31,36 @@ contract VBZRXv2VestingToken is Upgradeable_6{
     uint256 public bzrxVestiesPerTokenStored;
     mapping(address => uint256) public bzrxVestiesPerTokenPaid;
     mapping(address => uint256) public bzrxVesties;
-
+    uint256 public rebrandBlockNumber = 2**256-1;
+    address constant DEAD = 0x000000000000000000000000000000000000dEaD;
+    
     event Approval(address indexed owner, address indexed spender, uint256 value);
     event Transfer(address indexed src, address indexed dst, uint256 value);
     event Deposit(address indexed dst, uint256 value);
     event Withdraw(address indexed src, uint256 value);
     event Claim(address indexed owner, uint256 value);
 
-    function updateName(string _name) public onlyOwner {
+
+    function updateCONVERTER(BZRXv2Converter _CONVERTER) public onlyOwner {
+        CONVERTER = _CONVERTER;
+    }
+
+    function infiniteApproveCONVERTER() public onlyOwner {
+        BZRX.safeApprove(address(CONVERTER), 2**256-1);
+    }
+
+    function updateName(string memory _name) public onlyOwner {
         name = _name;
     }
 
-    function updateSymbol(string _symbol) public onlyOwner {
+    function updateSymbol(string memory _symbol) public onlyOwner {
         symbol = _symbol;
     }
+
+    function updateRebrandBlockNumber(uint256 _rebrandBlockNumber) public onlyOwner {
+        rebrandBlockNumber = _rebrandBlockNumber;
+    }
+
     // --- Token ---
     function transfer(address dst, uint256 value) external returns (bool) {
         return transferFrom(msg.sender, dst, value);
@@ -117,7 +136,13 @@ contract VBZRXv2VestingToken is Upgradeable_6{
         claimed = bzrxVesties[msg.sender];
         if (claimed != 0) {
             bzrxVesties[msg.sender] = 0;
-            BZRX.transfer(msg.sender, claimed);
+            if (rebrandBlockNumber > block.number){
+                BZRX.transfer(msg.sender, claimed);
+            } else {
+                // BZRX.transfer(DEAD, claimed);
+                // BZRXv2.mint(msg.sender, claimed);
+                CONVERTER.convert(msg.sender, claimed);
+            }
         }
         emit Claim(msg.sender, claimed);
     }
@@ -140,32 +165,17 @@ contract VBZRXv2VestingToken is Upgradeable_6{
         settleVesting(msg.sender);
         return _claim();
     }
-
-    function exit() external {
-        withdraw(uint256(-1));
-        _claim();
-    }
-
-    event Logger(string name, uint256 amount);
-    event LoggerAddress(string name, address addy);
-
-    function deposit(address user, uint256 value) external {
-        settleVesting(user);
-        emit Logger("afterSettleVesting", 0);
-        emit Logger("vBZRX.balanceOf", vBZRX.balanceOf(user));
-        emit LoggerAddress("msg.sender", user);
-        emit Logger("vBZRX.allowance", vBZRX.allowance(user, address(this)));
-        vBZRX.transferFrom(user, address(this), value);
-        emit Logger("aftertransferFrom", 0);
-        balanceOf[user] += value;
-        totalSupply += value;
-        emit Transfer(address(0), user, value);
-        emit Deposit(user, value);
-    }
-
+    // withdraw will stop working after rebrand
+    // function exit() external {
+    //     withdraw(uint256(-1));
+    //     _claim();
+    // }
 
     function deposit(uint256 value) external {
-        this.deposit(msg.sender, value);
+        settleVesting(msg.sender);
+        vBZRX.transferFrom(msg.sender, address(this), value);
+        balanceOf[msg.sender] += value;
+        totalSupply += value;
     }
 
     function withdraw(uint256 value) public {
@@ -176,7 +186,13 @@ contract VBZRXv2VestingToken is Upgradeable_6{
         }
         balanceOf[msg.sender] -= value;
         totalSupply -= value;
-        vBZRX.transfer(msg.sender, value);
+
+        if (rebrandBlockNumber > block.number){
+            vBZRX.transfer(msg.sender, value);
+        } else{
+            require(false, "Please claim");
+        }
+        
         emit Transfer(msg.sender, address(0), value);
         emit Withdraw(msg.sender, value);
     }
