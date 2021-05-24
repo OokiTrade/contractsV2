@@ -1,2 +1,4 @@
 eth-brownie==1.12.4
 munch==2.5.0
+fixedint==0.1.6
+helpers==0.2.0

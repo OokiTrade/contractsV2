@@ -48,15 +48,6 @@ contract SwapsImplKyber is State, ISwapsImpl {
         IERC20 sourceToken = IERC20(sourceTokenAddress);
         address _thisAddress = address(this);
 
-        // re-up the Kyber spend approval if needed
-        uint256 tempAllowance = sourceToken.allowance(_thisAddress, kyberContract);
-        if (tempAllowance < maxSourceTokenAmount) {
-            sourceToken.safeApprove(
-                kyberContract,
-                uint256(-1)
-            );
-        }
-
         uint256 sourceBalanceBefore = sourceToken.balanceOf(_thisAddress);
 
         /* the following code is to allow the Kyber trade to fail silently and not revert if it does, preventing a "bubble up" */
@@ -104,6 +95,16 @@ contract SwapsImplKyber is State, ISwapsImpl {
         }
 
         return expectedRate;
+    }
+
+    function setSwapApprovals(
+        address[] memory tokens)
+        public
+    {
+        for (uint256 i = 0; i < tokens.length; i++) {
+            IERC20(tokens[i]).safeApprove(kyberContract, 0);
+            IERC20(tokens[i]).safeApprove(kyberContract, uint256(-1));
+        }
     }
 
     function _getSwapTxnData(

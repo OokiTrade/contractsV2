@@ -25,4 +25,8 @@ interface ISwapsImpl {
         external
         view
         returns (uint256);
+
+    function setSwapApprovals(
+        address[] calldata tokens)
+        external;
 }

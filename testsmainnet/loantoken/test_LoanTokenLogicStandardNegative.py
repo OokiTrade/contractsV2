@@ -103,8 +103,11 @@ def testMint11IfCase(requireMainnetFork, iETH, WETH, DAI, accounts):
 
 
 def testMint12(requireMainnetFork, iETH, WETH, DAI, iDAI, accounts):
-    with reverts("12"):
+    with reverts("SafeMath: division by zero"):
         iDAI.marginTrade(0, 0, 0, 0, WETH.address,
+                         accounts[1], 0, {'from': accounts[1]})
+    with reverts("12"):
+        iDAI.marginTrade(0, 1, 0, 0, WETH.address,
                          accounts[1], 0, {'from': accounts[1]})
 
 
