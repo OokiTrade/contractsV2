@@ -135,23 +135,23 @@ def deployProtocol():
     wvbzrxImpl = acct.deploy(VBZRXWrapper)
     wvbzrx = acct.deploy(Proxy_0_5, wvbzrxImpl)
 
-    tokens.weth = Contract.from_abi("wETH", "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619", TestWeth.abi)
-    tokens.wbtc = Contract.from_abi("wBTC", "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6", TestToken.abi)
-    tokens.usdc = Contract.from_abi("USDC", "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", TestToken.abi)
+    #tokens.weth = Contract.from_abi("wETH", "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619", TestWeth.abi)
+    #tokens.wbtc = Contract.from_abi("wBTC", "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6", TestToken.abi)
+    #tokens.usdc = Contract.from_abi("USDC", "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", TestToken.abi)
     tokens.usdt = Contract.from_abi("USDT", "0xc2132D05D31c914a87C6611C10748AEb04B58e8F", TestToken.abi)
     tokens.wmatic = Contract.from_abi("wMATIC", "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270", TestToken.abi)
-    tokens.link = Contract.from_abi("LINK", "0xb0897686c545045afc77cf20ec7a532e3120e0f1", TestToken.abi)
-    tokens.quick = Contract.from_abi("QUICK", "0x831753DD7087CaC61aB5644b308642cc1c33Dc13", TestToken.abi)
+    #tokens.link = Contract.from_abi("LINK", "0xb0897686c545045afc77cf20ec7a532e3120e0f1", TestToken.abi)
+    #tokens.quick = Contract.from_abi("QUICK", "0x831753DD7087CaC61aB5644b308642cc1c33Dc13", TestToken.abi)
     tokens.wvbzrx = Contract.from_abi("wvBZRX", wvbzrx.address, TestToken.abi)
-    tokens.aave = Contract.from_abi("AAVE", "0xD6DF932A45C0f255f85145f286eA0b292B21C90B", TestToken.abi)
+    #tokens.aave = Contract.from_abi("AAVE", "0xD6DF932A45C0f255f85145f286eA0b292B21C90B", TestToken.abi)
     #
 
-    chainlinkFeeds.weth = "0xF9680D99D6C9589e2a93a78A04A279e509205945"
-    chainlinkFeeds.wbtc = "0xc907E116054Ad103354f2D350FD2514433D57F6f"
-    chainlinkFeeds.usdc = "0xfE4A8cc5b5B2366C1B58Bea3858e81843581b2F7"
+    #chainlinkFeeds.weth = "0xF9680D99D6C9589e2a93a78A04A279e509205945"
+    #chainlinkFeeds.wbtc = "0xc907E116054Ad103354f2D350FD2514433D57F6f"
+    #chainlinkFeeds.usdc = "0xfE4A8cc5b5B2366C1B58Bea3858e81843581b2F7"
     chainlinkFeeds.usdt = "0x0A6513e40db6EB1b165753AD52E80663aeA50545"
     chainlinkFeeds.wmatic = "0xAB594600376Ec9fD91F8e885dADF0CE036862dE0"
-    chainlinkFeeds.link = "0xd9FFdb71EbE7496cC440152d43986Aae0AB76665"
+    #chainlinkFeeds.link = "0xd9FFdb71EbE7496cC440152d43986Aae0AB76665"
     #chainlinkFeeds.bzrx = ""
     #chainlinkFeeds.wvbzrx = ""
     #chainlinkFeeds.quick = ""
@@ -189,22 +189,19 @@ def deployProtocol():
 
     bzx.setSupportedTokens(
         [
-            tokens.weth,
+     #       tokens.weth,
             tokens.usdt,
-            tokens.wbtc,
-            tokens.usdc,
+     #       tokens.wbtc,
+     #       tokens.usdc,
             tokens.wmatic,
-            tokens.link,
-            tokens.quick,
-            tokens.aave,
-            tokens.wvbzrx
+     #       tokens.link,
+     #       tokens.quick,
+     #       tokens.aave,
+            tokens.wvbzrx,
+            tokens.bzrx
         ],
         [
-            True,
-            True,
-            True,
-            True,
-            True,
+
             True,
             True,
             True,
@@ -246,40 +243,42 @@ def deployProtocol():
     loanTokenSettings = acct.deploy(LoanTokenSettings)
 
 
-    # itokens.weth = deployItoken('wETH', tokens.weth.address, loanTokenLogicStandard, loanTokenSettings);
-    # itokens.usdt = deployItoken('USDT', tokens.usdt.address, loanTokenLogicStandard, loanTokenSettings);
-    # itokens.wbtc = deployItoken('WBTC', tokens.wbtc.address, loanTokenLogicStandard, loanTokenSettings);
-    # itokens.usdc = deployItoken('USDC', tokens.usdc.address, loanTokenLogicStandard, loanTokenSettings);
-    # itokens.wmatic = deployItoken('wMATIC', tokens.wmatic.address, loanTokenLogicStandard, loanTokenSettings);
-    itokens.link = deployItoken('LINK', tokens.link.address, loanTokenLogicStandard, loanTokenSettings);
+    #itokens.weth = deployItoken('wETH', tokens.weth.address, loanTokenLogicStandard, loanTokenSettings);
+    itokens.usdt = deployItoken('USDT', tokens.usdt.address, loanTokenLogicStandard, loanTokenSettings);
+    #itokens.wbtc = deployItoken('WBTC', tokens.wbtc.address, loanTokenLogicStandard, loanTokenSettings);
+    #itokens.usdc = deployItoken('USDC', tokens.usdc.address, loanTokenLogicStandard, loanTokenSettings);
+    itokens.wmatic = deployItoken('wMATIC', tokens.wmatic.address, loanTokenLogicStandard, loanTokenSettings);
+    #itokens.link = deployItoken('LINK', tokens.link.address, loanTokenLogicStandard, loanTokenSettings);
     itokens.bzrx = deployItoken('BZRX', tokens.bzrx.address, loanTokenLogicStandard, loanTokenSettings);
-    itokens.quick = deployItoken('QUICK', tokens.quick.address, loanTokenLogicStandard, loanTokenSettings);
-    itokens.aave = deployItoken('AAVE', tokens.aave.address, loanTokenLogicStandard, loanTokenSettings);
-    itokens.wvbzrx = deployItoken('wvBZRX', tokens.aave.address, loanTokenLogicStandard, loanTokenSettings);
+    #itokens.quick = deployItoken('QUICK', tokens.quick.address, loanTokenLogicStandard, loanTokenSettings);
+    #itokens.aave = deployItoken('AAVE', tokens.aave.address, loanTokenLogicStandard, loanTokenSettings);
+    itokens.wvbzrx = deployItoken('wvBZRX', tokens.wvbzrx.address, loanTokenLogicStandard, loanTokenSettings);
 
     print("Deploying setLoanPool")
     bzx.setLoanPool(
         [
-            itokens.weth,
+            #itokens.weth,
             itokens.usdt,
-            itokens.wbtc,
-            itokens.usdc,
+            #itokens.wbtc,
+            #itokens.usdc,
             itokens.wmatic,
-            itokens.link,
-            itokens.quick,
-            itokens.aave,
+            #itokens.link,
+            #itokens.quick,
+            #itokens.aave,
             itokens.wvbzrx,
+            itokens.bzrx,
         ],
         [
-            tokens.weth,
+            #tokens.weth,
             tokens.usdt,
-            tokens.wbtc,
-            tokens.usdc,
+            #tokens.wbtc,
+            #tokens.usdc,
             tokens.wmatic,
-            tokens.link,
-            tokens.quick,
-            tokens.aave,
+            #tokens.link,
+            #tokens.quick,
+            #tokens.aave,
             tokens.wvbzrx,
+            tokens.bzrx,
         ])
 
     print("Margin Settings")
@@ -306,41 +305,40 @@ def deployProtocol():
     print("Calling setDecimals.")
     tx = feeds.setDecimals(
         [
-            tokens.weth,
+            #tokens.weth,
             tokens.usdt,
-            tokens.wbtc,
-            tokens.usdc,
+            #tokens.wbtc,
+            #tokens.usdc,
             tokens.wmatic,
-            tokens.link,
-            tokens.quick,
-            tokens.aave,
+            #tokens.link,
+            #tokens.quick,
+            #tokens.aave,
             tokens.wvbzrx,
+            tokens.bzrx,
         ]
         , {"from": acct})
 
     print("Calling setPriceFeed.")
     feeds.setPriceFeed(
         [
-            tokens.weth,
+            #tokens.weth,
             tokens.usdt,
-            tokens.wbtc,
-            tokens.usdc,
+            #tokens.wbtc,
+            #tokens.usdc,
             tokens.wmatic,
-            tokens.link
+            #tokens.link
             #quick, wvbzrx, aave
         ],
         [
-            chainlinkFeeds.weth,
+            #chainlinkFeeds.weth,
             chainlinkFeeds.usdt,
-            chainlinkFeeds.wbtc,
-            chainlinkFeeds.usdc,
+            #chainlinkFeeds.wbtc,
+            #chainlinkFeeds.usdc,
             chainlinkFeeds.wmatic,
-            chainlinkFeeds.link,
+            #chainlinkFeeds.link,
             #quick, wvbzrx, aave
         ]
         , {"from": acct})
-    for token in tokens.keys():
-        tokens[token].transfer(acct, 100e18)
 
     tokenHolder = acct.deploy(TokenHolder, acct)
     helperImpl = acct.deploy(HelperImpl)
