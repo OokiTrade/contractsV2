@@ -34,7 +34,7 @@ contract VBZRXv2VestingToken is Upgradeable_6 {
     mapping(address => uint256) public bzrxVestiesPerTokenPaid;
     mapping(address => uint256) public bzrxVesties;
     uint256 public rebrandBlockNumber = uint256(-1);
-    address constant DEAD = 0x000000000000000000000000000000000000dEaD;
+    address internal constant DEAD = 0x000000000000000000000000000000000000dEaD;
     
     event Approval(address indexed owner, address indexed spender, uint256 value);
     event Transfer(address indexed src, address indexed dst, uint256 value);
