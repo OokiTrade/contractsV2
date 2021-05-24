@@ -9,10 +9,12 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "./IVestingToken.sol";
 import "./Upgradeable_6.sol";
-import "./BZRXv2Token.sol";
-import "./BZRXv2Converter.sol";
 
-contract VBZRXv2VestingToken is Upgradeable_6{
+interface IBZRXv2Converter {
+    function convert(address _receiver, uint256 _tokenAmount) external;
+}
+
+contract VBZRXv2VestingToken is Upgradeable_6 {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
     // --- ERC20 Data ---
@@ -22,7 +24,7 @@ contract VBZRXv2VestingToken is Upgradeable_6{
     uint256 public totalSupply;
 
     IERC20 public constant BZRX = IERC20(0x56d811088235F11C8920698a204A5010a788f4b3);
-    BZRXv2Converter public CONVERTER;
+    IBZRXv2Converter public CONVERTER;
     IVestingToken public constant vBZRX = IVestingToken(0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F);
 
     mapping (address => uint256)                      public balanceOf;
@@ -31,7 +33,7 @@ contract VBZRXv2VestingToken is Upgradeable_6{
     uint256 public bzrxVestiesPerTokenStored;
     mapping(address => uint256) public bzrxVestiesPerTokenPaid;
     mapping(address => uint256) public bzrxVesties;
-    uint256 public rebrandBlockNumber = 2**256-1;
+    uint256 public rebrandBlockNumber = uint256(-1);
     address constant DEAD = 0x000000000000000000000000000000000000dEaD;
     
     event Approval(address indexed owner, address indexed spender, uint256 value);
@@ -41,12 +43,12 @@ contract VBZRXv2VestingToken is Upgradeable_6{
     event Claim(address indexed owner, uint256 value);
 
 
-    function updateCONVERTER(BZRXv2Converter _CONVERTER) public onlyOwner {
+    function updateCONVERTER(IBZRXv2Converter _CONVERTER) public onlyOwner {
         CONVERTER = _CONVERTER;
     }
 
     function infiniteApproveCONVERTER() public onlyOwner {
-        BZRX.safeApprove(address(CONVERTER), 2**256-1);
+        BZRX.safeApprove(address(CONVERTER), uint256(-1));
     }
 
     function updateName(string memory _name) public onlyOwner {
@@ -136,11 +138,9 @@ contract VBZRXv2VestingToken is Upgradeable_6{
         claimed = bzrxVesties[msg.sender];
         if (claimed != 0) {
             bzrxVesties[msg.sender] = 0;
-            if (rebrandBlockNumber > block.number){
+            if (block.number < rebrandBlockNumber) {
                 BZRX.transfer(msg.sender, claimed);
             } else {
-                // BZRX.transfer(DEAD, claimed);
-                // BZRXv2.mint(msg.sender, claimed);
                 CONVERTER.convert(msg.sender, claimed);
             }
         }
@@ -165,11 +165,12 @@ contract VBZRXv2VestingToken is Upgradeable_6{
         settleVesting(msg.sender);
         return _claim();
     }
+
     // withdraw will stop working after rebrand
-    // function exit() external {
-    //     withdraw(uint256(-1));
-    //     _claim();
-    // }
+    function exit() external {
+        withdraw(uint256(-1));
+        _claim();
+    }
 
     function deposit(uint256 value) external {
         settleVesting(msg.sender);
@@ -179,6 +180,8 @@ contract VBZRXv2VestingToken is Upgradeable_6{
     }
 
     function withdraw(uint256 value) public {
+        require(block.number < rebrandBlockNumber, "Please claim");
+
         settleVesting(msg.sender);
         uint256 balance = balanceOf[msg.sender];
         if (value > balance) {
@@ -187,12 +190,8 @@ contract VBZRXv2VestingToken is Upgradeable_6{
         balanceOf[msg.sender] -= value;
         totalSupply -= value;
 
-        if (rebrandBlockNumber > block.number){
-            vBZRX.transfer(msg.sender, value);
-        } else{
-            require(false, "Please claim");
-        }
-        
+        vBZRX.transfer(msg.sender, value);
+
         emit Transfer(msg.sender, address(0), value);
         emit Withdraw(msg.sender, value);
     }
