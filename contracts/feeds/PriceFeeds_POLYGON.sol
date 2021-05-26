@@ -12,7 +12,7 @@ import "../core/Constants.sol";
 import "./IPriceFeedsExt.sol";
 
 
-contract PriceFeeds_BSC is Constants, Ownable {
+contract PriceFeeds_POLYGON is Constants, Ownable {
     using SafeMath for uint256;
 
     event GlobalPricingPaused(
@@ -385,6 +385,6 @@ contract PriceFeeds_BSC is Constants, Ownable {
         view
         returns (uint256 gasPrice)
     {
-        return 10e9;
+        return 2e9;
     }
 }
