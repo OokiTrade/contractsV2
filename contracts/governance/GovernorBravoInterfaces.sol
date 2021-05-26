@@ -81,7 +81,7 @@ contract GovernorBravoDelegateStorageV1 is GovernorBravoDelegatorStorage {
     TimelockInterface public timelock;
 
     /// @notice The address of the Compound governance token
-    CompInterface public comp;
+    StakingInterface public staking;
 
     /// @notice The official record of all proposals ever proposed
     mapping (uint => Proposal) public proposals;
@@ -172,9 +172,28 @@ interface TimelockInterface {
     function executeTransaction(address target, uint value, string calldata signature, bytes calldata data, uint eta) external payable returns (bytes memory);
 }
 
-interface CompInterface {
-    function getPriorVotes(address account, uint blockNumber) external view returns (uint96);
+
+interface StakingInterface {
+    function votingBalanceOf(
+        address account,
+        uint proposalCount)
+        external
+        view
+        returns (uint totalVotes);
+
+    function votingBalanceOfNow(
+        address account)
+        external
+        view
+        returns (uint totalVotes);
+
+    function _setProposalVals(
+        address account,
+        uint proposalCount)
+        external
+        returns (uint);
 }
+
 
 interface GovernorAlpha {
     /// @notice The total number of proposals
