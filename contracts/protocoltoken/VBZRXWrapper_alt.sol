@@ -65,13 +65,9 @@ contract VBZRXWrapper_alt is Upgradeable_0_5 {
             bzrxVesties[dst] += moveAmount;
 
             uint256 depositBalance = depositBalanceOf[src];
-            if (value > depositBalance) {
-                depositBalanceOf[src] = 0;
-                depositBalanceOf[dst] += depositBalance;
-            } else {
-                depositBalanceOf[src] = depositBalance - value;
-                depositBalanceOf[dst] += value;
-            }
+            require(value <= depositBalance, "vBZRXWrapper/insufficient-deposit-balance");
+            depositBalanceOf[src] = depositBalance - value;
+            depositBalanceOf[dst] += value;
         }
 
         balanceOf[src] = srcBalance - value;
@@ -181,11 +177,8 @@ contract VBZRXWrapper_alt is Upgradeable_0_5 {
         totalSupply -= value;
 
         uint256 depositBalance = depositBalanceOf[msg.sender];
-        if (value > depositBalance) {
-            depositBalanceOf[msg.sender] = 0;
-        } else {
-            depositBalanceOf[msg.sender] = depositBalance - value;
-        }
+        require(value <= depositBalance, "vBZRXWrapper/insufficient-deposit-balance");
+        depositBalanceOf[msg.sender] = depositBalance - value;
 
         vBZRX.transfer(msg.sender, value);
         emit Transfer(msg.sender, address(0), value);
