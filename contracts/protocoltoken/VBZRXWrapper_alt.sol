@@ -128,8 +128,9 @@ contract VBZRXWrapper_alt is Upgradeable_0_5 {
         return _claim();
     }
 
+    // can withdraw at most what the user deposited
     function exit() external {
-        withdraw(uint256(-1));
+        withdraw(depositBalanceOf[msg.sender]);
         _claim();
     }
 
