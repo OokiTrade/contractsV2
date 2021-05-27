@@ -35,8 +35,9 @@ contract VBZRXWrapper_alt is Upgradeable_0_5 {
     event Withdraw(address indexed src, uint256 value);
     event Claim(address indexed owner, uint256 value);
 
-    mapping (address => uint256)                      public depositBalanceOf;
     event TransferDepositBalance(address indexed src, address indexed dst, uint256 value);
+    mapping (address => uint256) public depositBalanceOf;
+    mapping (address => bool) public bridge;
     
 
     // --- Token ---
@@ -45,11 +46,32 @@ contract VBZRXWrapper_alt is Upgradeable_0_5 {
     }
 
     function transferFrom(address src, address dst, uint256 value) public returns (bool) {
+        settleVesting(src);
+        settleVesting(dst);
+
         uint256 srcBalance = balanceOf[src];
         require(srcBalance >= value, "vBZRXWrapper/insufficient-balance");
         if (src != msg.sender && allowance[src][msg.sender] != uint256(-1)) {
             require(allowance[src][msg.sender] >= value, "vBZRXWrapper/insufficient-allowance");
             allowance[src][msg.sender] -= value;
+        }
+
+        if (!bridge[src] && !bridge[dst]) {
+            // move proportional vesties to dst
+            uint256 moveAmount = bzrxVesties[src]
+                .mul(value)
+                .div(srcBalance);
+            bzrxVesties[src] -= moveAmount;
+            bzrxVesties[dst] += moveAmount;
+
+            uint256 depositBalance = depositBalanceOf[src];
+            if (value > depositBalance) {
+                depositBalanceOf[src] = 0;
+                depositBalanceOf[dst] += depositBalance;
+            } else {
+                depositBalanceOf[src] = depositBalance - value;
+                depositBalanceOf[dst] += value;
+            }
         }
 
         balanceOf[src] = srcBalance - value;
@@ -128,13 +150,14 @@ contract VBZRXWrapper_alt is Upgradeable_0_5 {
         return _claim();
     }
 
-    // can withdraw at most what the user deposited
     function exit() external {
-        withdraw(depositBalanceOf[msg.sender]);
+        withdraw(uint256(-1));
         _claim();
     }
 
     function deposit(uint256 value) external {
+        require(!bridge[msg.sender], "unauthorized");
+
         settleVesting(msg.sender);
         vBZRX.transferFrom(msg.sender, address(this), value);
         balanceOf[msg.sender] += value;
@@ -146,8 +169,9 @@ contract VBZRXWrapper_alt is Upgradeable_0_5 {
         emit Deposit(msg.sender, value);
     }
 
-    // can withdraw at most what the user deposited
     function withdraw(uint256 value) public {
+        require(!bridge[msg.sender], "unauthorized");
+
         settleVesting(msg.sender);
         uint256 balance = balanceOf[msg.sender];
         if (value > balance) {
@@ -157,25 +181,18 @@ contract VBZRXWrapper_alt is Upgradeable_0_5 {
         totalSupply -= value;
 
         uint256 depositBalance = depositBalanceOf[msg.sender];
-        require(value <= depositBalance, "vBZRXWrapper/insufficient-deposit-balance");
-        depositBalanceOf[msg.sender] = depositBalance - value;
+        if (value > depositBalance) {
+            depositBalanceOf[msg.sender] = 0;
+        } else {
+            depositBalanceOf[msg.sender] = depositBalance - value;
+        }
 
         vBZRX.transfer(msg.sender, value);
         emit Transfer(msg.sender, address(0), value);
         emit Withdraw(msg.sender, value);
     }
 
-    function transferDepositBalance(address dst, uint256 value) external returns (bool) {
-        settleVesting(msg.sender);
-        settleVesting(dst);
-
-        uint256 srcBalance = depositBalanceOf[msg.sender];
-        require(value <= srcBalance, "vBZRXWrapper/insufficient-deposit-balance");
-
-        depositBalanceOf[msg.sender] = srcBalance - value;
-        depositBalanceOf[dst] += value;
-
-        emit TransferDepositBalance(msg.sender, dst, value);
-        return true;
+    function setBridge(address addr, bool toggle) external onlyOwner {
+        bridge[addr] = toggle;
     }
 }
