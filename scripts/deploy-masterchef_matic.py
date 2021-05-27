@@ -15,25 +15,28 @@ tokens = Munch()
 itokens = Munch()
 bzx = Contract.from_abi("bzx", address=bzxProtocol, abi=interface.IBZx.abi, owner=acct)
 
-#tokens.weth = Contract.from_abi("WETH", "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619", TestWeth.abi)
-#tokens.wbtc = Contract.from_abi("WBTC", "0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6", TestToken.abi)
-#tokens.usdc = Contract.from_abi("USDC", "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", TestToken.abi)
-tokens.usdt = Contract.from_abi("USDT", "0xc2132D05D31c914a87C6611C10748AEb04B58e8F", TestToken.abi)
-#tokens.dai = Contract.from_abi("DAI", "0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063", TestToken.abi)
-tokens.wmatic = Contract.from_abi("WMATIC", "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270", TestToken.abi)
-#tokens.link = Contract.from_abi("LINK", "0xb0897686c545045afc77cf20ec7a532e3120e0f1", TestToken.abi)
+MATIC = Contract.from_abi("MATIC", address="0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270", abi=TestToken.abi, owner=acct)
+ETH = Contract.from_abi("ETH", address="0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619", abi=TestToken.abi, owner=acct)
+WBTC = Contract.from_abi("WBTC", address="0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6", abi=TestToken.abi, owner=acct)
+LINK = Contract.from_abi("LINK", address="0xb0897686c545045afc77cf20ec7a532e3120e0f1", abi=TestToken.abi, owner=acct)
+USDC = Contract.from_abi("USDC", address="0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", abi=TestToken.abi, owner=acct)
+USDT = Contract.from_abi("USDT", address="0xc2132D05D31c914a87C6611C10748AEb04B58e8F", abi=TestToken.abi, owner=acct)
+AAVE = Contract.from_abi("AAVE", address="0xD6DF932A45C0f255f85145f286eA0b292B21C90B", abi=TestToken.abi, owner=acct)
 
 
-#itokens.weth = Contract.from_abi("iWETH", bzx.underlyingToLoanPool(tokens.weth), TestWeth.abi)
-#itokens.wbtc = Contract.from_abi("iWBTC", bzx.underlyingToLoanPool(tokens.wbtc), TestToken.abi)
-#itokens.usdc = Contract.from_abi("iUSDC", bzx.underlyingToLoanPool(tokens.usdc), TestToken.abi)
-itokens.usdt = Contract.from_abi("iUSDT", bzx.underlyingToLoanPool(tokens.usdt), TestToken.abi)
-#itokens.dai = Contract.from_abi("iDAI", bzx.underlyingToLoanPool(tokens.dai), TestToken.abi)
-itokens.wmatic = Contract.from_abi("iWMATIC", bzx.underlyingToLoanPool(tokens.wmatic), TestToken.abi)
-#itokens.link = Contract.from_abi("iLINK", bzx.underlyingToLoanPool(tokens.link), TestToken.abi)
+iMATIC = Contract.from_abi("iMATIC", address=MATIC.address, abi=LoanTokenLogicWeth.abi, owner=acct)
+iETH = Contract.from_abi("iETH", address=ETH.address, abi=LoanTokenLogicStandard.abi, owner=acct)
+iWBTC = Contract.from_abi("iWBTC", address=WBTC.address, abi=LoanTokenLogicStandard.abi, owner=acct)
+iLINK = Contract.from_abi("iLINK", address=LINK.address, abi=LoanTokenLogicStandard.abi, owner=acct)
+iUSDC = Contract.from_abi("iUSDC", address=USDC.address, abi=LoanTokenLogicStandard.abi, owner=acct)
+iUSDT = Contract.from_abi("iUSDT", address=USDT.address, abi=LoanTokenLogicStandard.abi, owner=acct)
+iAAVE = Contract.from_abi("iAAVE", address=AAVE.address, abi=LoanTokenLogicStandard.abi, owner=acct)
+
+QUICKROUTER = Contract.from_abi("router", "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff", interface.IPancakeRouter02.abi)
+
 
 # two sided
-#PGOV_WMATIC = Contract.from_abi("PGOV_WMATIC", "", interface.IPancakePair.abi)
+USDT_WMATIC = Contract.from_abi("USDT_WMATIC", "0x604229c960e5cacf2aaeac8be68ac07ba9df81c3", interface.IPancakePair.abi)
 
 pgovToken = acct.deploy(PGovToken)
 
@@ -66,15 +69,16 @@ masterChef.initialize(pgovToken, devAccount, pgovPerBlock, startBlock, bonusEndB
 # 87500 - iBZRX
 # 100000 - PGOV/BNB
 
-#masterChef.add(12500, itokens.weth, 1)
-#masterChef.add(12500, itokens.wbtc, 1)
-masterChef.add(12500, itokens.usdt, 1)
-#masterChef.add(12500, itokens.usdc, 1)
-#masterChef.add(12500, itokens.dai, 1)
-masterChef.add(87500, itokens.wmatic, 1)
-#masterChef.add(87500, itokens.link, 1)
+masterChef.add(12500, ETH, 1)
+masterChef.add(12500, WBTC, 1)
+masterChef.add(12500, USDT, 1)
+masterChef.add(12500, USDC, 1)
+masterChef.add(12500, LINK, 1)
+masterChef.add(87500, MATIC, 1)
+
+masterChef.add(87500, pgovToken, 1)
 
 print("masterChef: ", masterChef.address)
 
 # two sided
-#masterChef.add(100000, PGOV_wMATIC, 1)
+masterChef.add(100000, USDT_WMATIC, 1)
