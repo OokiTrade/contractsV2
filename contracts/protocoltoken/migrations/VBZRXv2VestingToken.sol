@@ -42,25 +42,30 @@ contract VBZRXv2VestingToken is Upgradeable_6 {
     event Withdraw(address indexed src, uint256 value);
     event Claim(address indexed owner, uint256 value);
 
+    mapping (address => bool) public bridge;
 
-    function updateCONVERTER(IBZRXv2Converter _CONVERTER) public onlyOwner {
+    function updateCONVERTER(IBZRXv2Converter _CONVERTER) external onlyOwner {
         CONVERTER = _CONVERTER;
     }
 
-    function infiniteApproveCONVERTER() public onlyOwner {
+    function infiniteApproveCONVERTER() external onlyOwner {
         BZRX.safeApprove(address(CONVERTER), uint256(-1));
     }
 
-    function updateName(string memory _name) public onlyOwner {
+    function updateName(string memory _name) external onlyOwner {
         name = _name;
     }
 
-    function updateSymbol(string memory _symbol) public onlyOwner {
+    function updateSymbol(string memory _symbol) external onlyOwner {
         symbol = _symbol;
     }
 
-    function updateRebrandBlockNumber(uint256 _rebrandBlockNumber) public onlyOwner {
+    function updateRebrandBlockNumber(uint256 _rebrandBlockNumber) external onlyOwner {
         rebrandBlockNumber = _rebrandBlockNumber;
+    }
+
+    function setBridge(address _addr, bool _toggle) external onlyOwner {
+        bridge[_addr] = _toggle;
     }
 
     // --- Token ---
