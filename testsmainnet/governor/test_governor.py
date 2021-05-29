@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import pytest
-from brownie import network, Contract, Wei, chain
+from brownie import network, Contract, Wei, chain, reverts
 
 
 @pytest.fixture(scope="module")
@@ -57,12 +57,18 @@ def TOKEN_SETTINGS(LoanTokenSettings):
     return Contract.from_abi(
         "loanToken", address="0x11ba2b39bc80464c14b7eea54d2ec93d8f60e7b8", abi=LoanTokenSettings.abi)
 
+@pytest.fixture(scope="function", autouse=True)
+def isolate(fn_isolation):
+    pass
+
+
 def loadContractFromAbi(address, alias, abi):
     try:
         return Contract(alias)
     except ValueError:
         contract = Contract.from_abi(alias, address=address, abi=abi)
         return contract
+
 
 def testGovernance(requireMainnetFork, GOVERNANCE_DELEGATOR, TIMELOCK, STAKING, TOKEN_SETTINGS, iUSDC, accounts):  
     bzxOwner = "0xB7F72028D9b502Dc871C444363a7aC5A52546608"
@@ -160,3 +166,101 @@ def testGovernanceProposeCancel(requireMainnetFork, GOVERNANCE_DELEGATOR, TIMELO
     proposal = GOVERNANCE_DELEGATOR.proposals(proposalCount)
     canceled = proposal[8]
     assert canceled == True
+
+
+
+def testGovernanceProposeVotingActiveCancel(requireMainnetFork, GOVERNANCE_DELEGATOR, TIMELOCK, STAKING, TOKEN_SETTINGS, iUSDC, accounts):  
+    bzxOwner = "0xB7F72028D9b502Dc871C444363a7aC5A52546608"
+    
+    # init timelock below
+    calldata = TIMELOCK.setPendingAdmin.encode_input(GOVERNANCE_DELEGATOR.address)
+    eta = chain.time()+TIMELOCK.delay() + 10
+    TIMELOCK.queueTransaction(TIMELOCK, 0, b"", calldata, eta)
+    chain.sleep(eta-chain.time())
+    chain.mine()
+    TIMELOCK.executeTransaction(TIMELOCK, 0, b"", calldata, eta)
+
+    # set staking with governor
+    STAKING.setGovernor(GOVERNANCE_DELEGATOR, {"from": bzxOwner})
+
+    # init governance
+    GOVERNANCE_DELEGATOR._initiate()
+
+    # make a proposal to change iUSDC name
+    newName = iUSDC.name() + "1"
+    calldata = TOKEN_SETTINGS.initialize.encode_input(iUSDC.loanTokenAddress(), newName, iUSDC.symbol())
+    calldata2 = iUSDC.updateSettings.encode_input(TOKEN_SETTINGS, calldata)
+
+    tx = GOVERNANCE_DELEGATOR.propose([iUSDC.address],[0],[""],[calldata2],"asdf", {"from": bzxOwner})
+    proposalCount = GOVERNANCE_DELEGATOR.proposalCount()
+    proposal = GOVERNANCE_DELEGATOR.proposals(proposalCount)
+    id = proposal[0]
+    eta = proposal[2]
+    startBlock = proposal[3]
+    endBlock = proposal[4]
+    forVotes = proposal[5]
+    againstVotes = proposal[6]
+    abstainVotes = proposal[7]
+    canceled = proposal[8]
+
+    chain.mine()
+    tx = GOVERNANCE_DELEGATOR.castVote(id,1, {"from" : bzxOwner})
+    assert GOVERNANCE_DELEGATOR.state.call(id) == 1
+   
+    tx = GOVERNANCE_DELEGATOR.cancel(id, {"from": bzxOwner})
+    proposal = GOVERNANCE_DELEGATOR.proposals(proposalCount)
+    canceled = proposal[8]
+    assert canceled == True
+
+
+def testGovernanceProposeVotingActiveVotingEndsDefeated(requireMainnetFork, GOVERNANCE_DELEGATOR, TIMELOCK, STAKING, TOKEN_SETTINGS, iUSDC, accounts):  
+    bzxOwner = "0xB7F72028D9b502Dc871C444363a7aC5A52546608"
+    
+    # init timelock below
+    calldata = TIMELOCK.setPendingAdmin.encode_input(GOVERNANCE_DELEGATOR.address)
+    eta = chain.time()+TIMELOCK.delay() + 10
+    TIMELOCK.queueTransaction(TIMELOCK, 0, b"", calldata, eta)
+    chain.sleep(eta-chain.time())
+    chain.mine()
+    TIMELOCK.executeTransaction(TIMELOCK, 0, b"", calldata, eta)
+
+    # set staking with governor
+    STAKING.setGovernor(GOVERNANCE_DELEGATOR, {"from": bzxOwner})
+
+    # init governance
+    GOVERNANCE_DELEGATOR._initiate()
+
+    # make a proposal to change iUSDC name
+    newName = iUSDC.name() + "1"
+    calldata = TOKEN_SETTINGS.initialize.encode_input(iUSDC.loanTokenAddress(), newName, iUSDC.symbol())
+    calldata2 = iUSDC.updateSettings.encode_input(TOKEN_SETTINGS, calldata)
+
+    tx = GOVERNANCE_DELEGATOR.propose([iUSDC.address],[0],[""],[calldata2],"asdf", {"from": bzxOwner})
+    proposalCount = GOVERNANCE_DELEGATOR.proposalCount()
+    proposal = GOVERNANCE_DELEGATOR.proposals(proposalCount)
+    id = proposal[0]
+    eta = proposal[2]
+    startBlock = proposal[3]
+    endBlock = proposal[4]
+    forVotes = proposal[5]
+    againstVotes = proposal[6]
+    abstainVotes = proposal[7]
+    canceled = proposal[8]
+
+    chain.mine()
+    tx = GOVERNANCE_DELEGATOR.castVote(id,0, {"from" : bzxOwner})
+    assert GOVERNANCE_DELEGATOR.state.call(id) == 1
+   
+
+    chain.mine(endBlock - chain.height)
+    assert GOVERNANCE_DELEGATOR.state.call(id) == 1
+    chain.mine()
+    assert GOVERNANCE_DELEGATOR.state.call(id) == 3
+    with reverts("GovernorBravo::queue: proposal can only be queued if it is succeeded"):
+        GOVERNANCE_DELEGATOR.queue(id)
+
+    tx = GOVERNANCE_DELEGATOR.cancel(id, {"from": bzxOwner})
+    proposal = GOVERNANCE_DELEGATOR.proposals(proposalCount)
+    canceled = proposal[8]
+    assert canceled == True
+
