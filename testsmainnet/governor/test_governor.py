@@ -45,6 +45,18 @@ def TIMELOCK(Timelock, accounts):
     timelock = accounts[0].deploy(Timelock, accounts[0], hours12)
     return timelock
 
+
+@pytest.fixture(scope="module")
+def iUSDC(LoanTokenLogicStandard):
+    iUSDC = loadContractFromAbi(
+        "0x32E4c68B3A4a813b710595AebA7f6B7604Ab9c15", "iUSDC", LoanTokenLogicStandard.abi)
+    return iUSDC
+
+@pytest.fixture(scope="module")
+def TOKEN_SETTINGS(LoanTokenSettings):
+    return Contract.from_abi(
+        "loanToken", address="0x11ba2b39bc80464c14b7eea54d2ec93d8f60e7b8", abi=LoanTokenSettings.abi)
+
 def loadContractFromAbi(address, alias, abi):
     try:
         return Contract(alias)
@@ -52,7 +64,7 @@ def loadContractFromAbi(address, alias, abi):
         contract = Contract.from_abi(alias, address=address, abi=abi)
         return contract
 
-def testGovernance(requireMainnetFork, GOVERNANCE_DELEGATOR, TIMELOCK, STAKING):
+def testGovernance(requireMainnetFork, GOVERNANCE_DELEGATOR, TIMELOCK, STAKING, TOKEN_SETTINGS, iUSDC, accounts):  
     bzxOwner = "0xB7F72028D9b502Dc871C444363a7aC5A52546608"
     
     # init timelock below
@@ -68,5 +80,83 @@ def testGovernance(requireMainnetFork, GOVERNANCE_DELEGATOR, TIMELOCK, STAKING):
 
     # init governance
     GOVERNANCE_DELEGATOR._initiate()
-    tx = GOVERNANCE_DELEGATOR.propose([],[],[],[],"asdf")
-    assert False
+
+    # make a proposal to change iUSDC name
+    newName = iUSDC.name() + "1"
+    calldata = TOKEN_SETTINGS.initialize.encode_input(iUSDC.loanTokenAddress(), newName, iUSDC.symbol())
+    calldata2 = iUSDC.updateSettings.encode_input(TOKEN_SETTINGS, calldata)
+
+    tx = GOVERNANCE_DELEGATOR.propose([iUSDC.address],[0],[""],[calldata2],"asdf", {"from": bzxOwner})
+    proposalCount = GOVERNANCE_DELEGATOR.proposalCount()
+    proposal = GOVERNANCE_DELEGATOR.proposals(proposalCount)
+    id = proposal[0]
+    eta = proposal[2]
+    startBlock = proposal[3]
+    endBlock = proposal[4]
+    forVotes = proposal[5]
+    againstVotes = proposal[6]
+    abstainVotes = proposal[7]
+    canceled = proposal[8]
+    assert GOVERNANCE_DELEGATOR.state.call(id) == 0
+    chain.mine()
+
+    # after first vote state is active
+    tx = GOVERNANCE_DELEGATOR.castVote(id,1, {"from" : bzxOwner})
+    assert GOVERNANCE_DELEGATOR.state.call(id) == 1
+
+    chain.mine(endBlock - chain.height)
+    assert GOVERNANCE_DELEGATOR.state.call(id) == 1
+    chain.mine()
+    assert GOVERNANCE_DELEGATOR.state.call(id) == 4
+    
+    GOVERNANCE_DELEGATOR.queue(id)
+
+    proposal = GOVERNANCE_DELEGATOR.proposals(proposalCount)
+    eta = proposal[2]
+    chain.sleep(eta - chain.time())
+    chain.mine()
+
+    iUSDC.transferOwnership(TIMELOCK, {"from": bzxOwner})
+    GOVERNANCE_DELEGATOR.execute(id)
+
+    assert True
+
+
+def testGovernanceProposeCancel(requireMainnetFork, GOVERNANCE_DELEGATOR, TIMELOCK, STAKING, TOKEN_SETTINGS, iUSDC, accounts):  
+    bzxOwner = "0xB7F72028D9b502Dc871C444363a7aC5A52546608"
+    
+    # init timelock below
+    calldata = TIMELOCK.setPendingAdmin.encode_input(GOVERNANCE_DELEGATOR.address)
+    eta = chain.time()+TIMELOCK.delay() + 10
+    TIMELOCK.queueTransaction(TIMELOCK, 0, b"", calldata, eta)
+    chain.sleep(eta-chain.time())
+    chain.mine()
+    TIMELOCK.executeTransaction(TIMELOCK, 0, b"", calldata, eta)
+
+    # set staking with governor
+    STAKING.setGovernor(GOVERNANCE_DELEGATOR, {"from": bzxOwner})
+
+    # init governance
+    GOVERNANCE_DELEGATOR._initiate()
+
+    # make a proposal to change iUSDC name
+    newName = iUSDC.name() + "1"
+    calldata = TOKEN_SETTINGS.initialize.encode_input(iUSDC.loanTokenAddress(), newName, iUSDC.symbol())
+    calldata2 = iUSDC.updateSettings.encode_input(TOKEN_SETTINGS, calldata)
+
+    tx = GOVERNANCE_DELEGATOR.propose([iUSDC.address],[0],[""],[calldata2],"asdf", {"from": bzxOwner})
+    proposalCount = GOVERNANCE_DELEGATOR.proposalCount()
+    proposal = GOVERNANCE_DELEGATOR.proposals(proposalCount)
+    id = proposal[0]
+    eta = proposal[2]
+    startBlock = proposal[3]
+    endBlock = proposal[4]
+    forVotes = proposal[5]
+    againstVotes = proposal[6]
+    abstainVotes = proposal[7]
+    canceled = proposal[8]
+   
+    tx = GOVERNANCE_DELEGATOR.cancel(id, {"from": bzxOwner})
+    proposal = GOVERNANCE_DELEGATOR.proposals(proposalCount)
+    canceled = proposal[8]
+    assert canceled == True

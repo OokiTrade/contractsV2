@@ -74,14 +74,13 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
     function propose(address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas, string memory description) public returns (uint) {
         // Reject proposals before initiating as Governor
         require(initialProposalId != 0, "GovernorBravo::propose: Governor Bravo not active");
-        uint latestProposalId = proposalCount + 1;
+        uint latestProposalId = latestProposalIds[msg.sender];
         uint votes = staking._setProposalVals(msg.sender, latestProposalId);
         require(votes > proposalThreshold, "GovernorBravo::propose: proposer votes below proposal threshold");
         require(targets.length == values.length && targets.length == signatures.length && targets.length == calldatas.length, "GovernorBravo::propose: proposal function information arity mismatch");
         require(targets.length != 0, "GovernorBravo::propose: must provide actions");
         require(targets.length <= proposalMaxOperations, "GovernorBravo::propose: too many actions");
 
-        // uint latestProposalId = latestProposalIds[msg.sender];
         if (latestProposalId != 0) {
           ProposalState proposersLatestProposalState = state(latestProposalId);
           require(proposersLatestProposalState != ProposalState.Active, "GovernorBravo::propose: one live proposal per proposer, found an already active proposal");
@@ -261,7 +260,7 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
         Receipt storage receipt = proposal.receipts[voter];
         require(receipt.hasVoted == false, "GovernorBravo::castVoteInternal: voter already voted");
         // 2**96-1 is greater than total supply of bzrx 1.3b*1e18 thus guaranteeing it won't ever overflow
-        uint96 votes = uint96(staking.votingBalanceOf(voter, proposalId));
+        uint96 votes = uint96(staking.votingBalanceOfNow(voter));
 
         if (support == 0) {
             proposal.againstVotes = add256(proposal.againstVotes, votes);
