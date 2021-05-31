@@ -7,6 +7,7 @@ LINK = Contract.from_abi("LINK", address="0xb0897686c545045afc77cf20ec7a532e3120
 USDC = Contract.from_abi("USDC", address="0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", abi=TestToken.abi, owner=acct)
 USDT = Contract.from_abi("USDT", address="0xc2132D05D31c914a87C6611C10748AEb04B58e8F", abi=TestToken.abi, owner=acct)
 AAVE = Contract.from_abi("AAVE", address="0xD6DF932A45C0f255f85145f286eA0b292B21C90B", abi=TestToken.abi, owner=acct)
+BZRX = Contract.from_abi("BZRX", address="0x97dfbEF4eD5a7f63781472Dbc69Ab8e5d7357cB9", abi=TestToken.abi, owner=acct)
 
 
 iMATIC = Contract.from_abi("iMATIC", address=MATIC.address, abi=LoanTokenLogicWeth.abi, owner=acct)
@@ -16,6 +17,7 @@ iLINK = Contract.from_abi("iLINK", address=LINK.address, abi=LoanTokenLogicStand
 iUSDC = Contract.from_abi("iUSDC", address=USDC.address, abi=LoanTokenLogicStandard.abi, owner=acct)
 iUSDT = Contract.from_abi("iUSDT", address=USDT.address, abi=LoanTokenLogicStandard.abi, owner=acct)
 iAAVE = Contract.from_abi("iAAVE", address=AAVE.address, abi=LoanTokenLogicStandard.abi, owner=acct)
+iBZRX = Contract.from_abi("iBZRX", address=AAVE.address, abi=LoanTokenLogicStandard.abi, owner=acct)
 
 
 usdcacc = "0x1a13F4Ca1d028320A707D99520AbFefca3998b7F"
@@ -32,14 +34,15 @@ ethacc = "0x28424507fefb6f7f8E9D3860F56504E4e5f5f390"
 ETH.transfer(acct, ETH.balanceOf(ethacc), {'from': ethacc})
 
 
-# mint ETH and iETH
-amount = ETH.balanceOf(acct)/2
-ETH.approve(iETH, 2**256-1, {'from': acct})
-iETH.mint(acct, amount, {'from': acct})
-iETH.approve(acct, 2**256-1, {'from': acct})
-
-# mint ETH and iETH
+# mint USDT and iUSDT
 amount = USDT.balanceOf(acct)/2
 USDT.approve(iUSDT, 2**256-1, {'from': acct})
 iUSDT.mint(acct, amount, {'from': acct})
 iUSDT.approve(acct, 2**256-1, {'from': acct})
+
+
+amount = MATIC.balanceOf(acct)/2
+MATIC.approve(iMATIC, 2**256-1, {'from': acct})
+iMATIC.mint(acct, amount, {'from': acct})
+iMATIC.approve(acct, 2**256-1, {'from': acct})
+

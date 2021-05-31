@@ -22,6 +22,7 @@ LINK = Contract.from_abi("LINK", address="0xb0897686c545045afc77cf20ec7a532e3120
 USDC = Contract.from_abi("USDC", address="0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", abi=TestToken.abi, owner=acct)
 USDT = Contract.from_abi("USDT", address="0xc2132D05D31c914a87C6611C10748AEb04B58e8F", abi=TestToken.abi, owner=acct)
 AAVE = Contract.from_abi("AAVE", address="0xD6DF932A45C0f255f85145f286eA0b292B21C90B", abi=TestToken.abi, owner=acct)
+BZRX = Contract.from_abi("BZRX", address="0x97dfbEF4eD5a7f63781472Dbc69Ab8e5d7357cB9", abi=TestToken.abi, owner=acct)
 
 
 iMATIC = Contract.from_abi("iMATIC", address=MATIC.address, abi=LoanTokenLogicWeth.abi, owner=acct)
@@ -31,6 +32,7 @@ iLINK = Contract.from_abi("iLINK", address=LINK.address, abi=LoanTokenLogicStand
 iUSDC = Contract.from_abi("iUSDC", address=USDC.address, abi=LoanTokenLogicStandard.abi, owner=acct)
 iUSDT = Contract.from_abi("iUSDT", address=USDT.address, abi=LoanTokenLogicStandard.abi, owner=acct)
 iAAVE = Contract.from_abi("iAAVE", address=AAVE.address, abi=LoanTokenLogicStandard.abi, owner=acct)
+iBZRX = Contract.from_abi("iBZRX", address=AAVE.address, abi=LoanTokenLogicStandard.abi, owner=acct)
 
 QUICKROUTER = Contract.from_abi("router", "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff", interface.IPancakeRouter02.abi)
 
@@ -82,3 +84,5 @@ print("masterChef: ", masterChef.address)
 
 # two sided
 masterChef.add(100000, USDT_WMATIC, 1)
+
+exec(open("./scripts/set-env-polygon.py").read())
