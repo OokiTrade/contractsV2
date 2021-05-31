@@ -65,35 +65,15 @@ def iUSDT(accounts, BZX, LoanTokenLogicStandard, USDT):
 
 @pytest.fixture(scope="class", autouse=True)
 def bgovToken(accounts, BGovToken):
-    return accounts[0].deploy(BGovToken);
+    return Contract.from_abi("BGovToken", address="0xf8E026dC4C0860771f691EcFFBbdfe2fa51c77CF", abi=BGovToken.abi, owner=accounts[0]);
 
 @pytest.fixture(scope="class", autouse=True)
-def masterChef(accounts, chain, MasterChef, iWBNB, iETH, iBUSD, iWBTC, iUSDT, bgovToken, Proxy):
-    devAccount = accounts[0]
-    bgovPerBlock = 100*10**18
-    bonusEndBlock = chain.height + 1*10**6
-
-    startBlock = chain.height
-
-    masterChefImpl = accounts[0].deploy(MasterChef)
-    masterChefProxy = accounts[0].deploy(Proxy, masterChefImpl)
-    masterChef = Contract.from_abi("masterChef", address=masterChefProxy, abi=MasterChef.abi, owner=accounts[0])
-
-    masterChef.initialize(bgovToken, devAccount, bgovPerBlock, startBlock, bonusEndBlock)
-
-    allocPoint = 1
-    bgovToken.transferOwnership(masterChef);
-    masterChef.add(allocPoint, iWBNB, 1)
-    masterChef.add(allocPoint, iETH, 1)
-    masterChef.add(allocPoint, iBUSD, 1)
-    masterChef.add(allocPoint, iWBTC, 1)
-    masterChef.add(allocPoint, iUSDT, 1)
-
-    return masterChef;
+def masterChef(accounts, chain, MasterChef_BSC, iWBNB, iETH, iBUSD, iWBTC, iUSDT, bgovToken, Proxy):
+    return Contract.from_abi("masterchef", address="0x1FDCA2422668B961E162A8849dc0C2feaDb58915", abi=MasterChef_BSC.abi, owner=accounts[0]);
 
 
 @pytest.fixture(scope="class", autouse=True)
-def tokens(accounts, chain, MasterChef, iWBNB, WBNB, iBUSD, BUSD):
+def tokens(accounts, chain, MasterChef_BSC, iWBNB, WBNB, iBUSD, BUSD):
     return {
         'iWBNB': iWBNB,
         'iBUSD': iBUSD,

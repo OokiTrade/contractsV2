@@ -3,10 +3,10 @@
 import pytest
 from brownie import reverts
 
-from conftest import initBalance
+from testsbsc.conftest import initBalance
 
 testdata = [
-    ('BUSD', 'iBUSD', 2)
+    ('BUSD', 'iBUSD', 1)
 ]
 
 INITIAL_LP_TOKEN_ACCOUNT_AMOUNT = 0.001 * 10 ** 18;
@@ -25,13 +25,13 @@ def testFarming_deposit(requireBscFork, tokens, tokenName, lpTokenName, pid, acc
         masterChef.deposit(pid, INITIAL_LP_TOKEN_ACCOUNT_AMOUNT, {'from': account1})
 
     # Deposit more than balance
-    lpToken.approve(masterChef, INITIAL_LP_TOKEN_ACCOUNT_AMOUNT + 1, {'from': account1})
+    lpToken.approve(masterChef, 2**256-1, {'from': account1})
     with reverts("16"):
-        masterChef.deposit(pid, INITIAL_LP_TOKEN_ACCOUNT_AMOUNT + 1, {'from': account1})
+        masterChef.deposit(pid, lpToken.balanceOf(account1)+1, {'from': account1})
 
     # Deposit more invalid pool
-    with reverts("Index out of range"):
-        masterChef.deposit(1000, INITIAL_LP_TOKEN_ACCOUNT_AMOUNT, {'from': account1})
+    with reverts(""):
+        masterChef.deposit(1000, lpToken.balanceOf(account1)+1, {'from': account1})
 
 
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
@@ -53,7 +53,7 @@ def testFarming_withdrawal(requireBscFork, tokens, tokenName, lpTokenName, pid, 
         masterChef.withdraw(pid, depositAmount + 1, {'from': account1})
 
     # withdraw invalid pool
-    with reverts("Index out of range"):
+    with reverts(""):
         masterChef.withdraw(1000, depositAmount, {'from': account1})
 
 
