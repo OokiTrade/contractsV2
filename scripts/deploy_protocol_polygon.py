@@ -47,7 +47,7 @@ and PGOV, PGOV/MATIC, and wvBZRX on the farming page
             "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", # USDC
             "0xc2132D05D31c914a87C6611C10748AEb04B58e8F", # USDT
             "0xD6DF932A45C0f255f85145f286eA0b292B21C90B", # AAVE
-            #"", # BZRX
+            "0x54cFe73f2c7d0c4b62Ab869B473F5512Dc0944D2", # BZRX
             #"0x831753DD7087CaC61aB5644b308642cc1c33Dc13", # QUICK
         ]
     , {"from": acct})
@@ -62,7 +62,7 @@ and PGOV, PGOV/MATIC, and wvBZRX on the farming page
             "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", # USDC
             "0xc2132D05D31c914a87C6611C10748AEb04B58e8F", # USDT
             "0xD6DF932A45C0f255f85145f286eA0b292B21C90B", # AAVE
-            #"", # BZRX
+            #"0x54cFe73f2c7d0c4b62Ab869B473F5512Dc0944D2", # BZRX
             #"0x831753DD7087CaC61aB5644b308642cc1c33Dc13", # QUICK
         ],
         [
@@ -120,7 +120,7 @@ and PGOV, PGOV/MATIC, and wvBZRX on the farming page
             "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", # USDC
             "0xc2132D05D31c914a87C6611C10748AEb04B58e8F", # USDT
             "0xD6DF932A45C0f255f85145f286eA0b292B21C90B", # AAVE
-            #"", # BZRX
+            "0x54cFe73f2c7d0c4b62Ab869B473F5512Dc0944D2", # BZRX
             #"0x831753DD7087CaC61aB5644b308642cc1c33Dc13", # QUICK
         ]
     , {"from": acct})'''
@@ -135,7 +135,7 @@ and PGOV, PGOV/MATIC, and wvBZRX on the farming page
             "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", # USDC
             "0xc2132D05D31c914a87C6611C10748AEb04B58e8F", # USDT
             "0xD6DF932A45C0f255f85145f286eA0b292B21C90B", # AAVE
-            #"", # BZRX
+            "0x54cFe73f2c7d0c4b62Ab869B473F5512Dc0944D2", # BZRX
             #"0x831753DD7087CaC61aB5644b308642cc1c33Dc13", # QUICK
         ],
         [
@@ -146,7 +146,7 @@ and PGOV, PGOV/MATIC, and wvBZRX on the farming page
             True, # USDC
             True, # USDT
             True, # AAVE
-            #True, # BZRX
+            True, # BZRX
             #True, # QUICK
         ],
         True

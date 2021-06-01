@@ -66,6 +66,7 @@ contract MasterChef_Polygon is Upgradeable {
         uint256 amount
     );
 
+    // add the GOV pool first to have ID 0
     uint256 internal constant GOV_POOL_ID = 0;
     event AddExternalReward(
         address indexed sender,
@@ -73,13 +74,22 @@ contract MasterChef_Polygon is Upgradeable {
         uint256 amount
     );
 
-    MintCoordinator public constant coordinator = MintCoordinator(0xB9b9bdFc8bAC6ED64530E43eD204b63bB540fB16);
+    MintCoordinator public constant coordinator = MintCoordinator(0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440);
 
     mapping(IERC20 => bool) public poolExists;
     modifier nonDuplicated(IERC20 _lpToken) {
         require(!poolExists[_lpToken], "pool exists");
         _;
     }
+
+    // total deposits in a pool
+    mapping(uint256 => uint256) public poolAmount;
+
+    // pool rewards locked for future claim
+    mapping(uint256 => bool) public isLocked;
+
+    // total locked rewards for a user
+    mapping(address => uint256) public lockedRewards;
 
     function initialize(
         GovToken _GOV,
@@ -140,6 +150,20 @@ contract MasterChef_Polygon is Upgradeable {
         onlyOwner
     {
         GOV.transferOwnership(newOwner);
+    }
+
+    function setStartBlock(uint256 _startBlock)
+        public
+        onlyOwner
+    {
+        startBlock = _startBlock;
+    }
+
+    function setLocked(uint256 _pid, bool _toggle)
+        public
+        onlyOwner
+    {
+        isLocked[_pid] = _toggle;
     }
 
 
@@ -223,7 +247,8 @@ contract MasterChef_Polygon is Upgradeable {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 accGOVPerShare = pool.accGOVPerShare.mul(1e18);
-        uint256 lpSupply = pool.lpToken.balanceOf(address(this));
+        //uint256 lpSupply = pool.lpToken.balanceOf(address(this));
+        uint256 lpSupply = poolAmount[_pid];
         if (block.number > pool.lastRewardBlock && lpSupply != 0) {
             uint256 multiplier =
                 getMultiplierPrecise(pool.lastRewardBlock, block.number);
@@ -263,7 +288,8 @@ contract MasterChef_Polygon is Upgradeable {
         if (block.number <= pool.lastRewardBlock) {
             return;
         }
-        uint256 lpSupply = pool.lpToken.balanceOf(address(this));
+        //uint256 lpSupply = pool.lpToken.balanceOf(address(this));
+        uint256 lpSupply = poolAmount[_pid];
         if (lpSupply == 0) {
             pool.lastRewardBlock = block.number;
             return;
@@ -286,7 +312,8 @@ contract MasterChef_Polygon is Upgradeable {
         PoolInfo storage pool = poolInfo[GOV_POOL_ID];
         require(block.number > pool.lastRewardBlock, "rewards not started");
 
-        uint256 lpSupply = pool.lpToken.balanceOf(address(this));
+        //uint256 lpSupply = pool.lpToken.balanceOf(address(this));
+        uint256 lpSupply = poolAmount[GOV_POOL_ID];
         require(lpSupply != 0, "no deposits");
 
         updatePool(GOV_POOL_ID);
@@ -296,6 +323,7 @@ contract MasterChef_Polygon is Upgradeable {
             address(this),
             _amount
         );
+        poolAmount[GOV_POOL_ID] = poolAmount[GOV_POOL_ID].add(_amount);
         pool.accGOVPerShare = pool.accGOVPerShare.add(
             _amount.mul(1e12).div(lpSupply)
         );
@@ -313,13 +341,14 @@ contract MasterChef_Polygon is Upgradeable {
                 user.amount.mul(pool.accGOVPerShare).div(1e12).sub(
                     user.rewardDebt
                 );
-            safeGOVTransfer(msg.sender, pending);
+            safeGOVTransfer(_pid, msg.sender, pending);
         }
         pool.lpToken.safeTransferFrom(
             address(msg.sender),
             address(this),
             _amount
         );
+        poolAmount[_pid] = poolAmount[_pid].add(_amount);
         user.amount = user.amount.add(_amount);
         user.rewardDebt = user.amount.mul(pool.accGOVPerShare).div(1e12);
         emit Deposit(msg.sender, _pid, _amount);
@@ -339,7 +368,8 @@ contract MasterChef_Polygon is Upgradeable {
             user.amount.mul(pool.accGOVPerShare).div(1e12).sub(
                 user.rewardDebt
             );
-        safeGOVTransfer(msg.sender, pending);
+        safeGOVTransfer(_pid, msg.sender, pending);
+        poolAmount[_pid] = poolAmount[_pid].sub(_amount);
         user.amount = user.amount.sub(_amount);
         user.rewardDebt = user.amount.mul(pool.accGOVPerShare).div(1e12);
         pool.lpToken.safeTransfer(address(msg.sender), _amount);
@@ -352,17 +382,22 @@ contract MasterChef_Polygon is Upgradeable {
         UserInfo storage user = userInfo[_pid][msg.sender];
         pool.lpToken.safeTransfer(address(msg.sender), user.amount);
         emit EmergencyWithdraw(msg.sender, _pid, user.amount);
+        poolAmount[_pid] = poolAmount[_pid].sub(user.amount);
         user.amount = 0;
         user.rewardDebt = 0;
     }
 
     // Safe GOV transfer function, just in case if rounding error causes pool to not have enough GOVs.
-    function safeGOVTransfer(address _to, uint256 _amount) internal {
-        uint256 GOVBal = GOV.balanceOf(address(this));
-        if (_amount > GOVBal) {
-            GOV.transfer(_to, GOVBal);
+    function safeGOVTransfer(uint256 _pid, address _to, uint256 _amount) internal {
+        if (isLocked[_pid]) {
+            lockedRewards[_to] = lockedRewards[_to].add(_amount);
         } else {
-            GOV.transfer(_to, _amount);
+            uint256 GOVBal = GOV.balanceOf(address(this));
+            if (_amount > GOVBal) {
+                GOV.transfer(_to, GOVBal);
+            } else {
+                GOV.transfer(_to, _amount);
+            }
         }
     }
 
