@@ -70,13 +70,12 @@ masterChef.initialize(pgovToken, devAccount, pgovPerBlock, startBlock)
 # 12500 - iBNB, iBUSD, iBTC, iUSDT, iETH  
 # 87500 - iBZRX
 # 100000 - PGOV/BNB
-
-masterChef.add(12500, ETH, 1)
-masterChef.add(12500, WBTC, 1)
-masterChef.add(12500, USDT, 1)
-masterChef.add(12500, USDC, 1)
-masterChef.add(12500, LINK, 1)
-masterChef.add(87500, MATIC, 1)
+masterChef.add(87500, iMATIC, 1)
+masterChef.add(12500, iUSDC, 1)
+masterChef.add(12500, iETH, 1)
+masterChef.add(12500, iWBTC, 1)
+masterChef.add(12500, iUSDT, 1)
+masterChef.add(12500, iLINK, 1)
 
 masterChef.add(87500, pgovToken, 1)
 

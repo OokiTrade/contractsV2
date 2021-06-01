@@ -12,7 +12,7 @@ testdata = [
 INITIAL_LP_TOKEN_ACCOUNT_AMOUNT = 0.001 * 10 ** 18;
 
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
-def testFarming_deposit(requireBscFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, bgovToken):
+def testFarming_deposit(requireBscFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, pgovToken):
     # Precondition
     lpToken = tokens[lpTokenName]
     token = tokens[tokenName]
@@ -35,7 +35,7 @@ def testFarming_deposit(requireBscFork, tokens, tokenName, lpTokenName, pid, acc
 
 
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
-def testFarming_withdrawal(requireBscFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, bgovToken):
+def testFarming_withdrawal(requireBscFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, pgovToken):
     lpToken = tokens[lpTokenName]
     token = tokens[tokenName]
     account1 = accounts[4]

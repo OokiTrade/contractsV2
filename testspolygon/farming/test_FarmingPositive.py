@@ -2,15 +2,15 @@
 
 import pytest
 
-from testsbsc.conftest import initBalance
+from testspolygon.conftest import initBalance, requireFork
 
 testdata = [
-    ('WBNB', 'iWBNB', 0)
+    ('MATIC', 'iMATIC', 0)
 ]
 
 INITIAL_LP_TOKEN_ACCOUNT_AMOUNT = 0.001 * 10 ** 18;
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
-def testFarming_deposit(requireBscFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, bgovToken):
+def testFarming_deposit(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, pgovToken):
     # Precondition
     lpToken = tokens[lpTokenName]
     token = tokens[tokenName]
@@ -35,7 +35,7 @@ def testFarming_deposit(requireBscFork, tokens, tokenName, lpTokenName, pid, acc
     assert lpToken.balanceOf(account1) == lpBalance1 - depositAmount1
     # pendingBGOVs will be 0 because we are the first who deposit LP tokens
     # and it will be changed after the second deposit/withdraw transaction (for any user)
-    # bgovToken.balanceOf(account1) will be 0 and will be also changed if this user deposit again
+    # pgovToken.balanceOf(account1) will be 0 and will be also changed if this user deposit again
 
     # The second deposit transaction for user2, this will trigger on calculation of pendingBGOVs (pool.accBgovPerShare
     # will be > 0)
@@ -55,7 +55,7 @@ def testFarming_deposit(requireBscFork, tokens, tokenName, lpTokenName, pid, acc
 
     assert lpToken.balanceOf(account1) == 0
     assert lpToken.balanceOf(masterChef) == masterChefLPBalanceBefore + depositAmount1 + depositAmount2 + 10000
-    assert masterChef.pendingBGOV(pid, account1) + bgovToken.balanceOf(account1) > bgovBefore
+    assert masterChef.pendingBGOV(pid, account1) + pgovToken.balanceOf(account1) > bgovBefore
 
     # checking Deposit event
     depositEvent = tx3.events['Deposit'][0]
@@ -65,13 +65,13 @@ def testFarming_deposit(requireBscFork, tokens, tokenName, lpTokenName, pid, acc
 
 
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
-def testFarming_withdraw(requireBscFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, bgovToken):
+def testFarming_withdraw(requireBscFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, pgovToken):
     # Precondition
     lpToken = tokens[lpTokenName]
     token = tokens[tokenName]
     account1 = accounts[4]
     initBalance(account1, token, lpToken, INITIAL_LP_TOKEN_ACCOUNT_AMOUNT)
-    bgovBalanceInitial = bgovToken.balanceOf(account1);
+    bgovBalanceInitial = pgovToken.balanceOf(account1);
     lpBalance1 = lpToken.balanceOf(account1)
     depositAmount = lpBalance1 - 10000
     masterchefBalance = lpToken.balanceOf(masterChef);
@@ -90,16 +90,16 @@ def testFarming_withdraw(requireBscFork, tokens, tokenName, lpTokenName, pid, ac
     tx2 = masterChef.withdraw(pid, depositAmount - 10000, {'from': account1})
     assert tx2.status.name == 'Confirmed'
     masterChef.updatePool(pid)
-    assert bgovToken.balanceOf(account1) >= expectedBgovBalance
+    assert pgovToken.balanceOf(account1) >= expectedBgovBalance
     assert lpToken.balanceOf(masterChef) < masterChefLPBalanceBefore
     assert masterChef.pendingBGOV(pid, account1) > 0
     assert lpToken.balanceOf(account1) == lpBalanceBefore1 + depositAmount - 10000
     
     # Withdraw 2th part
-    expectedBgovBalance = bgovToken.balanceOf(account1) + masterChef.pendingBGOV(pid, account1);
+    expectedBgovBalance = pgovToken.balanceOf(account1) + masterChef.pendingBGOV(pid, account1);
     masterChef.updatePool(pid)
     tx3 = masterChef.withdraw(pid, 10000, {'from': account1})
-    assert bgovToken.balanceOf(account1) >= expectedBgovBalance
+    assert pgovToken.balanceOf(account1) >= expectedBgovBalance
     assert lpToken.balanceOf(masterChef) < masterChefLPBalanceBefore
     assert masterChef.pendingBGOV(pid, account1) == 0
     assert lpToken.balanceOf(account1) == lpBalanceBefore1 + depositAmount
@@ -113,13 +113,13 @@ def testFarming_withdraw(requireBscFork, tokens, tokenName, lpTokenName, pid, ac
 
 
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
-def testFarming_claim_reward(requireBscFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, bgovToken):
+def testFarming_claim_reward(requireBscFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, pgovToken):
     # Precondition
     lpToken = tokens[lpTokenName]
     token = tokens[tokenName]
     account1 = accounts[5]
     initBalance(account1, token, lpToken, INITIAL_LP_TOKEN_ACCOUNT_AMOUNT)
-    bgovBalanceInitial = bgovToken.balanceOf(account1);
+    bgovBalanceInitial = pgovToken.balanceOf(account1);
     lpBalance1 = lpToken.balanceOf(account1)
     depositAmount = lpBalance1 - 10000
     masterChefLPBalanceBefore = lpToken.balanceOf(masterChef);
@@ -133,7 +133,7 @@ def testFarming_claim_reward(requireBscFork, tokens, tokenName, lpTokenName, pid
 
     # Test procedure
     masterChef.claimReward(pid, {'from': account1})
-    assert bgovToken.balanceOf(account1) >= expectedBgovBalance
+    assert pgovToken.balanceOf(account1) >= expectedBgovBalance
     assert lpToken.balanceOf(masterChef) == masterChefLPBalanceBefore + depositAmount
     assert masterChef.pendingBGOV(pid, account1) == 0
     assert lpToken.balanceOf(account1) == lpBalanceBefore1
@@ -141,7 +141,7 @@ def testFarming_claim_reward(requireBscFork, tokens, tokenName, lpTokenName, pid
 
 # Withdraw without caring about rewards
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
-def testFarming_emergencyWithdraw(requireBscFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, bgovToken):
+def testFarming_emergencyWithdraw(requireBscFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, pgovToken):
     # Precondition
     lpToken = tokens[lpTokenName]
     token = tokens[tokenName]
