@@ -6,13 +6,12 @@ from brownie import *
 from brownie import Contract, network
 from brownie.network.contract import InterfaceContainer
 from brownie.network.state import _add_contract, _remove_contract
-from munch import Munch
+
 
 acct = accounts[0] #accounts.load('deployer1')
 
 bzxProtocol = '0xfe4F0eb0A1Ad109185c9AaDE64C48ff8e928e54B'
-tokens = Munch()
-itokens = Munch()
+
 bzx = Contract.from_abi("bzx", address=bzxProtocol, abi=interface.IBZx.abi, owner=acct)
 
 MATIC = Contract.from_abi("MATIC", address="0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270", abi=TestToken.abi, owner=acct)

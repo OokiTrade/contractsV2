@@ -35,10 +35,10 @@ ETH.transfer(acct, ETH.balanceOf(ethacc), {'from': ethacc})
 
 
 print ("Mint iusdt")
-amount = USDT.balanceOf(acct)/2
-USDT.approve(iUSDT, 2**256-1, {'from': acct})
-iUSDT.mint(acct, amount, {'from': acct})
-iUSDT.approve(acct, 2**256-1, {'from': acct})
+amount = USDC.balanceOf(acct)/2
+USDC.approve(iUSDC, 2**256-1, {'from': acct})
+iUSDC.mint(acct, amount, {'from': acct})
+iUSDC.approve(acct, 2**256-1, {'from': acct})
 
 print ("Mint imatic")
 amount = MATIC.balanceOf(acct)/2

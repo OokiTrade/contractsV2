@@ -3,16 +3,16 @@
 import pytest
 from brownie import reverts
 
-from testsbsc.conftest import initBalance
+from testspolygon.conftest import initBalance, requireFork
 
 testdata = [
-    ('BUSD', 'iBUSD', 1)
+    ('MATIC', 'iMATIC', 0)
 ]
 
 INITIAL_LP_TOKEN_ACCOUNT_AMOUNT = 0.001 * 10 ** 18;
 
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
-def testFarming_deposit(requireBscFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, pgovToken):
+def testFarming_deposit(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, pgovToken):
     # Precondition
     lpToken = tokens[lpTokenName]
     token = tokens[tokenName]
@@ -35,7 +35,7 @@ def testFarming_deposit(requireBscFork, tokens, tokenName, lpTokenName, pid, acc
 
 
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
-def testFarming_withdrawal(requireBscFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, pgovToken):
+def testFarming_withdrawal(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, pgovToken):
     lpToken = tokens[lpTokenName]
     token = tokens[tokenName]
     account1 = accounts[4]
@@ -57,7 +57,7 @@ def testFarming_withdrawal(requireBscFork, tokens, tokenName, lpTokenName, pid, 
         masterChef.withdraw(1000, depositAmount, {'from': account1})
 
 
-def testFarming_changedev(requireBscFork, accounts, masterChef):
+def testFarming_changedev(requireFork, accounts, masterChef):
     account1 = accounts[4]
     with reverts("dev: wut?"):
         masterChef.dev(account1, {'from': account1})

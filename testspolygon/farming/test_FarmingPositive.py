@@ -65,7 +65,7 @@ def testFarming_deposit(requireFork, tokens, tokenName, lpTokenName, pid, accoun
 
 
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
-def testFarming_withdraw(requireBscFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, pgovToken):
+def testFarming_withdraw(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, pgovToken):
     # Precondition
     lpToken = tokens[lpTokenName]
     token = tokens[tokenName]
@@ -113,7 +113,7 @@ def testFarming_withdraw(requireBscFork, tokens, tokenName, lpTokenName, pid, ac
 
 
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
-def testFarming_claim_reward(requireBscFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, pgovToken):
+def testFarming_claim_reward(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, pgovToken):
     # Precondition
     lpToken = tokens[lpTokenName]
     token = tokens[tokenName]
@@ -141,7 +141,7 @@ def testFarming_claim_reward(requireBscFork, tokens, tokenName, lpTokenName, pid
 
 # Withdraw without caring about rewards
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
-def testFarming_emergencyWithdraw(requireBscFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, pgovToken):
+def testFarming_emergencyWithdraw(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, pgovToken):
     # Precondition
     lpToken = tokens[lpTokenName]
     token = tokens[tokenName]
