@@ -81,8 +81,7 @@ def masterChef(accounts, chain, MasterChef_Polygon, iMATIC, iETH, iUSDC, iWBTC, 
 
     mintCoordinator = Contract.from_abi("mintCoordinator", address="0xB9b9bdFc8bAC6ED64530E43eD204b63bB540fB16", abi=MintCoordinator_Polygon.abi, owner=accounts[0]);
     mintCoordinator.addMinter(masterChef, {"from": mintCoordinator.owner()})
-    mintCoordinator.transferOwnership(accounts[0], {"from": mintCoordinator.owner()})
-    pgovToken.transferOwnership(accounts[0], {"from": pgovToken.owner()})
+    pgovToken.transferOwnership(mintCoordinator, {"from": pgovToken.owner()})
 
     return masterChef
 
