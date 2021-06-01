@@ -68,7 +68,7 @@ def pgovToken(accounts, GovToken):
     return Contract.from_abi("GovToken", address="0x6044a7161C8EBb7fE610Ed579944178350426B5B", abi=GovToken.abi, owner=accounts[0]);
 
 @pytest.fixture(scope="class", autouse=True)
-def masterChef(accounts, chain, MasterChef_Polygon, iMATIC, iETH, iUSDC, iWBTC, iUSDT, pgovToken, Proxy):
+def masterChef(accounts, chain, MasterChef_Polygon, iMATIC, iETH, iUSDC, iWBTC, iUSDT, pgovToken, Proxy, MintCoordinator_Polygon):
     devAccount = accounts[9]
     pgovPerBlock = 25*10**18
     startBlock = chain.height
@@ -78,6 +78,12 @@ def masterChef(accounts, chain, MasterChef_Polygon, iMATIC, iETH, iUSDC, iWBTC, 
     masterChef.initialize(pgovToken, devAccount, pgovPerBlock, startBlock)
     masterChef.add(87500, iMATIC, 1)
     masterChef.add(12500, iUSDC, 1)
+
+    mintCoordinator = Contract.from_abi("mintCoordinator", address="0xB9b9bdFc8bAC6ED64530E43eD204b63bB540fB16", abi=MintCoordinator_Polygon.abi, owner=accounts[0]);
+    mintCoordinator.addMinter(masterChef, {"from": mintCoordinator.owner()})
+    mintCoordinator.transferOwnership(accounts[0], {"from": mintCoordinator.owner()})
+    pgovToken.transferOwnership(accounts[0], {"from": pgovToken.owner()})
+
     return masterChef
 
 @pytest.fixture(scope="class", autouse=True)
