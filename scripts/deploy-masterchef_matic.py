@@ -54,9 +54,10 @@ masterChef.add(87500, iETH, 1)
 masterChef.add(87500, iMATIC, 1)
 masterChef.add(12500, iUSDC, 1)
 
+
 mintCoordinator = Contract.from_abi("mintCoordinator", address="0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440", abi=MintCoordinator_Polygon.abi, owner=accounts[0]);
 mintCoordinator.addMinter(masterChef, {"from": mintCoordinator.owner()})
 pgovToken.transferOwnership(mintCoordinator, {"from": pgovToken.owner()})
-
+masterChef.massUpdatePools({'from': masterChef.owner()})
 
 exec(open("./scripts/set-env-polygon.py").read())
