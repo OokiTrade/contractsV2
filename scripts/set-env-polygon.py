@@ -10,14 +10,14 @@ AAVE = Contract.from_abi("AAVE", address="0xD6DF932A45C0f255f85145f286eA0b292B21
 BZRX = Contract.from_abi("BZRX", address="0x97dfbEF4eD5a7f63781472Dbc69Ab8e5d7357cB9", abi=TestToken.abi, owner=acct)
 
 
-iMATIC = Contract.from_abi("iMATIC", address=MATIC.address, abi=LoanTokenLogicWeth.abi, owner=acct)
-iETH = Contract.from_abi("iETH", address=ETH.address, abi=LoanTokenLogicStandard.abi, owner=acct)
-iWBTC = Contract.from_abi("iWBTC", address=WBTC.address, abi=LoanTokenLogicStandard.abi, owner=acct)
-iLINK = Contract.from_abi("iLINK", address=LINK.address, abi=LoanTokenLogicStandard.abi, owner=acct)
-iUSDC = Contract.from_abi("iUSDC", address=USDC.address, abi=LoanTokenLogicStandard.abi, owner=acct)
-iUSDT = Contract.from_abi("iUSDT", address=USDT.address, abi=LoanTokenLogicStandard.abi, owner=acct)
-iAAVE = Contract.from_abi("iAAVE", address=AAVE.address, abi=LoanTokenLogicStandard.abi, owner=acct)
-iBZRX = Contract.from_abi("iBZRX", address=AAVE.address, abi=LoanTokenLogicStandard.abi, owner=acct)
+iMATIC = Contract.from_abi("iMATIC", address=BZX.underlyingToLoanPool(MATIC.address), abi=LoanTokenLogicWeth.abi, owner=acct)
+iETH = Contract.from_abi("iETH", address=BZX.underlyingToLoanPool(ETH.address), abi=LoanTokenLogicStandard.abi, owner=acct)
+iWBTC = Contract.from_abi("iWBTC", address=BZX.underlyingToLoanPool(WBTC.address), abi=LoanTokenLogicStandard.abi, owner=acct)
+iLINK = Contract.from_abi("iLINK", address=BZX.underlyingToLoanPool(LINK.address), abi=LoanTokenLogicStandard.abi, owner=acct)
+iUSDC = Contract.from_abi("iUSDC", address=BZX.underlyingToLoanPool(USDC.address), abi=LoanTokenLogicStandard.abi, owner=acct)
+iUSDT = Contract.from_abi("iUSDT", address=BZX.underlyingToLoanPool(USDT.address), abi=LoanTokenLogicStandard.abi, owner=acct)
+iAAVE = Contract.from_abi("iAAVE", address=BZX.underlyingToLoanPool(AAVE.address), abi=LoanTokenLogicStandard.abi, owner=acct)
+iBZRX = Contract.from_abi("iBZRX", address=BZX.underlyingToLoanPool(AAVE.address), abi=LoanTokenLogicStandard.abi, owner=acct)
 
 
 usdcacc = "0x1a13F4Ca1d028320A707D99520AbFefca3998b7F"
@@ -46,4 +46,28 @@ MATIC.approve(iMATIC, 2**256-1, {'from': acct})
 iMATIC.mint(acct, amount, {'from': acct})
 iMATIC.approve(acct, 2**256-1, {'from': acct})
 
-acct.deploy(HelperImpl)
+# assert False
+#
+# print("Deposit iMatic to get some pgovs")
+# iMATIC.approve(masterChef, 2**256-1, {'from': acct})
+# masterChef.deposit(2, iMATIC.balanceOf(acct), {'from': acct})
+# assert False
+# chain.sleep(60 * 60 * 24)
+# chain.mine()
+#
+# print("Clame Pgovs")
+# masterChef.claimReward(2, {'from':acct})
+# print(f"PGOVs: {pgovToken.balanceOf(acct)}")
+
+# print("Adding liquidity to sushi")
+# SUSHI_PGOV_wMATIC = Contract.from_abi("SUSHI_PGOV_wMATIC", "0xC698b8a1391F88F497A4EF169cA85b492860b502", interface.IPancakePair.abi)
+# SUSHI_ROUTER = Contract.from_abi("router", "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506", interface.IPancakeRouter02.abi)
+#
+# quote = SUSHI_ROUTER.quote(1000*10**18, pgovToken.address, MATIC.address)
+# quote1 = SUSHI_ROUTER.quote(10*10**18, MATIC.address, pgovToken.address)
+# MATIC.approve(SUSHI_ROUTER, 2**256-1, {'from': acct})
+# pgovToken.approve(SUSHI_ROUTER, 2**256-1, {'from': acct})
+#
+# SUSHI_ROUTER.addLiquidity(pgovToken, MATIC, quote1, pgovToken.balanceOf(acct), 0, 0,  acct, 10000000000000000000000000, {'from': acct})
+# SUSHI_PGOV_wMATIC.approve(masterChef, 2**256-1, {'from': acct})
+# masterChef.deposit(0, SUSHI_PGOV_wMATIC.balanceOf(acct), {'from': acct})

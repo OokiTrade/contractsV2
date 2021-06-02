@@ -24,14 +24,14 @@ AAVE = Contract.from_abi("AAVE", address="0xD6DF932A45C0f255f85145f286eA0b292B21
 BZRX = Contract.from_abi("BZRX", address="0x97dfbEF4eD5a7f63781472Dbc69Ab8e5d7357cB9", abi=TestToken.abi, owner=acct)
 
 
-iMATIC = Contract.from_abi("iMATIC", address=MATIC.address, abi=LoanTokenLogicWeth.abi, owner=acct)
-iETH = Contract.from_abi("iETH", address=ETH.address, abi=LoanTokenLogicStandard.abi, owner=acct)
-iWBTC = Contract.from_abi("iWBTC", address=WBTC.address, abi=LoanTokenLogicStandard.abi, owner=acct)
-iLINK = Contract.from_abi("iLINK", address=LINK.address, abi=LoanTokenLogicStandard.abi, owner=acct)
-iUSDC = Contract.from_abi("iUSDC", address=USDC.address, abi=LoanTokenLogicStandard.abi, owner=acct)
-iUSDT = Contract.from_abi("iUSDT", address=USDT.address, abi=LoanTokenLogicStandard.abi, owner=acct)
-iAAVE = Contract.from_abi("iAAVE", address=AAVE.address, abi=LoanTokenLogicStandard.abi, owner=acct)
-iBZRX = Contract.from_abi("iBZRX", address=AAVE.address, abi=LoanTokenLogicStandard.abi, owner=acct)
+iMATIC = Contract.from_abi("iMATIC", address=bzx.underlyingToLoanPool(MATIC.address), abi=LoanTokenLogicWeth.abi, owner=acct)
+iETH = Contract.from_abi("iETH", address=bzx.underlyingToLoanPool(ETH.address), abi=LoanTokenLogicStandard.abi, owner=acct)
+iWBTC = Contract.from_abi("iWBTC", address=bzx.underlyingToLoanPool(WBTC.address), abi=LoanTokenLogicStandard.abi, owner=acct)
+iLINK = Contract.from_abi("iLINK", address=bzx.underlyingToLoanPool(LINK.address), abi=LoanTokenLogicStandard.abi, owner=acct)
+iUSDC = Contract.from_abi("iUSDC", address=bzx.underlyingToLoanPool(USDC.address), abi=LoanTokenLogicStandard.abi, owner=acct)
+iUSDT = Contract.from_abi("iUSDT", address=bzx.underlyingToLoanPool(USDT.address), abi=LoanTokenLogicStandard.abi, owner=acct)
+iAAVE = Contract.from_abi("iAAVE", address=bzx.underlyingToLoanPool(AAVE.address), abi=LoanTokenLogicStandard.abi, owner=acct)
+iBZRX = Contract.from_abi("iBZRX", address=bzx.underlyingToLoanPool(AAVE.address), abi=LoanTokenLogicStandard.abi, owner=acct)
 
 QUICKROUTER = Contract.from_abi("router", "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff", interface.IPancakeRouter02.abi)
 
@@ -39,48 +39,25 @@ QUICKROUTER = Contract.from_abi("router", "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A
 # two sided
 USDT_WMATIC = Contract.from_abi("USDT_WMATIC", "0x604229c960e5cacf2aaeac8be68ac07ba9df81c3", interface.IPancakePair.abi)
 
-pgovToken = Contract.from_abi("PGOV", "0x6044a7161C8EBb7fE610Ed579944178350426B5B", GovToken.abi)
+pgovToken = Contract.from_abi("PGOV", "0xd5d84e75f48E75f01fb2EB6dFD8eA148eE3d0FEb", GovToken.abi)
 
-# TODO @Tom farm configuration
-devAccount = acct  # @Tom this account will receive small fees check updatePool() func
+
+devAccount = accounts[9]
 pgovPerBlock = 25*10**18
-bonusEndBlock = chain.height + 400000
 startBlock = chain.height
-
-masterChefImpl = acct.deploy(MasterChef_Polygon)
-masterChefProxy = acct.deploy(Proxy, masterChefImpl)
-masterChef = Contract.from_abi("masterChef", address=masterChefProxy, abi=MasterChef_Polygon.abi, owner=acct)
-
+masterChefImpl = accounts[0].deploy(MasterChef_Polygon)
+masterChefProxy = accounts[0].deploy(Proxy, masterChefImpl)
+masterChef = Contract.from_abi("masterChef", address=masterChefProxy, abi=MasterChef_Polygon.abi, owner=accounts[0])
 masterChef.initialize(pgovToken, devAccount, pgovPerBlock, startBlock)
-
-#PGOV_wBNB = Contract.from_abi("PGOV_wMATIC", "0xEcd0aa12A453AE356Aba41f62483EDc35f2290ed", interface.IPancakePair.abi)
-
-# from chef: // Total allocation poitns. Must be the sum of all allocation points in all pools.
-# aloso allocation points should consider price difference. depositing 1 iWBTC should be approximately equal to depositing 55k iBUSD
-
-# adding allocation points according to what was disscussed
-
-# Here are the params and initial pool weights for our starting farms:
-# _PGOVPerBlock: 25000000000000000000
-# _startBlock: TBD (early next week)
-# _bonusEndBlock: _startBlock + 400000
-
-# allocPoints per pool:
-# 12500 - iBNB, iBUSD, iBTC, iUSDT, iETH  
-# 87500 - iBZRX
-# 100000 - PGOV/BNB
+masterChef.add(87500, iUSDT, 1)
+masterChef.add(87500, iETH, 1)
 masterChef.add(87500, iMATIC, 1)
 masterChef.add(12500, iUSDC, 1)
-masterChef.add(12500, iETH, 1)
-masterChef.add(12500, iWBTC, 1)
-masterChef.add(12500, iUSDT, 1)
-masterChef.add(12500, iLINK, 1)
 
-masterChef.add(87500, pgovToken, 1)
 
-print("masterChef: ", masterChef.address)
-
-# two sided
-masterChef.add(100000, USDT_WMATIC, 1)
+mintCoordinator = Contract.from_abi("mintCoordinator", address="0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440", abi=MintCoordinator_Polygon.abi, owner=accounts[0]);
+mintCoordinator.addMinter(masterChef, {"from": mintCoordinator.owner()})
+pgovToken.transferOwnership(mintCoordinator, {"from": pgovToken.owner()})
+masterChef.massUpdatePools({'from': masterChef.owner()})
 
 exec(open("./scripts/set-env-polygon.py").read())
