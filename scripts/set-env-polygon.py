@@ -19,7 +19,6 @@ iUSDT = Contract.from_abi("iUSDT", address=BZX.underlyingToLoanPool(USDT.address
 iAAVE = Contract.from_abi("iAAVE", address=BZX.underlyingToLoanPool(AAVE.address), abi=LoanTokenLogicStandard.abi, owner=acct)
 iBZRX = Contract.from_abi("iBZRX", address=BZX.underlyingToLoanPool(AAVE.address), abi=LoanTokenLogicStandard.abi, owner=acct)
 
-
 usdcacc = "0x1a13F4Ca1d028320A707D99520AbFefca3998b7F"
 USDC.transfer(acct, USDC.balanceOf(usdcacc), {'from': usdcacc})
 
@@ -54,6 +53,31 @@ iETH.approve(acct, 2**256-1, {'from': acct})
 
 
 print("Deposit iMatic to get some pgovs")
+
+
+masterChef = Contract.from_abi("masterChef", address="0xd39Ff512C3e55373a30E94BB1398651420Ae1D43", abi=MasterChef_Polygon.abi, owner=accounts[0])
+masterChef.setStartBlock(chain.height-100, {'from': masterChef.owner()})
+
+masterChef.add(0, iMATIC, True, {'from': masterChef.owner()})
+iMATIC_PID = len(masterChef.getPoolInfos()) - 1
+masterChef.add(0, iUSDC, True, {'from': masterChef.owner()})
+iUSDC_PID = len(masterChef.getPoolInfos()) - 1
+SUSHI_PGOV_wMATIC = Contract.from_abi("SUSHI_PGOV_wMATIC", "0xC698b8a1391F88F497A4EF169cA85b492860b502", interface.IPancakePair.abi)
+SUSHI_PGOV_wMATIC_PID = 1
+
+print(f"SUSHI_PGOV_wMATIC_PID: {SUSHI_PGOV_wMATIC_PID}")
+i = 0
+for pool in masterChef.getPoolInfos():
+    masterChef.set(i,12500, True, {'from': masterChef.owner()})
+    i += 1
+masterChef.massUpdatePools({'from': masterChef.owner()})
+
+pgovToken = Contract.from_abi("GovToken", address="0xd5d84e75f48E75f01fb2EB6dFD8eA148eE3d0FEb", abi=GovToken.abi, owner=accounts[0]);
+mintCoordinator = Contract.from_abi("mintCoordinator", address="0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440", abi=MintCoordinator_Polygon.abi, owner=accounts[0]);
+mintCoordinator.addMinter(masterChef, {"from": mintCoordinator.owner()})
+pgovToken.transferOwnership(mintCoordinator, {"from": pgovToken.owner()})
+
+
 iMATIC.approve(masterChef, 2**256-1, {'from': acct})
 masterChef.deposit(2, iMATIC.balanceOf(acct), {'from': acct})
 
@@ -65,7 +89,6 @@ masterChef.claimReward(2, {'from':acct})
 print(f"PGOVs: {pgovToken.balanceOf(acct)}")
 
 print("Adding liquidity to sushi")
-SUSHI_PGOV_wMATIC = Contract.from_abi("SUSHI_PGOV_wMATIC", "0xC698b8a1391F88F497A4EF169cA85b492860b502", interface.IPancakePair.abi)
 SUSHI_ROUTER = Contract.from_abi("router", "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506", interface.IPancakeRouter02.abi)
 
 quote = SUSHI_ROUTER.quote(1000*10**18, pgovToken.address, MATIC.address)
@@ -75,4 +98,5 @@ pgovToken.approve(SUSHI_ROUTER, 2**256-1, {'from': acct})
 
 SUSHI_ROUTER.addLiquidity(pgovToken, MATIC, quote, pgovToken.balanceOf(acct), 0, 0,  acct, 10000000000000000000000000, {'from': acct})
 SUSHI_PGOV_wMATIC.approve(masterChef, 2**256-1, {'from': acct})
-masterChef.deposit(4, SUSHI_PGOV_wMATIC.balanceOf(acct), {'from': acct})
+
+masterChef.deposit(SUSHI_PGOV_wMATIC_PID, SUSHI_PGOV_wMATIC.balanceOf(acct), {'from': acct})

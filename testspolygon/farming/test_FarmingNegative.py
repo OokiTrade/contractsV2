@@ -43,7 +43,6 @@ def testFarming_withdrawal(requireFork, tokens, tokenName, lpTokenName, pid, acc
     lpBalance1 = lpToken.balanceOf(account1)
     depositAmount = lpBalance1 - 10000
     lpToken.approve(masterChef, lpBalance1, {'from': account1})
-    assert False
     tx1 = masterChef.deposit(pid, depositAmount, {'from': account1})
     masterChef.updatePool(pid)  # trigger calculate pending tokens
     assert masterChef.pendingGOV(pid, account1) > 0

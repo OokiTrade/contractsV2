@@ -67,19 +67,26 @@ def iUSDT(accounts, BZX, LoanTokenLogicStandard, USDT):
 def pgovToken(accounts, GovToken):
     return Contract.from_abi("GovToken", address="0xd5d84e75f48E75f01fb2EB6dFD8eA148eE3d0FEb", abi=GovToken.abi, owner=accounts[0]);
 
+
+@pytest.fixture(scope="module", autouse=True)
+def mintCoordinator(accounts, MintCoordinator_Polygon):
+    return Contract.from_abi("mintCoordinator", address="0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440", abi=MintCoordinator_Polygon.abi, owner=accounts[0]);
+
+@pytest.fixture(scope="module", autouse=True)
+def SUSHI_PGOV_MATIC(accounts, interface):
+    return Contract.from_abi("SUSHI_PGOV_wMATIC", "0xC698b8a1391F88F497A4EF169cA85b492860b502", interface.IPancakePair.abi)
+
 @pytest.fixture(scope="module", autouse=True)
 def masterChef(accounts, chain, MasterChef_Polygon, iMATIC, iETH, iUSDC, iWBTC, iUSDT, pgovToken, Proxy, MintCoordinator_Polygon):
-    devAccount = accounts[9]
-    pgovPerBlock = 25*10**18
-    startBlock = chain.height
-    masterChefImpl = accounts[0].deploy(MasterChef_Polygon)
-    masterChefProxy = accounts[0].deploy(Proxy, masterChefImpl)
-    masterChef = Contract.from_abi("masterChef", address=masterChefProxy, abi=MasterChef_Polygon.abi, owner=accounts[0])
-    masterChef.initialize(pgovToken, devAccount, pgovPerBlock, startBlock)
-    masterChef.add(87500, iUSDT, 1)
-    masterChef.add(87500, iETH, 1)
-    masterChef.add(87500, iMATIC, 1)
-    masterChef.add(12500, iUSDC, 1)
+
+    masterChef = Contract.from_abi("masterChef", address="0xd39Ff512C3e55373a30E94BB1398651420Ae1D43", abi=MasterChef_Polygon.abi, owner=accounts[0])
+    i = 0
+    masterChef.setStartBlock(chain.height-100, {'from': masterChef.owner()})
+
+    if(len(masterChef.getPoolInfos())==2):
+        masterChef.add(12500, iMATIC, True, {'from': masterChef.owner()})
+        masterChef.add(12500, iUSDC, True, {'from': masterChef.owner()})
+        masterChef.massUpdatePools({'from': masterChef.owner()})
 
     mintCoordinator = Contract.from_abi("mintCoordinator", address="0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440", abi=MintCoordinator_Polygon.abi, owner=accounts[0]);
     mintCoordinator.addMinter(masterChef, {"from": mintCoordinator.owner()})
@@ -104,3 +111,4 @@ def initBalance(account, token, lpToken, addBalance):
         USDC.approve(iUSDT, 2**256-1, {'from': account})
         iUSDC.mint(account, addBalance, {'from': account})
         iUSDC.approve(account, 2**256-1, {'from': account})
+
