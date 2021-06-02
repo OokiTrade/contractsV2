@@ -24,14 +24,14 @@ AAVE = Contract.from_abi("AAVE", address="0xD6DF932A45C0f255f85145f286eA0b292B21
 BZRX = Contract.from_abi("BZRX", address="0x97dfbEF4eD5a7f63781472Dbc69Ab8e5d7357cB9", abi=TestToken.abi, owner=acct)
 
 
-iMATIC = Contract.from_abi("iMATIC", address=MATIC.address, abi=LoanTokenLogicWeth.abi, owner=acct)
-iETH = Contract.from_abi("iETH", address=ETH.address, abi=LoanTokenLogicStandard.abi, owner=acct)
-iWBTC = Contract.from_abi("iWBTC", address=WBTC.address, abi=LoanTokenLogicStandard.abi, owner=acct)
-iLINK = Contract.from_abi("iLINK", address=LINK.address, abi=LoanTokenLogicStandard.abi, owner=acct)
-iUSDC = Contract.from_abi("iUSDC", address=USDC.address, abi=LoanTokenLogicStandard.abi, owner=acct)
-iUSDT = Contract.from_abi("iUSDT", address=USDT.address, abi=LoanTokenLogicStandard.abi, owner=acct)
-iAAVE = Contract.from_abi("iAAVE", address=AAVE.address, abi=LoanTokenLogicStandard.abi, owner=acct)
-iBZRX = Contract.from_abi("iBZRX", address=AAVE.address, abi=LoanTokenLogicStandard.abi, owner=acct)
+iMATIC = Contract.from_abi("iMATIC", address=bzx.underlyingToLoanPool(MATIC.address), abi=LoanTokenLogicWeth.abi, owner=acct)
+iETH = Contract.from_abi("iETH", address=bzx.underlyingToLoanPool(ETH.address), abi=LoanTokenLogicStandard.abi, owner=acct)
+iWBTC = Contract.from_abi("iWBTC", address=bzx.underlyingToLoanPool(WBTC.address), abi=LoanTokenLogicStandard.abi, owner=acct)
+iLINK = Contract.from_abi("iLINK", address=bzx.underlyingToLoanPool(LINK.address), abi=LoanTokenLogicStandard.abi, owner=acct)
+iUSDC = Contract.from_abi("iUSDC", address=bzx.underlyingToLoanPool(USDC.address), abi=LoanTokenLogicStandard.abi, owner=acct)
+iUSDT = Contract.from_abi("iUSDT", address=bzx.underlyingToLoanPool(USDT.address), abi=LoanTokenLogicStandard.abi, owner=acct)
+iAAVE = Contract.from_abi("iAAVE", address=bzx.underlyingToLoanPool(AAVE.address), abi=LoanTokenLogicStandard.abi, owner=acct)
+iBZRX = Contract.from_abi("iBZRX", address=bzx.underlyingToLoanPool(AAVE.address), abi=LoanTokenLogicStandard.abi, owner=acct)
 
 QUICKROUTER = Contract.from_abi("router", "0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff", interface.IPancakeRouter02.abi)
 
