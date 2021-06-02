@@ -46,28 +46,33 @@ MATIC.approve(iMATIC, 2**256-1, {'from': acct})
 iMATIC.mint(acct, amount, {'from': acct})
 iMATIC.approve(acct, 2**256-1, {'from': acct})
 
-# assert False
-#
-# print("Deposit iMatic to get some pgovs")
-# iMATIC.approve(masterChef, 2**256-1, {'from': acct})
-# masterChef.deposit(2, iMATIC.balanceOf(acct), {'from': acct})
-# assert False
-# chain.sleep(60 * 60 * 24)
-# chain.mine()
-#
-# print("Clame Pgovs")
-# masterChef.claimReward(2, {'from':acct})
-# print(f"PGOVs: {pgovToken.balanceOf(acct)}")
+print ("Mint ieth")
+amount = ETH.balanceOf(acct)/2
+ETH.approve(iETH, 2**256-1, {'from': acct})
+iETH.mint(acct, amount, {'from': acct})
+iETH.approve(acct, 2**256-1, {'from': acct})
 
-# print("Adding liquidity to sushi")
-# SUSHI_PGOV_wMATIC = Contract.from_abi("SUSHI_PGOV_wMATIC", "0xC698b8a1391F88F497A4EF169cA85b492860b502", interface.IPancakePair.abi)
-# SUSHI_ROUTER = Contract.from_abi("router", "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506", interface.IPancakeRouter02.abi)
-#
-# quote = SUSHI_ROUTER.quote(1000*10**18, pgovToken.address, MATIC.address)
-# quote1 = SUSHI_ROUTER.quote(10*10**18, MATIC.address, pgovToken.address)
-# MATIC.approve(SUSHI_ROUTER, 2**256-1, {'from': acct})
-# pgovToken.approve(SUSHI_ROUTER, 2**256-1, {'from': acct})
-#
-# SUSHI_ROUTER.addLiquidity(pgovToken, MATIC, quote1, pgovToken.balanceOf(acct), 0, 0,  acct, 10000000000000000000000000, {'from': acct})
-# SUSHI_PGOV_wMATIC.approve(masterChef, 2**256-1, {'from': acct})
-# masterChef.deposit(0, SUSHI_PGOV_wMATIC.balanceOf(acct), {'from': acct})
+
+print("Deposit iMatic to get some pgovs")
+iMATIC.approve(masterChef, 2**256-1, {'from': acct})
+masterChef.deposit(2, iMATIC.balanceOf(acct), {'from': acct})
+
+chain.sleep(60 * 60 * 24)
+chain.mine()
+
+print("Claim Pgovs")
+masterChef.claimReward(2, {'from':acct})
+print(f"PGOVs: {pgovToken.balanceOf(acct)}")
+
+print("Adding liquidity to sushi")
+SUSHI_PGOV_wMATIC = Contract.from_abi("SUSHI_PGOV_wMATIC", "0xC698b8a1391F88F497A4EF169cA85b492860b502", interface.IPancakePair.abi)
+SUSHI_ROUTER = Contract.from_abi("router", "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506", interface.IPancakeRouter02.abi)
+
+quote = SUSHI_ROUTER.quote(1000*10**18, pgovToken.address, MATIC.address)
+quote1 = SUSHI_ROUTER.quote(10*10**18, MATIC.address, pgovToken.address)
+MATIC.approve(SUSHI_ROUTER, 2**256-1, {'from': acct})
+pgovToken.approve(SUSHI_ROUTER, 2**256-1, {'from': acct})
+
+SUSHI_ROUTER.addLiquidity(pgovToken, MATIC, quote, pgovToken.balanceOf(acct), 0, 0,  acct, 10000000000000000000000000, {'from': acct})
+SUSHI_PGOV_wMATIC.approve(masterChef, 2**256-1, {'from': acct})
+masterChef.deposit(4, SUSHI_PGOV_wMATIC.balanceOf(acct), {'from': acct})

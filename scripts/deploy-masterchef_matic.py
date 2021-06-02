@@ -54,6 +54,9 @@ masterChef.add(87500, iETH, 1)
 masterChef.add(87500, iMATIC, 1)
 masterChef.add(12500, iUSDC, 1)
 
+SUSHI_PGOV_wMATIC = Contract.from_abi("SUSHI_PGOV_wMATIC", "0xC698b8a1391F88F497A4EF169cA85b492860b502", interface.IPancakePair.abi)
+masterChef.add(12500, SUSHI_PGOV_wMATIC, 1)
+
 
 mintCoordinator = Contract.from_abi("mintCoordinator", address="0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440", abi=MintCoordinator_Polygon.abi, owner=accounts[0]);
 mintCoordinator.addMinter(masterChef, {"from": mintCoordinator.owner()})
