@@ -45,5 +45,3 @@ amount = MATIC.balanceOf(acct)/2
 MATIC.approve(iMATIC, 2**256-1, {'from': acct})
 iMATIC.mint(acct, amount, {'from': acct})
 iMATIC.approve(acct, 2**256-1, {'from': acct})
-
-acct.deploy(HelperImpl)

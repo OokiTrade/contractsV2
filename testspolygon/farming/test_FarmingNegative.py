@@ -6,7 +6,7 @@ from brownie import reverts
 from testspolygon.conftest import initBalance, requireFork
 
 testdata = [
-    ('MATIC', 'iMATIC', 0)
+    ('MATIC', 'iMATIC', 2)
 ]
 
 INITIAL_LP_TOKEN_ACCOUNT_AMOUNT = 0.001 * 10 ** 18;
