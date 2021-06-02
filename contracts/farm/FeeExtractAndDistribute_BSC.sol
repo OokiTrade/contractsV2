@@ -68,6 +68,7 @@ contract FeeExtractAndDistribute_BSC is Upgradeable {
         _;
     }
 
+    fallback() external payable {} 
 
     function sweepFees()
         public
