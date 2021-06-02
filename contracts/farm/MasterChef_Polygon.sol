@@ -139,10 +139,17 @@ contract MasterChef_Polygon is Upgradeable {
         if (_withUpdate) {
             massUpdatePools();
         }
-        totalAllocPoint = totalAllocPoint.sub(poolInfo[_pid].allocPoint).add(
+
+        PoolInfo storage pool = poolInfo[_pid];
+        require(pool.lpToken != address(0) && poolExists[pool.lpToken], "pool not exists");
+        totalAllocPoint = totalAllocPoint.sub(pool.allocPoint).add(
             _allocPoint
         );
-        poolInfo[_pid].allocPoint = _allocPoint;
+        pool.allocPoint = _allocPoint;
+
+        if (block.number < pool.lastRewardBlock) {
+            pool.lastRewardBlock = startBlock;
+        }
     }
 
     function transferTokenOwnership(address newOwner)
