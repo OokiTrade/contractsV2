@@ -141,7 +141,7 @@ contract MasterChef_Polygon is Upgradeable {
         }
 
         PoolInfo storage pool = poolInfo[_pid];
-        require(pool.lpToken != address(0) && poolExists[pool.lpToken], "pool not exists");
+        require(address(pool.lpToken) != address(0) && poolExists[pool.lpToken], "pool not exists");
         totalAllocPoint = totalAllocPoint.sub(pool.allocPoint).add(
             _allocPoint
         );
