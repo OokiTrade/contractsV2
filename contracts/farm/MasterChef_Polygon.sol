@@ -68,6 +68,8 @@ contract MasterChef_Polygon is Upgradeable {
 
     // add the GOV pool first to have ID 0
     uint256 internal constant GOV_POOL_ID = 0;
+    uint256 internal constant BZRX_POOL_ID = 0; // TODO
+    
     event AddExternalReward(
         address indexed sender,
         uint256 indexed pid,
@@ -330,7 +332,7 @@ contract MasterChef_Polygon is Upgradeable {
             address(this),
             _amount
         );
-        poolAmount[GOV_POOL_ID] = poolAmount[GOV_POOL_ID].add(_amount);
+        poolAmount[GOV_POOL_ID] = lpSupply.add(_amount);
         pool.accGOVPerShare = pool.accGOVPerShare.add(
             _amount.mul(1e12).div(lpSupply)
         );
@@ -344,10 +346,19 @@ contract MasterChef_Polygon is Upgradeable {
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
         if (user.amount > 0) {
-            uint256 pending =
-                user.amount.mul(pool.accGOVPerShare).div(1e12).sub(
-                    user.rewardDebt
-                );
+            uint256 pending;
+            uint256 userLockedRewards = lockedRewards[msg.sender];
+            if (userLockedRewards > 0 && isLocked[BZRX_POOL_ID]){
+                pending =
+                    user.amount.mul(pool.accGOVPerShare).div(1e12).sub(
+                        user.rewardDebt + userLockedRewards
+                    );        
+            } else {
+                pending =
+                    user.amount.mul(pool.accGOVPerShare).div(1e12).sub(
+                        user.rewardDebt
+                    );
+            }
             safeGOVTransfer(_pid, msg.sender, pending);
         }
         pool.lpToken.safeTransferFrom(
@@ -359,6 +370,38 @@ contract MasterChef_Polygon is Upgradeable {
         user.amount = user.amount.add(_amount);
         user.rewardDebt = user.amount.mul(pool.accGOVPerShare).div(1e12);
         emit Deposit(msg.sender, _pid, _amount);
+    }
+
+    function compound(uint256 _pid) public {
+        require(!isLocked[_pid], "You can only compound locked pool");
+
+        PoolInfo storage pool = poolInfo[_pid];
+        UserInfo storage user = userInfo[_pid][msg.sender];
+        // calculate pending GOV reward on a locked pool(iBZRX)
+        uint256 pending =
+            user.amount.mul(pool.accGOVPerShare).div(1e12).sub(
+                user.rewardDebt
+            );
+        // recalc rewardDebt like we paid it
+        user.rewardDebt = user.amount.mul(pool.accGOVPerShare).div(1e12);
+
+        // add pending to GOV pool locked
+        UserInfo storage userGovPool = userInfo[GOV_POOL_ID][msg.sender];
+        PoolInfo storage poolGovPool = poolInfo[GOV_POOL_ID];
+        updatePool(GOV_POOL_ID);
+        // store locked amound
+        lockedRewards[msg.sender] = lockedRewards[msg.sender].add(pending);
+        // recalct total amount so that compounding works
+        userGovPool.amount = userGovPool.amount.add(pending);
+
+        uint256 lpSupply = poolAmount[GOV_POOL_ID];
+        // add to total supply
+        poolAmount[GOV_POOL_ID] = lpSupply.add(pending);
+
+        // recalc perShare
+        poolGovPool.accGOVPerShare = pool.accGOVPerShare.add(
+            pending.mul(1e12).div(lpSupply)
+        );
     }
 
     function claimReward(uint256 _pid) public {
