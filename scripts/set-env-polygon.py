@@ -7,7 +7,7 @@ LINK = Contract.from_abi("LINK", address="0xb0897686c545045afc77cf20ec7a532e3120
 USDC = Contract.from_abi("USDC", address="0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", abi=TestToken.abi, owner=acct)
 USDT = Contract.from_abi("USDT", address="0xc2132D05D31c914a87C6611C10748AEb04B58e8F", abi=TestToken.abi, owner=acct)
 AAVE = Contract.from_abi("AAVE", address="0xD6DF932A45C0f255f85145f286eA0b292B21C90B", abi=TestToken.abi, owner=acct)
-BZRX = Contract.from_abi("BZRX", address="0x97dfbEF4eD5a7f63781472Dbc69Ab8e5d7357cB9", abi=TestToken.abi, owner=acct)
+BZRX = Contract.from_abi("BZRX", address="0x54cFe73f2c7d0c4b62Ab869B473F5512Dc0944D2", abi=TestToken.abi, owner=acct)
 
 
 iMATIC = Contract.from_abi("iMATIC", address=BZX.underlyingToLoanPool(MATIC.address), abi=LoanTokenLogicWeth.abi, owner=acct)
@@ -17,7 +17,7 @@ iLINK = Contract.from_abi("iLINK", address=BZX.underlyingToLoanPool(LINK.address
 iUSDC = Contract.from_abi("iUSDC", address=BZX.underlyingToLoanPool(USDC.address), abi=LoanTokenLogicStandard.abi, owner=acct)
 iUSDT = Contract.from_abi("iUSDT", address=BZX.underlyingToLoanPool(USDT.address), abi=LoanTokenLogicStandard.abi, owner=acct)
 iAAVE = Contract.from_abi("iAAVE", address=BZX.underlyingToLoanPool(AAVE.address), abi=LoanTokenLogicStandard.abi, owner=acct)
-iBZRX = Contract.from_abi("iBZRX", address=BZX.underlyingToLoanPool(AAVE.address), abi=LoanTokenLogicStandard.abi, owner=acct)
+iBZRX = Contract.from_abi("iBZRX", address=BZX.underlyingToLoanPool(BZRX.address), abi=LoanTokenLogicStandard.abi, owner=acct)
 
 usdcacc = "0x1a13F4Ca1d028320A707D99520AbFefca3998b7F"
 USDC.transfer(acct, USDC.balanceOf(usdcacc), {'from': usdcacc})
@@ -54,22 +54,19 @@ iETH.approve(acct, 2**256-1, {'from': acct})
 
 print("Deposit iMatic to get some pgovs")
 
+SUSHI_PGOV_wMATIC = Contract.from_abi("SUSHI_PGOV_wMATIC", "0xC698b8a1391F88F497A4EF169cA85b492860b502", interface.IPancakePair.abi)
+SUSHI_PGOV_wMATIC_PID = 1
 
 masterChef = Contract.from_abi("masterChef", address="0xd39Ff512C3e55373a30E94BB1398651420Ae1D43", abi=MasterChef_Polygon.abi, owner=accounts[0])
 masterChef.setStartBlock(chain.height-100, {'from': masterChef.owner()})
 
 masterChef.add(0, iMATIC, True, {'from': masterChef.owner()})
-iMATIC_PID = len(masterChef.getPoolInfos()) - 1
-masterChef.add(0, iUSDC, True, {'from': masterChef.owner()})
-iUSDC_PID = len(masterChef.getPoolInfos()) - 1
-SUSHI_PGOV_wMATIC = Contract.from_abi("SUSHI_PGOV_wMATIC", "0xC698b8a1391F88F497A4EF169cA85b492860b502", interface.IPancakePair.abi)
-SUSHI_PGOV_wMATIC_PID = 1
 
-print(f"SUSHI_PGOV_wMATIC_PID: {SUSHI_PGOV_wMATIC_PID}")
 i = 0
 for pool in masterChef.getPoolInfos():
     masterChef.set(i,12500, True, {'from': masterChef.owner()})
     i += 1
+
 masterChef.massUpdatePools({'from': masterChef.owner()})
 
 pgovToken = Contract.from_abi("GovToken", address="0xd5d84e75f48E75f01fb2EB6dFD8eA148eE3d0FEb", abi=GovToken.abi, owner=accounts[0]);
@@ -83,8 +80,9 @@ masterChef.deposit(2, iMATIC.balanceOf(acct), {'from': acct})
 
 chain.sleep(60 * 60 * 24)
 chain.mine()
+masterChef.withdraw(2, masterChef.userInfo(2, acct)[0]-5000e18, {'from': acct})
 
-print("Claim Pgovs")
+print("Claim PGOVs")
 masterChef.claimReward(2, {'from':acct})
 print(f"PGOVs: {pgovToken.balanceOf(acct)}")
 
@@ -100,3 +98,39 @@ SUSHI_ROUTER.addLiquidity(pgovToken, MATIC, quote, pgovToken.balanceOf(acct), 0,
 SUSHI_PGOV_wMATIC.approve(masterChef, 2**256-1, {'from': acct})
 
 masterChef.deposit(SUSHI_PGOV_wMATIC_PID, SUSHI_PGOV_wMATIC.balanceOf(acct), {'from': acct})
+
+
+masterChef.add(0, iUSDC, True, {'from': masterChef.owner()})
+masterChef.add(0, iUSDT, True, {'from': masterChef.owner()})
+masterChef.add(0, iETH, True, {'from': masterChef.owner()})
+masterChef.add(0, iWBTC, True, {'from': masterChef.owner()})
+masterChef.add(0, iLINK, True, {'from': masterChef.owner()})
+masterChef.add(0, iAAVE, True, {'from': masterChef.owner()})
+masterChef.add(0, iBZRX, True, {'from': masterChef.owner()})
+
+
+i = 0
+for pool in masterChef.getPoolInfos():
+    masterChef.set(i,12500, True, {'from': masterChef.owner()})
+    i += 1
+    
+print("-----------------------------------")
+print (f"MATIC: {MATIC.address}")
+print (f"ETH: {ETH.address}")
+print (f"WBTC: {WBTC.address}")
+print (f"LINK: {LINK.address}")
+print (f"USDC: {USDC.address}")
+print (f"USDT: {USDT.address}")
+print (f"AAVE: {AAVE.address}")
+print (f"BZRX: {BZRX.address}")
+
+print("-----------------------------------")
+print (f"iMATIC: {BZX.underlyingToLoanPool(MATIC.address)}")
+print (f"iETH: {BZX.underlyingToLoanPool(ETH.address)}")
+print (f"iWBTC: {BZX.underlyingToLoanPool(WBTC.address)}")
+print (f"iLINK: {BZX.underlyingToLoanPool(LINK.address)}")
+print (f"iUSDC: {BZX.underlyingToLoanPool(USDC.address)}")
+print (f"iUSDT: {BZX.underlyingToLoanPool(USDT.address)}")
+print (f"iAAVE: {BZX.underlyingToLoanPool(AAVE.address)}")
+print (f"iBZRX: {BZX.underlyingToLoanPool(BZRX.address)}")
+
