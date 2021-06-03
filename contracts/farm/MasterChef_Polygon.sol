@@ -330,7 +330,6 @@ contract MasterChef_Polygon is Upgradeable {
             address(this),
             _amount
         );
-        poolAmount[GOV_POOL_ID] = poolAmount[GOV_POOL_ID].add(_amount);
         pool.accGOVPerShare = pool.accGOVPerShare.add(
             _amount.mul(1e12).div(lpSupply)
         );
