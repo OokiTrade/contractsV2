@@ -80,7 +80,7 @@ def SUSHI_PGOV_MATIC(accounts, interface):
 def masterChef(accounts, chain, MasterChef_Polygon, iMATIC, iETH, iUSDC, iWBTC, iUSDT, pgovToken, Proxy, MintCoordinator_Polygon):
 
     masterChef = Contract.from_abi("masterChef", address="0xd39Ff512C3e55373a30E94BB1398651420Ae1D43", abi=MasterChef_Polygon.abi, owner=accounts[0])
-    i = 0
+
     masterChef.setStartBlock(chain.height-100, {'from': masterChef.owner()})
 
     if(len(masterChef.getPoolInfos())==2):
@@ -91,6 +91,11 @@ def masterChef(accounts, chain, MasterChef_Polygon, iMATIC, iETH, iUSDC, iWBTC, 
     mintCoordinator = Contract.from_abi("mintCoordinator", address="0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440", abi=MintCoordinator_Polygon.abi, owner=accounts[0]);
     mintCoordinator.addMinter(masterChef, {"from": mintCoordinator.owner()})
     pgovToken.transferOwnership(mintCoordinator, {"from": pgovToken.owner()})
+
+    i = 0
+    for pool in masterChef.getPoolInfos():
+        masterChef.setLocked(i, False, {'from': masterChef.owner()})
+        i = i +1
 
     return masterChef
 

@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import pytest
-from brownie import reverts
+from brownie import reverts, chain
 
 from testspolygon.conftest import initBalance, requireFork
 
@@ -62,3 +62,20 @@ def testFarming_changedev(requireFork, accounts, masterChef):
     account1 = accounts[4]
     with reverts("dev: wut?"):
         masterChef.dev(account1, {'from': account1})
+
+
+# ownerOnly
+@pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
+def testFarming_ownerOnly(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, pgovToken):
+    account1 = accounts[4]
+    with reverts("Ownable: caller is not the owner"):
+        masterChef.setLocked(pid, True, {'from': account1})
+    with reverts("Ownable: caller is not the owner"):
+        masterChef.set(pid, 12500, False, {'from': account1})
+    with reverts("Ownable: caller is not the owner"):
+        masterChef.transferTokenOwnership(account1, {'from': account1})
+    with reverts("Ownable: caller is not the owner"):
+        masterChef.setStartBlock(chain.height, {'from': account1})
+    with reverts("Ownable: caller is not the owner"):
+        masterChef.add(87500, pgovToken, 1, {'from': account1})
+

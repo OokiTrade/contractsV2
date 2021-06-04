@@ -3,7 +3,7 @@
 import pytest
 
 from testspolygon.conftest import initBalance, requireFork
-
+from brownie import chain
 testdata = [
     ('MATIC', 'iMATIC', 2)
 ]
@@ -187,4 +187,32 @@ def testFarming_poolAmounts(requireFork, tokens, tokenName, lpTokenName, pid, ac
     lpToken.transfer(masterChef, lpToken.balanceOf(account1), {'from': account1})
     assert accGOVPerShare2 == masterChef.poolInfo(pid)[2]
     assert masterchefBalance2 < lpToken.balanceOf(masterChef)
+
+# lockedRewards
+@pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
+def testFarming_lockedRewards(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, pgovToken):
+    # Precondition
+    lpToken = tokens[lpTokenName]
+    token = tokens[tokenName]
+    account1 = accounts[7]
+    initBalance(account1, token, lpToken, INITIAL_LP_TOKEN_ACCOUNT_AMOUNT)
+    lpBalance1 = lpToken.balanceOf(account1)
+    pendingGOV1 = masterChef.pendingGOV(pid, account1)
+    pgovBalance1 = pgovToken.balanceOf(account1)
+    lockedRewards1 = masterChef.lockedRewards(account1);
+    lpToken.approve(masterChef, 2**256-1, {'from': account1})
+    depositAmount = lpBalance1 / 2
+    masterChef.setLocked(pid, True, {'from': masterChef.owner()})
+    tx1 = masterChef.deposit(pid, depositAmount, {'from': account1})
+    chain.mine()
+    pendingGOV2 = masterChef.pendingGOV(pid, account1)
+    masterChef.claimReward(pid,  {'from': account1})
+    pendingGOV3 = masterChef.pendingGOV(pid, account1);
+
+    assert pgovBalance1 == pgovToken.balanceOf(account1)
+    assert pendingGOV3 == 0
+    assert masterChef.lockedRewards(account1) > lockedRewards1
+
+
+
 
