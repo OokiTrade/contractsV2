@@ -160,3 +160,31 @@ def testFarming_emergencyWithdraw(requireFork, tokens, tokenName, lpTokenName, p
     lpBalanceBefore1 = lpToken.balanceOf(account1)
     assert lpToken.balanceOf(masterChef) == masterchefBalance
     assert lpToken.balanceOf(account1) == lpBalance1
+
+
+
+# poolAmounts
+@pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
+def testFarming_poolAmounts(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, pgovToken):
+    # Precondition
+    lpToken = tokens[lpTokenName]
+    token = tokens[tokenName]
+    account1 = accounts[6]
+    initBalance(account1, token, lpToken, INITIAL_LP_TOKEN_ACCOUNT_AMOUNT)
+    lpBalance1 = lpToken.balanceOf(account1)
+    accGOVPerShare1 = masterChef.poolInfo(pid)[2]
+    masterchefBalance1 = lpToken.balanceOf(masterChef);
+
+    depositAmount = lpBalance1 / 2
+    lpToken.approve(masterChef, 2**256-1, {'from': account1})
+    tx1 = masterChef.deposit(pid, depositAmount, {'from': account1})
+    assert tx1.status.name == 'Confirmed'
+    assert lpToken.balanceOf(account1) == lpBalance1 - depositAmount
+    assert accGOVPerShare1 < masterChef.poolInfo(pid)[2]
+    assert masterchefBalance1 < lpToken.balanceOf(masterChef)
+    accGOVPerShare2 = masterChef.poolInfo(pid)[2]
+    masterchefBalance2 = lpToken.balanceOf(masterChef);
+    lpToken.transfer(masterChef, lpToken.balanceOf(account1), {'from': account1})
+    assert accGOVPerShare2 == masterChef.poolInfo(pid)[2]
+    assert masterchefBalance2 < lpToken.balanceOf(masterChef)
+
