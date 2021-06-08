@@ -21,7 +21,7 @@ contract HelperImpl is Ownable {
     //address public constant bZxProtocol = 0xfe4F0eb0A1Ad109185c9AaDE64C48ff8e928e54B; // polygon
 
     function balanceOf(IERC20[] calldata tokens, address wallet)
-        public
+        public view
         returns (uint256[] memory balances)
     {
         balances = new uint256[](tokens.length);
@@ -31,7 +31,7 @@ contract HelperImpl is Ownable {
     }
 
     function totalSupply(IERC20[] calldata tokens)
-        public
+        public view
         returns (uint256[] memory totalSupply)
     {
         totalSupply = new uint256[](tokens.length);
@@ -44,7 +44,7 @@ contract HelperImpl is Ownable {
         IERC20[] calldata tokens,
         address owner,
         address spender
-    ) public returns (uint256[] memory allowances) {
+    ) public view returns (uint256[] memory allowances) {
         allowances = new uint256[](tokens.length);
         for (uint256 i = 0; i < tokens.length; i++) {
             allowances[i] = tokens[i].allowance(owner, spender);
@@ -52,7 +52,7 @@ contract HelperImpl is Ownable {
     }
 
     function tokenPrice(IToken[] calldata tokens)
-        public
+        public view
         returns (uint256[] memory prices)
     {
         prices = new uint256[](tokens.length);
@@ -62,7 +62,7 @@ contract HelperImpl is Ownable {
     }
 
     function supplyInterestRate(IToken[] calldata tokens)
-        public
+        public view
         returns (uint256[] memory rates)
     {
         rates = new uint256[](tokens.length);
@@ -72,7 +72,7 @@ contract HelperImpl is Ownable {
     }
 
     function borrowInterestRate(IToken[] calldata tokens)
-        public
+        public view
         returns (uint256[] memory rates)
     {
         rates = new uint256[](tokens.length);
@@ -82,7 +82,7 @@ contract HelperImpl is Ownable {
     }
 
     function assetBalanceOf(IToken[] calldata tokens, address wallet)
-        public
+        public view
         returns (uint256[] memory balances)
     {
         balances = new uint256[](tokens.length);
@@ -92,7 +92,7 @@ contract HelperImpl is Ownable {
     }
 
     function profitOf(IToken[] calldata tokens, address wallet)
-        public
+        public view
         returns (int256[] memory profits)
     {
         profits = new int256[](tokens.length);
@@ -102,7 +102,7 @@ contract HelperImpl is Ownable {
     }
 
     function marketLiquidity(IToken[] calldata tokens)
-        public
+        public view
         returns (uint256[] memory liquidity)
     {
         liquidity = new uint256[](tokens.length);
