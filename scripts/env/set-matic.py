@@ -11,3 +11,4 @@ for l in list:
 
 CHEF = Contract.from_abi("CHEF", "0xd39Ff512C3e55373a30E94BB1398651420Ae1D43", MasterChef_Polygon.abi)
 HELPER = Contract.from_abi("HELPER", "0xCc0fD6AA1F92e18D103A7294238Fdf558008725a", HelperImpl.abi)
+PRICE_FEED = Contract.from_abi("PRICE_FEED", BZX.priceFeeds(), abi = PriceFeeds.abi)

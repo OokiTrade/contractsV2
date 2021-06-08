@@ -10,3 +10,4 @@ for l in list:
     globals()[underlyingTemp.symbol()] = underlyingTemp
 
 HELPER = Contract.from_abi("HELPER", "0xa40cDd78BFBe0E8ca643081Df43A45ED8C2C12bB", HelperImpl.abi)
+PRICE_FEED = Contract.from_abi("PRICE_FEED", BZX.priceFeeds(), abi = PriceFeeds.abi)
