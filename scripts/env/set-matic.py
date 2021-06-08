@@ -1,5 +1,5 @@
 BZX = Contract.from_abi("BZX", "0xfe4F0eb0A1Ad109185c9AaDE64C48ff8e928e54B", interface.IBZx.abi)
-TOKEN_REGISTRY = Contract.from_abi("TOKEN_REGISTRY", "0x2fA30fB75E08f5533f0CF8EBcbb1445277684E85", TokenRegistry.abi)
+TOKEN_REGISTRY = Contract.from_abi("TOKEN_REGISTRY", "0x5a6f1e81334C63DE0183A4a3864bD5CeC4151c27", TokenRegistry.abi)
 
 list = TOKEN_REGISTRY.getTokens(0, 100)
 for l in list:
