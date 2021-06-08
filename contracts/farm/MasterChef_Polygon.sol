@@ -425,22 +425,32 @@ contract MasterChef_Polygon is Upgradeable {
         }
     }
 
-    function getOptimisedUserInfos(address _user) external view returns(uint256[2][] memory userInfos){
-        uint256 length = poolInfo.length;
-        userInfos = new uint256[2][](length);
-        for (uint256 pid = 0; pid < length; ++pid) {
-            userInfos[pid][0] = userInfo[pid][_user].amount;
-            userInfos[pid][1] = _pendingGOV(pid, _user);
+    struct OptimisedUserInfos {
+        uint256 amount;
+        uint256 pendingGOV;
+        bool isLocked;
+    }
 
+    function getOptimisedUserInfos(address _user) external view returns(OptimisedUserInfos[] memory userInfos){
+        userInfos = new OptimisedUserInfos[](poolInfo.length);
+        for (uint256 pid = 0; pid < poolInfo.length; ++pid) {
+            userInfos[pid].amount = userInfo[pid][_user].amount;
+            userInfos[pid].pendingGOV = _pendingGOV(pid, _user);
+            userInfos[pid].isLocked = isLocked[pid];
         }
     }
 
-    function getUserInfos(address _wallet) external view returns(UserInfo[] memory userInfos){
+    function getUserInfos(address _wallet) 
+        external 
+        view 
+        returns(UserInfo[] memory userInfos, 
+                uint256 lockedReward){
         uint256 length = poolInfo.length;
         userInfos = new UserInfo[](length);
         for (uint256 pid = 0; pid < length; ++pid) {
             userInfos[pid] = userInfo[pid][_wallet];
         }
+        lockedReward = lockedRewards[_wallet];
     }
 
     function getPendingGOV(address _user) external view returns(uint256[] memory pending){
