@@ -479,6 +479,7 @@ contract MasterChef_Polygon is Upgradeable {
     struct OptimisedUserInfos {
         uint256 amount;
         uint256 pendingGOV;
+        uint256 withrawableGOV;
         bool isLocked;
     }
 
@@ -487,6 +488,11 @@ contract MasterChef_Polygon is Upgradeable {
         for (uint256 pid = 0; pid < poolInfo.length; ++pid) {
             userInfos[pid].amount = userInfo[pid][_user].amount;
             userInfos[pid].pendingGOV = _pendingGOV(pid, _user);
+            if (pid == GOV_POOL_ID) {
+                userInfos[pid].withrawableGOV = pendingGOV - lockedRewards[_user];
+            } else {
+                userInfos[pid].withrawableGOV = pendingGOV;
+            }
             userInfos[pid].isLocked = isLocked[pid];
         }
     }
