@@ -336,11 +336,13 @@ contract MasterChef_Polygon is Upgradeable {
 
     // Deposit LP tokens to MasterChef for GOV allocation.
     function deposit(uint256 _pid, uint256 _amount) public {
-        poolInfo[_pid].lpToken.safeTransferFrom(
-            address(msg.sender),
-            address(this),
-            _amount
-        );
+        if(_amount != 0){
+            poolInfo[_pid].lpToken.safeTransferFrom(
+                address(msg.sender),
+                address(this),
+                _amount
+            );
+        }
         _deposit(_pid, _amount);
     }
 

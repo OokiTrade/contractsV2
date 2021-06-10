@@ -79,14 +79,25 @@ def SUSHI_PGOV_MATIC(accounts, interface):
 @pytest.fixture(scope="module", autouse=True)
 def masterChef(accounts, chain, MasterChef_Polygon, iMATIC, iETH, iUSDC, iWBTC, iUSDT, pgovToken, Proxy, MintCoordinator_Polygon):
 
-    masterChef = Contract.from_abi("masterChef", address="0xd39Ff512C3e55373a30E94BB1398651420Ae1D43", abi=MasterChef_Polygon.abi, owner=accounts[0])
+    #masterChef = Contract.from_abi("masterChef", address="0xd39Ff512C3e55373a30E94BB1398651420Ae1D43", abi=MasterChef_Polygon.abi, owner=accounts[0])
+
+    devAccount = accounts[0]
+    bgovPerBlock = 100*10**18
+    bonusEndBlock = chain.height + 1*10**6
+    startBlock = chain.height
+    masterChefImpl = accounts[0].deploy(MasterChef_Polygon)
+    masterChefProxy = accounts[0].deploy(Proxy, masterChefImpl)
+    masterChef = Contract.from_abi("masterChef", address=masterChefProxy, abi=MasterChef_Polygon.abi, owner=accounts[0])
+
+    masterChef.initialize(pgovToken, devAccount, bgovPerBlock, startBlock)
 
     masterChef.setStartBlock(chain.height-100, {'from': masterChef.owner()})
 
-    if(len(masterChef.getPoolInfos())==2):
-        masterChef.add(12500, iMATIC, True, {'from': masterChef.owner()})
-        masterChef.add(12500, iUSDC, True, {'from': masterChef.owner()})
-        masterChef.massUpdatePools({'from': masterChef.owner()})
+    masterChef.add(12500, pgovToken, True, {'from': masterChef.owner()})
+    masterChef.add(12500, iUSDC, True, {'from': masterChef.owner()})
+    masterChef.add(12500, iMATIC, True, {'from': masterChef.owner()})
+
+    masterChef.massUpdatePools({'from': masterChef.owner()})
 
     mintCoordinator = Contract.from_abi("mintCoordinator", address="0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440", abi=MintCoordinator_Polygon.abi, owner=accounts[0]);
     mintCoordinator.addMinter(masterChef, {"from": mintCoordinator.owner()})
