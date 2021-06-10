@@ -21,8 +21,8 @@ bzx = Contract.from_abi("bzx", address=bzxAddress,
 def main():
 
     #deployment()
-    marginSettings()
-    #demandCurve()
+    #marginSettings()
+    demandCurve()
 
 def deployment():
     underlyingSymbol = "BZRX"
@@ -185,7 +185,11 @@ def demandCurve():
     for tokenAssetPairA in supportedTokenAssetsPairs:
         
         ## no BZRX params
-        if (tokenAssetPairA[0] == "0x97dfbEF4eD5a7f63781472Dbc69Ab8e5d7357cB9"):
+        #if (tokenAssetPairA[0] == "0x97dfbEF4eD5a7f63781472Dbc69Ab8e5d7357cB9"):
+        #    continue
+
+        ## only BZRX params
+        if (tokenAssetPairA[0] != "0x97dfbEF4eD5a7f63781472Dbc69Ab8e5d7357cB9"):
             continue
 
         '''if (tokenAssetPairA[0] != "0xda4f261f26c82766408dcf6ba1b510fa8e64efe9" and tokenAssetPairA[0] != "0xC5b6cC0A9D61600BE42e83d8fA1331dB9E29e48C"):

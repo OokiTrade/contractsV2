@@ -22,7 +22,7 @@ def main():
 
     #deployment()
     #marginSettings()
-    #demandCurve()
+    demandCurve()
 
 def deployment():
     underlyingSymbol = "AUTO"
@@ -182,11 +182,15 @@ def demandCurve():
     for tokenAssetPairA in supportedTokenAssetsPairs:
         
         ## no BZRX params
-        if (tokenAssetPairA[0] == "0xA726F2a7B200b03beB41d1713e6158e0bdA8731F"):
+        #if (tokenAssetPairA[0] == "0xA726F2a7B200b03beB41d1713e6158e0bdA8731F"):
+        #    continue
+
+        ## only BZRX params
+        if (tokenAssetPairA[0] != "0xA726F2a7B200b03beB41d1713e6158e0bdA8731F"):
             continue
 
-        if (tokenAssetPairA[0] != "0xda4f261f26c82766408dcf6ba1b510fa8e64efe9" and tokenAssetPairA[0] != "0xC5b6cC0A9D61600BE42e83d8fA1331dB9E29e48C"):
-            continue
+        #if (tokenAssetPairA[0] != "0xda4f261f26c82766408dcf6ba1b510fa8e64efe9" and tokenAssetPairA[0] != "0xC5b6cC0A9D61600BE42e83d8fA1331dB9E29e48C"):
+        #    continue
 
         existingITokenLoanTokenAddress = tokenAssetPairA[1]
         collateralTokenAddress = tokenAssetPairA[1]
