@@ -254,7 +254,6 @@ contract MasterChef_Polygon is Upgradeable {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 accGOVPerShare = pool.accGOVPerShare.mul(1e18);
-        //uint256 lpSupply = pool.lpToken.balanceOf(address(this));
         uint256 lpSupply = poolAmount[_pid];
         if (block.number > pool.lastRewardBlock && lpSupply != 0) {
             uint256 multiplier =
@@ -295,7 +294,6 @@ contract MasterChef_Polygon is Upgradeable {
         if (block.number <= pool.lastRewardBlock) {
             return;
         }
-        //uint256 lpSupply = pool.lpToken.balanceOf(address(this));
         uint256 lpSupply = poolAmount[_pid];
         if (lpSupply == 0) {
             pool.lastRewardBlock = block.number;
@@ -319,7 +317,6 @@ contract MasterChef_Polygon is Upgradeable {
         PoolInfo storage pool = poolInfo[GOV_POOL_ID];
         require(block.number > pool.lastRewardBlock, "rewards not started");
 
-        //uint256 lpSupply = pool.lpToken.balanceOf(address(this));
         uint256 lpSupply = poolAmount[GOV_POOL_ID];
         require(lpSupply != 0, "no deposits");
 
@@ -339,71 +336,125 @@ contract MasterChef_Polygon is Upgradeable {
 
     // Deposit LP tokens to MasterChef for GOV allocation.
     function deposit(uint256 _pid, uint256 _amount) public {
-        PoolInfo storage pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
-        updatePool(_pid);
-        if (user.amount > 0) {
-            uint256 pending =
-                user.amount.mul(pool.accGOVPerShare).div(1e12).sub(
-                    user.rewardDebt
-                );
-            safeGOVTransfer(_pid, msg.sender, pending);
-        }
-        pool.lpToken.safeTransferFrom(
+        poolInfo[_pid].lpToken.safeTransferFrom(
             address(msg.sender),
             address(this),
             _amount
         );
-        poolAmount[_pid] = poolAmount[_pid].add(_amount);
-        user.amount = user.amount.add(_amount);
-        user.rewardDebt = user.amount.mul(pool.accGOVPerShare).div(1e12);
-        emit Deposit(msg.sender, _pid, _amount);
+        _deposit(_pid, _amount);
+    }
+
+    function _deposit(uint256 _pid, uint256 _amount) internal {
+        PoolInfo storage pool = poolInfo[_pid];
+        UserInfo storage user = userInfo[_pid][msg.sender];
+        updatePool(_pid);
+
+        uint256 userAmount = user.amount;
+        uint256 pending;
+        if (userAmount > 0) {
+            pending = userAmount
+                .mul(pool.accGOVPerShare)
+                .div(1e12)
+                .sub(user.rewardDebt);
+        }
+
+        if (_amount != 0) {
+            poolAmount[_pid] = poolAmount[_pid].add(_amount);
+            userAmount = userAmount.add(_amount);
+            emit Deposit(msg.sender, _pid, _amount);
+        }
+        user.rewardDebt = userAmount.mul(pool.accGOVPerShare).div(1e12);
+        user.amount = userAmount;
+
+        safeGOVTransfer(_pid, pending);
     }
 
     function claimReward(uint256 _pid) public {
-        deposit(_pid, 0);
+        _deposit(_pid, 0);
+    }
+
+    function compoundReward(uint256 _pid) public {
+        uint256 balance = GOV.balanceOf(msg.sender);
+        _deposit(_pid, 0);
+
+        // locked pools are ignored since they auto-compound
+        if (!isLocked[_pid]) {
+            balance = GOV.balanceOf(msg.sender).sub(balance);
+            if (balance != 0)
+                deposit(GOV_POOL_ID, balance);
+        }
     }
 
     // Withdraw LP tokens from MasterChef.
     function withdraw(uint256 _pid, uint256 _amount) public {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
-        require(user.amount >= _amount, "withdraw: not good");
+        uint256 userAmount = user.amount;
+        require(_amount != 0 && userAmount >= _amount, "withdraw: not good");
         updatePool(_pid);
-        uint256 pending =
-            user.amount.mul(pool.accGOVPerShare).div(1e12).sub(
-                user.rewardDebt
-            );
-        safeGOVTransfer(_pid, msg.sender, pending);
+
+        uint256 pending = userAmount
+            .mul(pool.accGOVPerShare)
+            .div(1e12)
+            .sub(user.rewardDebt);
+
+        IERC20 lpToken = pool.lpToken;
+        if (lpToken == GOV) {
+            uint256 locked = lockedRewards[msg.sender];
+            if (_amount > locked) {
+                _amount -= locked;
+            } else {
+                _amount = 0;
+            }
+        }
+
         poolAmount[_pid] = poolAmount[_pid].sub(_amount);
-        user.amount = user.amount.sub(_amount);
-        user.rewardDebt = user.amount.mul(pool.accGOVPerShare).div(1e12);
-        pool.lpToken.safeTransfer(address(msg.sender), _amount);
+        userAmount = userAmount.sub(_amount);
+        user.rewardDebt = userAmount.mul(pool.accGOVPerShare).div(1e12);
+        user.amount = userAmount;
+        lpToken.safeTransfer(address(msg.sender), _amount);
         emit Withdraw(msg.sender, _pid, _amount);
+
+        safeGOVTransfer(_pid, pending);
     }
 
     // Withdraw without caring about rewards. EMERGENCY ONLY.
     function emergencyWithdraw(uint256 _pid) public {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
-        pool.lpToken.safeTransfer(address(msg.sender), user.amount);
-        emit EmergencyWithdraw(msg.sender, _pid, user.amount);
-        poolAmount[_pid] = poolAmount[_pid].sub(user.amount);
-        user.amount = 0;
-        user.rewardDebt = 0;
+
+        uint256 _amount = user.amount;
+        IERC20 lpToken = pool.lpToken;
+        if (lpToken == GOV) {
+            uint256 locked = lockedRewards[msg.sender];
+            if (_amount > locked) {
+                _amount -= locked;
+            } else {
+                _amount = 0;
+            }
+        }
+
+        lpToken.safeTransfer(address(msg.sender), _amount);
+        emit EmergencyWithdraw(msg.sender, _pid, _amount);
+        poolAmount[_pid] = poolAmount[_pid].sub(_amount);
+        user.amount = user.amount.sub(_amount);
+        user.rewardDebt = user.amount.mul(pool.accGOVPerShare).div(1e12);
     }
 
-    // Safe GOV transfer function, just in case if rounding error causes pool to not have enough GOVs.
-    function safeGOVTransfer(uint256 _pid, address _to, uint256 _amount) internal {
+    function safeGOVTransfer(uint256 _pid, uint256 _amount) internal {
+        if (_amount == 0) {
+            return;
+        }
+        uint256 GOVBal = GOV.balanceOf(address(this));
+        if (_amount > GOVBal) {
+            _amount = GOVBal;
+        }
+
         if (isLocked[_pid]) {
-            lockedRewards[_to] = lockedRewards[_to].add(_amount);
+            lockedRewards[msg.sender] = lockedRewards[msg.sender].add(_amount);
+            _deposit(GOV_POOL_ID, _amount);
         } else {
-            uint256 GOVBal = GOV.balanceOf(address(this));
-            if (_amount > GOVBal) {
-                GOV.transfer(_to, GOVBal);
-            } else {
-                GOV.transfer(_to, _amount);
-            }
+            GOV.transfer(msg.sender, _amount);
         }
     }
 

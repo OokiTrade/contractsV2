@@ -21,7 +21,7 @@ bzx = Contract.from_abi("bzx", address=bzxAddress,
 def main():
 
     #deployment()
-    #marginSettings()
+    marginSettings()
     #demandCurve()
 
 def deployment():
@@ -125,6 +125,10 @@ def marginSettings():
             ## skipping BZRX for now
             if existingITokenLoanTokenAddress == "0x54cFe73f2c7d0c4b62Ab869B473F5512Dc0944D2" or collateralTokenAddress == "0x54cFe73f2c7d0c4b62Ab869B473F5512Dc0944D2":
                 continue
+
+            ## only BZRX for now
+            #if existingITokenLoanTokenAddress != "0x54cFe73f2c7d0c4b62Ab869B473F5512Dc0944D2" and collateralTokenAddress != "0x54cFe73f2c7d0c4b62Ab869B473F5512Dc0944D2":
+            #    continue
             '''
                         "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82", # CAKE
                         "0xa184088a740c695E156F91f5cC086a06bb78b827", # AUTO
