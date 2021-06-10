@@ -83,7 +83,7 @@ contract MasterChef_Polygon is Upgradeable {
     }
 
     // total deposits in a pool
-    mapping(uint256 => uint256) public poolAmount;
+    mapping(uint256 => uint256) public balanceOf;
 
     // pool rewards locked for future claim
     mapping(uint256 => bool) public isLocked;
@@ -254,7 +254,7 @@ contract MasterChef_Polygon is Upgradeable {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][_user];
         uint256 accGOVPerShare = pool.accGOVPerShare.mul(1e18);
-        uint256 lpSupply = poolAmount[_pid];
+        uint256 lpSupply = balanceOf[_pid];
         if (block.number > pool.lastRewardBlock && lpSupply != 0) {
             uint256 multiplier =
                 getMultiplierPrecise(pool.lastRewardBlock, block.number);
@@ -294,7 +294,7 @@ contract MasterChef_Polygon is Upgradeable {
         if (block.number <= pool.lastRewardBlock) {
             return;
         }
-        uint256 lpSupply = poolAmount[_pid];
+        uint256 lpSupply = balanceOf[_pid];
         if (lpSupply == 0) {
             pool.lastRewardBlock = block.number;
             return;
@@ -317,7 +317,7 @@ contract MasterChef_Polygon is Upgradeable {
         PoolInfo storage pool = poolInfo[GOV_POOL_ID];
         require(block.number > pool.lastRewardBlock, "rewards not started");
 
-        uint256 lpSupply = poolAmount[GOV_POOL_ID];
+        uint256 lpSupply = balanceOf[GOV_POOL_ID];
         require(lpSupply != 0, "no deposits");
 
         updatePool(GOV_POOL_ID);
@@ -359,7 +359,7 @@ contract MasterChef_Polygon is Upgradeable {
         }
 
         if (_amount != 0) {
-            poolAmount[_pid] = poolAmount[_pid].add(_amount);
+            balanceOf[_pid] = balanceOf[_pid].add(_amount);
             userAmount = userAmount.add(_amount);
             emit Deposit(msg.sender, _pid, _amount);
         }
@@ -408,7 +408,7 @@ contract MasterChef_Polygon is Upgradeable {
             }
         }
 
-        poolAmount[_pid] = poolAmount[_pid].sub(_amount);
+        balanceOf[_pid] = balanceOf[_pid].sub(_amount);
         userAmount = userAmount.sub(_amount);
         user.rewardDebt = userAmount.mul(pool.accGOVPerShare).div(1e12);
         user.amount = userAmount;
@@ -436,7 +436,7 @@ contract MasterChef_Polygon is Upgradeable {
 
         lpToken.safeTransfer(address(msg.sender), _amount);
         emit EmergencyWithdraw(msg.sender, _pid, _amount);
-        poolAmount[_pid] = poolAmount[_pid].sub(_amount);
+        balanceOf[_pid] = balanceOf[_pid].sub(_amount);
         user.amount = user.amount.sub(_amount);
         user.rewardDebt = user.amount.mul(pool.accGOVPerShare).div(1e12);
     }
@@ -476,13 +476,13 @@ contract MasterChef_Polygon is Upgradeable {
         }
     }
 
-    function getOptimisedUserInfos(address _user) external view returns(uint256[2][] memory userInfos){
+    function getOptimisedUserInfos(address _user) external view returns(uint256[3][] memory userInfos){
         uint256 length = poolInfo.length;
-        userInfos = new uint256[2][](length);
+        userInfos = new uint256[3][](length);
         for (uint256 pid = 0; pid < length; ++pid) {
             userInfos[pid][0] = userInfo[pid][_user].amount;
             userInfos[pid][1] = _pendingGOV(pid, _user);
-
+            userInfos[pid][2] = isLocked[pid] ? 1 : 0;
         }
     }
 
