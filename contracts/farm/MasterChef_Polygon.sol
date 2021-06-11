@@ -400,11 +400,9 @@ contract MasterChef_Polygon is Upgradeable {
 
         IERC20 lpToken = pool.lpToken;
         if (lpToken == GOV) {
-            uint256 locked = lockedRewards[msg.sender];
-            if (_amount > locked) {
-                _amount -= locked;
-            } else {
-                _amount = 0;
+            uint256 availableAmount = userAmount.sub(lockedRewards[msg.sender]);
+            if (_amount > availableAmount) {
+                _amount = availableAmount;
             }
         }
 
