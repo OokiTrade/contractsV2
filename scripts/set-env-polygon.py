@@ -65,16 +65,21 @@ devAccount = accounts[9]
 bgovPerBlock = 100*10**18
 bonusEndBlock = chain.height + 1*10**6
 startBlock = chain.height
-masterChefImpl = accounts[0].deploy(MasterChef_Polygon)
-masterChefProxy = accounts[0].deploy(Proxy, masterChefImpl)
+
+masterChefProxy = Contract.from_abi("masterChefProxy", address="0xd39Ff512C3e55373a30E94BB1398651420Ae1D43", abi=Proxy.abi, owner=acct)
+masterChefImpl = MasterChef_Polygon.deploy({'from': masterChefProxy.owner()})
+masterChefProxy.replaceImplementation(masterChefImpl, {'from': masterChefProxy.owner()})
 masterChef = Contract.from_abi("masterChef", address=masterChefProxy, abi=MasterChef_Polygon.abi, owner=acct)
 
-masterChef.initialize(pgovToken, devAccount, bgovPerBlock, startBlock)
+mintCoordinator = Contract.from_abi("mintCoordinator", address="0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440", abi=MintCoordinator_Polygon.abi, owner=accounts[0]);
+mintCoordinator.addMinter(masterChef, {"from": mintCoordinator.owner()})
+pgovToken.transferOwnership(mintCoordinator, {"from": pgovToken.owner()})
+
 
 masterChef.setStartBlock(chain.height-100, {'from': masterChef.owner()})
 
-masterChef.add(12500, pgovToken, True, {'from': masterChef.owner()})
-masterChef.add(12500, SUSHI_PGOV_wMATIC, True, {'from': masterChef.owner()})
+#masterChef.add(12500, pgovToken, True, {'from': masterChef.owner()})
+#masterChef.add(12500, SUSHI_PGOV_wMATIC, True, {'from': masterChef.owner()})
 masterChef.add(12500, iMATIC, True, {'from': masterChef.owner()})
 masterChef.add(12500, iWBTC, True, {'from': masterChef.owner()})
 masterChef.add(12500, iETH, True, {'from': masterChef.owner()})
@@ -95,11 +100,6 @@ for pool in masterChef.getPoolInfos():
     i += 1
 
 masterChef.massUpdatePools({'from': masterChef.owner()})
-
-mintCoordinator = Contract.from_abi("mintCoordinator", address="0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440", abi=MintCoordinator_Polygon.abi, owner=accounts[0]);
-mintCoordinator.addMinter(masterChef, {"from": mintCoordinator.owner()})
-pgovToken.transferOwnership(mintCoordinator, {"from": pgovToken.owner()})
-
 
 iMATIC.approve(masterChef, 2**256-1, {'from': acct})
 masterChef.deposit(2, iMATIC.balanceOf(acct), {'from': acct})
