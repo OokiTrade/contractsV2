@@ -3,7 +3,7 @@ BZX = Contract.from_abi("bzx", address="0xfe4F0eb0A1Ad109185c9AaDE64C48ff8e928e5
 MATIC = Contract.from_abi("MATIC", address="0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270", abi=TestToken.abi, owner=acct)
 ETH = Contract.from_abi("ETH", address="0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619", abi=TestToken.abi, owner=acct)
 WBTC = Contract.from_abi("WBTC", address="0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6", abi=TestToken.abi, owner=acct)
-LINK = Contract.from_abi("LINK", address="0xb0897686c545045afc77cf20ec7a532e3120e0f1", abi=TestToken.abi, owner=acct)
+LINK = Contract.from_abi("LINK", address="0x53e0bca35ec356bd5dddfebbd1fc0fd03fabad39", abi=TestToken.abi, owner=acct)
 USDC = Contract.from_abi("USDC", address="0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", abi=TestToken.abi, owner=acct)
 USDT = Contract.from_abi("USDT", address="0xc2132D05D31c914a87C6611C10748AEb04B58e8F", abi=TestToken.abi, owner=acct)
 AAVE = Contract.from_abi("AAVE", address="0xD6DF932A45C0f255f85145f286eA0b292B21C90B", abi=TestToken.abi, owner=acct)
@@ -56,12 +56,39 @@ print("Deposit iMatic to get some pgovs")
 
 SUSHI_PGOV_wMATIC = Contract.from_abi("SUSHI_PGOV_wMATIC", "0xC698b8a1391F88F497A4EF169cA85b492860b502", interface.IPancakePair.abi)
 SUSHI_PGOV_wMATIC_PID = 1
+pgovToken = Contract.from_abi("GovToken", address="0xd5d84e75f48E75f01fb2EB6dFD8eA148eE3d0FEb", abi=GovToken.abi, owner=accounts[0]);
 
-masterChef = Contract.from_abi("masterChef", address="0xd39Ff512C3e55373a30E94BB1398651420Ae1D43", abi=MasterChef_Polygon.abi, owner=accounts[0])
+#masterChef = Contract.from_abi("masterChef", address="0xd39Ff512C3e55373a30E94BB1398651420Ae1D43", abi=MasterChef_Polygon.abi, owner=accounts[0])
+
+
+devAccount = accounts[9]
+bgovPerBlock = 100*10**18
+bonusEndBlock = chain.height + 1*10**6
+startBlock = chain.height
+masterChefImpl = accounts[0].deploy(MasterChef_Polygon)
+masterChefProxy = accounts[0].deploy(Proxy, masterChefImpl)
+masterChef = Contract.from_abi("masterChef", address=masterChefProxy, abi=MasterChef_Polygon.abi, owner=acct)
+
+masterChef.initialize(pgovToken, devAccount, bgovPerBlock, startBlock)
+
 masterChef.setStartBlock(chain.height-100, {'from': masterChef.owner()})
 
-masterChef.add(0, iMATIC, True, {'from': masterChef.owner()})
+masterChef.add(12500, pgovToken, True, {'from': masterChef.owner()})
+masterChef.add(12500, SUSHI_PGOV_wMATIC, True, {'from': masterChef.owner()})
+masterChef.add(12500, iMATIC, True, {'from': masterChef.owner()})
+masterChef.add(12500, iWBTC, True, {'from': masterChef.owner()})
+masterChef.add(12500, iETH, True, {'from': masterChef.owner()})
+masterChef.add(12500, iLINK, True, {'from': masterChef.owner()})
+masterChef.add(12500, iUSDC, True, {'from': masterChef.owner()})
+masterChef.add(12500, iUSDT, True, {'from': masterChef.owner()})
+masterChef.add(12500, iAAVE, True, {'from': masterChef.owner()})
+masterChef.add(12500, iBZRX, True, {'from': masterChef.owner()})
 
+
+masterChef.massUpdatePools({'from': masterChef.owner()})
+
+masterChef.setStartBlock(chain.height-100, {'from': masterChef.owner()})
+print("masterChef.set")
 i = 0
 for pool in masterChef.getPoolInfos():
     masterChef.set(i,12500, True, {'from': masterChef.owner()})
@@ -69,7 +96,6 @@ for pool in masterChef.getPoolInfos():
 
 masterChef.massUpdatePools({'from': masterChef.owner()})
 
-pgovToken = Contract.from_abi("GovToken", address="0xd5d84e75f48E75f01fb2EB6dFD8eA148eE3d0FEb", abi=GovToken.abi, owner=accounts[0]);
 mintCoordinator = Contract.from_abi("mintCoordinator", address="0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440", abi=MintCoordinator_Polygon.abi, owner=accounts[0]);
 mintCoordinator.addMinter(masterChef, {"from": mintCoordinator.owner()})
 pgovToken.transferOwnership(mintCoordinator, {"from": pgovToken.owner()})
@@ -99,21 +125,6 @@ SUSHI_PGOV_wMATIC.approve(masterChef, 2**256-1, {'from': acct})
 
 masterChef.deposit(SUSHI_PGOV_wMATIC_PID, SUSHI_PGOV_wMATIC.balanceOf(acct), {'from': acct})
 
-
-masterChef.add(0, iUSDC, True, {'from': masterChef.owner()})
-masterChef.add(0, iUSDT, True, {'from': masterChef.owner()})
-masterChef.add(0, iETH, True, {'from': masterChef.owner()})
-masterChef.add(0, iWBTC, True, {'from': masterChef.owner()})
-masterChef.add(0, iLINK, True, {'from': masterChef.owner()})
-masterChef.add(0, iAAVE, True, {'from': masterChef.owner()})
-masterChef.add(0, iBZRX, True, {'from': masterChef.owner()})
-
-
-i = 0
-for pool in masterChef.getPoolInfos():
-    masterChef.set(i,12500, True, {'from': masterChef.owner()})
-    i += 1
-    
 print("-----------------------------------")
 print (f"MATIC: {MATIC.address}")
 print (f"ETH: {ETH.address}")
@@ -133,4 +144,8 @@ print (f"iUSDC: {BZX.underlyingToLoanPool(USDC.address)}")
 print (f"iUSDT: {BZX.underlyingToLoanPool(USDT.address)}")
 print (f"iAAVE: {BZX.underlyingToLoanPool(AAVE.address)}")
 print (f"iBZRX: {BZX.underlyingToLoanPool(BZRX.address)}")
+
+print("-----------------------------------")
+print (f"MasterChef: {masterChef.address}")
+
 
