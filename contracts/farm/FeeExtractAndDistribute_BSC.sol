@@ -41,6 +41,8 @@ contract FeeExtractAndDistribute_BSC is Upgradeable {
     address[] public currentFeeTokens;
 
     mapping(IERC20 => uint256) public tokenHeld;
+    
+    uint256 public maxUniswapDisagreement = 3e18;
 
     event ExtractAndDistribute();
 
@@ -90,7 +92,7 @@ contract FeeExtractAndDistribute_BSC is Upgradeable {
         internal
     {
         uint256[] memory amounts = bZx.withdrawFees(assets, address(this), IBZxPartial.FeeClaimType.All);
-
+        
         for (uint256 i = 0; i < assets.length; i++) {
             require(assets[i] != BGOV, "asset not supported");
             exportedFees[assets[i]] = exportedFees[assets[i]]
@@ -102,6 +104,8 @@ contract FeeExtractAndDistribute_BSC is Upgradeable {
 
         address asset;
         uint256 amount;
+        IPriceFeeds priceFeeds = IPriceFeeds(bZx.priceFeeds());
+        uint256 maxDisagreement = maxUniswapDisagreement;
         for (uint256 i = 0; i < assets.length; i++) {
             asset = assets[i];
             if (asset == BGOV || asset == BZRX || asset == BNB) {
@@ -111,7 +115,7 @@ contract FeeExtractAndDistribute_BSC is Upgradeable {
             exportedFees[asset] = 0;
 
             if (amount != 0) {
-                bnbOutput += _swapWithPair(asset, BNB, amount);
+                bnbOutput += _swapWithPair(asset, BNB, amount, priceFeeds, maxDisagreement);
             }
         }
         if (bnbOutput != 0) {
@@ -119,7 +123,7 @@ contract FeeExtractAndDistribute_BSC is Upgradeable {
             uint256 sellAmount = bnbOutput * 15e18 / 1e20;
             bnbOutput = bnbOutput - amount - sellAmount;
 
-            uint256 bgovAmount = _swapWithPair(BNB, BGOV, amount);
+            uint256 bgovAmount = _swapWithPair(BNB, BGOV, amount, priceFeeds, maxDisagreement);
             emit AssetSwap(
                 msg.sender,
                 BNB,
@@ -184,7 +188,9 @@ contract FeeExtractAndDistribute_BSC is Upgradeable {
     function _swapWithPair(
         address inAsset,
         address outAsset,
-        uint256 inAmount)
+        uint256 inAmount,
+        IPriceFeeds priceFeeds,
+        uint256 maxDisagreement)
         internal
         returns (uint256 returnAmount)
     {
@@ -201,9 +207,85 @@ contract FeeExtractAndDistribute_BSC is Upgradeable {
         );
 
         returnAmount = amounts[1];
+        
+        // priceFeeds.checkPriceDisagreement(
+        //     inAsset,
+        //     outAsset,
+        //     inAmount,
+        //     returnAmount,
+        //     maxDisagreement
+        // );
+        _checkUniDisagreement(
+            inAsset,
+            outAsset,
+            inAmount,
+            returnAmount,
+            priceFeeds,
+            maxDisagreement
+        );
+    }
+
+    event Logger(string name, uint256 amount);
+    event LoggerAddress(string name, address ady);
+
+    function _checkUniDisagreement(
+        address assetIn,
+        address assetOut,
+        uint256 amountIn,
+        uint256 amountOut,
+        IPriceFeeds priceFeeds,
+        uint256 maxDisagreement)
+        internal
+        // view
+    {
+
+        emit LoggerAddress("assetIn", assetIn);
+        emit LoggerAddress("assetOut", assetOut);
+        (uint256 rate, uint256 precision) = priceFeeds.queryRate(
+            assetIn,
+            assetOut
+        );
+        emit Logger("rate", rate);
+        emit Logger("precision", precision);
+        // rate = rate
+        //     .mul(1e36)
+        //     .div(precision)
+        //     .div(bzrxRate);
+
+        uint256 sourceToDestSwapRate = amountOut
+            .mul(precision)
+            .div(amountIn);
+        emit Logger("amountIn", amountIn);
+        emit Logger("amountOut", amountOut);
+        emit Logger("sourceToDestSwapRate", sourceToDestSwapRate);
+
+        uint256 spreadValue = sourceToDestSwapRate > rate ?
+            sourceToDestSwapRate - rate :
+            rate - sourceToDestSwapRate;
+        emit Logger("spreadValue", spreadValue);
+        if (spreadValue != 0) {
+            spreadValue = spreadValue
+                .mul(1e20)
+                .div(sourceToDestSwapRate);
+            emit Logger("spreadValue2", spreadValue);
+            emit Logger("maxDisagreement", maxDisagreement);
+            require(
+                spreadValue <= maxDisagreement,
+                "uniswap price disagreement"
+            );
+        }
     }
 
     // OnlyOwner functions
+
+    function setMaxUniswapDisagreement(
+        uint256 _maxUniswapDisagreement)
+        external
+        onlyOwner
+    {
+        require(_maxUniswapDisagreement != 0, "invalid param");
+        maxUniswapDisagreement = _maxUniswapDisagreement;
+    }
 
     function togglePause(
         bool _isPaused)

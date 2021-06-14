@@ -21,4 +21,14 @@ interface IPriceFeeds {
         external
         view
         returns (uint256 destAmount);
+        
+    function checkPriceDisagreement(
+        address sourceToken,
+        address destToken,
+        uint256 sourceAmount,
+        uint256 destAmount,
+        uint256 maxSlippage)
+        external
+        view
+        returns (uint256 sourceToDestSwapRate);
 }
