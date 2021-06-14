@@ -9,5 +9,5 @@ for l in list:
     underlyingTemp = Contract.from_abi("underlyingTemp", l[1], TestToken.abi)
     globals()[underlyingTemp.symbol()] = underlyingTemp
 
-HELPER = Contract.from_abi("HELPER", "0xa40cDd78BFBe0E8ca643081Df43A45ED8C2C12bB", HelperImpl.abi)
+HELPER = Contract.from_abi("HELPER", "0x4C90348b3fa4Edf8bFC2e777170a0A495463cb90", HelperImpl.abi)
 PRICE_FEED = Contract.from_abi("PRICE_FEED", BZX.priceFeeds(), abi = PriceFeeds.abi)
