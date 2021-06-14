@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./interfaces/Upgradeable.sol";
 import "./GovToken.sol";
-import "./MintCoordinator_BSC.sol";
+import "./MintCoordinator_Polygon.sol";
 
 
 contract MasterChef_Polygon is Upgradeable {
@@ -74,7 +74,7 @@ contract MasterChef_Polygon is Upgradeable {
         uint256 amount
     );
 
-    MintCoordinator public constant coordinator = MintCoordinator(0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440);
+    MintCoordinator_Polygon public constant coordinator = MintCoordinator_Polygon(0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440);
 
     mapping(IERC20 => bool) public poolExists;
     modifier nonDuplicated(IERC20 _lpToken) {
@@ -400,11 +400,9 @@ contract MasterChef_Polygon is Upgradeable {
 
         IERC20 lpToken = pool.lpToken;
         if (lpToken == GOV) {
-            uint256 locked = lockedRewards[msg.sender];
-            if (_amount > locked) {
-                _amount -= locked;
-            } else {
-                _amount = 0;
+            uint256 availableAmount = userAmount.sub(lockedRewards[msg.sender]);
+            if (_amount > availableAmount) {
+                _amount = availableAmount;
             }
         }
 
@@ -426,11 +424,9 @@ contract MasterChef_Polygon is Upgradeable {
         uint256 _amount = user.amount;
         IERC20 lpToken = pool.lpToken;
         if (lpToken == GOV) {
-            uint256 locked = lockedRewards[msg.sender];
-            if (_amount > locked) {
-                _amount -= locked;
-            } else {
-                _amount = 0;
+            uint256 availableAmount = _amount.sub(lockedRewards[msg.sender]);
+            if (_amount > availableAmount) {
+                _amount = availableAmount;
             }
         }
 
