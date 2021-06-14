@@ -192,8 +192,8 @@ def demandCurve():
         #if (tokenAssetPairA[0] != "0xda4f261f26c82766408dcf6ba1b510fa8e64efe9" and tokenAssetPairA[0] != "0xC5b6cC0A9D61600BE42e83d8fA1331dB9E29e48C"):
         #    continue
 
-        existingITokenLoanTokenAddress = tokenAssetPairA[1]
-        collateralTokenAddress = tokenAssetPairA[1]
+        #existingITokenLoanTokenAddress = tokenAssetPairA[1]
+        #collateralTokenAddress = tokenAssetPairA[1]
 
         ## only CAKE, AUTO, or DOGE params
         '''if (
@@ -203,7 +203,7 @@ def demandCurve():
             continue'''
 
         existingIToken = Contract.from_abi("existingIToken", address=tokenAssetPairA[0], abi=LoanTokenLogicStandard.abi, owner=acct)
-        print("itoken", existingIToken.name())
+        print("itoken", existingIToken.name(), tokenAssetPairA[0])
         
         calldata = loanTokenSettingsLowerAdmin.setDemandCurve.encode_input(0, 20*10**18, 0, 0, 60*10**18, 80*10**18, 120*10**18)
         existingIToken.updateSettings(loanTokenSettingsLowerAdmin.address, calldata, {"from": acct, "gas_price": 5e9})
