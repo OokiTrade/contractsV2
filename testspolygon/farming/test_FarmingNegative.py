@@ -6,7 +6,7 @@ from brownie import reverts, chain
 from testspolygon.conftest import initBalance, requireFork
 
 testdata = [
-    ('MATIC', 'iMATIC', 2)
+    ('MATIC', 'iMATIC', 8)
 ]
 
 INITIAL_LP_TOKEN_ACCOUNT_AMOUNT = 0.001 * 10 ** 18;
@@ -44,7 +44,7 @@ def testFarming_withdrawal(requireFork, tokens, tokenName, lpTokenName, pid, acc
     depositAmount = lpBalance1 - 10000
     lpToken.approve(masterChef, lpBalance1, {'from': account1})
     tx1 = masterChef.deposit(pid, depositAmount, {'from': account1})
-    masterChef.updatePool(pid)  # trigger calculate pending tokens
+    masterChef.updatePool(pid,{ 'from':account1})  # trigger calculate pending tokens
     assert masterChef.pendingGOV(pid, account1) > 0
     lpToken.approve(masterChef, INITIAL_LP_TOKEN_ACCOUNT_AMOUNT + 1, {'from': account1})
 

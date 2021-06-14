@@ -1,4 +1,4 @@
-acct = accounts[0]
+acct = accounts[10]
 BZX = Contract.from_abi("bzx", address="0xfe4F0eb0A1Ad109185c9AaDE64C48ff8e928e54B", abi=interface.IBZx.abi, owner=acct)
 MATIC = Contract.from_abi("MATIC", address="0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270", abi=TestToken.abi, owner=acct)
 ETH = Contract.from_abi("ETH", address="0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619", abi=TestToken.abi, owner=acct)
@@ -67,49 +67,48 @@ bonusEndBlock = chain.height + 1*10**6
 startBlock = chain.height
 
 masterChefProxy = Contract.from_abi("masterChefProxy", address="0xd39Ff512C3e55373a30E94BB1398651420Ae1D43", abi=Proxy.abi, owner=acct)
-masterChefImpl = MasterChef_Polygon.deploy({'from': masterChefProxy.owner()})
-masterChefProxy.replaceImplementation(masterChefImpl, {'from': masterChefProxy.owner()})
+# masterChefImpl = MasterChef_Polygon.deploy({'from': masterChefProxy.owner()})
+# masterChefProxy.replaceImplementation(masterChefImpl, {'from': masterChefProxy.owner()})
 masterChef = Contract.from_abi("masterChef", address=masterChefProxy, abi=MasterChef_Polygon.abi, owner=acct)
 
-mintCoordinator = Contract.from_abi("mintCoordinator", address="0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440", abi=MintCoordinator_Polygon.abi, owner=accounts[0]);
-mintCoordinator.addMinter(masterChef, {"from": mintCoordinator.owner()})
-pgovToken.transferOwnership(mintCoordinator, {"from": pgovToken.owner()})
+# mintCoordinator = Contract.from_abi("mintCoordinator", address="0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440", abi=MintCoordinator_Polygon.abi, owner=accounts[0]);
+# mintCoordinator.addMinter(masterChef, {"from": mintCoordinator.owner()})
+# pgovToken.transferOwnership(mintCoordinator, {"from": pgovToken.owner()})
 
 
 masterChef.setStartBlock(chain.height-100, {'from': masterChef.owner()})
 
 #masterChef.add(12500, pgovToken, True, {'from': masterChef.owner()})
 #masterChef.add(12500, SUSHI_PGOV_wMATIC, True, {'from': masterChef.owner()})
-masterChef.add(12500, iMATIC, True, {'from': masterChef.owner()})
-masterChef.add(12500, iWBTC, True, {'from': masterChef.owner()})
-masterChef.add(12500, iETH, True, {'from': masterChef.owner()})
-masterChef.add(12500, iLINK, True, {'from': masterChef.owner()})
-masterChef.add(12500, iUSDC, True, {'from': masterChef.owner()})
-masterChef.add(12500, iUSDT, True, {'from': masterChef.owner()})
-masterChef.add(12500, iAAVE, True, {'from': masterChef.owner()})
-masterChef.add(12500, iBZRX, True, {'from': masterChef.owner()})
+# masterChef.add(12500, iMATIC, True, {'from': masterChef.owner()})
+# masterChef.add(12500, iWBTC, True, {'from': masterChef.owner()})
+# masterChef.add(12500, iETH, True, {'from': masterChef.owner()})
+# masterChef.add(12500, iLINK, True, {'from': masterChef.owner()})
+# masterChef.add(12500, iUSDC, True, {'from': masterChef.owner()})
+# masterChef.add(12500, iUSDT, True, {'from': masterChef.owner()})
+# masterChef.add(12500, iAAVE, True, {'from': masterChef.owner()})
+# masterChef.add(12500, iBZRX, True, {'from': masterChef.owner()})
 
 
-masterChef.massUpdatePools({'from': masterChef.owner()})
+#masterChef.massUpdatePools({'from': masterChef.owner()})
 
-masterChef.setStartBlock(chain.height-100, {'from': masterChef.owner()})
+MATIC_PID = 8
 print("masterChef.set")
-i = 0
-for pool in masterChef.getPoolInfos():
-    masterChef.set(i,12500, True, {'from': masterChef.owner()})
-    i += 1
+for i in range(0,len(masterChef.getPoolInfos())):
+    masterChef.set(i, 12500, True, {'from': masterChef.owner()})
 
 masterChef.massUpdatePools({'from': masterChef.owner()})
 
 iMATIC.approve(masterChef, 2**256-1, {'from': acct})
-masterChef.deposit(2, iMATIC.balanceOf(acct), {'from': acct})
+masterChef.deposit(MATIC_PID, iMATIC.balanceOf(acct), {'from': acct})
 
 chain.sleep(60 * 60 * 24)
 chain.mine()
-masterChef.withdraw(2, masterChef.userInfo(2, acct)[0]-5000e18, {'from': acct})
 
 print("Claim PGOVs")
-masterChef.claimReward(2, {'from':acct})
+masterChef.claimReward(8, {'from':acct})
+masterChef.withdraw(MATIC_PID, masterChef.userInfo(MATIC_PID, acct)[0]-5000e18, {'from': acct})
+
 print(f"PGOVs: {pgovToken.balanceOf(acct)}")
 
 print("Adding liquidity to sushi")
