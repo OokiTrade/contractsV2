@@ -22,7 +22,7 @@ def main():
 
     #deployment()
     #marginSettings()
-    #demandCurve()
+    demandCurve()
 
 def deployment():
     underlyingSymbol = "BZRX"
@@ -125,6 +125,10 @@ def marginSettings():
             ## skipping BZRX for now
             if existingITokenLoanTokenAddress == "0x54cFe73f2c7d0c4b62Ab869B473F5512Dc0944D2" or collateralTokenAddress == "0x54cFe73f2c7d0c4b62Ab869B473F5512Dc0944D2":
                 continue
+
+            ## only BZRX for now
+            #if existingITokenLoanTokenAddress != "0x54cFe73f2c7d0c4b62Ab869B473F5512Dc0944D2" and collateralTokenAddress != "0x54cFe73f2c7d0c4b62Ab869B473F5512Dc0944D2":
+            #    continue
             '''
                         "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82", # CAKE
                         "0xa184088a740c695E156F91f5cC086a06bb78b827", # AUTO
@@ -184,6 +188,10 @@ def demandCurve():
         if (tokenAssetPairA[0] == "0x97dfbEF4eD5a7f63781472Dbc69Ab8e5d7357cB9"):
             continue
 
+        ## only BZRX params
+        #if (tokenAssetPairA[0] != "0x97dfbEF4eD5a7f63781472Dbc69Ab8e5d7357cB9"):
+        #    continue
+
         '''if (tokenAssetPairA[0] != "0xda4f261f26c82766408dcf6ba1b510fa8e64efe9" and tokenAssetPairA[0] != "0xC5b6cC0A9D61600BE42e83d8fA1331dB9E29e48C"):
             continue'''
 
@@ -200,5 +208,5 @@ def demandCurve():
         existingIToken = Contract.from_abi("existingIToken", address=tokenAssetPairA[0], abi=LoanTokenLogicStandard.abi, owner=acct)
         print("itoken", existingIToken.name(), tokenAssetPairA[0])
         
-        calldata = loanTokenSettingsLowerAdmin.setDemandCurve.encode_input(0, 15*10**18, 0, 0, 60*10**18, 80*10**18, 120*10**18)
+        calldata = loanTokenSettingsLowerAdmin.setDemandCurve.encode_input(0, 20*10**18, 0, 0, 60*10**18, 80*10**18, 120*10**18)
         existingIToken.updateSettings(loanTokenSettingsLowerAdmin.address, calldata, {"from": acct, "gas_price": 1e9})

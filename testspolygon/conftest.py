@@ -78,24 +78,26 @@ def SUSHI_PGOV_MATIC(accounts, interface):
 
 @pytest.fixture(scope="module", autouse=True)
 def masterChef(accounts, chain, MasterChef_Polygon, iMATIC, iETH, iUSDC, iWBTC, iUSDT, pgovToken, Proxy, MintCoordinator_Polygon):
-
-    masterChef = Contract.from_abi("masterChef", address="0xd39Ff512C3e55373a30E94BB1398651420Ae1D43", abi=MasterChef_Polygon.abi, owner=accounts[0])
+    masterChefProxy = Contract.from_abi("masterChefProxy", address="0xd39Ff512C3e55373a30E94BB1398651420Ae1D43", abi=Proxy.abi)
+    masterChefImpl = MasterChef_Polygon.deploy({'from': masterChefProxy.owner()})
+    masterChefProxy.replaceImplementation(masterChefImpl, {'from': masterChefProxy.owner()})
+    masterChef = Contract.from_abi("masterChef", address=masterChefProxy, abi=MasterChef_Polygon.abi)
 
     masterChef.setStartBlock(chain.height-100, {'from': masterChef.owner()})
 
-    if(len(masterChef.getPoolInfos())==2):
-        masterChef.add(12500, iMATIC, True, {'from': masterChef.owner()})
-        masterChef.add(12500, iUSDC, True, {'from': masterChef.owner()})
-        masterChef.massUpdatePools({'from': masterChef.owner()})
+    # if(len(masterChef.getPoolInfos())==2):
+    #     masterChef.add(12500, iMATIC, True, {'from': masterChef.owner()})
+    #     masterChef.add(12500, iUSDC, True, {'from': masterChef.owner()})
+    #     masterChef.massUpdatePools({'from': masterChef.owner()})
 
-    mintCoordinator = Contract.from_abi("mintCoordinator", address="0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440", abi=MintCoordinator_Polygon.abi, owner=accounts[0]);
-    mintCoordinator.addMinter(masterChef, {"from": mintCoordinator.owner()})
-    pgovToken.transferOwnership(mintCoordinator, {"from": pgovToken.owner()})
+    # mintCoordinator = Contract.from_abi("mintCoordinator", address="0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440", abi=MintCoordinator_Polygon.abi, owner=accounts[0]);
+    # mintCoordinator.addMinter(masterChef, {"from": mintCoordinator.owner()})
+    # pgovToken.transferOwnership(mintCoordinator, {"from": pgovToken.owner()})
 
-    i = 0
-    for pool in masterChef.getPoolInfos():
-        masterChef.setLocked(i, False, {'from': masterChef.owner()})
-        i = i +1
+
+    for i in range(0,len(masterChef.getPoolInfos())):
+        masterChef.set(i, 12500, True, {'from': masterChef.owner()})
+        masterChef.setLocked(0,False,{'from': masterChef.owner()})
 
     return masterChef
 
