@@ -583,6 +583,11 @@ contract IBZx is
         external
         returns (uint256 claimAmount);
 
+    function transferLoan(
+        bytes32 loanId,
+        address newOwner)
+        external;
+
     function rewardsBalanceOf(
         address user)
         external
