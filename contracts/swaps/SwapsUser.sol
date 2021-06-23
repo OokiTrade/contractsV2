@@ -177,7 +177,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
 
         bool success;
         (success, data) = swapsImpl.delegatecall(data);
-        if (success == false) {
+        if (!success) {
             assembly {
                 let ptr := mload(0x40)
                 let size := returndatasize
