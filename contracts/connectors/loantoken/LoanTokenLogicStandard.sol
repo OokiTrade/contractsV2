@@ -37,6 +37,9 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
     //address public constant bZxContract = 0xC47812857A74425e2039b57891a3DFcF51602d5d; // bsc
     //address public constant wethToken = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c; // bsc
 
+    //address public constant bZxContract = 0xfe4F0eb0A1Ad109185c9AaDE64C48ff8e928e54B; // polygon
+    //address public constant wethToken = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270; // polygon
+
     bytes32 internal constant iToken_ProfitSoFar = 0x37aa2b7d583612f016e4a4de4292cb015139b3d7762663d06a53964912ea2fb6;          // keccak256("iToken_ProfitSoFar")
     bytes32 internal constant iToken_LowerAdminAddress = 0x7ad06df6a0af6bd602d90db766e0d5f253b45187c3717a0f9026ea8b10ff0d4b;    // keccak256("iToken_LowerAdminAddress")
     bytes32 internal constant iToken_LowerAdminContract = 0x34b31cff1dbd8374124bd4505521fc29cab0f9554a5386ba7d784a4e611c7e31;   // keccak256("iToken_LowerAdminContract")
