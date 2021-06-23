@@ -10,4 +10,11 @@ interface IMasterChefPartial {
     function addExternalReward(
         uint256 _amount)
         external;
+
+    event AddExternalReward(
+        address indexed sender,
+        uint256 indexed pid,
+        uint256 amount
+    );
+
 }

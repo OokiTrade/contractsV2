@@ -79,8 +79,8 @@ def SUSHI_PGOV_MATIC(accounts, interface):
 @pytest.fixture(scope="module", autouse=True)
 def masterChef(accounts, chain, MasterChef_Polygon, iMATIC, iETH, iUSDC, iWBTC, iUSDT, pgovToken, Proxy, MintCoordinator_Polygon):
     masterChefProxy = Contract.from_abi("masterChefProxy", address="0xd39Ff512C3e55373a30E94BB1398651420Ae1D43", abi=Proxy.abi)
-    masterChefImpl = MasterChef_Polygon.deploy({'from': masterChefProxy.owner()})
-    masterChefProxy.replaceImplementation(masterChefImpl, {'from': masterChefProxy.owner()})
+    # masterChefImpl = MasterChef_Polygon.deploy({'from': masterChefProxy.owner()})
+    # masterChefProxy.replaceImplementation(masterChefImpl, {'from': masterChefProxy.owner()})
     masterChef = Contract.from_abi("masterChef", address=masterChefProxy, abi=MasterChef_Polygon.abi)
 
     masterChef.setStartBlock(chain.height-100, {'from': masterChef.owner()})
