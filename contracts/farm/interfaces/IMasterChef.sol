@@ -2,16 +2,11 @@ pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
 /// SPDX-License-Identifier: MIT
-
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../GovToken.sol";
-import "./IMasterChefPartial.sol";
-import "./Upgradeable.sol";
 
 
-interface MasterChef is IMasterChefPartial {
+interface IMasterChef {
+
     // Info of each user.
     struct UserInfo {
         uint256 amount; // How many LP tokens the user has provided.
@@ -36,54 +31,96 @@ interface MasterChef is IMasterChefPartial {
         uint256 accGOVPerShare; // Accumulated GOVs per share, times 1e12. See below.
     }
 
-    function GOV() external view returns (GovToken);
+    function GOV()
+        external
+        view
+        returns (GovToken);
 
     // Block number when bonus GOV period ends.
-    function bonusEndBlock() external view returns(uint256);
-    // GOV tokens created per block.
-    function GOVPerBlock() external view returns(uint256) ;
-    // Bonus muliplier for early GOV makers.
-    function BONUS_MULTIPLIER() external view returns(uint256);
-    // unused
-    function migrator() external view returns(address);
-    // Info of each pool.
-    function poolInfo(uint256) external view returns (PoolInfo memory);
-    // Info of each user that stakes LP tokens.
-    function userInfo(uint256, address) external view returns (UserInfo memory);
-    // Total allocation poitns. Must be the sum of all allocation points in all pools.
-    function totalAllocPoint() external view returns(uint256);
-    // The block number when GOV mining starts.
-    function startBlock() external view returns (uint256);
+    function bonusEndBlock()
+        external
+        view
+        returns(uint256);
 
-    event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
-    event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
-    event EmergencyWithdraw(
-        address indexed user,
-        uint256 indexed pid,
-        uint256 amount
-    );
-    event AddExternalReward(
-        address indexed sender,
-        uint256 indexed pid,
-        uint256 amount
-    );
+    // GOV tokens created per block.
+    function GOVPerBlock()
+        external
+        view
+        returns(uint256);
+
+    // Bonus muliplier for early GOV makers.
+    function BONUS_MULTIPLIER()
+        external
+        view
+        returns(uint256);
+
+    // unused
+    function migrator()
+        external
+        view
+        returns(address);
+
+    // Info of each pool.
+    function poolInfo(uint256)
+        external
+        view
+        returns (PoolInfo memory);
+
+    // Info of each user that stakes LP tokens.
+    function userInfo(uint256, address)
+        external
+        view
+        returns (UserInfo memory);
+
+    // Total allocation poitns. Must be the sum of all allocation points in all pools.
+    function totalAllocPoint()
+        external
+        view
+        returns(uint256);
+
+    // The block number when GOV mining starts.
+    function startBlock()
+        external
+        view
+        returns (uint256);
 
     function poolExists(IERC20) external view returns (bool);
 
     // total deposits in a pool
-    function balanceOf(uint256) external view returns (uint256);
+    function balanceOf(uint256)
+        external
+        view
+        returns (uint256);
 
     // pool rewards locked for future claim
-    function isLocked(uint256) external view returns (bool);
+    function isLocked(uint256)
+        external
+        view
+        returns (bool);
 
     // total locked rewards for a user
-    function lockedRewards(address) external view returns (uint256);
+    function lockedRewards(address)
+        external
+        view
+        returns (uint256);
 
-    function isPaused() external view returns(bool);
+    function isPaused()
+        external
+        view
+        returns(bool);
 
-    function poolLength() external view returns (uint256);
+    function poolLength()
+        external
+        view
+        returns (uint256);
 
-    function owner() external view returns(address);
+    function owner()
+        external
+        view
+        returns(address);
+
+    function addExternalReward(uint256 _amount)
+        external;
 
     function getMultiplier(uint256 _from, uint256 _to)
         external
@@ -107,33 +144,70 @@ interface MasterChef is IMasterChefPartial {
         returns (uint256);
 
     // Update reward vairables for all pools. Be careful of gas spending!
-    function massUpdatePools() external;
+    function massUpdatePools()
+        external;
 
     // Update reward variables of the given pool to be up-to-date.
-    function updatePool(uint256 _pid) external;
+    function updatePool(uint256 _pid)
+        external;
 
     // Deposit LP tokens to MasterChef for GOV allocation.
-    function deposit(uint256 _pid, uint256 _amount) external;
+    function deposit(uint256 _pid, uint256 _amount)
+        external;
 
-    function claimReward(uint256 _pid) external;
+    function claimReward(uint256 _pid)
+        external;
 
-    function compoundReward(uint256 _pid) external;
+    function compoundReward(uint256 _pid)
+        external;
 
     // Withdraw LP tokens from MasterChef.
-    function withdraw(uint256 _pid, uint256 _amount) external;
+    function withdraw(uint256 _pid, uint256 _amount)
+        external;
 
     // Withdraw without caring about rewards. EMERGENCY ONLY.
-    function emergencyWithdraw(uint256 _pid) external;
+    function emergencyWithdraw(uint256 _pid)
+        external;
 
     // Update dev address by the previous dev.
-    function dev(address _devaddr) external;
+    function dev(address _devaddr)
+        external;
 
     // Custom logic - helpers
     function getPoolInfos() external view returns(PoolInfo[] memory);
 
-    function getOptimisedUserInfos(address _user) external view returns(uint256[3][] memory);
+    function getOptimisedUserInfos(address _user)
+        external
+        view
+        returns(uint256[3][] memory);
 
-    function getUserInfos(address _wallet) external view returns(UserInfo[] memory);
-    function getPendingGOV(address _user) external view returns(uint256[] memory);
+    function getUserInfos(address _wallet)
+        external
+        view
+        returns(UserInfo[] memory);
 
+    function getPendingGOV(address _user)
+        external
+        view
+        returns(uint256[] memory);
+
+    event Deposit(
+        address indexed user,
+        uint256 indexed pid,
+        uint256 amount
+    );
+    event Withdraw(address indexed user,
+        uint256 indexed pid,
+        uint256 amount
+    );
+    event EmergencyWithdraw(
+        address indexed user,
+        uint256 indexed pid,
+        uint256 amount
+    );
+    event AddExternalReward(
+        address indexed sender,
+        uint256 indexed pid,
+        uint256 amount
+    );
 }

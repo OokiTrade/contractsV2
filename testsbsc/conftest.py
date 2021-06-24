@@ -76,7 +76,7 @@ def masterChef(accounts, MasterChef_BSC, interface, iBNB, iETH, iWBTC, iUSDT, bg
     masterChefProxy = Contract.from_abi("masterChefProxy", address="0x1FDCA2422668B961E162A8849dc0C2feaDb58915", abi=Proxy.abi)
     masterChefImpl = MasterChef_BSC.deploy({'from': masterChefProxy.owner()})
     masterChefProxy.replaceImplementation(masterChefImpl, {'from': masterChefProxy.owner()})
-    masterChef = Contract.from_abi("masterChef", address=masterChefProxy, abi=interface.MasterChefAdmin.abi)
+    masterChef = Contract.from_abi("masterChef", address=masterChefProxy, abi=interface.IMasterChefAdmin.abi)
 
     for i in range(0,len(masterChef.getPoolInfos())):
     #    masterChef.set(i, 12500, True, {'from': masterChef.owner()})

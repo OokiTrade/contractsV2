@@ -9,35 +9,13 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "./interfaces/Upgradeable.sol";
 import "./GovToken.sol";
 import "./MintCoordinator_BSC.sol";
+import "./interfaces/IMasterChef.sol";
 
 
 contract MasterChef_BSC is Upgradeable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
-
-    // Info of each user.
-    struct UserInfo {
-        uint256 amount; // How many LP tokens the user has provided.
-        uint256 rewardDebt; // Reward debt. See explanation below.
-        //
-        // We do some fancy math here. Basically, any point in time, the amount of GOVs
-        // entitled to a user but is pending to be distributed is:
-        //
-        //   pending reward = (user.amount * pool.accGOVPerShare) - user.rewardDebt
-        //
-        // Whenever a user deposits or withdraws LP tokens to a pool. Here's what happens:
-        //   1. The pool's `accGOVPerShare` (and `lastRewardBlock`) gets updated.
-        //   2. User receives the pending reward sent to his/her address.
-        //   3. User's `amount` gets updated.
-        //   4. User's `rewardDebt` gets updated.
-    }
-    // Info of each pool.
-    struct PoolInfo {
-        IERC20 lpToken; // Address of LP token contract.
-        uint256 allocPoint; // How many allocation points assigned to this pool. GOVs to distribute per block.
-        uint256 lastRewardBlock; // Last block number that GOVs distribution occurs.
-        uint256 accGOVPerShare; // Accumulated GOVs per share, times 1e12. See below.
-    }
+    
     // The GOV TOKEN!
     GovToken public GOV;
     // Dev address.
@@ -51,9 +29,9 @@ contract MasterChef_BSC is Upgradeable {
     // unused
     address public migrator;
     // Info of each pool.
-    PoolInfo[] public poolInfo;
+    IMasterChef.PoolInfo[] public poolInfo;
     // Info of each user that stakes LP tokens.
-    mapping(uint256 => mapping(address => UserInfo)) public userInfo;
+    mapping(uint256 => mapping(address => IMasterChef.UserInfo)) public userInfo;
     // Total allocation poitns. Must be the sum of all allocation points in all pools.
     uint256 public totalAllocPoint = 0;
     // The block number when GOV mining starts.
@@ -131,7 +109,7 @@ contract MasterChef_BSC is Upgradeable {
         totalAllocPoint = totalAllocPoint.add(_allocPoint);
         poolExists[_lpToken] = true;
         poolInfo.push(
-            PoolInfo({
+            IMasterChef.PoolInfo({
                 lpToken: _lpToken,
                 allocPoint: _allocPoint,
                 lastRewardBlock: lastRewardBlock,
@@ -149,7 +127,7 @@ contract MasterChef_BSC is Upgradeable {
             massUpdatePools();
         }
 
-        PoolInfo storage pool = poolInfo[_pid];
+        IMasterChef.PoolInfo storage pool = poolInfo[_pid];
         require(address(pool.lpToken) != address(0) && poolExists[pool.lpToken], "pool not exists");
         totalAllocPoint = totalAllocPoint.sub(pool.allocPoint).add(
             _allocPoint
@@ -260,8 +238,8 @@ contract MasterChef_BSC is Upgradeable {
         view
         returns (uint256)
     {
-        PoolInfo storage pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][_user];
+        IMasterChef.PoolInfo storage pool = poolInfo[_pid];
+        IMasterChef.UserInfo storage user = userInfo[_pid][_user];
         uint256 accGOVPerShare = pool.accGOVPerShare.mul(1e18);
         uint256 lpSupply = balanceOf[_pid];
         if (block.number > pool.lastRewardBlock && lpSupply != 0) {
@@ -315,7 +293,7 @@ contract MasterChef_BSC is Upgradeable {
 
     // Update reward variables of the given pool to be up-to-date.
     function updatePool(uint256 _pid) public checkPause {
-        PoolInfo storage pool = poolInfo[_pid];
+        IMasterChef.PoolInfo storage pool = poolInfo[_pid];
         if (block.number <= pool.lastRewardBlock) {
             return;
         }
@@ -339,7 +317,7 @@ contract MasterChef_BSC is Upgradeable {
 
     // Anyone can contribute GOV to a given pool
     function addExternalReward(uint256 _amount) public checkPause {
-        PoolInfo storage pool = poolInfo[GOV_POOL_ID];
+        IMasterChef.PoolInfo storage pool = poolInfo[GOV_POOL_ID];
         require(block.number > pool.lastRewardBlock, "rewards not started");
 
         uint256 lpSupply = balanceOf[GOV_POOL_ID];
@@ -370,8 +348,8 @@ contract MasterChef_BSC is Upgradeable {
     }
 
     function _deposit(uint256 _pid, uint256 _amount) internal {
-        PoolInfo storage pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
+        IMasterChef.PoolInfo storage pool = poolInfo[_pid];
+        IMasterChef.UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
 
         uint256 userAmount = user.amount;
@@ -412,8 +390,8 @@ contract MasterChef_BSC is Upgradeable {
 
     // Withdraw LP tokens from MasterChef.
     function withdraw(uint256 _pid, uint256 _amount) public checkPause {
-        PoolInfo storage pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
+        IMasterChef.PoolInfo storage pool = poolInfo[_pid];
+        IMasterChef.UserInfo storage user = userInfo[_pid][msg.sender];
         uint256 userAmount = user.amount;
         require(_amount != 0 && userAmount >= _amount, "withdraw: not good");
         updatePool(_pid);
@@ -443,8 +421,8 @@ contract MasterChef_BSC is Upgradeable {
 
     // Withdraw without caring about rewards. EMERGENCY ONLY.
     function emergencyWithdraw(uint256 _pid) public checkPause {
-        PoolInfo storage pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
+        IMasterChef.PoolInfo storage pool = poolInfo[_pid];
+        IMasterChef.UserInfo storage user = userInfo[_pid][msg.sender];
 
         uint256 _amount = user.amount;
         IERC20 lpToken = pool.lpToken;
@@ -489,9 +467,9 @@ contract MasterChef_BSC is Upgradeable {
     // Custom logic - helpers
 
 
-    function getPoolInfos() external view returns(PoolInfo[] memory poolInfos){
+    function getPoolInfos() external view returns(IMasterChef.PoolInfo[] memory poolInfos){
         uint256 length = poolInfo.length;
-        poolInfos = new PoolInfo[](length);
+        poolInfos = new IMasterChef.PoolInfo[](length);
         for (uint256 pid = 0; pid < length; ++pid) {
             poolInfos[pid] = poolInfo[pid];
         }
@@ -507,9 +485,9 @@ contract MasterChef_BSC is Upgradeable {
         }
     }
 
-    function getUserInfos(address _wallet) external view returns(UserInfo[] memory userInfos){
+    function getUserInfos(address _wallet) external view returns(IMasterChef.UserInfo[] memory userInfos){
         uint256 length = poolInfo.length;
-        userInfos = new UserInfo[](length);
+        userInfos = new IMasterChef.UserInfo[](length);
         for (uint256 pid = 0; pid < length; ++pid) {
             userInfos[pid] = userInfo[pid][_wallet];
         }
