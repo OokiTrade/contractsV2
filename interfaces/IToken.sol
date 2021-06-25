@@ -13,16 +13,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 interface IToken is IERC20 {
     function tokenPrice() external view returns (uint256);
 
-    function supplyInterestRate() external view returns (uint256);
-
-    function borrowInterestRate() external view returns (uint256);
-
-    function assetBalanceOf(address wallet) external view returns (uint256);
-
-    function profitOf(address wallet) external view returns (int256);
-
-    function marketLiquidity() external view returns (uint256);
-
     function mint(address receiver, uint256 depositAmount)
         external
         returns (uint256);
@@ -84,8 +74,6 @@ interface IToken is IERC20 {
     ) external payable returns (LoanOpenData memory);
 
     function profitOf(address user) external view returns (int256);
-
-    function tokenPrice() external view returns (uint256);
 
     function checkpointPrice(address _user) external view returns (uint256);
 
