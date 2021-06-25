@@ -140,7 +140,7 @@ contract HelperImpl is Ownable {
         }
     }
 
-    struct AssertRates{
+    struct AssetRates{
         uint256 rate;
         uint256 precision;
         uint256 destAmount;
@@ -152,22 +152,22 @@ contract HelperImpl is Ownable {
         uint256[] memory sourceAmounts)
         public
         view
-        returns (AssertRates[] memory assertRates)
+        returns (AssetRates[] memory assetRates)
     {
         IPriceFeeds feeds = IPriceFeeds(IBZx(bZxProtocol).priceFeeds());
-        assertRates = new AssertRates[](tokens.length);
+        assetRates = new AssetRates[](tokens.length);
  
 
         for (uint256 i = 0; i < tokens.length; i++) {
-            (assertRates[i].rate, assertRates[i].precision) = feeds.queryRate(
+            (assetRates[i].rate, assetRates[i].precision) = feeds.queryRate(
                 tokens[i],
                 usdTokenAddress
             );
 
             if (sourceAmounts[i] != 0) {
-                assertRates[i].destAmount = sourceAmounts[i] * assertRates[i].rate;
-                require(assertRates[i].destAmount / sourceAmounts[i] == assertRates[i].rate, "overflow");
-                assertRates[i].destAmount = assertRates[i].destAmount / assertRates[i].precision;
+                assetRates[i].destAmount = sourceAmounts[i] * assetRates[i].rate;
+                require(assetRates[i].destAmount / sourceAmounts[i] == assetRates[i].rate, "overflow");
+                assetRates[i].destAmount = assetRates[i].destAmount / assetRates[i].precision;
             }
         }
     }
