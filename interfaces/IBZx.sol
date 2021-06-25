@@ -4,6 +4,7 @@
  */
 // SPDX-License-Identifier: Apache License, Version 2.0.
 pragma solidity >=0.5.0 <=0.8.4;
+pragma experimental ABIEncoderV2;
 
 /// @title A proxy interface for The Protocol
 /// @author bZeroX
@@ -129,6 +130,66 @@ interface IBZx {
         external
         view
         returns (uint256[] memory amountsHeld, uint256[] memory amountsPaid);
+
+    function priceFeeds() external view returns (address);
+
+    function swapsImpl() external view returns (address);
+
+    function logicTargets(bytes4) external view returns (address);
+
+    function loans(bytes32) external view returns (Loan memory);
+
+    function loanParams(bytes32) external view returns (LoanParams memory);
+
+    // we don't use this yet
+    // function lenderOrders(address, bytes32) external returns (Order memory);
+    // function borrowerOrders(address, bytes32) external returns (Order memory);
+
+    function delegatedManagers(bytes32, address) external view returns (bool);
+
+    function lenderInterest(address, address)
+        external
+        view
+        returns (LenderInterest memory);
+
+    function loanInterest(bytes32) external view returns (LoanInterest memory);
+
+    function feesController() external view returns (address);
+
+    function lendingFeePercent() external view returns (uint256);
+
+    function lendingFeeTokensHeld(address) external view returns (uint256);
+
+    function lendingFeeTokensPaid(address) external view returns (uint256);
+
+    function borrowingFeePercent() external view returns (uint256);
+
+    function borrowingFeeTokensHeld(address) external view returns (uint256);
+
+    function borrowingFeeTokensPaid(address) external view returns (uint256);
+
+    function protocolTokenHeld() external view returns (uint256);
+
+    function protocolTokenPaid() external view returns (uint256);
+
+    function affiliateFeePercent() external view returns (uint256);
+
+    function liquidationIncentivePercent(address, address)
+        external
+        view
+        returns (uint256);
+
+    function loanPoolToUnderlying(address) external view returns (address);
+
+    function underlyingToLoanPool(address) external view returns (address);
+
+    function supportedTokens(address) external view returns (bool);
+
+    function maxDisagreement() external view returns (uint256);
+
+    function sourceBufferPercent() external view returns (uint256);
+
+    function maxSwapSize() external view returns (uint256);
 
     /// @dev get list of loan pools in the system. Ordering is not guaranteed
     /// @param start start index
@@ -423,7 +484,7 @@ interface IBZx {
         address gasTokenUser,
         uint256 swapAmount,
         bool returnTokenIsCollateral,
-        bytes memory /*loanDataBytes*/
+        bytes memory loanDataBytes
     )
         external
         returns (
@@ -489,10 +550,7 @@ interface IBZx {
         external
         returns (uint256 claimAmount);
 
-    function transferLoan(
-        bytes32 loanId,
-        address newOwner)
-        external;
+    function transferLoan(bytes32 loanId, address newOwner) external;
 
     function rewardsBalanceOf(address user)
         external
@@ -662,7 +720,11 @@ interface IBZx {
         uint256 collateral;
     }
 
-    enum LoanType {All, Margin, NonMargin}
+    enum LoanType {
+        All,
+        Margin,
+        NonMargin
+    }
 
     struct LoanReturnData {
         bytes32 loanId;
@@ -684,5 +746,39 @@ interface IBZx {
         uint256 depositValueAsCollateralToken;
     }
 
-    enum FeeClaimType {All, Lending, Trading, Borrowing}
+    enum FeeClaimType {
+        All,
+        Lending,
+        Trading,
+        Borrowing
+    }
+
+    struct Loan {
+        bytes32 id; // id of the loan
+        bytes32 loanParamsId; // the linked loan params id
+        bytes32 pendingTradesId; // the linked pending trades id
+        uint256 principal; // total borrowed amount outstanding
+        uint256 collateral; // total collateral escrowed for the loan
+        uint256 startTimestamp; // loan start time
+        uint256 endTimestamp; // for active loans, this is the expected loan end time, for in-active loans, is the actual (past) end time
+        uint256 startMargin; // initial margin when the loan opened
+        uint256 startRate; // reference rate when the loan opened for converting collateralToken to loanToken
+        address borrower; // borrower of this loan
+        address lender; // lender of this loan
+        bool active; // if false, the loan has been fully closed
+    }
+
+    struct LenderInterest {
+        uint256 principalTotal; // total borrowed amount outstanding of asset
+        uint256 owedPerDay; // interest owed per day for all loans of asset
+        uint256 owedTotal; // total interest owed for all loans of asset (assuming they go to full term)
+        uint256 paidTotal; // total interest paid so far for asset
+        uint256 updatedTimestamp; // last update
+    }
+
+    struct LoanInterest {
+        uint256 owedPerDay; // interest owed per day for loan
+        uint256 depositTotal; // total escrowed interest for loan
+        uint256 updatedTimestamp; // last update
+    }
 }
