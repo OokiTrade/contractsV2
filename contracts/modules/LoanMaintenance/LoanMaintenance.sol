@@ -35,6 +35,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         _setTarget(this.getUserLoansCount.selector, target);
         _setTarget(this.getLoan.selector, target);
         _setTarget(this.getActiveLoans.selector, target);
+        _setTarget(this.getActiveLoansAdvanced.selector, target);
         _setTarget(this.getActiveLoansCount.selector, target);
     }
 
@@ -612,6 +613,30 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         view
         returns (LoanReturnData[] memory loansData)
     {
+        return getActiveLoansInternal(start, count, unsafeOnly, false);
+    }
+
+    function getActiveLoansAdvanced(
+        uint256 start,
+        uint256 count,
+        bool unsafeOnly,
+        bool isLiquidatable)
+        external
+        view 
+        returns (LoanReturnData[] memory loansData) 
+    {
+        return getActiveLoansInternal(start, count, unsafeOnly, isLiquidatable);
+    }
+
+    function getActiveLoansInternal(
+        uint256 start,
+        uint256 count,
+        bool unsafeOnly,
+        bool isLiquidatable)
+        internal
+        view 
+        returns (LoanReturnData[] memory loansData)
+    {
         uint256 end = start.add(count).min256(activeLoansSet.length());
         if (start >= end) {
             return loansData;
@@ -632,6 +657,17 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
                     break;
                 } else {
                     continue;
+                }
+            }
+
+            if (isLiquidatable) {
+                if (loanData.currentMargin == 0) {
+                    // we skip, not adding it to result set
+                    if (i == 0) {
+                        break;
+                    } else {
+                        continue;
+                    }
                 }
             }
 
