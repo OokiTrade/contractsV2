@@ -613,7 +613,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         view
         returns (LoanReturnData[] memory loansData)
     {
-        return getActiveLoansInternal(start, count, unsafeOnly, false);
+        return _getActiveLoans(start, count, unsafeOnly, false);
     }
 
     function getActiveLoansAdvanced(
@@ -622,13 +622,13 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         bool unsafeOnly,
         bool isLiquidatable)
         external
-        view 
+        view
         returns (LoanReturnData[] memory loansData) 
     {
-        return getActiveLoansInternal(start, count, unsafeOnly, isLiquidatable);
+        return _getActiveLoans(start, count, unsafeOnly, isLiquidatable);
     }
 
-    function getActiveLoansInternal(
+    function _getActiveLoans(
         uint256 start,
         uint256 count,
         bool unsafeOnly,
@@ -652,6 +652,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
                 LoanType.All,
                 unsafeOnly
             );
+
             if (loanData.loanId == 0) {
                 if (i == 0) {
                     break;
@@ -660,14 +661,12 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
                 }
             }
 
-            if (isLiquidatable) {
-                if (loanData.currentMargin == 0) {
-                    // we skip, not adding it to result set
-                    if (i == 0) {
-                        break;
-                    } else {
-                        continue;
-                    }
+            if (isLiquidatable && loanData.currentMargin == 0) {
+                // we skip, not adding it to result set
+                if (i == 0) {
+                    break;
+                } else {
+                    continue;
                 }
             }
 
