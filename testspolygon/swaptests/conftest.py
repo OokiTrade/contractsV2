@@ -44,19 +44,18 @@ def swaps(accounts, SwapsImplUniswapV2_POLYGON):
 @pytest.fixture(scope="class", autouse=True)
 def bzx(accounts, bZxProtocol, interface, swaps, ProtocolSettings, SwapsExternal,
         WMATIC,USDC, DAI, WBTC, ETH):
-    bzxproxy = accounts[0].deploy(bZxProtocol)
-    bzx = Contract.from_abi("bzx", address=bzxproxy.address, abi=interface.IBZx.abi, owner=accounts[0])
+    bzx = Contract.from_abi("bzx", address="0xfe4F0eb0A1Ad109185c9AaDE64C48ff8e928e54B", abi=interface.IBZx.abi, owner=accounts[0])
     _add_contract(bzx)
-    settings = accounts[0].deploy(ProtocolSettings)
-    bzx.replaceContract(settings.address)
-    bzx.setSwapsImplContract(swaps)
+    settings = ProtocolSettings.deploy({'from': bzx.owner()})
+    bzx.replaceContract(settings.address, {'from': bzx.owner()})
+    bzx.setSwapsImplContract(swaps, {'from': bzx.owner()})
     bzx.setSupportedTokens([
         WMATIC.address, USDC.address, DAI.address, WBTC.address, ETH.address
     ], [
         True, True, True, True, True
-    ], True, {'from':accounts[0]})
-    bzx.replaceContract(accounts[0].deploy(SwapsExternal).address, {'from': accounts[0]})
-
+    ], True, {'from': bzx.owner()})
+    swapsExternal = SwapsExternal.deploy({'from': bzx.owner()})
+    bzx.replaceContract(swapsExternal.address, {'from': bzx.owner()})
     return bzx
 
 

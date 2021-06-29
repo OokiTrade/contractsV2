@@ -16,22 +16,12 @@ contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
     using SafeERC20 for IERC20;
 
     // mainnet
-//    address public constant uniswapRouter = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
+//    address public constant uniswapRouter = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D; //Kyber
     address public constant uniswapRouter = 0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F; //Sushiswap
+    address public constant eth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address public constant dai = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
     address public constant usdc = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     address public constant usdt = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
-
-
-    function initialize(
-        address target)
-    external
-    onlyOwner
-    {
-        _setTarget(this.addStaticRoute.selector, target);
-        _setTarget(this.getStaticRoute.selector, target);
-        _setTarget(this.removeStaticRoute.selector, target);
-    }
 
     function dexSwap(
         address sourceTokenAddress,
@@ -104,62 +94,61 @@ contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
         if (sourceTokenAddress == destTokenAddress) {
             amountOut = amountIn;
         } else if (amountIn != 0) {
-            address[] memory _route = routes[sourceTokenAddress][destTokenAddress];
-            if(_route.length > 0){
-                amountOut = _getAmountOut(amountIn, _route);
-                if(_route.length == 3){
-                    midToken = _route[1];
-                }
-            }
-            else{
-                uint256 tmpValue;
-                address[] memory path = new address[](2);
-                path[0] = sourceTokenAddress;
-                path[1] = destTokenAddress;
-                amountOut = _getAmountOut(amountIn, path);
+            uint256 tmpValue;
 
-                path = new address[](3);
-                path[0] = sourceTokenAddress;
-                path[2] = destTokenAddress;
+            address[] memory path = new address[](2);
+            path[0] = sourceTokenAddress;
+            path[1] = destTokenAddress;
+            amountOut = _getAmountOut(amountIn, path);
 
-                if (sourceTokenAddress != address(wethToken) && destTokenAddress != address(wethToken)) {
-                    path[1] = address(wethToken);
-                    tmpValue = _getAmountOut(amountIn, path);
-                    if (tmpValue > amountOut) {
-                        amountOut = tmpValue;
-                        midToken = address(wethToken);
-                    }
-                }
-
-                if (sourceTokenAddress != dai && destTokenAddress != dai) {
-                    path[1] = dai;
-                    tmpValue = _getAmountOut(amountIn, path);
-                    if (tmpValue > amountOut) {
-                        amountOut = tmpValue;
-                        midToken = dai;
-                    }
-                }
-
-                if (sourceTokenAddress != usdc && destTokenAddress != usdc) {
-                    path[1] = usdc;
-                    tmpValue = _getAmountOut(amountIn, path);
-                    if (tmpValue > amountOut) {
-                        amountOut = tmpValue;
-                        midToken = usdc;
-                    }
-                }
-
-                if (sourceTokenAddress != usdt && destTokenAddress != usdt) {
-                    path[1] = usdt;
-                    tmpValue = _getAmountOut(amountIn, path);
-                    if (tmpValue > amountOut) {
-                        amountOut = tmpValue;
-                        midToken = usdt;
-                    }
+            path = new address[](3);
+            path[0] = sourceTokenAddress;
+            path[2] = destTokenAddress;
+            
+            if (sourceTokenAddress != address(wethToken) && destTokenAddress != address(wethToken)) {
+                path[1] = address(wethToken);
+                tmpValue = _getAmountOut(amountIn, path);
+                if (tmpValue > amountOut) {
+                    amountOut = tmpValue;
+                    midToken = address(wethToken);
                 }
             }
 
+            if (sourceTokenAddress != eth && destTokenAddress != eth) {
+                path[1] = eth;
+                tmpValue = _getAmountOut(amountIn, path);
+                if (tmpValue > amountOut) {
+                    amountOut = tmpValue;
+                    midToken = eth;
+                }
+            }
 
+            if (sourceTokenAddress != dai && destTokenAddress != dai) {
+                path[1] = dai;
+                tmpValue = _getAmountOut(amountIn, path);
+                if (tmpValue > amountOut) {
+                    amountOut = tmpValue;
+                    midToken = dai;
+                }
+            }
+
+            if (sourceTokenAddress != usdc && destTokenAddress != usdc) {
+                path[1] = usdc;
+                tmpValue = _getAmountOut(amountIn, path);
+                if (tmpValue > amountOut) {
+                    amountOut = tmpValue;
+                    midToken = usdc;
+                }
+            }
+
+            if (sourceTokenAddress != usdt && destTokenAddress != usdt) {
+                path[1] = usdt;
+                tmpValue = _getAmountOut(amountIn, path);
+                if (tmpValue > amountOut) {
+                    amountOut = tmpValue;
+                    midToken = usdt;
+                }
+            }
         }
     }
 
@@ -174,58 +163,59 @@ contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
         if (sourceTokenAddress == destTokenAddress) {
             amountIn = amountOut;
         } else if (amountOut != 0) {
-            address[] memory _route = routes[sourceTokenAddress][destTokenAddress];
-            if(_route.length > 0){
-                amountIn = _getAmountIn(amountOut, _route);
-                if(_route.length == 3){
-                    midToken = _route[1];
+            uint256 tmpValue;
+
+            address[] memory path = new address[](2);
+            path[0] = sourceTokenAddress;
+            path[1] = destTokenAddress;
+            amountIn = _getAmountIn(amountOut, path);
+
+            path = new address[](3);
+            path[0] = sourceTokenAddress;
+            path[2] = destTokenAddress;
+            
+            if (sourceTokenAddress != address(wethToken) && destTokenAddress != address(wethToken)) {
+                path[1] = address(wethToken);
+                tmpValue = _getAmountIn(amountOut, path);
+                if (tmpValue < amountIn) {
+                    amountIn = tmpValue;
+                    midToken = address(wethToken);
                 }
             }
-            else{
-                uint256 tmpValue;
-                address[] memory path = new address[](2);
-                path[0] = sourceTokenAddress;
-                path[1] = destTokenAddress;
-                amountIn = _getAmountIn(amountOut, path);
 
-                path = new address[](3);
-                path[0] = sourceTokenAddress;
-                path[2] = destTokenAddress;
-
-                if (sourceTokenAddress != address(wethToken) && destTokenAddress != address(wethToken)) {
-                    path[1] = address(wethToken);
-                    tmpValue = _getAmountIn(amountOut, path);
-                    if (tmpValue < amountIn) {
-                        amountIn = tmpValue;
-                        midToken = address(wethToken);
-                    }
+            if (sourceTokenAddress != eth && destTokenAddress != eth) {
+                path[1] = eth;
+                tmpValue = _getAmountIn(amountOut, path);
+                if (tmpValue < amountIn) {
+                    amountIn = tmpValue;
+                    midToken = eth;
                 }
+            }
 
-                if (sourceTokenAddress != dai && destTokenAddress != dai) {
-                    path[1] = dai;
-                    tmpValue = _getAmountIn(amountOut, path);
-                    if (tmpValue < amountIn) {
-                        amountIn = tmpValue;
-                        midToken = dai;
-                    }
+            if (sourceTokenAddress != dai && destTokenAddress != dai) {
+                path[1] = dai;
+                tmpValue = _getAmountIn(amountOut, path);
+                if (tmpValue < amountIn) {
+                    amountIn = tmpValue;
+                    midToken = dai;
                 }
+            }
 
-                if (sourceTokenAddress != usdc && destTokenAddress != usdc) {
-                    path[1] = usdc;
-                    tmpValue = _getAmountIn(amountOut, path);
-                    if (tmpValue < amountIn) {
-                        amountIn = tmpValue;
-                        midToken = usdc;
-                    }
+            if (sourceTokenAddress != usdc && destTokenAddress != usdc) {
+                path[1] = usdc;
+                tmpValue = _getAmountIn(amountOut, path);
+                if (tmpValue < amountIn) {
+                    amountIn = tmpValue;
+                    midToken = usdc;
                 }
+            }
 
-                if (sourceTokenAddress != usdt && destTokenAddress != usdt) {
-                    path[1] = usdt;
-                    tmpValue = _getAmountIn(amountOut, path);
-                    if (tmpValue < amountIn) {
-                        amountIn = tmpValue;
-                        midToken = usdt;
-                    }
+            if (sourceTokenAddress != usdt && destTokenAddress != usdt) {
+                path[1] = usdt;
+                tmpValue = _getAmountIn(amountOut, path);
+                if (tmpValue < amountIn) {
+                    amountIn = tmpValue;
+                    midToken = usdt;
                 }
             }
 
@@ -292,38 +282,6 @@ contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
         }
     }
 
-
-    function getStaticRoute(
-        address sourceTokenAddress,
-        address destTokenAddress)
-        public
-        onlyOwner
-        returns(address[] memory)
-    {
-        return routes[sourceTokenAddress][destTokenAddress];
-    }
-
-    function addStaticRoute(
-        address[] memory _route)
-        public
-        onlyOwner
-    {
-        //at the moment we support only path with 1 mid token address
-        require(_route.length >=2 && _route.length <= 3, "!length");
-
-        routes[_route[0]][_route[_route.length-1]] = _route;
-    }
-
-    function removeStaticRoute(
-        address sourceTokenAddress,
-        address destTokenAddress)
-        public
-        onlyOwner
-    {
-        delete routes[sourceTokenAddress][destTokenAddress];
-    }
-
-
     function _swapWithUni(
         address sourceTokenAddress,
         address destTokenAddress,
@@ -356,6 +314,7 @@ contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
                 return (0, 0);
             }
         }
+
         address[] memory path;
         if (midToken != address(0)) {
             path = new address[](3);
@@ -375,6 +334,7 @@ contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
             receiverAddress,
             block.timestamp
         );
+
         destTokenAmountReceived = amounts[amounts.length - 1];
     }
 }
