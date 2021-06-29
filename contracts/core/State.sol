@@ -76,6 +76,8 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
 
     uint256 public maxSwapSize = 1500 ether;                                                // maximum supported swap size in ETH
 
+    mapping(address => mapping(address => address[])) public routes;                        // static swap paths
+
 
     function _setTarget(
         bytes4 sig,

@@ -24,5 +24,11 @@ BPT = Contract.from_abi("BPT", "0xe26A220a341EAca116bDa64cF9D5638A935ae629", Tes
 HELPER = Contract.from_abi("HELPER", "0x3B55369bfeA51822eb3E85868c299E8127E13c56", HelperImpl.abi)
 PRICE_FEED = Contract.from_abi("PRICE_FEED", BZX.priceFeeds(), abi = PriceFeeds.abi)
 
+
+USDC = Contract.from_abi("USDC", address="0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48", abi=interface.ERC20.abi)
 swaps = SwapsImplUniswapV2_ETH.deploy({'from':BZX.owner()})
 BZX.setSwapsImplContract(swaps, {'from':BZX.owner()})
+BZX.replaceContract(swaps, {'from':BZX.owner()})
+
+USDC.approve('0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F', 2**256-1, {'from': BZX.address})
+BZX.addStaticRoute(['0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'],{'from':BZX.owner()})

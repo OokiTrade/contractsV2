@@ -750,4 +750,32 @@ contract IBZx is
         external
         view
         returns (uint256);
+
+    /// @dev add static route
+    /// @param route swap path
+    function addStaticRoute(
+        address[] calldata route)
+    external
+    payable;
+
+    /// @dev remove static route
+    /// @param sourceTokenAddress source token address
+    /// @param destTokenAddress destination token address
+    function removeStaticRoute(
+        address sourceTokenAddress,
+        address destTokenAddress)
+    external
+    payable;
+
+    /// @dev get static route
+    /// @param sourceTokenAddress source token address
+    /// @param destTokenAddress destination token address
+    /// @return swap path
+    function getStaticRoute(
+        address sourceTokenAddress,
+        address destTokenAddress)
+    external
+    payable
+    returns(address[] memory);
+
 }
