@@ -23,3 +23,6 @@ BPT = Contract.from_abi("BPT", "0xe26A220a341EAca116bDa64cF9D5638A935ae629", Tes
 
 HELPER = Contract.from_abi("HELPER", "0x3B55369bfeA51822eb3E85868c299E8127E13c56", HelperImpl.abi)
 PRICE_FEED = Contract.from_abi("PRICE_FEED", BZX.priceFeeds(), abi = PriceFeeds.abi)
+
+swaps = SwapsImplUniswapV2_ETH.deploy({'from':BZX.owner()})
+BZX.setSwapsImplContract(swaps, {'from':BZX.owner()})

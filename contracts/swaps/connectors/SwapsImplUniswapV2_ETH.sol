@@ -16,7 +16,8 @@ contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
     using SafeERC20 for IERC20;
 
     // mainnet
-    address public constant uniswapRouter = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
+//    address public constant uniswapRouter = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
+    address public constant uniswapRouter = 0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F; //Sushiswap
     address public constant dai = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
     address public constant usdc = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     address public constant usdt = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
