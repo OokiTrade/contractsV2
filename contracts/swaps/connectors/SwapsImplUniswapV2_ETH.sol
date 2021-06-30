@@ -68,14 +68,6 @@ contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
         }
     }
 
-    event Logger(string name, uint256 amount);
-
-    event LoggerAddress(string name, address logAddress);
-
-    event LoggerBytes(string name, bytes logBytes);
-    event LoggerBoolean(string name, bool val);
-
-
     function dexExpectedRate(
         address sourceTokenAddress,
         address destTokenAddress,
