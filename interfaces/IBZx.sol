@@ -634,6 +634,18 @@ interface IBZx {
         bool unsafeOnly
     ) external view returns (LoanReturnData[] memory loansData);
 
+    /// @dev get current active loans in the system
+    /// @param start of the index
+    /// @param count number of loans to return
+    /// @param unsafeOnly boolean if true return unsafe loan only (open for liquidation)
+    /// @param isLiquidatable boolean if true return liquidatable loans only
+    function getActiveLoansAdvanced(
+        uint256 start,
+        uint256 count,
+        bool unsafeOnly,
+        bool isLiquidatable
+    ) external view returns (LoanReturnData[] memory loansData);
+
     function getActiveLoansCount() external view returns (uint256);
 
     ////// Swap External //////
