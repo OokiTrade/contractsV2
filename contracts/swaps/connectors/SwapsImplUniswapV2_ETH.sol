@@ -320,7 +320,7 @@ contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
         public
         onlyOwner
     {
-        routes[sourceTokenAddress][destTokenAddress] = new address[](0);
+        delete routes[sourceTokenAddress][destTokenAddress];
     }
 
 
