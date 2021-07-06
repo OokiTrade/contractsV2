@@ -11,14 +11,18 @@ import "../../openzeppelin/SafeMath.sol";
 
 contract ITokenHolderLike {
     function balanceOf(address _who) public view returns (uint256);
+
     function freeUpTo(uint256 value) public returns (uint256);
+
     function freeFromUpTo(address from, uint256 value) public returns (uint256);
 }
 
 contract GasTokenUser {
     using SafeMath for uint256;
-    ITokenHolderLike constant public gasToken = ITokenHolderLike(0x0000000000004946c0e9F43F4Dee607b0eF1fA1c);
-    ITokenHolderLike constant public tokenHolder = ITokenHolderLike(0x55Eb3DD3f738cfdda986B8Eff3fa784477552C61);
+    ITokenHolderLike public constant gasToken =
+        ITokenHolderLike(0x0000000000004946c0e9F43F4Dee607b0eF1fA1c);
+    ITokenHolderLike public constant tokenHolder =
+        ITokenHolderLike(0x55Eb3DD3f738cfdda986B8Eff3fa784477552C61);
 
     modifier usesGasToken(address holder) {
         if (holder == address(0)) {
@@ -33,23 +37,17 @@ contract GasTokenUser {
             gasCalcValue = (_gasUsed(gasCalcValue) + 14154) / 41947;
 
             if (holder == address(tokenHolder)) {
-                tokenHolder.freeUpTo(
-                    gasCalcValue
-                );
+                tokenHolder.freeUpTo(gasCalcValue);
             } else {
-                tokenHolder.freeFromUpTo(
-                    holder,
-                    gasCalcValue
-                );
+                tokenHolder.freeFromUpTo(holder, gasCalcValue);
             }
-
         } else {
             _;
         }
     }
 
     modifier withGasRebate(address receiver, address bZxContract) {
-        uint256 startingGas = gasleft() + 21000 + 0; // starting gas + 0 the amount is so minuscule I am ignoring it for now
+        uint256 startingGas = gasleft() + 21000 + 0; // starting gas + 0 the amount is so minuscule I am ignoring it for now, it varies between different functions
         _;
 
         ProtocolLike BZX = ProtocolLike(bZxContract);
@@ -62,20 +60,9 @@ contract GasTokenUser {
         ).div(1e18 * 1e18);
 
         BZX.withdraw(receiver, gasRebate);
-
     }
-    
-    function _gasUsed(
-        uint256 startingGas)
-        internal
-        view
-        returns (uint256)
-    {
-        return 21000 +
-            startingGas -
-            gasleft() +
-            16 *
-            msg.data.length;
 
+    function _gasUsed(uint256 startingGas) internal view returns (uint256) {
+        return 21000 + startingGas - gasleft() + 16 * msg.data.length;
     }
 }
