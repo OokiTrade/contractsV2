@@ -297,7 +297,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         public
         payable
         nonReentrant
-        withGasRebate(receiver, bZxContract)
+        withGasRebate(trader, bZxContract)
         returns (ProtocolLike.LoanOpenData memory)
     {
         return _marginTrade(

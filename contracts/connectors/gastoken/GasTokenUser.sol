@@ -51,10 +51,6 @@ contract GasTokenUser {
     modifier withGasRebate(address receiver, address bZxContract) {
         uint256 startingGas = gasleft() + 21000 + 0; // starting gas + 0 the amount is so minuscule I am ignoring it for now
         _;
-        // emit Logger("one", 111);
-        // emit Logger("start", start);
-        // emit Logger("startingGas", startingGas);
-        // emit LoggerAddress("address", address(this));
 
         ProtocolLike BZX = ProtocolLike(bZxContract);
         address WMATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
@@ -66,9 +62,7 @@ contract GasTokenUser {
         ).div(1e18 * 1e18);
 
         BZX.withdraw(receiver, gasRebate);
-        // // gas rebate cannot exceed available collateral
-        // gasRebate = gasRebate
-        //     .min256(collateral);
+
     }
     
     function _gasUsed(
