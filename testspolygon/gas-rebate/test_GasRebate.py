@@ -48,7 +48,7 @@ def test_mainflow(requireMaticFork, BZX, accounts, ETH, iUSDC, USDC):
     USDC.transfer(accounts[0], 1000e6, {'from': '0x986a2fCa9eDa0e06fBf7839B89BfC006eE2a23Dd'})
     USDC.approve(iUSDC, 2**256-1, {'from': accounts[0]})
 
-    iUSDC.mintWithGasRebate(accounts[0], 1e6, {'from': accounts[0], "gas_price": Wei("1 gwei")})
+    iUSDC.mint(accounts[0], 1e6, {'from': accounts[0], "gas_price": Wei("1 gwei")})
     assert accounts[0].balance() > 100e18
     iUSDC.mint(accounts[0], 1e6, {'from': accounts[0], "gas_price": Wei("10 gwei")})
     assert accounts[0].balance() < 100e18

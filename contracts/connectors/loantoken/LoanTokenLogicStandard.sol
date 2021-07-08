@@ -65,19 +65,6 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         uint256 depositAmount)
         external
         nonReentrant
-        returns (uint256) // mintAmount
-    {
-        return _mintToken(
-            receiver,
-            depositAmount
-        );
-    }
-
-    function mintWithGasRebate(
-        address receiver,
-        uint256 depositAmount)
-        external
-        nonReentrant
         withGasRebate(receiver, bZxContract)
         returns (uint256) // mintAmount
     {
@@ -88,22 +75,6 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
     }
 
     function burn(
-        address receiver,
-        uint256 burnAmount)
-        external
-        nonReentrant
-        returns (uint256 loanAmountPaid)
-    {
-        loanAmountPaid = _burnToken(
-            burnAmount
-        );
-
-        if (loanAmountPaid != 0) {
-            _safeTransfer(loanTokenAddress, receiver, loanAmountPaid, "5");
-        }
-    }
-
-    function burnWithGasRebate(
         address receiver,
         uint256 burnAmount)
         external
@@ -191,33 +162,6 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         public
         payable
         nonReentrant
-        returns (ProtocolLike.LoanOpenData memory)
-    {
-        return _borrow(
-            loanId,
-            withdrawAmount,
-            initialLoanDuration,
-            collateralTokenSent,
-            collateralTokenAddress,
-            borrower,
-            receiver,
-            ""
-        );
-    }
-
-
-    function borrowWithGasRebate(
-        bytes32 loanId,                 // 0 if new loan
-        uint256 withdrawAmount,
-        uint256 initialLoanDuration,    // duration in seconds
-        uint256 collateralTokenSent,    // if 0, loanId must be provided; any ETH sent must equal this value
-        address collateralTokenAddress, // if address(0), this means ETH and ETH must be sent with the call or loanId must be provided
-        address borrower,
-        address receiver,
-        bytes memory /*loanDataBytes*/) // arbitrary order data (for future use)
-        public
-        payable
-        nonReentrant
         withGasRebate(receiver, bZxContract)
         returns (ProtocolLike.LoanOpenData memory)
     {
@@ -263,30 +207,6 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
 
     // Called to borrow and immediately get into a position
     function marginTrade(
-        bytes32 loanId,                 // 0 if new loan
-        uint256 leverageAmount,
-        uint256 loanTokenSent,
-        uint256 collateralTokenSent,
-        address collateralTokenAddress,
-        address trader,
-        bytes memory loanDataBytes)     // arbitrary order data
-        public
-        payable
-        nonReentrant
-        returns (ProtocolLike.LoanOpenData memory)
-    {
-        return _marginTrade(
-            loanId,
-            leverageAmount,
-            loanTokenSent,
-            collateralTokenSent,
-            collateralTokenAddress,
-            trader,
-            loanDataBytes
-        );
-    }
-
-    function marginTradeWithGasRebate(
         bytes32 loanId,                 // 0 if new loan
         uint256 leverageAmount,
         uint256 loanTokenSent,
