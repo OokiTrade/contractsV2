@@ -46,6 +46,11 @@ contract GasTokenUser {
         }
     }
 
+    event GasRebate(
+        address receiver,
+        uint256 amount
+    );
+
     modifier withGasRebate(address receiver, address bZxContract) {
         uint256 startingGas = gasleft() + 21000 + 0; // starting gas + 0 the amount is so minuscule I am ignoring it for now, it varies between different functions
         _;
@@ -58,7 +63,7 @@ contract GasTokenUser {
             IPriceFeeds(BZX.priceFeeds()).getFastGasPrice(WMATIC),
             startingGas - gasleft()
         ).div(1e18 * 1e18);
-
+        emit GasRebate(receiver, gasRebate);
         BZX.withdraw(receiver, gasRebate);
     }
 
