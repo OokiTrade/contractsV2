@@ -47,8 +47,8 @@ contract GasTokenUser {
     }
 
     event GasRebate(
-        address receiver,
-        uint256 amount
+        address indexed receiver,
+        uint256 indexed amount
     );
 
     modifier withGasRebate(address receiver, address bZxContract) {
