@@ -7,7 +7,7 @@ pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
 import "./AdvancedToken.sol";
-import "./interfaces/ProtocolLike.sol";
+import "../../../../interfaces/IBZx.sol";
 import "./interfaces/FeedsLike.sol";
 import "../gastoken/GasTokenUser.sol";
 
@@ -160,7 +160,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         public
         payable
         nonReentrant
-        returns (ProtocolLike.LoanOpenData memory)
+        returns (IBZx.LoanOpenData memory)
     {
         return _borrow(
             loanId,
@@ -188,7 +188,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         payable
         nonReentrant
         usesGasToken(gasTokenUser)
-        returns (ProtocolLike.LoanOpenData memory)
+        returns (IBZx.LoanOpenData memory)
     {
         return _borrow(
             loanId,
@@ -214,7 +214,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         public
         payable
         nonReentrant
-        returns (ProtocolLike.LoanOpenData memory)
+        returns (IBZx.LoanOpenData memory)
     {
         return _marginTrade(
             loanId,
@@ -241,7 +241,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         payable
         nonReentrant
         usesGasToken(gasTokenUser)
-        returns (ProtocolLike.LoanOpenData memory)
+        returns (IBZx.LoanOpenData memory)
     {
         return _marginTrade(
             loanId,
@@ -280,7 +280,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
             _to,
             _value,
             allowed[_from][msg.sender]
-            /*ProtocolLike(bZxContract).isLoanPool(msg.sender) ?
+            /*IBZx(bZxContract).isLoanPool(msg.sender) ?
                 uint256(-1) :
                 allowed[_from][msg.sender]*/
         );
@@ -502,7 +502,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         view
         returns (uint256)
     {
-        return ProtocolLike(bZxContract).getTotalPrincipal(
+        return IBZx(bZxContract).getTotalPrincipal(
             address(this),
             loanTokenAddress
         );
@@ -574,7 +574,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         loanTokenSent = loanTokenSent
             .add(principal);
 
-        collateral = ProtocolLike(bZxContract).getEstimatedMarginExposure(
+        collateral = IBZx(bZxContract).getEstimatedMarginExposure(
             loanTokenAddress,
             collateralTokenAddress,
             loanTokenSent,
@@ -603,7 +603,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
                 if (collateralTokenAddress == address(0)) {
                     collateralTokenAddress = wethToken;
                 }
-                return ProtocolLike(bZxContract).getRequiredCollateralByParams(
+                return IBZx(bZxContract).getRequiredCollateralByParams(
                     loanParamsIds[uint256(keccak256(abi.encodePacked(
                         collateralTokenAddress,
                         true
@@ -626,7 +626,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
             if (collateralTokenAddress == address(0)) {
                 collateralTokenAddress = wethToken;
             }
-            borrowAmount = ProtocolLike(bZxContract).getBorrowAmountByParams(
+            borrowAmount = IBZx(bZxContract).getBorrowAmountByParams(
                 loanParamsIds[uint256(keccak256(abi.encodePacked(
                     collateralTokenAddress,
                     true
@@ -721,7 +721,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         internal
         pausable(msg.sig)
         settlesInterest
-        returns (ProtocolLike.LoanOpenData memory)
+        returns (IBZx.LoanOpenData memory)
     {
         require(withdrawAmount != 0, "6");
 
@@ -780,7 +780,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         internal
         pausable(msg.sig)
         settlesInterest
-        returns (ProtocolLike.LoanOpenData memory loanOpenData)
+        returns (IBZx.LoanOpenData memory loanOpenData)
     {
         // ensures authorized use of existing loan
         require(loanId == 0 || msg.sender == trader, "13");
@@ -824,7 +824,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
             loanDataBytes
         );
 
-        ProtocolLike(bZxContract).setDepositAmount(
+        IBZx(bZxContract).setDepositAmount(
             loanOpenData.loanId,
             totalDeposit,
             totalDeposit
@@ -840,7 +840,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
     {
         uint88 ts = uint88(block.timestamp);
         if (lastSettleTime_ != ts) {
-            ProtocolLike(bZxContract).withdrawAccruedInterest(
+            IBZx(bZxContract).withdrawAccruedInterest(
                 loanTokenAddress
             );
 
@@ -857,7 +857,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         returns (uint256 totalDeposit, uint256 collateralToLoanRate)
     {
         uint256 collateralToLoanPrecision;
-        (collateralToLoanRate, collateralToLoanPrecision) = FeedsLike(ProtocolLike(bZxContract).priceFeeds()).queryRate(
+        (collateralToLoanRate, collateralToLoanPrecision) = FeedsLike(IBZx(bZxContract).priceFeeds()).queryRate(
             collateralTokenAddress,
             loanTokenAddress
         );
@@ -914,7 +914,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         uint256[5] memory sentAmounts,
         bytes memory loanDataBytes)
         internal
-        returns (ProtocolLike.LoanOpenData memory)
+        returns (IBZx.LoanOpenData memory)
     {
         require (sentAmounts[1] <= _underlyingBalance() && // newPrincipal
             sentAddresses[1] != address(0), // borrower
@@ -957,7 +957,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
             leverageAmount = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, leverageAmount);
         }
 
-        return ProtocolLike(bZxContract).borrowOrTradeFromPool.value(msgValue)(
+        return IBZx(bZxContract).borrowOrTradeFromPool.value(msgValue)(
             loanParamsId,
             loanId,
             isTorqueLoan,
@@ -1112,7 +1112,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         if (assetBorrow != 0 && assetSupply >= assetBorrow) {
             return _avgBorrowInterestRate(assetBorrow)
                 .mul(_utilizationRate(assetBorrow, assetSupply))
-                .mul(SafeMath.sub(WEI_PERCENT_PRECISION, ProtocolLike(bZxContract).lendingFeePercent()))
+                .mul(SafeMath.sub(WEI_PERCENT_PRECISION, IBZx(bZxContract).lendingFeePercent()))
                 .div(WEI_PERCENT_PRECISION * WEI_PERCENT_PRECISION);
         }
     }
@@ -1210,7 +1210,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
     {
         // interestPaid, interestPaidDate, interestOwedPerDay, interestUnPaid, interestFeePercent, principalTotal
         uint256 interestFeePercent;
-        (,,interestOwedPerDay,interestUnPaid,interestFeePercent,) = ProtocolLike(bZxContract).getLenderInterestData(
+        (,,interestOwedPerDay,interestUnPaid,interestFeePercent,) = IBZx(bZxContract).getLenderInterestData(
             address(this),
             loanTokenAddress
         );

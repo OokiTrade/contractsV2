@@ -484,7 +484,7 @@ interface IBZx {
         address gasTokenUser,
         uint256 swapAmount,
         bool returnTokenIsCollateral,
-        bytes memory loanDataBytes
+        bytes calldata loanDataBytes
     )
         external
         returns (
