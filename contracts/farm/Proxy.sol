@@ -2,7 +2,7 @@ pragma solidity 0.6.12;
 
 /// SPDX-License-Identifier: MIT
 
-import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin-3.4.0/utils/Address.sol";
 import "./interfaces/Upgradeable.sol";
 
 

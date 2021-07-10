@@ -3,9 +3,9 @@ pragma experimental ABIEncoderV2;
 
 /// SPDX-License-Identifier: MIT
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin-3.4.0/token/ERC20/IERC20.sol";
+import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
+// import "@openzeppelin-3.4.0/math/SafeMath.sol";
 import "./interfaces/Upgradeable.sol";
 import "./GovToken.sol";
 import "./MintCoordinator_BSC.sol";
