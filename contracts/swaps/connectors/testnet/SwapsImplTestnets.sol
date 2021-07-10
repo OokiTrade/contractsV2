@@ -8,7 +8,7 @@ pragma solidity 0.5.17;
 import "../../../core/State.sol";
 import "../../../openzeppelin/SafeERC20.sol";
 import "../../ISwapsImpl.sol";
-import "../../../feeds/IPriceFeeds.sol";
+import "../../../../interfaces/IPriceFeeds.sol";
 import "../../../testhelpers/TestToken.sol";
 
 
