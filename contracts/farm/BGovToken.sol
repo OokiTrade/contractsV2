@@ -2,8 +2,8 @@
 
 pragma solidity 0.6.12;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin-3.4.0/token/ERC20/ERC20.sol";
+import "@openzeppelin-3.4.0/access/Ownable.sol";
 
 
 // BGovToken with Governance.

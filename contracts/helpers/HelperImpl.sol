@@ -8,8 +8,8 @@ pragma experimental ABIEncoderV2;
 
 /// SPDX-License-Identifier: MIT
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin-3.4.0/access/Ownable.sol";
+import "@openzeppelin-3.4.0/token/ERC20/IERC20.sol";
 import "./IToken.sol";
 import "./IBZx.sol";
 import "../feeds/IPriceFeeds.sol";

@@ -6,8 +6,7 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
 import "./interfaces/Upgradeable.sol";
 import "./interfaces/IWethERC20.sol";
 import "./interfaces/IUniswapV2Router.sol";

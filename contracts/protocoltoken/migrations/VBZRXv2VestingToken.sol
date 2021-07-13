@@ -5,8 +5,8 @@
 // SPDX-License-Identifier: Apache License, Version 2.0.
 pragma solidity 0.6.12;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin-3.4.0/math/SafeMath.sol";
+import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
 import "./IVestingToken.sol";
 import "./Upgradeable_6.sol";
 
