@@ -7,8 +7,8 @@ pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
 import "./AdvancedToken.sol";
-import "../../../../interfaces/IBZx.sol";
-import "./interfaces/FeedsLike.sol";
+import "../../../interfaces/IBZx.sol";
+import "../../../interfaces/IPriceFeeds.sol";
 import "../gastoken/GasTokenUser.sol";
 
 
@@ -857,7 +857,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         returns (uint256 totalDeposit, uint256 collateralToLoanRate)
     {
         uint256 collateralToLoanPrecision;
-        (collateralToLoanRate, collateralToLoanPrecision) = FeedsLike(IBZx(bZxContract).priceFeeds()).queryRate(
+        (collateralToLoanRate, collateralToLoanPrecision) = IPriceFeeds(IBZx(bZxContract).priceFeeds()).queryRate(
             collateralTokenAddress,
             loanTokenAddress
         );

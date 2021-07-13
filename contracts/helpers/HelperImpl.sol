@@ -12,7 +12,7 @@ import "@openzeppelin-3.4.0/access/Ownable.sol";
 import "@openzeppelin-3.4.0/token/ERC20/IERC20.sol";
 import "./IToken.sol";
 import "./IBZx.sol";
-import "../feeds/IPriceFeeds.sol";
+import "../../interfaces/IPriceFeeds.sol";
 
 contract HelperImpl is Ownable {
     address public constant bZxProtocol = 0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f; // mainnet

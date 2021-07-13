@@ -5,6 +5,8 @@
 
 pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
+import "../../interfaces/IBZx.sol";
+import "../../interfaces/IPriceFeeds.sol";
 
 
 contract DAppHelper_TokenLike {
@@ -30,22 +32,6 @@ contract DAppHelper_iTokenLike is DAppHelper_TokenLike {
         returns (uint256);
 }
 
-contract DAppHelper_Protocol {
-    function priceFeeds()
-        public
-        view
-        returns (uint256);
-}
-
-contract DAppHelper_FeedsLike {
-    function queryRate(
-        address sourceToken,
-        address destToken)
-        public
-        view
-        returns (uint256 rate, uint256 precision);
-}
-
 contract DAppHelper {
 
     address public constant bZxProtocol = 0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f; // mainnet
@@ -65,7 +51,7 @@ contract DAppHelper {
             uint256[] memory destAmounts
         )
     {
-        DAppHelper_FeedsLike feeds = DAppHelper_FeedsLike(DAppHelper_Protocol(bZxProtocol).priceFeeds());
+        IPriceFeeds feeds = IPriceFeeds(IBZx(bZxProtocol).priceFeeds());
         rates = new uint256[](tokens.length);
         precisions = new uint256[](tokens.length);
         destAmounts = new uint256[](tokens.length);

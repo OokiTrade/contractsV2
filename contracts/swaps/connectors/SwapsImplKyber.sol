@@ -6,7 +6,7 @@
 pragma solidity 0.5.17;
 
 import "../../core/State.sol";
-import "../../feeds/IPriceFeeds.sol";
+import "../../../interfaces/IPriceFeeds.sol";
 import "../../openzeppelin/SafeERC20.sol";
 import "../ISwapsImpl.sol";
 
