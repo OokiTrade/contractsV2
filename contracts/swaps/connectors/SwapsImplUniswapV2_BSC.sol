@@ -6,10 +6,7 @@
 pragma solidity 0.5.17;
 
 import "../../core/State.sol";
-<<<<<<< Updated upstream
 import "../../../interfaces/IPriceFeeds.sol";
-=======
->>>>>>> Stashed changes
 import "../../interfaces/IUniswapV2Router.sol";
 import "../../openzeppelin/SafeERC20.sol";
 import "../ISwapsImpl.sol";
