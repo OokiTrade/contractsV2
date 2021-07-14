@@ -90,7 +90,7 @@ def testFarming_alt_reward2(requireFork, tokens, tokenName, lpTokenName, pid, ac
     lpToken.approve(masterChef, 2**256-1, {'from': account1})
     depositAmount = lpBalance/2
     bgovToken.approve(masterChef, 2**256-1, {'from': account1})
-    assert False
+
     masterChef.deposit(pid, depositAmount, {'from': account1})
     chain.sleep(60 * 60 * 24)
     chain.mine()
@@ -107,7 +107,7 @@ def testFarming_alt_reward2(requireFork, tokens, tokenName, lpTokenName, pid, ac
     deposited1 = deposited * 0.1;
     deposited2 = deposited * 0.8;
 
-    assert False
+
     masterChef.withdraw(GOV_POOL_PID, deposited1, {'from': account1})
     masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0]
 
