@@ -80,6 +80,9 @@ def testFarming_ownerOnly(requireFork, tokens, tokenName, lpTokenName, pid, acco
         masterChef.add(87500, bgovToken, 1, {'from': account1})
     with reverts("Ownable: caller is not the owner"):
         masterChef.massMigrateToBalanceOf({'from': account1})
+    with reverts("Ownable: caller is not the owner"):
+        masterChef.setGOVPerBlock(1, {'from': account1})
+
 
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
 def testFarming_checkPaused(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, bgovToken):

@@ -226,7 +226,7 @@ def testFarming_lockedPgovPoolWithdraw1(requireFork, tokens, tokenName, lpTokenN
     # Precondition
     lpToken = tokens[lpTokenName]
     token = tokens[tokenName]
-    account1 = accounts[7]
+    account1 = accounts[9]
     initBalance(account1, token, lpToken, INITIAL_LP_TOKEN_ACCOUNT_AMOUNT)
     lpBalance1 = lpToken.balanceOf(account1)
     lockedRewards1 = masterChef.lockedRewards(account1);
@@ -236,13 +236,18 @@ def testFarming_lockedPgovPoolWithdraw1(requireFork, tokens, tokenName, lpTokenN
     bgovToken.approve(masterChef, 2**256-1, {'from': account1})
     masterChef.setLocked(pid, False, {'from': masterChef.owner()})
     masterChef.setLocked(GOV_POOL_PID, False, {'from': masterChef.owner()})
+    value = 10e18
+    tx1 = masterChef.addAltReward({'from': account1, 'value': value})
 
     tx1 = masterChef.deposit(pid, depositAmount, {'from': account1})
+    chain.sleep(60)
     chain.mine()
 
     masterChef.compoundReward(pid,  {'from': account1})
+    chain.sleep(60)
     chain.mine()
     masterChef.compoundReward(GOV_POOL_PID,  {'from': account1})
+    chain.sleep(60)
     chain.mine()
 
     assert masterChef.lockedRewards(account1) == lockedRewards1
@@ -256,12 +261,14 @@ def testFarming_lockedPgovPoolWithdraw1(requireFork, tokens, tokenName, lpTokenN
     pendingGOV00 = masterChef.pendingGOV(GOV_POOL_PID, account1) - pendingGOV0
     pendingGOV = masterChef.pendingGOV(GOV_POOL_PID, account1) + pendingGOV00 - pendingGOV0
 
-    withdrawAmount = 1e18;
+
     govDeposited = masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0]
     pgovBalance = bgovToken.balanceOf(account1)
+    withdrawAmount = govDeposited/2;
     masterChef.withdraw(GOV_POOL_PID, withdrawAmount, {'from': account1})
+
     assert govDeposited - masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0] == withdrawAmount
-    assert ((bgovToken.balanceOf(account1) - pgovBalance - pendingGOV)/1e18) / (withdrawAmount/1e18) > 0.98
+    assert ((bgovToken.balanceOf(account1) - pgovBalance - pendingGOV)/1e18) / (withdrawAmount/1e18) > 0.9
 
     govDeposited1 = masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0]
     pendingGOV1 = masterChef.pendingGOV(GOV_POOL_PID, account1) + pendingGOV00 - pendingGOV0
@@ -270,7 +277,7 @@ def testFarming_lockedPgovPoolWithdraw1(requireFork, tokens, tokenName, lpTokenN
     tx = masterChef.withdraw(GOV_POOL_PID, withdrawAmount1, {'from': account1})
     eventAmount = tx.events['Withdraw'][0]['amount']
     assert govDeposited1 - masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0] == withdrawAmount1 - masterChef.lockedRewards(account1)
-    assert ((bgovToken.balanceOf(account1) - pgovBalance1 - pendingGOV1)/1e18) / ((withdrawAmount1 - masterChef.lockedRewards(account1))/1e18) > 0.98
+    assert ((bgovToken.balanceOf(account1) - pgovBalance1 - pendingGOV1)/1e18) / ((withdrawAmount1 - masterChef.lockedRewards(account1))/1e18) > 0.9
     assert eventAmount == withdrawAmount1 - masterChef.lockedRewards(account1)
 
 
@@ -281,7 +288,7 @@ def testFarming_lockedPgovPoolWithdraw2(requireFork, tokens, tokenName, lpTokenN
     # Precondition
     lpToken = tokens[lpTokenName]
     token = tokens[tokenName]
-    account1 = accounts[7]
+    account1 = accounts[9]
     initBalance(account1, token, lpToken, INITIAL_LP_TOKEN_ACCOUNT_AMOUNT)
     lpBalance1 = lpToken.balanceOf(account1)
     lockedRewards1 = masterChef.lockedRewards(account1);
@@ -293,27 +300,31 @@ def testFarming_lockedPgovPoolWithdraw2(requireFork, tokens, tokenName, lpTokenN
     masterChef.setLocked(GOV_POOL_PID, False, {'from': masterChef.owner()})
 
     tx1 = masterChef.deposit(pid, depositAmount, {'from': account1})
+    chain.sleep(60)
     chain.mine()
 
     masterChef.compoundReward(pid,  {'from': account1})
+    chain.sleep(60)
     chain.mine()
     masterChef.compoundReward(GOV_POOL_PID,  {'from': account1})
+    chain.sleep(60)
     chain.mine()
 
     assert masterChef.lockedRewards(account1) > lockedRewards1
 
     #trying to withdraw less than locked
     #Checking how many pending govs goes per 1 block (it's used inside of the withdraw transaction)
-    #it's not exact value but more/less correct
+    #it's not exact testFarming_lockedPgovPoolWithdraw1value but more/less correct
     pendingGOV0 = masterChef.pendingGOV(GOV_POOL_PID, account1)
     chain.mine()
     masterChef.updatePool(GOV_POOL_PID,{ 'from':account1})
     pendingGOV00 = masterChef.pendingGOV(GOV_POOL_PID, account1) - pendingGOV0
     pendingGOV = masterChef.pendingGOV(GOV_POOL_PID, account1) + pendingGOV00 - pendingGOV0
 
-    withdrawAmount = 1e18;
-    govDeposited = masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0]
+    govDeposited = (masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0])
     pgovBalance = bgovToken.balanceOf(account1)
+    withdrawAmount = (govDeposited-masterChef.lockedRewards(account1))/2;
+
     masterChef.withdraw(GOV_POOL_PID, withdrawAmount, {'from': account1})
     assert govDeposited - masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0] == withdrawAmount
     assert ((bgovToken.balanceOf(account1) - pgovBalance - pendingGOV)/1e18) / (withdrawAmount/1e18) > 0.99
@@ -330,7 +341,7 @@ def testFarming_lockedPgovPoolWithdraw3(requireFork, tokens, tokenName, lpTokenN
     # Precondition
     lpToken = tokens[lpTokenName]
     token = tokens[tokenName]
-    account1 = accounts[7]
+    account1 = accounts[9]
     initBalance(account1, token, lpToken, INITIAL_LP_TOKEN_ACCOUNT_AMOUNT)
     lpBalance1 = lpToken.balanceOf(account1)
     lockedRewards1 = masterChef.lockedRewards(account1);
@@ -342,10 +353,10 @@ def testFarming_lockedPgovPoolWithdraw3(requireFork, tokens, tokenName, lpTokenN
     masterChef.setLocked(GOV_POOL_PID, True, {'from': masterChef.owner()})
 
     tx1 = masterChef.deposit(pid, depositAmount, {'from': account1})
-    chain.sleep(60 * 60 * 24)
+    chain.sleep(60)
     chain.mine()
     masterChef.compoundReward(pid,  {'from': account1})
-    chain.sleep(60 * 60 * 24)
+    chain.sleep(60)
     chain.mine()
     masterChef.compoundReward(GOV_POOL_PID,  {'from': account1})
     chain.mine()
@@ -361,10 +372,10 @@ def testFarming_lockedPgovPoolWithdraw3(requireFork, tokens, tokenName, lpTokenN
     pendingGOV00 = masterChef.pendingGOV(GOV_POOL_PID, account1) - pendingGOV0
     pendingGOV = masterChef.pendingGOV(GOV_POOL_PID, account1) + pendingGOV00 - pendingGOV0
 
-    withdrawAmount = 1e18;
     govDeposited = masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0]
     pgovBalance = bgovToken.balanceOf(account1)
     lockedRewards = masterChef.lockedRewards(account1)
+    withdrawAmount = (govDeposited - lockedRewards)/2;
     tx = masterChef.withdraw(GOV_POOL_PID, withdrawAmount, {'from': account1})
     withdrawEventAmount = tx.events['Withdraw'][0]['amount']
     assert withdrawAmount == withdrawEventAmount
@@ -385,7 +396,7 @@ def testFarming_lockedPgovPoolWithdraw4(requireFork, tokens, tokenName, lpTokenN
     # Precondition
     lpToken = tokens[lpTokenName]
     token = tokens[tokenName]
-    account1 = accounts[7]
+    account1 = accounts[9]
     initBalance(account1, token, lpToken, INITIAL_LP_TOKEN_ACCOUNT_AMOUNT)
     lpBalance1 = lpToken.balanceOf(account1)
     lockedRewards1 = masterChef.lockedRewards(account1);
@@ -397,10 +408,10 @@ def testFarming_lockedPgovPoolWithdraw4(requireFork, tokens, tokenName, lpTokenN
     masterChef.setLocked(GOV_POOL_PID, True, {'from': masterChef.owner()})
 
     tx1 = masterChef.deposit(pid, depositAmount, {'from': account1})
-    chain.sleep(60 * 60 * 24)
+    chain.sleep(60)
     chain.mine()
     masterChef.compoundReward(pid,  {'from': account1})
-    chain.sleep(60 * 60 * 24)
+    chain.sleep(60)
     chain.mine()
     masterChef.compoundReward(0,  {'from': account1})
     chain.mine()
@@ -421,7 +432,7 @@ def testFarming_upgradeMasterChefBalanceOf(requireFork, tokens, tokenName, lpTok
     # Precondition
     lpToken = tokens[lpTokenName]
     token = tokens[tokenName]
-    account1 = accounts[7]
+    account1 = accounts[9]
     initBalance(account1, token, lpToken, INITIAL_LP_TOKEN_ACCOUNT_AMOUNT)
     lpBalance1 = lpToken.balanceOf(account1)
     lpToken.approve(masterChef, 2**256-1, {'from': account1})
