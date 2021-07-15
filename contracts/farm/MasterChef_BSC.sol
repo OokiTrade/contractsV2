@@ -377,7 +377,7 @@ contract MasterChef_BSC is Upgradeable {
         IMasterChef.PoolInfo storage pool = poolInfo[GOV_POOL_ID];
         require(block.number > pool.lastRewardBlock, "rewards not started");
 
-        uint256 lpSupply = pool.lpToken.balanceOf(address(this));
+        uint256 lpSupply = balanceOf[GOV_POOL_ID];
         require(lpSupply != 0, "no deposits");
 
         updatePool(GOV_POOL_ID);
@@ -414,7 +414,6 @@ contract MasterChef_BSC is Upgradeable {
                 .div(1e12)
                 .sub(user.rewardDebt);
 
-            // settles alt reward if any
             if (_pid == GOV_POOL_ID) {
                 pendingAlt = _pendingAltRewards(msg.sender);
             }
@@ -426,20 +425,21 @@ contract MasterChef_BSC is Upgradeable {
             balanceOf[_pid] = _newBalanceOf;
             userAmount = userAmount.add(_amount);
             emit Deposit(msg.sender, _pid, _amount);
-            if(_pid == GOV_POOL_ID && _newBalanceOf != 0){
+            if(_pid == GOV_POOL_ID && _balanceOf != 0) { // _newBalanceOf != 0
                 altRewardsPerShare[GOV_POOL_ID] = altRewardsPerShare[GOV_POOL_ID].mul(_balanceOf).div(_newBalanceOf);
             }
         }
         user.rewardDebt = userAmount.mul(pool.accGOVPerShare).div(1e12);
         user.amount = userAmount;
 
-        safeGOVTransfer(_pid, pending);
-
-        // claims alt reward if any
-        if (pendingAlt != 0) {
+        if (_pid == GOV_POOL_ID) {
             altRewardsDebt[msg.sender] = userAmount
                 .mul(altRewardsPerShare[GOV_POOL_ID])
                 .div(1e12);
+        }
+
+        safeGOVTransfer(_pid, pending);
+        if (pendingAlt != 0) {
             Address.sendValue(msg.sender, pendingAlt);
         }
     }
@@ -474,14 +474,12 @@ contract MasterChef_BSC is Upgradeable {
             .sub(user.rewardDebt);
 
         uint256 pendingAlt;
-        IERC20 lpToken = pool.lpToken;
-        if (lpToken == GOV) { // _pid == GOV_POOL_ID
+        if (_pid == GOV_POOL_ID) {
             uint256 availableAmount = userAmount.sub(lockedRewards[msg.sender]);
             if (_amount > availableAmount) {
                 _amount = availableAmount;
             }
 
-            // settles alt reward if any
             pendingAlt = _pendingAltRewards(msg.sender);
         }
 
@@ -491,19 +489,20 @@ contract MasterChef_BSC is Upgradeable {
         userAmount = userAmount.sub(_amount);
         user.rewardDebt = userAmount.mul(pool.accGOVPerShare).div(1e12);
         user.amount = userAmount;
-        lpToken.safeTransfer(address(msg.sender), _amount);
+        pool.lpToken.safeTransfer(address(msg.sender), _amount);
         emit Withdraw(msg.sender, _pid, _amount);
 
-        if(_pid == GOV_POOL_ID && _newBalanceOf != 0){
-            altRewardsPerShare[GOV_POOL_ID] = altRewardsPerShare[GOV_POOL_ID].mul(_balanceOf).div(_newBalanceOf);
-        }
-        safeGOVTransfer(_pid, pending);
-
-        // claims alt reward if any
-        if (pendingAlt != 0) {
+        if (_pid == GOV_POOL_ID) {
+            altRewardsPerShare[GOV_POOL_ID] = _newBalanceOf != 0 ?
+                altRewardsPerShare[GOV_POOL_ID] = altRewardsPerShare[GOV_POOL_ID].mul(_balanceOf).div(_newBalanceOf) :
+                altRewardsPerShare[GOV_POOL_ID] = 0;
             altRewardsDebt[msg.sender] = userAmount
                 .mul(altRewardsPerShare[GOV_POOL_ID])
                 .div(1e12);
+        }
+
+        safeGOVTransfer(_pid, pending);
+        if (pendingAlt != 0) {
             Address.sendValue(msg.sender, pendingAlt);
         }
     }
@@ -524,10 +523,15 @@ contract MasterChef_BSC is Upgradeable {
 
         lpToken.safeTransfer(address(msg.sender), _amount);
         emit EmergencyWithdraw(msg.sender, _pid, _amount);
-        balanceOf[_pid] = balanceOf[_pid].sub(_amount);
+        uint256 _balanceOf = balanceOf[_pid];
+        uint256 _newBalanceOf = _balanceOf.sub(_amount);
+        balanceOf[_pid] = _newBalanceOf;
         user.amount = user.amount.sub(_amount);
         user.rewardDebt = user.amount.mul(pool.accGOVPerShare).div(1e12);
         if (_pid == GOV_POOL_ID) {
+            altRewardsPerShare[GOV_POOL_ID] = _newBalanceOf != 0 ?
+                altRewardsPerShare[GOV_POOL_ID] = altRewardsPerShare[GOV_POOL_ID].mul(_balanceOf).div(_newBalanceOf) :
+                altRewardsPerShare[GOV_POOL_ID] = 0;
             altRewardsDebt[msg.sender] = user.amount
                 .mul(altRewardsPerShare[GOV_POOL_ID])
                 .div(1e12);
