@@ -4,12 +4,13 @@ import pytest
 
 from conftest import initBalance, requireFork
 from brownie import chain
+
 testdata = [
-    ('BNB', 'iBNB', 0)
+    ('MATIC', 'iMATIC', 8)
 ]
 
 INITIAL_LP_TOKEN_ACCOUNT_AMOUNT = 10 * 10 ** 18;
-GOV_POOL_PID = 7
+GOV_POOL_PID = 0
 
 
 
@@ -95,7 +96,6 @@ def testFarming_alt_reward2(requireFork, tokens, tokenName, lpTokenName, pid, ac
     chain.sleep(60 * 60 * 24)
     chain.mine()
     masterChef.compoundReward(pid,  {'from': account1})
-  
     chain.sleep(60 * 60 * 24)
     chain.mine()
     masterChef.compoundReward(GOV_POOL_PID,  {'from': account1})

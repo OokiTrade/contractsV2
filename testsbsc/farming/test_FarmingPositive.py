@@ -2,7 +2,7 @@
 
 import pytest
 
-from testsbsc.conftest import initBalance, requireFork
+from conftest import initBalance, requireFork
 from brownie import chain
 testdata = [
     ('BNB', 'iBNB', 0)
@@ -11,7 +11,7 @@ testdata = [
 INITIAL_LP_TOKEN_ACCOUNT_AMOUNT = 10 * 10 ** 18;
 GOV_POOL_PID = 7
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
-def testFarming_deposit(requireFork, tokens, tokenName, BNB, lpTokenName, pid, accounts, masterChef, bgovToken):
+def testFarming_deposit(requireFork, tokens, tokenName, BNB, lpTokenName, pid, accounts, masterChef, govToken):
     # Precondition
     masterChef.setLocked(pid, False, {'from': masterChef.owner()})
     lpToken = tokens[lpTokenName]
@@ -20,7 +20,7 @@ def testFarming_deposit(requireFork, tokens, tokenName, BNB, lpTokenName, pid, a
     account2 = accounts[3]
     initBalance(account1, token, lpToken, INITIAL_LP_TOKEN_ACCOUNT_AMOUNT)
     initBalance(account2, token, lpToken, INITIAL_LP_TOKEN_ACCOUNT_AMOUNT)
-    bgovToken.approve(masterChef, 2**256-1, {'from': account1})
+    govToken.approve(masterChef, 2**256-1, {'from': account1})
     masterChefLPBalanceBefore = lpToken.balanceOf(masterChef);
     lpBalance1 = lpToken.balanceOf(account1)
     lpBalance2 = lpToken.balanceOf(account2)
@@ -36,7 +36,7 @@ def testFarming_deposit(requireFork, tokens, tokenName, BNB, lpTokenName, pid, a
     assert lpToken.balanceOf(account1) == lpBalance1 - depositAmount1
     # pendingGOVs will be 0 because we are the first who deposit LP tokens
     # and it will be changed after the second deposit/withdraw transaction (for any user)
-    # bgovToken.balanceOf(account1) will be 0 and will be also changed if this user deposit again
+    # govToken.balanceOf(account1) will be 0 and will be also changed if this user deposit again
 
     # The second deposit transaction for user2, this will trigger on calculation of pendingGOVs (pool.accBgovPerShare
     # will be > 0)
@@ -56,7 +56,7 @@ def testFarming_deposit(requireFork, tokens, tokenName, BNB, lpTokenName, pid, a
 
     assert lpToken.balanceOf(account1) == 0
     assert lpToken.balanceOf(masterChef) == masterChefLPBalanceBefore + depositAmount1 + depositAmount2 + 10000
-    assert masterChef.pendingGOV(pid, account1) + bgovToken.balanceOf(account1) > bgovBefore
+    assert masterChef.pendingGOV(pid, account1) + govToken.balanceOf(account1) > bgovBefore
 
     # checking Deposit event
     depositEvent = tx3.events['Deposit'][0]
@@ -66,14 +66,14 @@ def testFarming_deposit(requireFork, tokens, tokenName, BNB, lpTokenName, pid, a
 
 
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
-def testFarming_withdraw(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, bgovToken):
+def testFarming_withdraw(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, govToken):
     # Precondition
     masterChef.setLocked(pid, False, {'from': masterChef.owner()})
     lpToken = tokens[lpTokenName]
     token = tokens[tokenName]
     account1 = accounts[4]
     initBalance(account1, token, lpToken, INITIAL_LP_TOKEN_ACCOUNT_AMOUNT)
-    bgovBalanceInitial = bgovToken.balanceOf(account1);
+    bgovBalanceInitial = govToken.balanceOf(account1);
     lpBalance1 = lpToken.balanceOf(account1)
     depositAmount = lpBalance1 - 10000
     masterchefBalance = lpToken.balanceOf(masterChef);
@@ -92,16 +92,16 @@ def testFarming_withdraw(requireFork, tokens, tokenName, lpTokenName, pid, accou
     tx2 = masterChef.withdraw(pid, depositAmount - 10000, {'from': account1})
     assert tx2.status.name == 'Confirmed'
     masterChef.updatePool(pid,{ 'from':account1})
-    assert bgovToken.balanceOf(account1) >= expectedBgovBalance
+    assert govToken.balanceOf(account1) >= expectedBgovBalance
     assert lpToken.balanceOf(masterChef) < masterChefLPBalanceBefore
     assert masterChef.pendingGOV(pid, account1) > 0
     assert lpToken.balanceOf(account1) == lpBalanceBefore1 + depositAmount - 10000
     
     # Withdraw 2th part
-    expectedBgovBalance = bgovToken.balanceOf(account1) + masterChef.pendingGOV(pid, account1);
+    expectedBgovBalance = govToken.balanceOf(account1) + masterChef.pendingGOV(pid, account1);
     masterChef.updatePool(pid,{ 'from':account1})
     tx3 = masterChef.withdraw(pid, 10000, {'from': account1})
-    assert bgovToken.balanceOf(account1) >= expectedBgovBalance
+    assert govToken.balanceOf(account1) >= expectedBgovBalance
     assert lpToken.balanceOf(masterChef) < masterChefLPBalanceBefore
     assert masterChef.pendingGOV(pid, account1) == 0
     assert lpToken.balanceOf(account1) == lpBalanceBefore1 + depositAmount
@@ -115,14 +115,14 @@ def testFarming_withdraw(requireFork, tokens, tokenName, lpTokenName, pid, accou
 
 
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
-def testFarming_claim_reward(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, bgovToken):
+def testFarming_claim_reward(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, govToken):
     # Precondition
     masterChef.setLocked(pid, False, {'from': masterChef.owner()})
     lpToken = tokens[lpTokenName]
     token = tokens[tokenName]
     account1 = accounts[5]
     initBalance(account1, token, lpToken, INITIAL_LP_TOKEN_ACCOUNT_AMOUNT)
-    bgovBalanceInitial = bgovToken.balanceOf(account1);
+    bgovBalanceInitial = govToken.balanceOf(account1);
     lpBalance1 = lpToken.balanceOf(account1)
     depositAmount = lpBalance1 - 10000
     masterChefLPBalanceBefore = lpToken.balanceOf(masterChef);
@@ -136,7 +136,7 @@ def testFarming_claim_reward(requireFork, tokens, tokenName, lpTokenName, pid, a
 
     # Test procedure
     masterChef.claimReward(pid, {'from': account1})
-    assert bgovToken.balanceOf(account1) >= expectedBgovBalance
+    assert govToken.balanceOf(account1) >= expectedBgovBalance
     assert lpToken.balanceOf(masterChef) == masterChefLPBalanceBefore + depositAmount
     assert masterChef.pendingGOV(pid, account1) == 0
     assert lpToken.balanceOf(account1) == lpBalanceBefore1
@@ -144,7 +144,7 @@ def testFarming_claim_reward(requireFork, tokens, tokenName, lpTokenName, pid, a
 
 # Withdraw without caring about rewards
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
-def testFarming_emergencyWithdraw(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, bgovToken):
+def testFarming_emergencyWithdraw(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, govToken):
     # Precondition
     masterChef.setLocked(pid, False, {'from': masterChef.owner()})
     lpToken = tokens[lpTokenName]
@@ -169,7 +169,7 @@ def testFarming_emergencyWithdraw(requireFork, tokens, tokenName, lpTokenName, p
 
 # poolAmounts
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
-def testFarming_poolAmounts(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, bgovToken):
+def testFarming_poolAmounts(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, govToken):
     # Precondition
     masterChef.setLocked(pid, False, {'from': masterChef.owner()})
     lpToken = tokens[lpTokenName]
@@ -194,7 +194,7 @@ def testFarming_poolAmounts(requireFork, tokens, tokenName, lpTokenName, pid, ac
     assert masterchefBalance2 < lpToken.balanceOf(masterChef)
 
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
-def testFarming_compoundReward(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, bgovToken):
+def testFarming_compoundReward(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, govToken):
     # Precondition
     masterChef.setLocked(pid, False, {'from': masterChef.owner()})
     lpToken = tokens[lpTokenName]
@@ -203,11 +203,11 @@ def testFarming_compoundReward(requireFork, tokens, tokenName, lpTokenName, pid,
     initBalance(account1, token, lpToken, INITIAL_LP_TOKEN_ACCOUNT_AMOUNT)
     lpBalance1 = lpToken.balanceOf(account1)
     pendingGOV1 = masterChef.pendingGOV(pid, account1)
-    pgovBalance1 = bgovToken.balanceOf(account1)
+    pgovBalance1 = govToken.balanceOf(account1)
     lockedRewards1 = masterChef.lockedRewards(account1);
     lpToken.approve(masterChef, 2**256-1, {'from': account1})
     depositAmount = lpBalance1 / 2
-    bgovToken.approve(masterChef, 2**256-1, {'from': account1})
+    govToken.approve(masterChef, 2**256-1, {'from': account1})
     masterChef.setLocked(pid, False, {'from': masterChef.owner()})
     tx1 = masterChef.deposit(pid, depositAmount, {'from': account1})
     chain.mine()
@@ -222,7 +222,7 @@ def testFarming_compoundReward(requireFork, tokens, tokenName, lpTokenName, pid,
 ## GovPool unlocked
 ## LPPool unlocked
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
-def testFarming_lockedPgovPoolWithdraw1(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, bgovToken):
+def testFarming_lockedPgovPoolWithdraw1(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, govToken):
     # Precondition
     lpToken = tokens[lpTokenName]
     token = tokens[tokenName]
@@ -233,7 +233,7 @@ def testFarming_lockedPgovPoolWithdraw1(requireFork, tokens, tokenName, lpTokenN
     lpToken.approve(masterChef, 2**256-1, {'from': account1})
     depositAmount = lpBalance1
 
-    bgovToken.approve(masterChef, 2**256-1, {'from': account1})
+    govToken.approve(masterChef, 2**256-1, {'from': account1})
     masterChef.setLocked(pid, False, {'from': masterChef.owner()})
     masterChef.setLocked(GOV_POOL_PID, False, {'from': masterChef.owner()})
     value = 10e18
@@ -263,28 +263,28 @@ def testFarming_lockedPgovPoolWithdraw1(requireFork, tokens, tokenName, lpTokenN
 
 
     govDeposited = masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0]
-    pgovBalance = bgovToken.balanceOf(account1)
+    pgovBalance = govToken.balanceOf(account1)
     withdrawAmount = govDeposited/2;
     masterChef.withdraw(GOV_POOL_PID, withdrawAmount, {'from': account1})
 
     assert govDeposited - masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0] == withdrawAmount
-    assert ((bgovToken.balanceOf(account1) - pgovBalance - pendingGOV)/1e18) / (withdrawAmount/1e18) > 0.9
+    assert ((govToken.balanceOf(account1) - pgovBalance - pendingGOV)/1e18) / (withdrawAmount/1e18) > 0.9
 
     govDeposited1 = masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0]
     pendingGOV1 = masterChef.pendingGOV(GOV_POOL_PID, account1) + pendingGOV00 - pendingGOV0
-    pgovBalance1 = bgovToken.balanceOf(account1)
+    pgovBalance1 = govToken.balanceOf(account1)
     withdrawAmount1 = masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0];
     tx = masterChef.withdraw(GOV_POOL_PID, withdrawAmount1, {'from': account1})
     eventAmount = tx.events['Withdraw'][0]['amount']
     assert govDeposited1 - masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0] == withdrawAmount1 - masterChef.lockedRewards(account1)
-    assert ((bgovToken.balanceOf(account1) - pgovBalance1 - pendingGOV1)/1e18) / ((withdrawAmount1 - masterChef.lockedRewards(account1))/1e18) > 0.9
+    assert ((govToken.balanceOf(account1) - pgovBalance1 - pendingGOV1)/1e18) / ((withdrawAmount1 - masterChef.lockedRewards(account1))/1e18) > 0.9
     assert eventAmount == withdrawAmount1 - masterChef.lockedRewards(account1)
 
 
 ## GovPool unlocked
 ## LPPool locked
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
-def testFarming_lockedPgovPoolWithdraw2(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, bgovToken):
+def testFarming_lockedPgovPoolWithdraw2(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, govToken):
     # Precondition
     lpToken = tokens[lpTokenName]
     token = tokens[tokenName]
@@ -295,7 +295,7 @@ def testFarming_lockedPgovPoolWithdraw2(requireFork, tokens, tokenName, lpTokenN
     lpToken.approve(masterChef, 2**256-1, {'from': account1})
     depositAmount = lpBalance1
 
-    bgovToken.approve(masterChef, 2**256-1, {'from': account1})
+    govToken.approve(masterChef, 2**256-1, {'from': account1})
     masterChef.setLocked(pid, True, {'from': masterChef.owner()})
     masterChef.setLocked(GOV_POOL_PID, False, {'from': masterChef.owner()})
 
@@ -322,12 +322,12 @@ def testFarming_lockedPgovPoolWithdraw2(requireFork, tokens, tokenName, lpTokenN
     pendingGOV = masterChef.pendingGOV(GOV_POOL_PID, account1) + pendingGOV00 - pendingGOV0
 
     govDeposited = (masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0])
-    pgovBalance = bgovToken.balanceOf(account1)
+    pgovBalance = govToken.balanceOf(account1)
     withdrawAmount = (govDeposited-masterChef.lockedRewards(account1))/2;
 
     masterChef.withdraw(GOV_POOL_PID, withdrawAmount, {'from': account1})
     assert govDeposited - masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0] == withdrawAmount
-    assert ((bgovToken.balanceOf(account1) - pgovBalance - pendingGOV)/1e18) / (withdrawAmount/1e18) > 0.99
+    assert ((govToken.balanceOf(account1) - pgovBalance - pendingGOV)/1e18) / (withdrawAmount/1e18) > 0.99
 
     withdrawAmount1 = masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0];
     tx = masterChef.withdraw(GOV_POOL_PID, withdrawAmount1, {'from': account1})
@@ -337,7 +337,7 @@ def testFarming_lockedPgovPoolWithdraw2(requireFork, tokens, tokenName, lpTokenN
 ## GovPool locked
 ## LPPool unlocked
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
-def testFarming_lockedPgovPoolWithdraw3(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, bgovToken):
+def testFarming_lockedPgovPoolWithdraw3(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, govToken):
     # Precondition
     lpToken = tokens[lpTokenName]
     token = tokens[tokenName]
@@ -348,7 +348,7 @@ def testFarming_lockedPgovPoolWithdraw3(requireFork, tokens, tokenName, lpTokenN
     lpToken.approve(masterChef, 2**256-1, {'from': account1})
     depositAmount = lpBalance1
 
-    bgovToken.approve(masterChef, 2**256-1, {'from': account1})
+    govToken.approve(masterChef, 2**256-1, {'from': account1})
     masterChef.setLocked(pid, False, {'from': masterChef.owner()})
     masterChef.setLocked(GOV_POOL_PID, True, {'from': masterChef.owner()})
 
@@ -373,14 +373,14 @@ def testFarming_lockedPgovPoolWithdraw3(requireFork, tokens, tokenName, lpTokenN
     pendingGOV = masterChef.pendingGOV(GOV_POOL_PID, account1) + pendingGOV00 - pendingGOV0
 
     govDeposited = masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0]
-    pgovBalance = bgovToken.balanceOf(account1)
+    pgovBalance = govToken.balanceOf(account1)
     lockedRewards = masterChef.lockedRewards(account1)
-    withdrawAmount = (govDeposited - lockedRewards)/2;
+    withdrawAmount = int((govDeposited - lockedRewards)/2);
     tx = masterChef.withdraw(GOV_POOL_PID, withdrawAmount, {'from': account1})
     withdrawEventAmount = tx.events['Withdraw'][0]['amount']
     assert withdrawAmount == withdrawEventAmount
     depositEventAmount = tx.events['Deposit'][0]['amount']
-    assert pendingGOV/depositEventAmount > 0.99999
+    assert pendingGOV/depositEventAmount > 0.999
 
     withdrawAmount1 = masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0];
     lockedRewards1 = masterChef.lockedRewards(account1)
@@ -392,7 +392,7 @@ def testFarming_lockedPgovPoolWithdraw3(requireFork, tokens, tokenName, lpTokenN
 ## GovPool locked
 ## LPPool locked
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
-def testFarming_lockedPgovPoolWithdraw4(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, bgovToken):
+def testFarming_lockedPgovPoolWithdraw4(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, govToken):
     # Precondition
     lpToken = tokens[lpTokenName]
     token = tokens[tokenName]
@@ -403,7 +403,7 @@ def testFarming_lockedPgovPoolWithdraw4(requireFork, tokens, tokenName, lpTokenN
     lpToken.approve(masterChef, 2**256-1, {'from': account1})
     depositAmount = lpBalance1
 
-    bgovToken.approve(masterChef, 2**256-1, {'from': account1})
+    govToken.approve(masterChef, 2**256-1, {'from': account1})
     masterChef.setLocked(pid, True, {'from': masterChef.owner()})
     masterChef.setLocked(GOV_POOL_PID, True, {'from': masterChef.owner()})
 
@@ -413,7 +413,7 @@ def testFarming_lockedPgovPoolWithdraw4(requireFork, tokens, tokenName, lpTokenN
     masterChef.compoundReward(pid,  {'from': account1})
     chain.sleep(60)
     chain.mine()
-    masterChef.compoundReward(0,  {'from': account1})
+    masterChef.compoundReward(GOV_POOL_PID,  {'from': account1})
     chain.mine()
 
     assert masterChef.lockedRewards(account1) > lockedRewards1
@@ -428,7 +428,7 @@ def testFarming_lockedPgovPoolWithdraw4(requireFork, tokens, tokenName, lpTokenN
 
 
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
-def testFarming_upgradeMasterChefBalanceOf(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, bgovToken):
+def testFarming_upgradeMasterChefBalanceOf(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, govToken):
     # Precondition
     lpToken = tokens[lpTokenName]
     token = tokens[tokenName]
@@ -438,7 +438,7 @@ def testFarming_upgradeMasterChefBalanceOf(requireFork, tokens, tokenName, lpTok
     lpToken.approve(masterChef, 2**256-1, {'from': account1})
     depositAmount = lpBalance1 - 10000
 
-    bgovToken.approve(masterChef, 2**256-1, {'from': account1})
+    govToken.approve(masterChef, 2**256-1, {'from': account1})
     beforeUpgrade = masterChef.balanceOf(pid)
 
     masterChef.deposit(pid, depositAmount, {'from': account1})

@@ -63,7 +63,7 @@ def iBUSD(accounts, BZX, LoanTokenLogicStandard, USDT):
 
 
 @pytest.fixture(scope="module", autouse=True)
-def bgovToken(accounts, GovToken):
+def govToken(accounts, GovToken):
     return Contract.from_abi("GovToken", address="0xf8E026dC4C0860771f691EcFFBbdfe2fa51c77CF", abi=GovToken.abi, owner=accounts[0]);
 
 
@@ -72,15 +72,11 @@ def BGOV_BNB(accounts, interface):
     return Contract.from_abi("BGOV_BNB", "0x10ED43C718714eb63d5aA57B78B54704E256024E", interface.IPancakePair.abi)
 
 @pytest.fixture(scope="module", autouse=True)
-def masterChef(accounts, MasterChef_BSC, interface, iBNB, iETH, iWBTC, iUSDT, bgovToken, Proxy):
+def masterChef(accounts, MasterChef_BSC, interface, iBNB, iETH, iWBTC, iUSDT, govToken, Proxy):
     masterChefProxy = Contract.from_abi("masterChefProxy", address="0x1FDCA2422668B961E162A8849dc0C2feaDb58915", abi=Proxy.abi)
     masterChefImpl = MasterChef_BSC.deploy({'from': masterChefProxy.owner()})
     masterChefProxy.replaceImplementation(masterChefImpl, {'from': masterChefProxy.owner()})
     masterChef = Contract.from_abi("masterChef", address=masterChefProxy, abi=interface.IMasterChefAdmin.abi)
-
-    for i in range(0,len(masterChef.getPoolInfos())):
-    #    masterChef.set(i, 12500, True, {'from': masterChef.owner()})
-        masterChef.setLocked(0,False,{'from': masterChef.owner()})
     masterChef.togglePause(False, {'from': masterChef.owner()})
     return masterChef
 

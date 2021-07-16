@@ -4,7 +4,7 @@ import pytest
 from brownie import Contract, network, Wei
 
 @pytest.fixture(scope="module")
-def requireMaticFork():
+def requireFork():
     assert (network.show_active().find("-fork")>=0)
 
 @pytest.fixture(scope="module", autouse=True)
@@ -34,7 +34,7 @@ def BZX(accounts,LoanMaintenance_2, interface):
     bzx =  Contract.from_abi("bzx", address="0xfe4F0eb0A1Ad109185c9AaDE64C48ff8e928e54B",
                       abi=interface.IBZx.abi, owner=accounts[0])
 
-    bzx.replaceContract(LoanMaintenance_2.deploy({'from':bzx.owner()}), {'from':bzx.owner()})
+    #bzx.replaceContract(LoanMaintenance_2.deploy({'from':bzx.owner()}), {'from':bzx.owner()})
     return bzx
 
 
@@ -68,7 +68,7 @@ def iUSDT(accounts, BZX, LoanTokenLogicStandard, USDT):
 
 
 @pytest.fixture(scope="module", autouse=True)
-def pgovToken(accounts, GovToken):
+def govToken(accounts, GovToken):
     return Contract.from_abi("GovToken", address="0xd5d84e75f48E75f01fb2EB6dFD8eA148eE3d0FEb", abi=GovToken.abi, owner=accounts[0]);
 
 
@@ -81,29 +81,15 @@ def SUSHI_PGOV_MATIC(accounts, interface):
     return Contract.from_abi("SUSHI_PGOV_wMATIC", "0xC698b8a1391F88F497A4EF169cA85b492860b502", interface.IPancakePair.abi)
 
 @pytest.fixture(scope="module", autouse=True)
-def masterChef(accounts, chain, MasterChef_Polygon, iMATIC, iETH, iUSDC, iWBTC, iUSDT, pgovToken, Proxy, MintCoordinator_Polygon):
+def masterChef(accounts, chain, MasterChef_Polygon, iMATIC, iETH, iUSDC, iWBTC, iUSDT, govToken, Proxy,interface, MintCoordinator_Polygon):
     masterChefProxy = Contract.from_abi("masterChefProxy", address="0xd39Ff512C3e55373a30E94BB1398651420Ae1D43", abi=Proxy.abi)
-    # masterChefImpl = MasterChef_Polygon.deploy({'from': masterChefProxy.owner()})
-    # masterChefProxy.replaceImplementation(masterChefImpl, {'from': masterChefProxy.owner()})
-    masterChef = Contract.from_abi("masterChef", address=masterChefProxy, abi=MasterChef_Polygon.abi)
-
-    # masterChef.setStartBlock(chain.height-100, {'from': masterChef.owner()})
-
-    # if(len(masterChef.getPoolInfos())==2):
-    #     masterChef.add(12500, iMATIC, True, {'from': masterChef.owner()})
-    #     masterChef.add(12500, iUSDC, True, {'from': masterChef.owner()})
-    #     masterChef.massUpdatePools({'from': masterChef.owner()})
-
-    # mintCoordinator = Contract.from_abi("mintCoordinator", address="0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440", abi=MintCoordinator_Polygon.abi, owner=accounts[0]);
-    # mintCoordinator.addMinter(masterChef, {"from": mintCoordinator.owner()})
-    # pgovToken.transferOwnership(mintCoordinator, {"from": pgovToken.owner()})
-
-
-    # for i in range(0,len(masterChef.getPoolInfos())):
-    #     masterChef.set(i, 12500, True, {'from': masterChef.owner()})
-    #     masterChef.setLocked(0,False,{'from': masterChef.owner()})
-
+    masterChefImpl = MasterChef_Polygon.deploy({'from': masterChefProxy.owner()})
+    masterChefProxy.replaceImplementation(masterChefImpl, {'from': masterChefProxy.owner()})
+    masterChef = Contract.from_abi("masterChef", address=masterChefProxy, abi=interface.IMasterChefAdmin.abi)
+    masterChef.togglePause(False, {'from': masterChef.owner()})
+    masterChef.set(8, 190000, True, {'from': masterChef.owner()})
     return masterChef
+
 
 @pytest.fixture(scope="module", autouse=True)
 def tokens(accounts, chain, iMATIC, MATIC, iUSDC, USDC):
