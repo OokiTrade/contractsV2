@@ -5,7 +5,7 @@
 
 pragma solidity >=0.6.0 <0.7.0;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin-3.4.0/token/ERC20/IERC20.sol";
 import "./IWeth.sol";
 
 

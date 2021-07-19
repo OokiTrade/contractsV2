@@ -3,49 +3,13 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+pragma solidity >=0.6.0 <0.8.4;
 pragma experimental ABIEncoderV2;
+import "../../interfaces/IBZx.sol";
+import "../../interfaces/IPriceFeeds.sol";
+import "../../interfaces/IToken.sol";
 
-
-contract DAppHelper_TokenLike {
-    string public name;
-    uint8 public decimals;
-    string public symbol;
-    function totalSupply() public view returns (uint256);
-    function balanceOf(address _who) public view returns (uint256);
-    function allowance(address _owner, address _spender) public view returns (uint256);
-}
-
-contract DAppHelper_iTokenLike is DAppHelper_TokenLike {
-    function loanTokenAddress() public view returns (address);
-    function tokenPrice() public view returns (uint256);
-    function totalAssetSupply() public view returns (uint256);
-    function totalAssetBorrow() public view returns (uint256);
-    function supplyInterestRate() public view returns (uint256);
-    function avgBorrowInterestRate() public view returns (uint256);
-    function nextBorrowInterestRate(
-        uint256 borrowAmount)
-        public
-        view
-        returns (uint256);
-}
-
-contract DAppHelper_Protocol {
-    function priceFeeds()
-        public
-        view
-        returns (uint256);
-}
-
-contract DAppHelper_FeedsLike {
-    function queryRate(
-        address sourceToken,
-        address destToken)
-        public
-        view
-        returns (uint256 rate, uint256 precision);
-}
-
+// this contract is deprecated use HelperImpl
 contract DAppHelper {
 
     address public constant bZxProtocol = 0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f; // mainnet
@@ -65,7 +29,7 @@ contract DAppHelper {
             uint256[] memory destAmounts
         )
     {
-        DAppHelper_FeedsLike feeds = DAppHelper_FeedsLike(DAppHelper_Protocol(bZxProtocol).priceFeeds());
+        IPriceFeeds feeds = IPriceFeeds(IBZx(bZxProtocol).priceFeeds());
         rates = new uint256[](tokens.length);
         precisions = new uint256[](tokens.length);
         destAmounts = new uint256[](tokens.length);
@@ -105,7 +69,7 @@ contract DAppHelper {
         vaultBalance = new uint256[](tokenAddresses.length);
 
         for (uint256 i=0; i < tokenAddresses.length; i++) {
-            DAppHelper_iTokenLike token = DAppHelper_iTokenLike(tokenAddresses[i]);
+            IToken token = IToken(tokenAddresses[i]);
             totalAssetSupply[i] = token.totalAssetSupply();
             totalAssetBorrow[i] = token.totalAssetBorrow();
             supplyInterestRate[i] = token.supplyInterestRate();
@@ -113,7 +77,7 @@ contract DAppHelper {
             torqueBorrowInterestRate[i] = token.nextBorrowInterestRate(0);
 
             address loanToken = token.loanTokenAddress();
-            vaultBalance[i] = DAppHelper_TokenLike(loanToken).balanceOf(bZxProtocol);
+            vaultBalance[i] = IToken(loanToken).balanceOf(bZxProtocol);
         }
     }
 }

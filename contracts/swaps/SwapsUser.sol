@@ -6,7 +6,7 @@
 pragma solidity 0.5.17;
 
 import "../core/State.sol";
-import "../feeds/IPriceFeeds.sol";
+import "../../interfaces/IPriceFeeds.sol";
 import "../events/SwapsEvents.sol";
 import "../mixins/FeesHelper.sol";
 import "./ISwapsImpl.sol";
@@ -195,7 +195,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
         uint256 sourceTokenAmount)
         internal
         view
-        returns (uint256)
+        returns (uint256 expectedReturn)
     {
         uint256 tradingFee = _getTradingFee(sourceTokenAmount);
         if (tradingFee != 0) {
@@ -203,19 +203,11 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
                 .sub(tradingFee);
         }
 
-        uint256 sourceToDestRate = ISwapsImpl(swapsImpl).dexExpectedRate(
+        (expectedReturn,) = ISwapsImpl(swapsImpl).dexAmountOut(
             sourceToken,
             destToken,
             sourceTokenAmount
         );
-        uint256 sourceToDestPrecision = IPriceFeeds(priceFeeds).queryPrecision(
-            sourceToken,
-            destToken
-        );
-
-        return sourceTokenAmount
-            .mul(sourceToDestRate)
-            .div(sourceToDestPrecision);
     }
 
     function _checkSwapSize(

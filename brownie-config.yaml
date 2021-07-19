@@ -39,7 +39,8 @@ compiler:
             enabled: true
             runs: 200
         remappings: 
-            - "@openzeppelin=./node_modules/@openzeppelin/"
+            - "@openzeppelin-3.4.0=./node_modules/openzeppelin-3.4.0"
+            - "@openzeppelin-2.5.0=./node_modules/openzeppelin-2.5.0"
 
 console:
     show_colors: true

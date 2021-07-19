@@ -5,7 +5,7 @@
 
 pragma solidity 0.6.12;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin-3.4.0/access/Ownable.sol";
 
 
 interface GovTokenLike {

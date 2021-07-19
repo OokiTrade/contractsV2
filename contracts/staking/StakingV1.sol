@@ -10,7 +10,7 @@ import "./StakingState.sol";
 import "./StakingConstants.sol";
 import "../interfaces/IVestingToken.sol";
 import "../interfaces/ILoanPool.sol";
-import "../feeds/IPriceFeeds.sol";
+import "../../interfaces/IPriceFeeds.sol";
 
 
 contract StakingV1 is StakingState, StakingConstants {
