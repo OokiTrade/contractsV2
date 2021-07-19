@@ -55,7 +55,7 @@ def testFarming_alt_reward1(requireFork, tokens, tokenName, lpTokenName, pid, ac
     balanceBefore = account1.balance()
     assert masterChef.balance() == value
     assert masterChef.balance() > masterChefBalanceBefore
-    assert masterChef.altRewardsPerShare(GOV_POOL_PID) > 10000
+    assert masterChef.altRewardsRounds(GOV_POOL_PID, 0) > 10000
     assert pendingAltReward > 10000
     assert masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][3] == pendingAltReward
     withdrawAmount1 = masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0];

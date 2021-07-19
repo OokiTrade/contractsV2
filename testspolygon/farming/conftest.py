@@ -85,7 +85,7 @@ def masterChef(accounts, chain, MasterChef_Polygon, iMATIC, iETH, iUSDC, iWBTC, 
     masterChefProxy = Contract.from_abi("masterChefProxy", address="0xd39Ff512C3e55373a30E94BB1398651420Ae1D43", abi=Proxy.abi)
     masterChefImpl = MasterChef_Polygon.deploy({'from': masterChefProxy.owner()})
     masterChefProxy.replaceImplementation(masterChefImpl, {'from': masterChefProxy.owner()})
-    masterChef = Contract.from_abi("masterChef", address=masterChefProxy, abi=interface.IMasterChefAdmin.abi)
+    masterChef = Contract.from_abi("masterChef", address=masterChefProxy, abi=MasterChef_Polygon.abi)
     masterChef.togglePause(False, {'from': masterChef.owner()})
     masterChef.set(8, 190000, True, {'from': masterChef.owner()})
     return masterChef
