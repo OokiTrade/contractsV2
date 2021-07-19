@@ -156,6 +156,7 @@ def testFarming_alt_reward3(requireFork, tokens, tokenName, lpTokenName, pid, ac
     masterChefBalanceBefore = masterChef.balance()
     masterChef.compoundReward(pid,  {'from': account1})
     masterChef.compoundReward(GOV_POOL_PID,  {'from': account1})
+    masterChef.withdraw(GOV_POOL_PID, deposited, {'from': account1})
     assert account1.balance() == balanceBefore
     assert masterChef.balance() == masterChefBalanceBefore
 
