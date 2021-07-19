@@ -238,11 +238,13 @@ def deployProtocol():
         elif thisNetwork == "kovan":
             swaps = acct.deploy(SwapsImplTestnets)
         else:
-            swaps = acct.deploy(SwapsImplKyber)
+            #swaps = acct.deploy(SwapsImplKyber)
+            swaps = acct.deploy(SwapsImplUniswapV2_ETH)
 
     else:
         if "SwapsImpl" in addresses[thisNetwork]:
-            swaps = Contract.from_abi("swaps", address=addresses[thisNetwork].SwapsImpl, abi=SwapsImplKyber.abi, owner=acct)
+            #swaps = Contract.from_abi("swaps", address=addresses[thisNetwork].SwapsImpl, abi=SwapsImplKyber.abi, owner=acct)
+            swaps = Contract.from_abi("swaps", address=addresses[thisNetwork].SwapsImpl, abi=SwapsImplUniswapV2_ETH.abi, owner=acct)
         else:
             raise ValueError('SwapsImpl deployment missing!')
 
