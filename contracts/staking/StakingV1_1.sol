@@ -9,8 +9,8 @@ pragma experimental ABIEncoderV2;
 import "./StakingState.sol";
 import "./StakingConstants.sol";
 import "../interfaces/IVestingToken.sol";
-import "../interfaces/ILoanPool.sol";
-import "../feeds/IPriceFeeds.sol";
+import "../../interfaces/IBZx.sol";
+import "../../interfaces/IPriceFeeds.sol";
 
 
 contract StakingV1_1 is StakingState, StakingConstants {
@@ -903,7 +903,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
         internal
         returns (uint256[] memory)
     {
-        uint256[] memory amounts = bZx.withdrawFees(assets, address(this), IBZxPartial.FeeClaimType.All);
+        uint256[] memory amounts = bZx.withdrawFees(assets, address(this), IBZx.FeeClaimType.All);
 
         for (uint256 i = 0; i < assets.length; i++) {
             stakingRewards[assets[i]] = stakingRewards[assets[i]]
