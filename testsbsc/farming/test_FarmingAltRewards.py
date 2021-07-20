@@ -144,9 +144,12 @@ def testFarming_alt_reward3(requireFork, tokens, tokenName, lpTokenName, pid, ac
     tx1 = masterChef.addAltReward({'from': account1, 'value': 10e18})
 
     balanceBefore = account1.balance()
+
     masterChefBalanceBefore = masterChef.balance()
     deposited = masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0];
     masterChef.withdraw(GOV_POOL_PID, deposited, {'from': account1})
+    print(balanceBefore);
+    print(account1.balance());
     assert account1.balance() > balanceBefore
     assert masterChef.balance() < masterChefBalanceBefore
 
@@ -157,6 +160,8 @@ def testFarming_alt_reward3(requireFork, tokens, tokenName, lpTokenName, pid, ac
     masterChef.compoundReward(pid,  {'from': account1})
     masterChef.compoundReward(GOV_POOL_PID,  {'from': account1})
     masterChef.withdraw(GOV_POOL_PID, deposited, {'from': account1})
+    print(balanceBefore);
+    print(account1.balance());
     assert account1.balance() == balanceBefore
     assert masterChef.balance() == masterChefBalanceBefore
 
@@ -170,5 +175,7 @@ def testFarming_alt_reward3(requireFork, tokens, tokenName, lpTokenName, pid, ac
 
     deposited = masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0]
     masterChef.withdraw(GOV_POOL_PID, deposited, {'from': account1})
+    print(balanceBefore);
+    print(account1.balance());
     assert account1.balance() > balanceBefore
     assert masterChef.balance() < masterChefBalanceBefore

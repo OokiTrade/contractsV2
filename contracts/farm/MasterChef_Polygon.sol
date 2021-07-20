@@ -281,36 +281,36 @@ contract MasterChef_Polygon is Upgradeable {
         view
         returns (uint256)
     {
-
         uint256[] memory _altRewardsRounds = altRewardsRounds[GOV_POOL_ID];
         uint256 _currentRound = _altRewardsRounds.length;
         if(_currentRound == 0)
-            return 0;
+        return 0;
 
         uint256 _amount = userInfo[GOV_POOL_ID][_user].amount;
         if(_amount == 0)
-            return 0;
+        return 0;
 
-        uint256 _lastCalmedRoundIndex = userAltRewardsRounds[msg.sender];
+        uint256 _lastCalmedRound = userAltRewardsRounds[msg.sender];
         uint256 currentAccumulatedAltRewards = _altRewardsRounds[_currentRound-1];
 
         //Never claimed yet
-        if(_lastCalmedRoundIndex == 0){
+        if(_lastCalmedRound == 0){
             return _amount
-                .mul(currentAccumulatedAltRewards)
-                .div(1e12);
-        }
+            .mul(currentAccumulatedAltRewards)
+            .div(1e12);
+            }
+        _lastCalmedRound -= 1; //correct index to start from 0
+        _currentRound -= 1; //correct index to start from 0
 
         //Already claimed everything
-        if(_lastCalmedRoundIndex == _currentRound-1){
+        if(_lastCalmedRound == _currentRound){
             return 0;
         }
 
-        uint256 _lastAccumulatedAltRewards = _altRewardsRounds[_lastCalmedRoundIndex];
+        uint256 _lastAccumulatedAltRewards = _altRewardsRounds[_lastCalmedRound];
         uint256 _currentRewards = _amount.mul(currentAccumulatedAltRewards);
         uint256 _clamedRewards = _amount.mul(_lastAccumulatedAltRewards);
         return (_currentRewards.sub(_clamedRewards)).div(1e12);
-
     }
 
     // View function to see pending GOVs on frontend.
@@ -448,6 +448,12 @@ contract MasterChef_Polygon is Upgradeable {
 
             if (_pid == GOV_POOL_ID) {
                 pendingAlt = _pendingAltRewards(msg.sender);
+                
+                //Update userAltRewardsRounds even if user got nothing in the current round
+                uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
+                if(_altRewardsPerShare.length > 0){
+                    userAltRewardsRounds[msg.sender] = _altRewardsPerShare.length;
+                }
             }
         }
 
@@ -462,10 +468,6 @@ contract MasterChef_Polygon is Upgradeable {
         user.amount = userAmount;
 
         safeGOVTransfer(_pid, pending);
-
-        //Update userAltRewardsRounds even if user got nothing in the current round
-        uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
-        userAltRewardsRounds[msg.sender] = (_altRewardsPerShare.length>0) ? _altRewardsPerShare.length - 1: 0;
         if (pendingAlt != 0) {
             Address.sendValue(msg.sender, pendingAlt);
         }
@@ -508,6 +510,11 @@ contract MasterChef_Polygon is Upgradeable {
             }
 
             pendingAlt = _pendingAltRewards(msg.sender);
+            //Update userAltRewardsRounds even if user got nothing in the current round
+            uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
+            if(_altRewardsPerShare.length > 0){
+                userAltRewardsRounds[msg.sender] = _altRewardsPerShare.length;
+            }
         }
 
         uint256 _balanceOf = balanceOf[_pid];
@@ -520,10 +527,6 @@ contract MasterChef_Polygon is Upgradeable {
         emit Withdraw(msg.sender, _pid, _amount);
 
         safeGOVTransfer(_pid, pending);
-
-        //Update userAltRewardsRounds even if user got nothing in the current round
-        uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
-        userAltRewardsRounds[msg.sender] = (_altRewardsPerShare.length>0) ? _altRewardsPerShare.length - 1: 0;
         if (pendingAlt != 0) {
             Address.sendValue(msg.sender, pendingAlt);
         }
@@ -543,6 +546,11 @@ contract MasterChef_Polygon is Upgradeable {
                 _amount = availableAmount;
             }
             pendingAlt = _pendingAltRewards(msg.sender);
+            //Update userAltRewardsRounds even if user got nothing in the current round
+            uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
+            if(_altRewardsPerShare.length > 0){
+                userAltRewardsRounds[msg.sender] = _altRewardsPerShare.length;
+            }
         }
 
         lpToken.safeTransfer(address(msg.sender), _amount);
@@ -553,9 +561,6 @@ contract MasterChef_Polygon is Upgradeable {
         user.amount = user.amount.sub(_amount);
         user.rewardDebt = user.amount.mul(pool.accGOVPerShare).div(1e12);
 
-        //Update userAltRewardsRounds even if user got nothing in the current round
-        uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
-        userAltRewardsRounds[msg.sender] = (_altRewardsPerShare.length>0) ? _altRewardsPerShare.length - 1: 0;
         if (pendingAlt != 0) {
             Address.sendValue(msg.sender, pendingAlt);
         }
