@@ -284,11 +284,11 @@ contract MasterChef_Polygon is Upgradeable {
         uint256[] memory _altRewardsRounds = altRewardsRounds[GOV_POOL_ID];
         uint256 _currentRound = _altRewardsRounds.length;
         if(_currentRound == 0)
-        return 0;
+            return 0;
 
         uint256 _amount = userInfo[GOV_POOL_ID][_user].amount;
         if(_amount == 0)
-        return 0;
+            return 0;
 
         uint256 _lastCalmedRound = userAltRewardsRounds[msg.sender];
         uint256 currentAccumulatedAltRewards = _altRewardsRounds[_currentRound-1];
@@ -448,7 +448,7 @@ contract MasterChef_Polygon is Upgradeable {
 
             if (_pid == GOV_POOL_ID) {
                 pendingAlt = _pendingAltRewards(msg.sender);
-                
+
                 //Update userAltRewardsRounds even if user got nothing in the current round
                 uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
                 if(_altRewardsPerShare.length > 0){
