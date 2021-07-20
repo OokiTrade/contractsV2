@@ -33,7 +33,6 @@ def USDT(accounts, TestToken):
 def BZX(accounts,LoanMaintenance_2, interface):
     bzx =  Contract.from_abi("bzx", address="0xfe4F0eb0A1Ad109185c9AaDE64C48ff8e928e54B",
                       abi=interface.IBZx.abi, owner=accounts[0])
-
     #bzx.replaceContract(LoanMaintenance_2.deploy({'from':bzx.owner()}), {'from':bzx.owner()})
     return bzx
 
@@ -68,6 +67,7 @@ def iUSDT(accounts, BZX, LoanTokenLogicStandard, USDT):
 
 
 @pytest.fixture(scope="module", autouse=True)
+
 def govToken(accounts, GovToken):
     return Contract.from_abi("GovToken", address="0xd5d84e75f48E75f01fb2EB6dFD8eA148eE3d0FEb", abi=GovToken.abi, owner=accounts[0]);
 
@@ -89,7 +89,6 @@ def masterChef(accounts, chain, MasterChef_Polygon, iMATIC, iETH, iUSDC, iWBTC, 
     masterChef.togglePause(False, {'from': masterChef.owner()})
     masterChef.set(8, 190000, True, {'from': masterChef.owner()})
     return masterChef
-
 
 @pytest.fixture(scope="module", autouse=True)
 def tokens(accounts, chain, iMATIC, MATIC, iUSDC, USDC):
