@@ -462,9 +462,11 @@ contract MasterChef_Polygon is Upgradeable {
         user.amount = userAmount;
 
         safeGOVTransfer(_pid, pending);
+
+        //Update userAltRewardsRounds even if user got nothing in the current round
+        uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
+        userAltRewardsRounds[msg.sender] = (_altRewardsPerShare.length>0) ? _altRewardsPerShare.length - 1: 0;
         if (pendingAlt != 0) {
-            uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
-            userAltRewardsRounds[msg.sender] = _altRewardsPerShare.length - 1; // _altRewardsPerShare.length>0 otherwise pendingAlt == 0
             Address.sendValue(msg.sender, pendingAlt);
         }
     }
@@ -518,9 +520,11 @@ contract MasterChef_Polygon is Upgradeable {
         emit Withdraw(msg.sender, _pid, _amount);
 
         safeGOVTransfer(_pid, pending);
+
+        //Update userAltRewardsRounds even if user got nothing in the current round
+        uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
+        userAltRewardsRounds[msg.sender] = (_altRewardsPerShare.length>0) ? _altRewardsPerShare.length - 1: 0;
         if (pendingAlt != 0) {
-            uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
-            userAltRewardsRounds[msg.sender] = _altRewardsPerShare.length - 1; // _altRewardsPerShare.length>0 otherwise pendingAlt == 0
             Address.sendValue(msg.sender, pendingAlt);
         }
     }
@@ -549,9 +553,10 @@ contract MasterChef_Polygon is Upgradeable {
         user.amount = user.amount.sub(_amount);
         user.rewardDebt = user.amount.mul(pool.accGOVPerShare).div(1e12);
 
+        //Update userAltRewardsRounds even if user got nothing in the current round
+        uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
+        userAltRewardsRounds[msg.sender] = (_altRewardsPerShare.length>0) ? _altRewardsPerShare.length - 1: 0;
         if (pendingAlt != 0) {
-            uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
-            userAltRewardsRounds[msg.sender] = _altRewardsPerShare.length - 1; // _altRewardsPerShare.length>0 otherwise pendingAlt == 0
             Address.sendValue(msg.sender, pendingAlt);
         }
     }
