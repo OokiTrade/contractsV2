@@ -13,18 +13,25 @@ interface GovTokenLike {
     function mint(address to, uint256 amount) external;
     function transferOwnership(address newOwner) external;
     function rescue(IERC20 token) external;
+    function totalSupply() external returns (uint256);
 }
 
 // polygon: 0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440
 contract MintCoordinator_Polygon is Ownable {
 
     GovTokenLike public constant govToken = GovTokenLike(0xd5d84e75f48E75f01fb2EB6dFD8eA148eE3d0FEb);
+    uint256 public totalMinted;
 
     mapping (address => bool) public minters;
 
     function mint(address _to, uint256 _amount) public {
         require(minters[msg.sender], "unauthorized");
         govToken.mint(_to, _amount);
+        if (totalMinted == 0){
+            totalMinted = govToken.totalSupply();
+        } else {
+            totalMinted += _amount; // cannot overflow, don't want to add math library
+        }
     }
 
     function transferTokenOwnership(address newOwner) public onlyOwner {

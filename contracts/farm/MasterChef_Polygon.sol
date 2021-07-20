@@ -303,12 +303,18 @@ contract MasterChef_Polygon is Upgradeable {
             multiplier.mul(GOVPerBlock).mul(pool.allocPoint).div(
                 totalAllocPoint
             );
-        coordinator.mint(devaddr, GOVReward.div(1e19));
-        coordinator.mint(address(this), GOVReward.div(1e18));
-        pool.accGOVPerShare = pool.accGOVPerShare.add(
-            GOVReward.div(1e6).div(lpSupply)
-        );
-        pool.lastRewardBlock = block.number;
+        // 250m = 250 * 1e6
+        if (coordinator.totalMinted() < 250*1e6*1e18) {
+            coordinator.mint(devaddr, GOVReward.div(1e19));
+            coordinator.mint(address(this), GOVReward.div(1e18));
+            pool.accGOVPerShare = pool.accGOVPerShare.add(
+                GOVReward.div(1e6).div(lpSupply)
+            );
+            pool.lastRewardBlock = block.number;
+        } else {
+            // minting stopped reached 250m total supply. disabling pool
+            pool.allocPoint = 0;
+        }
     }
 
     // Anyone can contribute GOV to a given pool
