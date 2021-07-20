@@ -75,7 +75,7 @@ def testFarming_withdraw(requireFork, tokens, tokenName, lpTokenName, pid, accou
     initBalance(account1, token, lpToken, INITIAL_LP_TOKEN_ACCOUNT_AMOUNT)
     bgovBalanceInitial = govToken.balanceOf(account1);
     lpBalance1 = lpToken.balanceOf(account1)
-    depositAmount = lpBalance1 - 10000
+    depositAmount = lpBalance1 / 2
     masterchefBalance = lpToken.balanceOf(masterChef);
 
     lpToken.approve(masterChef, 2**256-1, {'from': account1})
@@ -89,18 +89,18 @@ def testFarming_withdraw(requireFork, tokens, tokenName, lpTokenName, pid, accou
 
     # Test procedure
     # Withdraw 1th part
-    tx2 = masterChef.withdraw(pid, depositAmount - 10000, {'from': account1})
+    tx2 = masterChef.withdraw(pid, depositAmount / 2, {'from': account1})
     assert tx2.status.name == 'Confirmed'
     masterChef.updatePool(pid,{ 'from':account1})
     assert govToken.balanceOf(account1) >= expectedBgovBalance
     assert lpToken.balanceOf(masterChef) < masterChefLPBalanceBefore
     assert masterChef.pendingGOV(pid, account1) > 0
-    assert lpToken.balanceOf(account1) == lpBalanceBefore1 + depositAmount - 10000
+    assert lpToken.balanceOf(account1) == lpBalanceBefore1 + depositAmount /2
 
     # Withdraw 2th part
     expectedBgovBalance = govToken.balanceOf(account1) + masterChef.pendingGOV(pid, account1);
     masterChef.updatePool(pid,{ 'from':account1})
-    tx3 = masterChef.withdraw(pid, 10000, {'from': account1})
+    tx3 = masterChef.withdraw(pid, depositAmount /2, {'from': account1})
     assert govToken.balanceOf(account1) >= expectedBgovBalance
     assert lpToken.balanceOf(masterChef) < masterChefLPBalanceBefore
     assert masterChef.pendingGOV(pid, account1) == 0
@@ -111,7 +111,7 @@ def testFarming_withdraw(requireFork, tokens, tokenName, lpTokenName, pid, accou
     withdrawEvent = tx3.events['Withdraw'][0]
     assert (withdrawEvent['user'] == account1)
     assert (withdrawEvent['pid'] == pid)
-    assert (withdrawEvent['amount'] == 10000)
+    assert (withdrawEvent['amount'] == depositAmount /2)
 
 
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
