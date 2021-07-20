@@ -8,10 +8,10 @@ pragma experimental ABIEncoderV2;
 
 import "./StakingInterimState.sol";
 import "../../interfaces/ILoanPool.sol";
-
+import "../../utils/MathUtil.sol";
 
 contract StakingInterim is StakingInterimState {
-
+    using MathUtil for uint256;
     ILoanPool public constant iBZRX = ILoanPool(0x18240BD9C07fA6156Ce3F3f61921cC82b2619157);
 
     struct RepStakedTokens {
