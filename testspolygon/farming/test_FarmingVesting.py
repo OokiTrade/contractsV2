@@ -2,18 +2,18 @@
 
 import pytest
 
-from testspolygon.conftest import initBalance, requireMaticFork
+from conftest import initBalance, requireFork
 from brownie import chain
 testdata = [
     ('MATIC', 'iMATIC', 8)
 ]
 
 INITIAL_LP_TOKEN_ACCOUNT_AMOUNT = 100 * 10 ** 18;
-
+GOV_POOL_PID = 0
 ## GovPool locked
 ## LPPool locked
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
-def testFarming_Vesting1(requireMaticFork, bzxOwner, tokens, tokenName, lpTokenName, pid, accounts, masterChef, pgovToken):
+def testFarming_Vesting1(requireFork, bzxOwner, tokens, tokenName, lpTokenName, pid, accounts, masterChef, govToken):
     # Precondition
     lpToken = tokens[lpTokenName]
     token = tokens[tokenName]
@@ -23,18 +23,18 @@ def testFarming_Vesting1(requireMaticFork, bzxOwner, tokens, tokenName, lpTokenN
 
     lpToken.approve(masterChef, 2**256-1, {'from': account1})
     depositAmount = lpBalance1
-    masterChef.set(0, 10000000000, True, {'from': masterChef.owner()})
+    masterChef.set(GOV_POOL_PID, 10000000000, True, {'from': masterChef.owner()})
     masterChef.set(pid, 10000000000, True, {'from': masterChef.owner()})
-    pgovToken.approve(masterChef, 2**256-1, {'from': account1})
+    govToken.approve(masterChef, 2**256-1, {'from': account1})
     masterChef.setLocked(pid, True, {'from': masterChef.owner()})
-    masterChef.setLocked(0, True, {'from': masterChef.owner()})
+    masterChef.setLocked(GOV_POOL_PID, True, {'from': masterChef.owner()})
 
     tx1 = masterChef.deposit(pid, depositAmount, {'from': account1})
     chain.mine(blocks=100)
 
     masterChef.compoundReward(pid,  {'from': account1})
     chain.mine()
-    masterChef.compoundReward(0,  {'from': account1})
+    masterChef.compoundReward(GOV_POOL_PID,  {'from': account1})
     chain.mine()
     lockedRewards1 = masterChef.lockedRewards(account1);
     assert lockedRewards1 > 0
@@ -44,7 +44,7 @@ def testFarming_Vesting1(requireMaticFork, bzxOwner, tokens, tokenName, lpTokenN
     assert masterChef.lockedRewards(account1) < lockedRewards1
 
 
-def testFarming_Vesting2(requireMaticFork, masterChef):
+def testFarming_Vesting2(requireFork, masterChef):
     lockedAmount = 1000e18
     startVestinStamp = 1625993882
     userStartVestinStamp = 1626013882
