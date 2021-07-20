@@ -297,8 +297,7 @@ contract MasterChef_Polygon is Upgradeable {
             return 0;
         }
 
-        uint256 _userStartVestingStamp = userStartVestingStamp[_user];
-        return calculateUnlockedRewards(_locked, now, _userStartVestingStamp);
+        return calculateUnlockedRewards(_locked, now, userStartVestingStamp[_user]);
     }
 
     //This function will be internal after testing, _userStartVestingStamp will not be higher than now
@@ -314,8 +313,7 @@ contract MasterChef_Polygon is Upgradeable {
         if(_cliffDuration >= vestingDuration)
             return _locked;
 
-        uint256 _unlockedPerSecond = _locked.div(vestingDuration);
-        return _cliffDuration.mul(_unlockedPerSecond);
+        return _cliffDuration.mul(_locked.div(vestingDuration)); // _locked.div(vestingDuration) is unlockedPerSecond
     }
 
     function lockedRewards(address _user)
@@ -412,7 +410,7 @@ contract MasterChef_Polygon is Upgradeable {
         }
         user.rewardDebt = userAmount.mul(pool.accGOVPerShare).div(1e12);
         user.amount = userAmount;
-
+        //user vestingStartStamp recalculation is done in safeGOVTransfer
         safeGOVTransfer(_pid, pending);
     }
 
@@ -459,7 +457,7 @@ contract MasterChef_Polygon is Upgradeable {
         user.amount = userAmount;
         lpToken.safeTransfer(address(msg.sender), _amount);
         emit Withdraw(msg.sender, _pid, _amount);
-
+        //user vestingStartStamp recalculation is done in safeGOVTransfer
         safeGOVTransfer(_pid, pending);
     }
 
@@ -494,11 +492,9 @@ contract MasterChef_Polygon is Upgradeable {
         }
 
         if (isLocked[_pid]) {
-            uint256 _unlockedRewards = unlockedRewards(msg.sender);
             uint256 _locked = _lockedRewards[msg.sender];
-            _lockedRewards[msg.sender] = _locked.add(_amount).sub(_unlockedRewards);
-            uint256 _userStartVestingStamp = userStartVestingStamp[msg.sender];
-            userStartVestingStamp[msg.sender] = calculateVestingStartStamp(now, _userStartVestingStamp, _locked, _amount);
+            _lockedRewards[msg.sender] = _locked.add(_amount).sub(unlockedRewards(msg.sender));
+            userStartVestingStamp[msg.sender] = calculateVestingStartStamp(now, userStartVestingStamp[msg.sender], _locked, _amount);
             _deposit(GOV_POOL_ID, _amount);
         } else {
             GOV.transfer(msg.sender, _amount);
