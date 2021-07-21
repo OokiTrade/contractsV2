@@ -20,10 +20,10 @@ interface GovTokenLike {
 contract MintCoordinator_Polygon is Ownable {
 
     GovTokenLike public constant govToken = GovTokenLike(0xd5d84e75f48E75f01fb2EB6dFD8eA148eE3d0FEb);
+    mapping (address => bool) public minters;
+    
     // we store totalMinted here instead of using pure IERC20.totalSupply because burn removes from totalSupply.
     uint256 public totalMinted;
-
-    mapping (address => bool) public minters;
 
     function mint(address _to, uint256 _amount) public {
         require(minters[msg.sender], "unauthorized");
