@@ -13,7 +13,7 @@ GOV_POOL_PID = 0
 ## GovPool locked
 ## LPPool locked
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
-def testFarming_Vesting1(requireFork, bzxOwner, tokens, tokenName, lpTokenName, pid, accounts, masterChef, govToken):
+def testFarming_Vesting1(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, govToken):
     # Precondition
     lpToken = tokens[lpTokenName]
     token = tokens[tokenName]
