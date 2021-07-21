@@ -74,7 +74,7 @@ contract MasterChef_Polygon is Upgradeable {
 
     modifier checkNoPause() {
         require(notPaused || msg.sender == owner(), "paused");
-    _;
+        _;
     }
 
     // vestingStamp for a user
@@ -291,7 +291,7 @@ contract MasterChef_Polygon is Upgradeable {
         returns (uint256)
     {
         uint256 _locked = _lockedRewards[_user];
-        if(_locked == 0){
+        if(_locked == 0) {
             return 0;
         }
 
@@ -304,7 +304,7 @@ contract MasterChef_Polygon is Upgradeable {
         view
         returns (uint256)
     {
-        if(_userStartVestingStamp == 0){
+        if(_userStartVestingStamp == 0) {
             _userStartVestingStamp = startVestingStamp;
         }
         uint256 _cliffDuration = currentStamp.sub(_userStartVestingStamp);
@@ -525,7 +525,7 @@ contract MasterChef_Polygon is Upgradeable {
         if(_depositAmount >= _lockedAmount) return currentStamp;
         if(_depositAmount == 0) return _userStartVestingStamp;
 
-        if(_userStartVestingStamp == 0){
+        if(_userStartVestingStamp == 0) {
             _userStartVestingStamp = startVestingStamp;
         }
         uint256 cliffDuration = currentStamp.sub(_userStartVestingStamp);
