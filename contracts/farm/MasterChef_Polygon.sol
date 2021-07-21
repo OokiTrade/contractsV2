@@ -73,7 +73,7 @@ contract MasterChef_Polygon is Upgradeable {
 
     modifier checkNoPause() {
         require(notPaused || msg.sender == owner(), "paused");
-    _;
+        _;
     }
 
     event AddAltReward(
@@ -283,31 +283,31 @@ contract MasterChef_Polygon is Upgradeable {
     {
         uint256[] memory _altRewardsRounds = altRewardsRounds[GOV_POOL_ID];
         uint256 _currentRound = _altRewardsRounds.length;
-        if(_currentRound == 0)
+        if (_currentRound == 0)
             return 0;
 
         uint256 _amount = userInfo[GOV_POOL_ID][_user].amount;
-        if(_amount == 0)
+        if (_amount == 0)
             return 0;
 
-        uint256 _lastCalmedRound = userAltRewardsRounds[msg.sender];
+        uint256 _lastClaimedRound = userAltRewardsRounds[msg.sender];
         uint256 currentAccumulatedAltRewards = _altRewardsRounds[_currentRound-1];
 
         //Never claimed yet
-        if(_lastCalmedRound == 0){
+        if (_lastClaimedRound == 0) {
             return _amount
             .mul(currentAccumulatedAltRewards)
             .div(1e12);
-            }
-        _lastCalmedRound -= 1; //correct index to start from 0
+        }
+        _lastClaimedRound -= 1; //correct index to start from 0
         _currentRound -= 1; //correct index to start from 0
 
         //Already claimed everything
-        if(_lastCalmedRound == _currentRound){
+        if (_lastClaimedRound == _currentRound) {
             return 0;
         }
 
-        uint256 _lastAccumulatedAltRewards = _altRewardsRounds[_lastCalmedRound];
+        uint256 _lastAccumulatedAltRewards = _altRewardsRounds[_lastClaimedRound];
         uint256 _currentRewards = _amount.mul(currentAccumulatedAltRewards);
         uint256 _clamedRewards = _amount.mul(_lastAccumulatedAltRewards);
         return (_currentRewards.sub(_clamedRewards)).div(1e12);
@@ -410,7 +410,7 @@ contract MasterChef_Polygon is Upgradeable {
 
         uint256 _prevAltRewardsPerShare = 0;
         uint256[] memory _altRewardsRounds = altRewardsRounds[GOV_POOL_ID];
-        if(_altRewardsRounds.length > 0){
+        if (_altRewardsRounds.length > 0) {
             _prevAltRewardsPerShare = _altRewardsRounds[_altRewardsRounds.length - 1];
         }
 
@@ -451,7 +451,7 @@ contract MasterChef_Polygon is Upgradeable {
 
                 //Update userAltRewardsRounds even if user got nothing in the current round
                 uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
-                if(_altRewardsPerShare.length > 0){
+                if (_altRewardsPerShare.length > 0) {
                     userAltRewardsRounds[msg.sender] = _altRewardsPerShare.length;
                 }
             }
@@ -512,7 +512,7 @@ contract MasterChef_Polygon is Upgradeable {
             pendingAlt = _pendingAltRewards(msg.sender);
             //Update userAltRewardsRounds even if user got nothing in the current round
             uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
-            if(_altRewardsPerShare.length > 0){
+            if (_altRewardsPerShare.length > 0) {
                 userAltRewardsRounds[msg.sender] = _altRewardsPerShare.length;
             }
         }
@@ -548,7 +548,7 @@ contract MasterChef_Polygon is Upgradeable {
             pendingAlt = _pendingAltRewards(msg.sender);
             //Update userAltRewardsRounds even if user got nothing in the current round
             uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
-            if(_altRewardsPerShare.length > 0){
+            if (_altRewardsPerShare.length > 0) {
                 userAltRewardsRounds[msg.sender] = _altRewardsPerShare.length;
             }
         }

@@ -72,7 +72,7 @@ contract MasterChef_BSC is Upgradeable {
 
     modifier checkNoPause() {
         require(notPaused || msg.sender == owner(), "paused");
-    _;
+        _;
     }
 
     event AddAltReward(
