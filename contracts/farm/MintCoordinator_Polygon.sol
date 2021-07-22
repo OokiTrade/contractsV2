@@ -29,12 +29,17 @@ contract MintCoordinator_Polygon is Ownable {
     function mint(address _to, uint256 _amount) public {
         require(minters[msg.sender], "unauthorized");
         uint256 MAX_MINTED = 250*1e6*1e18;
+        if (totalMinted >= MAX_MINTED) {
+            // we're done minting
+            return;
+        }
         if (totalMinted.add(_amount) >= MAX_MINTED) {
             _amount = MAX_MINTED.sub(totalMinted);
         }
 
         govToken.mint(_to, _amount);
         if (totalMinted == 0){
+            // this condition executes once
             totalMinted = govToken.totalSupply();
         } else {
             totalMinted = totalMinted.add(_amount); // better safe than sorry

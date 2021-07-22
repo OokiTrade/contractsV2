@@ -29,6 +29,9 @@ def testFarming_limit_minting(accounts, masterChef, mintCoordinator, pgovToken, 
 
     totalSupply = pgovToken.totalSupply()
     maxSupply = 250*1e6*1e18 # 250 m
+    # below deposit to trigger first mint to set totalMint in coordinator
+    masterChef.deposit(0, 0 , {'from': accounts[0]})
+
     mintCoordinator.mint(accounts[0], maxSupply - totalSupply, {'from': masterChef})
 
     masterChef.deposit(0, 0 , {'from': accounts[0]})
@@ -39,7 +42,7 @@ def testFarming_limit_minting(accounts, masterChef, mintCoordinator, pgovToken, 
     totalSupply = pgovToken.totalSupply()
     assert maxSupply - totalSupply == 0 # no more minting
     assert masterChef.poolInfo(0)[1] == 0 # pool disabled
-    assert True
+    mintCoordinator.mint(accounts[0], 1e6*1e18, {'from': masterChef})
 
 
     
