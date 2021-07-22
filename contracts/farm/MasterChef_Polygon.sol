@@ -81,9 +81,9 @@ contract MasterChef_Polygon is Upgradeable {
     mapping(address => uint256) public userStartVestingStamp;
 
     //default value if userStartVestingStamp[user] == 0
-    uint256 public constant startVestingStamp = 1625993882;
+    uint256 public startVestingStamp;
 
-    uint256 public constant vestingDuration = 15768000; //6 months (6 * 365 * 24 * 60 * 60)
+    uint256 public vestingDuration; // 15768000 6 months (6 * 365 * 24 * 60 * 60)
 
 
     function initialize(
@@ -99,6 +99,20 @@ contract MasterChef_Polygon is Upgradeable {
         GOVPerBlock = _GOVPerBlock;
         bonusEndBlock = _bonusEndBlock;
         startBlock = _startBlock;
+    }
+
+    function setVestingDuration(uint256 _vestingDuration)
+        external
+        onlyOwner
+    {
+        vestingDuration = _vestingDuration;
+    }
+
+    function setStartVestingStamp(uint256 _startVestingStamp)
+        external
+        onlyOwner
+    {
+        startVestingStamp = _startVestingStamp;
     }
 
     function poolLength() external view returns (uint256) {
@@ -298,12 +312,16 @@ contract MasterChef_Polygon is Upgradeable {
         return calculateUnlockedRewards(_locked, now, userStartVestingStamp[_user]);
     }
 
-    //This function will be internal after testing, _userStartVestingStamp will not be higher than now
     function calculateUnlockedRewards(uint256 _locked, uint256 currentStamp, uint256 _userStartVestingStamp)
         public
         view
         returns (uint256)
     {
+        //Vesting is not started
+        if(startVestingStamp == 0 || vestingDuration == 0){
+            return 0;
+        }
+
         if(_userStartVestingStamp == 0) {
             _userStartVestingStamp = startVestingStamp;
         }
@@ -504,6 +522,7 @@ contract MasterChef_Polygon is Upgradeable {
         if (isLocked[_pid]) {
             uint256 _locked = _lockedRewards[msg.sender];
             _lockedRewards[msg.sender] = _locked.add(_amount);
+
             userStartVestingStamp[msg.sender] = calculateVestingStartStamp(now, userStartVestingStamp[msg.sender], _locked, _amount);
             _deposit(GOV_POOL_ID, _amount);
         } else {
@@ -525,6 +544,11 @@ contract MasterChef_Polygon is Upgradeable {
         if(_depositAmount >= _lockedAmount) return currentStamp;
         if(_depositAmount == 0) return _userStartVestingStamp;
 
+        //Vesting is not started, set 0 as default value
+        if(startVestingStamp == 0 || vestingDuration == 0){
+            return 0;
+        }
+
         if(_userStartVestingStamp == 0) {
             _userStartVestingStamp = startVestingStamp;
         }
@@ -541,8 +565,6 @@ contract MasterChef_Polygon is Upgradeable {
 
 
     // Custom logic - helpers
-
-
     function getPoolInfos() external view returns(IMasterChef.PoolInfo[] memory poolInfos) {
         uint256 length = poolInfo.length;
         poolInfos = new IMasterChef.PoolInfo[](length);
