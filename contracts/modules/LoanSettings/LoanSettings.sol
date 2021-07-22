@@ -8,10 +8,11 @@ pragma experimental ABIEncoderV2;
 
 import "../../core/State.sol";
 import "../../events/LoanSettingsEvents.sol";
-
+import "../../utils/MathUtil.sol";
 
 contract LoanSettings is State, LoanSettingsEvents {
-
+    using MathUtil for uint256;
+    
     function initialize(
         address target)
         external

@@ -8,7 +8,7 @@ pragma experimental ABIEncoderV2;
 
 import "./AdvancedTokenStorage.sol";
 import "../../../interfaces/IBZx.sol";
-
+import "../../interfaces/IERC20Detailed.sol";
 
 contract LoanTokenSettings is AdvancedTokenStorage {
     using SafeMath for uint256;
@@ -115,7 +115,7 @@ contract LoanTokenSettings is AdvancedTokenStorage {
 
         name = _name;
         symbol = _symbol;
-        decimals = IERC20(loanTokenAddress).decimals();
+        decimals = IERC20Detailed(loanTokenAddress).decimals();
 
         initialPrice = WEI_PRECISION; // starting price of 1
     }

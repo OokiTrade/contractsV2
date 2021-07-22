@@ -7,6 +7,7 @@ pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
+import "../interfaces/IERC20Burnable.sol";
 import "./interfaces/Upgradeable.sol";
 import "./interfaces/IWethERC20.sol";
 import "./interfaces/IUniswapV2Router.sol";
@@ -121,10 +122,11 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable {
             emit AssetSwap(msg.sender, MATIC, PGOV, amount, pgovAmount);
 
             // burn baby burn (15% of original amount)
-            IERC20(PGOV).transfer(
-                0x000000000000000000000000000000000000dEaD,
-                pgovAmount
-            );
+            // IERC20(PGOV).transfer(
+            //     0x000000000000000000000000000000000000dEaD,
+            //     pgovAmount
+            // );
+            IERC20Burnable(PGOV).burn(pgovAmount);
             emit AssetBurn(msg.sender, PGOV, pgovAmount);
 
             // buy and distribute BZRX

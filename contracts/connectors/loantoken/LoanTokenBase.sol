@@ -5,11 +5,11 @@
 
 pragma solidity 0.5.17;
 
-import "../../openzeppelin/SafeMath.sol";
-import "../../openzeppelin/SignedSafeMath.sol";
+import "@openzeppelin-2.5.0/math/SafeMath.sol";
+import "../../utils/SignedSafeMath.sol";
 import "../../utils/ReentrancyGuard.sol";
 import "../../openzeppelin/Ownable.sol";
-import "../../openzeppelin/Address.sol";
+import "@openzeppelin-2.5.0/utils/Address.sol";
 import "../../interfaces/IWethERC20.sol";
 import "./Pausable.sol";
 
