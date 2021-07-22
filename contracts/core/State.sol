@@ -11,7 +11,7 @@ import "./Objects.sol";
 import "../mixins/EnumerableBytes32Set.sol";
 import "../utils/ReentrancyGuard.sol";
 import "../openzeppelin/Ownable.sol";
-import "../openzeppelin/SafeMath.sol";
+import "@openzeppelin-2.5.0/math/SafeMath.sol";
 
 
 contract State is Constants, Objects, ReentrancyGuard, Ownable {
