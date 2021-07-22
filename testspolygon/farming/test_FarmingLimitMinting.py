@@ -37,7 +37,9 @@ def testFarming_limit_minting(accounts, masterChef, mintCoordinator, pgovToken, 
     masterChef.deposit(0, 0 , {'from': accounts[0]})
     
     totalSupply = pgovToken.totalSupply()
-    assert maxSupply - totalSupply < 1e18 # no more minting
+    assert maxSupply - totalSupply == 0 # no more minting
+    assert masterChef.poolInfo(0)[1] == 0 # pool disabled
+    assert True
 
 
     
