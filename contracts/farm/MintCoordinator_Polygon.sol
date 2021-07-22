@@ -7,7 +7,7 @@ pragma solidity 0.6.12;
 
 import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
 import "@openzeppelin-3.4.0/access/Ownable.sol";
-
+import "@openzeppelin-3.4.0/math/SafeMath.sol";
 
 interface GovTokenLike {
     function mint(address to, uint256 amount) external;
@@ -18,6 +18,7 @@ interface GovTokenLike {
 
 // polygon: 0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440
 contract MintCoordinator_Polygon is Ownable {
+    using SafeMath for uint256;
 
     GovTokenLike public constant govToken = GovTokenLike(0xd5d84e75f48E75f01fb2EB6dFD8eA148eE3d0FEb);
     mapping (address => bool) public minters;
@@ -28,15 +29,15 @@ contract MintCoordinator_Polygon is Ownable {
     function mint(address _to, uint256 _amount) public {
         require(minters[msg.sender], "unauthorized");
         uint256 MAX_MINTED = 250*1e6*1e18;
-        if (totalMinted + _amount >= MAX_MINTED) {
-            _amount = MAX_MINTED - totalMinted;
+        if (totalMinted.add(_amount) >= MAX_MINTED) {
+            _amount = MAX_MINTED.sub(totalMinted);
         }
 
         govToken.mint(_to, _amount);
         if (totalMinted == 0){
             totalMinted = govToken.totalSupply();
         } else {
-            totalMinted += _amount; // cannot overflow, don't want to add math library
+            totalMinted = totalMinted.add(_amount); // better safe than sorry
         }
     }
 
