@@ -6,7 +6,7 @@
 pragma solidity 0.5.17;
 
 import "./StakingUpgradeable.sol";
-import "../openzeppelin/Address.sol";
+import "@openzeppelin-2.5.0/utils/Address.sol";
 
 
 contract StakingProxy is StakingUpgradeable {
