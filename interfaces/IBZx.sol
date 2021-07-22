@@ -715,6 +715,10 @@ interface IBZx {
         uint256 sourceTokenAmount
     ) external view returns (uint256);
 
+    function owner() external returns (address);
+
+    function transferOwnership(address newOwner) external;
+
     struct LoanParams {
         bytes32 id;
         bool active;
