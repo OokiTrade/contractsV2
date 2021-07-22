@@ -715,7 +715,7 @@ interface IBZx {
         uint256 sourceTokenAmount
     ) external view returns (uint256);
 
-    function owner() external returns (address);
+    function owner() external view returns (address);
 
     function transferOwnership(address newOwner) external;
 
