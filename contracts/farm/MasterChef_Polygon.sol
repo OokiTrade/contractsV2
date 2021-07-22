@@ -73,7 +73,7 @@ contract MasterChef_Polygon is Upgradeable {
         uint256 amount
     );
 
-    MintCoordinator_Polygon public constant coordinator = MintCoordinator_Polygon(0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440);
+    MintCoordinator_Polygon public coordinator = MintCoordinator_Polygon(0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440);
 
     mapping(IERC20 => bool) public poolExists;
     modifier nonDuplicated(IERC20 _lpToken) {
@@ -89,6 +89,11 @@ contract MasterChef_Polygon is Upgradeable {
 
     // total locked rewards for a user
     mapping(address => uint256) public lockedRewards;
+
+
+    function setMintCoordinator(address newMintCoordinator) public onlyOwner {
+        coordinator = MintCoordinator_Polygon(newMintCoordinator);
+    }
 
     function initialize(
         GovToken _GOV,
