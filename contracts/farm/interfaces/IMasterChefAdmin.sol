@@ -24,4 +24,6 @@ interface IMasterChefAdmin is IMasterChef {
         external;
     function migrateToBalanceOf(uint256 _pid)
         external;
+    function setGOVPerBlock(uint256 _GOVPerBlock)
+        external;
 }
