@@ -86,6 +86,17 @@ contract MasterChef_Polygon is Upgradeable {
     uint256 public vestingDuration; // 15768000 6 months (6 * 365 * 24 * 60 * 60)
 
 
+    event AddAltReward(
+        address indexed sender,
+        uint256 indexed pid,
+        uint256 amount
+    );
+
+    //Mapping pid -- accumulated bnbPerGov
+    mapping(uint256 => uint256[]) public altRewardsRounds;
+
+    mapping(address => uint256) public userAltRewardsRounds;      // user => lastClaimedRound
+
     function initialize(
         GovToken _GOV,
         address _devaddr,
@@ -289,6 +300,51 @@ contract MasterChef_Polygon is Upgradeable {
         return user.amount.mul(accGOVPerShare).div(1e30).sub(user.rewardDebt);
     }
 
+    // View function to see pending alt rewards on frontend.
+    function pendingAltRewards(address _user)
+        external
+        view
+        returns (uint256)
+    {
+            return _pendingAltRewards(_user);
+    }
+
+    function _pendingAltRewards(address _user)
+        internal
+        view
+        returns (uint256)
+    {
+        uint256[] memory _altRewardsRounds = altRewardsRounds[GOV_POOL_ID];
+        uint256 _currentRound = _altRewardsRounds.length;
+        if (_currentRound == 0)
+            return 0;
+
+        uint256 _amount = userInfo[GOV_POOL_ID][_user].amount;
+        if (_amount == 0)
+            return 0;
+
+        uint256 _lastClaimedRound = userAltRewardsRounds[msg.sender];
+        uint256 currentAccumulatedAltRewards = _altRewardsRounds[_currentRound-1];
+
+        //Never claimed yet
+        if (_lastClaimedRound == 0) {
+            return _amount
+            .mul(currentAccumulatedAltRewards)
+            .div(1e12);
+        }
+        _lastClaimedRound -= 1; //correct index to start from 0
+        _currentRound -= 1; //correct index to start from 0
+
+        //Already claimed everything
+        if (_lastClaimedRound == _currentRound) {
+            return 0;
+        }
+
+        uint256 _lastAccumulatedAltRewards = _altRewardsRounds[_lastClaimedRound];
+        uint256 _currentRewards = _amount.mul(currentAccumulatedAltRewards);
+        uint256 _clamedRewards = _amount.mul(_lastAccumulatedAltRewards);
+        return (_currentRewards.sub(_clamedRewards)).div(1e12);
+    }
 
     // View function to see pending GOVs on frontend.
     function pendingGOV(uint256 _pid, address _user)
@@ -407,6 +463,29 @@ contract MasterChef_Polygon is Upgradeable {
         emit AddExternalReward(msg.sender, GOV_POOL_ID, _amount);
     }
 
+    // Anyone can contribute native token rewards to GOV pool stakers
+    function addAltReward() public payable checkNoPause {
+        IMasterChef.PoolInfo storage pool = poolInfo[GOV_POOL_ID];
+        require(block.number > pool.lastRewardBlock, "rewards not started");
+
+        uint256 lpSupply = balanceOf[GOV_POOL_ID];
+        require(lpSupply != 0, "no deposits");
+
+        updatePool(GOV_POOL_ID);
+
+        uint256 _prevAltRewardsPerShare = 0;
+        uint256[] memory _altRewardsRounds = altRewardsRounds[GOV_POOL_ID];
+        if (_altRewardsRounds.length > 0) {
+            _prevAltRewardsPerShare = _altRewardsRounds[_altRewardsRounds.length - 1];
+        }
+
+        uint256 _currentAltRewardsPerShare = msg.value.mul(1e12).div(lpSupply);
+        uint256 _rewardsPerShare = _currentAltRewardsPerShare.add(_prevAltRewardsPerShare);
+        altRewardsRounds[GOV_POOL_ID].push(_rewardsPerShare);
+
+        emit AddAltReward(msg.sender, GOV_POOL_ID, msg.value);
+    }
+
     // Deposit LP tokens to MasterChef for GOV allocation.
     function deposit(uint256 _pid, uint256 _amount) public checkNoPause {
         poolInfo[_pid].lpToken.safeTransferFrom(
@@ -424,11 +503,23 @@ contract MasterChef_Polygon is Upgradeable {
 
         uint256 userAmount = user.amount;
         uint256 pending;
-        if (userAmount > 0) {
+        uint256 pendingAlt;
+
+        if (userAmount != 0) {
             pending = userAmount
                 .mul(pool.accGOVPerShare)
                 .div(1e12)
                 .sub(user.rewardDebt);
+
+            if (_pid == GOV_POOL_ID) {
+                pendingAlt = _pendingAltRewards(msg.sender);
+
+                //Update userAltRewardsRounds even if user got nothing in the current round
+                uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
+                if (_altRewardsPerShare.length > 0) {
+                    userAltRewardsRounds[msg.sender] = _altRewardsPerShare.length;
+                }
+            }
         }
 
         if (_amount != 0) {
@@ -440,6 +531,9 @@ contract MasterChef_Polygon is Upgradeable {
         user.amount = userAmount;
         //user vestingStartStamp recalculation is done in safeGOVTransfer
         safeGOVTransfer(_pid, pending);
+        if (pendingAlt != 0) {
+            Address.sendValue(msg.sender, pendingAlt);
+        }
     }
 
     function claimReward(uint256 _pid) public checkNoPause {
@@ -471,11 +565,19 @@ contract MasterChef_Polygon is Upgradeable {
             .div(1e12)
             .sub(user.rewardDebt);
 
+        uint256 pendingAlt;
         IERC20 lpToken = pool.lpToken;
         if (lpToken == GOV) {
             uint256 availableAmount = userAmount.sub(_lockedRewards[msg.sender]);
             if (_amount > availableAmount) {
                 _amount = availableAmount;
+            }
+
+            pendingAlt = _pendingAltRewards(msg.sender);
+            //Update userAltRewardsRounds even if user got nothing in the current round
+            uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
+            if (_altRewardsPerShare.length > 0) {
+                userAltRewardsRounds[msg.sender] = _altRewardsPerShare.length;
             }
         }
 
@@ -487,6 +589,9 @@ contract MasterChef_Polygon is Upgradeable {
         emit Withdraw(msg.sender, _pid, _amount);
         //user vestingStartStamp recalculation is done in safeGOVTransfer
         safeGOVTransfer(_pid, pending);
+        if (pendingAlt != 0) {
+            Address.sendValue(msg.sender, pendingAlt);
+        }
     }
 
     // Withdraw without caring about rewards. EMERGENCY ONLY.
@@ -495,11 +600,18 @@ contract MasterChef_Polygon is Upgradeable {
         IMasterChef.UserInfo storage user = userInfo[_pid][msg.sender];
 
         uint256 _amount = user.amount;
+        uint256 pendingAlt;
         IERC20 lpToken = pool.lpToken;
         if (lpToken == GOV) {
             uint256 availableAmount = _amount.sub(_lockedRewards[msg.sender]);
             if (_amount > availableAmount) {
                 _amount = availableAmount;
+            }
+            pendingAlt = _pendingAltRewards(msg.sender);
+            //Update userAltRewardsRounds even if user got nothing in the current round
+            uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
+            if (_altRewardsPerShare.length > 0) {
+                userAltRewardsRounds[msg.sender] = _altRewardsPerShare.length;
             }
         }
 
@@ -508,6 +620,10 @@ contract MasterChef_Polygon is Upgradeable {
         balanceOf[_pid] = balanceOf[_pid].sub(_amount);
         user.amount = user.amount.sub(_amount);
         user.rewardDebt = user.amount.mul(pool.accGOVPerShare).div(1e12);
+
+        if (pendingAlt != 0) {
+            Address.sendValue(msg.sender, pendingAlt);
+        }
     }
 
     function safeGOVTransfer(uint256 _pid, uint256 _amount) internal {
@@ -573,13 +689,14 @@ contract MasterChef_Polygon is Upgradeable {
         }
     }
 
-    function getOptimisedUserInfos(address _user) external view returns(uint256[3][] memory userInfos) {
+    function getOptimisedUserInfos(address _user) external view returns(uint256[4][] memory userInfos) {
         uint256 length = poolInfo.length;
-        userInfos = new uint256[3][](length);
+        userInfos = new uint256[4][](length);
         for (uint256 pid = 0; pid < length; ++pid) {
             userInfos[pid][0] = userInfo[pid][_user].amount;
             userInfos[pid][1] = _pendingGOV(pid, _user);
             userInfos[pid][2] = isLocked[pid] ? 1 : 0;
+            userInfos[pid][3] = pid == GOV_POOL_ID ? _pendingAltRewards(_user) : 0;
         }
     }
 

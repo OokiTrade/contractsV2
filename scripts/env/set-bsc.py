@@ -10,5 +10,4 @@ for l in list:
     globals()[underlyingTemp.symbol()] = underlyingTemp
 
 CHI = Contract.from_abi("CHI", "0x0000000000004946c0e9F43F4Dee607b0eF1fA1c", TestToken.abi)
-CHEF = Contract.from_abi("CHEF", "0x1FDCA2422668B961E162A8849dc0C2feaDb58915", MasterChef_BSC.abi)
 HELPER = Contract.from_abi("HELPER", "0xE05999ACcb887D32c9bd186e8C9dfE0e1E7814dE", HelperImpl.abi)

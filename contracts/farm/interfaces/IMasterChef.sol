@@ -179,7 +179,7 @@ interface IMasterChef {
     function getOptimisedUserInfos(address _user)
         external
         view
-        returns(uint256[3][] memory);
+        returns(uint256[4][] memory);
 
     function getUserInfos(address _wallet)
         external
@@ -190,6 +190,20 @@ interface IMasterChef {
         external
         view
         returns(uint256[] memory);
+
+    function altRewardsDebt(address _user)
+        external
+        view
+        returns(uint256);
+
+    function addAltReward()
+        external
+        payable;
+
+    function pendingAltRewards(address _user)
+        external
+        view
+        returns (uint256);
 
     event Deposit(
         address indexed user,
