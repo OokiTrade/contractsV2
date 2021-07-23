@@ -102,7 +102,7 @@ contract TokenHolder is Ownable {
     }
 
     function withdrawEther(
-        address receiver,
+        address payable receiver,
         uint256 amount)
         external
         onlyOwner
