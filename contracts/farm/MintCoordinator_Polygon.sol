@@ -26,24 +26,28 @@ contract MintCoordinator_Polygon is Ownable {
     // we store totalMinted here instead of using pure IERC20.totalSupply because burn removes from totalSupply.
     uint256 public totalMinted;
 
+    uint256 public constant MAX_MINTED = 250*1e6*1e18;
+
     function mint(address _to, uint256 _amount) public {
         require(minters[msg.sender], "unauthorized");
-        uint256 MAX_MINTED = 250*1e6*1e18;
-        if (totalMinted >= MAX_MINTED) {
+
+        uint256 _totalMinted = totalMinted;
+        if (_totalMinted >= MAX_MINTED) {
             // we're done minting
             return;
         }
-        if (totalMinted.add(_amount) >= MAX_MINTED) {
-            _amount = MAX_MINTED.sub(totalMinted);
+        if (_totalMinted.add(_amount) >= MAX_MINTED) {
+            _amount = MAX_MINTED.sub(_totalMinted);
         }
 
         govToken.mint(_to, _amount);
-        if (totalMinted == 0){
+        if (_totalMinted == 0) {
             // this condition executes once
-            totalMinted = govToken.totalSupply();
+            _totalMinted = govToken.totalSupply();
         } else {
-            totalMinted = totalMinted.add(_amount); // better safe than sorry
+            _totalMinted = _totalMinted.add(_amount); // better safe than sorry
         }
+        totalMinted = _totalMinted;
     }
 
     function transferTokenOwnership(address newOwner) public onlyOwner {
