@@ -51,7 +51,7 @@ contract MasterChef_Polygon is Upgradeable {
         uint256 amount
     );
 
-    MintCoordinator_Polygon public constant coordinator = MintCoordinator_Polygon(0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440);
+    MintCoordinator_Polygon public coordinator = MintCoordinator_Polygon(0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440);
 
     mapping(IERC20 => bool) public poolExists;
 
@@ -69,6 +69,11 @@ contract MasterChef_Polygon is Upgradeable {
     // total locked rewards for a user
     mapping(address => uint256) internal _lockedRewards;
 
+
+
+    function setMintCoordinator(address newMintCoordinator) public onlyOwner {
+        coordinator = MintCoordinator_Polygon(newMintCoordinator);
+    }
 
     bool public notPaused;
 
@@ -433,6 +438,12 @@ contract MasterChef_Polygon is Upgradeable {
             multiplier.mul(GOVPerBlock).mul(pool.allocPoint).div(
                 totalAllocPoint
             );
+        // 250m = 250 * 1e6
+        if (coordinator.totalMinted() >= 250*1e6*1e18) {
+            pool.allocPoint = 0;
+            return;
+        }
+
         coordinator.mint(devaddr, GOVReward.div(1e19));
         coordinator.mint(address(this), GOVReward.div(1e18));
         pool.accGOVPerShare = pool.accGOVPerShare.add(
