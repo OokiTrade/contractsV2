@@ -31,7 +31,7 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
     }
 
     function burnToEther(
-        address receiver,
+        address payable receiver,
         uint256 burnAmount)
         external
         nonReentrant
@@ -83,7 +83,7 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
         if (withdrawalAmount != 0) { // withdrawOnOpen == true
             IWethERC20(_wethToken).withdraw(withdrawalAmount);
             Address.sendValue(
-                receiver,
+                address(uint160(receiver)),
                 withdrawalAmount
             );
             if (newPrincipal > withdrawalAmount) {

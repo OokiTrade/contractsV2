@@ -49,7 +49,7 @@ contract VaultController is Constants {
             if (value > balance) {
                 _wethToken.withdraw(value - balance);
             }
-            Address.sendValue(to, value);
+            Address.sendValue(address(uint160(to)), value);
 
             emit VaultWithdraw(
                 address(_wethToken),
