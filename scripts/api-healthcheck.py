@@ -4,8 +4,8 @@ import json
 import requests
 import telebot
 
-BOT_TG_ID = "-481421264"
-BOT_KEY = '1789090059:AAGQ6ZJ2i__bdR_R47WVNJcHi_vDu7deuQg'
+BOT_TG_ID = "GROUPID"
+BOT_KEY = 'APIKEY'
 
 bot = telebot.TeleBot(BOT_KEY)
 
