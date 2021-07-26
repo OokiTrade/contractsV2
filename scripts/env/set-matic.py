@@ -19,6 +19,13 @@ SUSHI_ROUTER = Contract.from_abi("router", "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47
 masterChefProxy = Contract.from_abi("masterChefProxy", address=CHEF.address, abi=Proxy.abi)
 masterChefImpl = MasterChef_Polygon.deploy({'from': CHEF.owner()})
 masterChefProxy.replaceImplementation(masterChefImpl, {'from': CHEF.owner()})
-CHEF.massMigrateToBalanceOf()
+
+newMintCoordinator = MintCoordinator_Polygon.deploy({'from': CHEF.owner()});
+newMintCoordinator.addMinter(CHEF)
+newMintCoordinator.transferOwnership(CHEF)
+CHEF.setMintCoordinator(newMintCoordinator, {'from': CHEF.owner()})
+PGOV.transferOwnership(newMintCoordinator, {'from': PGOV.owner()})
+
+CHEF.massMigrateToBalanceOf({'from': CHEF.owner()})
 CHEF.togglePause(False, {'from': CHEF.owner()})
 CHEF =  Contract.from_abi("CHEF", CHEF.address, interface.IMasterChef.abi)
