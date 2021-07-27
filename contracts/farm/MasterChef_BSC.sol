@@ -322,7 +322,7 @@ contract MasterChef_BSC is Upgradeable {
         if (_amount == 0)
             return 0;
 
-        uint256 _lastClaimedRound = userAltRewardsRounds[msg.sender];
+        uint256 _lastClaimedRound = userAltRewardsRounds[_user];
         uint256 currentAccumulatedAltRewards = _altRewardsRounds[_currentRound-1];
 
         //Never claimed yet
