@@ -6,7 +6,7 @@
 pragma solidity 0.5.17;
 
 import "../core/Constants.sol";
-import "../openzeppelin/SafeERC20.sol";
+import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 
 
 contract VaultController is Constants {
@@ -49,7 +49,7 @@ contract VaultController is Constants {
             if (value > balance) {
                 _wethToken.withdraw(value - balance);
             }
-            Address.sendValue(to, value);
+            Address.sendValue(address(uint160(to)), value);
 
             emit VaultWithdraw(
                 address(_wethToken),

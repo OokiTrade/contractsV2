@@ -2,10 +2,10 @@
 
 import pytest
 
-from testspolygon.conftest import initBalance, requireFork
+from conftest import initBalance, requireFork
 from brownie import reverts
 
-def testPgovRescue(requireFork, accounts, pgovToken, ETH, iETH):
+def testPgovRescue(requireFork, accounts, govToken, ETH, iETH):
     # Precondition
 
     account1 = accounts[2]
@@ -14,14 +14,14 @@ def testPgovRescue(requireFork, accounts, pgovToken, ETH, iETH):
     ethacc = "0x28424507fefb6f7f8E9D3860F56504E4e5f5f390"
     ETH.transfer(account1, amount, {'from': ethacc})
 
-    owner = pgovToken.owner()
+    owner = govToken.owner()
     balanceBefore = ETH.balanceOf(owner);
-    ETH.transfer(pgovToken, 1e18, {'from':account1})
-    pgovToken.rescue(ETH, {'from':owner})
+    ETH.transfer(govToken, 1e18, {'from':account1})
+    govToken.rescue(ETH, {'from':owner})
     assert ETH.balanceOf(owner) == balanceBefore + amount
 
     with reverts("Ownable: caller is not the owner"):
-        pgovToken.rescue(ETH, {'from':account1})
+        govToken.rescue(ETH, {'from':account1})
 
 
 

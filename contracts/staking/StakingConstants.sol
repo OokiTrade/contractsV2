@@ -5,7 +5,7 @@
 
 pragma solidity 0.5.17;
 
-import "../interfaces/IERC20.sol";
+import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 import "../interfaces/IUniswapV2Router.sol";
 import "./interfaces/ICurve3Pool.sol";
 import "../../interfaces/IBZx.sol";

@@ -6,7 +6,7 @@
 pragma solidity 0.5.17;
 
 
-import "../../openzeppelin/Address.sol";
+import "@openzeppelin-2.5.0/utils/Address.sol";
 import "./Upgradeable_0_5.sol";
 
 

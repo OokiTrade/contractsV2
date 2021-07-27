@@ -6,13 +6,14 @@
 pragma solidity 0.5.17;
 
 import "../core/State.sol";
-import "../openzeppelin/SafeERC20.sol";
+import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 import "../../interfaces/IPriceFeeds.sol";
 import "../events/FeesEvents.sol";
-
+import "../utils/MathUtil.sol";
 
 contract FeesHelper is State, FeesEvents {
     using SafeERC20 for IERC20;
+    using MathUtil for uint256;
 
     // calculate trading fee
     function _getTradingFee(

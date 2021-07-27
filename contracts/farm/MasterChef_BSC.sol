@@ -14,7 +14,7 @@ import "./interfaces/IMasterChef.sol";
 contract MasterChef_BSC is Upgradeable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
-    
+
     // The GOV TOKEN!
     GovToken public GOV;
     // Dev address.
@@ -66,22 +66,35 @@ contract MasterChef_BSC is Upgradeable {
     mapping(uint256 => bool) public isLocked;
 
     // total locked rewards for a user
-    mapping(address => uint256) public lockedRewards;
+    mapping(address => uint256) internal _lockedRewards;
+
 
     bool public notPaused;
 
     modifier checkNoPause() {
-        require(notPaused, "paused");
-    _;
+        require(notPaused || msg.sender == owner(), "paused");
+        _;
     }
+
+    // vestingStamp for a user
+    mapping(address => uint256) public userStartVestingStamp;
+
+    //default value if userStartVestingStamp[user] == 0
+    uint256 public startVestingStamp;
+
+    uint256 public vestingDuration; // 15768000 6 months (6 * 365 * 24 * 60 * 60)
+
 
     event AddAltReward(
         address indexed sender,
         uint256 indexed pid,
         uint256 amount
     );
-    mapping(address => uint256) public altRewardsDebt;      // user => amount
-    mapping(uint256 => uint256) public altRewardsPerShare;  // pid => amount
+
+    //Mapping pid -- accumulated bnbPerGov
+    mapping(uint256 => uint256[]) public altRewardsRounds;
+
+    mapping(address => uint256) public userAltRewardsRounds;      // user => lastClaimedRound
 
     function initialize(
         GovToken _GOV,
@@ -96,6 +109,20 @@ contract MasterChef_BSC is Upgradeable {
         GOVPerBlock = _GOVPerBlock;
         bonusEndBlock = _bonusEndBlock;
         startBlock = _startBlock;
+    }
+
+    function setVestingDuration(uint256 _vestingDuration)
+        external
+        onlyOwner
+    {
+        vestingDuration = _vestingDuration;
+    }
+
+    function setStartVestingStamp(uint256 _startVestingStamp)
+        external
+        onlyOwner
+    {
+        startVestingStamp = _startVestingStamp;
     }
 
     function poolLength() external view returns (uint256) {
@@ -272,15 +299,50 @@ contract MasterChef_BSC is Upgradeable {
         return user.amount.mul(accGOVPerShare).div(1e30).sub(user.rewardDebt);
     }
 
+    // View function to see pending alt rewards on frontend.
+    function pendingAltRewards(address _user)
+        external
+        view
+        returns (uint256)
+    {
+            return _pendingAltRewards(_user);
+    }
+
     function _pendingAltRewards(address _user)
         internal
         view
         returns (uint256)
     {
-        return userInfo[GOV_POOL_ID][_user].amount
-            .mul(altRewardsPerShare[GOV_POOL_ID])
-            .div(1e12)
-            .sub(altRewardsDebt[_user]);
+        uint256[] memory _altRewardsRounds = altRewardsRounds[GOV_POOL_ID];
+        uint256 _currentRound = _altRewardsRounds.length;
+        if (_currentRound == 0)
+            return 0;
+
+        uint256 _amount = userInfo[GOV_POOL_ID][_user].amount;
+        if (_amount == 0)
+            return 0;
+
+        uint256 _lastClaimedRound = userAltRewardsRounds[msg.sender];
+        uint256 currentAccumulatedAltRewards = _altRewardsRounds[_currentRound-1];
+
+        //Never claimed yet
+        if (_lastClaimedRound == 0) {
+            return _amount
+            .mul(currentAccumulatedAltRewards)
+            .div(1e12);
+        }
+        _lastClaimedRound -= 1; //correct index to start from 0
+        _currentRound -= 1; //correct index to start from 0
+
+        //Already claimed everything
+        if (_lastClaimedRound == _currentRound) {
+            return 0;
+        }
+
+        uint256 _lastAccumulatedAltRewards = _altRewardsRounds[_lastClaimedRound];
+        uint256 _currentRewards = _amount.mul(currentAccumulatedAltRewards);
+        uint256 _clamedRewards = _amount.mul(_lastAccumulatedAltRewards);
+        return (_currentRewards.sub(_clamedRewards)).div(1e12);
     }
 
     // View function to see pending GOVs on frontend.
@@ -292,13 +354,45 @@ contract MasterChef_BSC is Upgradeable {
         return _pendingGOV(_pid, _user);
     }
 
-    // View function to see pending alt rewards on frontend.
-    function pendingAltRewards(address _user)
+    function unlockedRewards(address _user)
+        public
+        view
+        returns (uint256)
+    {
+        uint256 _locked = _lockedRewards[_user];
+        if(_locked == 0) {
+            return 0;
+        }
+
+        return calculateUnlockedRewards(_locked, now, userStartVestingStamp[_user]);
+    }
+
+    function calculateUnlockedRewards(uint256 _locked, uint256 currentStamp, uint256 _userStartVestingStamp)
+        public
+        view
+        returns (uint256)
+    {
+        //Vesting is not started
+        if(startVestingStamp == 0 || vestingDuration == 0){
+            return 0;
+        }
+
+        if(_userStartVestingStamp == 0) {
+            _userStartVestingStamp = startVestingStamp;
+        }
+        uint256 _cliffDuration = currentStamp.sub(_userStartVestingStamp);
+        if(_cliffDuration >= vestingDuration)
+            return _locked;
+
+        return _cliffDuration.mul(_locked.div(vestingDuration)); // _locked.div(vestingDuration) is unlockedPerSecond
+    }
+
+    function lockedRewards(address _user)
         external
         view
         returns (uint256)
     {
-        return _pendingAltRewards(_user);
+        return _lockedRewards[_user].sub(unlockedRewards(_user));
     }
 
     function togglePause(bool _isPaused) external onlyOwner {
@@ -314,6 +408,7 @@ contract MasterChef_BSC is Upgradeable {
     }
 
     function massMigrateToBalanceOf() public onlyOwner {
+        require(!notPaused, "!paused");
         massUpdatePools();
         uint256 length = poolInfo.length;
         for (uint256 pid = 0; pid < length; ++pid) {
@@ -372,14 +467,20 @@ contract MasterChef_BSC is Upgradeable {
         IMasterChef.PoolInfo storage pool = poolInfo[GOV_POOL_ID];
         require(block.number > pool.lastRewardBlock, "rewards not started");
 
-        uint256 lpSupply = pool.lpToken.balanceOf(address(this));
+        uint256 lpSupply = balanceOf[GOV_POOL_ID];
         require(lpSupply != 0, "no deposits");
 
         updatePool(GOV_POOL_ID);
 
-        altRewardsPerShare[GOV_POOL_ID] = altRewardsPerShare[GOV_POOL_ID].add(
-            msg.value.mul(1e12).div(lpSupply)
-        );
+        uint256 _prevAltRewardsPerShare = 0;
+        uint256[] memory _altRewardsRounds = altRewardsRounds[GOV_POOL_ID];
+        if (_altRewardsRounds.length > 0) {
+            _prevAltRewardsPerShare = _altRewardsRounds[_altRewardsRounds.length - 1];
+        }
+
+        uint256 _currentAltRewardsPerShare = msg.value.mul(1e12).div(lpSupply);
+        uint256 _rewardsPerShare = _currentAltRewardsPerShare.add(_prevAltRewardsPerShare);
+        altRewardsRounds[GOV_POOL_ID].push(_rewardsPerShare);
 
         emit AddAltReward(msg.sender, GOV_POOL_ID, msg.value);
     }
@@ -402,15 +503,21 @@ contract MasterChef_BSC is Upgradeable {
         uint256 userAmount = user.amount;
         uint256 pending;
         uint256 pendingAlt;
+
         if (userAmount != 0) {
             pending = userAmount
                 .mul(pool.accGOVPerShare)
                 .div(1e12)
                 .sub(user.rewardDebt);
 
-            // settles alt reward if any
             if (_pid == GOV_POOL_ID) {
                 pendingAlt = _pendingAltRewards(msg.sender);
+
+                //Update userAltRewardsRounds even if user got nothing in the current round
+                uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
+                if (_altRewardsPerShare.length > 0) {
+                    userAltRewardsRounds[msg.sender] = _altRewardsPerShare.length;
+                }
             }
         }
 
@@ -421,14 +528,9 @@ contract MasterChef_BSC is Upgradeable {
         }
         user.rewardDebt = userAmount.mul(pool.accGOVPerShare).div(1e12);
         user.amount = userAmount;
-
+        //user vestingStartStamp recalculation is done in safeGOVTransfer
         safeGOVTransfer(_pid, pending);
-
-        // claims alt reward if any
         if (pendingAlt != 0) {
-            altRewardsDebt[msg.sender] = userAmount
-                .mul(altRewardsPerShare[GOV_POOL_ID])
-                .div(1e12);
             Address.sendValue(msg.sender, pendingAlt);
         }
     }
@@ -464,14 +566,18 @@ contract MasterChef_BSC is Upgradeable {
 
         uint256 pendingAlt;
         IERC20 lpToken = pool.lpToken;
-        if (lpToken == GOV) { // _pid == GOV_POOL_ID
-            uint256 availableAmount = userAmount.sub(lockedRewards[msg.sender]);
+        if (lpToken == GOV) {
+            uint256 availableAmount = userAmount.sub(_lockedRewards[msg.sender]);
             if (_amount > availableAmount) {
                 _amount = availableAmount;
             }
 
-            // settles alt reward if any
             pendingAlt = _pendingAltRewards(msg.sender);
+            //Update userAltRewardsRounds even if user got nothing in the current round
+            uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
+            if (_altRewardsPerShare.length > 0) {
+                userAltRewardsRounds[msg.sender] = _altRewardsPerShare.length;
+            }
         }
 
         balanceOf[_pid] = balanceOf[_pid].sub(_amount);
@@ -480,14 +586,9 @@ contract MasterChef_BSC is Upgradeable {
         user.amount = userAmount;
         lpToken.safeTransfer(address(msg.sender), _amount);
         emit Withdraw(msg.sender, _pid, _amount);
-
+        //user vestingStartStamp recalculation is done in safeGOVTransfer
         safeGOVTransfer(_pid, pending);
-
-        // claims alt reward if any
         if (pendingAlt != 0) {
-            altRewardsDebt[msg.sender] = userAmount
-                .mul(altRewardsPerShare[GOV_POOL_ID])
-                .div(1e12);
             Address.sendValue(msg.sender, pendingAlt);
         }
     }
@@ -498,11 +599,18 @@ contract MasterChef_BSC is Upgradeable {
         IMasterChef.UserInfo storage user = userInfo[_pid][msg.sender];
 
         uint256 _amount = user.amount;
+        uint256 pendingAlt;
         IERC20 lpToken = pool.lpToken;
         if (lpToken == GOV) {
-            uint256 availableAmount = _amount.sub(lockedRewards[msg.sender]);
+            uint256 availableAmount = _amount.sub(_lockedRewards[msg.sender]);
             if (_amount > availableAmount) {
                 _amount = availableAmount;
+            }
+            pendingAlt = _pendingAltRewards(msg.sender);
+            //Update userAltRewardsRounds even if user got nothing in the current round
+            uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
+            if (_altRewardsPerShare.length > 0) {
+                userAltRewardsRounds[msg.sender] = _altRewardsPerShare.length;
             }
         }
 
@@ -511,10 +619,9 @@ contract MasterChef_BSC is Upgradeable {
         balanceOf[_pid] = balanceOf[_pid].sub(_amount);
         user.amount = user.amount.sub(_amount);
         user.rewardDebt = user.amount.mul(pool.accGOVPerShare).div(1e12);
-        if (_pid == GOV_POOL_ID) {
-            altRewardsDebt[msg.sender] = user.amount
-                .mul(altRewardsPerShare[GOV_POOL_ID])
-                .div(1e12);
+
+        if (pendingAlt != 0) {
+            Address.sendValue(msg.sender, pendingAlt);
         }
     }
 
@@ -528,11 +635,41 @@ contract MasterChef_BSC is Upgradeable {
         }
 
         if (isLocked[_pid]) {
-            lockedRewards[msg.sender] = lockedRewards[msg.sender].add(_amount);
+            uint256 _locked = _lockedRewards[msg.sender];
+            _lockedRewards[msg.sender] = _locked.add(_amount);
+
+            userStartVestingStamp[msg.sender] = calculateVestingStartStamp(now, userStartVestingStamp[msg.sender], _locked, _amount);
             _deposit(GOV_POOL_ID, _amount);
         } else {
             GOV.transfer(msg.sender, _amount);
         }
+    }
+
+    //This function will be internal after testing,
+    function calculateVestingStartStamp(uint256 currentStamp, uint256 _userStartVestingStamp, uint256 _lockedAmount, uint256 _depositAmount)
+        public
+        view
+        returns(uint256)
+    {
+        //VestingStartStamp will be distributed between
+        //_userStartVestingStamp (min) and currentStamp (max) depends on _lockedAmount and _depositAmount
+
+        //To avoid calculation on limit values
+        if(_lockedAmount == 0) return startVestingStamp;
+        if(_depositAmount >= _lockedAmount) return currentStamp;
+        if(_depositAmount == 0) return _userStartVestingStamp;
+
+        //Vesting is not started, set 0 as default value
+        if(startVestingStamp == 0 || vestingDuration == 0){
+            return 0;
+        }
+
+        if(_userStartVestingStamp == 0) {
+            _userStartVestingStamp = startVestingStamp;
+        }
+        uint256 cliffDuration = currentStamp.sub(_userStartVestingStamp);
+        uint256 depositShare = _depositAmount.mul(1e12).div(_lockedAmount);
+        return _userStartVestingStamp.add(cliffDuration.mul(depositShare).div(1e12));
     }
 
     // Update dev address by the previous dev.
@@ -543,8 +680,6 @@ contract MasterChef_BSC is Upgradeable {
 
 
     // Custom logic - helpers
-
-
     function getPoolInfos() external view returns(IMasterChef.PoolInfo[] memory poolInfos) {
         uint256 length = poolInfo.length;
         poolInfos = new IMasterChef.PoolInfo[](length);

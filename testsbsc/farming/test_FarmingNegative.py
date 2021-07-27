@@ -3,7 +3,7 @@
 import pytest
 from brownie import reverts, chain
 
-from testsbsc.conftest import initBalance, requireFork
+from conftest import initBalance, requireFork
 
 testdata = [
     ('BNB', 'iBNB', 0)
@@ -12,7 +12,7 @@ testdata = [
 INITIAL_LP_TOKEN_ACCOUNT_AMOUNT = 0.001 * 10 ** 18;
 
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
-def testFarming_deposit(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, bgovToken):
+def testFarming_deposit(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, govToken):
     # Precondition
     lpToken = tokens[lpTokenName]
     token = tokens[tokenName]
@@ -35,7 +35,7 @@ def testFarming_deposit(requireFork, tokens, tokenName, lpTokenName, pid, accoun
 
 
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
-def testFarming_withdrawal(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, bgovToken):
+def testFarming_withdrawal(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, govToken):
     lpToken = tokens[lpTokenName]
     token = tokens[tokenName]
     account1 = accounts[4]
@@ -66,7 +66,7 @@ def testFarming_changedev(requireFork, accounts, masterChef):
 
 # ownerOnly
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
-def testFarming_ownerOnly(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, bgovToken):
+def testFarming_ownerOnly(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, govToken):
     account1 = accounts[4]
     with reverts("Ownable: caller is not the owner"):
         masterChef.setLocked(pid, True, {'from': account1})
@@ -77,12 +77,15 @@ def testFarming_ownerOnly(requireFork, tokens, tokenName, lpTokenName, pid, acco
     with reverts("Ownable: caller is not the owner"):
         masterChef.setStartBlock(chain.height, {'from': account1})
     with reverts("Ownable: caller is not the owner"):
-        masterChef.add(87500, bgovToken, 1, {'from': account1})
+        masterChef.add(87500, govToken, 1, {'from': account1})
     with reverts("Ownable: caller is not the owner"):
         masterChef.massMigrateToBalanceOf({'from': account1})
+    with reverts("Ownable: caller is not the owner"):
+        masterChef.setGOVPerBlock(1, {'from': account1})
+
 
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
-def testFarming_checkPaused(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, bgovToken):
+def testFarming_checkPaused(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, govToken):
     with reverts("!paused"):
         masterChef.massMigrateToBalanceOf({'from': masterChef.owner()})
 
