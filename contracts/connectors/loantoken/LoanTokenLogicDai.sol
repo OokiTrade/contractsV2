@@ -3,7 +3,7 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+pragma solidity >=0.6.0 <0.8.0;
 pragma experimental ABIEncoderV2;
 
 import "./LoanTokenLogicStandard.sol";
@@ -11,7 +11,7 @@ import "../../interfaces/IChai.sol";
 
 
 contract LoanTokenLogicDai is LoanTokenLogicStandard {
-
+    using SafeMath for uint256;
     uint256 public constant RAY = 10**27;
 
     // Mainnet
@@ -51,6 +51,7 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
         address receiver,
         uint256 depositAmount)
         external
+        override
         nonReentrant
         returns (uint256 mintAmount)
     {
@@ -79,6 +80,7 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
         address receiver,
         uint256 burnAmount)
         external
+        override
         nonReentrant
         returns (uint256 loanAmountPaid)
     {
@@ -96,6 +98,7 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
         string calldata signature,
         bytes calldata data)
         external
+        override
         payable
         nonReentrant
         pausable(msg.sig)
@@ -132,7 +135,7 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
         }
 
         // arbitrary call
-        (bool success, bytes memory returnData) = arbitraryCaller.call.value(msg.value)(
+        (bool success, bytes memory returnData) = arbitraryCaller.call{value: msg.value}(
             abi.encodeWithSelector(
                 0xde064e0d, // sendCall(address,bytes)
                 target,
@@ -166,6 +169,7 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
         address receiver,
         bytes memory /*loanDataBytes*/) // arbitrary order data (for future use)
         internal
+        override
         returns (IBZx.LoanOpenData memory loanOpenData)
     {
         loanOpenData = super._borrow(
@@ -194,6 +198,7 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
         address trader,
         bytes memory loanDataBytes)
         internal
+        override
         returns (IBZx.LoanOpenData memory loanOpenData)
     {
         loanOpenData = super._marginTrade(
@@ -239,6 +244,7 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
     function totalSupplyInterestRate(
         uint256 assetSupply)
         public
+        override
         view
         returns (uint256)
     {
@@ -373,6 +379,7 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
         uint256[5] memory sentAmounts,
         uint256 withdrawalAmount)
         internal
+        override
         returns (uint256)
     {
         _dsrWithdraw(sentAmounts[1]);
@@ -394,8 +401,8 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
 
         uint256 rho = _pot.rho();
         uint256 chi = _pot.chi();
-        if (now > rho) {
-            chi = rmul(rpow(_pot.dsr(), now - rho, RAY), chi);
+        if (block.timestamp > rho) {
+            chi = rmul(rpow(_pot.dsr(), block.timestamp - rho, RAY), chi);
         }
 
         return chi;
@@ -428,6 +435,7 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
 
     function _underlyingBalance()
         internal
+        override
         view
         returns (uint256)
     {
@@ -456,6 +464,7 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
         uint256 assetBorrow,
         uint256 assetSupply)
         internal
+        override
         view
         returns (uint256)
     {

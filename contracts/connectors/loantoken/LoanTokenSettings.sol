@@ -3,7 +3,7 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+pragma solidity >=0.6.0 <0.8.0;
 pragma experimental ABIEncoderV2;
 
 import "./AdvancedTokenStorage.sol";
@@ -23,7 +23,7 @@ contract LoanTokenSettings is AdvancedTokenStorage {
     bytes32 internal constant iToken_LowerAdminContract = 0x34b31cff1dbd8374124bd4505521fc29cab0f9554a5386ba7d784a4e611c7e31;   // keccak256("iToken_LowerAdminContract")
 
 
-    function()
+    fallback()
         external
     {
         revert("fallback not allowed");
@@ -61,7 +61,7 @@ contract LoanTokenSettings is AdvancedTokenStorage {
         if (balance < amount)
             amount = balance;
 
-        (bool success,) = receiver.call.value(amount)("");
+        (bool success,) = receiver.call{value: amount}("");
         require(success,
             "transfer failed"
         );

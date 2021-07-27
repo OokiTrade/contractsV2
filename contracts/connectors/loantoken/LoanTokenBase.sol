@@ -3,14 +3,15 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+pragma solidity >=0.6.0 <0.8.0;
 
-import "@openzeppelin-2.5.0/math/SafeMath.sol";
+import "@openzeppelin-3.4.0/math/SafeMath.sol";
 import "../../utils/SignedSafeMath.sol";
 import "../../utils/ReentrancyGuard.sol";
-import "@openzeppelin-2.5.0/ownership/Ownable.sol";
-import "@openzeppelin-2.5.0/utils/Address.sol";
-import "../../interfaces/IWethERC20.sol";
+import "@openzeppelin-3.4.0/access/Ownable.sol";
+import "@openzeppelin-3.4.0/utils/Address.sol";
+import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
+import "../../interfaces/IWeth.sol";
 import "./Pausable.sol";
 
 

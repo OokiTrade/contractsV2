@@ -3,7 +3,7 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+pragma solidity >=0.6.0 <0.8.0;
 
 import "./AdvancedTokenStorage.sol";
 
@@ -21,7 +21,7 @@ contract LoanToken is AdvancedTokenStorage {
         _setTarget(_newTarget);
     }
 
-    function()
+    fallback()
         external
         payable
     {
@@ -32,8 +32,8 @@ contract LoanToken is AdvancedTokenStorage {
         address target = target_;
         bytes memory data = msg.data;
         assembly {
-            let result := delegatecall(gas, target, add(data, 0x20), mload(data), 0, 0)
-            let size := returndatasize
+            let result := delegatecall(gas(), target, add(data, 0x20), mload(data), 0, 0)
+            let size := returndatasize()
             let ptr := mload(0x40)
             returndatacopy(ptr, 0, size)
             switch result
