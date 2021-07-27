@@ -10,7 +10,7 @@ import "./Constants.sol";
 import "./Objects.sol";
 import "../mixins/EnumerableBytes32Set.sol";
 import "../utils/ReentrancyGuard.sol";
-import "../openzeppelin/Ownable.sol";
+import "@openzeppelin-2.5.0/ownership/Ownable.sol";
 import "@openzeppelin-2.5.0/math/SafeMath.sol";
 
 
