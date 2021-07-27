@@ -30,8 +30,8 @@ def testFarming_Vesting1(requireFork, tokens, tokenName, lpTokenName, pid, accou
 
     lpToken.approve(masterChef, 2**256-1, {'from': account1})
     depositAmount = lpBalance1
-    masterChef.set(GOV_POOL_PID, 10000000000, True, {'from': masterChef.owner()})
-    masterChef.set(pid, 10000000000, True, {'from': masterChef.owner()})
+    # masterChef.set(GOV_POOL_PID, 10000000000, True, {'from': masterChef.owner()})
+    # masterChef.set(pid, 10000000000, True, {'from': masterChef.owner()})
     govToken.approve(masterChef, 2**256-1, {'from': account1})
     masterChef.setLocked(pid, True, {'from': masterChef.owner()})
     masterChef.setLocked(GOV_POOL_PID, True, {'from': masterChef.owner()})

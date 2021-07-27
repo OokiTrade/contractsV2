@@ -17,13 +17,6 @@ masterChefProxy = Contract.from_abi("masterChefProxy", address=CHEF.address, abi
 masterChefImpl = MasterChef_BSC.deploy({'from': CHEF.owner()})
 masterChefProxy.replaceImplementation(masterChefImpl, {'from': CHEF.owner()})
 
-
-newMintCoordinator = MintCoordinator_BSC.deploy({'from': CHEF.owner()});
-newMintCoordinator.addMinter(CHEF)
-newMintCoordinator.transferOwnership(CHEF)
-CHEF.setMintCoordinator(newMintCoordinator, {'from': CHEF.owner()})
-BGOV.transferOwnership(newMintCoordinator, {'from': BGOV.owner()})
-
-
+CHEF.massMigrateToBalanceOf({'from': CHEF.owner()})
 CHEF.togglePause(False, {'from': CHEF.owner()})
 CHEF =  Contract.from_abi("CHEF", CHEF.address, interface.IMasterChef.abi)

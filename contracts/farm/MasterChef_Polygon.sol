@@ -415,11 +415,11 @@ contract MasterChef_Polygon is Upgradeable {
 
     function massMigrateToBalanceOf() public onlyOwner {
         require(!notPaused, "!paused");
-        massUpdatePools();
         uint256 length = poolInfo.length;
         for (uint256 pid = 0; pid < length; ++pid) {
             balanceOf[pid] = poolInfo[pid].lpToken.balanceOf(address(this));
         }
+        massUpdatePools();
     }
 
     // Update reward variables of the given pool to be up-to-date.
