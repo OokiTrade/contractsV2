@@ -11,3 +11,12 @@ for l in list:
 
 CHI = Contract.from_abi("CHI", "0x0000000000004946c0e9F43F4Dee607b0eF1fA1c", TestToken.abi)
 HELPER = Contract.from_abi("HELPER", "0xE05999ACcb887D32c9bd186e8C9dfE0e1E7814dE", HelperImpl.abi)
+
+
+masterChefProxy = Contract.from_abi("masterChefProxy", address=CHEF.address, abi=Proxy.abi)
+masterChefImpl = MasterChef_BSC.deploy({'from': CHEF.owner()})
+masterChefProxy.replaceImplementation(masterChefImpl, {'from': CHEF.owner()})
+
+CHEF.togglePause(False, {'from': CHEF.owner()})
+CHEF =  Contract.from_abi("CHEF", CHEF.address, interface.IMasterChef.abi)
+

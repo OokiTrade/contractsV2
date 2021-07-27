@@ -86,8 +86,18 @@ def masterChef(accounts, chain, MasterChef_Polygon, iMATIC, iETH, iUSDC, iWBTC, 
     masterChefImpl = MasterChef_Polygon.deploy({'from': masterChefProxy.owner()})
     masterChefProxy.replaceImplementation(masterChefImpl, {'from': masterChefProxy.owner()})
     masterChef = Contract.from_abi("masterChef", address=masterChefProxy, abi=MasterChef_Polygon.abi)
+
+
+    newMintCoordinator = MintCoordinator_Polygon.deploy({'from': masterChef.owner()});
+    newMintCoordinator.addMinter(masterChef)
+    newMintCoordinator.transferOwnership(masterChef)
+    masterChef.setMintCoordinator(newMintCoordinator, {'from': masterChef.owner()})
+    govToken.transferOwnership(newMintCoordinator, {'from': govToken.owner()})
+
+    masterChef.massMigrateToBalanceOf({'from': masterChef.owner()})
+
     masterChef.togglePause(False, {'from': masterChef.owner()})
-    masterChef.set(8, 190000, True, {'from': masterChef.owner()})
+
     return masterChef
 
 @pytest.fixture(scope="module", autouse=True)
