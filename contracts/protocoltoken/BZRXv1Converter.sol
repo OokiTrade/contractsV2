@@ -6,7 +6,7 @@
 pragma solidity 0.5.17;
 
 import "@openzeppelin-2.5.0/token/ERC20/IERC20.sol";
-import "../openzeppelin/Ownable.sol";
+import "@openzeppelin-2.5.0/ownership/Ownable.sol";
 
 
 contract BZRXv1Converter is Ownable {
