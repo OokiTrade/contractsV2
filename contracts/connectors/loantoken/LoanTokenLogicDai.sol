@@ -3,6 +3,8 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
+// SPDX-License-Identifier: APACHE 2.0
+
 pragma solidity >=0.6.0 <0.8.0;
 pragma experimental ABIEncoderV2;
 
@@ -27,7 +29,6 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
 
     constructor(
         address _newOwner)
-        public
         LoanTokenLogicStandard(_newOwner)
     {}
 

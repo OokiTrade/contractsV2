@@ -1,6 +1,6 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: APACHE 2.0
 
-pragma solidity 0.6.12;
+pragma solidity >=0.6.0 <0.8.0;
 
 import "@openzeppelin-3.4.0/token/ERC20/ERC20.sol";
 import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
@@ -9,7 +9,7 @@ import "@openzeppelin-3.4.0/access/Ownable.sol";
 
 // polygon (PGOV): 0xd5d84e75f48E75f01fb2EB6dFD8eA148eE3d0FEb
 contract GovToken is ERC20, Ownable {
-    constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) public {}
+    constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) {}
     
     function mint(address _to, uint256 _amount) public onlyOwner {
         _mint(_to, _amount);

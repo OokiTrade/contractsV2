@@ -3,7 +3,9 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: APACHE 2.0
+
+pragma solidity >=0.6.0 <0.8.0;
 
 import "../BZRXToken.sol";
 
@@ -14,7 +16,6 @@ contract BZRXTokenMock is BZRXToken {
 
     constructor()
         BZRXToken(msg.sender)
-        public
     {}
 
     function setBlock(
@@ -26,6 +27,7 @@ contract BZRXTokenMock is BZRXToken {
 
     function _getBlockNumber()
         internal
+        override
         view
         returns (uint256)
     {

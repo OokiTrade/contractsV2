@@ -12,8 +12,9 @@
 
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GNU
 
-pragma solidity 0.5.17;
+pragma solidity >=0.6.0 <0.8.0;
 
 
 contract TestWeth {
@@ -29,7 +30,7 @@ contract TestWeth {
     mapping (address => uint)                       public  balanceOf;
     mapping (address => mapping (address => uint))  public  allowance;
 
-    function() external payable {
+    fallback() external payable {
         deposit();
     }
     function deposit() public payable {

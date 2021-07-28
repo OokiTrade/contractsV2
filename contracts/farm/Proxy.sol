@@ -1,6 +1,6 @@
-pragma solidity 0.6.12;
+pragma solidity >=0.6.0 <0.8.0;
 
-/// SPDX-License-Identifier: MIT
+/// SPDX-License-Identifier: APACHE 2.0
 
 import "@openzeppelin-3.4.0/utils/Address.sol";
 import "./interfaces/Upgradeable.sol";
@@ -8,7 +8,7 @@ import "./interfaces/Upgradeable.sol";
 
 contract Proxy is Upgradeable {
 
-    constructor(address _impl) public payable {
+    constructor(address _impl) payable {
         replaceImplementation(_impl);
     }
 

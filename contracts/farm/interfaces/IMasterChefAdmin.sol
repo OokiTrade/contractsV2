@@ -1,9 +1,9 @@
-pragma solidity 0.6.12;
+pragma solidity >=0.6.0 <0.8.0;
 import "@openzeppelin-3.4.0/token/ERC20/IERC20.sol";
 import "./IMasterChef.sol";
 pragma experimental ABIEncoderV2;
 
-/// SPDX-License-Identifier: MIT
+/// SPDX-License-Identifier: APACHE 2.0
 
 
 

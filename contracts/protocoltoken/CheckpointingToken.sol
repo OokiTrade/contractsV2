@@ -3,9 +3,11 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: APACHE 2.0
 
-import "@openzeppelin-2.5.0/token/ERC20/IERC20.sol";
+pragma solidity >=0.6.0 <0.8.0;
+
+import "@openzeppelin-3.4.0/token/ERC20/IERC20.sol";
 import "./Checkpointing.sol";
 
 
@@ -28,6 +30,8 @@ contract CheckpointingToken is IERC20 {
     // override this function if a totalSupply should be tracked
     function totalSupply()
         public
+        virtual
+        override
         view
         returns (uint256)
     {
@@ -37,6 +41,7 @@ contract CheckpointingToken is IERC20 {
     function balanceOf(
         address _owner)
         public
+        override
         view
         returns (uint256)
     {
@@ -57,6 +62,7 @@ contract CheckpointingToken is IERC20 {
         address _owner,
         address _spender)
         public
+        override
         view
         returns (uint256)
     {
@@ -67,6 +73,7 @@ contract CheckpointingToken is IERC20 {
         address _spender,
         uint256 _value)
         public
+        override
         returns (bool)
     {
         allowances_[msg.sender][_spender] = _value;
@@ -78,6 +85,7 @@ contract CheckpointingToken is IERC20 {
         address _to,
         uint256 _value)
         public
+        override
         returns (bool)
     {
         return transferFrom(
@@ -92,6 +100,8 @@ contract CheckpointingToken is IERC20 {
         address _to,
         uint256 _value)
         public
+        virtual
+        override
         returns (bool)
     {
         uint256 previousBalanceFrom = balanceOfAt(_from, block.number);
@@ -121,6 +131,7 @@ contract CheckpointingToken is IERC20 {
 
     function _getBlockNumber()
         internal
+        virtual
         view
         returns (uint256)
     {
@@ -129,6 +140,7 @@ contract CheckpointingToken is IERC20 {
 
     function _getTimestamp()
         internal
+        virtual
         view
         returns (uint256)
     {

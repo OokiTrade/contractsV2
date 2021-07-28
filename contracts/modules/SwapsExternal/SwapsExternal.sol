@@ -3,7 +3,9 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: APACHE 2.0
+
+pragma solidity >=0.6.0 <0.8.0;
 pragma experimental ABIEncoderV2;
 
 import "../../core/State.sol";
@@ -14,6 +16,8 @@ import "../../connectors/gastoken/GasTokenUser.sol";
 
 
 contract SwapsExternal is State, VaultController, SwapsUser, GasTokenUser {
+    using SafeERC20 for IERC20;
+    using SafeMath for uint256;
 
     function initialize(
         address target)
@@ -95,7 +99,7 @@ contract SwapsExternal is State, VaultController, SwapsUser, GasTokenUser {
                 require(sourceToken == address(wethToken), "sourceToken mismatch");
             }
             require(msg.value == sourceTokenAmount, "sourceTokenAmount mismatch");
-            wethToken.deposit.value(sourceTokenAmount)();
+            wethToken.deposit{value: sourceTokenAmount}();
         } else {
             IERC20 sourceTokenContract = IERC20(sourceToken);
 

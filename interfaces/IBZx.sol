@@ -2,8 +2,11 @@
  * Copyright 2017-2020, bZeroX, LLC. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
-// SPDX-License-Identifier: Apache License, Version 2.0.
-pragma solidity >=0.5.0 <=0.8.4;
+
+// SPDX-License-Identifier: APACHE 2.0
+
+pragma solidity >=0.6.0 <0.8.0;
+
 pragma experimental ABIEncoderV2;
 
 /// @title A proxy interface for The Protocol

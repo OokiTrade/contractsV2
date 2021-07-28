@@ -3,7 +3,9 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: APACHE 2.0
+
+pragma solidity >=0.6.0 <0.8.0;
 
 import "../BZRXVestingToken.sol";
 
@@ -44,6 +46,7 @@ contract BZRXVestingTokenMock is BZRXVestingToken {
 
     function _getBlockNumber()
         internal
+        override
         view
         returns (uint256)
     {
@@ -56,6 +59,7 @@ contract BZRXVestingTokenMock is BZRXVestingToken {
 
     function _getTimestamp()
         internal
+        override
         view
         returns (uint256)
     {

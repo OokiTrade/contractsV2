@@ -3,7 +3,9 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: APACHE 2.0
+
+pragma solidity >=0.6.0 <0.8.0;
 
 import "../PriceFeeds.sol";
 import "../../swaps/ISwapsImpl.sol";
@@ -31,6 +33,7 @@ contract PriceFeedsTestnets is PriceFeeds {
 
     function _getFastGasPrice()
         internal
+        override
         view
         returns (uint256 gasPrice)
     {
@@ -41,6 +44,7 @@ contract PriceFeedsTestnets is PriceFeeds {
         address sourceToken,
         address destToken)
         internal
+        override
         view
         returns (uint256 rate, uint256 precision)
     {

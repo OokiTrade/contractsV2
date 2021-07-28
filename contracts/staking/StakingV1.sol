@@ -3,7 +3,9 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: APACHE 2.0
+
+pragma solidity >=0.6.0 <0.8.0;
 pragma experimental ABIEncoderV2;
 
 import "./StakingState.sol";
@@ -12,9 +14,16 @@ import "../interfaces/IVestingToken.sol";
 import "../interfaces/ILoanPool.sol";
 import "../../interfaces/IPriceFeeds.sol";
 import "../utils/MathUtil.sol";
+import "../protocoltoken/CheckpointingToken.sol";
 
 contract StakingV1 is StakingState, StakingConstants {
     using MathUtil for uint256;
+    using SafeMath for uint256;
+    using SafeERC20 for IERC20;
+    using Checkpointing for Checkpointing.History;
+    using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
+    
+
     modifier onlyEOA() {
         require(msg.sender == tx.origin, "unauthorized");
         _;

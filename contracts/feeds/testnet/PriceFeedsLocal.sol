@@ -3,19 +3,22 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: APACHE 2.0
+
+pragma solidity >=0.6.0 <0.8.0;
 
 import "../PriceFeeds.sol";
 
 
 contract PriceFeedsLocal is PriceFeeds {
-
+    using SafeMath for uint256;
     mapping (address => mapping (address => uint256)) public rates;
 
     //uint256 public slippageMultiplier = 100 ether;
 
     function _getFastGasPrice()
         internal
+        override
         view
         returns (uint256 gasPrice)
     {
@@ -26,6 +29,7 @@ contract PriceFeedsLocal is PriceFeeds {
         address sourceToken,
         address destToken)
         internal
+        override
         view
         returns (uint256 rate, uint256 precision)
     {

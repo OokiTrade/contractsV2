@@ -3,10 +3,12 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: APACHE 2.0
+
+pragma solidity >=0.6.0 <0.8.0;
 
 import "../core/Constants.sol";
-import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
+import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
 
 
 contract VaultController is Constants {
@@ -29,7 +31,7 @@ contract VaultController is Constants {
         internal
     {
         IWethERC20 _wethToken = wethToken;
-        _wethToken.deposit.value(value)();
+        _wethToken.deposit{value: value}();
 
         emit VaultDeposit(
             address(_wethToken),

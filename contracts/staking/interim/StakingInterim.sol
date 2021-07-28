@@ -3,7 +3,9 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: APACHE 2.0
+
+pragma solidity >=0.6.0 <0.8.0;
 pragma experimental ABIEncoderV2;
 
 import "./StakingInterimState.sol";
@@ -12,6 +14,10 @@ import "../../utils/MathUtil.sol";
 
 contract StakingInterim is StakingInterimState {
     using MathUtil for uint256;
+    using SafeMath for uint256;
+    using SafeERC20 for IERC20;
+    using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
+
     ILoanPool public constant iBZRX = ILoanPool(0x18240BD9C07fA6156Ce3F3f61921cC82b2619157);
 
     struct RepStakedTokens {
@@ -466,6 +472,7 @@ contract StakingInterim is StakingInterimState {
 
     function _getTimestamp()
         internal
+        virtual
         view
         returns (uint256)
     {

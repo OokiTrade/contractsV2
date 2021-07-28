@@ -3,7 +3,9 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: APACHE 2.0
+
+pragma solidity >=0.6.0 <0.8.0;
 
 
 contract LoanMaintenanceEvents {
@@ -76,7 +78,7 @@ contract LoanMaintenanceEvents {
         uint256 startRate; // collateralToLoanRate
         uint256 startMargin; // margin with which loan was open
         uint256 maintenanceMargin; // maintenance margin
-        uint256 currentMargin; /// current margin
+        uint256 currentMargin; // current margin
         uint256 maxLoanTerm; // maximum term of the loan
         uint256 maxLiquidatable; // current max liquidatable
         uint256 maxSeizable; // current max seizable
