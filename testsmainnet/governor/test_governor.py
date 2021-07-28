@@ -86,7 +86,7 @@ def testGovernance(requireMainnetFork, GOVERNANCE_DELEGATOR, TIMELOCK, STAKING, 
     STAKING.setGovernor(GOVERNANCE_DELEGATOR, {"from": bzxOwner})
 
     # init governance
-    GOVERNANCE_DELEGATOR._initiate()
+    #GOVERNANCE_DELEGATOR._initiate()
 
     # make a proposal to change iUSDC name
     newName = iUSDC.name() + "1"
@@ -145,7 +145,7 @@ def testGovernanceProposeCancel(requireMainnetFork, GOVERNANCE_DELEGATOR, TIMELO
     STAKING.setGovernor(GOVERNANCE_DELEGATOR, {"from": bzxOwner})
 
     # init governance
-    GOVERNANCE_DELEGATOR._initiate()
+    #GOVERNANCE_DELEGATOR._initiate()
 
     # make a proposal to change iUSDC name
     newName = iUSDC.name() + "1"
@@ -187,7 +187,7 @@ def testGovernanceProposeVotingActiveCancel(requireMainnetFork, GOVERNANCE_DELEG
     STAKING.setGovernor(GOVERNANCE_DELEGATOR, {"from": bzxOwner})
 
     # init governance
-    GOVERNANCE_DELEGATOR._initiate()
+    #GOVERNANCE_DELEGATOR._initiate()
 
     # make a proposal to change iUSDC name
     newName = iUSDC.name() + "1"
@@ -232,7 +232,7 @@ def testGovernanceProposeVotingActiveVotingEndsDefeated(requireMainnetFork, GOVE
     STAKING.setGovernor(GOVERNANCE_DELEGATOR, {"from": bzxOwner})
 
     # init governance
-    GOVERNANCE_DELEGATOR._initiate()
+    #GOVERNANCE_DELEGATOR._initiate()
 
     # make a proposal to change iUSDC name
     newName = iUSDC.name() + "1"
@@ -287,7 +287,7 @@ def testGovernanceReallyComplexTXToSetITokens(requireMainnetFork, GOVERNANCE_DEL
     STAKING.setGovernor(GOVERNANCE_DELEGATOR, {"from": bzxOwner})
 
     # init governance
-    GOVERNANCE_DELEGATOR._initiate()
+    #GOVERNANCE_DELEGATOR._initiate()
 
     # begining of building calldata arrays 
 
