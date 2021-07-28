@@ -182,7 +182,7 @@ contract SwapsImplKyber is State, ISwapsImpl {
         override
         view
         returns (uint256 amountIn, address midToken){
-            require(false, "not implemented");
+            revert("not implemented");
         }
 
     function dexAmountOut(
@@ -193,6 +193,6 @@ contract SwapsImplKyber is State, ISwapsImpl {
         override
         view
         returns (uint256 amountOut, address midToken){
-            require(false, "not implemented");
+            revert("not implemented");
         }
 }
