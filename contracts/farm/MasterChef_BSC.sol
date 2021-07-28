@@ -388,7 +388,7 @@ contract MasterChef_BSC is Upgradeable {
     }
 
     function lockedRewards(address _user)
-        external
+        public
         view
         returns (uint256)
     {
