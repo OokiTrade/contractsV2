@@ -25,7 +25,7 @@ def GOVERNANCE_DELEGATOR(accounts, GovernorBravoDelegator, STAKING, TIMELOCK, Go
     ADMIN = accounts[0]
     MIN_VOTINGPEROD = 5760
     MIN_VOTING_DELAY = 1
-    MIN_PROPOSAL_THRESHOLD = 50000e18
+    MIN_PROPOSAL_THRESHOLD = 5150000e18
     impl = accounts[0].deploy(GovernorBravoDelegate)
     governorBravoDelegator = accounts[0].deploy(GovernorBravoDelegator, TIMELOCK, STAKING, ADMIN, impl, MIN_VOTINGPEROD, MIN_VOTING_DELAY, MIN_PROPOSAL_THRESHOLD) 
     return Contract.from_abi("governorBravoDelegator", address=governorBravoDelegator, abi=GovernorBravoDelegate.abi, owner=accounts[0])
@@ -71,6 +71,7 @@ def loadContractFromAbi(address, alias, abi):
 
 
 def testGovernance(requireMainnetFork, GOVERNANCE_DELEGATOR, TIMELOCK, STAKING, TOKEN_SETTINGS, iUSDC, accounts):  
+    proposer = "0x95BeeC2457838108089fcD0E059659A4E60B091A"
     bzxOwner = "0xB7F72028D9b502Dc871C444363a7aC5A52546608"
     
     # init timelock below
@@ -92,7 +93,7 @@ def testGovernance(requireMainnetFork, GOVERNANCE_DELEGATOR, TIMELOCK, STAKING, 
     calldata = TOKEN_SETTINGS.initialize.encode_input(iUSDC.loanTokenAddress(), newName, iUSDC.symbol())
     calldata2 = iUSDC.updateSettings.encode_input(TOKEN_SETTINGS, calldata)
 
-    tx = GOVERNANCE_DELEGATOR.propose([iUSDC.address],[0],[""],[calldata2],"asdf", {"from": bzxOwner})
+    tx = GOVERNANCE_DELEGATOR.propose([iUSDC.address],[0],[""],[calldata2],"asdf", {"from": proposer})
     proposalCount = GOVERNANCE_DELEGATOR.proposalCount()
     proposal = GOVERNANCE_DELEGATOR.proposals(proposalCount)
     id = proposal[0]
@@ -129,6 +130,7 @@ def testGovernance(requireMainnetFork, GOVERNANCE_DELEGATOR, TIMELOCK, STAKING, 
 
 
 def testGovernanceProposeCancel(requireMainnetFork, GOVERNANCE_DELEGATOR, TIMELOCK, STAKING, TOKEN_SETTINGS, iUSDC, accounts):  
+    proposer = "0x95BeeC2457838108089fcD0E059659A4E60B091A"
     bzxOwner = "0xB7F72028D9b502Dc871C444363a7aC5A52546608"
     
     # init timelock below
@@ -150,7 +152,7 @@ def testGovernanceProposeCancel(requireMainnetFork, GOVERNANCE_DELEGATOR, TIMELO
     calldata = TOKEN_SETTINGS.initialize.encode_input(iUSDC.loanTokenAddress(), newName, iUSDC.symbol())
     calldata2 = iUSDC.updateSettings.encode_input(TOKEN_SETTINGS, calldata)
 
-    tx = GOVERNANCE_DELEGATOR.propose([iUSDC.address],[0],[""],[calldata2],"asdf", {"from": bzxOwner})
+    tx = GOVERNANCE_DELEGATOR.propose([iUSDC.address],[0],[""],[calldata2],"asdf", {"from": proposer})
     proposalCount = GOVERNANCE_DELEGATOR.proposalCount()
     proposal = GOVERNANCE_DELEGATOR.proposals(proposalCount)
     id = proposal[0]
@@ -170,6 +172,7 @@ def testGovernanceProposeCancel(requireMainnetFork, GOVERNANCE_DELEGATOR, TIMELO
 
 
 def testGovernanceProposeVotingActiveCancel(requireMainnetFork, GOVERNANCE_DELEGATOR, TIMELOCK, STAKING, TOKEN_SETTINGS, iUSDC, accounts):  
+    proposer = "0x95BeeC2457838108089fcD0E059659A4E60B091A"
     bzxOwner = "0xB7F72028D9b502Dc871C444363a7aC5A52546608"
     
     # init timelock below
@@ -191,7 +194,7 @@ def testGovernanceProposeVotingActiveCancel(requireMainnetFork, GOVERNANCE_DELEG
     calldata = TOKEN_SETTINGS.initialize.encode_input(iUSDC.loanTokenAddress(), newName, iUSDC.symbol())
     calldata2 = iUSDC.updateSettings.encode_input(TOKEN_SETTINGS, calldata)
 
-    tx = GOVERNANCE_DELEGATOR.propose([iUSDC.address],[0],[""],[calldata2],"asdf", {"from": bzxOwner})
+    tx = GOVERNANCE_DELEGATOR.propose([iUSDC.address],[0],[""],[calldata2],"asdf", {"from": proposer})
     proposalCount = GOVERNANCE_DELEGATOR.proposalCount()
     proposal = GOVERNANCE_DELEGATOR.proposals(proposalCount)
     id = proposal[0]
@@ -214,6 +217,7 @@ def testGovernanceProposeVotingActiveCancel(requireMainnetFork, GOVERNANCE_DELEG
 
 
 def testGovernanceProposeVotingActiveVotingEndsDefeated(requireMainnetFork, GOVERNANCE_DELEGATOR, TIMELOCK, STAKING, TOKEN_SETTINGS, iUSDC, accounts):  
+    proposer = "0x95BeeC2457838108089fcD0E059659A4E60B091A"
     bzxOwner = "0xB7F72028D9b502Dc871C444363a7aC5A52546608"
     
     # init timelock below
@@ -235,7 +239,7 @@ def testGovernanceProposeVotingActiveVotingEndsDefeated(requireMainnetFork, GOVE
     calldata = TOKEN_SETTINGS.initialize.encode_input(iUSDC.loanTokenAddress(), newName, iUSDC.symbol())
     calldata2 = iUSDC.updateSettings.encode_input(TOKEN_SETTINGS, calldata)
 
-    tx = GOVERNANCE_DELEGATOR.propose([iUSDC.address],[0],[""],[calldata2],"asdf", {"from": bzxOwner})
+    tx = GOVERNANCE_DELEGATOR.propose([iUSDC.address],[0],[""],[calldata2],"asdf", {"from": proposer})
     proposalCount = GOVERNANCE_DELEGATOR.proposalCount()
     proposal = GOVERNANCE_DELEGATOR.proposals(proposalCount)
     id = proposal[0]
@@ -268,6 +272,7 @@ def testGovernanceProposeVotingActiveVotingEndsDefeated(requireMainnetFork, GOVE
 
 
 def testGovernanceReallyComplexTXToSetITokens(requireMainnetFork, GOVERNANCE_DELEGATOR, TIMELOCK, STAKING, TOKEN_SETTINGS, iUSDC, accounts,TestToken, LoanTokenLogicStandard, TokenRegistry, LoanToken, LoanTokenSettings, interface, PriceFeeds, ProtocolSettings, LoanTokenSettingsLowerAdmin):  
+    proposer = "0x95BeeC2457838108089fcD0E059659A4E60B091A"
     bzxOwner = accounts.at("0xB7F72028D9b502Dc871C444363a7aC5A52546608", force=True)
     
     # init timelock below
@@ -446,7 +451,7 @@ def testGovernanceReallyComplexTXToSetITokens(requireMainnetFork, GOVERNANCE_DEL
         [""] * len(calldataArray),
         calldataArray,
         "asdf", 
-        {"from": bzxOwner})
+        {"from": proposer})
     proposalCount = GOVERNANCE_DELEGATOR.proposalCount()
     proposal = GOVERNANCE_DELEGATOR.proposals(proposalCount)
     id = proposal[0]

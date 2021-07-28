@@ -51,6 +51,9 @@ contract GovernorBravoDelegatorStorage {
 
     /// @notice Active brains of Governor
     address public implementation;
+
+    /// @notice The address of the Governor Guardian
+    address public guardian;
 }
 
 
@@ -77,10 +80,10 @@ contract GovernorBravoDelegateStorageV1 is GovernorBravoDelegatorStorage {
     /// @notice The total number of proposals
     uint public proposalCount;
 
-    /// @notice The address of the Compound Protocol Timelock
+    /// @notice The address of the bZx Protocol Timelock
     TimelockInterface public timelock;
 
-    /// @notice The address of the Compound governance token
+    /// @notice The address of the bZx governance token
     StakingInterface public staking;
 
     /// @notice The official record of all proposals ever proposed

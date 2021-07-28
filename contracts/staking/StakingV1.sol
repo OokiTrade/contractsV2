@@ -13,8 +13,10 @@ import "../interfaces/ILoanPool.sol";
 import "../../interfaces/IPriceFeeds.sol";
 import "../utils/MathUtil.sol";
 
+
 contract StakingV1 is StakingState, StakingConstants {
     using MathUtil for uint256;
+
     modifier onlyEOA() {
         require(msg.sender == tx.origin, "unauthorized");
         _;

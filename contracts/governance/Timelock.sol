@@ -1,7 +1,7 @@
 
 pragma solidity 0.5.17;
 
-import "../openzeppelin/SafeMath.sol";
+import "@openzeppelin-2.5.0/math/SafeMath.sol";
 
 
 contract Timelock {
