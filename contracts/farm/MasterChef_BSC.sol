@@ -509,15 +509,14 @@ contract MasterChef_BSC is Upgradeable {
                 .mul(pool.accGOVPerShare)
                 .div(1e12)
                 .sub(user.rewardDebt);
+        }
 
-            if (_pid == GOV_POOL_ID) {
-                pendingAlt = _pendingAltRewards(msg.sender);
-
-                //Update userAltRewardsRounds even if user got nothing in the current round
-                uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
-                if (_altRewardsPerShare.length > 0) {
-                    userAltRewardsRounds[msg.sender] = _altRewardsPerShare.length;
-                }
+        if (_pid == GOV_POOL_ID) {
+            pendingAlt = _pendingAltRewards(msg.sender);
+            //Update userAltRewardsRounds even if user got nothing in the current round
+            uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
+            if (_altRewardsPerShare.length > 0) {
+                userAltRewardsRounds[msg.sender] = _altRewardsPerShare.length;
             }
         }
 
