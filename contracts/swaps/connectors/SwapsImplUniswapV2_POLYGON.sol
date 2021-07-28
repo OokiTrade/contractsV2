@@ -3,11 +3,13 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: APACHE 2.0
+
+pragma solidity >=0.6.0 <0.8.0;
 
 import "../../core/State.sol";
 import "../../interfaces/IUniswapV2Router.sol";
-import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
+import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
 import "../ISwapsImpl.sol";
 
 
@@ -31,6 +33,7 @@ contract SwapsImplUniswapV2_POLYGON is State, ISwapsImpl {
         uint256 maxSourceTokenAmount,
         uint256 requiredDestTokenAmount)
         public
+        override
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
     {
         require(sourceTokenAddress != destTokenAddress, "source == dest");
@@ -62,6 +65,7 @@ contract SwapsImplUniswapV2_POLYGON is State, ISwapsImpl {
         address destTokenAddress,
         uint256 sourceTokenAmount)
         public
+        override
         view
         returns (uint256 expectedRate)
     {
@@ -73,6 +77,7 @@ contract SwapsImplUniswapV2_POLYGON is State, ISwapsImpl {
         address destTokenAddress,
         uint256 amountIn)
         public
+        override
         view
         returns (uint256 amountOut, address midToken)
     {
@@ -142,6 +147,7 @@ contract SwapsImplUniswapV2_POLYGON is State, ISwapsImpl {
         address destTokenAddress,
         uint256 amountOut)
         public
+        override
         view
         returns (uint256 amountIn, address midToken)
     {
@@ -260,6 +266,7 @@ contract SwapsImplUniswapV2_POLYGON is State, ISwapsImpl {
     function setSwapApprovals(
         address[] memory tokens)
         public
+        override
     {
         for (uint256 i = 0; i < tokens.length; i++) {
             IERC20(tokens[i]).safeApprove(uniswapRouter, 0);

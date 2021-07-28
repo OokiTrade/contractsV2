@@ -3,7 +3,9 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: APACHE 2.0
+
+pragma solidity >=0.6.0 <0.8.0;
 pragma experimental ABIEncoderV2;
 
 import "../../core/State.sol";
@@ -14,6 +16,9 @@ import "../../swaps/SwapsUser.sol";
 
 
 contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUser, SwapsUser {
+    using SafeMath for uint256;
+    using MathUtil for uint256;
+    using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
 
     function initialize(
         address target)

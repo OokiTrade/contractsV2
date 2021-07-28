@@ -3,13 +3,16 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: APACHE 2.0
+
+pragma solidity >=0.6.0 <0.8.0;
 
 import "./CheckpointingToken.sol";
 
 
 contract BZRXToken is CheckpointingToken {
-
+    using Checkpointing for Checkpointing.History;
+    
     string public constant name = "bZx Protocol Token";
     string public constant symbol = "BZRX";
     uint8 public constant decimals = 18;
@@ -18,7 +21,6 @@ contract BZRXToken is CheckpointingToken {
 
     constructor(
         address _to)
-        public
     {
         balancesHistory_[_to].addCheckpoint(_getBlockNumber(), totalSupply_);
         emit Transfer(address(0), _to, totalSupply_);
@@ -26,6 +28,7 @@ contract BZRXToken is CheckpointingToken {
 
     function totalSupply()
         public
+        override
         view
         returns (uint256)
     {

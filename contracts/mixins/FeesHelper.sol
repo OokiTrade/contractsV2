@@ -3,10 +3,12 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: APACHE 2.0
+
+pragma solidity >=0.6.0 <0.8.0;
 
 import "../core/State.sol";
-import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
+import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
 import "../../interfaces/IPriceFeeds.sol";
 import "../events/FeesEvents.sol";
 import "../utils/MathUtil.sol";
@@ -14,6 +16,7 @@ import "../utils/MathUtil.sol";
 contract FeesHelper is State, FeesEvents {
     using SafeERC20 for IERC20;
     using MathUtil for uint256;
+    using SafeMath for uint256;
 
     // calculate trading fee
     function _getTradingFee(

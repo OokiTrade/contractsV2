@@ -3,9 +3,11 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: APACHE 2.0
 
-// import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
+pragma solidity >=0.6.0 <0.8.0;
+
+// import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
 import "../core/State.sol";
 import "../mixins/VaultController.sol";
 import "./FeesHelper.sol";
@@ -13,6 +15,8 @@ import "./FeesHelper.sol";
 
 contract InterestUser is State, VaultController, FeesHelper {
     using SafeERC20 for IERC20;
+    using MathUtil for uint256;
+    using SafeMath for uint256;
 
     function _payInterest(
         address lender,

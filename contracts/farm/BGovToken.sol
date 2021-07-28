@@ -1,6 +1,6 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: APACHE 2.0
 
-pragma solidity 0.6.12;
+pragma solidity >=0.6.0 <0.8.0;
 
 import "@openzeppelin-3.4.0/token/ERC20/ERC20.sol";
 import "@openzeppelin-3.4.0/access/Ownable.sol";
@@ -8,6 +8,8 @@ import "@openzeppelin-3.4.0/access/Ownable.sol";
 
 // BGovToken with Governance.
 contract BGovToken is ERC20("BGOV Token", "BGOV"), Ownable {
+    using SafeMath for uint256;
+
     /// @notice Creates `_amount` token to `_to`. Must only be called by the owner (MasterChef).
     function mint(address _to, uint256 _amount) public onlyOwner {
         _mint(_to, _amount);
@@ -112,7 +114,7 @@ contract BGovToken is ERC20("BGOV Token", "BGOV"), Ownable {
         address signatory = ecrecover(digest, v, r, s);
         require(signatory != address(0), "BGOV::delegateBySig: invalid signature");
         require(nonce == nonces[signatory]++, "BGOV::delegateBySig: invalid nonce");
-        require(now <= expiry, "BGOV::delegateBySig: signature expired");
+        require(block.timestamp <= expiry, "BGOV::delegateBySig: signature expired");
         return _delegate(signatory, delegatee);
     }
 

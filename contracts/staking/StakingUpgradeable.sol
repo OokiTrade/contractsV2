@@ -3,9 +3,11 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: APACHE 2.0
 
-import "@openzeppelin-2.5.0/ownership/Ownable.sol";
+pragma solidity >=0.6.0 <0.8.0;
+
+import "@openzeppelin-3.4.0/access/Ownable.sol";
 
 
 contract StakingUpgradeable is Ownable {

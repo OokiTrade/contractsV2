@@ -1,7 +1,7 @@
-pragma solidity 0.6.12;
+pragma solidity >=0.6.0 <0.8.0;
 pragma experimental ABIEncoderV2;
 
-/// SPDX-License-Identifier: MIT
+/// SPDX-License-Identifier: APACHE 2.0
 
 import "@openzeppelin-3.4.0/token/ERC20/IERC20.sol";
 import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
@@ -364,7 +364,7 @@ contract MasterChef_BSC is Upgradeable {
             return 0;
         }
 
-        return calculateUnlockedRewards(_locked, now, userStartVestingStamp[_user]);
+        return calculateUnlockedRewards(_locked, block.timestamp, userStartVestingStamp[_user]);
     }
 
     function calculateUnlockedRewards(uint256 _locked, uint256 currentStamp, uint256 _userStartVestingStamp)
@@ -638,7 +638,7 @@ contract MasterChef_BSC is Upgradeable {
             uint256 _locked = _lockedRewards[msg.sender];
             _lockedRewards[msg.sender] = _locked.add(_amount);
 
-            userStartVestingStamp[msg.sender] = calculateVestingStartStamp(now, userStartVestingStamp[msg.sender], _locked, _amount);
+            userStartVestingStamp[msg.sender] = calculateVestingStartStamp(block.timestamp, userStartVestingStamp[msg.sender], _locked, _amount);
             _deposit(GOV_POOL_ID, _amount);
         } else {
             GOV.transfer(msg.sender, _amount);

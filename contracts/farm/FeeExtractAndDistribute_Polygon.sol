@@ -3,7 +3,9 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.6.12;
+// SPDX-License-Identifier: APACHE 2.0
+
+pragma solidity >=0.6.0 <0.8.0;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
@@ -155,7 +157,7 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable {
             }
 
             IWethERC20(MATIC).withdraw(maticOutput + sellAmount + distributeAmount);
-            chef.addAltReward.value(distributeAmount);
+            chef.addAltReward{value: distributeAmount}();
             Address.sendValue(fundsWallet, maticOutput + sellAmount);
 
             emit ExtractAndDistribute();

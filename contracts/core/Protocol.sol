@@ -3,7 +3,9 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: APACHE 2.0
+
+pragma solidity >=0.6.0 <0.8.0;
 pragma experimental ABIEncoderV2;
 
 import "./State.sol";
@@ -11,7 +13,7 @@ import "./State.sol";
 
 contract bZxProtocol is State {
 
-    function()
+    fallback()
         external
         payable
     {
@@ -24,8 +26,8 @@ contract bZxProtocol is State {
 
         bytes memory data = msg.data;
         assembly {
-            let result := delegatecall(gas, target, add(data, 0x20), mload(data), 0, 0)
-            let size := returndatasize
+            let result := delegatecall(gas(), target, add(data, 0x20), mload(data), 0, 0)
+            let size := returndatasize()
             let ptr := mload(0x40)
             returndatacopy(ptr, 0, size)
             switch result

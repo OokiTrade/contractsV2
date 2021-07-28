@@ -3,15 +3,17 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: APACHE 2.0
+
+pragma solidity >=0.6.0 <0.8.0;
 
 
 import "./Constants.sol";
 import "./Objects.sol";
 import "../mixins/EnumerableBytes32Set.sol";
 import "../utils/ReentrancyGuard.sol";
-import "@openzeppelin-2.5.0/ownership/Ownable.sol";
-import "@openzeppelin-2.5.0/math/SafeMath.sol";
+import "@openzeppelin-3.4.0/access/Ownable.sol";
+import "@openzeppelin-3.4.0/math/SafeMath.sol";
 
 
 contract State is Constants, Objects, ReentrancyGuard, Ownable {

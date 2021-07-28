@@ -1,7 +1,7 @@
-pragma solidity 0.6.12;
+pragma solidity >=0.6.0 <0.8.0;
 pragma experimental ABIEncoderV2;
 
-/// SPDX-License-Identifier: MIT
+/// SPDX-License-Identifier: APACHE 2.0
 import "../GovToken.sol";
 
 

@@ -3,7 +3,9 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: APACHE 2.0
+
+pragma solidity >=0.6.0 <0.8.0;
 pragma experimental ABIEncoderV2;
 
 import "../../core/State.sol";
@@ -16,6 +18,9 @@ import "../../interfaces/ILoanPool.sol";
 
 
 contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, InterestUser, SwapsUser, LiquidationHelper {
+    using SafeMath for uint256;
+    using MathUtil for uint256;
+    using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
 
     enum CloseTypes {
         Deposit,
@@ -577,7 +582,7 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
             } else {
                 require(loanToken == address(wethToken), "wrong asset sent");
                 require(msg.value >= principalNeeded, "not enough ether");
-                wethToken.deposit.value(principalNeeded)();
+                wethToken.deposit{value: principalNeeded}();
                 if (receiver != address(this)) {
                     vaultTransfer(
                         loanToken,

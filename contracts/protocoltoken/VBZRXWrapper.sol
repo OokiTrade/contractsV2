@@ -3,9 +3,11 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: APACHE 2.0
 
-import "@openzeppelin-2.5.0/math/SafeMath.sol";
+pragma solidity >=0.6.0 <0.8.0;
+
+import "@openzeppelin-3.4.0/math/SafeMath.sol";
 import "../interfaces/IVestingToken.sol";
 import "../proxies/0_5/Upgradeable_0_5.sol";
 

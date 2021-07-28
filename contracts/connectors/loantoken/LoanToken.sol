@@ -3,6 +3,8 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
+// SPDX-License-Identifier: APACHE 2.0
+
 pragma solidity >=0.6.0 <0.8.0;
 
 import "./AdvancedTokenStorage.sol";
@@ -15,7 +17,6 @@ contract LoanToken is AdvancedTokenStorage {
     constructor(
         address _newOwner,
         address _newTarget)
-        public
     {
         transferOwnership(_newOwner);
         _setTarget(_newTarget);

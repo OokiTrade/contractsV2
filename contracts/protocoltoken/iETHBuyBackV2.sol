@@ -3,11 +3,13 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: APACHE 2.0
 
-import "@openzeppelin-2.5.0/token/ERC20/IERC20.sol";
-import "@openzeppelin-2.5.0/ownership/Ownable.sol";
-import "@openzeppelin-2.5.0/math/SafeMath.sol";
+pragma solidity >=0.6.0 <0.8.0;
+
+import "@openzeppelin-3.4.0/token/ERC20/IERC20.sol";
+import "@openzeppelin-3.4.0/access/Ownable.sol";
+import "@openzeppelin-3.4.0/math/SafeMath.sol";
 
 
 interface iETHBuyBackV1 {
@@ -61,7 +63,6 @@ contract iETHBuyBackV2 is Ownable {
         uint256 _iETHSwapRate,
         uint256 _iETHSwapRateWL,
         address _newOwner)
-        public
     {
         iETHSwapRate = _iETHSwapRate;
         iETHSwapRateWL = _iETHSwapRateWL;

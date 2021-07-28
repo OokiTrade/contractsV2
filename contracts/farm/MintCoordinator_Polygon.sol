@@ -3,7 +3,9 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.6.12;
+// SPDX-License-Identifier: APACHE 2.0
+
+pragma solidity >=0.6.0 <0.8.0;
 
 import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
 import "@openzeppelin-3.4.0/access/Ownable.sol";
@@ -29,7 +31,7 @@ contract MintCoordinator_Polygon is Ownable {
 
     uint256 public constant MAX_MINTED = 250*1e6*1e18;
 
-    constructor() public {
+    constructor() {
         // adding MasterChef
         minters[0xd39Ff512C3e55373a30E94BB1398651420Ae1D43] = true;
     }

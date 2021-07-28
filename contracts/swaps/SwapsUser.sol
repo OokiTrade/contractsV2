@@ -3,7 +3,9 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: APACHE 2.0
+
+pragma solidity >=0.6.0 <0.8.0;
 
 import "../core/State.sol";
 import "../../interfaces/IPriceFeeds.sol";
@@ -13,7 +15,8 @@ import "./ISwapsImpl.sol";
 
 
 contract SwapsUser is State, SwapsEvents, FeesHelper {
-
+    using SafeMath for uint256;
+    
     function _loanSwap(
         bytes32 loanId,
         address sourceToken,
@@ -180,7 +183,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
         if (!success) {
             assembly {
                 let ptr := mload(0x40)
-                let size := returndatasize
+                let size := returndatasize()
                 returndatacopy(ptr, 0, size)
                 revert(ptr, size)
             }
