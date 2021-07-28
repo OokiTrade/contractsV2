@@ -51,7 +51,7 @@ contract MasterChef_Polygon is Upgradeable {
         uint256 amount
     );
 
-    MintCoordinator_Polygon public coordinator = MintCoordinator_Polygon(0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440);
+    MintCoordinator_Polygon public constant coordinator = MintCoordinator_Polygon(0x52fb1688B829BDb2BF70058f0BBfFD38af26cc2b);
 
     mapping(IERC20 => bool) public poolExists;
 
@@ -68,12 +68,6 @@ contract MasterChef_Polygon is Upgradeable {
 
     // total locked rewards for a user
     mapping(address => uint256) internal _lockedRewards;
-
-
-
-    function setMintCoordinator(address newMintCoordinator) public onlyOwner {
-        coordinator = MintCoordinator_Polygon(newMintCoordinator);
-    }
 
     bool public notPaused;
 
@@ -328,7 +322,7 @@ contract MasterChef_Polygon is Upgradeable {
         if (_amount == 0)
             return 0;
 
-        uint256 _lastClaimedRound = userAltRewardsRounds[msg.sender];
+        uint256 _lastClaimedRound = userAltRewardsRounds[_user];
         uint256 currentAccumulatedAltRewards = _altRewardsRounds[_currentRound-1];
 
         //Never claimed yet
@@ -394,7 +388,7 @@ contract MasterChef_Polygon is Upgradeable {
     }
 
     function lockedRewards(address _user)
-        external
+        public
         view
         returns (uint256)
     {
@@ -415,11 +409,11 @@ contract MasterChef_Polygon is Upgradeable {
 
     function massMigrateToBalanceOf() public onlyOwner {
         require(!notPaused, "!paused");
-        massUpdatePools();
         uint256 length = poolInfo.length;
         for (uint256 pid = 0; pid < length; ++pid) {
             balanceOf[pid] = poolInfo[pid].lpToken.balanceOf(address(this));
         }
+        massUpdatePools();
     }
 
     // Update reward variables of the given pool to be up-to-date.
@@ -579,11 +573,10 @@ contract MasterChef_Polygon is Upgradeable {
         uint256 pendingAlt;
         IERC20 lpToken = pool.lpToken;
         if (lpToken == GOV) {
-            uint256 availableAmount = userAmount.sub(_lockedRewards[msg.sender]);
+            uint256 availableAmount = userAmount.sub(lockedRewards(msg.sender));
             if (_amount > availableAmount) {
                 _amount = availableAmount;
             }
-
             pendingAlt = _pendingAltRewards(msg.sender);
             //Update userAltRewardsRounds even if user got nothing in the current round
             uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
@@ -596,6 +589,7 @@ contract MasterChef_Polygon is Upgradeable {
         userAmount = userAmount.sub(_amount);
         user.rewardDebt = userAmount.mul(pool.accGOVPerShare).div(1e12);
         user.amount = userAmount;
+
         lpToken.safeTransfer(address(msg.sender), _amount);
         emit Withdraw(msg.sender, _pid, _amount);
         //user vestingStartStamp recalculation is done in safeGOVTransfer
@@ -614,7 +608,7 @@ contract MasterChef_Polygon is Upgradeable {
         uint256 pendingAlt;
         IERC20 lpToken = pool.lpToken;
         if (lpToken == GOV) {
-            uint256 availableAmount = _amount.sub(_lockedRewards[msg.sender]);
+            uint256 availableAmount = _amount.sub(lockedRewards(msg.sender));
             if (_amount > availableAmount) {
                 _amount = availableAmount;
             }

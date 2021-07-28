@@ -16,7 +16,8 @@ interface GovTokenLike {
     function totalSupply() external returns (uint256);
 }
 
-// polygon: 0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440
+// polygon: 0x52fb1688B829BDb2BF70058f0BBfFD38af26cc2b
+// polygon (old): 0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440
 contract MintCoordinator_Polygon is Ownable {
     using SafeMath for uint256;
 
@@ -27,6 +28,11 @@ contract MintCoordinator_Polygon is Ownable {
     uint256 public totalMinted;
 
     uint256 public constant MAX_MINTED = 250*1e6*1e18;
+
+    constructor() public {
+        // adding MasterChef
+        minters[0xd39Ff512C3e55373a30E94BB1398651420Ae1D43] = true;
+    }
 
     function mint(address _to, uint256 _amount) public {
         require(minters[msg.sender], "unauthorized");
