@@ -3,9 +3,9 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity >=0.5.0 <0.6.0;
+pragma solidity >=0.6.0 <0.8.0;
 
-import "@openzeppelin-2.5.0/token/ERC20/IERC20.sol";
+import "@openzeppelin-3.4.0/token/ERC20/IERC20.sol";
 
 
 interface IPot {
@@ -25,7 +25,7 @@ interface IPot {
         returns (uint256);
 }
 
-contract IChai is IERC20 {
+interface IChai is IERC20 {
     function move(
         address src,
         address dst,

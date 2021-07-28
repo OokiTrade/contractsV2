@@ -16,7 +16,7 @@ contract HelperProxy is Ownable {
 
     address public implementation;
 
-    constructor(address _impl) public payable {
+    constructor(address _impl) payable {
         replaceImplementation(_impl);
     }
 

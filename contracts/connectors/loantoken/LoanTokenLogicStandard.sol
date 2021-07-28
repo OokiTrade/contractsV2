@@ -3,16 +3,15 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+pragma solidity >=0.6.0 <0.8.0;
 pragma experimental ABIEncoderV2;
 
 import "./AdvancedToken.sol";
 import "../../../interfaces/IBZx.sol";
 import "../../../interfaces/IPriceFeeds.sol";
-import "../gastoken/GasTokenUser.sol";
 
 
-contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
+contract LoanTokenLogicStandard is AdvancedToken {
     using SafeMath for uint256;
     using SignedSafeMath for int256;
 
@@ -52,7 +51,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         transferOwnership(_newOwner);
     }
 
-    function()
+    fallback()
         external
     {
         revert("fallback not allowed");
@@ -64,6 +63,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         address receiver,
         uint256 depositAmount)
         external
+        virtual
         nonReentrant
         returns (uint256) // mintAmount
     {
@@ -77,6 +77,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         address receiver,
         uint256 burnAmount)
         external
+        virtual
         nonReentrant
         returns (uint256 loanAmountPaid)
     {
@@ -96,6 +97,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         string calldata signature,
         bytes calldata data)
         external
+        virtual
         payable
         nonReentrant
         pausable(msg.sig)
@@ -125,7 +127,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         }
 
         // arbitrary call
-        (bool success, bytes memory returnData) = arbitraryCaller.call.value(msg.value)(
+        (bool success, bytes memory returnData) = arbitraryCaller.call{value: msg.value}(
             abi.encodeWithSelector(
                 0xde064e0d, // sendCall(address,bytes)
                 target,
@@ -174,34 +176,6 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         );
     }
 
-    function borrowWithGasToken(
-        bytes32 loanId,                 // 0 if new loan
-        uint256 withdrawAmount,
-        uint256 initialLoanDuration,    // duration in seconds
-        uint256 collateralTokenSent,    // if 0, loanId must be provided; any ETH sent must equal this value
-        address collateralTokenAddress, // if address(0), this means ETH and ETH must be sent with the call or loanId must be provided
-        address borrower,
-        address receiver,
-        address gasTokenUser,           // specifies an address that has given spend approval for gas/chi token
-        bytes memory /*loanDataBytes*/) // arbitrary order data (for future use)
-        public
-        payable
-        nonReentrant
-        usesGasToken(gasTokenUser)
-        returns (IBZx.LoanOpenData memory)
-    {
-        return _borrow(
-            loanId,
-            withdrawAmount,
-            initialLoanDuration,
-            collateralTokenSent,
-            collateralTokenAddress,
-            borrower,
-            receiver,
-            ""
-        );
-    }
-
     // Called to borrow and immediately get into a position
     function marginTrade(
         bytes32 loanId,                 // 0 if new loan
@@ -214,33 +188,6 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         public
         payable
         nonReentrant
-        returns (IBZx.LoanOpenData memory)
-    {
-        return _marginTrade(
-            loanId,
-            leverageAmount,
-            loanTokenSent,
-            collateralTokenSent,
-            collateralTokenAddress,
-            trader,
-            loanDataBytes
-        );
-    }
-
-    // Called to borrow and immediately get into a position
-    function marginTradeWithGasToken(
-        bytes32 loanId,                 // 0 if new loan
-        uint256 leverageAmount,
-        uint256 loanTokenSent,
-        uint256 collateralTokenSent,
-        address collateralTokenAddress,
-        address trader,
-        address gasTokenUser,           // specifies an address that has given spend approval for gas/chi token
-        bytes memory loanDataBytes)     // arbitrary order data
-        public
-        payable
-        nonReentrant
-        usesGasToken(gasTokenUser)
         returns (IBZx.LoanOpenData memory)
     {
         return _marginTrade(
@@ -485,6 +432,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
     function totalSupplyInterestRate(
         uint256 assetSupply)
         public
+        virtual
         view
         returns (uint256)
     {
@@ -667,7 +615,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
             _safeTransferFrom(loanTokenAddress, msg.sender, address(this), depositAmount, "18");
         } else {
             require(msg.value == depositAmount, "18");
-            IWeth(wethToken).deposit.value(depositAmount)();
+            IWeth(wethToken).deposit{value: depositAmount}();
         }
 
         _updateCheckpoints(
@@ -719,6 +667,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         address receiver,
         bytes memory /*loanDataBytes*/) // arbitrary order data (for future use)
         internal
+        virtual
         pausable(msg.sig)
         settlesInterest
         returns (IBZx.LoanOpenData memory)
@@ -778,6 +727,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         address trader,
         bytes memory loanDataBytes)
         internal
+        virtual
         pausable(msg.sig)
         settlesInterest
         returns (IBZx.LoanOpenData memory loanOpenData)
@@ -957,7 +907,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
             leverageAmount = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, leverageAmount);
         }
 
-        return IBZx(bZxContract).borrowOrTradeFromPool.value(msgValue)(
+        return IBZx(bZxContract).borrowOrTradeFromPool{value: msgValue}(
             loanParamsId,
             loanId,
             isTorqueLoan,
@@ -983,6 +933,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         uint256[5] memory sentAmounts,
         uint256 withdrawalAmount)
         internal
+        virtual
         returns (uint256 msgValue)
     {
         address _wethToken = wethToken;
@@ -1007,7 +958,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
 
         if (collateralTokenSent != 0) {
             if (collateralTokenAddress == _wethToken && msgValue != 0 && msgValue >= collateralTokenSent) {
-                IWeth(_wethToken).deposit.value(collateralTokenSent)();
+                IWeth(_wethToken).deposit{value: collateralTokenSent}();
                 _safeTransfer(collateralTokenAddress, bZxContract, collateralTokenSent, "28");
                 msgValue -= collateralTokenSent;
             } else {
@@ -1065,6 +1016,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
 
     function _underlyingBalance()
         internal
+        virtual
         view
         returns (uint256)
     {
@@ -1106,6 +1058,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         uint256 assetBorrow,
         uint256 assetSupply)
         internal
+        virtual
         view
         returns (uint256)
     {
@@ -1331,7 +1284,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         uint256 size;
         uint256 ptr;
         assembly {
-            size := returndatasize
+            size := returndatasize()
             ptr := mload(0x40)
             returndatacopy(ptr, 0, size)
             if eq(result, 0) { revert(ptr, size) }

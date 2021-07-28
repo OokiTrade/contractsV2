@@ -3,7 +3,7 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+pragma solidity >=0.6.0 <0.8.0;
 pragma experimental ABIEncoderV2;
 
 import "./LoanTokenLogicStandard.sol";
@@ -13,7 +13,6 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
 
     constructor(
         address _newOwner)
-        public
         LoanTokenLogicStandard(_newOwner)
     {}
 
@@ -42,7 +41,7 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
         );
 
         if (loanAmountPaid != 0) {
-            IWethERC20(wethToken).withdraw(loanAmountPaid);
+            IWeth(wethToken).withdraw(loanAmountPaid);
             Address.sendValue(
                 receiver,
                 loanAmountPaid
@@ -67,6 +66,7 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
         uint256[5] memory sentAmounts,
         uint256 withdrawalAmount)
         internal
+        override
         returns (uint256 msgValue)
     {
         address _wethToken = wethToken;
@@ -81,7 +81,7 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
         msgValue = msg.value;
 
         if (withdrawalAmount != 0) { // withdrawOnOpen == true
-            IWethERC20(_wethToken).withdraw(withdrawalAmount);
+            IWeth(_wethToken).withdraw(withdrawalAmount);
             Address.sendValue(
                 address(uint160(receiver)),
                 withdrawalAmount
@@ -99,7 +99,7 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
 
         if (loanTokenSent != 0) {
             if (msgValue != 0 && msgValue >= loanTokenSent) {
-                IWeth(_wethToken).deposit.value(loanTokenSent)();
+                IWeth(_wethToken).deposit{ value: loanTokenSent}();
                 _safeTransfer(_loanTokenAddress, bZxContract, loanTokenSent, "29");
                 msgValue -= loanTokenSent;
             } else {
