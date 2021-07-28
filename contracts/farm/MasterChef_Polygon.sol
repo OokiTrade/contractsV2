@@ -388,7 +388,7 @@ contract MasterChef_Polygon is Upgradeable {
     }
 
     function lockedRewards(address _user)
-        external
+        public
         view
         returns (uint256)
     {
@@ -557,6 +557,13 @@ contract MasterChef_Polygon is Upgradeable {
         }
     }
 
+    event Logger(string name, uint256 amount);
+
+    event LoggerAddress(string name, address logAddress);
+
+    event LoggerBytes(string name, bytes logBytes);
+    event LoggerBoolean(string name, bool val);
+
     // Withdraw LP tokens from MasterChef.
     function withdraw(uint256 _pid, uint256 _amount) public checkNoPause {
         IMasterChef.PoolInfo storage pool = poolInfo[_pid];
@@ -573,11 +580,11 @@ contract MasterChef_Polygon is Upgradeable {
         uint256 pendingAlt;
         IERC20 lpToken = pool.lpToken;
         if (lpToken == GOV) {
-            uint256 availableAmount = userAmount.sub(_lockedRewards[msg.sender]);
+            uint256 availableAmount = userAmount.sub(lockedRewards(msg.sender));
             if (_amount > availableAmount) {
                 _amount = availableAmount;
             }
-
+            emit Logger("availableAmount", availableAmount);
             pendingAlt = _pendingAltRewards(msg.sender);
             //Update userAltRewardsRounds even if user got nothing in the current round
             uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
@@ -590,6 +597,7 @@ contract MasterChef_Polygon is Upgradeable {
         userAmount = userAmount.sub(_amount);
         user.rewardDebt = userAmount.mul(pool.accGOVPerShare).div(1e12);
         user.amount = userAmount;
+
         lpToken.safeTransfer(address(msg.sender), _amount);
         emit Withdraw(msg.sender, _pid, _amount);
         //user vestingStartStamp recalculation is done in safeGOVTransfer
@@ -608,7 +616,7 @@ contract MasterChef_Polygon is Upgradeable {
         uint256 pendingAlt;
         IERC20 lpToken = pool.lpToken;
         if (lpToken == GOV) {
-            uint256 availableAmount = _amount.sub(_lockedRewards[msg.sender]);
+            uint256 availableAmount = _amount.sub(lockedRewards(msg.sender));
             if (_amount > availableAmount) {
                 _amount = availableAmount;
             }
