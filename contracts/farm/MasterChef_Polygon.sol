@@ -557,13 +557,6 @@ contract MasterChef_Polygon is Upgradeable {
         }
     }
 
-    event Logger(string name, uint256 amount);
-
-    event LoggerAddress(string name, address logAddress);
-
-    event LoggerBytes(string name, bytes logBytes);
-    event LoggerBoolean(string name, bool val);
-
     // Withdraw LP tokens from MasterChef.
     function withdraw(uint256 _pid, uint256 _amount) public checkNoPause {
         IMasterChef.PoolInfo storage pool = poolInfo[_pid];
@@ -584,7 +577,6 @@ contract MasterChef_Polygon is Upgradeable {
             if (_amount > availableAmount) {
                 _amount = availableAmount;
             }
-            emit Logger("availableAmount", availableAmount);
             pendingAlt = _pendingAltRewards(msg.sender);
             //Update userAltRewardsRounds even if user got nothing in the current round
             uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
