@@ -720,7 +720,7 @@ contract StakingV1 is StakingState, StakingConstants {
     {
         uint256 vBZRXBalance = _balancesPerToken[vBZRX][account];
         if (vBZRXBalance != 0) {
-            // staked vBZRX counts has 1/2 a vote, that's prorated based on total vested
+            // staked vBZRX is prorated based on total vested
             totalVotes = vBZRXBalance
                 .mul(_startingVBZRXBalance -
                     vestedBalanceForAmount( // overflow not possible
@@ -728,7 +728,7 @@ contract StakingV1 is StakingState, StakingConstants {
                         0,
                         block.timestamp
                     )
-                ).div(_startingVBZRXBalance) / 2;
+                ).div(_startingVBZRXBalance);
 
             // user is attributed a staked balance of vested BZRX, from their last update to the present
             totalVotes = vestedBalanceForAmount(
