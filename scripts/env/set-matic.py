@@ -20,12 +20,8 @@ masterChefProxy = Contract.from_abi("masterChefProxy", address=CHEF.address, abi
 masterChefImpl = MasterChef_Polygon.deploy({'from': CHEF.owner()})
 masterChefProxy.replaceImplementation(masterChefImpl, {'from': CHEF.owner()})
 
-newMintCoordinator = MintCoordinator_Polygon.deploy({'from': CHEF.owner()});
-newMintCoordinator.addMinter(CHEF)
-newMintCoordinator.transferOwnership(CHEF)
-CHEF.setMintCoordinator(newMintCoordinator, {'from': CHEF.owner()})
-PGOV.transferOwnership(newMintCoordinator, {'from': PGOV.owner()})
+PGOV.transferOwnership(CHEF.coordinator(), {'from': PGOV.owner()})
 
-CHEF.massMigrateToBalanceOf({'from': CHEF.owner()})
+CHEF.massUpdatePools({'from': CHEF.owner()})
 CHEF.togglePause(False, {'from': CHEF.owner()})
 CHEF =  Contract.from_abi("CHEF", CHEF.address, interface.IMasterChef.abi)
