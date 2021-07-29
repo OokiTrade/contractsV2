@@ -2,8 +2,8 @@
 
 pragma solidity >=0.6.0 <0.8.0;
 
-import "@openzeppelin-3.4.0/token/ERC20/ERC20.sol";
-import "@openzeppelin-3.4.0/access/Ownable.sol";
+import "openzeppelin-3.4.0/token/ERC20/ERC20.sol";
+import "openzeppelin-3.4.0/access/Ownable.sol";
 
 contract BZRXv2Token is ERC20("BZRXv2 Token", "BZRXv2"), Ownable {
     function mint(address _to, uint256 _amount) public onlyOwner {

@@ -10,7 +10,7 @@ pragma experimental ABIEncoderV2;
 
 import "../../core/State.sol";
 import "../../events/ProtocolSettingsEvents.sol";
-import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
+import "openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
 import "../../interfaces/IVestingToken.sol";
 import "../../utils/MathUtil.sol";
 

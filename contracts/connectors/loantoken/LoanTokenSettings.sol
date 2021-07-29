@@ -53,21 +53,21 @@ contract LoanTokenSettings is AdvancedTokenStorage {
         symbol = _symbol;
     }
 
-    function recoverEther(
-        address receiver,
-        uint256 amount)
-        public
-        onlyAdmin
-    {
-        uint256 balance = address(this).balance;
-        if (balance < amount)
-            amount = balance;
+    // function recoverEther(
+    //     address receiver,
+    //     uint256 amount)
+    //     public
+    //     onlyAdmin
+    // {
+    //     uint256 balance = address(this).balance;
+    //     if (balance < amount)
+    //         amount = balance;
 
-        (bool success,) = receiver.call{value: amount}("");
-        require(success,
-            "transfer failed"
-        );
-    }
+    //     (bool success,) = receiver.call{value: amount}("");
+    //     require(success,
+    //         "transfer failed"
+    //     );
+    // }
 
     function recoverToken(
         address tokenAddress,

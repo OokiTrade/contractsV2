@@ -8,7 +8,7 @@
 pragma solidity >=0.6.0 <0.8.0;
 
 import "../core/Constants.sol";
-import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
+import "openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
 
 
 contract VaultController is Constants {
@@ -25,41 +25,41 @@ contract VaultController is Constants {
         uint256 amount
     );
 
-    function vaultEtherDeposit(
-        address from,
-        uint256 value)
-        internal
-    {
-        IWethERC20 _wethToken = wethToken;
-        _wethToken.deposit{value: value}();
+    // function vaultEtherDeposit(
+    //     address from,
+    //     uint256 value)
+    //     internal
+    // {
+    //     IWethERC20 _wethToken = wethToken;
+    //     _wethToken.deposit{value: value}();
 
-        emit VaultDeposit(
-            address(_wethToken),
-            from,
-            value
-        );
-    }
+    //     emit VaultDeposit(
+    //         address(_wethToken),
+    //         from,
+    //         value
+    //     );
+    // }
 
-    function vaultEtherWithdraw(
-        address to,
-        uint256 value)
-        internal
-    {
-        if (value != 0) {
-            IWethERC20 _wethToken = wethToken;
-            uint256 balance = address(this).balance;
-            if (value > balance) {
-                _wethToken.withdraw(value - balance);
-            }
-            Address.sendValue(address(uint160(to)), value);
+    // function vaultEtherWithdraw(
+    //     address to,
+    //     uint256 value)
+    //     internal
+    // {
+    //     if (value != 0) {
+    //         IWethERC20 _wethToken = wethToken;
+    //         uint256 balance = address(this).balance;
+    //         if (value > balance) {
+    //             _wethToken.withdraw(value - balance);
+    //         }
+    //         Address.sendValue(address(uint160(to)), value);
 
-            emit VaultWithdraw(
-                address(_wethToken),
-                to,
-                value
-            );
-        }
-    }
+    //         emit VaultWithdraw(
+    //             address(_wethToken),
+    //             to,
+    //             value
+    //         );
+    //     }
+    // }
 
     function vaultDeposit(
         address token,

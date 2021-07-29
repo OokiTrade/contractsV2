@@ -7,7 +7,7 @@
 
 pragma solidity >=0.6.0 <0.8.0;
 
-import "@openzeppelin-3.4.0/math/SafeMath.sol";
+import "openzeppelin-3.4.0/math/SafeMath.sol";
 import "../interfaces/IVestingToken.sol";
 import "../proxies/0_5/Upgradeable_0_5.sol";
 

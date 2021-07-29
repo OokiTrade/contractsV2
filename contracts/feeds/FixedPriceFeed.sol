@@ -8,7 +8,7 @@
 pragma solidity >=0.6.0 <0.8.0;
 
 import "./IPriceFeedsExt.sol";
-import "@openzeppelin-3.4.0/access/Ownable.sol";
+import "openzeppelin-3.4.0/access/Ownable.sol";
 
 
 // bsc: 0xfe4F0eb0A1Ad109185c9AaDE64C48ff8e928e54B

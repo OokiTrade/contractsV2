@@ -8,7 +8,7 @@
 pragma solidity >=0.6.0 <0.8.0;
 
 
-import "@openzeppelin-3.4.0/utils/Address.sol";
+
 import "./Upgradeable_0_5.sol";
 
 
@@ -38,7 +38,19 @@ contract Proxy_0_5 is Upgradeable_0_5 {
     }
 
     function replaceImplementation(address impl) public onlyOwner {
-        require(Address.isContract(impl), "not a contract");
+        require(isContract(impl), "not a contract");
         implementation = impl;
     }
+
+    function isContract(address account) internal view returns (bool) {
+        // This method relies on extcodesize, which returns 0 for contracts in
+        // construction, since the code is only stored at the end of the
+        // constructor execution.
+
+        uint256 size;
+        // solhint-disable-next-line no-inline-assembly
+        assembly { size := extcodesize(account) }
+        return size > 0;
+    }
+
 }

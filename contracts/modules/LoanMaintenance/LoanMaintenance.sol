@@ -67,19 +67,19 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             .add(depositAmount);
         loanLocal.collateral = collateral;
 
-        if (msg.value == 0) {
+        // if (msg.value == 0) {
             vaultDeposit(
                 collateralToken,
                 msg.sender,
                 depositAmount
             );
-        } else {
-            require(msg.value == depositAmount, "ether deposit mismatch");
-            vaultEtherDeposit(
-                msg.sender,
-                msg.value
-            );
-        }
+        // } else {
+        //     require(msg.value == depositAmount, "ether deposit mismatch");
+        //     vaultEtherDeposit(
+        //         msg.sender,
+        //         msg.value
+        //     );
+        // }
 
         // update deposit amount
         (uint256 collateralToLoanRate, uint256 collateralToLoanPrecision) = IPriceFeeds(priceFeeds).queryRate(
@@ -145,18 +145,18 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             .sub(actualWithdrawAmount, "withdrawAmount too high");
         loanLocal.collateral = collateral;
 
-        if (collateralToken == address(wethToken)) {
-            vaultEtherWithdraw(
-                receiver,
-                actualWithdrawAmount
-            );
-        } else {
+        // if (collateralToken == address(wethToken)) {
+        //     vaultEtherWithdraw(
+        //         receiver,
+        //         actualWithdrawAmount
+        //     );
+        // } else {
             vaultWithdraw(
                 collateralToken,
                 receiver,
                 actualWithdrawAmount
             );
-        }
+        // }
 
         // update deposit amount
         (uint256 collateralToLoanRate, uint256 collateralToLoanPrecision) = IPriceFeeds(priceFeeds).queryRate(
@@ -255,19 +255,19 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
                 depositAmount
             );
         } else {
-            if (msg.value == 0) {
+            // if (msg.value == 0) {
                 vaultDeposit(
                     loanParamsLocal.loanToken,
                     msg.sender,
                     depositAmount
                 );
-            } else {
-                require(msg.value == depositAmount, "ether deposit mismatch");
-                vaultEtherDeposit(
-                    msg.sender,
-                    msg.value
-                );
-            }
+            // } else {
+            //     require(msg.value == depositAmount, "ether deposit mismatch");
+            //     vaultEtherDeposit(
+            //         msg.sender,
+            //         msg.value
+            //     );
+            // }
         }
 
         if (backInterestOwed != 0) {
@@ -354,18 +354,18 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         require(withdrawAmount < interestDepositRemaining, "withdraw amount too high");
 
         // withdraw interest
-        if (loanParamsLocal.loanToken == address(wethToken)) {
-            vaultEtherWithdraw(
-                receiver,
-                withdrawAmount
-            );
-        } else {
+        // if (loanParamsLocal.loanToken == address(wethToken)) {
+        //     vaultEtherWithdraw(
+        //         receiver,
+        //         withdrawAmount
+        //     );
+        // } else {
             vaultWithdraw(
                 loanParamsLocal.loanToken,
                 receiver,
                 withdrawAmount
             );
-        }
+        // }
 
         secondsReduced = withdrawAmount
             .mul(1 days)

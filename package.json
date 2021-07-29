@@ -26,11 +26,17 @@
   "scripts": {
     "analyize-contracts": "slither .",
     "lint-contracts": "solhint contracts/**/*.sol",
-    "test": "brownie test"
+    "test": "brownie test",
+    "compile-ovm": "truffle compile --config truffle-config-ovm.js"
   },
   "husky": {
     "hooks": {
       "pre-commit-disabled": "yarn analyize-contracts && yarn lint-contracts && yarn test"
     }
+  },
+  "dependencies": {
+    "@eth-optimism/solc": "0.7.6-alpha.1",
+    "@truffle/hdwallet-provider": "^1.4.2",
+    "truffle": "^5.4.2"
   }
 }

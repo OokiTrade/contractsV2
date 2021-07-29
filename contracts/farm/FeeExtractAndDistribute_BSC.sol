@@ -8,7 +8,7 @@
 pragma solidity >=0.6.0 <0.8.0;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
+import "openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
 import "./interfaces/Upgradeable.sol";
 import "./interfaces/IWethERC20.sol";
 import "./interfaces/IUniswapV2Router.sol";
@@ -61,7 +61,7 @@ contract FeeExtractAndDistribute_BSC is Upgradeable {
     );
 
     modifier onlyEOA() {
-        require(msg.sender == tx.origin, "unauthorized");
+        // require(msg.sender == tx.origin, "unauthorized");
         _;
     }
 

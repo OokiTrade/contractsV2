@@ -58,7 +58,7 @@ contract LoanClosings is LoanClosingsBase {
             21576; // estimated used gas ignoring loanDataBytes: 21000 + (4+32) * 16
 
         // restrict to EOAs to prevent griefing attacks, during interest rate recalculation
-        require(msg.sender == tx.origin, "only EOAs can call");
+        // require(msg.sender == tx.origin, "only EOAs can call");
 
         return _rollover(
             loanId,

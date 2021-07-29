@@ -682,18 +682,18 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         internal
     {
         if (assetAmount != 0) {
-            if (assetToken == address(wethToken)) {
-                vaultEtherWithdraw(
-                    receiver,
-                    assetAmount
-                );
-            } else {
+            // if (assetToken == address(wethToken)) {
+            //     vaultEtherWithdraw(
+            //         receiver,
+            //         assetAmount
+            //     );
+            // } else {
                 vaultWithdraw(
                     assetToken,
                     receiver,
                     assetAmount
                 );
-            }
+            // }
         }
     }
 

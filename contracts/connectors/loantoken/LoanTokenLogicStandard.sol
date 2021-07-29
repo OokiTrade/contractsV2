@@ -91,65 +91,65 @@ contract LoanTokenLogicStandard is AdvancedToken {
         }
     }
 
-    function flashBorrow(
-        uint256 borrowAmount,
-        address borrower,
-        address target,
-        string calldata signature,
-        bytes calldata data)
-        external
-        virtual
-        payable
-        nonReentrant
-        pausable(msg.sig)
-        settlesInterest
-        returns (bytes memory)
-    {
-        require(borrowAmount != 0, "38");
+    // function flashBorrow(
+    //     uint256 borrowAmount,
+    //     address borrower,
+    //     address target,
+    //     string calldata signature,
+    //     bytes calldata data)
+    //     external
+    //     virtual
+    //     payable
+    //     nonReentrant
+    //     pausable(msg.sig)
+    //     settlesInterest
+    //     returns (bytes memory)
+    // {
+    //     require(borrowAmount != 0, "38");
 
-        // save before balances
-        uint256 beforeEtherBalance = address(this).balance.sub(msg.value);
-        uint256 beforeAssetsBalance = _underlyingBalance()
-            .add(totalAssetBorrow());
+    //     // save before balances
+    //     uint256 beforeEtherBalance = address(this).balance.sub(msg.value);
+    //     uint256 beforeAssetsBalance = _underlyingBalance()
+    //         .add(totalAssetBorrow());
 
-        // lock totalAssetSupply for duration of flash loan
-        _flTotalAssetSupply = beforeAssetsBalance;
+    //     // lock totalAssetSupply for duration of flash loan
+    //     _flTotalAssetSupply = beforeAssetsBalance;
 
-        // transfer assets to calling contract
-        _safeTransfer(loanTokenAddress, borrower, borrowAmount, "39");
+    //     // transfer assets to calling contract
+    //     _safeTransfer(loanTokenAddress, borrower, borrowAmount, "39");
 
-        emit FlashBorrow(borrower, target, loanTokenAddress, borrowAmount);
+    //     emit FlashBorrow(borrower, target, loanTokenAddress, borrowAmount);
 
-        bytes memory callData;
-        if (bytes(signature).length == 0) {
-            callData = data;
-        } else {
-            callData = abi.encodePacked(bytes4(keccak256(bytes(signature))), data);
-        }
+    //     bytes memory callData;
+    //     if (bytes(signature).length == 0) {
+    //         callData = data;
+    //     } else {
+    //         callData = abi.encodePacked(bytes4(keccak256(bytes(signature))), data);
+    //     }
 
-        // arbitrary call
-        (bool success, bytes memory returnData) = arbitraryCaller.call{value: msg.value}(
-            abi.encodeWithSelector(
-                0xde064e0d, // sendCall(address,bytes)
-                target,
-                callData
-            )
-        );
-        require(success, "call failed");
+    //     // arbitrary call
+    //     (bool success, bytes memory returnData) = arbitraryCaller.call{value: msg.value}(
+    //         abi.encodeWithSelector(
+    //             0xde064e0d, // sendCall(address,bytes)
+    //             target,
+    //             callData
+    //         )
+    //     );
+    //     require(success, "call failed");
 
-        // unlock totalAssetSupply
-        _flTotalAssetSupply = 0;
+    //     // unlock totalAssetSupply
+    //     _flTotalAssetSupply = 0;
 
-        // verifies return of flash loan
-        require(
-            address(this).balance >= beforeEtherBalance &&
-            _underlyingBalance()
-                .add(totalAssetBorrow()) >= beforeAssetsBalance,
-            "40"
-        );
+    //     // verifies return of flash loan
+    //     require(
+    //         address(this).balance >= beforeEtherBalance &&
+    //         _underlyingBalance()
+    //             .add(totalAssetBorrow()) >= beforeAssetsBalance,
+    //         "40"
+    //     );
 
-        return returnData;
-    }
+    //     return returnData;
+    // }
 
     function borrow(
         bytes32 loanId,                 // 0 if new loan
