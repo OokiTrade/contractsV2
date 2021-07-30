@@ -69,6 +69,7 @@ contract MasterChef_Polygon is Upgradeable {
     // total locked rewards for a user
     mapping(address => uint256) internal _lockedRewards;
 
+
     bool public notPaused;
 
     modifier checkNoPause() {
@@ -88,6 +89,11 @@ contract MasterChef_Polygon is Upgradeable {
     event AddAltReward(
         address indexed sender,
         uint256 indexed pid,
+        uint256 amount
+    );
+
+    event ClaimAltRewards(
+        address indexed user,
         uint256 amount
     );
 
@@ -523,7 +529,7 @@ contract MasterChef_Polygon is Upgradeable {
             //Update userAltRewardsRounds even if user got nothing in the current round
             uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
             if (_altRewardsPerShare.length > 0) {
-            userAltRewardsRounds[msg.sender] = _altRewardsPerShare.length;
+                userAltRewardsRounds[msg.sender] = _altRewardsPerShare.length;
             }
         }
 
@@ -538,6 +544,7 @@ contract MasterChef_Polygon is Upgradeable {
         safeGOVTransfer(_pid, pending);
         if (pendingAlt != 0) {
             Address.sendValue(msg.sender, pendingAlt);
+            emit ClaimAltRewards(msg.sender, pendingAlt);
         }
     }
 
@@ -577,6 +584,7 @@ contract MasterChef_Polygon is Upgradeable {
             if (_amount > availableAmount) {
                 _amount = availableAmount;
             }
+
             pendingAlt = _pendingAltRewards(msg.sender);
             //Update userAltRewardsRounds even if user got nothing in the current round
             uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
@@ -596,6 +604,7 @@ contract MasterChef_Polygon is Upgradeable {
         safeGOVTransfer(_pid, pending);
         if (pendingAlt != 0) {
             Address.sendValue(msg.sender, pendingAlt);
+            emit ClaimAltRewards(msg.sender, pendingAlt);
         }
     }
 
@@ -628,6 +637,7 @@ contract MasterChef_Polygon is Upgradeable {
 
         if (pendingAlt != 0) {
             Address.sendValue(msg.sender, pendingAlt);
+            emit ClaimAltRewards(msg.sender, pendingAlt);
         }
     }
 

@@ -91,6 +91,11 @@ contract MasterChef_BSC is Upgradeable {
         uint256 amount
     );
 
+    event ClaimAltRewards(
+        address indexed user,
+        uint256 amount
+    );
+
     //Mapping pid -- accumulated bnbPerGov
     mapping(uint256 => uint256[]) public altRewardsRounds;
 
@@ -513,6 +518,7 @@ contract MasterChef_BSC is Upgradeable {
 
         if (_pid == GOV_POOL_ID) {
             pendingAlt = _pendingAltRewards(msg.sender);
+
             //Update userAltRewardsRounds even if user got nothing in the current round
             uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
             if (_altRewardsPerShare.length > 0) {
@@ -531,6 +537,7 @@ contract MasterChef_BSC is Upgradeable {
         safeGOVTransfer(_pid, pending);
         if (pendingAlt != 0) {
             Address.sendValue(msg.sender, pendingAlt);
+            emit ClaimAltRewards(msg.sender, pendingAlt);
         }
     }
 
@@ -590,6 +597,7 @@ contract MasterChef_BSC is Upgradeable {
         safeGOVTransfer(_pid, pending);
         if (pendingAlt != 0) {
             Address.sendValue(msg.sender, pendingAlt);
+            emit ClaimAltRewards(msg.sender, pendingAlt);
         }
     }
 
@@ -622,6 +630,7 @@ contract MasterChef_BSC is Upgradeable {
 
         if (pendingAlt != 0) {
             Address.sendValue(msg.sender, pendingAlt);
+            emit ClaimAltRewards(msg.sender, pendingAlt);
         }
     }
 
