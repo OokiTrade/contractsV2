@@ -153,7 +153,7 @@ contract FeeExtractAndDistribute_BSC is Upgradeable {
             }
 
             IWethERC20(BNB).withdraw(bnbOutput + sellAmount + distributeAmount);
-            chef.addAltReward.value(distributeAmount);
+            chef.addAltReward.value(distributeAmount)();
             Address.sendValue(fundsWallet, bnbOutput + sellAmount);
 
             emit ExtractAndDistribute();

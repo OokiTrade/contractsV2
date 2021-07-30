@@ -155,7 +155,7 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable {
             }
 
             IWethERC20(MATIC).withdraw(maticOutput + sellAmount + distributeAmount);
-            chef.addAltReward.value(distributeAmount);
+            chef.addAltReward.value(distributeAmount)();
             Address.sendValue(fundsWallet, maticOutput + sellAmount);
 
             emit ExtractAndDistribute();

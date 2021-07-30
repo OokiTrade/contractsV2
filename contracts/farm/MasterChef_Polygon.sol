@@ -429,13 +429,15 @@ contract MasterChef_Polygon is Upgradeable {
             return;
         }
         uint256 lpSupply = balanceOf[_pid];
-        if (lpSupply == 0) {
+        uint256 _GOVPerBlock = GOVPerBlock;
+        uint256 _allocPoint = pool.allocPoint;
+        if (lpSupply == 0 || _GOVPerBlock == 0 || _allocPoint == 0) {
             pool.lastRewardBlock = block.number;
             return;
         }
         uint256 multiplier = getMultiplierPrecise(pool.lastRewardBlock, block.number);
         uint256 GOVReward =
-            multiplier.mul(GOVPerBlock).mul(pool.allocPoint).div(
+            multiplier.mul(_GOVPerBlock).mul(_allocPoint).div(
                 totalAllocPoint
             );
         // 250m = 250 * 1e6
