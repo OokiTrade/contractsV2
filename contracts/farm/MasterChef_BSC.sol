@@ -538,8 +538,7 @@ contract MasterChef_BSC is Upgradeable {
         //user vestingStartStamp recalculation is done in safeGOVTransfer
         safeGOVTransfer(_pid, pending);
         if (pendingAlt != 0) {
-            Address.sendValue(msg.sender, pendingAlt);
-            emit ClaimAltRewards(msg.sender, pendingAlt);
+            sendValueIfPossible(msg.sender, pendingAlt);
         }
     }
 
@@ -598,8 +597,7 @@ contract MasterChef_BSC is Upgradeable {
         //user vestingStartStamp recalculation is done in safeGOVTransfer
         safeGOVTransfer(_pid, pending);
         if (pendingAlt != 0) {
-            Address.sendValue(msg.sender, pendingAlt);
-            emit ClaimAltRewards(msg.sender, pendingAlt);
+            sendValueIfPossible(msg.sender, pendingAlt);
         }
     }
 
@@ -631,8 +629,7 @@ contract MasterChef_BSC is Upgradeable {
         user.rewardDebt = user.amount.mul(pool.accGOVPerShare).div(1e12);
 
         if (pendingAlt != 0) {
-            Address.sendValue(msg.sender, pendingAlt);
-            emit ClaimAltRewards(msg.sender, pendingAlt);
+            sendValueIfPossible(msg.sender, pendingAlt);
         }
     }
 
@@ -726,4 +723,15 @@ contract MasterChef_BSC is Upgradeable {
         }
     }
 
+    function sendValueIfPossible(address payable recipient, uint256 amount) internal {
+        require(address(this).balance >= amount, "Address: insufficient balance");
+        (bool success, ) = recipient.call{ value: amount }("");
+        if (!success) {
+            (success, ) = devaddr.call{ value: amount }("");
+            if (success)
+                emit ClaimAltRewards(devaddr, amount);
+        } else {
+            emit ClaimAltRewards(recipient, amount);
+        }
+    }
 }
