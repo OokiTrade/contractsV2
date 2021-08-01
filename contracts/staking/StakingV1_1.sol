@@ -88,7 +88,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
         uint256 stakedAmount;
         for (uint256 i = 0; i < tokens.length; i++) {
             token = tokens[i];
-            require(token == BZRX || token == vBZRX || token == iBZRX || token == LPToken, "invalid token");
+            require(token == BZRX || token == vBZRX || token == iBZRX || token == LPToken || token == LPTokenOld, "invalid token");
 
             unstakeAmount = values[i];
             stakedAmount = _balancesPerToken[token][msg.sender];
