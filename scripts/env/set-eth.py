@@ -14,7 +14,11 @@ for l in list:
         globals()[underlyingTemp.symbol()] = underlyingTemp
 
 CHI = Contract.from_abi("CHI", "0x0000000000004946c0e9F43F4Dee607b0eF1fA1c", TestToken.abi)
-STAKING = Contract.from_abi("STAKING", "0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4", StakingV1.abi)
+
+stakingProxy = Contract.from_abi("proxy", "0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4", StakingProxy.abi)
+stakingImpl = StakingV1_1.deploy({'from': stakingProxy.owner()})
+stakingProxy.replaceImplementation(stakingImpl, {'from': stakingProxy.owner()})
+STAKING = Contract.from_abi("STAKING", stakingProxy.address, StakingV1_1.abi)
 
 
 vBZRX = Contract.from_abi("vBZRX", "0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F", BZRXVestingToken.abi)
