@@ -675,14 +675,16 @@ contract StakingV1_1 is StakingState, StakingConstants {
             uint256 bzrxBalance,
             uint256 iBZRXBalance,
             uint256 vBZRXBalance,
-            uint256 LPTokenBalance
+            uint256 LPTokenBalance,
+            uint256 LPTokenBalanceOld
         )
     {
         return (
             balanceOfByAsset(BZRX, account),
             balanceOfByAsset(iBZRX, account),
             balanceOfByAsset(vBZRX, account),
-            balanceOfByAsset(LPToken, account)
+            balanceOfByAsset(LPToken, account),
+            balanceOfByAsset(LPTokenOld, account)
         );
     }
 
@@ -1266,6 +1268,8 @@ contract StakingV1_1 is StakingState, StakingConstants {
         }
     }
 
+    /*
+    // commenting to reduce compile size
     function setCurveApproval()
         external
         onlyOwner
@@ -1276,7 +1280,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
         IERC20(USDC).safeApprove(address(curve3pool), uint256(-1));
         IERC20(USDT).safeApprove(address(curve3pool), 0);
         IERC20(USDT).safeApprove(address(curve3pool), uint256(-1));
-    }
+    }*/
 
     function setRewardPercent(
         uint256 _rewardPercent)
