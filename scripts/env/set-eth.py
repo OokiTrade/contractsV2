@@ -15,6 +15,27 @@ for l in list:
 
 CHI = Contract.from_abi("CHI", "0x0000000000004946c0e9F43F4Dee607b0eF1fA1c", TestToken.abi)
 
+
+old = Contract.from_abi("STAKING", '0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4', StakingV1.abi)
+LPT_OLD = Contract.from_abi("LPT", "0xe26A220a341EAca116bDa64cF9D5638A935ae629", TestToken.abi)
+LPT_OLD.transfer(accounts[9], 10e18, {'from': '0xe95ebce2b02ee07def5ed6b53289801f7fc137a4'})
+LPT_OLD.approve(old, 2**256-1, {'from': accounts[9]})
+
+old.stake([LPT_OLD], [LPT_OLD.balanceOf(accounts[9])], {'from': accounts[9]})
+
+
+SUSHI_ROUTER = Contract.from_abi("router", "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F", interface.IPancakeRouter02.abi)
+
+quote = SUSHI_ROUTER.quote(1000*10**18, WETH.address, BZRX.address)
+quote1 = SUSHI_ROUTER.quote(10000*10**18, BZRX.address, WETH.address)
+BZRX.approve(SUSHI_ROUTER, 2**256-1, {'from': accounts[9]})
+WETH.approve(SUSHI_ROUTER, 2**256-1, {'from': accounts[9]})
+BZRX.transfer(accounts[9], 20000e18, {'from': BZRX})
+WETH.transfer(accounts[9], 20e18, {'from': WETH})
+
+SUSHI_ROUTER.addLiquidity(WETH,BZRX, quote1, BZRX.balanceOf(accounts[9]), 0, 0,  accounts[9], 10000000e18, {'from': accounts[9]})
+
+
 stakingProxy = Contract.from_abi("proxy", "0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4", StakingProxy.abi)
 stakingImpl = StakingV1_1.deploy({'from': stakingProxy.owner()})
 stakingProxy.replaceImplementation(stakingImpl, {'from': stakingProxy.owner()})

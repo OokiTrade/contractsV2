@@ -9,8 +9,3 @@ from brownie import *
 def requireMainnetFork():
     assert (network.show_active() == "mainnet-fork" or network.show_active() == "mainnet-fork-alchemy")
 
-@pytest.fixture(scope="module")
-def setFeesController(bzx, stakingV1):
-    bzx.setFeesController(stakingV1, {"from": bzx.owner()})
-
-
