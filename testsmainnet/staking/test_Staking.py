@@ -134,7 +134,6 @@ def testStake_BZRXProfit(requireMainnetFork, stakingV1_1, bzx, setFeesController
         '0x40a75ae5f7a5336e75f7c7977e12c4b46a9ac0f30de01a2d5b6c1a4f4af63587', txBorrow.events)
     payLendingFeeAmount = int(str(payLendingFeeEvent['data']), 0)
 
-    assert False
     txSweep = stakingV1_1.sweepFees()
 
     borrowFee = txSweep.events['WithdrawBorrowingFees'][0]
@@ -232,7 +231,7 @@ def testStake_VestingFees(requireMainnetFork, stakingV1_1, bzx, setFeesControlle
     collateralAddress = "0x0000000000000000000000000000000000000000"
     txBorrow = iUSDC.borrow("", borrowAmount, borrowTime, collateralAmount, collateralAddress,
                             accounts[0], accounts[0], b"", {'from': accounts[0], 'value': Wei(collateralAmount)})
-    assert False
+
     sweepTx = stakingV1_1.sweepFees()
 
     earningsDuringVesting = stakingV1_1.earned(accounts[0])
@@ -281,7 +280,7 @@ def testStake_vestingClaimBZRX(requireMainnetFork, stakingV1_1, bzx, setFeesCont
 
 def testStake_vBZRXVotingRigthsShouldDiminishOverTime(requireMainnetFork, stakingV1_1, bzx, setFeesController, BZRX, vBZRX, iBZRX, LPT, accounts, iUSDC, USDC, WETH):
 
-    vBZRX.transfer(accounts[1], 100e18, {'from': vBZRX})
+    vBZRX.transfer(accounts[1], 1000e18, {'from': vBZRX})
 
     balanceOfvBZRX = vBZRX.balanceOf(accounts[1])
 
@@ -291,14 +290,9 @@ def testStake_vBZRXVotingRigthsShouldDiminishOverTime(requireMainnetFork, stakin
     amounts = [balanceOfvBZRX]
     tx = stakingV1_1.stake(tokens, amounts, {'from': accounts[1]})
     chain.mine()
-    votingPower = stakingV1_1.votingBalanceOfNow(accounts[1])
-    assert(votingPower <= balanceOfvBZRX/2)
-    assert(votingPower > 0)
-
-    # moving time to somewhere 1000 sec after vesting start
-    chain.sleep(vBZRX.vestingCliffTimestamp() - chain.time() + 1000)
     chain.mine()
 
+    assert False
     votingPower = stakingV1_1.votingBalanceOfNow(accounts[1])
     assert(votingPower <= balanceOfvBZRX/2)
     assert(votingPower > 0)
@@ -308,8 +302,7 @@ def testStake_vBZRXVotingRigthsShouldDiminishOverTime(requireMainnetFork, stakin
     chain.mine()
 
     votingPower = stakingV1_1.votingBalanceOfNow(accounts[1])
-    assert(votingPower <= balanceOfvBZRX)
-    assert(votingPower > 0)
+    assert(votingPower == 0)
     assert True
 
 
