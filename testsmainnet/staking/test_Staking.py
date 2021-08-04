@@ -292,15 +292,17 @@ def testStake_vBZRXVotingRigthsShouldDiminishOverTime(requireMainnetFork, stakin
     chain.mine()
     chain.mine()
 
-    assert False
-    votingPower = stakingV1_1.votingBalanceOfNow(accounts[1])
-    assert(votingPower <= balanceOfvBZRX/2)
-    assert(votingPower > 0)
+    # assert False
+    # votingPower = stakingV1_1.votingBalanceOfNow(accounts[1])
+    # assert(votingPower <= balanceOfvBZRX/2)
+    # assert(votingPower > 0)
 
     # moving time after vesting end
     chain.sleep(vBZRX.vestingEndTimestamp() - chain.time() + 100)
     chain.mine()
 
+    stakingV1_1.claimBzrx({'from': accounts[1]})
+    
     votingPower = stakingV1_1.votingBalanceOfNow(accounts[1])
     assert(votingPower == 0)
     assert True
