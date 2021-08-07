@@ -10,10 +10,9 @@ import "../../core/State.sol";
 import "../../mixins/VaultController.sol";
 import "../../swaps/SwapsUser.sol";
 import "../../swaps/ISwapsImpl.sol";
-import "../../connectors/gastoken/GasTokenUser.sol";
 
 
-contract SwapsExternal is State, VaultController, SwapsUser, GasTokenUser {
+contract SwapsExternal is State, VaultController, SwapsUser {
 
     function initialize(
         address target)
@@ -54,13 +53,13 @@ contract SwapsExternal is State, VaultController, SwapsUser, GasTokenUser {
         address destToken,
         address receiver,
         address returnToSender,
-        address gasTokenUser,
+        address /*gasTokenUser*/, // obsolete
         uint256 sourceTokenAmount,
         uint256 requiredDestTokenAmount,
         bytes calldata swapData)
         external
         payable
-        usesGasToken(gasTokenUser)
+        /*usesGasToken(gasTokenUser)*/
         nonReentrant
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
     {
