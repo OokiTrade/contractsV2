@@ -41,8 +41,8 @@ def STAKING(StakingV1_1, accounts, StakingProxy):
 
 @pytest.fixture(scope="module")
 def TIMELOCK(Timelock, accounts):
-    hours12 = 12*60*60
-    timelock = accounts[0].deploy(Timelock, accounts[0], hours12)
+    hours48 = 48*60*60
+    timelock = accounts[0].deploy(Timelock, accounts[0], hours48)
     return timelock
 
 

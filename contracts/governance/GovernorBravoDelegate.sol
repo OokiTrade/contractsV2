@@ -82,9 +82,9 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
         require(targets.length <= proposalMaxOperations, "GovernorBravo::propose: too many actions");
 
         if (latestProposalId != 0) {
-          ProposalState proposersLatestProposalState = state(latestProposalId);
-          require(proposersLatestProposalState != ProposalState.Active, "GovernorBravo::propose: one live proposal per proposer, found an already active proposal");
-          require(proposersLatestProposalState != ProposalState.Pending, "GovernorBravo::propose: one live proposal per proposer, found an already pending proposal");
+            ProposalState proposersLatestProposalState = state(latestProposalId);
+            require(proposersLatestProposalState != ProposalState.Active, "GovernorBravo::propose: one live proposal per proposer, found an already active proposal");
+            require(proposersLatestProposalState != ProposalState.Pending, "GovernorBravo::propose: one live proposal per proposer, found an already pending proposal");
         }
 
         uint startBlock = add256(block.number, votingDelay);
@@ -260,7 +260,7 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
         Receipt storage receipt = proposal.receipts[voter];
         require(receipt.hasVoted == false, "GovernorBravo::castVoteInternal: voter already voted");
         // 2**96-1 is greater than total supply of bzrx 1.3b*1e18 thus guaranteeing it won't ever overflow
-        uint96 votes = uint96(staking.votingBalanceOfNow(voter));
+        uint96 votes = uint96(staking.votingBalanceOf(voter, proposalId));
 
         if (support == 0) {
             proposal.againstVotes = add256(proposal.againstVotes, votes);
