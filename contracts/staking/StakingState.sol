@@ -57,4 +57,13 @@ contract StakingState is StakingUpgradeable {
     uint256 public callerRewardDivisor = 100;
 
     address[] public currentFeeTokens;
+
+    struct ProposalState {
+        uint256 proposalTime;
+        uint256 iBZRXWeight;
+        uint256 lpBZRXBalance;
+        uint256 lpTotalSupply;
+    }
+    address public governor;
+    mapping(uint256 => ProposalState) internal _proposalState;
 }

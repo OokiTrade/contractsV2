@@ -16,7 +16,8 @@ contract StakingConstants {
     address public constant BZRX = 0x56d811088235F11C8920698a204A5010a788f4b3;
     address public constant vBZRX = 0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F;
     address public constant iBZRX = 0x18240BD9C07fA6156Ce3F3f61921cC82b2619157;
-    address public constant LPToken = 0xe26A220a341EAca116bDa64cF9D5638A935ae629;
+    address public constant LPToken = 0xa30911e072A0C88D55B5D0A0984B66b0D04569d0; // sushiswap
+    address public constant LPTokenOld = 0xe26A220a341EAca116bDa64cF9D5638A935ae629; // balancer
     IERC20 public constant curve3Crv = IERC20(0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490);
 
     address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
@@ -24,7 +25,7 @@ contract StakingConstants {
     address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     address public constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
 
-    IUniswapV2Router public constant uniswapRouter = IUniswapV2Router(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);
+    IUniswapV2Router public constant uniswapRouter = IUniswapV2Router(0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F); // sushiswap
     ICurve3Pool public constant curve3pool = ICurve3Pool(0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7);
     IBZx public constant bZx = IBZx(0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f);
 
