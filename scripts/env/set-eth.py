@@ -35,12 +35,7 @@ WETH.transfer(accounts[9], 20e18, {'from': WETH})
 
 SUSHI_ROUTER.addLiquidity(WETH,BZRX, quote1, BZRX.balanceOf(accounts[9]), 0, 0,  accounts[9], 10000000e18, {'from': accounts[9]})
 
-
-stakingProxy = Contract.from_abi("proxy", "0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4", StakingProxy.abi)
-stakingImpl = StakingV1_1.deploy({'from': stakingProxy.owner()})
-stakingProxy.replaceImplementation(stakingImpl, {'from': stakingProxy.owner()})
 STAKING = Contract.from_abi("STAKING", stakingProxy.address, StakingV1_1.abi)
-
 
 vBZRX = Contract.from_abi("vBZRX", "0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F", BZRXVestingToken.abi)
 POOL3 = Contract.from_abi("CURVE3CRV", "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490", TestToken.abi)
