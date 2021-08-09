@@ -184,6 +184,7 @@ contract LoanClosingsRollover is LoanClosingsBase {
         );
     }
 
+    event Logger(string name, address ady);
     function _rolloverClose(
         Loan memory loanLocal,
         uint256 startingGas,
@@ -195,6 +196,7 @@ contract LoanClosingsRollover is LoanClosingsBase {
         )
     {
         uint256 withdrawAmount;
+        delegatedManagers[loanLocal.id][msg.sender] = true;
         (, withdrawAmount, rebateToken) = _closeWithSwap(
             loanLocal.id,
             address(this),  // receiver
@@ -202,6 +204,7 @@ contract LoanClosingsRollover is LoanClosingsBase {
             true,           // returnTokenIsCollateral
             loanDataBytes
         );
+        delete delegatedManagers[loanLocal.id][msg.sender];
 
         if (msg.sender != loanLocal.borrower) {
             gasRebate = _getRebate(
