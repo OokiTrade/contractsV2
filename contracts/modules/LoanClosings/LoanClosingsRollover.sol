@@ -195,6 +195,10 @@ contract LoanClosingsRollover is LoanClosingsBase {
         )
     {
         uint256 withdrawAmount;
+        bool isDelegatedManager = delegatedManagers[loanLocal.id][msg.sender];
+        if (!isDelegatedManager) {
+            delegatedManagers[loanLocal.id][msg.sender] = true;
+        }
         (, withdrawAmount, rebateToken) = _closeWithSwap(
             loanLocal.id,
             address(this),  // receiver
@@ -202,6 +206,9 @@ contract LoanClosingsRollover is LoanClosingsBase {
             true,           // returnTokenIsCollateral
             loanDataBytes
         );
+        if (!isDelegatedManager) {
+            delete delegatedManagers[loanLocal.id][msg.sender];
+        }
 
         if (msg.sender != loanLocal.borrower) {
             gasRebate = _getRebate(
