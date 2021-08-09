@@ -184,7 +184,6 @@ contract LoanClosingsRollover is LoanClosingsBase {
         );
     }
 
-    event Logger(string name, address ady);
     function _rolloverClose(
         Loan memory loanLocal,
         uint256 startingGas,
