@@ -14,10 +14,4 @@ CHEF = Contract.from_abi("CHEF", "0x1FDCA2422668B961E162A8849dc0C2feaDb58915", M
 HELPER = Contract.from_abi("HELPER", "0xE05999ACcb887D32c9bd186e8C9dfE0e1E7814dE", HelperImpl.abi)
 BGOV = Contract.from_abi("PGOV", "0xf8E026dC4C0860771f691EcFFBbdfe2fa51c77CF", GovToken.abi)
 
-masterChefProxy = Contract.from_abi("masterChefProxy", address=CHEF.address, abi=Proxy.abi)
-masterChefImpl = MasterChef_BSC.deploy({'from': CHEF.owner()})
-masterChefProxy.replaceImplementation(masterChefImpl, {'from': CHEF.owner()})
-
-CHEF.massMigrateToBalanceOf({'from': CHEF.owner()})
-CHEF.togglePause(False, {'from': CHEF.owner()})
 CHEF =  Contract.from_abi("CHEF", CHEF.address, interface.IMasterChef.abi)

@@ -15,13 +15,3 @@ PGOV_MATIC_LP = Contract.from_abi("PGOV", "0xC698b8a1391F88F497A4EF169cA85b49286
 HELPER = Contract.from_abi("HELPER", "0xCc0fD6AA1F92e18D103A7294238Fdf558008725a", HelperImpl.abi)
 PRICE_FEED = Contract.from_abi("PRICE_FEED", BZX.priceFeeds(), abi = PriceFeeds.abi)
 SUSHI_ROUTER = Contract.from_abi("router", "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506", interface.IPancakeRouter02.abi)
-
-masterChefProxy = Contract.from_abi("masterChefProxy", address=CHEF.address, abi=Proxy.abi)
-masterChefImpl = MasterChef_Polygon.deploy({'from': CHEF.owner()})
-masterChefProxy.replaceImplementation(masterChefImpl, {'from': CHEF.owner()})
-
-PGOV.transferOwnership(CHEF.coordinator(), {'from': PGOV.owner()})
-
-CHEF.massUpdatePools({'from': CHEF.owner()})
-CHEF.togglePause(False, {'from': CHEF.owner()})
-CHEF =  Contract.from_abi("CHEF", CHEF.address, interface.IMasterChef.abi)
