@@ -56,6 +56,11 @@ contract LoanClosingsRollover is LoanClosingsBase {
             "healthy position"
         );
 
+        require(
+            loanPoolToUnderlying[loanLocal.lender] != address(0),
+            "invalid lender"
+        );
+
         LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
         uint256 maxDuration = loanParamsLocal.maxLoanTerm;
 
@@ -68,10 +73,6 @@ contract LoanClosingsRollover is LoanClosingsBase {
             );
         }
 
-        require(
-            loanPoolToUnderlying[loanLocal.lender] != address(0),
-            "invalid lender"
-        );
 
         // pay outstanding interest to lender
         _payInterest(
