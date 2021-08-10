@@ -56,22 +56,34 @@ contract LoanClosingsRollover is LoanClosingsBase {
             "healthy position"
         );
 
-        LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
-        uint256 maxDuration = loanParamsLocal.maxLoanTerm;
-
-        if (maxDuration != 0) {
-            // margin positions need to close
-            return _rolloverClose(
-                loanLocal,
-                startingGas,
-                loanDataBytes
-            );
-        }
-
         require(
             loanPoolToUnderlying[loanLocal.lender] != address(0),
             "invalid lender"
         );
+
+        LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
+        uint256 maxDuration = loanParamsLocal.maxLoanTerm;
+
+        // if open date > x and didRollover is false -> rollover, else -> rollover will close (mark didRollover = true if needed)
+        bool toSimpleRollover = false; 
+
+        uint256 TODOTimestamp = 0;
+        if (loanLocal.startTimestamp < TODOTimestamp && didRollover(loanLocal.id) == false) {
+            toSimpleRollover = true;
+        }
+
+        if (!toSimpleRollover) {
+            if (maxDuration != 0) {
+                // margin positions need to close
+                return _rolloverClose(
+                    loanLocal,
+                    startingGas,
+                    loanDataBytes
+                );
+            }
+        } else {
+            saveDidRollover(loanLocal.id, true);
+        }
 
         // pay outstanding interest to lender
         _payInterest(
@@ -102,8 +114,28 @@ contract LoanClosingsRollover is LoanClosingsBase {
                 .div(24 hours);
         }
 
-        // loanInterestLocal.owedPerDay doesn't change
-        maxDuration = ONE_MONTH;
+        if(toSimpleRollover) {
+            if (maxDuration != 0) {
+                // fixed-term loan, so need to query iToken for latest variable rate
+                uint256 owedPerDay = loanLocal.principal
+                    .mul(ILoanPool(loanLocal.lender).borrowInterestRate())
+                    .div(DAYS_IN_A_YEAR * WEI_PERCENT_PRECISION);
+
+                lenderInterestLocal.owedPerDay = lenderInterestLocal.owedPerDay
+                    .add(owedPerDay);
+                lenderInterestLocal.owedPerDay = lenderInterestLocal.owedPerDay
+                    .sub(loanInterestLocal.owedPerDay);
+
+                loanInterestLocal.owedPerDay = owedPerDay;
+            } else {
+                // loanInterestLocal.owedPerDay doesn't change
+                maxDuration = ONE_MONTH;
+            }
+        } else {
+            // loanInterestLocal.owedPerDay doesn't change
+            maxDuration = ONE_MONTH;
+        }
+
 
         if (backInterestTime >= maxDuration) {
             maxDuration = backInterestTime
@@ -259,5 +291,17 @@ contract LoanClosingsRollover is LoanClosingsBase {
         );
 
         loans[loanLocal.id] = loanLocal;
+    }
+
+    function didRollover(bytes32 loanId) internal returns (bool isFirstTime) {
+        assembly {
+            isFirstTime := sload(loanId)
+        }
+    }
+
+    function saveDidRollover(bytes32 loanId, bool state) internal {
+        assembly {
+            sstore(loanId, state)
+        }
     }
 }
