@@ -11,7 +11,7 @@ import "../../utils/ReentrancyGuard.sol";
 import "@openzeppelin-2.5.0/ownership/Ownable.sol";
 import "@openzeppelin-2.5.0/utils/Address.sol";
 import "../../interfaces/IWethERC20.sol";
-import "../../utils/PausableGuardian.sol";
+import "../../governance/PausableGuardian.sol";
 
 
 contract LoanTokenBase is ReentrancyGuard, Ownable, PausableGuardian {

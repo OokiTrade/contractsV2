@@ -11,7 +11,7 @@ import "../../events/LoanOpeningsEvents.sol";
 import "../../mixins/VaultController.sol";
 import "../../mixins/InterestUser.sol";
 import "../../swaps/SwapsUser.sol";
-import "../../utils/PausableGuardian.sol";
+import "../../governance/PausableGuardian.sol";
 
 
 contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUser, SwapsUser, PausableGuardian {
@@ -51,7 +51,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         external
         payable
         nonReentrant
-        pausable(this.borrowOrTradeFromPool.selector)
+        pausable(msg.sig)
         returns (LoanOpenData memory)
     {
         require(msg.value == 0 || loanDataBytes.length != 0, "loanDataBytes required with ether");
@@ -94,7 +94,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         address delegated,
         bool toggle)
         external
-        pausable(this.setDelegatedManager.selector)
+        pausable(msg.sig)
     {
         require(loans[loanId].borrower == msg.sender, "unauthorized");
 

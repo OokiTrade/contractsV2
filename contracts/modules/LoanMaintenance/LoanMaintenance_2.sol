@@ -8,7 +8,7 @@ pragma experimental ABIEncoderV2;
 
 import "../../core/State.sol";
 import "../../events/LoanMaintenanceEvents.sol";
-import "../../utils/PausableGuardian.sol";
+import "../../governance/PausableGuardian.sol";
 
 contract LoanMaintenance_2 is State, LoanMaintenanceEvents, PausableGuardian {
 
@@ -25,7 +25,7 @@ contract LoanMaintenance_2 is State, LoanMaintenanceEvents, PausableGuardian {
         address newOwner)
         external
         nonReentrant
-        pausable(this.transferLoan.selector)
+        pausable(msg.sig)
     {
         Loan storage loanLocal = loans[loanId];
         address currentOwner = loanLocal.borrower;

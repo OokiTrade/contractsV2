@@ -64,6 +64,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         uint256 depositAmount)
         external
         nonReentrant
+        pausable(msg.sig)
         returns (uint256) // mintAmount
     {
         return _mintToken(
@@ -77,6 +78,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         uint256 burnAmount)
         external
         nonReentrant
+        pausable(msg.sig)
         returns (uint256 loanAmountPaid)
     {
         loanAmountPaid = _burnToken(
