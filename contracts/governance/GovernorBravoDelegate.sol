@@ -75,8 +75,8 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
       */
     function propose(address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas, string memory description) public returns (uint) {
         uint latestProposalId = latestProposalIds[msg.sender];
-        uint votes = staking._setProposalVals(msg.sender, latestProposalId);
-        require(votes > proposalThreshold, "GovernorBravo::propose: proposer votes below proposal threshold");
+        
+
         require(targets.length == values.length && targets.length == signatures.length && targets.length == calldatas.length, "GovernorBravo::propose: proposal function information arity mismatch");
         require(targets.length != 0, "GovernorBravo::propose: must provide actions");
         require(targets.length <= proposalMaxOperations, "GovernorBravo::propose: too many actions");
@@ -110,6 +110,8 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
 
         proposals[newProposal.id] = newProposal;
         latestProposalIds[newProposal.proposer] = newProposal.id;
+        uint votes = staking._setProposalVals(msg.sender, newProposal.id);
+        require(votes > proposalThreshold, "GovernorBravo::propose: proposer votes below proposal threshold");
 
         emit ProposalCreated(newProposal.id, msg.sender, targets, values, signatures, calldatas, startBlock, endBlock, description);
         return newProposal.id;
