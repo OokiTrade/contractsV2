@@ -12,9 +12,10 @@ import "../../mixins/VaultController.sol";
 import "../../mixins/InterestUser.sol";
 import "../../mixins/LiquidationHelper.sol";
 import "../../swaps/SwapsUser.sol";
+import "../../utils/PausableGuardian.sol";
 
 
-contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, InterestUser, SwapsUser, LiquidationHelper {
+contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, InterestUser, SwapsUser, LiquidationHelper, PausableGuardian {
 
     function initialize(
         address target)
@@ -45,6 +46,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         external
         payable
         nonReentrant
+        pausable(this.depositCollateral.selector)
     {
         require(depositAmount != 0, "depositAmount is 0");
 
@@ -106,6 +108,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         uint256 withdrawAmount)
         external
         nonReentrant
+        pausable(this.depositCollateral.selector)
         returns (uint256 actualWithdrawAmount)
     {
         require(withdrawAmount != 0, "withdrawAmount is 0");
@@ -180,6 +183,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
     function withdrawAccruedInterest(
         address loanToken)
         external
+        pausable(this.withdrawAccruedInterest.selector)
     {
         // pay outstanding interest to lender
         _payInterest(
@@ -196,6 +200,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         external
         payable
         nonReentrant
+        pausable(this.extendLoanDuration.selector)
         returns (uint256 secondsExtended)
     {
         require(depositAmount != 0, "depositAmount is 0");
@@ -311,6 +316,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         uint256 withdrawAmount)
         external
         nonReentrant
+        pausable(this.reduceLoanDuration.selector)
         returns (uint256 secondsReduced)
     {
         require(withdrawAmount != 0, "withdrawAmount is 0");
@@ -396,6 +402,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         uint256 depositValueAsLoanToken,
         uint256 depositValueAsCollateralToken)
         external
+        pausable(this.setDepositAmount.selector)
     {
         // only callable by loan pools
         require(loanPoolToUnderlying[msg.sender] != address(0), "not authorized");
@@ -411,6 +418,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
     function claimRewards(
         address receiver)
         external
+        pausable(this.claimRewards.selector)
         returns (uint256 claimAmount)
     {
         bytes32 slot = keccak256(abi.encodePacked(msg.sender, UserRewardsID));
