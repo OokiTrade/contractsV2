@@ -402,7 +402,6 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         uint256 depositValueAsLoanToken,
         uint256 depositValueAsCollateralToken)
         external
-        pausable(this.setDepositAmount.selector)
     {
         // only callable by loan pools
         require(loanPoolToUnderlying[msg.sender] != address(0), "not authorized");
