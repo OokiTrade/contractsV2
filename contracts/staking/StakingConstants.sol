@@ -43,9 +43,6 @@ contract StakingConstants {
 
     uint256 public constant BZRXWeightStored = 1e18;
 
-    //Need to deploy feesExtractor proxy
-    //address internal constant FEES_EXTRACTOR = 0x269004Fd5ebeA626818b970687cfF81Ea343fC42;
-
     struct DelegatedTokens {
         address user;
         uint256 BZRX;

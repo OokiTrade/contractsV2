@@ -14,7 +14,7 @@ import "./interfaces/IUniswapV2Router.sol";
 import "../../interfaces/IBZx.sol";
 import "./interfaces/IMasterChefPartial.sol";
 import "./interfaces/IPriceFeeds.sol";
-import "./../staking/interfaces/IStakingPartial.sol";
+import "../../interfaces/IStaking.sol";
 import "./../staking/interfaces/ICurve3Pool.sol";
 
 contract FeeExtractAndDistribute_ETH is Upgradeable {
@@ -41,9 +41,7 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
     IBZx public constant bZx = IBZx(0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f);
 
     mapping(address => address[]) public swapPaths;
-
-
-    address internal constant ZERO_ADDRESS = address(0);
+    mapping(address => uint256) public stakingRewards;
 
     bool public isPaused;
 
@@ -105,10 +103,7 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
         uint256[] memory amounts = bZx.withdrawFees(assets, address(this), IBZx.FeeClaimType.All);
 
         for (uint256 i = 0; i < assets.length; i++) {
-            STAKING.setStakingRewards(
-                assets[i],
-                STAKING.stakingRewards(assets[i]).add(amounts[i])
-            );
+            stakingRewards[assets[i]] = stakingRewards[assets[i]].add(amounts[i]);
         }
 
         emit WithdrawFees(
@@ -157,10 +152,7 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
             }
         }
         if (bzrxOutput != 0) {
-            STAKING.setStakingRewards(
-                BZRX,
-                STAKING.stakingRewards(BZRX).add(bzrxOutput)
-            );
+            stakingRewards[BZRX] = stakingRewards[BZRX].add(bzrxOutput);
         }
 
         if (daiAmount != 0 || usdcAmount != 0 || usdtAmount != 0) {
@@ -169,10 +161,7 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
                 usdcAmount,
                 usdtAmount
             );
-            STAKING.setStakingRewards(
-                address(curve3Crv),
-                STAKING.stakingRewards(address(curve3Crv)).add(crv3Output)
-            );
+            stakingRewards[address(curve3Crv)] = stakingRewards[address(curve3Crv)].add(crv3Output);
         }
 
         emit ConvertFees(
@@ -186,14 +175,14 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
         internal
         returns (uint256 bzrxRewards, uint256 crv3Rewards)
     {
-        bzrxRewards = STAKING.stakingRewards(BZRX);
-        crv3Rewards = STAKING.stakingRewards(address(curve3Crv));
+        bzrxRewards = stakingRewards[BZRX];
+        crv3Rewards = stakingRewards[address(curve3Crv)];
         if (bzrxRewards != 0 || crv3Rewards != 0) {
             address _fundsWallet = STAKING.fundsWallet();
             uint256 rewardAmount;
             uint256 callerReward;
             if (bzrxRewards != 0) {
-                STAKING.setStakingRewards(BZRX, 0);
+                stakingRewards[BZRX] = 0;
                 rewardAmount = bzrxRewards
                     .mul(STAKING.rewardPercent())
                     .div(1e20);
@@ -212,7 +201,7 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
                     .sub(callerReward);
             }
             if (crv3Rewards != 0) {
-                STAKING.setStakingRewards(address(curve3Crv), 0);
+                stakingRewards[address(curve3Crv)] = 0;
 
                 rewardAmount = crv3Rewards
                     .mul(STAKING.rewardPercent())
@@ -250,15 +239,12 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
         internal
         returns (uint256 returnAmount)
     {
-        uint256 stakingReward = STAKING.stakingRewards(asset);
+        uint256 stakingReward = stakingRewards[asset];
         if (stakingReward != 0) {
             if (amount > stakingReward) {
                 amount = stakingReward;
             }
-            STAKING.setStakingRewards(
-                asset,
-                stakingReward.sub(amount)
-            );
+            stakingRewards[asset] = stakingReward.sub(amount);
 
             uint256[] memory amounts = uniswapRouter.swapExactTokensForTokens(
                 amount,
@@ -294,43 +280,34 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
         uint256 stakingReward;
 
         if (daiAmount != 0) {
-            stakingReward = STAKING.stakingRewards(DAI);
+            stakingReward = stakingRewards[DAI];
             if (stakingReward != 0) {
                 if (daiAmount > stakingReward) {
                     daiAmount = stakingReward;
                 }
-                STAKING.setStakingRewards(
-                    DAI,
-                    stakingReward.sub(daiAmount)
-                );
+                stakingRewards[DAI] = stakingReward.sub(daiAmount);
                 curveAmounts[0] = daiAmount;
                 curveTotal = daiAmount;
             }
         }
         if (usdcAmount != 0) {
-            stakingReward = STAKING.stakingRewards(USDC);
+            stakingReward = stakingRewards[USDC];
             if (stakingReward != 0) {
                 if (usdcAmount > stakingReward) {
                     usdcAmount = stakingReward;
                 }
-                STAKING.setStakingRewards(
-                    USDC,
-                    stakingReward.sub(usdcAmount)
-                );
+                stakingRewards[USDC] = stakingReward.sub(usdcAmount);
                 curveAmounts[1] = usdcAmount;
                 curveTotal = curveTotal.add(usdcAmount.mul(1e12)); // normalize to 18 decimals
             }
         }
         if (usdtAmount != 0) {
-            stakingReward = STAKING.stakingRewards(USDT);
+            stakingReward = stakingRewards[USDT];
             if (stakingReward != 0) {
                 if (usdtAmount > stakingReward) {
                     usdtAmount = stakingReward;
                 }
-                STAKING.setStakingRewards(
-                    USDT,
-                    stakingReward.sub(usdtAmount)
-                );
+                stakingRewards[USDT] = stakingReward.sub(usdtAmount);
                 curveAmounts[2] = usdtAmount;
                 curveTotal = curveTotal.add(usdtAmount.mul(1e12)); // normalize to 18 decimals
             }
@@ -441,5 +418,17 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
             IERC20(path[0]).safeApprove(address(uniswapRouter), 0);
             IERC20(path[0]).safeApprove(address(uniswapRouter), uint256(-1));
         }
+    }
+
+
+    function migrateStakingRewards()
+        external
+        onlyOwner
+    {
+        address[] memory assets = STAKING.getCurrentFeeTokens();
+        for (uint256 i = 0; i < assets.length; i++) {
+            stakingRewards[assets[i]] = STAKING.stakingRewards(assets[i]);
+        }
+        stakingRewards[address(curve3Crv)] = STAKING.stakingRewards(address(curve3Crv));
     }
 }

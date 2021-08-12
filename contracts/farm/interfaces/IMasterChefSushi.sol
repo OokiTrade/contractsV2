@@ -3,7 +3,8 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+pragma solidity >=0.5.0 <=0.8.4;
+pragma experimental ABIEncoderV2;
 
 interface IMasterChefSushi {
 

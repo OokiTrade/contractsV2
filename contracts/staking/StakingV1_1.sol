@@ -13,7 +13,6 @@ import "../../interfaces/IBZx.sol";
 import "../../interfaces/IPriceFeeds.sol";
 import "../utils/MathUtil.sol";
 import "../farm/interfaces/IMasterChefSushi.sol";
-import "./interfaces/IStakingPartial.sol";
 
 
 contract StakingV1_1 is StakingState, StakingConstants {
@@ -35,14 +34,6 @@ contract StakingV1_1 is StakingState, StakingConstants {
         returns (address[] memory)
     {
         return currentFeeTokens;
-    }
-
-    function setStakingRewards(address asset, uint256 value)
-        external
-    {
-        //!!!! Enable after FEES_EXTRACTOR is deployed
-        //require(msg.sender == FEES_EXTRACTOR, "unauthorized");
-        stakingRewards[asset] = value;
     }
 
     // View function to see pending sushi rewards on frontend.
