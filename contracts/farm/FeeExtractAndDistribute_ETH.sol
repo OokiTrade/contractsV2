@@ -40,6 +40,8 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
     ICurve3Pool public constant curve3pool = ICurve3Pool(0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7);
     IBZx public constant bZx = IBZx(0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f);
 
+    mapping(address => address[]) public swapPaths;
+
 
     address internal constant ZERO_ADDRESS = address(0);
 
@@ -82,7 +84,7 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
         // sweepFeesByAsset() does checkPause
         returns (uint256 bzrxRewards, uint256 crv3Rewards)
     {
-        return sweepFeesByAsset(STAKING.currentFeeTokens());
+        return sweepFeesByAsset(STAKING.getCurrentFeeTokens());
     }
 
     function sweepFeesByAsset(address[] memory assets)
@@ -261,7 +263,7 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
             uint256[] memory amounts = uniswapRouter.swapExactTokensForTokens(
                 amount,
                 1, // amountOutMin
-                STAKING.swapPaths(asset),
+                swapPaths[asset],
                 address(this),
                 block.timestamp
             );
@@ -411,6 +413,33 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
                 spreadValue <= maxDisagreement,
                 "curve price disagreement"
             );
+        }
+    }
+
+    // path should start with the asset to swap and end with BZRX
+    // only one path allowed per asset
+    // ex: asset -> WETH -> BZRX
+    function setPaths(
+        address[][] calldata paths)
+        external
+        onlyOwner
+    {
+        address[] memory path;
+        for (uint256 i = 0; i < paths.length; i++) {
+            path = paths[i];
+            require(path.length >= 2 &&
+            path[0] != path[path.length - 1] &&
+            path[path.length - 1] == BZRX,
+                "invalid path"
+            );
+
+            // check that the path exists
+            uint256[] memory amountsOut = uniswapRouter.getAmountsOut(1e10, path);
+            require(amountsOut[amountsOut.length - 1] != 0, "path does not exist");
+
+            swapPaths[path[0]] = path;
+            IERC20(path[0]).safeApprove(address(uniswapRouter), 0);
+            IERC20(path[0]).safeApprove(address(uniswapRouter), uint256(-1));
         }
     }
 }

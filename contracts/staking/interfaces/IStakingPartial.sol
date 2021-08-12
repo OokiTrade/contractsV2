@@ -13,7 +13,7 @@ interface IStakingPartial {
         view
         returns (uint256);
 
-    function currentFeeTokens()
+    function getCurrentFeeTokens()
         external
         view
         returns (address[] memory);
@@ -52,10 +52,6 @@ interface IStakingPartial {
         external
         view
         returns (uint256);
-
-    function swapPaths(address path)
-        external
-        returns (address[] memory);
 
     function addRewards(uint256 newBZRX, uint256 newStableCoin)
         external;

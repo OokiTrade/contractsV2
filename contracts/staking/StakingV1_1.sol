@@ -29,10 +29,19 @@ contract StakingV1_1 is StakingState, StakingConstants {
         _;
     }
 
+    function getCurrentFeeTokens()
+        external
+        view
+        returns (address[] memory)
+    {
+        return currentFeeTokens;
+    }
+
     function setStakingRewards(address asset, uint256 value)
         external
-        onlyOwner
     {
+        //!!!! Enable after FEES_EXTRACTOR is deployed
+        //require(msg.sender == FEES_EXTRACTOR, "unauthorized");
         stakingRewards[asset] = value;
     }
 
@@ -137,7 +146,10 @@ contract StakingV1_1 is StakingState, StakingConstants {
             //Deposit to sushi masterchef
             if(token == LPToken){
                 uint256 sushiBalanceBefore = IERC20(SUSHI).balanceOf(address(this));
-                IMasterChefSushi(SUSHI_MASTERCHEF).deposit(BZRX_ETH_SUSHI_MASTERCHEF_PID, stakeAmount);
+                IMasterChefSushi(SUSHI_MASTERCHEF).deposit(
+                    BZRX_ETH_SUSHI_MASTERCHEF_PID,
+                    IERC20(LPToken).balanceOf(address(this))
+                );
                 uint256 sushiRewards = IERC20(SUSHI).balanceOf(address(this)) - sushiBalanceBefore;
                 if(sushiRewards != 0){
                     _addAltRewards(SUSHI, sushiRewards);
@@ -1034,33 +1046,6 @@ contract StakingV1_1 is StakingState, StakingConstants {
         onlyOwner
     {
         currentFeeTokens = tokens;
-    }
-
-    // path should start with the asset to swap and end with BZRX
-    // only one path allowed per asset
-    // ex: asset -> WETH -> BZRX
-    function setPaths(
-        address[][] calldata paths)
-        external
-        onlyOwner
-    {
-        address[] memory path;
-        for (uint256 i = 0; i < paths.length; i++) {
-            path = paths[i];
-            require(path.length >= 2 &&
-                path[0] != path[path.length - 1] &&
-                path[path.length - 1] == BZRX,
-                "invalid path"
-            );
-            
-            // check that the path exists
-            uint256[] memory amountsOut = uniswapRouter.getAmountsOut(1e10, path);
-            require(amountsOut[amountsOut.length - 1] != 0, "path does not exist");
-            
-            swapPaths[path[0]] = path;
-            IERC20(path[0]).safeApprove(address(uniswapRouter), 0);
-            IERC20(path[0]).safeApprove(address(uniswapRouter), uint256(-1));
-        }
     }
 
     /*
