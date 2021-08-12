@@ -46,6 +46,15 @@ contract StakingV1_1 is StakingState, StakingConstants {
         return _pendingAltRewards(SUSHI, _user, userSupply);
     }
 
+    function pendingAltRewards(address token, address _user)
+        external
+        view
+        returns (uint256)
+    {
+        uint256 userSupply = balanceOfByAsset(token, _user);
+        return _pendingAltRewards(token, _user, userSupply);
+    }
+
     function _pendingAltRewards(address token, address _user, uint256 userSupply)
         internal
         view
@@ -722,6 +731,13 @@ contract StakingV1_1 is StakingState, StakingConstants {
             newBZRX,
             newStableCoin
         );
+    }
+
+    function addAltRewards(address token, uint256 amount) public {
+        if(amount != 0){
+            _addAltRewards(token, amount);
+            IERC20(token).transferFrom(msg.sender, address(this), amount);
+        }
     }
 
     function _addAltRewards(address token, uint256 amount) internal {

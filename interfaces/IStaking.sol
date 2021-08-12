@@ -138,4 +138,13 @@ interface IStakingPartial {
 
     function exit()
         external;
+
+    function addAltRewards(address token, uint256 amount)
+        external;
+
+    function pendingAltRewards(address token, address _user)
+        external
+        view
+        returns (uint256);
+
 }
