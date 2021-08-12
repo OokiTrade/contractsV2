@@ -112,7 +112,6 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
         proposals[proposalId] = newProposal;
         latestProposalIds[msg.sender] = proposalId;
 
-
         emit ProposalCreated(proposalId, msg.sender, targets, values, signatures, calldatas, startBlock, endBlock, description);
         return proposalId;
     }
