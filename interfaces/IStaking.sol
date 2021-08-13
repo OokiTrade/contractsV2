@@ -56,12 +56,16 @@ interface IStakingPartial {
 
     function stake(
         address[] calldata tokens,
-        uint256[] calldata values)
+        uint256[] calldata values,
+        bool claim
+    )
         external;
 
     function unstake(
         address[] memory tokens,
-        uint256[] memory values)
+        uint256[] memory values,
+        bool claim
+    )
         external;
 
     function earned(address account)

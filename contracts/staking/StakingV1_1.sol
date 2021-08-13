@@ -108,7 +108,9 @@ contract StakingV1_1 is StakingState, StakingConstants {
 
     function stake(
         address[] calldata tokens,
-        uint256[] calldata values)
+        uint256[] calldata values,
+        bool claim
+    )
         external
         checkPause
         updateRewards(msg.sender)
@@ -124,7 +126,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
 
         address token;
         uint256 stakeAmount;
-        uint256 lptUserSupply = balanceOfByAsset(LPToken, msg.sender);
+        uint256 lptUserSupply = (claim)?balanceOfByAsset(LPToken, msg.sender):0;
 
         for (uint256 i = 0; i < tokens.length; i++) {
             token = tokens[i];
@@ -163,16 +165,19 @@ contract StakingV1_1 is StakingState, StakingConstants {
             );
         }
 
-        _paySushiRewards(
-            msg.sender,
-            _pendingAltRewards(SUSHI, msg.sender, lptUserSupply)
-        );
-
+        if(claim){
+            _paySushiRewards(
+                msg.sender,
+                _pendingAltRewards(SUSHI, msg.sender, lptUserSupply)
+            );
+        }
     }
 
     function unstake(
         address[] memory tokens,
-        uint256[] memory values)
+        uint256[] memory values,
+        bool claim
+    )
         public
         checkPause
         updateRewards(msg.sender)
@@ -184,7 +189,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
         address token;
         uint256 unstakeAmount;
         uint256 stakedAmount;
-        uint256 lptUserSupply = balanceOfByAsset(LPToken, msg.sender);
+        uint256 lptUserSupply = (claim)?balanceOfByAsset(LPToken, msg.sender):0;
 
         for (uint256 i = 0; i < tokens.length; i++) {
             token = tokens[i];
@@ -229,11 +234,12 @@ contract StakingV1_1 is StakingState, StakingConstants {
                 unstakeAmount
             );
         }
-
-        _paySushiRewards(
-            msg.sender,
-            _pendingAltRewards(SUSHI, msg.sender, lptUserSupply)
-        );
+        if(claim){
+            _paySushiRewards(
+                msg.sender,
+                _pendingAltRewards(SUSHI, msg.sender, lptUserSupply)
+            );
+        }
     }
 
     /*function changeDelegate(
@@ -422,7 +428,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
         values[2] = uint256(-1);
         values[3] = uint256(-1);
         
-        unstake(tokens, values); // calls updateRewards
+        unstake(tokens, values, true); // calls updateRewards
         _claim(false);
     }
 
