@@ -83,7 +83,7 @@ FEE_EXTRACTOR.setPaths([
         "0x56d811088235F11C8920698a204A5010a788f4b3"],  # UNI -> WETH -> BZRX
 ], {'from': BZX.owner()})
 
-FEE_EXTRACTOR.setApprovals();
+FEE_EXTRACTOR.setApprovals()
 
 '''
 # approve curvpool spent dai
