@@ -419,16 +419,4 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
             IERC20(path[0]).safeApprove(address(uniswapRouter), uint256(-1));
         }
     }
-
-
-    function migrateStakingRewards()
-        external
-        onlyOwner
-    {
-        address[] memory assets = STAKING.getCurrentFeeTokens();
-        for (uint256 i = 0; i < assets.length; i++) {
-            stakingRewards[assets[i]] = STAKING.stakingRewards(assets[i]);
-        }
-        stakingRewards[address(curve3Crv)] = STAKING.stakingRewards(address(curve3Crv));
-    }
 }

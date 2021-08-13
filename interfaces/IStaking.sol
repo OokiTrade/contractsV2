@@ -56,15 +56,27 @@ interface IStakingPartial {
 
     function stake(
         address[] calldata tokens,
+        uint256[] calldata values
+    )
+        external;
+
+    function stake(
+        address[] calldata tokens,
         uint256[] calldata values,
-        bool claim
+        bool claimSushi
+    )
+        external;
+
+    function unstake(
+        address[] calldata tokens,
+        uint256[] calldata values
     )
         external;
 
     function unstake(
         address[] memory tokens,
         uint256[] memory values,
-        bool claim
+        bool claimSushi
     )
         external;
 

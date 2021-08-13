@@ -89,7 +89,3 @@ USDC.approve('0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7', 2**256-1, {'from': FE
 USDT.approve('0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7', 2**256-1, {'from': FEE_EXTRACTOR})
 BZRX.approve(STAKING, 2**256-1, {'from': FEE_EXTRACTOR})
 POOL3.approve(STAKING, 2**256-1, {'from': FEE_EXTRACTOR})
-FEE_EXTRACTOR.migrateStakingRewards({'from': FEE_EXTRACTOR.owner()})
-
-
-

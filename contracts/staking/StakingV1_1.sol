@@ -107,11 +107,20 @@ contract StakingV1_1 is StakingState, StakingConstants {
     }
 
     function stake(
-        address[] calldata tokens,
-        uint256[] calldata values,
-        bool claim
+        address[] memory tokens,
+        uint256[] memory values
     )
-        external
+        public
+    {
+        stake(tokens, values, false);
+    }
+
+    function stake(
+        address[] memory tokens,
+        uint256[] memory values,
+        bool claimSushi
+    )
+        public
         checkPause
         updateRewards(msg.sender)
     {
@@ -126,7 +135,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
 
         address token;
         uint256 stakeAmount;
-        uint256 lptUserSupply = (claim)?balanceOfByAsset(LPToken, msg.sender):0;
+        uint256 lptUserSupply = (claimSushi)?balanceOfByAsset(LPToken, msg.sender):0;
 
         for (uint256 i = 0; i < tokens.length; i++) {
             token = tokens[i];
@@ -165,18 +174,26 @@ contract StakingV1_1 is StakingState, StakingConstants {
             );
         }
 
-        if(claim){
+        if(claimSushi){
             _paySushiRewards(
                 msg.sender,
                 _pendingAltRewards(SUSHI, msg.sender, lptUserSupply)
             );
         }
     }
+    function unstake(
+        address[] memory tokens,
+        uint256[] memory values
+    )
+        public
+    {
+        unstake(tokens, values, false);
+    }
 
     function unstake(
         address[] memory tokens,
         uint256[] memory values,
-        bool claim
+        bool claimSushi
     )
         public
         checkPause
@@ -189,7 +206,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
         address token;
         uint256 unstakeAmount;
         uint256 stakedAmount;
-        uint256 lptUserSupply = (claim)?balanceOfByAsset(LPToken, msg.sender):0;
+        uint256 lptUserSupply = (claimSushi)?balanceOfByAsset(LPToken, msg.sender):0;
 
         for (uint256 i = 0; i < tokens.length; i++) {
             token = tokens[i];
@@ -234,7 +251,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
                 unstakeAmount
             );
         }
-        if(claim){
+        if(claimSushi){
             _paySushiRewards(
                 msg.sender,
                 _pendingAltRewards(SUSHI, msg.sender, lptUserSupply)
