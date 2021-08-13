@@ -13,7 +13,7 @@ interface IStakingPartial {
         view
         returns (uint256);
 
-    function getCurrentFeeTokens()
+    function currentFeeTokens()
         external
         view
         returns (address[] memory);
@@ -28,6 +28,11 @@ interface IStakingPartial {
         external
         view
         returns (uint256);
+
+    function isPaused()
+        external
+        view
+        returns (bool);
 
     function fundsWallet()
         external

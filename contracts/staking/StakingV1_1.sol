@@ -28,14 +28,6 @@ contract StakingV1_1 is StakingState, StakingConstants {
         _;
     }
 
-    function getCurrentFeeTokens()
-        external
-        view
-        returns (address[] memory)
-    {
-        return currentFeeTokens;
-    }
-
     // View function to see pending sushi rewards on frontend.
     function pendingSushiRewards(address _user)
         external
@@ -71,16 +63,16 @@ contract StakingV1_1 is StakingState, StakingConstants {
         uint256 _lastClaimedRound = userAltRewardsRounds[_user];
         uint256 currentAccumulatedAltRewards = _altRewardsRounds[_currentRound-1];
 
-        //Never claimed yet
+        // Never claimed yet
         if (_lastClaimedRound == 0) {
             return userSupply
-            .mul(currentAccumulatedAltRewards)
-            .div(1e12);
+                .mul(currentAccumulatedAltRewards)
+                .div(1e12);
         }
-        _lastClaimedRound -= 1; //correct index to start from 0
-        _currentRound -= 1; //correct index to start from 0
+        _lastClaimedRound--; //correct index to start from 0
+        _currentRound--; //correct index to start from 0
 
-        //Already claimed everything
+        // Already claimed everything
         if (_lastClaimedRound == _currentRound) {
             return 0;
         }
@@ -135,7 +127,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
 
         address token;
         uint256 stakeAmount;
-        uint256 lptUserSupply = (claimSushi)?balanceOfByAsset(LPToken, msg.sender):0;
+        uint256 lptUserSupply = claimSushi ? balanceOfByAsset(LPToken, msg.sender) : 0;
 
         for (uint256 i = 0; i < tokens.length; i++) {
             token = tokens[i];
@@ -154,15 +146,15 @@ contract StakingV1_1 is StakingState, StakingConstants {
 
             IERC20(token).safeTransferFrom(msg.sender, address(this), stakeAmount);
 
-            //Deposit to sushi masterchef
-            if(token == LPToken){
+            // Deposit to sushi masterchef
+            if (token == LPToken) {
                 uint256 sushiBalanceBefore = IERC20(SUSHI).balanceOf(address(this));
                 IMasterChefSushi(SUSHI_MASTERCHEF).deposit(
                     BZRX_ETH_SUSHI_MASTERCHEF_PID,
                     IERC20(LPToken).balanceOf(address(this))
                 );
                 uint256 sushiRewards = IERC20(SUSHI).balanceOf(address(this)) - sushiBalanceBefore;
-                if(sushiRewards != 0){
+                if (sushiRewards != 0) {
                     _addAltRewards(SUSHI, sushiRewards);
                 }
             }
@@ -174,7 +166,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
             );
         }
 
-        if(claimSushi){
+        if (claimSushi) {
             _paySushiRewards(
                 msg.sender,
                 _pendingAltRewards(SUSHI, msg.sender, lptUserSupply)
@@ -206,7 +198,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
         address token;
         uint256 unstakeAmount;
         uint256 stakedAmount;
-        uint256 lptUserSupply = (claimSushi)?balanceOfByAsset(LPToken, msg.sender):0;
+        uint256 lptUserSupply = claimSushi ? balanceOfByAsset(LPToken, msg.sender) : 0;
 
         for (uint256 i = 0; i < tokens.length; i++) {
             token = tokens[i];
@@ -232,12 +224,12 @@ contract StakingV1_1 is StakingState, StakingConstants {
                 IVestingToken(vBZRX).claim();
             }
 
-            //Withdraw to sushi masterchef
-            if(token == LPToken){
+            // Withdraw to sushi masterchef
+            if (token == LPToken) {
                 uint256 sushiBalanceBefore = IERC20(SUSHI).balanceOf(address(this));
                 IMasterChefSushi(SUSHI_MASTERCHEF).withdraw(BZRX_ETH_SUSHI_MASTERCHEF_PID, unstakeAmount);
                 uint256 sushiRewards = IERC20(SUSHI).balanceOf(address(this)) - sushiBalanceBefore;
-                if(sushiRewards != 0){
+                if (sushiRewards != 0) {
                     _addAltRewards(SUSHI, sushiRewards);
                 }
             }
@@ -251,7 +243,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
                 unstakeAmount
             );
         }
-        if(claimSushi){
+        if (claimSushi) {
             _paySushiRewards(
                 msg.sender,
                 _pendingAltRewards(SUSHI, msg.sender, lptUserSupply)
@@ -757,7 +749,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
     }
 
     function addAltRewards(address token, uint256 amount) public {
-        if(amount != 0){
+        if (amount != 0) {
             _addAltRewards(token, amount);
             IERC20(token).transferFrom(msg.sender, address(this), amount);
         }
@@ -765,7 +757,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
 
     function _addAltRewards(address token, uint256 amount) internal {
 
-        address poolAddress = (token == SUSHI)?LPToken:token;
+        address poolAddress = token == SUSHI ? LPToken : token;
 
         uint256 totalSupply = _totalSupplyPerToken[poolAddress];
         require(totalSupply != 0, "no deposits");
@@ -1077,20 +1069,6 @@ contract StakingV1_1 is StakingState, StakingConstants {
     {
         currentFeeTokens = tokens;
     }
-
-    /*
-    // commenting to reduce compile size
-    function setCurveApproval()
-        external
-        onlyOwner
-    {
-        IERC20(DAI).safeApprove(address(curve3pool), 0);
-        IERC20(DAI).safeApprove(address(curve3pool), uint256(-1));
-        IERC20(USDC).safeApprove(address(curve3pool), 0);
-        IERC20(USDC).safeApprove(address(curve3pool), uint256(-1));
-        IERC20(USDT).safeApprove(address(curve3pool), 0);
-        IERC20(USDT).safeApprove(address(curve3pool), uint256(-1));
-    }*/
 
     function setRewardPercent(
         uint256 _rewardPercent)

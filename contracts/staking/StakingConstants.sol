@@ -38,7 +38,7 @@ contract StakingConstants {
     uint256 internal constant vestingEndTimestamp =        vestingStartTimestamp + vestingDuration;
     uint256 internal constant _startingVBZRXBalance =      889389933e18; // 889,389,933 BZRX
 
-    address internal constant SUSHI_MASTERCHEF =  0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd;
+    address internal constant SUSHI_MASTERCHEF = 0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd;
     uint256 internal constant BZRX_ETH_SUSHI_MASTERCHEF_PID =  188;
 
     uint256 public constant BZRXWeightStored = 1e18;

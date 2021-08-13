@@ -67,10 +67,6 @@ contract StakingState is StakingUpgradeable {
     address public governor;
     mapping(uint256 => ProposalState) internal _proposalState;
 
-    //Mapping token address -- accumulated rewardsPerToken
-    mapping(address => uint256[]) public altRewardsRounds;
-
-    mapping(address => uint256) public userAltRewardsRounds;      // user => lastClaimedRound
-
-
+    mapping(address => uint256[]) public altRewardsRounds;                          // token => value (accumulated rewardsPerToken)
+    mapping(address => uint256) public userAltRewardsRounds;                        // user => lastClaimedRound
 }

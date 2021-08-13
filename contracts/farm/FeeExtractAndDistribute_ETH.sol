@@ -43,8 +43,6 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
     mapping(address => address[]) public swapPaths;
     mapping(address => uint256) public stakingRewards;
 
-    bool public isPaused;
-
     event ExtractAndDistribute();
 
     event WithdrawFees(
@@ -69,7 +67,7 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
     }
 
     modifier checkPause() {
-        require(!isPaused || msg.sender == owner(), "paused");
+        require(!STAKING.isPaused() || msg.sender == owner(), "paused");
         _;
     }
 
@@ -82,7 +80,7 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
         // sweepFeesByAsset() does checkPause
         returns (uint256 bzrxRewards, uint256 crv3Rewards)
     {
-        return sweepFeesByAsset(STAKING.getCurrentFeeTokens());
+        return sweepFeesByAsset(STAKING.currentFeeTokens());
     }
 
     function sweepFeesByAsset(address[] memory assets)
@@ -391,6 +389,18 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
                 "curve price disagreement"
             );
         }
+    }
+
+    function setApprovals()
+        external
+        onlyOwner
+    {
+        IERC20(DAI).safeApprove(address(curve3pool), uint256(-1));
+        IERC20(USDC).safeApprove(address(curve3pool), uint256(-1));
+        IERC20(USDT).safeApprove(address(curve3pool), uint256(-1));
+
+        IERC20(BZRX).safeApprove(address(STAKING), uint256(-1));
+        curve3Crv.safeApprove(address(STAKING), uint256(-1));
     }
 
     // path should start with the asset to swap and end with BZRX
