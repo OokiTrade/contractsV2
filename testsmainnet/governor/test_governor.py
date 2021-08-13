@@ -26,13 +26,13 @@ def BZRX(accounts, TestToken):
     
 @pytest.fixture(scope="module")
 def GOVERNANCE_DELEGATOR(accounts, GovernorBravoDelegator, STAKING, TIMELOCK, GovernorBravoDelegate, BZRX):
-    ADMIN = accounts[0]
-    MIN_VOTINGPEROD = 5760
-    MIN_VOTING_DELAY = 1
-    MIN_PROPOSAL_THRESHOLD = 5150000e18
-    impl = accounts[0].deploy(GovernorBravoDelegate)
-    governorBravoDelegator = accounts.at(STAKING.owner()).deploy(GovernorBravoDelegator, TIMELOCK, STAKING, ADMIN, impl, MIN_VOTINGPEROD, MIN_VOTING_DELAY, MIN_PROPOSAL_THRESHOLD)
-    gov = Contract.from_abi("governorBravoDelegator", address=governorBravoDelegator, abi=GovernorBravoDelegate.abi, owner=accounts[0])
+    # ADMIN = accounts[0]
+    # MIN_VOTINGPEROD = 5760
+    # MIN_VOTING_DELAY = 1
+    # MIN_PROPOSAL_THRESHOLD = 5150000e18
+    # impl = accounts[0].deploy(GovernorBravoDelegate)
+    # governorBravoDelegator = accounts.at(STAKING.owner()).deploy(GovernorBravoDelegator, TIMELOCK, STAKING, ADMIN, impl, MIN_VOTINGPEROD, MIN_VOTING_DELAY, MIN_PROPOSAL_THRESHOLD)
+    gov = Contract.from_abi("governorBravoDelegator", address="0x9da41f7810c2548572f4Fa414D06eD9772cA9e6E", abi=GovernorBravoDelegate.abi)
 
     # init timelock below
     calldata = TIMELOCK.setPendingAdmin.encode_input(gov.address)
@@ -45,7 +45,12 @@ def GOVERNANCE_DELEGATOR(accounts, GovernorBravoDelegator, STAKING, TIMELOCK, Go
 
 
     TIMELOCK.acceptAdmin({'from': gov})
+    gov.__setPendingLocalAdmin(TIMELOCK, {'from': bzxOwner})
+    gov.__acceptLocalAdmin({'from': TIMELOCK})
 
+    # at this point gov and timelock owns each other.
+    assert gov.admin() == TIMELOCK
+    assert TIMELOCK.admin() == gov
 
     BZRX.transferFrom("0xBE0eB53F46cd790Cd13851d5EFf43D12404d33E8", bzxOwner, 50*1e6*1e18, {'from': "0xBE0eB53F46cd790Cd13851d5EFf43D12404d33E8"})
     STAKING.stake([BZRX], [BZRX.balanceOf(bzxOwner)], {'from': bzxOwner})
@@ -118,6 +123,7 @@ def testGovernance(requireMainnetFork, GOVERNANCE_DELEGATOR, TIMELOCK, STAKING, 
     canceled = proposal[8]
     assert GOVERNANCE_DELEGATOR.state.call(id) == 0
     chain.mine()
+    chain.mine(startBlock - chain.height)
 
     # after first vote state is active
     tx = GOVERNANCE_DELEGATOR.castVote(id,1, {"from" : bzxOwner})
@@ -128,14 +134,14 @@ def testGovernance(requireMainnetFork, GOVERNANCE_DELEGATOR, TIMELOCK, STAKING, 
     chain.mine()
     assert GOVERNANCE_DELEGATOR.state.call(id) == 4
     
-    GOVERNANCE_DELEGATOR.queue(id)
+    GOVERNANCE_DELEGATOR.queue(id, {"from" : bzxOwner})
 
     proposal = GOVERNANCE_DELEGATOR.proposals(proposalCount)
     eta = proposal[2]
     chain.sleep(eta - chain.time())
     chain.mine()
 
-    GOVERNANCE_DELEGATOR.execute(id)
+    GOVERNANCE_DELEGATOR.execute(id, {"from" : bzxOwner})
 
     assert True
 
@@ -191,6 +197,8 @@ def testGovernanceProposeVotingActiveCancel(requireMainnetFork, GOVERNANCE_DELEG
     canceled = proposal[8]
 
     chain.mine()
+    chain.mine(startBlock - chain.height)
+    
     tx = GOVERNANCE_DELEGATOR.castVote(id,1, {"from" : bzxOwner})
     assert GOVERNANCE_DELEGATOR.state.call(id) == 1
    
@@ -222,6 +230,8 @@ def testGovernanceProposeVotingActiveVotingEndsDefeated(requireMainnetFork, GOVE
     canceled = proposal[8]
 
     chain.mine()
+    chain.mine(startBlock - chain.height)
+
     tx = GOVERNANCE_DELEGATOR.castVote(id,0, {"from" : bzxOwner})
     assert GOVERNANCE_DELEGATOR.state.call(id) == 1
    
@@ -231,7 +241,7 @@ def testGovernanceProposeVotingActiveVotingEndsDefeated(requireMainnetFork, GOVE
     chain.mine()
     assert GOVERNANCE_DELEGATOR.state.call(id) == 3
     with reverts("GovernorBravo::queue: proposal can only be queued if it is succeeded"):
-        GOVERNANCE_DELEGATOR.queue(id)
+        GOVERNANCE_DELEGATOR.queue(id, {"from" : bzxOwner})
 
     tx = GOVERNANCE_DELEGATOR.cancel(id, {"from": bzxOwner})
     proposal = GOVERNANCE_DELEGATOR.proposals(proposalCount)
@@ -415,6 +425,7 @@ def testGovernanceReallyComplexTXToSetITokens(requireMainnetFork, GOVERNANCE_DEL
     canceled = proposal[8]
     assert GOVERNANCE_DELEGATOR.state.call(id) == 0
     chain.mine()
+    chain.mine(startBlock - chain.height)
 
     # after first vote state is active
     tx = GOVERNANCE_DELEGATOR.castVote(id,1, {"from" : bzxOwner})
@@ -425,14 +436,14 @@ def testGovernanceReallyComplexTXToSetITokens(requireMainnetFork, GOVERNANCE_DEL
     chain.mine()
     assert GOVERNANCE_DELEGATOR.state.call(id) == 4
     
-    GOVERNANCE_DELEGATOR.queue(id)
+    GOVERNANCE_DELEGATOR.queue(id, {"from" : bzxOwner})
 
     proposal = GOVERNANCE_DELEGATOR.proposals(proposalCount)
     eta = proposal[2]
     chain.sleep(eta - chain.time())
     chain.mine()
 
-    GOVERNANCE_DELEGATOR.execute(id)
+    GOVERNANCE_DELEGATOR.execute(id, {"from" : bzxOwner})
 
     assert True
 
@@ -492,8 +503,8 @@ def testGovernanceConsecutiveProposal(requireMainnetFork, GOVERNANCE_DELEGATOR, 
     abstainVotes = proposal[7]
     canceled = proposal[8]
     assert GOVERNANCE_DELEGATOR.state.call(id) == 0
+    chain.mine(startBlock - chain.height)
     chain.mine()
-
     # after first vote state is active
     tx = GOVERNANCE_DELEGATOR.castVote(id,1, {"from" : bzxOwner})
     assert GOVERNANCE_DELEGATOR.state.call(id) == 1
@@ -503,14 +514,14 @@ def testGovernanceConsecutiveProposal(requireMainnetFork, GOVERNANCE_DELEGATOR, 
     chain.mine()
     assert GOVERNANCE_DELEGATOR.state.call(id) == 4
     
-    GOVERNANCE_DELEGATOR.queue(id)
+    GOVERNANCE_DELEGATOR.queue(id, {'from': accounts[0]})
 
     proposal = GOVERNANCE_DELEGATOR.proposals(proposalCount)
     eta = proposal[2]
     chain.sleep(eta - chain.time())
     chain.mine()
 
-    GOVERNANCE_DELEGATOR.execute(id)
+    GOVERNANCE_DELEGATOR.execute(id, {'from': accounts[0]})
 
 
 
@@ -567,9 +578,10 @@ def testGovernanceConsecutiveProposal(requireMainnetFork, GOVERNANCE_DELEGATOR, 
     canceled = proposal[8]
     assert GOVERNANCE_DELEGATOR.state.call(id) == 0
     chain.mine()
+    chain.mine(startBlock - chain.height)
 
     # after first vote state is active
-    tx = GOVERNANCE_DELEGATOR.castVote(id,1, {"from" : bzxOwner})
+    tx = GOVERNANCE_DELEGATOR.castVote(id, 1, {"from" : bzxOwner})
     assert GOVERNANCE_DELEGATOR.state.call(id) == 1
 
     chain.mine(endBlock - chain.height)
@@ -577,12 +589,12 @@ def testGovernanceConsecutiveProposal(requireMainnetFork, GOVERNANCE_DELEGATOR, 
     chain.mine()
     assert GOVERNANCE_DELEGATOR.state.call(id) == 4
     
-    GOVERNANCE_DELEGATOR.queue(id)
+    GOVERNANCE_DELEGATOR.queue(id, {"from" : bzxOwner})
 
     proposal = GOVERNANCE_DELEGATOR.proposals(proposalCount)
     eta = proposal[2]
     chain.sleep(eta - chain.time())
     chain.mine()
 
-    GOVERNANCE_DELEGATOR.execute(id)
+    GOVERNANCE_DELEGATOR.execute(id, {"from" : bzxOwner})
     assert True
