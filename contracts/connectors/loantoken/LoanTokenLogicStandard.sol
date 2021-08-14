@@ -161,6 +161,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         public
         payable
         nonReentrant
+        pausable(msg.sig)
         returns (IBZx.LoanOpenData memory)
     {
         return _borrow(
@@ -188,6 +189,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         public
         payable
         nonReentrant
+        pausable(msg.sig)
         returns (IBZx.LoanOpenData memory)
     {
         return _marginTrade(
