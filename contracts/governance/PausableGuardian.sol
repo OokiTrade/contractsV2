@@ -27,20 +27,15 @@ contract PausableGuardian {
         bytes4 sig, // example: "mint(uint256,uint256)"
         bool isPaused
     ) public {
-        require(getGuardian() == msg.sender, "unauthorized");
-
+        require(msg.sender == getGuardian() || msg.sender == owner(), "unauthorized");
         bytes32 slot = keccak256(abi.encodePacked(sig, Pausable_FunctionPause));
-
         assembly {
             sstore(slot, isPaused)
         }
     }
 
     function changeGuardian(address newGuardian) public {
-        // getGuardian() == address(0) to allow initial guardian set
-        // current bzxOwner = 0xB7F72028D9b502Dc871C444363a7aC5A52546608
-        // this is to allow initial deploy. later on thru gov vote can be removed once guardians are set.
-        require(getGuardian() == msg.sender || msg.sender == 0xB7F72028D9b502Dc871C444363a7aC5A52546608, "unauthorized");
+        require(msg.sender == getGuardian() || msg.sender == owner(), "unauthorized");
         bytes32 slot = keccak256(abi.encodePacked(Pausable_GuardianAddress));
         assembly {
             sstore(slot, newGuardian)
