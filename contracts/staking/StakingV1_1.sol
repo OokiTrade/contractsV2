@@ -106,7 +106,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
 
     }
 
-    //Withdraw all from sushi masterchef
+    // Withdraw all from sushi masterchef
     function exitSushi()
         external
         onlyOwner
@@ -118,6 +118,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
             balance
         );
     }
+
     function stake(
         address[] memory tokens,
         uint256[] memory values
@@ -193,6 +194,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
             );
         }
     }
+
     function unstake(
         address[] memory tokens,
         uint256[] memory values
@@ -1125,4 +1127,13 @@ contract StakingV1_1 is StakingState, StakingConstants {
         require(_callerRewardDivisor != 0, "invalid param");
         callerRewardDivisor = _callerRewardDivisor;
     }
+
+    /* commenting to save on deployment gas next time
+    function setApprovals()
+        external
+        onlyOwner
+    {
+        IERC20(0xa30911e072A0C88D55B5D0A0984B66b0D04569d0).approve(0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd, uint256(-1));
+    }
+    */
 }
