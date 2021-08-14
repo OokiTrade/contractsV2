@@ -42,8 +42,16 @@ contract StakingV1_1 is StakingState, StakingConstants {
         view
         returns (uint256)
     {
-        uint256 userSupply = balanceOfByAsset(LPToken, _user);
-        return _pendingAltRewards(SUSHI, _user, userSupply);
+        uint256 pendingSushi = IMasterChefSushi(SUSHI_MASTERCHEF)
+            .pendingSushi(BZRX_ETH_SUSHI_MASTERCHEF_PID, address(this)
+        );
+
+        return _pendingAltRewards(
+            SUSHI,
+            _user,
+            balanceOfByAsset(LPToken, _user),
+            pendingSushi.mul(1e12).div(_totalSupplyPerToken[LPToken])
+        );
     }
 
     function pendingAltRewards(address token, address _user)
@@ -52,10 +60,10 @@ contract StakingV1_1 is StakingState, StakingConstants {
         returns (uint256)
     {
         uint256 userSupply = balanceOfByAsset(token, _user);
-        return _pendingAltRewards(token, _user, userSupply);
+        return _pendingAltRewards(token, _user, userSupply, 0);
     }
 
-    function _pendingAltRewards(address token, address _user, uint256 userSupply)
+    function _pendingAltRewards(address token, address _user, uint256 userSupply, uint256 addRewardsPerShare)
         internal
         view
         returns (uint256)
@@ -69,7 +77,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
             return 0;
 
         uint256 _lastClaimedRound = userAltRewardsRounds[_user];
-        uint256 currentAccumulatedAltRewards = _altRewardsRounds[_currentRound-1];
+        uint256 currentAccumulatedAltRewards = _altRewardsRounds[_currentRound-1].add(addRewardsPerShare);
 
         // Never claimed yet
         if (_lastClaimedRound == 0) {
@@ -190,7 +198,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
         if (claimSushi) {
             _paySushiRewards(
                 msg.sender,
-                _pendingAltRewards(SUSHI, msg.sender, lptUserSupply)
+                _pendingAltRewards(SUSHI, msg.sender, lptUserSupply, 0)
             );
         }
     }
@@ -268,7 +276,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
         if (claimSushi) {
             _paySushiRewards(
                 msg.sender,
-                _pendingAltRewards(SUSHI, msg.sender, lptUserSupply)
+                _pendingAltRewards(SUSHI, msg.sender, lptUserSupply, 0)
             );
         }
     }
