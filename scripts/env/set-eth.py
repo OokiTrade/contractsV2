@@ -50,7 +50,7 @@ for acc in [accounts[0], accounts[9]]:
     SLP.approve(CHEF, 2**256-1, {'from':STAKING})
     SUSHI = Contract.from_abi("SUSHI", "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2", TestToken.abi)
 
-CHEF.deposit(188, SLP.balanceOf(STAKING), {'from': STAKING})
+#CHEF.deposit(188, SLP.balanceOf(STAKING), {'from': STAKING})
 
 feesExtractorImpl = FeeExtractAndDistribute_ETH.deploy({'from': stakingProxy.owner()})
 proxy = Proxy.deploy(feesExtractorImpl, {'from': stakingProxy.owner()})

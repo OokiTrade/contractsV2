@@ -106,6 +106,18 @@ contract StakingV1_1 is StakingState, StakingConstants {
 
     }
 
+    //Withdraw all from sushi masterchef
+    function exitSushi()
+        external
+        onlyOwner
+    {
+        IMasterChefSushi chef = IMasterChefSushi(SUSHI_MASTERCHEF);
+        uint256 balance = chef.userInfo(BZRX_ETH_SUSHI_MASTERCHEF_PID, address(this)).amount;
+        chef.withdraw(
+            BZRX_ETH_SUSHI_MASTERCHEF_PID,
+            balance
+        );
+    }
     function stake(
         address[] memory tokens,
         uint256[] memory values

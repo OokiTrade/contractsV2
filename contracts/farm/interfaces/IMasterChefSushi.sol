@@ -8,10 +8,21 @@ pragma experimental ABIEncoderV2;
 
 interface IMasterChefSushi {
 
+    struct UserInfo {
+        uint256 amount;
+        uint256 rewardDebt;
+    }
+
     function deposit(uint256 _pid, uint256 _amount)
         external;
 
     function withdraw(uint256 _pid, uint256 _amount)
         external;
+
+    // Info of each user that stakes LP tokens.
+    function userInfo(uint256, address)
+        external
+        view
+        returns (UserInfo memory);
 
 }
