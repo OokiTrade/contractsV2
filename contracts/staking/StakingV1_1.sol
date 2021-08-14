@@ -28,6 +28,14 @@ contract StakingV1_1 is StakingState, StakingConstants {
         _;
     }
 
+    function getCurrentFeeTokens()
+        external
+        view
+        returns (address[] memory)
+    {
+        return currentFeeTokens;
+    }
+
     // View function to see pending sushi rewards on frontend.
     function pendingSushiRewards(address _user)
         external

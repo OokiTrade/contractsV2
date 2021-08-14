@@ -9,7 +9,7 @@ def requireMainnetFork():
     assert (network.show_active() == "mainnet-fork" or network.show_active() == "mainnet-fork-alchemy")
 
 
-def testStake_UserStory1_StakedFirstTime(requireMainnetFork, stakingV1_1, bzx, BZRX, vBZRX, iBZRX, LPT, accounts, iUSDC, USDC, WETH, setFeesController):
+def testStake_UserStory1_StakedFirstTime(requireMainnetFork, stakingV1_1, bzx, BZRX, vBZRX, iBZRX, LPT, accounts, iUSDC, USDC, WETH, ):
 
     # mint some for testing
     BZRX.transfer(accounts[1], 200e18, {'from': BZRX})
@@ -42,7 +42,7 @@ def testStake_UserStory1_StakedFirstTime(requireMainnetFork, stakingV1_1, bzx, B
     assert True
 
 
-def testStake_UserStory2_StakedMoreTokens(requireMainnetFork, stakingV1_1, bzx, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH, setFeesController):
+def testStake_UserStory2_StakedMoreTokens(requireMainnetFork, stakingV1_1, bzx, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH, ):
 
     # mint some for testing
     BZRX.transfer(accounts[1], 200e18, {'from': BZRX})
@@ -105,12 +105,12 @@ def testStake_UserStory2_StakedMoreTokens(requireMainnetFork, stakingV1_1, bzx, 
     assert True
 
 
-def testStake_UserStory3_IClaimMyIncentiveRewards(requireMainnetFork, stakingV1_1, bzx, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH,setFeesController):
+def testStake_UserStory3_IClaimMyIncentiveRewards(requireMainnetFork, stakingV1_1, bzx, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH,):
     # those extracted from protocol directly not from staking
     assert True
 
 
-def testStake_UserStory4_IClaimMyStakingRewards(requireMainnetFork, stakingV1_1, bzx, BZRX, vBZRX, iBZRX, POOL3, accounts, iUSDC, USDC, WETH, setFeesController):
+def testStake_UserStory4_IClaimMyStakingRewards(requireMainnetFork, fees_extractor, stakingV1_1, bzx, BZRX, vBZRX, iBZRX, POOL3, accounts, iUSDC, USDC, WETH, ):
     # mint some for testing
     BZRX.transfer(accounts[1], 200e18, {'from': BZRX})
     BZRX.approve(iBZRX, 100e18, {'from': accounts[1]})
@@ -148,7 +148,7 @@ def testStake_UserStory4_IClaimMyStakingRewards(requireMainnetFork, stakingV1_1,
     txBorrow = iUSDC.borrow("", borrowAmount, borrowTime, collateralAmount, collateralAddress,
                             accounts[0], accounts[0], b"", {'from': accounts[0], 'value': Wei(collateralAmount)})
 
-    txSweep = stakingV1_1.sweepFees()
+    txSweep = fees_extractor.sweepFees({'from': accounts[9]})
 
     earnings = stakingV1_1.earned.call(accounts[1])
 
@@ -172,7 +172,7 @@ def testStake_UserStory4_IClaimMyStakingRewards(requireMainnetFork, stakingV1_1,
     assert True
 
 
-def testStake_UserStory5_IClaimAndRestakeMyStakingRewards(requireMainnetFork, stakingV1_1, bzx, BZRX, vBZRX, iBZRX, POOL3, LPT, accounts, iUSDC, USDC, WETH, setFeesController):
+def testStake_UserStory5_IClaimAndRestakeMyStakingRewards(requireMainnetFork, fees_extractor, stakingV1_1, bzx, BZRX, vBZRX, iBZRX, POOL3, LPT, accounts, iUSDC, USDC, WETH, ):
     # mint some for testing
     BZRX.transfer(accounts[1], 200e18, {'from': BZRX})
     BZRX.approve(iBZRX, 100e18, {'from': accounts[1]})
@@ -209,7 +209,7 @@ def testStake_UserStory5_IClaimAndRestakeMyStakingRewards(requireMainnetFork, st
     txBorrow = iUSDC.borrow("", borrowAmount, borrowTime, collateralAmount, collateralAddress,
                             accounts[0], accounts[0], b"", {'from': accounts[0], 'value': Wei(collateralAmount)})
 
-    txSweep = stakingV1_1.sweepFees()
+    txSweep = fees_extractor.sweepFees({'from': accounts[9]})
     balance = stakingV1_1.balanceOfByAssets.call(accounts[1])
     earnings = stakingV1_1.earned.call(accounts[1])
 
@@ -238,7 +238,7 @@ def testStake_UserStory5_IClaimAndRestakeMyStakingRewards(requireMainnetFork, st
     assert True
 
 
-def testStake_IWantToUnstakeMyTokens(requireMainnetFork, stakingV1_1, bzx, BZRX, vBZRX, iBZRX, LPT, accounts, iUSDC, USDC, WETH, setFeesController):
+def testStake_IWantToUnstakeMyTokens(requireMainnetFork, stakingV1_1, bzx, BZRX, vBZRX, iBZRX, LPT, accounts, iUSDC, USDC, WETH):
 
     # mint some for testing
     BZRX.transfer(accounts[1], 200e18, {'from': BZRX})
@@ -287,7 +287,7 @@ def testStake_IWantToUnstakeMyTokens(requireMainnetFork, stakingV1_1, bzx, BZRX,
     assert True
 
 
-def testStake_IWantToUnstakeAllMyStakedTokens(requireMainnetFork, stakingV1_1, bzx, BZRX, vBZRX, iBZRX, LPT, accounts, iUSDC, USDC, WETH, setFeesController):
+def testStake_IWantToUnstakeAllMyStakedTokens(requireMainnetFork, stakingV1_1, bzx, BZRX, vBZRX, iBZRX, LPT, accounts, iUSDC, USDC, WETH):
 
     # mint some for testing
     BZRX.transfer(accounts[1], 200e18, {'from': BZRX})
@@ -340,7 +340,7 @@ def testStake_IWantToUnstakeAllMyStakedTokens(requireMainnetFork, stakingV1_1, b
     assert True
 
 
-def testStake_IShuldBeAbleToUpdateStakingRewards(requireMainnetFork, stakingV1_1, bzx, BZRX, vBZRX, iBZRX, LPT, accounts, iUSDC, USDC, WETH, setFeesController):
+def testStake_IShuldBeAbleToUpdateStakingRewards(requireMainnetFork, fees_extractor, stakingV1_1, bzx, BZRX, vBZRX, iBZRX, LPT, accounts, iUSDC, USDC, WETH):
 
     # mint some for testing
     BZRX.transfer(accounts[1], 200e18, {'from': BZRX})
@@ -373,7 +373,7 @@ def testStake_IShuldBeAbleToUpdateStakingRewards(requireMainnetFork, stakingV1_1
     txBorrow = iUSDC.borrow("", borrowAmount, borrowTime, collateralAmount, collateralAddress,
                             accounts[0], accounts[0], b"", {'from': accounts[0], 'value': Wei(collateralAmount)})
 
-    txSweep = stakingV1_1.sweepFees()
+    txSweep = fees_extractor.sweepFees({'from': accounts[9]})
 
 
     earnings = stakingV1_1.earned.call(accounts[1])

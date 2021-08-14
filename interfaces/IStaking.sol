@@ -13,7 +13,7 @@ interface IStakingPartial {
         view
         returns (uint256);
 
-    function currentFeeTokens()
+    function getCurrentFeeTokens()
         external
         view
         returns (address[] memory);

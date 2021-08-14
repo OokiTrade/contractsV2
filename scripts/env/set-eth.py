@@ -46,7 +46,7 @@ for acc in [accounts[0], accounts[9]]:
     
     SUSHI_ROUTER.addLiquidity(WETH,BZRX, quote1, BZRX.balanceOf(acc), 0, 0,  acc, 10000000e18, {'from': acc})
     SLP.approve(STAKING, 2**256-1, {'from': acc})
-    CHEF =  Contract.from_abi("CHEF", "0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd", MasterChef_Polygon.abi)
+    CHEF =  Contract.from_abi("CHEF", "0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd", interface.IMasterChefSushi.abi)
     SLP.approve(CHEF, 2**256-1, {'from':STAKING})
     SUSHI = Contract.from_abi("SUSHI", "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2", TestToken.abi)
 
@@ -83,7 +83,7 @@ FEE_EXTRACTOR.setPaths([
         "0x56d811088235F11C8920698a204A5010a788f4b3"],  # UNI -> WETH -> BZRX
 ], {'from': BZX.owner()})
 
-FEE_EXTRACTOR.setApprovals()
+FEE_EXTRACTOR.setApprovals({'from': FEE_EXTRACTOR.owner()})
 
 '''
 # approve curvpool spent dai

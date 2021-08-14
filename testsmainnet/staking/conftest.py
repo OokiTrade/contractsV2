@@ -9,75 +9,17 @@ from brownie.network.state import _add_contract, _remove_contract
 
 @pytest.fixture(scope="module", autouse=True)
 def stakingV1(bzx, StakingProxy, StakingV1, accounts):
-
-    proxy = StakingProxy.deploy(StakingV1.deploy(
-        {"from": accounts[0]}), {"from": accounts[0]})
-    staking = Contract.from_abi(
-        "staking", address=proxy.address, abi=StakingV1.abi, owner=accounts[0])
-
-    staking.setPaths([
-        ["0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-            "0x56d811088235F11C8920698a204A5010a788f4b3"],  # WETH -> BZRX
-        ["0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-            "0x56d811088235F11C8920698a204A5010a788f4b3"],  # WBTC -> WETH -> BZRX
-        ["0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-            "0x56d811088235F11C8920698a204A5010a788f4b3"],  # AAVE -> WETH -> BZRX
-        ["0xdd974D5C2e2928deA5F71b9825b8b646686BD200", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-            "0x56d811088235F11C8920698a204A5010a788f4b3"],  # KNC -> WETH -> BZRX
-        ["0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-            "0x56d811088235F11C8920698a204A5010a788f4b3"],  # MKR -> WETH -> BZRX
-        ["0x514910771AF9Ca656af840dff83E8264EcF986CA", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-            "0x56d811088235F11C8920698a204A5010a788f4b3"],  # LINK -> WETH -> BZRX
-        ["0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
-            "0x56d811088235F11C8920698a204A5010a788f4b3"],  # YFI -> WETH -> BZRX
-    ])
-
-    staking.setCurveApproval()
-
-    assets = [
-        "0x56d811088235F11C8920698a204A5010a788f4b3",  # BZRX
-        "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",  # WETH
-        "0x6B175474E89094C44Da98b954EedeAC495271d0F",  # DAI
-        "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",  # USDC
-        "0xdAC17F958D2ee523a2206206994597C13D831ec7",  # USDT
-        "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",  # WBTC
-        "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",  # AAVE
-        "0xdd974D5C2e2928deA5F71b9825b8b646686BD200",  # KNC
-        "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2",  # MKR
-        "0x514910771AF9Ca656af840dff83E8264EcF986CA",  # LINK
-        "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",  # YFI
-    ]
-    
-    # for address in assets:
-    #     staking.setUniswapApproval(address)
-    #     time.sleep(1)
-    staking.setFeeTokens(assets)
-    staking.setFundsWallet(accounts[9])
-    # bzx.withdrawFees(assets, accounts[8], 0, {'from': stakingV1})
-    bzx.setFeesController(staking, {'from': bzx.owner()})
-    staking.togglePause(False)
+    stakingProxy = Contract.from_abi("proxy", "0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4", StakingProxy.abi)
+    stakingImpl = StakingV1.deploy({'from': stakingProxy.owner()})
+    stakingProxy.replaceImplementation(stakingImpl, {'from': stakingProxy.owner()})
+    return Contract.from_abi("StakingV1_1", stakingProxy.address, StakingV1.abi, owner=accounts[9])
 
 
-    staking.setMaxUniswapDisagreement(100*10**18, {'from': "0x66aB6D9362d4F35596279692F0251Db635165871", "allow_revert": 1})
-    staking.setMaxCurveDisagreement(100*10**18, {'from': "0x66aB6D9362d4F35596279692F0251Db635165871", "allow_revert": 1})
-    staking.setRewardPercent(50e18)
-    staking.setCallerRewardDivisor(100)
 
-    return staking
-    # print("bzx owner", bzx.owner())
-    # acct = accounts.at(bzx.owner(), force = True)
-    # bzx.setFeesController(staking,  {'from': bzx.owner()})
 
 
 @pytest.fixture(scope="module", autouse=True)
-def stakingV1_1(bzx, StakingProxy, StakingV1_1,StakingV1, TestToken, accounts, LPT_OLD):
-
-    old = Contract.from_abi("STAKING", '0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4', StakingV1.abi)
-    LPT_OLD = Contract.from_abi("LPT", "0xe26A220a341EAca116bDa64cF9D5638A935ae629", TestToken.abi)
-    LPT_OLD.transfer(accounts[0], 10e18, {'from': '0xe95ebce2b02ee07def5ed6b53289801f7fc137a4'})
-    LPT_OLD.approve(old, 2**256-1, {'from': accounts[0]})
-    old.stake([LPT_OLD], [LPT_OLD.balanceOf(accounts[0])], {'from': accounts[0]})
-
+def stakingV1_1(bzx, StakingProxy, StakingV1_1,stakingV1, TestToken, accounts, LPT_OLD):
     stakingProxy = Contract.from_abi("proxy", "0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4", StakingProxy.abi)
     stakingImpl = StakingV1_1.deploy({'from': stakingProxy.owner()})
     stakingProxy.replaceImplementation(stakingImpl, {'from': stakingProxy.owner()})
@@ -104,21 +46,26 @@ def vBZRX(accounts, BZRXVestingToken):
 
 
 @pytest.fixture(scope="module")
-def LPT(accounts, TestToken, BZRX, WETH, interface):
+def LPT(accounts, TestToken, BZRX, WETH,router, interface, stakingV1_1, SUSHI_CHEF):
     LPT = loadContractFromAbi("0xa30911e072A0C88D55B5D0A0984B66b0D04569d0", "LPT", TestToken.abi)
-
-    SUSHI_ROUTER = Contract.from_abi("router", "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F", interface.IPancakeRouter02.abi)
-
-    quote = SUSHI_ROUTER.quote(1000*10**18, WETH.address, BZRX.address)
-    quote1 = SUSHI_ROUTER.quote(10000*10**18, BZRX.address, WETH.address)
-    BZRX.approve(SUSHI_ROUTER, 2**256-1, {'from': accounts[9]})
-    WETH.approve(SUSHI_ROUTER, 2**256-1, {'from': accounts[9]})
+    router = Contract.from_abi("router", "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F", interface.IPancakeRouter02.abi)
+    quote = router.quote(1000*10**18, WETH.address, BZRX.address)
+    quote1 = router.quote(10000*10**18, BZRX.address, WETH.address)
+    BZRX.approve(router, 2**256-1, {'from': accounts[9]})
+    WETH.approve(router, 2**256-1, {'from': accounts[9]})
     BZRX.transfer(accounts[9], 20000e18, {'from': BZRX})
     WETH.transfer(accounts[9], 20e18, {'from': WETH})
 
-    SUSHI_ROUTER.addLiquidity(WETH,BZRX, quote1, BZRX.balanceOf(accounts[9]), 0, 0,  accounts[9], 10000000e18, {'from': accounts[9]})
-
+    router.addLiquidity(WETH,BZRX, quote1, BZRX.balanceOf(accounts[9]), 0, 0,  accounts[9], 10000000e18, {'from': accounts[9]})
+    LPT.approve(SUSHI_CHEF, 2**256-1, {'from':stakingV1_1})
+    SUSHI_CHEF.deposit(188, LPT.balanceOf(stakingV1_1), {'from': stakingV1_1})
     return LPT
+
+@pytest.fixture(scope="module")
+def SUSHI_CHEF(accounts, interface, stakingV1_1):
+    chef = Contract.from_abi("CHEF", "0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd", interface.IMasterChefSushi.abi)
+    return chef
+
 
 @pytest.fixture(scope="module")
 def LPT_OLD(accounts, TestToken):
@@ -172,6 +119,50 @@ def iBZRX(accounts, BZRX, LoanTokenLogicStandard):
     return iBZRX
 
 
+@pytest.fixture(scope="module")
+def SUSHI(TestToken):
+     return Contract.from_abi("SUSHI", "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2", TestToken.abi)
+
+@pytest.fixture(scope="module")
+def router(TestToken, interface):
+    return Contract.from_abi("router", "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F", interface.IPancakeRouter02.abi)
+
+@pytest.fixture(scope="module")
+def fees_extractor(accounts, bzx, stakingV1_1, FeeExtractAndDistribute_ETH, Proxy):
+
+    feesExtractorImpl = FeeExtractAndDistribute_ETH.deploy({'from': stakingV1_1.owner()})
+    proxy = Proxy.deploy(feesExtractorImpl, {'from': stakingV1_1.owner()})
+
+    res = Contract.from_abi("FEE_EXTRACTOR", proxy.address, FeeExtractAndDistribute_ETH.abi)
+    bzx.setFeesController(proxy, {'from': bzx.owner()})
+    res.setPaths([
+        ["0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+         "0x56d811088235F11C8920698a204A5010a788f4b3"],  # WETH -> BZRX
+        ["0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+         "0x56d811088235F11C8920698a204A5010a788f4b3"],  # WBTC -> WETH -> BZRX
+        ["0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+         "0x56d811088235F11C8920698a204A5010a788f4b3"],  # AAVE -> WETH -> BZRX
+        # ["0xdd974D5C2e2928deA5F71b9825b8b646686BD200", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        #     "0x56d811088235F11C8920698a204A5010a788f4b3"]  # KNC -> WETH -> BZRX
+        ["0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+         "0x56d811088235F11C8920698a204A5010a788f4b3"],  # MKR -> WETH -> BZRX
+        ["0x514910771AF9Ca656af840dff83E8264EcF986CA", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+         "0x56d811088235F11C8920698a204A5010a788f4b3"],  # LINK -> WETH -> BZRX
+        ["0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+         "0x56d811088235F11C8920698a204A5010a788f4b3"],  # YFI -> WETH -> BZRX
+        ["0xc00e94cb662c3520282e6f5717214004a7f26888", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+         "0x56d811088235F11C8920698a204A5010a788f4b3"],  # COMP -> WETH -> BZRX,
+        #["0xBBbbCA6A901c926F240b89EacB641d8Aec7AEafD", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        #    "0x56d811088235F11C8920698a204A5010a788f4b3"],  # LRC -> WETH -> BZRX <--- no liquidity on sushi
+        ["0x1f9840a85d5af5bf1d1762f925bdaddc4201f984", "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+         "0x56d811088235F11C8920698a204A5010a788f4b3"],  # UNI -> WETH -> BZRX
+    ], {'from': bzx.owner()})
+
+    res.setApprovals({'from': res.owner()})
+
+    return res
+
+
 # def loadContractFromEtherscan(address, alias):
 #     try:
 #         return Contract(alias)
@@ -179,24 +170,6 @@ def iBZRX(accounts, BZRX, LoanTokenLogicStandard):
 #         contract = Contract.from_explorer(address)
 #         contract.set_alias(alias)
 #         return contract
-
-@pytest.fixture(scope="module")
-def setFeesController(bzx, stakingV1_1, accounts):
-    bzx.setFeesController(stakingV1_1, {"from": bzx.owner()})
-    assets = [
-        "0x56d811088235F11C8920698a204A5010a788f4b3",  # BZRX
-        "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",  # WETH
-        "0x6B175474E89094C44Da98b954EedeAC495271d0F",  # DAI
-        "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",  # USDC
-        "0xdAC17F958D2ee523a2206206994597C13D831ec7",  # USDT
-        "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",  # WBTC
-        "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9",  # AAVE
-        "0xdd974D5C2e2928deA5F71b9825b8b646686BD200",  # KNC
-        "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2",  # MKR
-        "0x514910771AF9Ca656af840dff83E8264EcF986CA",  # LINK
-        "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",  # YFI
-    ]
-    bzx.withdrawFees(assets, accounts[8], 0, {'from': stakingV1_1})
 
 
 def loadContractFromAbi(address, alias, abi):

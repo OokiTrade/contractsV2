@@ -80,7 +80,7 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
         // sweepFeesByAsset() does checkPause
         returns (uint256 bzrxRewards, uint256 crv3Rewards)
     {
-        return sweepFeesByAsset(STAKING.currentFeeTokens());
+        return sweepFeesByAsset(STAKING.getCurrentFeeTokens());
     }
 
     function sweepFeesByAsset(address[] memory assets)

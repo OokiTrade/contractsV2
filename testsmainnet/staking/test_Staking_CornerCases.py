@@ -10,7 +10,7 @@ def requireMainnetFork():
 
 
 
-def testStake_Multiple_People(requireMainnetFork, stakingV1_1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC):
+def testStake_Multiple_People(requireMainnetFork, stakingV1_1, fees_extractor, bzx,  BZRX, vBZRX, iBZRX, accounts, iUSDC):
     vBZRX.transfer(accounts[1], 100e18, {
                    'from': vBZRX})
 
@@ -41,7 +41,7 @@ def testStake_Multiple_People(requireMainnetFork, stakingV1_1, bzx, setFeesContr
     # due to staking and stake block difference, people who stake first have more vesties inside
     assert earned1[0] >= earned2[0] >= earned3[0] >= earned4[0]
 
-    makeSomeFees(BZRX, accounts, iUSDC, stakingV1_1)
+    makeSomeFees(BZRX, accounts, fees_extractor, iUSDC)
 
     earned1After = stakingV1_1.earned(accounts[1])
     earned2After = stakingV1_1.earned(accounts[2])
@@ -78,7 +78,7 @@ def testStake_Multiple_People(requireMainnetFork, stakingV1_1, bzx, setFeesContr
 def checkSmallDiff(a, b, precision=18):
     return abs(a - b) < 10**precision
 
-def testStake_Multiple_VestiesMoveTime(requireMainnetFork, stakingV1_1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC):
+def testStake_Multiple_VestiesMoveTime(requireMainnetFork, stakingV1_1, bzx,  BZRX, vBZRX, iBZRX, accounts, iUSDC):
     vBZRX.transfer(accounts[1], 100e18, {
                    'from': vBZRX})
 
@@ -135,7 +135,7 @@ def testStake_Multiple_VestiesMoveTime(requireMainnetFork, stakingV1_1, bzx, set
 
 
 
-def testStake_Multiple_VestiesMoveMultipleTime(requireMainnetFork, stakingV1_1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC):
+def testStake_Multiple_VestiesMoveMultipleTime(requireMainnetFork, stakingV1_1, bzx,  BZRX, vBZRX, iBZRX, accounts, iUSDC):
     vBZRX.transfer(accounts[1], 100e18, {
                    'from': vBZRX})
 
@@ -204,7 +204,7 @@ def testStake_Multiple_VestiesMoveMultipleTime(requireMainnetFork, stakingV1_1, 
 
     #ssert False
 
-def makeSomeFees(BZRX, accounts, iUSDC, stakingV1_1):
+def makeSomeFees(BZRX, accounts, fees_extractor, iUSDC):
     BZRX.transfer(accounts[0], 10000e18, {
                   'from': BZRX})
     BZRX.approve(iUSDC, 2**256-1, {'from': accounts[0]})
@@ -214,4 +214,4 @@ def makeSomeFees(BZRX, accounts, iUSDC, stakingV1_1):
     txBorrow = iUSDC.borrow("", borrowAmount, borrowTime, collateralAmount, BZRX,
                             accounts[0], accounts[0], b"", {'from': accounts[0], 'allow_revert': 1})
 
-    stakingV1_1.sweepFees()
+    fees_extractor.sweepFees({'from': accounts[9]})
