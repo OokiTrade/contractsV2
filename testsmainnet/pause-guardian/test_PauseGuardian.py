@@ -21,9 +21,26 @@ def iUSDC(accounts, LoanTokenLogicStandard, LoanToken):
 
 
     return Contract.from_abi("iDAI", address="0x32E4c68B3A4a813b710595AebA7f6B7604Ab9c15",  abi=LoanTokenLogicStandard.abi)
-    
 
-def testPauseGuardian(requireMainnetFork, iUSDC, accounts, USDC):
+@pytest.fixture(scope="module")
+def BZX(accounts, interface, LoanMaintenance, LoanOpenings, ProtocolPausableGuardian):
+    
+    bzx = Contract.from_abi("bzx", address="0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f", abi=interface.IBZx.abi, owner=accounts[0])
+    bzxOwner = accounts.at(bzx.owner(), True)
+    
+    loanMaintenanceImpl = bzxOwner.deploy(LoanMaintenance)
+    bzx.replaceContract(loanMaintenanceImpl, {'from': bzxOwner})
+    
+    loanOpenings = bzxOwner.deploy(LoanOpenings)
+    bzx.replaceContract(loanOpenings, {'from': bzxOwner})
+
+    protocolPausableGuardian = bzxOwner.deploy(ProtocolPausableGuardian)
+    bzx.replaceContract(protocolPausableGuardian, {'from': bzxOwner})
+
+    return bzx
+ 
+
+def testPauseGuardianOnIToken(requireMainnetFork, iUSDC, accounts, USDC):
     bzxOwner = "0xB7F72028D9b502Dc871C444363a7aC5A52546608"
     # mint some USDC
     USDC.transfer(accounts[0], 100*1e6, {"from": "0x47ac0Fb4F2D84898e4D9E7b4DaB3C24507a6D503"})
@@ -33,7 +50,7 @@ def testPauseGuardian(requireMainnetFork, iUSDC, accounts, USDC):
 
     assert iUSDC.getGuardian() == "0x0000000000000000000000000000000000000000"
     
-    iUSDC.changeGuardian(accounts[0], {"from": bzxOwner})
+    iUSDC.changeGuardian(accounts[0], {"from": iUSDC.owner()})
 
     assert iUSDC.getGuardian() == accounts[0]
 
@@ -42,7 +59,7 @@ def testPauseGuardian(requireMainnetFork, iUSDC, accounts, USDC):
 
 
     assert iUSDC._isPaused(iUSDC.mint.signature) == False
-    iUSDC.toggleFunctionPause(iUSDC.mint.signature, True, {"from": accounts[0]})
+    iUSDC.toggleFunctionPause(iUSDC.mint.signature, {"from": iUSDC.owner()})
     assert iUSDC._isPaused(iUSDC.mint.signature) == True
 
     # checking other functions are still false
@@ -51,4 +68,42 @@ def testPauseGuardian(requireMainnetFork, iUSDC, accounts, USDC):
     with reverts("paused"):
         iUSDC.mint(accounts[0], 1e6, {"from": accounts[0]})
 
-    assert False
+    assert True
+
+
+def testPauseGuardianOnProtocol(requireMainnetFork, BZX, accounts):
+
+    assert BZX.getGuardian() == "0x0000000000000000000000000000000000000000"
+    
+    with reverts("unauthorized"): # only guardian or owner can change guardian
+        BZX.changeGuardian(accounts[0], {'from': accounts[2]})
+
+    BZX.changeGuardian(accounts[1], {'from': BZX.owner()})
+    assert BZX.getGuardian() == accounts[1]
+
+    # checking guardian can change guardian
+    BZX.changeGuardian(accounts[0], {'from': accounts[1]})
+    assert BZX.getGuardian() == accounts[0]
+
+    with reverts("not authorized"): # this means passed pausable check
+        BZX.borrowOrTradeFromPool(0, 0, True, 0, [accounts[0],accounts[0],accounts[0],accounts[0]],[0,0,0,0,0], b'')
+
+    with reverts("unauthorized"): # only guardian or owner() can pause 
+        BZX.toggleFunctionPause(BZX.borrowOrTradeFromPool.signature, {"from": accounts[1]})
+
+    BZX.toggleFunctionPause(BZX.borrowOrTradeFromPool.signature, {"from": accounts[0]})
+    assert True == BZX._isPaused(BZX.borrowOrTradeFromPool.signature)
+
+    with reverts("paused"): # this means not passed pausable check
+        BZX.borrowOrTradeFromPool(0, 0, True, 0, [accounts[0],accounts[0],accounts[0],accounts[0]],[0,0,0,0,0], b'')
+
+    with reverts("unauthorized"): # only owner() can unpause
+        BZX.toggleFunctionUnPause(BZX.borrowOrTradeFromPool.signature, {"from": accounts[1]})
+
+    BZX.toggleFunctionUnPause(BZX.borrowOrTradeFromPool.signature, {"from": BZX.owner()})
+    assert BZX._isPaused(BZX.borrowOrTradeFromPool.signature) == False
+
+
+    with reverts("not authorized"): # this means passed pausable check
+        BZX.borrowOrTradeFromPool(0, 0, True, 0, [accounts[0],accounts[0],accounts[0],accounts[0]],[0,0,0,0,0], b'')
+    assert True

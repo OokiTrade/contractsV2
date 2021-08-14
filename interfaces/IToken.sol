@@ -172,6 +172,19 @@ interface IToken {
 
     function loanParamsIds(uint256) external view returns (bytes32);
 
+
+    /// Guardian interface
+
+    function _isPaused(bytes4 sig) external view returns (bool isPaused);
+
+    function toggleFunctionPause(bytes4 sig) external;
+
+    function toggleFunctionUnPause(bytes4 sig) external;
+
+    function changeGuardian(address newGuardian) external;
+
+    function getGuardian() external view returns (address guardian);
+
     struct LoanOpenData {
         bytes32 loanId;
         uint256 principal;

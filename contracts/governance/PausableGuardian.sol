@@ -5,7 +5,9 @@
 
 pragma solidity 0.5.17;
 
-contract PausableGuardian {
+import "@openzeppelin-2.5.0/ownership/Ownable.sol";
+
+contract PausableGuardian is Ownable {
     // keccak256("Pausable_FunctionPause")
     bytes32 internal constant Pausable_FunctionPause = 0xa7143c84d793a15503da6f19bf9119a2dac94448ca45d77c8bf08f57b2e91047;
     // keccak256("Pausable_GuardianAddress")
@@ -23,12 +25,20 @@ contract PausableGuardian {
         }
     }
 
-    function toggleFunctionPause(
-        bytes4 sig, // example: "mint(uint256,uint256)"
-        bool isPaused
-    ) public {
+    function toggleFunctionPause(bytes4 sig) public {
         require(msg.sender == getGuardian() || msg.sender == owner(), "unauthorized");
         bytes32 slot = keccak256(abi.encodePacked(sig, Pausable_FunctionPause));
+        bool isPaused = true;
+        assembly {
+            sstore(slot, isPaused)
+        }
+    }
+
+    function toggleFunctionUnPause(bytes4 sig) public {
+        // only DAO can unpause
+        require(msg.sender == owner(), "unauthorized");
+        bytes32 slot = keccak256(abi.encodePacked(sig, Pausable_FunctionPause));
+        bool isPaused = false;
         assembly {
             sstore(slot, isPaused)
         }
