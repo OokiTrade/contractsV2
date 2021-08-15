@@ -72,5 +72,5 @@ contract StakingState is StakingUpgradeable {
     mapping(address => uint256) public altRewardsPerShare;
 
     //Token => (User => Info)
-    mapping(address => mapping(address => IStakingPartial.AltRewardsUserInfo)) public userAltRewardsPerShare;
+    mapping(address => mapping(address => IStaking.AltRewardsUserInfo)) public userAltRewardsPerShare;
 }

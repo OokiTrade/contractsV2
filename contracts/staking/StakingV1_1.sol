@@ -75,7 +75,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
         if (userSupply == 0)
             return 0;
 
-        IStakingPartial.AltRewardsUserInfo memory altRewardsUserInfo = userAltRewardsPerShare[_user][token];
+        IStaking.AltRewardsUserInfo memory altRewardsUserInfo = userAltRewardsPerShare[_user][token];
         return altRewardsUserInfo.pendingRewards.add(
                 (_altRewardsPerShare.sub(altRewardsUserInfo.rewardsPerShare)).mul(userSupply).div(1e12)
             );

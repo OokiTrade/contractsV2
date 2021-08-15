@@ -21,7 +21,7 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    IStakingPartial public constant STAKING = IStakingPartial(0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4);
+    IStaking public constant STAKING = IStaking(0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4);
 
     address public constant BZRX = 0x56d811088235F11C8920698a204A5010a788f4b3;
     address public constant vBZRX = 0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F;
