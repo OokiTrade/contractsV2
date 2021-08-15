@@ -168,7 +168,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
                     IERC20(LPToken).balanceOf(address(this))
                 );
 
-                userAltRewardsPerShare[msg.sender][SUSHI] = IStakingPartial.AltRewardsUserInfo({
+                userAltRewardsPerShare[msg.sender][SUSHI] = IStaking.AltRewardsUserInfo({
                         rewardsPerShare: altRewardsPerShare[SUSHI],
                         pendingRewards: pendingBefore
                     }
@@ -229,7 +229,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
             if (token == LPToken) {
                 _withdrawFromSushiMasterchef(unstakeAmount);
 
-                userAltRewardsPerShare[msg.sender][SUSHI] = IStakingPartial.AltRewardsUserInfo({
+                userAltRewardsPerShare[msg.sender][SUSHI] = IStaking.AltRewardsUserInfo({
                         rewardsPerShare: altRewardsPerShare[SUSHI],
                         pendingRewards: pendingBefore
                     }
@@ -428,7 +428,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
 
         uint256 pendingSushi = _pendingAltRewards(SUSHI, _user, lptUserSupply, 0);
 
-        userAltRewardsPerShare[_user][SUSHI] = IStakingPartial.AltRewardsUserInfo({
+        userAltRewardsPerShare[_user][SUSHI] = IStaking.AltRewardsUserInfo({
                 rewardsPerShare: altRewardsPerShare[SUSHI],
                 pendingRewards: 0
             }
