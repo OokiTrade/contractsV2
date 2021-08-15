@@ -8,6 +8,12 @@ pragma experimental ABIEncoderV2;
 
 interface IStakingPartial {
 
+
+    struct AltRewardsUserInfo {
+        uint256 rewardsPerShare;
+        uint256 pendingRewards;
+    }
+
     function pendingSushiRewards(address _user)
         external
         view
@@ -79,8 +85,8 @@ interface IStakingPartial {
         external;
 
     function unstake(
-        address[] memory tokens,
-        uint256[] memory values,
+        address[] calldata tokens,
+        uint256[] calldata values,
         bool claimSushi
     )
         external;

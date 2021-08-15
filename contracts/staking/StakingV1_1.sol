@@ -13,6 +13,7 @@ import "../../interfaces/IBZx.sol";
 import "../../interfaces/IPriceFeeds.sol";
 import "../utils/MathUtil.sol";
 import "../farm/interfaces/IMasterChefSushi.sol";
+import "../../interfaces/IStaking.sol";
 
 
 contract StakingV1_1 is StakingState, StakingConstants {
@@ -38,13 +39,12 @@ contract StakingV1_1 is StakingState, StakingConstants {
 
     // View function to see pending sushi rewards on frontend.
     function pendingSushiRewards(address _user)
-        external
+        public
         view
         returns (uint256)
     {
         uint256 pendingSushi = IMasterChefSushi(SUSHI_MASTERCHEF)
-            .pendingSushi(BZRX_ETH_SUSHI_MASTERCHEF_PID, address(this)
-        );
+            .pendingSushi(BZRX_ETH_SUSHI_MASTERCHEF_PID, address(this));
 
         return _pendingAltRewards(
             SUSHI,
@@ -63,55 +63,22 @@ contract StakingV1_1 is StakingState, StakingConstants {
         return _pendingAltRewards(token, _user, userSupply, 0);
     }
 
-    function _pendingAltRewards(address token, address _user, uint256 userSupply, uint256 addRewardsPerShare)
+    function _pendingAltRewards(address token, address _user, uint256 userSupply, uint256 extraRewardsPerShare)
         internal
         view
         returns (uint256)
     {
-        uint256[] memory _altRewardsRounds = altRewardsRounds[token];
-        uint256 _currentRound = _altRewardsRounds.length;
-        if (_currentRound == 0)
+        uint256 _altRewardsPerShare = altRewardsPerShare[token].add(extraRewardsPerShare);
+        if (_altRewardsPerShare == 0)
             return 0;
 
         if (userSupply == 0)
             return 0;
 
-        uint256 _lastClaimedRound = userAltRewardsRounds[_user];
-        uint256 currentAccumulatedAltRewards = _altRewardsRounds[_currentRound-1].add(addRewardsPerShare);
-
-        // Never claimed yet
-        if (_lastClaimedRound == 0) {
-            return userSupply
-                .mul(currentAccumulatedAltRewards)
-                .div(1e12);
-        }
-        _lastClaimedRound--; //correct index to start from 0
-        _currentRound--; //correct index to start from 0
-
-        // Already claimed everything
-        if (_lastClaimedRound == _currentRound) {
-            return 0;
-        }
-
-        uint256 _lastAccumulatedAltRewards = _altRewardsRounds[_lastClaimedRound];
-        uint256 _currentRewards = userSupply.mul(currentAccumulatedAltRewards);
-        uint256 _clamedRewards = userSupply.mul(_lastAccumulatedAltRewards);
-        return (_currentRewards.sub(_clamedRewards)).div(1e12);
-    }
-
-    function _paySushiRewards(address _user, uint256 pendingSushi) internal {
-
-        //Update userAltRewardsRounds even if user got nothing in the current round
-        uint256[] memory _altRewardsPerShare = altRewardsRounds[SUSHI];
-        if (_altRewardsPerShare.length > 0) {
-            userAltRewardsRounds[_user] = _altRewardsPerShare.length;
-        }
-
-        if (pendingSushi != 0) {
-            IERC20(SUSHI).safeTransfer(_user, pendingSushi);
-            emit ClaimAltRewards(_user, SUSHI, pendingSushi);
-        }
-
+        IStakingPartial.AltRewardsUserInfo memory altRewardsUserInfo = userAltRewardsPerShare[_user][token];
+        return altRewardsUserInfo.pendingRewards.add(
+                (_altRewardsPerShare.sub(altRewardsUserInfo.rewardsPerShare)).mul(userSupply).div(1e12)
+            );
     }
 
     // Withdraw all from sushi masterchef
@@ -127,19 +94,39 @@ contract StakingV1_1 is StakingState, StakingConstants {
         );
     }
 
-    function stake(
-        address[] memory tokens,
-        uint256[] memory values
-    )
-        public
+
+    function _depositToSushiMasterchef(uint256 amount)
+        internal
     {
-        stake(tokens, values, false);
+        uint256 sushiBalanceBefore = IERC20(SUSHI).balanceOf(address(this));
+        IMasterChefSushi(SUSHI_MASTERCHEF).deposit(
+            BZRX_ETH_SUSHI_MASTERCHEF_PID,
+            amount
+        );
+        uint256 sushiRewards = IERC20(SUSHI).balanceOf(address(this)) - sushiBalanceBefore;
+        if (sushiRewards != 0) {
+            _addAltRewards(SUSHI, sushiRewards);
+        }
     }
+
+    function _withdrawFromSushiMasterchef(uint256 amount)
+        internal
+    {
+        uint256 sushiBalanceBefore = IERC20(SUSHI).balanceOf(address(this));
+        IMasterChefSushi(SUSHI_MASTERCHEF).withdraw(
+            BZRX_ETH_SUSHI_MASTERCHEF_PID,
+            amount
+        );
+        uint256 sushiRewards = IERC20(SUSHI).balanceOf(address(this)) - sushiBalanceBefore;
+        if (sushiRewards != 0) {
+            _addAltRewards(SUSHI, sushiRewards);
+        }
+    }
+
 
     function stake(
         address[] memory tokens,
-        uint256[] memory values,
-        bool claimSushi
+        uint256[] memory values
     )
         public
         checkPause
@@ -156,7 +143,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
 
         address token;
         uint256 stakeAmount;
-        uint256 lptUserSupply = claimSushi ? balanceOfByAsset(LPToken, msg.sender) : 0;
+
 
         for (uint256 i = 0; i < tokens.length; i++) {
             token = tokens[i];
@@ -166,7 +153,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
             if (stakeAmount == 0) {
                 continue;
             }
-
+            uint256 pendingBefore = (token == LPToken) ? pendingSushiRewards(msg.sender) : 0;
             _balancesPerToken[token][msg.sender] = _balancesPerToken[token][msg.sender].add(stakeAmount);
             _totalSupplyPerToken[token] = _totalSupplyPerToken[token].add(stakeAmount);
 
@@ -177,15 +164,15 @@ contract StakingV1_1 is StakingState, StakingConstants {
 
             // Deposit to sushi masterchef
             if (token == LPToken) {
-                uint256 sushiBalanceBefore = IERC20(SUSHI).balanceOf(address(this));
-                IMasterChefSushi(SUSHI_MASTERCHEF).deposit(
-                    BZRX_ETH_SUSHI_MASTERCHEF_PID,
+                _depositToSushiMasterchef(
                     IERC20(LPToken).balanceOf(address(this))
                 );
-                uint256 sushiRewards = IERC20(SUSHI).balanceOf(address(this)) - sushiBalanceBefore;
-                if (sushiRewards != 0) {
-                    _addAltRewards(SUSHI, sushiRewards);
-                }
+
+                userAltRewardsPerShare[msg.sender][SUSHI] = IStakingPartial.AltRewardsUserInfo({
+                        rewardsPerShare: altRewardsPerShare[SUSHI],
+                        pendingRewards: pendingBefore
+                    }
+                );
             }
             emit Stake(
                 msg.sender,
@@ -194,28 +181,11 @@ contract StakingV1_1 is StakingState, StakingConstants {
                 stakeAmount
             );
         }
-
-        if (claimSushi) {
-            _paySushiRewards(
-                msg.sender,
-                _pendingAltRewards(SUSHI, msg.sender, lptUserSupply, 0)
-            );
-        }
     }
 
     function unstake(
         address[] memory tokens,
         uint256[] memory values
-    )
-        public
-    {
-        unstake(tokens, values, false);
-    }
-
-    function unstake(
-        address[] memory tokens,
-        uint256[] memory values,
-        bool claimSushi
     )
         public
         checkPause
@@ -228,7 +198,6 @@ contract StakingV1_1 is StakingState, StakingConstants {
         address token;
         uint256 unstakeAmount;
         uint256 stakedAmount;
-        uint256 lptUserSupply = claimSushi ? balanceOfByAsset(LPToken, msg.sender) : 0;
 
         for (uint256 i = 0; i < tokens.length; i++) {
             token = tokens[i];
@@ -243,6 +212,8 @@ contract StakingV1_1 is StakingState, StakingConstants {
                 unstakeAmount = stakedAmount;
             }
 
+            uint256 pendingBefore = (token == LPToken) ? pendingSushiRewards(msg.sender) : 0;
+
             _balancesPerToken[token][msg.sender] = stakedAmount - unstakeAmount; // will not overflow
             _totalSupplyPerToken[token] = _totalSupplyPerToken[token] - unstakeAmount; // will not overflow
 
@@ -256,12 +227,14 @@ contract StakingV1_1 is StakingState, StakingConstants {
 
             // Withdraw to sushi masterchef
             if (token == LPToken) {
-                uint256 sushiBalanceBefore = IERC20(SUSHI).balanceOf(address(this));
-                IMasterChefSushi(SUSHI_MASTERCHEF).withdraw(BZRX_ETH_SUSHI_MASTERCHEF_PID, unstakeAmount);
-                uint256 sushiRewards = IERC20(SUSHI).balanceOf(address(this)) - sushiBalanceBefore;
-                if (sushiRewards != 0) {
-                    _addAltRewards(SUSHI, sushiRewards);
-                }
+                _withdrawFromSushiMasterchef(unstakeAmount);
+
+                userAltRewardsPerShare[msg.sender][SUSHI] = IStakingPartial.AltRewardsUserInfo({
+                        rewardsPerShare: altRewardsPerShare[SUSHI],
+                        pendingRewards: pendingBefore
+                    }
+                );
+
             }
 
             IERC20(token).safeTransfer(msg.sender, unstakeAmount);
@@ -271,12 +244,6 @@ contract StakingV1_1 is StakingState, StakingConstants {
                 token,
                 msg.sender, //currentDelegate,
                 unstakeAmount
-            );
-        }
-        if (claimSushi) {
-            _paySushiRewards(
-                msg.sender,
-                _pendingAltRewards(SUSHI, msg.sender, lptUserSupply, 0)
             );
         }
     }
@@ -344,7 +311,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
         external
         checkPause
         updateRewards(msg.sender)
-        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
+        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned,  uint256 sushiRewardsEarned)
     {
         return _claim(restake);
     }
@@ -379,19 +346,35 @@ contract StakingV1_1 is StakingState, StakingConstants {
         );
     }
 
+    function claimSushi()
+        external
+        checkPause
+        returns (uint256 sushiRewardsEarned)
+    {
+        sushiRewardsEarned = _claimSushi();
+        if(sushiRewardsEarned != 0){
+            emit ClaimAltRewards(msg.sender, SUSHI, sushiRewardsEarned);
+        }
+    }
+
     function _claim(
         bool restake)
         internal
-        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
+        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned, uint256 sushiRewardsEarned)
     {
         bzrxRewardsEarned = _claimBzrx(restake);
         stableCoinRewardsEarned = _claim3Crv();
+        sushiRewardsEarned = _claimSushi();
 
         emit Claim(
             msg.sender,
             bzrxRewardsEarned,
             stableCoinRewardsEarned
         );
+
+        if(sushiRewardsEarned != 0){
+            emit ClaimAltRewards(msg.sender, SUSHI, sushiRewardsEarned);
+        }
     }
 
     function _claimBzrx(
@@ -427,6 +410,35 @@ contract StakingV1_1 is StakingState, StakingConstants {
             stableCoinRewards[msg.sender] = 0;
             curve3Crv.transfer(msg.sender, stableCoinRewardsEarned);
         }
+    }
+
+    function _claimSushi()
+        internal
+        returns (uint256)
+    {
+        address _user = msg.sender;
+        uint256 lptUserSupply = balanceOfByAsset(LPToken, _user);
+        if(lptUserSupply == 0){
+            return 0;
+        }
+
+        _depositToSushiMasterchef(
+            IERC20(LPToken).balanceOf(address(this))
+        );
+
+        uint256 pendingSushi = _pendingAltRewards(SUSHI, _user, lptUserSupply, 0);
+
+        userAltRewardsPerShare[_user][SUSHI] = IStakingPartial.AltRewardsUserInfo({
+                rewardsPerShare: altRewardsPerShare[SUSHI],
+                pendingRewards: 0
+            }
+        );
+        if (pendingSushi != 0) {
+            IERC20(SUSHI).safeTransfer(_user, pendingSushi);
+        }
+
+
+        return pendingSushi;
     }
 
     function _restakeBZRX(
@@ -467,7 +479,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
         values[2] = uint256(-1);
         values[3] = uint256(-1);
         
-        unstake(tokens, values, true); // calls updateRewards
+        unstake(tokens, values); // calls updateRewards
         _claim(false);
     }
 
@@ -543,7 +555,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
         address account)
         external
         view
-        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned, uint256 bzrxRewardsVesting, uint256 stableCoinRewardsVesting)
+        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned, uint256 bzrxRewardsVesting, uint256 stableCoinRewardsVesting, uint256 sushiRewardsEarned)
     {
         (bzrxRewardsEarned, stableCoinRewardsEarned, bzrxRewardsVesting, stableCoinRewardsVesting) = _earned(
             account,
@@ -575,6 +587,16 @@ contract StakingV1_1 is StakingState, StakingConstants {
                 .mul(multiplier)
                 .div(1e36)
             );
+
+        uint256 pendingSushi = IMasterChefSushi(SUSHI_MASTERCHEF)
+            .pendingSushi(BZRX_ETH_SUSHI_MASTERCHEF_PID, address(this));
+
+        sushiRewardsEarned = _pendingAltRewards(
+            SUSHI,
+            account,
+            balanceOfByAsset(LPToken, account),
+            pendingSushi.mul(1e12).div(_totalSupplyPerToken[LPToken])
+        );
     }
 
     function _earned(
@@ -792,15 +814,8 @@ contract StakingV1_1 is StakingState, StakingConstants {
         uint256 totalSupply = _totalSupplyPerToken[poolAddress];
         require(totalSupply != 0, "no deposits");
 
-        uint256 _prevAltRewardsPerShare = 0;
-        uint256[] memory _altRewardsRounds = altRewardsRounds[token];
-        if (_altRewardsRounds.length > 0) {
-            _prevAltRewardsPerShare = _altRewardsRounds[_altRewardsRounds.length - 1];
-        }
-
-        uint256 _currentAltRewardsPerShare = amount.mul(1e12).div(totalSupply);
-        uint256 _rewardsPerShare = _currentAltRewardsPerShare.add(_prevAltRewardsPerShare);
-        altRewardsRounds[token].push(_rewardsPerShare);
+        altRewardsPerShare[token] = altRewardsPerShare[token]
+            .add(amount.mul(1e12).div(totalSupply));
 
         emit AddAltRewards(msg.sender, token, amount);
     }
@@ -1134,6 +1149,14 @@ contract StakingV1_1 is StakingState, StakingConstants {
     {
         require(_callerRewardDivisor != 0, "invalid param");
         callerRewardDivisor = _callerRewardDivisor;
+    }
+
+    function setInitialAltRewardsPerShare(
+        address token, uint256 value)
+        external
+        onlyOwner
+    {
+        altRewardsPerShare[token] = value;
     }
 
     /* commenting to save on deployment gas next time

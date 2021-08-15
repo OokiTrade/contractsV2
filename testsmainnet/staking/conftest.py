@@ -23,8 +23,9 @@ def stakingV1_1(bzx, StakingProxy, StakingV1_1,stakingV1, TestToken, accounts, L
     stakingProxy = Contract.from_abi("proxy", "0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4", StakingProxy.abi)
     stakingImpl = StakingV1_1.deploy({'from': stakingProxy.owner()})
     stakingProxy.replaceImplementation(stakingImpl, {'from': stakingProxy.owner()})
-    return Contract.from_abi("StakingV1_1", stakingProxy.address, StakingV1_1.abi, owner=accounts[9])
 
+    res = Contract.from_abi("StakingV1_1", stakingProxy.address, StakingV1_1.abi, owner=accounts[9])
+    return res;
 
 @pytest.fixture(scope="module")
 def bzx(accounts, LoanTokenLogicStandard, interface):
@@ -58,7 +59,6 @@ def LPT(accounts, TestToken, BZRX, WETH,router, interface, stakingV1_1, SUSHI_CH
 
     router.addLiquidity(WETH,BZRX, quote1, BZRX.balanceOf(accounts[9]), 0, 0,  accounts[9], 10000000e18, {'from': accounts[9]})
     LPT.approve(SUSHI_CHEF, 2**256-1, {'from':stakingV1_1})
-    SUSHI_CHEF.deposit(188, LPT.balanceOf(stakingV1_1), {'from': stakingV1_1})
     return LPT
 
 @pytest.fixture(scope="module")
