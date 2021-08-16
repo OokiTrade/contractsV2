@@ -114,7 +114,7 @@ def testStake_SweeepFees(requireMainnetFork,fees_extractor, stakingV1_1, bzx,  B
 def testStake_BZRXProfit(requireMainnetFork, fees_extractor, stakingV1_1, bzx,  BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
 
     earnedAmounts = stakingV1_1.earned(accounts[0])
-    assert(earnedAmounts == (0, 0, 0, 0))
+    assert(earnedAmounts == (0, 0, 0, 0, 0))
     print("earnedAmounts", earnedAmounts)
     balanceOfBZRX = BZRX.balanceOf(accounts[0])
 
@@ -178,7 +178,7 @@ def testStake_BZRXProfit(requireMainnetFork, fees_extractor, stakingV1_1, bzx,  
 
     # second user staking. he should get zero rewards if he just staked
     earnedAmounts = stakingV1_1.earned(accounts[1])
-    assert(earnedAmounts == (0, 0, 0, 0))
+    assert(earnedAmounts == (0, 0, 0, 0, 0))
     BZRX.transfer(accounts[1], 1000*10**18, {'from': BZRX.address})
 
     balanceOfBZRX = BZRX.balanceOf(accounts[1])
@@ -191,7 +191,7 @@ def testStake_BZRXProfit(requireMainnetFork, fees_extractor, stakingV1_1, bzx,  
 
     earnedAmounts = stakingV1_1.earned(accounts[1])
     print(str(earnedAmounts))
-    assert(earnedAmounts == (0, 0, 0, 0))
+    assert(earnedAmounts == (0, 0, 0, 0, 0))
 
     txBorrow = iUSDC.borrow("", borrowAmount, borrowTime, collateralAmount, collateralAddress,
                             accounts[0], accounts[0], b"", {'from': accounts[0], 'value': Wei(collateralAmount)})

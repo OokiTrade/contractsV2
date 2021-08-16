@@ -1151,12 +1151,16 @@ contract StakingV1_1 is StakingState, StakingConstants {
         callerRewardDivisor = _callerRewardDivisor;
     }
 
-    function setInitialAltRewardsPerShare(
-        address token, uint256 value)
+    function setInitialAltRewardsPerShare()
         external
         onlyOwner
     {
-        altRewardsPerShare[token] = value;
+        uint256 index = altRewardsRounds[SUSHI].length;
+        if(index == 0){
+            return;
+        }
+
+        altRewardsPerShare[SUSHI] = altRewardsRounds[SUSHI][index - 1];
     }
 
     /* commenting to save on deployment gas next time
