@@ -9,6 +9,7 @@ import "./StakingUpgradeable.sol";
 import "@openzeppelin-2.5.0/math/SafeMath.sol";
 import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 import "../mixins/EnumerableBytes32Set.sol";
+import "../../interfaces/IStaking.sol";
 
 
 contract StakingState is StakingUpgradeable {
@@ -66,4 +67,10 @@ contract StakingState is StakingUpgradeable {
     }
     address public governor;
     mapping(uint256 => ProposalState) internal _proposalState;
+
+    mapping(address => uint256[]) public altRewardsRounds;                          // depreciated
+    mapping(address => uint256) public altRewardsPerShare;                          // token => value
+
+    // Token => (User => Info)
+    mapping(address => mapping(address => IStaking.AltRewardsUserInfo)) public userAltRewardsPerShare;
 }

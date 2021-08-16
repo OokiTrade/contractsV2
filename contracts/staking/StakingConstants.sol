@@ -24,6 +24,7 @@ contract StakingConstants {
     address public constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
     address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     address public constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+    address public constant SUSHI = 0x6B3595068778DD592e39A122f4f5a5cF09C90fE2;
 
     IUniswapV2Router public constant uniswapRouter = IUniswapV2Router(0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F); // sushiswap
     ICurve3Pool public constant curve3pool = ICurve3Pool(0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7);
@@ -36,6 +37,9 @@ contract StakingConstants {
     uint256 internal constant vestingCliffTimestamp =      vestingStartTimestamp + cliffDuration;
     uint256 internal constant vestingEndTimestamp =        vestingStartTimestamp + vestingDuration;
     uint256 internal constant _startingVBZRXBalance =      889389933e18; // 889,389,933 BZRX
+
+    address internal constant SUSHI_MASTERCHEF = 0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd;
+    uint256 internal constant BZRX_ETH_SUSHI_MASTERCHEF_PID =  188;
 
     uint256 public constant BZRXWeightStored = 1e18;
 
@@ -95,4 +99,17 @@ contract StakingConstants {
         uint256 bzrxRewards,
         uint256 stableCoinRewards
     );
+
+    event AddAltRewards(
+        address indexed sender,
+        address indexed token,
+        uint256 amount
+    );
+
+    event ClaimAltRewards(
+        address indexed user,
+        address indexed token,
+        uint256 amount
+    );
+
 }

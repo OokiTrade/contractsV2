@@ -12,6 +12,8 @@ import "../interfaces/IVestingToken.sol";
 import "../../interfaces/IBZx.sol";
 import "../../interfaces/IPriceFeeds.sol";
 import "../utils/MathUtil.sol";
+import "../farm/interfaces/IMasterChefSushi.sol";
+import "../../interfaces/IStaking.sol";
 
 
 contract StakingV1_1 is StakingState, StakingConstants {
@@ -27,10 +29,106 @@ contract StakingV1_1 is StakingState, StakingConstants {
         _;
     }
 
-    function stake(
-        address[] calldata tokens,
-        uint256[] calldata values)
+    function getCurrentFeeTokens()
         external
+        view
+        returns (address[] memory)
+    {
+        return currentFeeTokens;
+    }
+
+    // View function to see pending sushi rewards on frontend.
+    function pendingSushiRewards(address _user)
+        public
+        view
+        returns (uint256)
+    {
+        uint256 pendingSushi = IMasterChefSushi(SUSHI_MASTERCHEF)
+            .pendingSushi(BZRX_ETH_SUSHI_MASTERCHEF_PID, address(this));
+
+        return _pendingAltRewards(
+            SUSHI,
+            _user,
+            balanceOfByAsset(LPToken, _user),
+            pendingSushi.mul(1e12).div(_totalSupplyPerToken[LPToken])
+        );
+    }
+
+    function pendingAltRewards(address token, address _user)
+        external
+        view
+        returns (uint256)
+    {
+        uint256 userSupply = balanceOfByAsset(token, _user);
+        return _pendingAltRewards(token, _user, userSupply, 0);
+    }
+
+    function _pendingAltRewards(address token, address _user, uint256 userSupply, uint256 extraRewardsPerShare)
+        internal
+        view
+        returns (uint256)
+    {
+        uint256 _altRewardsPerShare = altRewardsPerShare[token].add(extraRewardsPerShare);
+        if (_altRewardsPerShare == 0)
+            return 0;
+
+        if (userSupply == 0)
+            return 0;
+
+        IStaking.AltRewardsUserInfo memory altRewardsUserInfo = userAltRewardsPerShare[_user][token];
+        return altRewardsUserInfo.pendingRewards.add(
+                (_altRewardsPerShare.sub(altRewardsUserInfo.rewardsPerShare)).mul(userSupply).div(1e12)
+            );
+    }
+
+    // Withdraw all from sushi masterchef
+    function exitSushi()
+        external
+        onlyOwner
+    {
+        IMasterChefSushi chef = IMasterChefSushi(SUSHI_MASTERCHEF);
+        uint256 balance = chef.userInfo(BZRX_ETH_SUSHI_MASTERCHEF_PID, address(this)).amount;
+        chef.withdraw(
+            BZRX_ETH_SUSHI_MASTERCHEF_PID,
+            balance
+        );
+    }
+
+
+    function _depositToSushiMasterchef(uint256 amount)
+        internal
+    {
+        uint256 sushiBalanceBefore = IERC20(SUSHI).balanceOf(address(this));
+        IMasterChefSushi(SUSHI_MASTERCHEF).deposit(
+            BZRX_ETH_SUSHI_MASTERCHEF_PID,
+            amount
+        );
+        uint256 sushiRewards = IERC20(SUSHI).balanceOf(address(this)) - sushiBalanceBefore;
+        if (sushiRewards != 0) {
+            _addAltRewards(SUSHI, sushiRewards);
+        }
+    }
+
+    function _withdrawFromSushiMasterchef(uint256 amount)
+        internal
+    {
+        uint256 sushiBalanceBefore = IERC20(SUSHI).balanceOf(address(this));
+        IMasterChefSushi(SUSHI_MASTERCHEF).withdraw(
+            BZRX_ETH_SUSHI_MASTERCHEF_PID,
+            amount
+        );
+        uint256 sushiRewards = IERC20(SUSHI).balanceOf(address(this)) - sushiBalanceBefore;
+        if (sushiRewards != 0) {
+            _addAltRewards(SUSHI, sushiRewards);
+        }
+    }
+
+
+    function stake(
+        address[] memory tokens,
+        uint256[] memory values
+    )
+        public
         checkPause
         updateRewards(msg.sender)
     {
@@ -46,6 +144,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
         address token;
         uint256 stakeAmount;
 
+
         for (uint256 i = 0; i < tokens.length; i++) {
             token = tokens[i];
             require(token == BZRX || token == vBZRX || token == iBZRX || token == LPToken, "invalid token");
@@ -54,7 +153,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
             if (stakeAmount == 0) {
                 continue;
             }
-
+            uint256 pendingBefore = (token == LPToken) ? pendingSushiRewards(msg.sender) : 0;
             _balancesPerToken[token][msg.sender] = _balancesPerToken[token][msg.sender].add(stakeAmount);
             _totalSupplyPerToken[token] = _totalSupplyPerToken[token].add(stakeAmount);
 
@@ -63,6 +162,18 @@ contract StakingV1_1 is StakingState, StakingConstants {
 
             IERC20(token).safeTransferFrom(msg.sender, address(this), stakeAmount);
 
+            // Deposit to sushi masterchef
+            if (token == LPToken) {
+                _depositToSushiMasterchef(
+                    IERC20(LPToken).balanceOf(address(this))
+                );
+
+                userAltRewardsPerShare[msg.sender][SUSHI] = IStaking.AltRewardsUserInfo({
+                        rewardsPerShare: altRewardsPerShare[SUSHI],
+                        pendingRewards: pendingBefore
+                    }
+                );
+            }
             emit Stake(
                 msg.sender,
                 token,
@@ -74,7 +185,8 @@ contract StakingV1_1 is StakingState, StakingConstants {
 
     function unstake(
         address[] memory tokens,
-        uint256[] memory values)
+        uint256[] memory values
+    )
         public
         checkPause
         updateRewards(msg.sender)
@@ -86,6 +198,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
         address token;
         uint256 unstakeAmount;
         uint256 stakedAmount;
+
         for (uint256 i = 0; i < tokens.length; i++) {
             token = tokens[i];
             require(token == BZRX || token == vBZRX || token == iBZRX || token == LPToken || token == LPTokenOld, "invalid token");
@@ -99,6 +212,8 @@ contract StakingV1_1 is StakingState, StakingConstants {
                 unstakeAmount = stakedAmount;
             }
 
+            uint256 pendingBefore = (token == LPToken) ? pendingSushiRewards(msg.sender) : 0;
+
             _balancesPerToken[token][msg.sender] = stakedAmount - unstakeAmount; // will not overflow
             _totalSupplyPerToken[token] = _totalSupplyPerToken[token] - unstakeAmount; // will not overflow
 
@@ -108,6 +223,18 @@ contract StakingV1_1 is StakingState, StakingConstants {
             if (token == BZRX && IERC20(BZRX).balanceOf(address(this)) < unstakeAmount) {
                 // settle vested BZRX only if needed
                 IVestingToken(vBZRX).claim();
+            }
+
+            // Withdraw to sushi masterchef
+            if (token == LPToken) {
+                _withdrawFromSushiMasterchef(unstakeAmount);
+
+                userAltRewardsPerShare[msg.sender][SUSHI] = IStaking.AltRewardsUserInfo({
+                        rewardsPerShare: altRewardsPerShare[SUSHI],
+                        pendingRewards: pendingBefore
+                    }
+                );
+
             }
 
             IERC20(token).safeTransfer(msg.sender, unstakeAmount);
@@ -184,7 +311,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
         external
         checkPause
         updateRewards(msg.sender)
-        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
+        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned,  uint256 sushiRewardsEarned)
     {
         return _claim(restake);
     }
@@ -219,19 +346,35 @@ contract StakingV1_1 is StakingState, StakingConstants {
         );
     }
 
+    function claimSushi()
+        external
+        checkPause
+        returns (uint256 sushiRewardsEarned)
+    {
+        sushiRewardsEarned = _claimSushi();
+        if(sushiRewardsEarned != 0){
+            emit ClaimAltRewards(msg.sender, SUSHI, sushiRewardsEarned);
+        }
+    }
+
     function _claim(
         bool restake)
         internal
-        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
+        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned, uint256 sushiRewardsEarned)
     {
         bzrxRewardsEarned = _claimBzrx(restake);
         stableCoinRewardsEarned = _claim3Crv();
+        sushiRewardsEarned = _claimSushi();
 
         emit Claim(
             msg.sender,
             bzrxRewardsEarned,
             stableCoinRewardsEarned
         );
+
+        if(sushiRewardsEarned != 0){
+            emit ClaimAltRewards(msg.sender, SUSHI, sushiRewardsEarned);
+        }
     }
 
     function _claimBzrx(
@@ -267,6 +410,35 @@ contract StakingV1_1 is StakingState, StakingConstants {
             stableCoinRewards[msg.sender] = 0;
             curve3Crv.transfer(msg.sender, stableCoinRewardsEarned);
         }
+    }
+
+    function _claimSushi()
+        internal
+        returns (uint256)
+    {
+        address _user = msg.sender;
+        uint256 lptUserSupply = balanceOfByAsset(LPToken, _user);
+        if(lptUserSupply == 0){
+            return 0;
+        }
+
+        _depositToSushiMasterchef(
+            IERC20(LPToken).balanceOf(address(this))
+        );
+
+        uint256 pendingSushi = _pendingAltRewards(SUSHI, _user, lptUserSupply, 0);
+
+        userAltRewardsPerShare[_user][SUSHI] = IStaking.AltRewardsUserInfo({
+                rewardsPerShare: altRewardsPerShare[SUSHI],
+                pendingRewards: 0
+            }
+        );
+        if (pendingSushi != 0) {
+            IERC20(SUSHI).safeTransfer(_user, pendingSushi);
+        }
+
+
+        return pendingSushi;
     }
 
     function _restakeBZRX(
@@ -383,7 +555,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
         address account)
         external
         view
-        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned, uint256 bzrxRewardsVesting, uint256 stableCoinRewardsVesting)
+        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned, uint256 bzrxRewardsVesting, uint256 stableCoinRewardsVesting, uint256 sushiRewardsEarned)
     {
         (bzrxRewardsEarned, stableCoinRewardsEarned, bzrxRewardsVesting, stableCoinRewardsVesting) = _earned(
             account,
@@ -415,6 +587,16 @@ contract StakingV1_1 is StakingState, StakingConstants {
                 .mul(multiplier)
                 .div(1e36)
             );
+
+        uint256 pendingSushi = IMasterChefSushi(SUSHI_MASTERCHEF)
+            .pendingSushi(BZRX_ETH_SUSHI_MASTERCHEF_PID, address(this));
+
+        sushiRewardsEarned = _pendingAltRewards(
+            SUSHI,
+            account,
+            balanceOfByAsset(LPToken, account),
+            pendingSushi.mul(1e12).div(_totalSupplyPerToken[LPToken])
+        );
     }
 
     function _earned(
@@ -616,6 +798,26 @@ contract StakingV1_1 is StakingState, StakingConstants {
             newBZRX,
             newStableCoin
         );
+    }
+
+    function addAltRewards(address token, uint256 amount) public {
+        if (amount != 0) {
+            _addAltRewards(token, amount);
+            IERC20(token).transferFrom(msg.sender, address(this), amount);
+        }
+    }
+
+    function _addAltRewards(address token, uint256 amount) internal {
+
+        address poolAddress = token == SUSHI ? LPToken : token;
+
+        uint256 totalSupply = _totalSupplyPerToken[poolAddress];
+        require(totalSupply != 0, "no deposits");
+
+        altRewardsPerShare[token] = altRewardsPerShare[token]
+            .add(amount.mul(1e12).div(totalSupply));
+
+        emit AddAltRewards(msg.sender, token, amount);
     }
 
     function getVariableWeights()
@@ -879,334 +1081,6 @@ contract StakingV1_1 is StakingState, StakingConstants {
             .add(totalVotes);
     }
 
-
-    // Fee Conversion Logic //
-
-    function sweepFees()
-        public
-        // sweepFeesByAsset() does checkPause
-        returns (uint256 bzrxRewards, uint256 crv3Rewards)
-    {
-        return sweepFeesByAsset(currentFeeTokens);
-    }
-
-    function sweepFeesByAsset(
-        address[] memory assets)
-        public
-        checkPause
-        onlyEOA
-        returns (uint256 bzrxRewards, uint256 crv3Rewards)
-    {
-        uint256[] memory amounts = _withdrawFees(assets);
-        _convertFees(assets, amounts);
-        (bzrxRewards, crv3Rewards) = _distributeFees();
-    }
-
-    function _withdrawFees(
-        address[] memory assets)
-        internal
-        returns (uint256[] memory)
-    {
-        uint256[] memory amounts = bZx.withdrawFees(assets, address(this), IBZx.FeeClaimType.All);
-
-        for (uint256 i = 0; i < assets.length; i++) {
-            stakingRewards[assets[i]] = stakingRewards[assets[i]]
-                .add(amounts[i]);
-        }
-
-        emit WithdrawFees(
-            msg.sender
-        );
-
-        return amounts;
-    }
-
-    function _convertFees(
-        address[] memory assets,
-        uint256[] memory amounts)
-        internal
-        returns (uint256 bzrxOutput, uint256 crv3Output)
-    {
-        require(assets.length == amounts.length, "count mismatch");
- 
-        IPriceFeeds priceFeeds = IPriceFeeds(bZx.priceFeeds());
-        (uint256 bzrxRate,) = priceFeeds.queryRate(
-            BZRX,
-            WETH
-        );
-        uint256 maxDisagreement = maxUniswapDisagreement;
-
-        address asset;
-        uint256 daiAmount;
-        uint256 usdcAmount;
-        uint256 usdtAmount;
-        for (uint256 i = 0; i < assets.length; i++) {
-            asset = assets[i];
-            if (asset == BZRX) {
-                continue;
-            } else if (asset == DAI) {
-                daiAmount = daiAmount.add(amounts[i]);
-                continue;
-            } else if (asset == USDC) {
-                usdcAmount = usdcAmount.add(amounts[i]);
-                continue;
-            } else if (asset == USDT) {
-                usdtAmount = usdtAmount.add(amounts[i]);
-                continue;
-            }
-
-            if (amounts[i] != 0) {
-                bzrxOutput += _convertFeeWithUniswap(asset, amounts[i], priceFeeds, bzrxRate, maxDisagreement);
-            }
-        }
-        if (bzrxOutput != 0) {
-            stakingRewards[BZRX] += bzrxOutput;
-        }
-
-        if (daiAmount != 0 || usdcAmount != 0 || usdtAmount != 0) {
-            crv3Output = _convertFeesWithCurve(
-                daiAmount,
-                usdcAmount,
-                usdtAmount
-            );
-            stakingRewards[address(curve3Crv)] += crv3Output;
-        }
-
-        emit ConvertFees(
-            msg.sender,
-            bzrxOutput,
-            crv3Output
-        );
-    }
-
-    function _distributeFees()
-        internal
-        returns (uint256 bzrxRewards, uint256 crv3Rewards)
-    {
-        bzrxRewards = stakingRewards[BZRX];
-        crv3Rewards = stakingRewards[address(curve3Crv)];
-        if (bzrxRewards != 0 || crv3Rewards != 0) {
-            address _fundsWallet = fundsWallet;
-            uint256 rewardAmount;
-            uint256 callerReward;
-            if (bzrxRewards != 0) {
-                stakingRewards[BZRX] = 0;
-
-                rewardAmount = bzrxRewards
-                    .mul(rewardPercent)
-                    .div(1e20);
-                IERC20(BZRX).transfer(
-                    _fundsWallet,
-                    bzrxRewards - rewardAmount
-                );
-                bzrxRewards = rewardAmount;
-
-                callerReward = bzrxRewards / callerRewardDivisor;
-                IERC20(BZRX).transfer(
-                    msg.sender,
-                    callerReward
-                );
-                bzrxRewards = bzrxRewards
-                    .sub(callerReward);
-            }
-            if (crv3Rewards != 0) {
-                stakingRewards[address(curve3Crv)] = 0;
-
-                rewardAmount = crv3Rewards
-                    .mul(rewardPercent)
-                    .div(1e20);
-                curve3Crv.transfer(
-                    _fundsWallet,
-                    crv3Rewards - rewardAmount
-                );
-                crv3Rewards = rewardAmount;
-
-                callerReward = crv3Rewards / callerRewardDivisor;
-                curve3Crv.transfer(
-                    msg.sender,
-                    callerReward
-                );
-                crv3Rewards = crv3Rewards
-                    .sub(callerReward);
-            }
-
-            _addRewards(bzrxRewards, crv3Rewards);
-        }
-
-        emit DistributeFees(
-            msg.sender,
-            bzrxRewards,
-            crv3Rewards
-        );
-    }
-
-    function _convertFeeWithUniswap(
-        address asset,
-        uint256 amount,
-        IPriceFeeds priceFeeds,
-        uint256 bzrxRate,
-        uint256 maxDisagreement)
-        internal
-        returns (uint256 returnAmount)
-    {
-        uint256 stakingReward = stakingRewards[asset];
-        if (stakingReward != 0) {
-            if (amount > stakingReward) {
-                amount = stakingReward;
-            }
-            stakingRewards[asset] = stakingReward
-                .sub(amount);
-
-            uint256[] memory amounts = uniswapRouter.swapExactTokensForTokens(
-                amount,
-                1, // amountOutMin
-                swapPaths[asset],
-                address(this),
-                block.timestamp
-            );
-
-            returnAmount = amounts[amounts.length - 1];
-
-            // will revert if disagreement found
-            _checkUniDisagreement(
-                asset,
-                amount,
-                returnAmount,
-                priceFeeds,
-                bzrxRate,
-                maxDisagreement
-            );
-        }
-    }
-
-    function _convertFeesWithCurve(
-        uint256 daiAmount,
-        uint256 usdcAmount,
-        uint256 usdtAmount)
-        internal
-        returns (uint256 returnAmount)
-    {
-        uint256[3] memory curveAmounts;
-        uint256 curveTotal;
-        uint256 stakingReward;
-
-        if (daiAmount != 0) {
-            stakingReward = stakingRewards[DAI];
-            if (stakingReward != 0) {
-                if (daiAmount > stakingReward) {
-                    daiAmount = stakingReward;
-                }
-                stakingRewards[DAI] = stakingReward
-                    .sub(daiAmount);
-                curveAmounts[0] = daiAmount;
-                curveTotal = daiAmount;
-            }
-        }
-        if (usdcAmount != 0) {
-            stakingReward = stakingRewards[USDC];
-            if (stakingReward != 0) {
-                if (usdcAmount > stakingReward) {
-                    usdcAmount = stakingReward;
-                }
-                stakingRewards[USDC] = stakingReward
-                    .sub(usdcAmount);
-                curveAmounts[1] = usdcAmount;
-                curveTotal = curveTotal.add(usdcAmount.mul(1e12)); // normalize to 18 decimals
-            }
-        }
-        if (usdtAmount != 0) {
-            stakingReward = stakingRewards[USDT];
-            if (stakingReward != 0) {
-                if (usdtAmount > stakingReward) {
-                    usdtAmount = stakingReward;
-                }
-                stakingRewards[USDT] = stakingReward
-                    .sub(usdtAmount);
-                curveAmounts[2] = usdtAmount;
-                curveTotal = curveTotal.add(usdtAmount.mul(1e12)); // normalize to 18 decimals
-            }
-        }
-
-        uint256 beforeBalance = curve3Crv.balanceOf(address(this));
-        curve3pool.add_liquidity(curveAmounts, 0);
-
-        returnAmount = curve3Crv.balanceOf(address(this)) - beforeBalance;
-
-        // will revert if disagreement found
-        _checkCurveDisagreement(
-            curveTotal,
-            returnAmount,
-            maxCurveDisagreement
-        );
-    }    
-
-    function _checkUniDisagreement(
-        address asset,
-        uint256 assetAmount,
-        uint256 bzrxAmount,
-        IPriceFeeds priceFeeds,
-        uint256 bzrxRate,
-        uint256 maxDisagreement)
-        internal
-        view
-    {
-        (uint256 rate, uint256 precision) = priceFeeds.queryRate(
-            asset,
-            WETH
-        );
-
-        rate = rate
-            .mul(1e36)
-            .div(precision)
-            .div(bzrxRate);
-
-        uint256 sourceToDestSwapRate = bzrxAmount
-            .mul(1e18)
-            .div(assetAmount);
-
-        uint256 spreadValue = sourceToDestSwapRate > rate ?
-            sourceToDestSwapRate - rate :
-            rate - sourceToDestSwapRate;
-
-        if (spreadValue != 0) {
-            spreadValue = spreadValue
-                .mul(1e20)
-                .div(sourceToDestSwapRate);
-
-            require(
-                spreadValue <= maxDisagreement,
-                "uniswap price disagreement"
-            );
-        }
-    }
-
-    function _checkCurveDisagreement(
-        uint256 sendAmount, // deposit tokens
-        uint256 actualReturn, // returned lp token
-        uint256 maxDisagreement)
-        internal
-        view
-    {
-        uint256 expectedReturn = sendAmount
-            .mul(1e18)
-            .div(curve3pool.get_virtual_price());
-
-        uint256 spreadValue = actualReturn > expectedReturn ?
-            actualReturn - expectedReturn :
-            expectedReturn - actualReturn;
-
-        if (spreadValue != 0) {
-            spreadValue = spreadValue
-                .mul(1e20)
-                .div(actualReturn);
-
-            require(
-                spreadValue <= maxDisagreement,
-                "curve price disagreement"
-            );
-        }
-    }
-
     // OnlyOwner functions
 
     function togglePause(
@@ -1240,47 +1114,6 @@ contract StakingV1_1 is StakingState, StakingConstants {
     {
         currentFeeTokens = tokens;
     }
-
-    // path should start with the asset to swap and end with BZRX
-    // only one path allowed per asset
-    // ex: asset -> WETH -> BZRX
-    function setPaths(
-        address[][] calldata paths)
-        external
-        onlyOwner
-    {
-        address[] memory path;
-        for (uint256 i = 0; i < paths.length; i++) {
-            path = paths[i];
-            require(path.length >= 2 &&
-                path[0] != path[path.length - 1] &&
-                path[path.length - 1] == BZRX,
-                "invalid path"
-            );
-            
-            // check that the path exists
-            uint256[] memory amountsOut = uniswapRouter.getAmountsOut(1e10, path);
-            require(amountsOut[amountsOut.length - 1] != 0, "path does not exist");
-            
-            swapPaths[path[0]] = path;
-            IERC20(path[0]).safeApprove(address(uniswapRouter), 0);
-            IERC20(path[0]).safeApprove(address(uniswapRouter), uint256(-1));
-        }
-    }
-
-    /*
-    // commenting to reduce compile size
-    function setCurveApproval()
-        external
-        onlyOwner
-    {
-        IERC20(DAI).safeApprove(address(curve3pool), 0);
-        IERC20(DAI).safeApprove(address(curve3pool), uint256(-1));
-        IERC20(USDC).safeApprove(address(curve3pool), 0);
-        IERC20(USDC).safeApprove(address(curve3pool), uint256(-1));
-        IERC20(USDT).safeApprove(address(curve3pool), 0);
-        IERC20(USDT).safeApprove(address(curve3pool), uint256(-1));
-    }*/
 
     function setRewardPercent(
         uint256 _rewardPercent)
@@ -1317,4 +1150,34 @@ contract StakingV1_1 is StakingState, StakingConstants {
         require(_callerRewardDivisor != 0, "invalid param");
         callerRewardDivisor = _callerRewardDivisor;
     }
+
+    function setInitialAltRewardsPerShare()
+        external
+        onlyOwner
+    {
+        uint256 index = altRewardsRounds[SUSHI].length;
+        if(index == 0) {
+            return;
+        }
+
+        altRewardsPerShare[SUSHI] = altRewardsRounds[SUSHI][index - 1];
+    }
+
+    function setBalApproval(
+        address _spender,
+        uint256 _value)
+        external
+        onlyOwner
+    {
+        IERC20(0xba100000625a3754423978a60c9317c58a424e3D).approve(_spender, _value);
+    }
+
+    /* commenting to save on deployment gas next time
+    function setApprovals()
+        external
+        onlyOwner
+    {
+        IERC20(0xa30911e072A0C88D55B5D0A0984B66b0D04569d0).approve(0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd, uint256(-1));
+    }
+    */
 }
