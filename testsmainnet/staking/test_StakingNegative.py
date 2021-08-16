@@ -10,23 +10,23 @@ def requireMainnetFork():
     assert (network.show_active() == "mainnet-fork" or network.show_active() == "mainnet-fork-alchemy")
 
 
-def testStakeCountMismatch(requireMainnetFork, stakingV1_1, bzx, setFeesController, BZRX, vBZRX, iBZRX):
+def testStakeCountMismatch(requireMainnetFork, stakingV1_1, bzx, BZRX, vBZRX, iBZRX):
     with reverts("count mismatch"):
         stakingV1_1.stake([BZRX], [1, 2])
 
 
-def testUnStakeCountMismatch(requireMainnetFork, stakingV1_1, bzx, setFeesController, BZRX, vBZRX, iBZRX):
+def testUnStakeCountMismatch(requireMainnetFork, stakingV1_1, bzx, BZRX, vBZRX, iBZRX):
     with reverts("count mismatch"):
         stakingV1_1.unstake([BZRX], [1, 2])
 
 
-def testStakeInvalidToken(requireMainnetFork, stakingV1_1, bzx, setFeesController, BZRX, vBZRX, iBZRX):
+def testStakeInvalidToken(requireMainnetFork, stakingV1_1, bzx, BZRX, vBZRX, iBZRX):
     with reverts("count mismatch"):
         stakingV1_1.stake([stakingV1_1], [1, 2])
 
 
 
-def testStake_UnStake_NothingStaked(requireMainnetFork, stakingV1_1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts):
+def testStake_UnStake_NothingStaked(requireMainnetFork, stakingV1_1, bzx, BZRX, vBZRX, iBZRX, accounts):
     # tx =
     # tx.info()
     balanceOfBZRX = BZRX.balanceOf(accounts[0])
@@ -45,7 +45,7 @@ def testStake_UnStake_NothingStaked(requireMainnetFork, stakingV1_1, bzx, setFee
     assert True
 
 
-def testStake_StakeOld(requireMainnetFork, stakingV1_1, bzx, setFeesController, BZRX, vBZRX, iBZRX, LPT_OLD, accounts):
+def testStake_StakeOld(requireMainnetFork, stakingV1_1, bzx, BZRX, vBZRX, iBZRX, LPT_OLD, accounts):
 
     LPT_OLD.transfer(accounts[1], 1e18, { 'from': "0xe95ebce2b02ee07def5ed6b53289801f7fc137a4"})
 
@@ -59,8 +59,8 @@ def testStake_StakeOld(requireMainnetFork, stakingV1_1, bzx, setFeesController, 
     iBZRX.approve(stakingV1_1, balanceOfiBZRX, {'from': accounts[1]})
     LPT_OLD.approve(stakingV1_1, balanceOfLPT, {'from': accounts[1]})
 
-    tokens = [BZRX, vBZRX, iBZRX, LPT_OLD]
-    amounts = [balanceOfBZRX, balanceOfvBZRX, balanceOfiBZRX, balanceOfLPT]
+    tokens = [LPT_OLD]
+    amounts = [1]
     with reverts("invalid token"):
         tx = stakingV1_1.stake(tokens, amounts, {'from': accounts[1]})
 

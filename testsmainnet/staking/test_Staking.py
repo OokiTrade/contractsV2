@@ -18,7 +18,7 @@ def loadContractFromAbi(address, alias, abi):
 
 
 # TODO add LPToken
-def testStake_UnStake(requireMainnetFork, stakingV1_1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts):
+def testStake_UnStake(requireMainnetFork, stakingV1_1, bzx,  BZRX, vBZRX, iBZRX, accounts):
     # tx =
     # tx.info()
     balanceOfBZRX = BZRX.balanceOf(accounts[0])
@@ -82,17 +82,23 @@ def testStake_UnStake(requireMainnetFork, stakingV1_1, bzx, setFeesController, B
 
     assert True
 
-# TODO add LPToken
-def testStake_UnStakeOld(requireMainnetFork, stakingV1_1, bzx, setFeesController, LPT_OLD, vBZRX, iBZRX, accounts):
-    amounts = [stakingV1_1.balanceOfByAsset(LPT_OLD, accounts[0])]
+
+def testStake_UnStakeOld(requireMainnetFork, stakingV1_1, bzx, LPT_OLD, vBZRX, iBZRX, accounts):
+    account = "0x1ee7d451af9fffc192627cebea98d2dae9e4a7c3"
+    amounts = [stakingV1_1.balanceOfByAsset(LPT_OLD, account)]
     tokens = [LPT_OLD]
-    tx = stakingV1_1.unstake(tokens, amounts, {'from':accounts[0]})
-    assert stakingV1_1.balanceOfByAsset(LPT_OLD, accounts[0]) == 0
+    tx = stakingV1_1.unstake(tokens, amounts, {'from':account})
+    assert stakingV1_1.balanceOfByAsset(LPT_OLD, account) == 0
     assert True
 
 
-def testStake_SweeepFees(requireMainnetFork, stakingV1_1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC):
-    tx = stakingV1_1.sweepFees()
+def testStake_SweeepFees(requireMainnetFork,fees_extractor, stakingV1_1, bzx,  BZRX, POOL3, iBZRX, accounts, iUSDC, USDC):
+    bzrxBalanceBefore = BZRX.balanceOf(stakingV1_1)
+    pool3BalanceBefore = POOL3.balanceOf(stakingV1_1)
+    tx = fees_extractor.sweepFees({'from': accounts[9]})
+    assert bzrxBalanceBefore < BZRX.balanceOf(stakingV1_1)
+    assert pool3BalanceBefore < POOL3.balanceOf(stakingV1_1)
+
     withdrawFeesEvent = tx.events['WithdrawFees']
     assert(withdrawFeesEvent[0]['sender'] == accounts[9])
 
@@ -105,10 +111,10 @@ def testStake_SweeepFees(requireMainnetFork, stakingV1_1, bzx, setFeesController
     assert True
 
 
-def testStake_BZRXProfit(requireMainnetFork, stakingV1_1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
+def testStake_BZRXProfit(requireMainnetFork, fees_extractor, stakingV1_1, bzx,  BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
 
     earnedAmounts = stakingV1_1.earned(accounts[0])
-    assert(earnedAmounts == (0, 0, 0, 0))
+    assert(earnedAmounts == (0, 0, 0, 0, 0))
     print("earnedAmounts", earnedAmounts)
     balanceOfBZRX = BZRX.balanceOf(accounts[0])
 
@@ -134,7 +140,7 @@ def testStake_BZRXProfit(requireMainnetFork, stakingV1_1, bzx, setFeesController
         '0x40a75ae5f7a5336e75f7c7977e12c4b46a9ac0f30de01a2d5b6c1a4f4af63587', txBorrow.events)
     payLendingFeeAmount = int(str(payLendingFeeEvent['data']), 0)
 
-    txSweep = stakingV1_1.sweepFees()
+    txSweep = fees_extractor.sweepFees({'from': accounts[9]})
 
     borrowFee = txSweep.events['WithdrawBorrowingFees'][0]
     assert(borrowFee['sender'] == stakingV1_1)
@@ -172,7 +178,7 @@ def testStake_BZRXProfit(requireMainnetFork, stakingV1_1, bzx, setFeesController
 
     # second user staking. he should get zero rewards if he just staked
     earnedAmounts = stakingV1_1.earned(accounts[1])
-    assert(earnedAmounts == (0, 0, 0, 0))
+    assert(earnedAmounts == (0, 0, 0, 0, 0))
     BZRX.transfer(accounts[1], 1000*10**18, {'from': BZRX.address})
 
     balanceOfBZRX = BZRX.balanceOf(accounts[1])
@@ -185,12 +191,12 @@ def testStake_BZRXProfit(requireMainnetFork, stakingV1_1, bzx, setFeesController
 
     earnedAmounts = stakingV1_1.earned(accounts[1])
     print(str(earnedAmounts))
-    assert(earnedAmounts == (0, 0, 0, 0))
+    assert(earnedAmounts == (0, 0, 0, 0, 0))
 
     txBorrow = iUSDC.borrow("", borrowAmount, borrowTime, collateralAmount, collateralAddress,
                             accounts[0], accounts[0], b"", {'from': accounts[0], 'value': Wei(collateralAmount)})
 
-    txSweepSecondAcc = stakingV1_1.sweepFees()
+    txSweepSecondAcc = fees_extractor.sweepFees({'from': accounts[9]})
 
     print(str(amounts), str(amounts2))
     assert(amounts[0] == amounts2[0])
@@ -219,7 +225,7 @@ def filterEvents(topic, events):
     return payBorrowingFeeEvent
 
 
-def testStake_VestingFees(requireMainnetFork, stakingV1_1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
+def testStake_VestingFees(requireMainnetFork, fees_extractor, stakingV1_1, bzx,  BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
     balanceOfvBZRX = vBZRX.balanceOf(accounts[0])
     vBZRX.approve(stakingV1_1, balanceOfvBZRX, {'from': accounts[0]})
     stakingV1_1.stake([vBZRX], [balanceOfvBZRX], {'from': accounts[0]})
@@ -232,7 +238,7 @@ def testStake_VestingFees(requireMainnetFork, stakingV1_1, bzx, setFeesControlle
     txBorrow = iUSDC.borrow("", borrowAmount, borrowTime, collateralAmount, collateralAddress,
                             accounts[0], accounts[0], b"", {'from': accounts[0], 'value': Wei(collateralAmount)})
 
-    sweepTx = stakingV1_1.sweepFees()
+    sweepTx = fees_extractor.sweepFees({'from': accounts[9]})
 
     earningsDuringVesting = stakingV1_1.earned(accounts[0])
     # vesting already started
@@ -258,7 +264,7 @@ def testStake_VestingFees(requireMainnetFork, stakingV1_1, bzx, setFeesControlle
     # assert False
 
 
-def testStake_vestingClaimBZRX(requireMainnetFork, stakingV1_1, bzx, setFeesController, BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
+def testStake_vestingClaimBZRX(requireMainnetFork, stakingV1_1, bzx,  BZRX, vBZRX, iBZRX, accounts, iUSDC, USDC, WETH):
 
     vBZRX.transfer(accounts[1], 1000*10**18, {'from': vBZRX.address})
     balanceOfvBZRX = vBZRX.balanceOf(accounts[1])
@@ -278,7 +284,7 @@ def testStake_vestingClaimBZRX(requireMainnetFork, stakingV1_1, bzx, setFeesCont
     assert True
 
 
-def testStake_vBZRXVotingRigthsShouldDiminishOverTime(requireMainnetFork, stakingV1_1, bzx, setFeesController, BZRX, vBZRX, iBZRX, LPT, accounts, iUSDC, USDC, WETH):
+def testStake_vBZRXVotingRigthsShouldDiminishOverTime(requireMainnetFork, stakingV1_1, bzx,  BZRX, vBZRX, iBZRX, LPT, accounts, iUSDC, USDC, WETH):
 
     vBZRX.transfer(accounts[1], 1000e18, {'from': vBZRX})
 
@@ -308,7 +314,7 @@ def testStake_vBZRXVotingRigthsShouldDiminishOverTime(requireMainnetFork, stakin
     assert True
 
 
-def testStake_vBZRXVotingRigthsShouldDiminishOverTime2(requireMainnetFork, stakingV1_1, bzx, setFeesController, BZRX, vBZRX, iBZRX, LPT, accounts, iUSDC, USDC, WETH):
+def testStake_vBZRXVotingRigthsShouldDiminishOverTime2(requireMainnetFork, stakingV1_1, bzx,  BZRX, vBZRX, iBZRX, LPT, accounts, iUSDC, USDC, WETH):
 
     vBZRX.transfer(accounts[1], 100e18, {'from': vBZRX})
 
