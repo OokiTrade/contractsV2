@@ -58,7 +58,6 @@ def LPT(accounts, TestToken, BZRX, WETH,router, interface, stakingV1_1, SUSHI_CH
     WETH.transfer(accounts[9], 20e18, {'from': WETH})
 
     router.addLiquidity(WETH,BZRX, quote1, BZRX.balanceOf(accounts[9]), 0, 0,  accounts[9], 10000000e18, {'from': accounts[9]})
-    LPT.approve(SUSHI_CHEF, 2**256-1, {'from':stakingV1_1})
     return LPT
 
 @pytest.fixture(scope="module")
