@@ -1156,7 +1156,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
         onlyOwner
     {
         uint256 index = altRewardsRounds[SUSHI].length;
-        if(index == 0){
+        if(index == 0) {
             return;
         }
 
