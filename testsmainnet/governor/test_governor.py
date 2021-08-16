@@ -598,3 +598,30 @@ def testGovernanceConsecutiveProposal(requireMainnetFork, GOVERNANCE_DELEGATOR, 
 
     GOVERNANCE_DELEGATOR.execute(id, {"from" : bzxOwner})
     assert True
+
+
+
+def testGovernanceAcceptLocalAdmin(requireMainnetFork, GOVERNANCE_DELEGATOR, TIMELOCK, STAKING, TOKEN_SETTINGS, iUSDC, accounts,TestToken, LoanTokenLogicStandard, TokenRegistry, LoanToken, LoanTokenSettings, interface, PriceFeeds, ProtocolSettings, LoanTokenSettingsLowerAdmin, BZRX):  
+    proposer = "0x95BeeC2457838108089fcD0E059659A4E60B091A"
+    bzxOwner = accounts.at("0xB7F72028D9b502Dc871C444363a7aC5A52546608", force=True)
+
+    # FIRST
+    # begining of building calldata arrays 
+
+    # calldataArray = getTransactionListToDeployITokens(accounts)
+    calldataArray = []
+    targets = []
+
+    calldata = GOVERNANCE_DELEGATOR.__acceptLocalAdmin.encode_input()
+
+    calldataArray.append(calldata)
+    targets.append(GOVERNANCE_DELEGATOR.address)
+
+
+    tx = GOVERNANCE_DELEGATOR.propose(
+        targets,
+        [0] * len(calldataArray),
+        [""] * len(calldataArray),
+        calldataArray,
+        "DAO.__acceptLocalAdmin()", 
+        {"from": proposer})
