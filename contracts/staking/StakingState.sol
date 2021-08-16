@@ -68,9 +68,9 @@ contract StakingState is StakingUpgradeable {
     address public governor;
     mapping(uint256 => ProposalState) internal _proposalState;
 
-    mapping(address => uint256[]) public altRewardsRounds; //is not used, will keep it for memory aline
-    mapping(address => uint256) public altRewardsPerShare;
+    mapping(address => uint256[]) public altRewardsRounds;                          // depreciated
+    mapping(address => uint256) public altRewardsPerShare;                          // token => value
 
-    //Token => (User => Info)
+    // Token => (User => Info)
     mapping(address => mapping(address => IStaking.AltRewardsUserInfo)) public userAltRewardsPerShare;
 }

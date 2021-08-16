@@ -1159,6 +1159,14 @@ contract StakingV1_1 is StakingState, StakingConstants {
         altRewardsPerShare[token] = value;
     }
 
+    function rescueBalRewards()
+        external
+        onlyOwner
+    {
+        IERC20 bal = IERC20(0xba100000625a3754423978a60c9317c58a424e3D);
+        bal.transfer(msg.sender, bal.balanceOf(address(this)));
+    }
+
     /* commenting to save on deployment gas next time
     function setApprovals()
         external
