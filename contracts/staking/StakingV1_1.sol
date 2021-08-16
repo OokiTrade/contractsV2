@@ -1163,12 +1163,13 @@ contract StakingV1_1 is StakingState, StakingConstants {
         altRewardsPerShare[SUSHI] = altRewardsRounds[SUSHI][index - 1];
     }
 
-    function rescueBalRewards()
+    function setBalApproval(
+        address _spender,
+        uint256 _value)
         external
         onlyOwner
     {
-        IERC20 bal = IERC20(0xba100000625a3754423978a60c9317c58a424e3D);
-        bal.transfer(msg.sender, bal.balanceOf(address(this)));
+        IERC20(0xba100000625a3754423978a60c9317c58a424e3D).approve(_spender, _value);
     }
 
     /* commenting to save on deployment gas next time
