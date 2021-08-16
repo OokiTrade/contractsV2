@@ -74,25 +74,26 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
       * @return Proposal id of new proposal
       */
     function propose(address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas, string memory description) public returns (uint) {
-        uint latestProposalId = latestProposalIds[msg.sender];
-        uint votes = staking._setProposalVals(msg.sender, latestProposalId);
-        require(votes > proposalThreshold, "GovernorBravo::propose: proposer votes below proposal threshold");
         require(targets.length == values.length && targets.length == signatures.length && targets.length == calldatas.length, "GovernorBravo::propose: proposal function information arity mismatch");
         require(targets.length != 0, "GovernorBravo::propose: must provide actions");
         require(targets.length <= proposalMaxOperations, "GovernorBravo::propose: too many actions");
 
+        uint latestProposalId = latestProposalIds[msg.sender];
         if (latestProposalId != 0) {
             ProposalState proposersLatestProposalState = state(latestProposalId);
             require(proposersLatestProposalState != ProposalState.Active, "GovernorBravo::propose: one live proposal per proposer, found an already active proposal");
             require(proposersLatestProposalState != ProposalState.Pending, "GovernorBravo::propose: one live proposal per proposer, found an already pending proposal");
         }
 
+        uint proposalId = proposalCount + 1;
+        require(staking._setProposalVals(msg.sender, proposalId) > proposalThreshold, "GovernorBravo::propose: proposer votes below proposal threshold");
+        proposalCount = proposalId;
+
         uint startBlock = add256(block.number, votingDelay);
         uint endBlock = add256(startBlock, votingPeriod);
 
-        proposalCount++;
         Proposal memory newProposal = Proposal({
-            id: proposalCount,
+            id: proposalId,
             proposer: msg.sender,
             eta: 0,
             targets: targets,
@@ -108,11 +109,11 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
             executed: false
         });
 
-        proposals[newProposal.id] = newProposal;
-        latestProposalIds[newProposal.proposer] = newProposal.id;
+        proposals[proposalId] = newProposal;
+        latestProposalIds[msg.sender] = proposalId;
 
-        emit ProposalCreated(newProposal.id, msg.sender, targets, values, signatures, calldatas, startBlock, endBlock, description);
-        return newProposal.id;
+        emit ProposalCreated(proposalId, msg.sender, targets, values, signatures, calldatas, startBlock, endBlock, description);
+        return proposalId;
     }
 
     /**

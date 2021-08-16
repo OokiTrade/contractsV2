@@ -93,3 +93,8 @@ USDT.approve('0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7', 2**256-1, {'from': FE
 BZRX.approve(STAKING, 2**256-1, {'from': FEE_EXTRACTOR})
 POOL3.approve(STAKING, 2**256-1, {'from': FEE_EXTRACTOR})
 '''
+
+
+DAO = Contract.from_abi("governorBravoDelegator", address="0x9da41f7810c2548572f4Fa414D06eD9772cA9e6E", abi=GovernorBravoDelegate.abi)
+TIMELOCK = Contract.from_abi("TIMELOCK", address="0xfedC4dD5247B93feb41e899A09C44cFaBec29Cbc", abi=Timelock.abi)
+
