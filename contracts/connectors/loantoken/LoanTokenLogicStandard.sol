@@ -64,7 +64,6 @@ contract LoanTokenLogicStandard is AdvancedToken {
         uint256 depositAmount)
         external
         nonReentrant
-        pausable(msg.sig)
         returns (uint256) // mintAmount
     {
         return _mintToken(
@@ -78,7 +77,6 @@ contract LoanTokenLogicStandard is AdvancedToken {
         uint256 burnAmount)
         external
         nonReentrant
-        pausable(msg.sig)
         returns (uint256 loanAmountPaid)
     {
         loanAmountPaid = _burnToken(
@@ -99,7 +97,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         external
         payable
         nonReentrant
-        pausable(msg.sig)
+        pausable
         settlesInterest
         returns (bytes memory)
     {
@@ -161,7 +159,6 @@ contract LoanTokenLogicStandard is AdvancedToken {
         public
         payable
         nonReentrant
-        pausable(msg.sig)
         returns (IBZx.LoanOpenData memory)
     {
         return _borrow(
@@ -189,7 +186,6 @@ contract LoanTokenLogicStandard is AdvancedToken {
         public
         payable
         nonReentrant
-        pausable(msg.sig)
         returns (IBZx.LoanOpenData memory)
     {
         return _marginTrade(
@@ -604,6 +600,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         uint256 depositAmount)
         internal
         settlesInterest
+        pausable
         returns (uint256 mintAmount)
     {
         require (depositAmount != 0, "17");
@@ -632,6 +629,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         uint256 burnAmount)
         internal
         settlesInterest
+        pausable
         returns (uint256 loanAmountPaid)
     {
         require(burnAmount != 0, "19");
@@ -669,7 +667,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         address receiver,
         bytes memory /*loanDataBytes*/) // arbitrary order data (for future use)
         internal
-        pausable(msg.sig)
+        pausable
         settlesInterest
         returns (IBZx.LoanOpenData memory)
     {
@@ -728,7 +726,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         address trader,
         bytes memory loanDataBytes)
         internal
-        pausable(msg.sig)
+        pausable
         settlesInterest
         returns (IBZx.LoanOpenData memory loanOpenData)
     {

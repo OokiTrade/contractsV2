@@ -25,7 +25,7 @@ contract LoanMaintenance_2 is State, LoanMaintenanceEvents, PausableGuardian {
         address newOwner)
         external
         nonReentrant
-        pausable(msg.sig)
+        pausable
     {
         Loan storage loanLocal = loans[loanId];
         address currentOwner = loanLocal.borrower;

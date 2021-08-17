@@ -9,6 +9,7 @@ pragma experimental ABIEncoderV2;
 import "../../core/State.sol";
 import "../../governance/PausableGuardian.sol";
 
+
 contract ProtocolPausableGuardian is State, PausableGuardian {
 
     function initialize(

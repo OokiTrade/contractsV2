@@ -46,7 +46,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         external
         payable
         nonReentrant
-        pausable(msg.sig)
+        pausable
     {
         require(depositAmount != 0, "depositAmount is 0");
 
@@ -108,7 +108,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         uint256 withdrawAmount)
         external
         nonReentrant
-        pausable(msg.sig)
+        pausable
         returns (uint256 actualWithdrawAmount)
     {
         require(withdrawAmount != 0, "withdrawAmount is 0");
@@ -183,7 +183,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
     function withdrawAccruedInterest(
         address loanToken)
         external
-        pausable(msg.sig)
+        pausable
     {
         // pay outstanding interest to lender
         _payInterest(
@@ -200,7 +200,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         external
         payable
         nonReentrant
-        pausable(msg.sig)
+        pausable
         returns (uint256 secondsExtended)
     {
         require(depositAmount != 0, "depositAmount is 0");
@@ -316,7 +316,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         uint256 withdrawAmount)
         external
         nonReentrant
-        pausable(msg.sig)
+        pausable
         returns (uint256 secondsReduced)
     {
         require(withdrawAmount != 0, "withdrawAmount is 0");
@@ -417,7 +417,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
     function claimRewards(
         address receiver)
         external
-        pausable(msg.sig)
+        pausable
         returns (uint256 claimAmount)
     {
         bytes32 slot = keccak256(abi.encodePacked(msg.sender, UserRewardsID));

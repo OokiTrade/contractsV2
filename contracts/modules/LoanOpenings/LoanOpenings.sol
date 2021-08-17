@@ -51,7 +51,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         external
         payable
         nonReentrant
-        pausable(msg.sig)
+        pausable
         returns (LoanOpenData memory)
     {
         require(msg.value == 0 || loanDataBytes.length != 0, "loanDataBytes required with ether");
@@ -94,7 +94,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         address delegated,
         bool toggle)
         external
-        pausable(msg.sig)
+        pausable
     {
         require(loans[loanId].borrower == msg.sender, "unauthorized");
 

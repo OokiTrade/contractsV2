@@ -7,9 +7,9 @@ pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
 import "./LoanClosingsBase.sol";
-import "../../governance/PausableGuardian.sol";
 
-contract LoanClosings is LoanClosingsBase, PausableGuardian {
+
+contract LoanClosings is LoanClosingsBase {
 
     function initialize(
         address target)
@@ -29,7 +29,6 @@ contract LoanClosings is LoanClosingsBase, PausableGuardian {
         external
         payable
         nonReentrant
-        pausable(msg.sig)
         returns (
             uint256 loanCloseAmount,
             uint256 seizedAmount,
@@ -48,7 +47,6 @@ contract LoanClosings is LoanClosingsBase, PausableGuardian {
         bytes calldata /*loanDataBytes*/) // for future use
         external
         nonReentrant
-        pausable(msg.sig)
         returns (
             address rebateToken,
             uint256 gasRebate
@@ -74,7 +72,6 @@ contract LoanClosings is LoanClosingsBase, PausableGuardian {
         public
         payable
         nonReentrant
-        pausable(msg.sig)
         returns (
             uint256 loanCloseAmount,
             uint256 withdrawAmount,
@@ -96,7 +93,6 @@ contract LoanClosings is LoanClosingsBase, PausableGuardian {
         bytes memory /*loanDataBytes*/) // for future use
         public
         nonReentrant
-        pausable(msg.sig)
         returns (
             uint256 loanCloseAmount,
             uint256 withdrawAmount,

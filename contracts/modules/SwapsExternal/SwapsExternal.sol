@@ -10,9 +10,10 @@ import "../../core/State.sol";
 import "../../mixins/VaultController.sol";
 import "../../swaps/SwapsUser.sol";
 import "../../swaps/ISwapsImpl.sol";
+import "../../governance/PausableGuardian.sol";
 
 
-contract SwapsExternal is State, VaultController, SwapsUser {
+contract SwapsExternal is State, VaultController, SwapsUser, PausableGuardian {
 
     function initialize(
         address target)
