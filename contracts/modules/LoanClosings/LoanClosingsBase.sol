@@ -14,13 +14,25 @@ import "../../mixins/LiquidationHelper.sol";
 import "../../swaps/SwapsUser.sol";
 import "../../interfaces/ILoanPool.sol";
 
+// TODO - move to interfaces directory
+interface BProtocol {
+    function canLiquidate(address debt, uint debtAmount, address collateral, uint collateralAmount) external returns(bool);
+}
 
 contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, InterestUser, SwapsUser, LiquidationHelper {
+    
+    // mapping from loan params id to dedicated backstop - TODO - move to state contract?
+    mapping(bytes32 => BProtocol) public dedicatedBackstop;
 
     enum CloseTypes {
         Deposit,
         Swap,
         Liquidation
+    }
+
+    function setDedicatedBackstop(bytes32 loanParamsId, BProtocol dedicatedBackstop) external onlyOwner {
+        dedicatedBackstop[loanParamsId] = dedicatedBackstop;
+        // TODO - log as event
     }
 
     function _liquidate(
@@ -79,6 +91,13 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         }
 
         require(loanCloseAmount != 0, "nothing to liquidate");
+
+        BProtocol backstop = dedicatedBackstop[loanLocal.loanParamsId];
+        if(backstop != BProtocol(0) &&
+           backstop.canLiquidate(loanParamsLocal.loanToken, loanCloseAmount, loanParamsLocal.collateralToken, seizedAmount))
+        {
+            require(receiver == address(backstop), "only B.Protocol can liquidate");
+        }
 
         // liquidator deposits the principal being closed
         _returnPrincipalWithDeposit(
