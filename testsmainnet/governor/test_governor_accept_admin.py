@@ -26,51 +26,27 @@ def BZRX(accounts, TestToken):
     
 @pytest.fixture(scope="module")
 def GOVERNANCE_DELEGATOR(accounts, GovernorBravoDelegator, STAKING, TIMELOCK, GovernorBravoDelegate, BZRX):
-    # ADMIN = accounts[0]
-    # MIN_VOTINGPEROD = 5760
-    # MIN_VOTING_DELAY = 1
-    # MIN_PROPOSAL_THRESHOLD = 5150000e18
-    # impl = accounts[0].deploy(GovernorBravoDelegate)
-    # governorBravoDelegator = accounts.at(STAKING.owner()).deploy(GovernorBravoDelegator, TIMELOCK, STAKING, ADMIN, impl, MIN_VOTINGPEROD, MIN_VOTING_DELAY, MIN_PROPOSAL_THRESHOLD)
+
     gov = Contract.from_abi("governorBravoDelegator", address="0x9da41f7810c2548572f4Fa414D06eD9772cA9e6E", abi=GovernorBravoDelegate.abi)
 
-    # init timelock below
-    calldata = TIMELOCK.setPendingAdmin.encode_input(gov.address)
-    eta = chain.time()+TIMELOCK.delay() + 10
     bzxOwner = STAKING.owner()
-    TIMELOCK.queueTransaction(TIMELOCK, 0, b"", calldata, eta, {'from': bzxOwner})
-    chain.sleep(eta-chain.time())
-    chain.mine()
-    TIMELOCK.executeTransaction(TIMELOCK, 0, b"", calldata, eta, {'from': bzxOwner})
-
-
-    # TIMELOCK.acceptAdmin({'from': gov})
     gov.__setPendingLocalAdmin(TIMELOCK, {'from': bzxOwner})
     # gov.__acceptLocalAdmin({'from': TIMELOCK})
-    gov.__acceptAdmin({'from': bzxOwner})
+    # gov.__acceptAdmin({'from': bzxOwner})
 
 
     BZRX.transferFrom("0xBE0eB53F46cd790Cd13851d5EFf43D12404d33E8", bzxOwner, 50*1e6*1e18, {'from': "0xBE0eB53F46cd790Cd13851d5EFf43D12404d33E8"})
     STAKING.stake([BZRX], [BZRX.balanceOf(bzxOwner)], {'from': bzxOwner})
-    STAKING.setGovernor(gov, {"from": bzxOwner})
     return gov
 
 @pytest.fixture(scope="module")
 def STAKING(StakingV1_1, accounts, StakingProxy):
-    
-    bzxOwner = "0xB7F72028D9b502Dc871C444363a7aC5A52546608"
+
     stakingAddress = "0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4"
-    proxy = Contract.from_abi("staking", address=stakingAddress,abi=StakingProxy.abi)
-    impl = accounts[0].deploy(StakingV1_1)
-    proxy.replaceImplementation(impl, {"from": bzxOwner})
     return Contract.from_abi("staking", address=stakingAddress,abi=StakingV1_1.abi)
 
 @pytest.fixture(scope="module")
 def TIMELOCK(Timelock, accounts):
-    # hours12 = 12*60*60
-    # days2 = 2*24*60*60
-    # timelock = accounts[0].deploy(Timelock, accounts[0], days2)
-    # return timelock
     timelock = Contract.from_abi("TIMELOCK", address="0xfedC4dD5247B93feb41e899A09C44cFaBec29Cbc", abi=Timelock.abi, owner=accounts[0])
     return timelock
 
