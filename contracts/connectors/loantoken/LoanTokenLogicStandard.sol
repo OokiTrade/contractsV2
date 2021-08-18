@@ -9,10 +9,9 @@ pragma experimental ABIEncoderV2;
 import "./AdvancedToken.sol";
 import "../../../interfaces/IBZx.sol";
 import "../../../interfaces/IPriceFeeds.sol";
-import "../gastoken/GasTokenUser.sol";
 
 
-contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
+contract LoanTokenLogicStandard is AdvancedToken {
     using SafeMath for uint256;
     using SignedSafeMath for int256;
 
@@ -98,7 +97,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         external
         payable
         nonReentrant
-        pausable(msg.sig)
+        pausable
         settlesInterest
         returns (bytes memory)
     {
@@ -174,33 +173,6 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         );
     }
 
-    function borrowWithGasToken(
-        bytes32 loanId,                 // 0 if new loan
-        uint256 withdrawAmount,
-        uint256 initialLoanDuration,    // duration in seconds
-        uint256 collateralTokenSent,    // if 0, loanId must be provided; any ETH sent must equal this value
-        address collateralTokenAddress, // if address(0), this means ETH and ETH must be sent with the call or loanId must be provided
-        address borrower,
-        address receiver,
-        address gasTokenUser,           // specifies an address that has given spend approval for gas/chi token
-        bytes memory /*loanDataBytes*/) // arbitrary order data (for future use)
-        public
-        payable
-        nonReentrant
-        usesGasToken(gasTokenUser)
-        returns (IBZx.LoanOpenData memory)
-    {
-        return _borrow(
-            loanId,
-            withdrawAmount,
-            initialLoanDuration,
-            collateralTokenSent,
-            collateralTokenAddress,
-            borrower,
-            receiver,
-            ""
-        );
-    }
 
     // Called to borrow and immediately get into a position
     function marginTrade(
@@ -227,32 +199,6 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         );
     }
 
-    // Called to borrow and immediately get into a position
-    function marginTradeWithGasToken(
-        bytes32 loanId,                 // 0 if new loan
-        uint256 leverageAmount,
-        uint256 loanTokenSent,
-        uint256 collateralTokenSent,
-        address collateralTokenAddress,
-        address trader,
-        address gasTokenUser,           // specifies an address that has given spend approval for gas/chi token
-        bytes memory loanDataBytes)     // arbitrary order data
-        public
-        payable
-        nonReentrant
-        usesGasToken(gasTokenUser)
-        returns (IBZx.LoanOpenData memory)
-    {
-        return _marginTrade(
-            loanId,
-            leverageAmount,
-            loanTokenSent,
-            collateralTokenSent,
-            collateralTokenAddress,
-            trader,
-            loanDataBytes
-        );
-    }
 
     function transfer(
         address _to,
@@ -654,6 +600,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         uint256 depositAmount)
         internal
         settlesInterest
+        pausable
         returns (uint256 mintAmount)
     {
         require (depositAmount != 0, "17");
@@ -682,6 +629,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         uint256 burnAmount)
         internal
         settlesInterest
+        pausable
         returns (uint256 loanAmountPaid)
     {
         require(burnAmount != 0, "19");
@@ -719,7 +667,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         address receiver,
         bytes memory /*loanDataBytes*/) // arbitrary order data (for future use)
         internal
-        pausable(msg.sig)
+        pausable
         settlesInterest
         returns (IBZx.LoanOpenData memory)
     {
@@ -778,7 +726,7 @@ contract LoanTokenLogicStandard is AdvancedToken, GasTokenUser {
         address trader,
         bytes memory loanDataBytes)
         internal
-        pausable(msg.sig)
+        pausable
         settlesInterest
         returns (IBZx.LoanOpenData memory loanOpenData)
     {

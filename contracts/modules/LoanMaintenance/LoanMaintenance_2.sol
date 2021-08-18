@@ -8,9 +8,9 @@ pragma experimental ABIEncoderV2;
 
 import "../../core/State.sol";
 import "../../events/LoanMaintenanceEvents.sol";
+import "../../governance/PausableGuardian.sol";
 
-
-contract LoanMaintenance_2 is State, LoanMaintenanceEvents {
+contract LoanMaintenance_2 is State, LoanMaintenanceEvents, PausableGuardian {
 
     function initialize(
         address target)
@@ -25,6 +25,7 @@ contract LoanMaintenance_2 is State, LoanMaintenanceEvents {
         address newOwner)
         external
         nonReentrant
+        pausable
     {
         Loan storage loanLocal = loans[loanId];
         address currentOwner = loanLocal.borrower;

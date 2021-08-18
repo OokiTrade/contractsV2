@@ -98,7 +98,7 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
         external
         payable
         nonReentrant
-        pausable(msg.sig)
+        pausable
         settlesInterest
         returns (bytes memory)
     {
