@@ -9,7 +9,7 @@ import pdb
 with open(stakePath) as f:
     reader = csv.DictReader(f)
     for row in reader:
-        print(row)
+        # print(row)
         # pdb.set_trace()
         if row['user__id'] not in allEvents:
             allEvents[row['user__id']] = {'events': []}
@@ -23,7 +23,7 @@ with open(stakePath) as f:
 with open(unstakePath) as f:
     reader = csv.DictReader(f)
     for row in reader:
-        print(row)
+        # print(row)
         # pdb.set_trace()
         if row['user__id'] not in allEvents:
             allEvents[row['user__id']] = {'events': []}
@@ -38,7 +38,7 @@ totalBPTOverTime = 0
 endTime = 1629139060
 
 for account in allEvents:
-    print('k', account)
+    # print('k', account)
     # pdb.set_trace()
     # walletEventsSortedByTime = sorted(allEvents[account], key=x['timestamp'], reverse=False)
     walletEvents = allEvents[account]['events']
@@ -51,14 +51,14 @@ for account in allEvents:
     #     # pdb.set_trace()
     #     pass
     for i, event in enumerate(walletEventsSortedByTime):
-        print('evemt', event)
+        # print('evemt', event)
         
 
         if i !=0: # previousEventStartDateTime is not stored yet
             walletStakedOverTimeBPT += currentStaked*(int(event['timestamp']) - int(previousEventStartDateTime))
 
-        print("walletStakedOverTimeBPT", walletStakedOverTimeBPT)
-        print("currentStaked", currentStaked)
+        # print("walletStakedOverTimeBPT", walletStakedOverTimeBPT)
+        # print("currentStaked", currentStaked)
         # pdb.set_trace()
         # pdb.set_trace()
         if event['action'] == 'stake':
@@ -86,13 +86,13 @@ for account in allEvents:
     # print('walletStakedOverTimeBPT', account, allEvents[account]['walletStakedOverTimeBPT'])
     totalBPTOverTime += allEvents[account]['walletStakedOverTimeBPT']
 
-print("totalBPTOverTime", totalBPTOverTime)
+# print("totalBPTOverTime", totalBPTOverTime)
 
-totalBalToDistribute = 1000*10**18
+totalBalToDistribute = 674965755171273444902 # BAL.balanceOf(STAKING)
  
 for account in allEvents:
     shareOverTime = allEvents[account]['walletStakedOverTimeBPT'] / float(totalBPTOverTime)
-    print("shareOverTime", shareOverTime)
+    # print("shareOverTime", shareOverTime)
     # pdb.set_trace()
     allEvents[account]['shareOverTime'] = shareOverTime
     allEvents[account]['amount'] = shareOverTime * totalBalToDistribute

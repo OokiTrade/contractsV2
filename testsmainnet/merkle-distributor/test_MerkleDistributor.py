@@ -2,7 +2,7 @@
 
 import pytest
 from brownie import network, Contract, reverts
-
+import json
 
 @pytest.fixture(scope="module")
 def requireMainnetFork():
@@ -20,41 +20,58 @@ def STAKING(StakingV1_1, accounts, StakingProxy):
 
 @pytest.fixture(scope="module")
 def MERKLEDISTRIBUITOR(accounts, LoanTokenLogicStandard, MerkleDistributor, BAL, STAKING):
-    BAL.transfer(accounts[0], 3000*1e18, {'from': BAL})
+    amount = 674965755171273444902 # PAD.balanceOf(STAKING)
+    BAL.transfer(accounts[0], amount, {'from': "0xF977814e90dA44bFA03b6295A0616a897441aceC"})
     
     merkle = accounts[0].deploy(MerkleDistributor)
-    BAL.approve(merkle, 3000*1e18, {'from': accounts[0]})
-    merkleRootProof = "0x6f81aca6d06c49a679da8fbb05392b8cb27fa25c5e69a92f50c39fb5adacef59" # this is from merkleproof.json
-    merkle.createAirdrop(BAL, merkleRootProof, merkle, 3000*1e18)
+    
+    BAL.approve(merkle, amount, {'from': accounts[0]})
+    merkleRootProof = "0x6ad0e1656269711e7dd825a7151218d39ae3cc20e7909eaf968dd4dbadcdcaa3" # this is from merkleproof.json
+    merkle.createAirdrop(BAL, merkleRootProof, merkle, amount)
     merkle.setApproval(BAL, merkle, 2**256-1)
     return merkle
 
 
-def testMerkleDistributor(requireMainnetFork, MERKLEDISTRIBUITOR, accounts, BAL, STAKING):
-    assert MERKLEDISTRIBUITOR.airdropCount() == 1
+def testMerkleDistributorAllAccounts(requireMainnetFork, MERKLEDISTRIBUITOR, accounts, BAL, STAKING):
+    
+    with open('./scripts/merkle-distributor/merkleproof.json', 'r') as myfile:
+        data=myfile.read()
+    merkleproof = json.loads(data)
 
+    for proof in merkleproof['claims']:
+        
+        claimer = proof
+        balanceBefore = BAL.balanceOf(claimer)
+        index = merkleproof['claims'][proof]['index']
+        amount = merkleproof['claims'][proof]['amount']
+        proof = merkleproof['claims'][proof]['proof']
+        
+        print('index', index)
+        MERKLEDISTRIBUITOR.claim(0, index, claimer, amount, proof, {'from': claimer})
+
+        balanceAfter = BAL.balanceOf(claimer)
+
+        expectedAmount = int(amount, 16)
+        assert  expectedAmount == balanceAfter - balanceBefore
+
+
+    assert BAL.balanceOf(MERKLEDISTRIBUITOR) < 1e5 # some lefties due to math calcs
+    assert True
+
+
+    # below info come from merkleproof.json
     claimer = "0x00364d17C57868380Ef4F4effe8caf74d757742D"
     balanceBefore = BAL.balanceOf(claimer)
     index = 0
-    amount =  "0x13574aeae8fe7200"
+    amount =  "0x0d0df3f688014700"
     proof = [
-                "0x0c15f451d497c08a5edc3450c03a61153d71814ae5117554a8c1ffa97cc92e5a",
-                "0xde828f013d44df2e723bac644c06441c19863a0ce936fa109491b1639d84155e",
-                "0x63d85ffb797d6a5b62d50a5a80a472f6a17bc2d73cf10bcdc619ba6c6ce2146f",
-                "0x6fa3a1461cc5c14e0f9a292881ce3cd3a36932b4537d30758bb00b4344390e4a",
-                "0x608be47c94585ddbb41b1b562f415de2cf72a1e393cf9719a95cb36c9d68c48c",
-                "0xde49da64f96eed7bf3f041bb7a81629c3f1fcbaf68449094358190c6232b0ff5"
+                "0x2b087ef16719779ba9ac65078dfef412d6373efc858e443437c04a3c57b43cce",
+                "0xac935e2e9d08073f84155f3d5e7e5326eeaccc7fcc136ce5fc2cd1a1275281ef",
+                "0x4c40b206b11535480d16400ef1e8a81ac947d4146ffb787bfbb4e07395fa8f38",
+                "0x7c501969c97a1397d4460cf31c062c32f5532b896b42d35ef25b363362c510fd",
+                "0x9fb5e133cefc22b338a7b1667a1c454c9b46f34a2a82cd0a8733aa9ae6f3f26f",
+                "0xe0b3f19a397359f80c5f62fae85edd74133439c5a5fbf1350f33a2be99448a6d"
             ]
-
-
-    MERKLEDISTRIBUITOR.claim(0, index, claimer, amount, proof, {'from': claimer})
-    balanceAfter = BAL.balanceOf(claimer)
-
-    # this `amount` comes from output.json for this address
-    expectedAmount = int(amount, 16)
-    assert  expectedAmount == balanceAfter - balanceBefore
-
 
     with reverts("MerkleDistributor: Drop already claimed."):
         MERKLEDISTRIBUITOR.claim(0, index, claimer, amount, proof, {'from': claimer})
-    assert False
