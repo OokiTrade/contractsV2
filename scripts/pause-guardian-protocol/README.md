@@ -6,7 +6,7 @@ The bZx DAO contract designates a Pause Guardian address capable of disabling pr
 BZRX token-holders designate the Pause Guardian address, which is currently held by multisig backed by TODO
 
 ## Procedure
-
+# TODO @angelo make a nice cool text
 
 ## License
 
