@@ -12,10 +12,10 @@ import "../../core/State.sol";
 import "../../mixins/VaultController.sol";
 import "../../swaps/SwapsUser.sol";
 import "../../swaps/ISwapsImpl.sol";
-import "../../connectors/gastoken/GasTokenUser.sol";
 
 
-contract SwapsExternal is State, VaultController, SwapsUser, GasTokenUser {
+
+contract SwapsExternal is State, VaultController, SwapsUser {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
 
@@ -25,7 +25,6 @@ contract SwapsExternal is State, VaultController, SwapsUser, GasTokenUser {
         onlyOwner
     {
         _setTarget(this.swapExternal.selector, target);
-        _setTarget(this.swapExternalWithGasToken.selector, target);
         _setTarget(this.getSwapExpectedReturn.selector, target);
     }
 
@@ -53,31 +52,6 @@ contract SwapsExternal is State, VaultController, SwapsUser, GasTokenUser {
         );
     }
 
-    function swapExternalWithGasToken(
-        address sourceToken,
-        address destToken,
-        address receiver,
-        address returnToSender,
-        address gasTokenUser,
-        uint256 sourceTokenAmount,
-        uint256 requiredDestTokenAmount,
-        bytes calldata swapData)
-        external
-        payable
-        usesGasToken(gasTokenUser)
-        nonReentrant
-        returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
-    {
-        return _swapExternal(
-            sourceToken,
-            destToken,
-            receiver,
-            returnToSender,
-            sourceTokenAmount,
-            requiredDestTokenAmount,
-            swapData
-        );
-    }
 
     function _swapExternal(
         address sourceToken,
