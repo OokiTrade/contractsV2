@@ -101,7 +101,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         virtual
         payable
         nonReentrant
-        pausable(msg.sig)
+        pausable
         settlesInterest
         returns (bytes memory)
     {
@@ -603,6 +603,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         uint256 depositAmount)
         internal
         settlesInterest
+        pausable
         returns (uint256 mintAmount)
     {
         require (depositAmount != 0, "17");
@@ -631,6 +632,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         uint256 burnAmount)
         internal
         settlesInterest
+        pausable
         returns (uint256 loanAmountPaid)
     {
         require(burnAmount != 0, "19");
@@ -669,7 +671,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         bytes memory /*loanDataBytes*/) // arbitrary order data (for future use)
         internal
         virtual
-        pausable(msg.sig)
+        pausable
         settlesInterest
         returns (IBZx.LoanOpenData memory)
     {
@@ -729,7 +731,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         bytes memory loanDataBytes)
         internal
         virtual
-        pausable(msg.sig)
+        pausable
         settlesInterest
         returns (IBZx.LoanOpenData memory loanOpenData)
     {

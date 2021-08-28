@@ -102,7 +102,7 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
         override
         payable
         nonReentrant
-        pausable(msg.sig)
+        pausable
         settlesInterest
         returns (bytes memory)
     {

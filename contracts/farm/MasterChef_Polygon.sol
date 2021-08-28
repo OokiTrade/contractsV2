@@ -69,6 +69,7 @@ contract MasterChef_Polygon is Upgradeable {
     // total locked rewards for a user
     mapping(address => uint256) internal _lockedRewards;
 
+
     bool public notPaused;
 
     modifier checkNoPause() {
@@ -88,6 +89,11 @@ contract MasterChef_Polygon is Upgradeable {
     event AddAltReward(
         address indexed sender,
         uint256 indexed pid,
+        uint256 amount
+    );
+
+    event ClaimAltRewards(
+        address indexed user,
         uint256 amount
     );
 
@@ -423,13 +429,15 @@ contract MasterChef_Polygon is Upgradeable {
             return;
         }
         uint256 lpSupply = balanceOf[_pid];
-        if (lpSupply == 0) {
+        uint256 _GOVPerBlock = GOVPerBlock;
+        uint256 _allocPoint = pool.allocPoint;
+        if (lpSupply == 0 || _GOVPerBlock == 0 || _allocPoint == 0) {
             pool.lastRewardBlock = block.number;
             return;
         }
         uint256 multiplier = getMultiplierPrecise(pool.lastRewardBlock, block.number);
         uint256 GOVReward =
-            multiplier.mul(GOVPerBlock).mul(pool.allocPoint).div(
+            multiplier.mul(_GOVPerBlock).mul(_allocPoint).div(
                 totalAllocPoint
             );
         // 250m = 250 * 1e6
@@ -523,7 +531,7 @@ contract MasterChef_Polygon is Upgradeable {
             //Update userAltRewardsRounds even if user got nothing in the current round
             uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
             if (_altRewardsPerShare.length > 0) {
-            userAltRewardsRounds[msg.sender] = _altRewardsPerShare.length;
+                userAltRewardsRounds[msg.sender] = _altRewardsPerShare.length;
             }
         }
 
@@ -537,7 +545,7 @@ contract MasterChef_Polygon is Upgradeable {
         //user vestingStartStamp recalculation is done in safeGOVTransfer
         safeGOVTransfer(_pid, pending);
         if (pendingAlt != 0) {
-            Address.sendValue(msg.sender, pendingAlt);
+            sendValueIfPossible(msg.sender, pendingAlt);
         }
     }
 
@@ -577,6 +585,7 @@ contract MasterChef_Polygon is Upgradeable {
             if (_amount > availableAmount) {
                 _amount = availableAmount;
             }
+
             pendingAlt = _pendingAltRewards(msg.sender);
             //Update userAltRewardsRounds even if user got nothing in the current round
             uint256[] memory _altRewardsPerShare = altRewardsRounds[GOV_POOL_ID];
@@ -595,7 +604,7 @@ contract MasterChef_Polygon is Upgradeable {
         //user vestingStartStamp recalculation is done in safeGOVTransfer
         safeGOVTransfer(_pid, pending);
         if (pendingAlt != 0) {
-            Address.sendValue(msg.sender, pendingAlt);
+            sendValueIfPossible(msg.sender, pendingAlt);
         }
     }
 
@@ -627,7 +636,7 @@ contract MasterChef_Polygon is Upgradeable {
         user.rewardDebt = user.amount.mul(pool.accGOVPerShare).div(1e12);
 
         if (pendingAlt != 0) {
-            Address.sendValue(msg.sender, pendingAlt);
+            sendValueIfPossible(msg.sender, pendingAlt);
         }
     }
 
@@ -721,4 +730,15 @@ contract MasterChef_Polygon is Upgradeable {
         }
     }
 
+    function sendValueIfPossible(address payable recipient, uint256 amount) internal {
+        require(address(this).balance >= amount, "Address: insufficient balance");
+        (bool success, ) = recipient.call{ value: amount }("");
+        if (!success) {
+            (success, ) = devaddr.call{ value: amount }("");
+            if (success)
+                emit ClaimAltRewards(devaddr, amount);
+        } else {
+            emit ClaimAltRewards(recipient, amount);
+        }
+    }
 }

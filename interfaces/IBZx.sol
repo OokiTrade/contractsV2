@@ -722,6 +722,19 @@ interface IBZx {
 
     function transferOwnership(address newOwner) external;
 
+
+    /// Guardian Interface
+
+    function _isPaused(bytes4 sig) external view returns (bool isPaused);
+
+    function toggleFunctionPause(bytes4 sig) external;
+
+    function toggleFunctionUnPause(bytes4 sig) external;
+
+    function changeGuardian(address newGuardian) external;
+
+    function getGuardian() external view returns (address guardian);
+
     struct LoanParams {
         bytes32 id;
         bool active;

@@ -12,13 +12,14 @@ import "../../core/State.sol";
 import "../../mixins/VaultController.sol";
 import "../../swaps/SwapsUser.sol";
 import "../../swaps/ISwapsImpl.sol";
+import "../../governance/PausableGuardian.sol";
 
 
 
-contract SwapsExternal is State, VaultController, SwapsUser {
+contract SwapsExternal is State, VaultController, SwapsUser, PausableGuardian {
     using SafeERC20 for IERC20;
     using SafeMath for uint256;
-
+    
     function initialize(
         address target)
         external
@@ -51,7 +52,6 @@ contract SwapsExternal is State, VaultController, SwapsUser {
             swapData
         );
     }
-
 
     function _swapExternal(
         address sourceToken,

@@ -45,6 +45,8 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable {
 
     mapping(IERC20 => uint256) public tokenHeld;
 
+    address payable public treasuryWallet;
+
     event ExtractAndDistribute();
 
     event AssetSwap(
@@ -158,7 +160,8 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable {
 
             IWethERC20(MATIC).withdraw(maticOutput + sellAmount + distributeAmount);
             chef.addAltReward{value: distributeAmount}();
-            Address.sendValue(fundsWallet, maticOutput + sellAmount);
+            Address.sendValue(fundsWallet, sellAmount);
+            Address.sendValue(treasuryWallet, maticOutput);
 
             emit ExtractAndDistribute();
         }
@@ -190,8 +193,12 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable {
         isPaused = _isPaused;
     }
 
-    function setFundsWallet(address payable _fundsWallet) external onlyOwner {
-        fundsWallet = _fundsWallet;
+    function setFundsWallet(address payable _wallet) external onlyOwner {
+        fundsWallet = _wallet;
+    }
+
+    function setTreasuryWallet(address payable _wallet) external onlyOwner {
+        treasuryWallet = _wallet;
     }
 
     function setFeeTokens(address[] calldata tokens) external onlyOwner {

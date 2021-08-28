@@ -14,10 +14,10 @@ import "@openzeppelin-3.4.0/access/Ownable.sol";
 import "@openzeppelin-3.4.0/utils/Address.sol";
 import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
 import "../../interfaces/IWeth.sol";
-import "./Pausable.sol";
+import "../../governance/PausableGuardian.sol";
 
 
-contract LoanTokenBase is ReentrancyGuard, Ownable, Pausable {
+contract LoanTokenBase is ReentrancyGuard, Ownable, PausableGuardian {
 
     uint256 internal constant WEI_PRECISION = 10**18;
     uint256 internal constant WEI_PERCENT_PRECISION = 10**20;

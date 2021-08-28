@@ -14,9 +14,10 @@ import "../../mixins/VaultController.sol";
 import "../../mixins/InterestUser.sol";
 import "../../mixins/LiquidationHelper.sol";
 import "../../swaps/SwapsUser.sol";
+import "../../governance/PausableGuardian.sol";
 
 
-contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, InterestUser, SwapsUser, LiquidationHelper {
+contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, InterestUser, SwapsUser, LiquidationHelper, PausableGuardian {
     using SafeMath for uint256;
     using MathUtil for uint256;
     using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
@@ -50,6 +51,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         external
         payable
         nonReentrant
+        pausable
     {
         require(depositAmount != 0, "depositAmount is 0");
 
@@ -111,6 +113,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         uint256 withdrawAmount)
         external
         nonReentrant
+        pausable
         returns (uint256 actualWithdrawAmount)
     {
         require(withdrawAmount != 0, "withdrawAmount is 0");
@@ -185,6 +188,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
     function withdrawAccruedInterest(
         address loanToken)
         external
+        pausable
     {
         // pay outstanding interest to lender
         _payInterest(
@@ -201,6 +205,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         external
         payable
         nonReentrant
+        pausable
         returns (uint256 secondsExtended)
     {
         require(depositAmount != 0, "depositAmount is 0");
@@ -316,6 +321,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         uint256 withdrawAmount)
         external
         nonReentrant
+        pausable
         returns (uint256 secondsReduced)
     {
         require(withdrawAmount != 0, "withdrawAmount is 0");
@@ -416,6 +422,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
     function claimRewards(
         address receiver)
         external
+        pausable
         returns (uint256 claimAmount)
     {
         bytes32 slot = keccak256(abi.encodePacked(msg.sender, UserRewardsID));
