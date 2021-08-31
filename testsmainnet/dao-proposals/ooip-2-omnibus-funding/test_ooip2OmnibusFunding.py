@@ -40,8 +40,8 @@ def testGovernanceProposal(requireMainnetFork, accounts, DAO, BZRX, TIMELOCK):
     marketingMultisigAmount = 150000 / 0.4 * 1e18
     infrastructureMultisigAmount = 15000 / 0.4 * 1e18
 
-    # our community member calcualted ~2M$ a year total DAO spending
-    daoFundingContractApprovalAmount = 2000000 / 0.4 * 1e18
+    # no unlimited approval, as a safety measure
+    daoFundingContractApprovalAmount = 4000000 / 0.4 * 1e18
 
     exec(open("./scripts/dao-proposals/OOIP-2-omnibus-funding/proposal.py").read())
 

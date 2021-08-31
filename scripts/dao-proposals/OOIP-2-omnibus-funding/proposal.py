@@ -2,9 +2,7 @@ exec(open("./scripts/env/set-eth.py").read())
 
 proposerAddress = "0x54e88185eb636c0a75d67dccc70e9abe169ba55e"
 
-description = "Now that the DAO has launched, funding is required to ensure that existing contributors are compensated on \
-    an ongoing basis. At the time of writing, the treasury contains over 400,000,000 ($170,000,000) BZRX, which can be \
-        purposed to maintain operations."
+description = "Setup for DAO Omnibus Funding"
 
 
 marketingMultisig = "0xddD5105b94A647eEa6776B5A63e37D81eAE3566F"
@@ -16,8 +14,8 @@ marketingMultisigAmount = 150000 / 0.4 * 1e18
 infrastructureMultisigAmount = 15000 / 0.4 * 1e18
 
 
-# our community member calcualted ~2M$ a year total DAO spending
-daoFundingContractApprovalAmount = 2000000 / 0.4 * 1e18
+# no unlimited approval, as a safety measure
+daoFundingContractApprovalAmount = 4000000 / 0.4 * 1e18
 
 targets = []
 values = []
@@ -48,4 +46,4 @@ signatures = [""] * len(targets)  # empty signatures array
 
 # Make proposal
 DAO.propose(targets, values, signatures, calldatas,
-            description, {'from': proposerAddress})
+            description, {'from': acct})
