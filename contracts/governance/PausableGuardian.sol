@@ -37,8 +37,8 @@ contract PausableGuardian is Ownable {
     }
 
     function toggleFunctionUnPause(bytes4 sig) public {
-        // only DAO can unpause
-        require(msg.sender == owner(), "unauthorized");
+        // only DAO can unpause, and adding guardian temporarily
+        require(msg.sender == getGuardian() || msg.sender == owner(), "unauthorized");
         bytes32 slot = keccak256(abi.encodePacked(sig, Pausable_FunctionPause));
         assembly {
             sstore(slot, 0)

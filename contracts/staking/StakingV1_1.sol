@@ -14,18 +14,13 @@ import "../../interfaces/IPriceFeeds.sol";
 import "../utils/MathUtil.sol";
 import "../farm/interfaces/IMasterChefSushi.sol";
 import "../../interfaces/IStaking.sol";
+import "../governance/PausableGuardian.sol";
 
-
-contract StakingV1_1 is StakingState, StakingConstants {
+contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     using MathUtil for uint256;
 
     modifier onlyEOA() {
         require(msg.sender == tx.origin, "unauthorized");
-        _;
-    }
-
-    modifier checkPause() {
-        require(!isPaused, "paused");
         _;
     }
 
@@ -129,7 +124,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
         uint256[] memory values
     )
         public
-        checkPause
+        pausable
         updateRewards(msg.sender)
     {
         require(tokens.length == values.length, "count mismatch");
@@ -188,7 +183,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
         uint256[] memory values
     )
         public
-        checkPause
+        pausable
         updateRewards(msg.sender)
     {
         require(tokens.length == values.length, "count mismatch");
@@ -251,7 +246,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
     /*function changeDelegate(
         address delegateToSet)
         external
-        checkPause
+        pausable
     {
         if (delegateToSet == ZERO_ADDRESS) {
             delegateToSet = msg.sender;
@@ -309,7 +304,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
     function claim(
         bool restake)
         external
-        checkPause
+        pausable
         updateRewards(msg.sender)
         returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned,  uint256 sushiRewardsEarned)
     {
@@ -318,7 +313,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
 
     function claimBzrx()
         external
-        checkPause
+        pausable
         updateRewards(msg.sender)
         returns (uint256 bzrxRewardsEarned)
     {
@@ -333,7 +328,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
 
     function claim3Crv()
         external
-        checkPause
+        pausable
         updateRewards(msg.sender)
         returns (uint256 stableCoinRewardsEarned)
     {
@@ -348,7 +343,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
 
     function claimSushi()
         external
-        checkPause
+        pausable
         returns (uint256 sushiRewardsEarned)
     {
         sushiRewardsEarned = _claimSushi();
@@ -466,7 +461,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
 
     function exit()
         public
-        // unstake() does a checkPause
+        // unstake() does check pausable
     {
         address[] memory tokens = new address[](4);
         uint256[] memory values = new uint256[](4);
@@ -734,7 +729,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
         uint256[] calldata bzrxAmounts,
         uint256[] calldata stableCoinAmounts)
         external
-        checkPause
+        pausable
         returns (uint256 bzrxTotal, uint256 stableCoinTotal)
     {
         require(accounts.length == bzrxAmounts.length && accounts.length == stableCoinAmounts.length, "count mismatch");
@@ -758,7 +753,7 @@ contract StakingV1_1 is StakingState, StakingConstants {
         uint256 newBZRX,
         uint256 newStableCoin)
         external
-        checkPause
+        pausable
     {
         if (newBZRX != 0 || newStableCoin != 0) {
             _addRewards(newBZRX, newStableCoin);
