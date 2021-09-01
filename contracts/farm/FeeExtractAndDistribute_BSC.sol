@@ -32,7 +32,8 @@ contract FeeExtractAndDistribute_BSC is Upgradeable {
 
     address internal constant ZERO_ADDRESS = address(0);
 
-    bool public isPaused;
+    //below is unused
+    bool public isPaused; 
 
     address payable public fundsWallet;
 
