@@ -1175,15 +1175,13 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     function setMigrator(IMigrator _migrator) public onlyOwner {
         migrator = _migrator;
     }
-    event Logger(string name, uint256 amount);
     
-   // Migrate lp token to another lp contract. Can be called by anyone. We trust that migrator contract is good.
+    // Migrate lp token to another lp contract. Can be called by anyone. We trust that migrator contract is good.
+    // After migration staking should be put to pause untill we redeploy with new onsent pool since its going to change
     function migrateSLP() public onlyOwner {
         require(address(migrator) != address(0), "migrate: no migrator");
 
         address lpToken = 0xa30911e072A0C88D55B5D0A0984B66b0D04569d0;
-        uint256 bal = IERC20(lpToken).balanceOf(address(this));
-        emit Logger("bal", bal);
 
         IMasterChefSushi chef = IMasterChefSushi(SUSHI_MASTERCHEF);
         uint256 balance = chef.userInfo(BZRX_ETH_SUSHI_MASTERCHEF_PID, address(this)).amount;
@@ -1191,17 +1189,13 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             BZRX_ETH_SUSHI_MASTERCHEF_PID,
             balance
         );
-        emit Logger("balance", balance);
-        emit Logger("bal", IERC20(lpToken).balanceOf(address(this)));
+
         IERC20(lpToken).transfer(address(migrator), balance);
 
-        address newLpToken = migrator.migrate(lpToken);
-
-        // // TODO if below is not false; need to rebalance
-        // require(bal == IERC20(newLpToken).balanceOf(address(this)), "migrate: bad");
-        LPToken = newLpToken;
+        migrator.migrate();
     }
 
+    
     function setApproval(
         address _token,
         address _spender,

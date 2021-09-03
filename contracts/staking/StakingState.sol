@@ -67,15 +67,14 @@ contract StakingState is StakingUpgradeable {
     }
     address public governor;
     
-    // The migrator contract. It has a lot of power. Can only be set through governance (owner).
-    IMigrator public migrator;
-    address public LPToken = 0xa30911e072A0C88D55B5D0A0984B66b0D04569d0; // sushiswap
-
     mapping(uint256 => ProposalState) internal _proposalState;
 
-    mapping(address => uint256[]) public altRewardsRounds;                          // depreciated
+    mapping(address => uint256[]) public altRewardsRounds;                          // deprecated
     mapping(address => uint256) public altRewardsPerShare;                          // token => value
 
     // Token => (User => Info)
     mapping(address => mapping(address => IStaking.AltRewardsUserInfo)) public userAltRewardsPerShare;
+    
+    // The migrator contract. It has a lot of power. Can only be set through governance (owner).
+    IMigrator public migrator;
 }
