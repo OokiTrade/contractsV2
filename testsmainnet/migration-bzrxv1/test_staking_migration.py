@@ -77,7 +77,7 @@ def test_migration_staking(requireMainnetFork, accounts, BZRX, OOKI, STAKING, BZ
     PAIR = Contract.from_abi("PAIR", address=pair, abi=interface.IUniswapV2Pair.abi)
     assert PAIR.balanceOf(STAKING) == PAIR.totalSupply() - 1000 # 1000 minting fee
 
-    OLDPAIR = Contract.from_abi("OLDPAIR", address=STAKING.LPToken(), abi=interface.IUniswapV2Pair.abi)
+    OLDPAIR = Contract.from_abi("OLDPAIR", address="0xa30911e072A0C88D55B5D0A0984B66b0D04569d0", abi=interface.IUniswapV2Pair.abi)
     assert OLDPAIR.balanceOf(STAKING) == 0
     
     assert False
