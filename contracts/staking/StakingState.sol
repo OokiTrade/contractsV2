@@ -10,7 +10,7 @@ import "@openzeppelin-2.5.0/math/SafeMath.sol";
 import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 import "../mixins/EnumerableBytes32Set.sol";
 import "../../interfaces/IStaking.sol";
-
+import "../../interfaces/IMigrator.sol";
 
 contract StakingState is StakingUpgradeable {
     using SafeMath for uint256;
@@ -58,7 +58,7 @@ contract StakingState is StakingUpgradeable {
     uint256 public callerRewardDivisor = 100;
 
     address[] public currentFeeTokens;
-
+    
     struct ProposalState {
         uint256 proposalTime;
         uint256 iBZRXWeight;
@@ -66,6 +66,11 @@ contract StakingState is StakingUpgradeable {
         uint256 lpTotalSupply;
     }
     address public governor;
+    
+    // The migrator contract. It has a lot of power. Can only be set through governance (owner).
+    IMigrator public migrator;
+    address public LPToken = 0xa30911e072A0C88D55B5D0A0984B66b0D04569d0; // sushiswap
+
     mapping(uint256 => ProposalState) internal _proposalState;
 
     mapping(address => uint256[]) public altRewardsRounds;                          // depreciated
