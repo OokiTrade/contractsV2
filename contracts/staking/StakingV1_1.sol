@@ -24,6 +24,11 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         _;
     }
 
+    modifier checkPause() {
+        require(!isPaused, "paused");
+        _;
+    }
+
     function getCurrentFeeTokens()
         external
         view
