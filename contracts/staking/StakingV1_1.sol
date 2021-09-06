@@ -15,6 +15,7 @@ import "../utils/MathUtil.sol";
 import "../farm/interfaces/IMasterChefSushi.sol";
 import "../../interfaces/IStaking.sol";
 import "../governance/PausableGuardian.sol";
+import "../interfaces/IUniswapV2Router.sol";
 
 contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     using MathUtil for uint256;
@@ -223,6 +224,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             if (token == OOKI && IERC20(OOKI).balanceOf(address(this)) < unstakeAmount) {
                 // settle vested OOKI only if needed
                 IVestingToken(vBZRX).claim();
+                // TODO converter here
             }
 
             // Withdraw to sushi masterchef
@@ -394,6 +396,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
                 if (IERC20(OOKI).balanceOf(address(this)) < bzrxRewardsEarned) {
                     // settle vested OOKI only if needed
                     IVestingToken(vBZRX).claim();
+                    // TODO Converter here
                 }
 
                 IERC20(OOKI).transfer(msg.sender, bzrxRewardsEarned);
@@ -1172,14 +1175,29 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         IERC20(0xba100000625a3754423978a60c9317c58a424e3D).approve(_spender, _value);
     }
 
-    function setMigrator(IMigrator _migrator) public onlyOwner {
-        migrator = _migrator;
+    function setConverter(IBZRXv2Converter _converter) public onlyOwner {
+        converter = _converter;
+    }
+
+    function migrateUserBalances() public {
+        _balancesPerToken[OOKI][msg.sender] = _balancesPerToken[BZRX][msg.sender];
+        _balancesPerToken[BZRX][msg.sender] = 0;
+
+        bzrxRewardsPerTokenPaid[OOKI] = bzrxRewardsPerTokenPaid[BZRX];
+        bzrxRewardsPerTokenPaid[BZRX] = 0;
+
+        bzrxRewards[OOKI] = bzrxRewards[BZRX];
+        bzrxRewards[BZRX] = 0;
+    }
+
+    function isUserMigrated() public view returns(bool) {
+        return _balancesPerToken[BZRX][msg.sender] > 0 || bzrxRewardsPerTokenPaid[BZRX] > 0 || bzrxRewards[BZRX] > 0;
     }
     
     // Migrate lp token to another lp contract. Can be called by anyone. We trust that migrator contract is good.
     // After migration staking should be put to pause untill we redeploy with new onsent pool since its going to change
     function migrateSLP() public onlyOwner {
-        require(address(migrator) != address(0), "migrate: no migrator");
+        require(address(converter) != address(0), "migrate: no migrator");
 
         address lpToken = 0xa30911e072A0C88D55B5D0A0984B66b0D04569d0;
 
@@ -1190,10 +1208,60 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             balance
         );
 
-        IERC20(lpToken).transfer(address(migrator), balance);
 
-        migrator.migrate();
+        // migrating SLP
+        IERC20(lpToken).approve(SUSHI_ROUTER, balance);
+        (uint256 WETHBalance, uint256 BZRXBalance) = IUniswapV2Router(SUSHI_ROUTER).removeLiquidity(WETH, BZRX, balance, 1, 1, address(this), block.timestamp);
+
+        IERC20(BZRX).approve(address(converter), BZRXBalance);
+        IBZRXv2Converter(converter).convert(address(this), BZRXBalance);
+
+        IERC20(WETH).approve(SUSHI_ROUTER, WETHBalance);
+        IERC20(OOKI).approve(SUSHI_ROUTER, BZRXBalance);
+
+        IUniswapV2Router(SUSHI_ROUTER).addLiquidity(WETH, OOKI, WETHBalance, BZRXBalance, 1, 1, msg.sender, block.timestamp);
+
+
+        // migrating BZRX balances to OOKI
+        _totalSupplyPerToken[OOKI] = _totalSupplyPerToken[BZRX];
+        _totalSupplyPerToken[BZRX] = 0; 
+
+        altRewardsPerShare[OOKI] = altRewardsPerShare[BZRX];
+        altRewardsPerShare[BZRX] = 0;
+
+        // TODO migrate outstanding BZRX on a contract
+
     }
+
+
+
+    //   function migrateSLP() public onlyOwner {
+    //     require(address(migrator) != address(0), "migrate: no migrator");
+
+    //     address lpToken = 0xa30911e072A0C88D55B5D0A0984B66b0D04569d0;
+
+    //     IMasterChefSushi chef = IMasterChefSushi(SUSHI_MASTERCHEF);
+    //     uint256 balance = chef.userInfo(BZRX_ETH_SUSHI_MASTERCHEF_PID, address(this)).amount;
+    //     chef.withdraw(
+    //         BZRX_ETH_SUSHI_MASTERCHEF_PID,
+    //         balance
+    //     );
+
+    //     IERC20(lpToken).transfer(address(migrator), balance);
+
+    //     migrator.migrate();
+
+
+    //     // migrating BZRX balances to OOKI
+    //     _totalSupplyPerToken[OOKI] = _totalSupplyPerToken[BZRX];
+    //     _totalSupplyPerToken[BZRX] = 0; 
+
+    //     altRewardsPerShare[OOKI] = altRewardsPerShare[BZRX];
+    //     altRewardsPerShare[BZRX] = 0;
+
+    //     // TODO migrate outstanding BZRX on a contract itself
+
+    // }
 
     
     function setApproval(

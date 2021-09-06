@@ -14,6 +14,7 @@ import "../../interfaces/IBZx.sol";
 contract StakingConstants {
 
     address public constant OOKI = 0xC5c66f91fE2e395078E0b872232A20981bc03B15;
+    address public constant BZRX = 0x56d811088235F11C8920698a204A5010a788f4b3;
     address public constant vBZRX = 0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F;
     address public constant iOOKI = 0x18240BD9C07fA6156Ce3F3f61921cC82b2619157;
     address public constant LPToken = 0x81c3061Ea82ce5f261c801C97535F485E1e101EC; // ooki sushiswap calculated upfront
@@ -40,6 +41,7 @@ contract StakingConstants {
     uint256 internal constant _startingVBZRXBalance =      889389933e18; // 889,389,933 BZRX
 
     address internal constant SUSHI_MASTERCHEF = 0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd;
+    address internal constant SUSHI_ROUTER = 0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F;
     uint256 internal constant BZRX_ETH_SUSHI_MASTERCHEF_PID =  188;
 
     uint256 public constant BZRXWeightStored = 1e18;

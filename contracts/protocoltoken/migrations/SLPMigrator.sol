@@ -10,16 +10,13 @@ import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
 import "@openzeppelin-3.4.0/access/Ownable.sol";
 import "../../../interfaces/IMigrator.sol";
 import "../../../interfaces/IBZRXv2Converter.sol";
-import "../../farm/interfaces/IMasterChefSushi.sol";
-import "../../interfaces/IUniswapV2Factory.sol";
 import "../../interfaces/IUniswapV2Router02.sol";
-import "../../interfaces/IUniswapV2Pair.sol";
+
 
 contract SLPMigrator is Ownable, IMigrator {
     using SafeERC20 for IERC20;
     address public CONVERTER;
 
-    address internal constant SUSHI_FACTORY = 0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac;
     address internal constant SUSHI_ROUTER = 0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F;
     address internal constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address internal constant OOKI = 0xC5c66f91fE2e395078E0b872232A20981bc03B15;

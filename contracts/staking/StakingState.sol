@@ -11,6 +11,7 @@ import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 import "../mixins/EnumerableBytes32Set.sol";
 import "../../interfaces/IStaking.sol";
 import "../../interfaces/IMigrator.sol";
+import "../../interfaces/IBZRXv2Converter.sol";
 
 contract StakingState is StakingUpgradeable {
     using SafeMath for uint256;
@@ -50,8 +51,8 @@ contract StakingState is StakingUpgradeable {
 
     mapping(address => uint256) public vestingLastSync;
 
-    mapping(address => address[]) public swapPaths;
-    mapping(address => uint256) public stakingRewards;
+    mapping(address => address[]) public swapPaths; // deprecated not used
+    mapping(address => uint256) public stakingRewards; // deprecated not used
     uint256 public rewardPercent = 50e18;
     uint256 public maxUniswapDisagreement = 3e18;
     uint256 public maxCurveDisagreement = 3e18;
@@ -75,6 +76,6 @@ contract StakingState is StakingUpgradeable {
     // Token => (User => Info)
     mapping(address => mapping(address => IStaking.AltRewardsUserInfo)) public userAltRewardsPerShare;
     
-    // The migrator contract. It has a lot of power. Can only be set through governance (owner).
-    IMigrator public migrator;
+    // The converter contract.
+    IBZRXv2Converter public converter;
 }
