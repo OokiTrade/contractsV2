@@ -50,7 +50,7 @@ contract MasterChef_BSC is Upgradeable {
         uint256 amount
     );
 
-    MintCoordinator public constant coordinator = MintCoordinator(0x68d57B33Fe3B691Ef96dFAf19EC8FA794899f2ac);
+    MintCoordinator_BSC public constant coordinator = MintCoordinator_BSC(0x68d57B33Fe3B691Ef96dFAf19EC8FA794899f2ac);
 
     mapping(IERC20 => bool) public poolExists;
 

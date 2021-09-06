@@ -7,7 +7,7 @@ pragma solidity 0.6.12;
 
 import "@openzeppelin-3.4.0/token/ERC20/ERC20.sol";
 import "@openzeppelin-3.4.0/access/Ownable.sol";
-import "../OokiToken.sol";
+import "./MintCoordinator.sol";
 
 
 contract BZRXv2Converter is Ownable {
@@ -19,7 +19,7 @@ contract BZRXv2Converter is Ownable {
 
     IERC20 public constant BZRXv1 = IERC20(0x56d811088235F11C8920698a204A5010a788f4b3);
     // IERC20 public constant vBZRXv1 = IERC20(0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F);
-    OokiToken public constant OOKI = OokiToken(0xC5c66f91fE2e395078E0b872232A20981bc03B15);
+    MintCoordinator public MINT_COORDINATOR;
     // VBZRXv2VestingToken public vBZRXv2;
     address constant DEAD = 0x000000000000000000000000000000000000dEaD;
 
@@ -39,7 +39,7 @@ contract BZRXv2Converter is Ownable {
         );
 
         // we mint burned amount
-        OOKI.mint(receiver, _tokenAmount);
+        MINT_COORDINATOR.mint(receiver, _tokenAmount);
 
         // overflow condition cannot be reached since the above will throw for bad amounts
         totalConverted += _tokenAmount;
@@ -51,12 +51,13 @@ contract BZRXv2Converter is Ownable {
     }
 
     // open convert tool to the public
-    function initialize()
+    function initialize(MintCoordinator _MINT_COORDINATOR)
         external
         onlyOwner
     {
         require(terminationTimestamp == 0, "already initialized");
         terminationTimestamp = _getTimestamp() + 60 * 60 * 24 * 365; // one year from now
+        MINT_COORDINATOR = _MINT_COORDINATOR;
     }
 
     // funds unclaimed after one year can be rescued
