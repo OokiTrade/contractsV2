@@ -10,7 +10,7 @@ import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
 import "@openzeppelin-3.4.0/access/Ownable.sol";
 import "../../../interfaces/IMigrator.sol";
 import "../../../interfaces/IBZRXv2Converter.sol";
-import "../../interfaces/IUniswapV2Router02.sol";
+import "../../interfaces/IUniswapV2Router.sol";
 
 
 contract SLPMigrator is Ownable, IMigrator {
@@ -31,7 +31,7 @@ contract SLPMigrator is Ownable, IMigrator {
         uint256 lpBalance = IERC20(LP_TOKEN).balanceOf(address(this));
 
         IERC20(LP_TOKEN).approve(SUSHI_ROUTER, lpBalance);
-        (uint256 WETHBalance, uint256 BZRXBalance) = IUniswapV2Router02(SUSHI_ROUTER).removeLiquidity(WETH, BZRX, lpBalance, 1, 1, address(this), block.timestamp);
+        (uint256 WETHBalance, uint256 BZRXBalance) = IUniswapV2Router(SUSHI_ROUTER).removeLiquidity(WETH, BZRX, lpBalance, 1, 1, address(this), block.timestamp);
 
         IERC20(BZRX).approve(CONVERTER, BZRXBalance);
         IBZRXv2Converter(CONVERTER).convert(address(this), BZRXBalance);
@@ -39,6 +39,6 @@ contract SLPMigrator is Ownable, IMigrator {
         IERC20(WETH).approve(SUSHI_ROUTER, WETHBalance);
         IERC20(OOKI).approve(SUSHI_ROUTER, BZRXBalance);
 
-        IUniswapV2Router02(SUSHI_ROUTER).addLiquidity(WETH, OOKI, WETHBalance, BZRXBalance, 1, 1, msg.sender, block.timestamp);
+        IUniswapV2Router(SUSHI_ROUTER).addLiquidity(WETH, OOKI, WETHBalance, BZRXBalance, 1, 1, msg.sender, block.timestamp);
     }
 }

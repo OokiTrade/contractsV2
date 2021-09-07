@@ -1197,7 +1197,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     // Migrate lp token to another lp contract. Can be called by anyone. We trust that migrator contract is good.
     // After migration staking should be put to pause untill we redeploy with new onsent pool since its going to change
     function migrateSLP() public onlyOwner {
-        require(address(converter) != address(0), "migrate: no migrator");
+        require(address(converter) != address(0), "no converter");
 
         address lpToken = 0xa30911e072A0C88D55B5D0A0984B66b0D04569d0;
 
@@ -1214,7 +1214,9 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         (uint256 WETHBalance, uint256 BZRXBalance) = IUniswapV2Router(SUSHI_ROUTER).removeLiquidity(WETH, BZRX, balance, 1, 1, address(this), block.timestamp);
 
         IERC20(BZRX).approve(address(converter), BZRXBalance);
-        IBZRXv2Converter(converter).convert(address(this), BZRXBalance);
+
+        // this will convert and current BZRX on a contract as well
+        IBZRXv2Converter(converter).convert(address(this), IERC20(BZRX).balanceOf(address(this)));
 
         IERC20(WETH).approve(SUSHI_ROUTER, WETHBalance);
         IERC20(OOKI).approve(SUSHI_ROUTER, BZRXBalance);
@@ -1228,8 +1230,6 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 
         altRewardsPerShare[OOKI] = altRewardsPerShare[BZRX];
         altRewardsPerShare[BZRX] = 0;
-
-        // TODO migrate outstanding BZRX on a contract
 
     }
 
