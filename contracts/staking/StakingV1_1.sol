@@ -893,7 +893,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     {
         uint256 balance = _balancesPerToken[vBZRX][account];
         if (balance != 0) {
-            vestingBalance = _balancesPerToken[vBZRX][account]
+            vestingBalance = balance
                 .mul(vBZRXWeightStored)
                 .div(1e18);
         }

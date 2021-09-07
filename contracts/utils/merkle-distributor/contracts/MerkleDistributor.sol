@@ -2,6 +2,7 @@
 pragma solidity 0.6.12;
 
 import "@openzeppelin-3.4.0/token/ERC20/IERC20.sol";
+import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
 import "@openzeppelin-3.4.0/cryptography/MerkleProof.sol";
 import "@openzeppelin-3.4.0/access/Ownable.sol";
 import "./interfaces/IMerkleDistributor.sol";
@@ -74,5 +75,9 @@ contract MerkleDistributor is IMerkleDistributor, Ownable {
         require(IERC20(token[airdropIndex]).transferFrom(airdropSource[airdropIndex], account, amount), "MerkleDistributor: Transfer failed.");
 
         emit Claimed(airdropIndex, index, account, amount);
+    }
+
+    function rescue(IERC20 _token) public onlyOwner {
+        SafeERC20.safeTransfer(_token, msg.sender, _token.balanceOf(address(this)));
     }
 }
