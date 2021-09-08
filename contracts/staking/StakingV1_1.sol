@@ -63,15 +63,6 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         return res;
     }
 
-    function pendingAltRewards(address token, address _user)
-        external
-        view
-        returns (uint256)
-    {
-        uint256 userSupply = balanceOfByAsset(token, _user);
-        return _pendingAltRewards(token, _user, userSupply, 0);
-    }
-
     function _pendingAltRewards(address token, address _user, uint256 userSupply, uint256 extraRewardsPerShare)
         internal
         view
