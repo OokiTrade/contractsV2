@@ -14,11 +14,6 @@ interface IStaking {
         uint256 pendingRewards;
     }
 
-    function pendingSushiRewards(address _user)
-        external
-        view
-        returns (uint256);
-
     function getCurrentFeeTokens()
         external
         view
@@ -98,7 +93,9 @@ interface IStaking {
             uint256 bzrxRewardsEarned,
             uint256 stableCoinRewardsEarned,
             uint256 bzrxRewardsVesting,
-            uint256 stableCoinRewardsVesting
+            uint256 stableCoinRewardsVesting,
+            uint256 sushiRewardsEarned,
+            uint256 crvRewardsEarned
         );
 
     function getVariableWeights()
