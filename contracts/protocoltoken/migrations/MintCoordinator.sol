@@ -13,6 +13,7 @@ contract MintCoordinator is Ownable {
 
     OokiToken public constant OOKI = OokiToken(0xC5c66f91fE2e395078E0b872232A20981bc03B15);
     mapping (address => bool) public minters;
+    mapping (address => bool) public burners;
     
 
     constructor() public {
@@ -22,6 +23,12 @@ contract MintCoordinator is Ownable {
     function mint(address _to, uint256 _amount) public {
         require(minters[msg.sender], "unauthorized");
         OOKI.mint(_to, _amount);
+    }
+
+    function burn(uint256 _amount) public {
+        require(burners[msg.sender], "unauthorized");
+        OOKI.transferFrom(msg.sender, address(this), _amount);
+        OOKI.burn(_amount);
     }
 
     function transferTokenOwnership(address newOwner) public onlyOwner {
@@ -35,6 +42,15 @@ contract MintCoordinator is Ownable {
     function removeMinter(address addr) public onlyOwner {
         minters[addr] = false;
     }
+
+    function addBurner(address addr) public onlyOwner {
+        burners[addr] = true;
+    }
+
+    function removeBurner(address addr) public onlyOwner {
+        burners[addr] = false;
+    }
+
 
     function rescue(IERC20 _token) public onlyOwner {
         SafeERC20.safeTransfer(_token, msg.sender, _token.balanceOf(address(this)));

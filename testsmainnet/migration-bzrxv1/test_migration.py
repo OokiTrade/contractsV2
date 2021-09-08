@@ -65,3 +65,25 @@ def test_migration_BZRX_different_receiver(requireMainnetFork, BZRX, OOKI, MIGRA
     assert balanceBZRXv1after + convertBalanceBZRXv1 == balanceBZRXv1
 
     assert True
+
+def test_migration_minter_burners(requireMainnetFork, BZRX, OOKI, MIGRATOR, accounts, MINT_COORDINATOR):
+    balanceBZRXv1 = BZRX.balanceOf(accounts[0])
+    assert balanceBZRXv1 > 0
+
+    convertBalanceBZRXv1 = 10*10**18
+    BZRX.approve(MIGRATOR, 2**256-1, {'from': accounts[0]})
+ 
+    MIGRATOR.convert(accounts[1], convertBalanceBZRXv1, {'from': accounts[0]})
+
+    MINT_COORDINATOR.addBurner(accounts[1])
+    OOKI.approve(MINT_COORDINATOR, 2**256-1, {'from': accounts[1]})
+
+    balanceOOKIBefore = OOKI.balanceOf(accounts[1])
+    MINT_COORDINATOR.burn(OOKI.balanceOf(accounts[1])/2, {"from": accounts[1]})
+    balanceOOKIAfter = OOKI.balanceOf(accounts[1])
+
+    assert balanceOOKIAfter == balanceOOKIBefore/2 # half was burned
+
+    assert balanceOOKIBefore/2 == OOKI.totalBurned()
+
+    assert True
