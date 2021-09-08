@@ -340,9 +340,26 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         external
         pausable
         updateRewards(msg.sender)
-        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned,  uint256 sushiRewardsEarned, uint256 crvRewardsEarned)
+        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
     {
         return _claim(restake);
+    }
+
+
+    function claimAltRewards()
+        external
+        pausable
+        returns (uint256 sushiRewardsEarned, uint256 crvRewardsEarned)
+    {
+        sushiRewardsEarned = _claimSushi();
+        crvRewardsEarned = _claimCrv();
+
+        if(sushiRewardsEarned != 0){
+            emit ClaimAltRewards(msg.sender, SUSHI, sushiRewardsEarned);
+        }
+        if(crvRewardsEarned != 0){
+            emit ClaimAltRewards(msg.sender, CRV, crvRewardsEarned);
+        }
     }
 
     function claimBzrx()
@@ -400,25 +417,16 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     function _claim(
         bool restake)
         internal
-        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned, uint256 sushiRewardsEarned, uint256 crvRewardsEarned)
+        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
     {
         bzrxRewardsEarned = _claimBzrx(restake);
         stableCoinRewardsEarned = _claim3Crv();
-        sushiRewardsEarned = _claimSushi();
-        crvRewardsEarned = _claimCrv();
 
         emit Claim(
             msg.sender,
             bzrxRewardsEarned,
             stableCoinRewardsEarned
         );
-
-        if(sushiRewardsEarned != 0){
-            emit ClaimAltRewards(msg.sender, SUSHI, sushiRewardsEarned);
-        }
-        if(crvRewardsEarned != 0){
-            emit ClaimAltRewards(msg.sender, CRV, crvRewardsEarned);
-        }
     }
 
     function _claimBzrx(
