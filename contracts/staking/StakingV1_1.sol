@@ -1150,10 +1150,13 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         bytes memory callData)
         public
         onlyOwner
+        returns(bytes memory)
     {
         (bool success, bytes memory returndata) = settingsTarget.delegatecall(callData);
 
-        if (!success) {
+        if (success) {
+            return returndata;
+        } else {
             // Look for revert reason and bubble it up if present
             if (returndata.length > 0) {
                 // The easiest way to bubble the revert reason is using memory via assembly
