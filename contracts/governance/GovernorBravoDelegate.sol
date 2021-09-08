@@ -230,7 +230,7 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
       * @param support The support value for the vote. 0=against, 1=for, 2=abstain
       * @param reason The reason given for the vote by the voter
       */
-    function castVoteWithReason(uint proposalId, uint8 support, string calldata reason) external {
+    function castVoteWithReason(uint proposalId, uint8 support, string memory reason) public {
         emit VoteCast(msg.sender, proposalId, support, castVoteInternal(msg.sender, proposalId, support), reason);
     }
 
@@ -238,13 +238,44 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
       * @notice Cast a vote for a proposal by signature
       * @dev External function that accepts EIP-712 signatures for voting on proposals.
       */
-    function castVoteBySig(uint proposalId, uint8 support, uint8 v, bytes32 r, bytes32 s) external {
+    function castVoteBySig(uint proposalId, uint8 support, uint8 v, bytes32 r, bytes32 s) public {
         bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name)), getChainIdInternal(), address(this)));
         bytes32 structHash = keccak256(abi.encode(BALLOT_TYPEHASH, proposalId, support));
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
         address signatory = ecrecover(digest, v, r, s);
         require(signatory != address(0), "GovernorBravo::castVoteBySig: invalid signature");
         emit VoteCast(signatory, proposalId, support, castVoteInternal(signatory, proposalId, support), "");
+    }
+
+
+    /**
+      * @dev Allows batching to castVote function
+      */
+    function castVotes(uint[] calldata proposalIds, uint8[] calldata supportVals) external {
+        require(proposalIds.length == supportVals.length, "count mismatch");
+        for (uint256 i = 0; i < proposalIds.length; i++) {
+            emit VoteCast(msg.sender, proposalIds[i], supportVals[i], castVoteInternal(msg.sender, proposalIds[i], supportVals[i]), "");
+        }
+    }
+
+    /**
+      * @dev Allows batching to castVoteWithReason function
+      */
+    function castVotesWithReason(uint[] calldata proposalIds, uint8[] calldata supportVals, string[] calldata reasons) external {
+        require(proposalIds.length == supportVals.length && proposalIds.length == reasons.length, "count mismatch");
+        for (uint256 i = 0; i < proposalIds.length; i++) {
+            emit VoteCast(msg.sender, proposalIds[i], supportVals[i], castVoteInternal(msg.sender, proposalIds[i], supportVals[i]), reasons[i]);
+        }
+    }
+
+    /**
+      * @dev Allows batching to castVoteBySig function
+      */
+    function castVotesBySig(uint[] calldata proposalIds, uint8[] calldata supportVals, uint8[] calldata vs, bytes32[] calldata rs, bytes32[] calldata ss) external {
+        require(proposalIds.length == supportVals.length && proposalIds.length == vs.length && proposalIds.length == rs.length && proposalIds.length == ss.length, "count mismatch");
+        for (uint256 i = 0; i < proposalIds.length; i++) {
+            castVoteBySig(proposalIds[i], supportVals[i], vs[i], rs[i], ss[i]);
+        }
     }
 
     /**
