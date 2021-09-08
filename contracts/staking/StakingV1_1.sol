@@ -1152,23 +1152,13 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         onlyOwner
         returns(bytes memory)
     {
-        (bool success, bytes memory returndata) = settingsTarget.delegatecall(callData);
-
-        if (success) {
-            return returndata;
-        } else {
-            // Look for revert reason and bubble it up if present
-            if (returndata.length > 0) {
-                // The easiest way to bubble the revert reason is using memory via assembly
-
-                // solhint-disable-next-line no-inline-assembly
-                assembly {
-                    let returndata_size := mload(returndata)
-                    revert(add(32, returndata), returndata_size)
-                }
-            } else {
-                revert("unknown reason");
-            }
+        (bool result,) = settingsTarget.delegatecall(callData);
+        assembly {
+            let size := returndatasize
+            let ptr := mload(0x40)
+            returndatacopy(ptr, 0, size)
+            if eq(result, 0) { revert(ptr, size) }
+            return(ptr, size)
         }
     }
 }
