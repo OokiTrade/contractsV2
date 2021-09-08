@@ -68,10 +68,14 @@ def STAKING(StakingV1_1, accounts, StakingProxy):
 
 
 def test_migration_staking(requireMainnetFork, accounts, BZRX, OOKI, STAKING, BZRX_CONVERTER, SLP_MIGRATOR, SLP, SUSHI_MASTERCHEF, SUSHI_FACTORY, WETH, interface):
-    STAKING.setMigrator(SLP_MIGRATOR, {"from": STAKING.owner()})
+    STAKING.setConverter(BZRX_CONVERTER, {"from": STAKING.owner()})
     OOKI.transferOwnership(BZRX_CONVERTER, {'from': OOKI.owner()})
 
+    balanceOfBZRXBefore = BZRX.balanceOf(STAKING)
     tx = STAKING.migrateSLP({"from": STAKING.owner()})
+    assert OOKI.balanceOf(STAKING) == balanceOfBZRXBefore
+    assert BZRX.balanceOf(STAKING) == 0 # all bzrx was migrated
+
     pair = SUSHI_FACTORY.getPair(OOKI, WETH)
     assert pair != "0x0000000000000000000000000000000000000000"
     PAIR = Contract.from_abi("PAIR", address=pair, abi=interface.IUniswapV2Pair.abi)

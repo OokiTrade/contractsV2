@@ -1086,108 +1086,112 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 
     // OnlyOwner functions
 
-    function togglePause(
-        bool _isPaused)
-        external
-        onlyOwner
-    {
-        isPaused = _isPaused;
-    }
+    // function togglePause(
+    //     bool _isPaused)
+    //     external
+    //     onlyOwner
+    // {
+    //     isPaused = _isPaused;
+    // }
 
-    function setFundsWallet(
-        address _fundsWallet)
-        external
-        onlyOwner
-    {
-        fundsWallet = _fundsWallet;
-    }
+    // function setFundsWallet(
+    //     address _fundsWallet)
+    //     external
+    //     onlyOwner
+    // {
+    //     fundsWallet = _fundsWallet;
+    // }
 
-    function setGovernor(
-        address _governor)
-        external
-        onlyOwner
-    {
-        governor = _governor;
-    }
+    // function setGovernor(
+    //     address _governor)
+    //     external
+    //     onlyOwner
+    // {
+    //     governor = _governor;
+    // }
 
-    function setFeeTokens(
-        address[] calldata tokens)
-        external
-        onlyOwner
-    {
-        currentFeeTokens = tokens;
-    }
+    // function setFeeTokens(
+    //     address[] calldata tokens)
+    //     external
+    //     onlyOwner
+    // {
+    //     currentFeeTokens = tokens;
+    // }
 
-    function setRewardPercent(
-        uint256 _rewardPercent)
-        external
-        onlyOwner
-    {
-        require(_rewardPercent <= 1e20, "value too high");
-        rewardPercent = _rewardPercent;
-    }
+    // function setRewardPercent(
+    //     uint256 _rewardPercent)
+    //     external
+    //     onlyOwner
+    // {
+    //     require(_rewardPercent <= 1e20, "value too high");
+    //     rewardPercent = _rewardPercent;
+    // }
 
-    function setMaxUniswapDisagreement(
-        uint256 _maxUniswapDisagreement)
-        external
-        onlyOwner
-    {
-        require(_maxUniswapDisagreement != 0, "invalid param");
-        maxUniswapDisagreement = _maxUniswapDisagreement;
-    }
+    // function setMaxUniswapDisagreement(
+    //     uint256 _maxUniswapDisagreement)
+    //     external
+    //     onlyOwner
+    // {
+    //     require(_maxUniswapDisagreement != 0, "invalid param");
+    //     maxUniswapDisagreement = _maxUniswapDisagreement;
+    // }
 
-    function setMaxCurveDisagreement(
-        uint256 _maxCurveDisagreement)
-        external
-        onlyOwner
-    {
-        require(_maxCurveDisagreement != 0, "invalid param");
-        maxCurveDisagreement = _maxCurveDisagreement;
-    }
+    // function setMaxCurveDisagreement(
+    //     uint256 _maxCurveDisagreement)
+    //     external
+    //     onlyOwner
+    // {
+    //     require(_maxCurveDisagreement != 0, "invalid param");
+    //     maxCurveDisagreement = _maxCurveDisagreement;
+    // }
 
-    function setCallerRewardDivisor(
-        uint256 _callerRewardDivisor)
-        external
-        onlyOwner
-    {
-        require(_callerRewardDivisor != 0, "invalid param");
-        callerRewardDivisor = _callerRewardDivisor;
-    }
+    // function setCallerRewardDivisor(
+    //     uint256 _callerRewardDivisor)
+    //     external
+    //     onlyOwner
+    // {
+    //     require(_callerRewardDivisor != 0, "invalid param");
+    //     callerRewardDivisor = _callerRewardDivisor;
+    // }
 
-    function setInitialAltRewardsPerShare()
-        external
-        onlyOwner
-    {
-        uint256 index = altRewardsRounds[SUSHI].length;
-        if(index == 0) {
-            return;
-        }
+    // function setInitialAltRewardsPerShare()
+    //     external
+    //     onlyOwner
+    // {
+    //     uint256 index = altRewardsRounds[SUSHI].length;
+    //     if(index == 0) {
+    //         return;
+    //     }
 
-        altRewardsPerShare[SUSHI] = altRewardsRounds[SUSHI][index - 1];
-    }
+    //     altRewardsPerShare[SUSHI] = altRewardsRounds[SUSHI][index - 1];
+    // }
 
-    function setBalApproval(
-        address _spender,
-        uint256 _value)
-        external
-        onlyOwner
-    {
-        IERC20(0xba100000625a3754423978a60c9317c58a424e3D).approve(_spender, _value);
-    }
+    // function setBalApproval(
+    //     address _spender,
+    //     uint256 _value)
+    //     external
+    //     onlyOwner
+    // {
+    //     IERC20(0xba100000625a3754423978a60c9317c58a424e3D).approve(_spender, _value);
+    // }
 
     function setConverter(IBZRXv2Converter _converter) public onlyOwner {
         converter = _converter;
     }
 
     function migrateUserBalances() public {
-        _balancesPerToken[OOKI][msg.sender] = _balancesPerToken[BZRX][msg.sender];
-        _balancesPerToken[BZRX][msg.sender] = 0;
 
-        bzrxRewardsPerTokenPaid[OOKI] = bzrxRewardsPerTokenPaid[BZRX];
-        bzrxRewardsPerTokenPaid[BZRX] = 0;
+        uint256 _localBalancesPerToken = _balancesPerToken[BZRX][msg.sender];
+        if (_localBalancesPerToken > 0) {
+            _balancesPerToken[OOKI][msg.sender] = _localBalancesPerToken;
+            _balancesPerToken[BZRX][msg.sender] = 0;
+        }
 
-        bzrxRewards[OOKI] = bzrxRewards[BZRX];
-        bzrxRewards[BZRX] = 0;
+        uint256 _localUserAltRewardsPerShare = userAltRewardsPerShare[BZRX][msg.sender];
+        if (_localUserAltRewardsPerShare > 0) {
+            userAltRewardsPerShare[OOKI][msg.sender] = userAltRewardsPerShare[BZRX][msg.sender];
+            userAltRewardsPerShare[BZRX][msg.sender] = 0;
+        }
     }
 
     function isUserMigrated() public view returns(bool) {
@@ -1213,15 +1217,16 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         IERC20(lpToken).approve(SUSHI_ROUTER, balance);
         (uint256 WETHBalance, uint256 BZRXBalance) = IUniswapV2Router(SUSHI_ROUTER).removeLiquidity(WETH, BZRX, balance, 1, 1, address(this), block.timestamp);
 
-        IERC20(BZRX).approve(address(converter), BZRXBalance);
-
+       
+        uint256 totalBZRXBalance = IERC20(BZRX).balanceOf(address(this));
+        IERC20(BZRX).approve(address(converter), totalBZRXBalance);
         // this will convert and current BZRX on a contract as well
-        IBZRXv2Converter(converter).convert(address(this), IERC20(BZRX).balanceOf(address(this)));
+        IBZRXv2Converter(converter).convert(address(this), totalBZRXBalance);
 
         IERC20(WETH).approve(SUSHI_ROUTER, WETHBalance);
         IERC20(OOKI).approve(SUSHI_ROUTER, BZRXBalance);
 
-        IUniswapV2Router(SUSHI_ROUTER).addLiquidity(WETH, OOKI, WETHBalance, BZRXBalance, 1, 1, msg.sender, block.timestamp);
+        IUniswapV2Router(SUSHI_ROUTER).addLiquidity(WETH, OOKI, WETHBalance, BZRXBalance, 1, 1, address(this), block.timestamp);
 
 
         // migrating BZRX balances to OOKI
@@ -1231,37 +1236,14 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         altRewardsPerShare[OOKI] = altRewardsPerShare[BZRX];
         altRewardsPerShare[BZRX] = 0;
 
+
+        bzrxRewardsPerTokenPaid[OOKI] = bzrxRewardsPerTokenPaid[BZRX];
+        bzrxRewardsPerTokenPaid[BZRX] = 0;
+
+        bzrxRewards[OOKI] = bzrxRewards[BZRX];
+        bzrxRewards[BZRX] = 0;
+
     }
-
-
-
-    //   function migrateSLP() public onlyOwner {
-    //     require(address(migrator) != address(0), "migrate: no migrator");
-
-    //     address lpToken = 0xa30911e072A0C88D55B5D0A0984B66b0D04569d0;
-
-    //     IMasterChefSushi chef = IMasterChefSushi(SUSHI_MASTERCHEF);
-    //     uint256 balance = chef.userInfo(BZRX_ETH_SUSHI_MASTERCHEF_PID, address(this)).amount;
-    //     chef.withdraw(
-    //         BZRX_ETH_SUSHI_MASTERCHEF_PID,
-    //         balance
-    //     );
-
-    //     IERC20(lpToken).transfer(address(migrator), balance);
-
-    //     migrator.migrate();
-
-
-    //     // migrating BZRX balances to OOKI
-    //     _totalSupplyPerToken[OOKI] = _totalSupplyPerToken[BZRX];
-    //     _totalSupplyPerToken[BZRX] = 0; 
-
-    //     altRewardsPerShare[OOKI] = altRewardsPerShare[BZRX];
-    //     altRewardsPerShare[BZRX] = 0;
-
-    //     // TODO migrate outstanding BZRX on a contract itself
-
-    // }
 
     
     function setApproval(
