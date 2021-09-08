@@ -230,7 +230,7 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
       * @param support The support value for the vote. 0=against, 1=for, 2=abstain
       * @param reason The reason given for the vote by the voter
       */
-    function castVoteWithReason(uint proposalId, uint8 support, string memory reason) public {
+    function castVoteWithReason(uint proposalId, uint8 support, string calldata reason) external {
         emit VoteCast(msg.sender, proposalId, support, castVoteInternal(msg.sender, proposalId, support), reason);
     }
 
