@@ -31,7 +31,7 @@ contract MerkleDistributor is IMerkleDistributor, Ownable {
         merkleRoot[currentAirdropIndex] = merkleRoot_;
         airdropCount++;
 
-        emit Created(token_, source_, amount_);
+        emit Created(currentAirdropIndex, token_, source_, amount_);
     }
 
     function isClaimed(uint256 airdropIndex, uint256 index) public view override returns (bool) {

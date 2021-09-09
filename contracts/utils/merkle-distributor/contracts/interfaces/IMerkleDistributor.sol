@@ -23,7 +23,7 @@ interface IMerkleDistributor {
     function createAirdrop(address token, bytes32 merkleRoot, address airdropSource, uint256 amount) external;
 
     // This event is triggered whenever a new airdrop is created.
-    event Created(address indexed token, address indexed source, uint256 amount);
+    event Created(uint256 indexed airdropIndex, address indexed token, address indexed source, uint256 amount);
 
     // This event is triggered whenever a call to #claim succeeds.
     event Claimed(uint256 indexed airdropIndex, address indexed token, address indexed account, uint256 index, uint256 amount);
