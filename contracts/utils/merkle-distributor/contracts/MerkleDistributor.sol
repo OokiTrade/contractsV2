@@ -9,7 +9,6 @@ import "./interfaces/IMerkleDistributor.sol";
 
 contract MerkleDistributor is IMerkleDistributor, Ownable {
     mapping(uint256 => address) public override airdropToken;
-    mapping(uint256 => uint256) public override airdropBalance;
     mapping(uint256 => bytes32) public override merkleRoot;
     mapping(uint256 => address) public override airdropSource;
 
@@ -28,10 +27,11 @@ contract MerkleDistributor is IMerkleDistributor, Ownable {
         }
         uint256 currentAirdropIndex = airdropCount;
         airdropToken[currentAirdropIndex] = token_;
-        airdropBalance[currentAirdropIndex] = amount_;
         airdropSource[currentAirdropIndex] = source_;
         merkleRoot[currentAirdropIndex] = merkleRoot_;
         airdropCount++;
+
+        emit Created(token_, source_, amount_);
     }
 
     function isClaimed(uint256 airdropIndex, uint256 index) public view override returns (bool) {
@@ -63,23 +63,19 @@ contract MerkleDistributor is IMerkleDistributor, Ownable {
 
         // Mark it claimed and send the token.
         _setClaimed(airdropIndex, index);
-        airdropBalance[airdropIndex] = sub(airdropBalance[airdropIndex], amount);
 
         address source = airdropSource[airdropIndex];
+        address token = airdropToken[airdropIndex];
         if (source == address(this)) {
-            require(IERC20(airdropToken[airdropIndex]).transfer(account, amount), "MerkleDistributor: Transfer failed.");
+            require(IERC20(token).transfer(account, amount), "MerkleDistributor: Transfer failed.");
         } else {
-            require(IERC20(airdropToken[airdropIndex]).transferFrom(source, account, amount), "MerkleDistributor: Transfer failed.");
+            require(IERC20(token).transferFrom(source, account, amount), "MerkleDistributor: Transfer failed.");
         }
 
-        emit Claimed(airdropIndex, index, account, amount);
+        emit Claimed(airdropIndex, token, account, index, amount);
     }
 
     function rescue(IERC20 _token) public onlyOwner {
         SafeERC20.safeTransfer(_token, msg.sender, _token.balanceOf(address(this)));
-    }
-
-    function sub(uint256 x, uint256 y) internal pure returns (uint256 c) {
-        require((c = x - y) <= x, "subtraction-overflow");
     }
 }
