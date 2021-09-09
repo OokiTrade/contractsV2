@@ -25,11 +25,6 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         _;
     }
 
-    modifier checkPause() {
-        require(!isPaused, "paused");
-        _;
-    }
-
     function getCurrentFeeTokens()
         external
         view
@@ -38,9 +33,8 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         return currentFeeTokens;
     }
 
-    // View function to see pending sushi rewards on frontend.
-    function pendingSushiRewards(address _user)
-        public
+    function _pendingSushiRewards(address _user)
+        internal
         view
         returns (uint256)
     {
@@ -55,13 +49,19 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         );
     }
 
-    function pendingAltRewards(address token, address _user)
-        external
-        view
+    function _pendingCrvRewards(address _user)
+        internal
         returns (uint256)
     {
-        uint256 userSupply = balanceOfByAsset(token, _user);
-        return _pendingAltRewards(token, _user, userSupply, 0);
+        uint256 pendingCrv = curve3PoolGauge.claimable_tokens(address(this));
+        (,uint256 earnedStable,,) = _earned(_user, bzrxPerTokenStored, stableCoinPerTokenStored);
+        uint256 res = _pendingAltRewards(
+            CRV,
+            _user,
+            earnedStable,
+            pendingCrv.mul(1e12).div(curve3PoolGauge.balanceOf(address(this)))
+        );
+        return res;
     }
 
     function _pendingAltRewards(address token, address _user, uint256 userSupply, uint256 extraRewardsPerShare)
@@ -73,28 +73,11 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         if (_altRewardsPerShare == 0)
             return 0;
 
-        if (userSupply == 0)
-            return 0;
-
         IStaking.AltRewardsUserInfo memory altRewardsUserInfo = userAltRewardsPerShare[_user][token];
         return altRewardsUserInfo.pendingRewards.add(
                 (_altRewardsPerShare.sub(altRewardsUserInfo.rewardsPerShare)).mul(userSupply).div(1e12)
             );
     }
-
-    // Withdraw all from sushi masterchef
-    function exitSushi()
-        external
-        onlyOwner
-    {
-        IMasterChefSushi chef = IMasterChefSushi(SUSHI_MASTERCHEF);
-        uint256 balance = chef.userInfo(BZRX_ETH_SUSHI_MASTERCHEF_PID, address(this)).amount;
-        chef.withdraw(
-            BZRX_ETH_SUSHI_MASTERCHEF_PID,
-            balance
-        );
-    }
-
 
     function _depositToSushiMasterchef(uint256 amount)
         internal
@@ -121,6 +104,38 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         uint256 sushiRewards = IERC20(SUSHI).balanceOf(address(this)) - sushiBalanceBefore;
         if (sushiRewards != 0) {
             _addAltRewards(SUSHI, sushiRewards);
+        }
+    }
+
+
+    function _depositTo3Pool(uint256 amount)
+        internal
+    {
+
+        if(amount != 0)
+            curve3PoolGauge.deposit(amount);
+
+        //Trigger claim rewards from curve pool
+        uint256 crvBalanceBefore = IERC20(CRV).balanceOf(address(this));
+        curveMinter.mint(address(curve3PoolGauge));
+        uint256 crvBalanceAfter = IERC20(CRV).balanceOf(address(this)) - crvBalanceBefore;
+        if(crvBalanceAfter != 0){
+            _addAltRewards(CRV, crvBalanceAfter);
+        }
+    }
+
+    function _withdrawFrom3Pool(uint256 amount)
+        internal
+    {
+        if(amount != 0)
+            curve3PoolGauge.withdraw(amount);
+
+        //Trigger claim rewards from curve pool
+        uint256 crvBalanceBefore = IERC20(CRV).balanceOf(address(this));
+        curveMinter.mint(address(curve3PoolGauge));
+        uint256 crvBalanceAfter = IERC20(CRV).balanceOf(address(this)) - crvBalanceBefore;
+        if(crvBalanceAfter != 0){
+            _addAltRewards(CRV, crvBalanceAfter);
         }
     }
 
@@ -154,7 +169,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             if (stakeAmount == 0) {
                 continue;
             }
-            uint256 pendingBefore = (token == LPToken) ? pendingSushiRewards(msg.sender) : 0;
+            uint256 pendingBefore = (token == LPToken) ? _pendingSushiRewards(msg.sender) : 0;
             _balancesPerToken[token][msg.sender] = _balancesPerToken[token][msg.sender].add(stakeAmount);
             _totalSupplyPerToken[token] = _totalSupplyPerToken[token].add(stakeAmount);
 
@@ -213,7 +228,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
                 unstakeAmount = stakedAmount;
             }
 
-            uint256 pendingBefore = (token == LPToken) ? pendingSushiRewards(msg.sender) : 0;
+            uint256 pendingBefore = (token == LPToken) ? _pendingSushiRewards(msg.sender) : 0;
 
             _balancesPerToken[token][msg.sender] = stakedAmount - unstakeAmount; // will not overflow
             _totalSupplyPerToken[token] = _totalSupplyPerToken[token] - unstakeAmount; // will not overflow
@@ -313,9 +328,26 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         external
         pausable
         updateRewards(msg.sender)
-        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned,  uint256 sushiRewardsEarned)
+        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
     {
         return _claim(restake);
+    }
+
+
+    function claimAltRewards()
+        external
+        pausable
+        returns (uint256 sushiRewardsEarned, uint256 crvRewardsEarned)
+    {
+        sushiRewardsEarned = _claimSushi();
+        crvRewardsEarned = _claimCrv();
+
+        if(sushiRewardsEarned != 0){
+            emit ClaimAltRewards(msg.sender, SUSHI, sushiRewardsEarned);
+        }
+        if(crvRewardsEarned != 0){
+            emit ClaimAltRewards(msg.sender, CRV, crvRewardsEarned);
+        }
     }
 
     function claimBzrx()
@@ -359,24 +391,30 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         }
     }
 
+    function claimCrv()
+        external
+        pausable
+        returns (uint256 crvRewardsEarned)
+    {
+        crvRewardsEarned = _claimCrv();
+        if(crvRewardsEarned != 0){
+            emit ClaimAltRewards(msg.sender, CRV, crvRewardsEarned);
+        }
+    }
+
     function _claim(
         bool restake)
         internal
-        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned, uint256 sushiRewardsEarned)
+        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned)
     {
         bzrxRewardsEarned = _claimBzrx(restake);
         stableCoinRewardsEarned = _claim3Crv();
-        sushiRewardsEarned = _claimSushi();
 
         emit Claim(
             msg.sender,
             bzrxRewardsEarned,
             stableCoinRewardsEarned
         );
-
-        if(sushiRewardsEarned != 0){
-            emit ClaimAltRewards(msg.sender, SUSHI, sushiRewardsEarned);
-        }
     }
 
     function _claimBzrx(
@@ -410,6 +448,16 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     {
         stableCoinRewardsEarned = stableCoinRewards[msg.sender];
         if (stableCoinRewardsEarned != 0) {
+            uint256 pendingCrv = _pendingCrvRewards(msg.sender);
+            uint256 curve3CrvBalance = curve3Crv.balanceOf(address(this));
+            _withdrawFrom3Pool(stableCoinRewardsEarned);
+
+            userAltRewardsPerShare[msg.sender][CRV] = IStaking.AltRewardsUserInfo({
+                    rewardsPerShare: altRewardsPerShare[CRV],
+                    pendingRewards: pendingCrv
+                }
+            );
+
             stableCoinRewards[msg.sender] = 0;
             curve3Crv.transfer(msg.sender, stableCoinRewardsEarned);
         }
@@ -421,10 +469,8 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     {
         address _user = msg.sender;
         uint256 lptUserSupply = balanceOfByAsset(LPToken, _user);
-        if(lptUserSupply == 0){
-            return 0;
-        }
 
+        //This will trigger claim rewards from sushi masterchef
         _depositToSushiMasterchef(
             IERC20(LPToken).balanceOf(address(this))
         );
@@ -442,6 +488,27 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 
 
         return pendingSushi;
+    }
+
+    function _claimCrv()
+        internal
+        returns (uint256)
+    {
+        address _user = msg.sender;
+
+        _depositTo3Pool(0);
+        uint256 pendingCrv = _pendingCrvRewards(_user);
+
+        userAltRewardsPerShare[_user][CRV] = IStaking.AltRewardsUserInfo({
+                rewardsPerShare: altRewardsPerShare[CRV],
+                pendingRewards: 0
+            }
+        );
+        if (pendingCrv != 0) {
+            IERC20(CRV).safeTransfer(_user, pendingCrv);
+        }
+
+        return pendingCrv;
     }
 
     function _restakeBZRX(
@@ -557,8 +624,8 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     function earned(
         address account)
         external
-        view
-        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned, uint256 bzrxRewardsVesting, uint256 stableCoinRewardsVesting, uint256 sushiRewardsEarned)
+        returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned, uint256 bzrxRewardsVesting,
+            uint256 stableCoinRewardsVesting, uint256 sushiRewardsEarned, uint256 crvRewardsEarned)
     {
         (bzrxRewardsEarned, stableCoinRewardsEarned, bzrxRewardsVesting, stableCoinRewardsVesting) = _earned(
             account,
@@ -600,6 +667,8 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             balanceOfByAsset(LPToken, account),
             pendingSushi.mul(1e12).div(_totalSupplyPerToken[LPToken])
         );
+
+        crvRewardsEarned  = _pendingCrvRewards(account);
     }
 
     function _earned(
@@ -753,6 +822,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         }
         if (stableCoinTotal != 0) {
             curve3Crv.transferFrom(msg.sender, address(this), stableCoinTotal);
+            _depositTo3Pool(stableCoinTotal);
         }
     }
 
@@ -770,6 +840,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             }
             if (newStableCoin != 0) {
                 curve3Crv.transferFrom(msg.sender, address(this), newStableCoin);
+                _depositTo3Pool(newStableCoin);
             }
         }
     }
@@ -814,7 +885,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 
         address poolAddress = token == SUSHI ? LPToken : token;
 
-        uint256 totalSupply = _totalSupplyPerToken[poolAddress];
+        uint256 totalSupply = (token == CRV) ? curve3PoolGauge.balanceOf(address(this)) :_totalSupplyPerToken[poolAddress];
         require(totalSupply != 0, "no deposits");
 
         altRewardsPerShare[token] = altRewardsPerShare[token]
@@ -901,7 +972,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     {
         uint256 balance = _balancesPerToken[vBZRX][account];
         if (balance != 0) {
-            vestingBalance = _balancesPerToken[vBZRX][account]
+            vestingBalance = balance
                 .mul(vBZRXWeightStored)
                 .div(1e18);
         }
@@ -1084,97 +1155,6 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             .add(totalVotes);
     }
 
-    // OnlyOwner functions
-
-    // function togglePause(
-    //     bool _isPaused)
-    //     external
-    //     onlyOwner
-    // {
-    //     isPaused = _isPaused;
-    // }
-
-    // function setFundsWallet(
-    //     address _fundsWallet)
-    //     external
-    //     onlyOwner
-    // {
-    //     fundsWallet = _fundsWallet;
-    // }
-
-    // function setGovernor(
-    //     address _governor)
-    //     external
-    //     onlyOwner
-    // {
-    //     governor = _governor;
-    // }
-
-    // function setFeeTokens(
-    //     address[] calldata tokens)
-    //     external
-    //     onlyOwner
-    // {
-    //     currentFeeTokens = tokens;
-    // }
-
-    // function setRewardPercent(
-    //     uint256 _rewardPercent)
-    //     external
-    //     onlyOwner
-    // {
-    //     require(_rewardPercent <= 1e20, "value too high");
-    //     rewardPercent = _rewardPercent;
-    // }
-
-    // function setMaxUniswapDisagreement(
-    //     uint256 _maxUniswapDisagreement)
-    //     external
-    //     onlyOwner
-    // {
-    //     require(_maxUniswapDisagreement != 0, "invalid param");
-    //     maxUniswapDisagreement = _maxUniswapDisagreement;
-    // }
-
-    // function setMaxCurveDisagreement(
-    //     uint256 _maxCurveDisagreement)
-    //     external
-    //     onlyOwner
-    // {
-    //     require(_maxCurveDisagreement != 0, "invalid param");
-    //     maxCurveDisagreement = _maxCurveDisagreement;
-    // }
-
-    // function setCallerRewardDivisor(
-    //     uint256 _callerRewardDivisor)
-    //     external
-    //     onlyOwner
-    // {
-    //     require(_callerRewardDivisor != 0, "invalid param");
-    //     callerRewardDivisor = _callerRewardDivisor;
-    // }
-
-    // function setInitialAltRewardsPerShare()
-    //     external
-    //     onlyOwner
-    // {
-    //     uint256 index = altRewardsRounds[SUSHI].length;
-    //     if(index == 0) {
-    //         return;
-    //     }
-
-    //     altRewardsPerShare[SUSHI] = altRewardsRounds[SUSHI][index - 1];
-    // }
-
-    // function setBalApproval(
-    //     address _spender,
-    //     uint256 _value)
-    //     external
-    //     onlyOwner
-    // {
-    //     IERC20(0xba100000625a3754423978a60c9317c58a424e3D).approve(_spender, _value);
-    // }
-
     function setConverter(IBZRXv2Converter _converter) public onlyOwner {
         converter = _converter;
     }
@@ -1245,24 +1225,21 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 
     }
 
-    
-    function setApproval(
-        address _token,
-        address _spender,
-        uint256 _value)
-        external
+    // OnlyOwner functions
+    function updateSettings(
+        address settingsTarget,
+        bytes memory callData)
+        public
         onlyOwner
+        returns(bytes memory)
     {
-        IERC20(_token).approve(_spender, _value);
+        (bool result,) = settingsTarget.delegatecall(callData);
+        assembly {
+            let size := returndatasize
+            let ptr := mload(0x40)
+            returndatacopy(ptr, 0, size)
+            if eq(result, 0) { revert(ptr, size) }
+            return(ptr, size)
+        }
     }
-
-
-    /* commenting to save on deployment gas next time
-    function setApprovals()
-        external
-        onlyOwner
-    {
-        IERC20(0xa30911e072A0C88D55B5D0A0984B66b0D04569d0).approve(0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd, uint256(-1));
-    }
-    */
 }

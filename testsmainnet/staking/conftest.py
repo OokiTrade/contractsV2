@@ -8,18 +8,7 @@ from brownie.network.state import _add_contract, _remove_contract
 
 
 @pytest.fixture(scope="module", autouse=True)
-def stakingV1(bzx, StakingProxy, StakingV1, accounts):
-    stakingProxy = Contract.from_abi("proxy", "0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4", StakingProxy.abi)
-    stakingImpl = StakingV1.deploy({'from': stakingProxy.owner()})
-    stakingProxy.replaceImplementation(stakingImpl, {'from': stakingProxy.owner()})
-    return Contract.from_abi("StakingV1_1", stakingProxy.address, StakingV1.abi, owner=accounts[9])
-
-
-
-
-
-@pytest.fixture(scope="module", autouse=True)
-def stakingV1_1(bzx, StakingProxy, StakingV1_1,stakingV1, TestToken, accounts, LPT_OLD):
+def stakingV1_1(bzx, StakingProxy, StakingV1_1, TestToken, accounts, LPT_OLD):
     stakingProxy = Contract.from_abi("proxy", "0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4", StakingProxy.abi)
     stakingImpl = StakingV1_1.deploy({'from': stakingProxy.owner()})
     stakingProxy.replaceImplementation(stakingImpl, {'from': stakingProxy.owner()})

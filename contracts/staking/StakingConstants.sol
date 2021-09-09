@@ -8,6 +8,8 @@ pragma solidity 0.5.17;
 import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 import "../interfaces/IUniswapV2Router.sol";
 import "./interfaces/ICurve3Pool.sol";
+import "./interfaces/ICurveMinter.sol";
+import "./interfaces/ICurve3PoolGauge.sol";
 import "../../interfaces/IBZx.sol";
 
 
@@ -45,6 +47,10 @@ contract StakingConstants {
     uint256 internal constant BZRX_ETH_SUSHI_MASTERCHEF_PID =  188;
 
     uint256 public constant BZRXWeightStored = 1e18;
+
+    ICurveMinter public constant curveMinter = ICurveMinter(0xd061D61a4d941c39E5453435B6345Dc261C2fcE0);
+    ICurve3PoolGauge public constant curve3PoolGauge = ICurve3PoolGauge(0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A);
+    address public constant CRV = 0xD533a949740bb3306d119CC777fa900bA034cd52;
 
     struct DelegatedTokens {
         address user;
