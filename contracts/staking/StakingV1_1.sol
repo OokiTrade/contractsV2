@@ -78,20 +78,6 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             );
     }
 
-    // Withdraw all from sushi masterchef
-    function exitSushi()
-        external
-        onlyOwner
-    {
-        IMasterChefSushi chef = IMasterChefSushi(SUSHI_MASTERCHEF);
-        uint256 balance = chef.userInfo(BZRX_ETH_SUSHI_MASTERCHEF_PID, address(this)).amount;
-        chef.withdraw(
-            BZRX_ETH_SUSHI_MASTERCHEF_PID,
-            balance
-        );
-    }
-
-
     function _depositToSushiMasterchef(uint256 amount)
         internal
     {
@@ -1167,102 +1153,20 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     }
 
     // OnlyOwner functions
-
-    function togglePause(
-        bool _isPaused)
-        external
+    function updateSettings(
+        address settingsTarget,
+        bytes memory callData)
+        public
         onlyOwner
+        returns(bytes memory)
     {
-        isPaused = _isPaused;
-    }
-
-    function setFundsWallet(
-        address _fundsWallet)
-        external
-        onlyOwner
-    {
-        fundsWallet = _fundsWallet;
-    }
-
-    function setGovernor(
-        address _governor)
-        external
-        onlyOwner
-    {
-        governor = _governor;
-    }
-
-    function setFeeTokens(
-        address[] calldata tokens)
-        external
-        onlyOwner
-    {
-        currentFeeTokens = tokens;
-    }
-
-    function setRewardPercent(
-        uint256 _rewardPercent)
-        external
-        onlyOwner
-    {
-        require(_rewardPercent <= 1e20, "value too high");
-        rewardPercent = _rewardPercent;
-    }
-
-    function setMaxUniswapDisagreement(
-        uint256 _maxUniswapDisagreement)
-        external
-        onlyOwner
-    {
-        require(_maxUniswapDisagreement != 0, "invalid param");
-        maxUniswapDisagreement = _maxUniswapDisagreement;
-    }
-
-    function setMaxCurveDisagreement(
-        uint256 _maxCurveDisagreement)
-        external
-        onlyOwner
-    {
-        require(_maxCurveDisagreement != 0, "invalid param");
-        maxCurveDisagreement = _maxCurveDisagreement;
-    }
-
-    function setCallerRewardDivisor(
-        uint256 _callerRewardDivisor)
-        external
-        onlyOwner
-    {
-        require(_callerRewardDivisor != 0, "invalid param");
-        callerRewardDivisor = _callerRewardDivisor;
-    }
-
-    function setInitialAltRewardsPerShare()
-        external
-        onlyOwner
-    {
-        uint256 index = altRewardsRounds[SUSHI].length;
-        if(index == 0) {
-            return;
+        (bool result,) = settingsTarget.delegatecall(callData);
+        assembly {
+            let size := returndatasize
+            let ptr := mload(0x40)
+            returndatacopy(ptr, 0, size)
+            if eq(result, 0) { revert(ptr, size) }
+            return(ptr, size)
         }
-
-        altRewardsPerShare[SUSHI] = altRewardsRounds[SUSHI][index - 1];
     }
-
-    function setBalApproval(
-        address _spender,
-        uint256 _value)
-        external
-        onlyOwner
-    {
-        IERC20(0xba100000625a3754423978a60c9317c58a424e3D).approve(_spender, _value);
-    }
-
-    function setApprovals()
-        external
-        onlyOwner
-    {
-        curve3Crv.approve(address(curve3PoolGauge), uint256(-1));
-        //IERC20(0xa30911e072A0C88D55B5D0A0984B66b0D04569d0).approve(0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd, uint256(-1));
-    }
-
 }
