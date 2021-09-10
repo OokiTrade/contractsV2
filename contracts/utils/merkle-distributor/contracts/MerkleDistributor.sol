@@ -8,7 +8,7 @@ import "@openzeppelin-3.4.0/access/Ownable.sol";
 import "./interfaces/IMerkleDistributor.sol";
 
 contract MerkleDistributor is IMerkleDistributor, Ownable {
-    mapping(uint256 => address) public override token;
+    mapping(uint256 => address) public override airdropToken;
     mapping(uint256 => bytes32) public override merkleRoot;
     mapping(uint256 => address) public override airdropSource;
 
@@ -16,32 +16,23 @@ contract MerkleDistributor is IMerkleDistributor, Ownable {
     mapping(uint256 => mapping(uint256 => uint256)) private claimedBitMap;
     uint256 public airdropCount;
 
-    address public constant STAKING = 0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4;
-
     function createAirdrop(
         address token_,
         bytes32 merkleRoot_,
-        address airdropSource_,
+        address source_,
         uint256 amount_
     ) external override onlyOwner {
-        require(IERC20(token_).transferFrom(msg.sender, address(this), amount_), "MerkleDistributor: Transfer failed.");
+        if (source_ == address(this)) {
+            require(IERC20(token_).transferFrom(msg.sender, address(this), amount_), "MerkleDistributor: Transfer failed.");
+        }
         uint256 currentAirdropIndex = airdropCount;
-        token[currentAirdropIndex] = token_;
+        airdropToken[currentAirdropIndex] = token_;
+        airdropSource[currentAirdropIndex] = source_;
         merkleRoot[currentAirdropIndex] = merkleRoot_;
-        airdropSource[currentAirdropIndex] = airdropSource_;
-        airdropCount += 1;
-    }
+        airdropCount++;
 
-    function setApproval(
-        address token_,
-        address spender_,
-        uint256 value_)
-        external
-        onlyOwner
-    {
-        IERC20(token_).approve(spender_, value_);
+        emit Created(currentAirdropIndex, token_, source_, amount_);
     }
-
 
     function isClaimed(uint256 airdropIndex, uint256 index) public view override returns (bool) {
         uint256 claimedWordIndex = index / 256;
@@ -72,9 +63,16 @@ contract MerkleDistributor is IMerkleDistributor, Ownable {
 
         // Mark it claimed and send the token.
         _setClaimed(airdropIndex, index);
-        require(IERC20(token[airdropIndex]).transferFrom(airdropSource[airdropIndex], account, amount), "MerkleDistributor: Transfer failed.");
 
-        emit Claimed(airdropIndex, index, account, amount);
+        address source = airdropSource[airdropIndex];
+        address token = airdropToken[airdropIndex];
+        if (source == address(this)) {
+            require(IERC20(token).transfer(account, amount), "MerkleDistributor: Transfer failed.");
+        } else {
+            require(IERC20(token).transferFrom(source, account, amount), "MerkleDistributor: Transfer failed.");
+        }
+
+        emit Claimed(airdropIndex, token, account, index, amount);
     }
 
     function rescue(IERC20 _token) public onlyOwner {

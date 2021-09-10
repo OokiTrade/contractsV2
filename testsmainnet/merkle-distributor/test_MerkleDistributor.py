@@ -12,15 +12,10 @@ def requireMainnetFork():
 @pytest.fixture(scope="module")
 def BAL(accounts, TestToken):
     return Contract.from_abi("BAL", address="0xba100000625a3754423978a60c9317c58a424e3D", abi=TestToken.abi)
- 
-@pytest.fixture(scope="module")
-def STAKING(StakingV1_1, accounts, StakingProxy):
-    stakingAddress = "0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4"
-    return Contract.from_abi("staking", address=stakingAddress,abi=StakingV1_1.abi)
 
 @pytest.fixture(scope="module")
-def MERKLEDISTRIBUITOR(accounts, LoanTokenLogicStandard, MerkleDistributor, BAL, STAKING):
-    amount = 674965755171273444902 # PAD.balanceOf(STAKING)
+def MERKLEDISTRIBUITOR(accounts, LoanTokenLogicStandard, MerkleDistributor, BAL):
+    amount = 674965755171273444902
     BAL.transfer(accounts[0], amount, {'from': "0xF977814e90dA44bFA03b6295A0616a897441aceC"})
     
     merkle = accounts[0].deploy(MerkleDistributor)
@@ -28,11 +23,10 @@ def MERKLEDISTRIBUITOR(accounts, LoanTokenLogicStandard, MerkleDistributor, BAL,
     BAL.approve(merkle, amount, {'from': accounts[0]})
     merkleRootProof = "0x6ad0e1656269711e7dd825a7151218d39ae3cc20e7909eaf968dd4dbadcdcaa3" # this is from merkleproof.json
     merkle.createAirdrop(BAL, merkleRootProof, merkle, amount)
-    merkle.setApproval(BAL, merkle, 2**256-1)
     return merkle
 
 
-def testMerkleDistributorAllAccounts(requireMainnetFork, MERKLEDISTRIBUITOR, accounts, BAL, STAKING):
+def testMerkleDistributorAllAccounts(requireMainnetFork, MERKLEDISTRIBUITOR, accounts, BAL):
     
     with open('./scripts/merkle-distributor/merkleproof.json', 'r') as myfile:
         data=myfile.read()
