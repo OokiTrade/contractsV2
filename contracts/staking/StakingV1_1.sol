@@ -1116,25 +1116,12 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             return 0;
         }
 
-        uint256 _vBZRXBalance = _balancesPerToken[vBZRX][account];
-        if (_vBZRXBalance != 0) {
-            // staked vBZRX is prorated based on total vested
-            totalVotes = _vBZRXBalance
-                .mul(_startingVBZRXBalance -
-                    vestedBalanceForAmount( // overflow not possible
-                        _startingVBZRXBalance,
-                        0,
-                        proposal.proposalTime
-                    )
-                ).div(_startingVBZRXBalance);
-
-            // user is attributed a staked balance of vested BZRX, from their last update to the present
-            totalVotes = vestedBalanceForAmount(
-                _vBZRXBalance,
-                _vestingLastSync,
-                proposal.proposalTime
-            ).add(totalVotes);
-        }
+        // user is attributed a staked balance of vested BZRX, from their last update to the present
+        totalVotes = vestedBalanceForAmount(
+            _balancesPerToken[vBZRX][account],
+            _vestingLastSync,
+            proposal.proposalTime
+        );
 
         totalVotes = _balancesPerToken[BZRX][account]
             .add(bzrxRewards[account]) // unclaimed BZRX rewards count as votes
