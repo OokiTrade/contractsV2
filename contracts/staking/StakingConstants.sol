@@ -20,6 +20,7 @@ contract StakingConstants {
     address public constant vBZRX = 0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F;
     address public constant iOOKI = 0x18240BD9C07fA6156Ce3F3f61921cC82b2619157;
     address public constant LPToken = 0x81c3061Ea82ce5f261c801C97535F485E1e101EC; // ooki sushiswap calculated upfront
+    address public constant LPTokenBeforeMigration = 0xa30911e072A0C88D55B5D0A0984B66b0D04569d0; // sushiswap
     // address public constant LPToken = 0xa30911e072A0C88D55B5D0A0984B66b0D04569d0; // sushiswap
     address public constant LPTokenOld = 0xe26A220a341EAca116bDa64cF9D5638A935ae629; // balancer
     IERC20 public constant curve3Crv = IERC20(0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490);

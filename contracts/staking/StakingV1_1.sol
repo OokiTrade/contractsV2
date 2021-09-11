@@ -239,7 +239,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             if (token == OOKI && IERC20(OOKI).balanceOf(address(this)) < unstakeAmount) {
                 // settle vested OOKI only if needed
                 IVestingToken(vBZRX).claim();
-                // TODO converter here
+                IBZRXv2Converter(converter).convert(address(this), IERC20(BZRX).balanceOf(address(this)));
             }
 
             // Withdraw to sushi masterchef
@@ -434,7 +434,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
                 if (IERC20(OOKI).balanceOf(address(this)) < bzrxRewardsEarned) {
                     // settle vested OOKI only if needed
                     IVestingToken(vBZRX).claim();
-                    // TODO Converter here
+                    IBZRXv2Converter(converter).convert(address(this), IERC20(BZRX).balanceOf(address(this)));
                 }
 
                 IERC20(OOKI).transfer(msg.sender, bzrxRewardsEarned);
@@ -632,7 +632,6 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             bzrxPerTokenStored,
             stableCoinPerTokenStored
         );
-
         (bzrxRewardsEarned, stableCoinRewardsEarned) = _syncVesting(
             account,
             bzrxRewardsEarned,
@@ -640,7 +639,6 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             bzrxRewardsVesting,
             stableCoinRewardsVesting
         );
-
         // discount vesting amounts for vesting time
         uint256 multiplier = vestedBalanceForAmount(
             1e36,
@@ -1164,6 +1162,12 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             _balancesPerToken[BZRX][msg.sender] = 0;
         }
 
+        uint256 _localBalancesPerTokenLP = _balancesPerToken[LPTokenBeforeMigration][msg.sender];
+        if (_localBalancesPerTokenLP > 0) {
+            _balancesPerToken[LPToken][msg.sender] = _localBalancesPerTokenLP;
+            _balancesPerToken[LPTokenBeforeMigration][msg.sender] = 0;
+        }
+
         IStaking.AltRewardsUserInfo memory _localUserAltRewardsPerShare = userAltRewardsPerShare[BZRX][msg.sender];
         if (_localUserAltRewardsPerShare.rewardsPerShare > 0) {
             userAltRewardsPerShare[OOKI][msg.sender] = _localUserAltRewardsPerShare;
@@ -1171,9 +1175,9 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         }
     }
 
-    function isUserMigrated() public view returns(bool) {
-        // TOTO
-        return false;
+    function isUserMigrated(address account) public view returns(bool) {
+        return userAltRewardsPerShare[BZRX][account].rewardsPerShare == 0 && userAltRewardsPerShare[BZRX][account].pendingRewards == 0 &&_balancesPerToken[LPTokenBeforeMigration][account] == 0 &&
+        _balancesPerToken[BZRX][account] == 0;
     }
    
     // OnlyOwner functions

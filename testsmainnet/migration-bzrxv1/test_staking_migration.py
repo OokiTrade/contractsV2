@@ -43,16 +43,21 @@ def SUSHI_FACTORY(accounts, TestToken, interface):
 #     return Contract.from_abi("SUSHI_FACTORY", address="0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac", abi=interface.IUniswapV2Factory.abi)
 
 
-@pytest.fixture(scope="module")
-def SLP_MIGRATOR(accounts, TestToken, SLPMigrator, BZRX_CONVERTER):
-    slpmigrator = accounts[0].deploy(SLPMigrator, BZRX_CONVERTER)
-    return slpmigrator
+# @pytest.fixture(scope="module")
+# def SLP_MIGRATOR(accounts, TestToken, SLPMigrator, BZRX_CONVERTER):
+#     slpmigrator = accounts[0].deploy(SLPMigrator, BZRX_CONVERTER)
+#     return slpmigrator
 
 
 @pytest.fixture(scope="module")
-def BZRX_CONVERTER(accounts, TestToken, BZRXv2Converter, OOKI):
+def BZRX_CONVERTER(accounts, BZRXv2Converter, OOKI, ADMIN_SETTINGS, STAKING):
     converter = accounts[0].deploy(BZRXv2Converter)
     converter.initialize(OOKI)
+
+    calldata = ADMIN_SETTINGS.setConverter.encode_input(converter)
+    STAKING.updateSettings(ADMIN_SETTINGS, calldata, {"from": STAKING.owner()})
+
+    OOKI.transferOwnership(converter, {'from': OOKI.owner()})
     return converter
 
 
@@ -66,15 +71,25 @@ def STAKING(StakingV1_1, accounts, StakingProxy):
     proxy.replaceImplementation(impl, {"from": bzxOwner})
     return Contract.from_abi("staking", address=stakingAddress, abi=StakingV1_1.abi)
 
+@pytest.fixture(scope="module")
+def ADMIN_SETTINGS(StakingAdminSettings, accounts):
+    admin = accounts[0].deploy(StakingAdminSettings)
+    return admin
 
-def test_migration_staking(requireMainnetFork, accounts, BZRX, OOKI, STAKING, BZRX_CONVERTER, SLP_MIGRATOR, SLP, SUSHI_MASTERCHEF, SUSHI_FACTORY, WETH, interface):
-    STAKING.setConverter(BZRX_CONVERTER, {"from": STAKING.owner()})
-    OOKI.transferOwnership(BZRX_CONVERTER, {'from': OOKI.owner()})
+@pytest.fixture(scope="function", autouse=True)
+def isolate(fn_isolation):
+    pass
+
+
+def test_migration_staking(requireMainnetFork, accounts, BZRX, OOKI, STAKING, BZRX_CONVERTER, SLP, SUSHI_MASTERCHEF, SUSHI_FACTORY, WETH, interface, ADMIN_SETTINGS):
 
     balanceOfBZRXBefore = BZRX.balanceOf(STAKING)
-    tx = STAKING.migrateSLP({"from": STAKING.owner()})
+    calldata = ADMIN_SETTINGS.migrateSLP.encode_input()
+    tx = STAKING.updateSettings(ADMIN_SETTINGS, calldata, {"from": STAKING.owner()})
+
     assert OOKI.balanceOf(STAKING) == balanceOfBZRXBefore
     assert BZRX.balanceOf(STAKING) == 0 # all bzrx was migrated
+    assert SLP.balanceOf(STAKING) == 0 # all slp was migrated
 
     pair = SUSHI_FACTORY.getPair(OOKI, WETH)
     assert pair != "0x0000000000000000000000000000000000000000"
@@ -83,5 +98,26 @@ def test_migration_staking(requireMainnetFork, accounts, BZRX, OOKI, STAKING, BZ
 
     OLDPAIR = Contract.from_abi("OLDPAIR", address="0xa30911e072A0C88D55B5D0A0984B66b0D04569d0", abi=interface.IUniswapV2Pair.abi)
     assert OLDPAIR.balanceOf(STAKING) == 0
+    
+    assert True
+
+
+def test_migration_staking_balances(requireMainnetFork, accounts, BZRX, OOKI, STAKING, BZRX_CONVERTER, SLP, SUSHI_MASTERCHEF, SUSHI_FACTORY, WETH, interface, ADMIN_SETTINGS):
+
+    account = "0xE487A866b0f6b1B663b4566Ff7e998Af6116fbA9"
+    balanceOfByAssets = STAKING.balanceOfByAssets(account)
+    balanceOfStored = STAKING.balanceOfStored(account)
+    
+
+    balanceOfBZRXBefore = BZRX.balanceOf(STAKING)
+    calldata = ADMIN_SETTINGS.migrateSLP.encode_input()
+    tx = STAKING.updateSettings(ADMIN_SETTINGS, calldata, {"from": STAKING.owner()})
+
+
+    assert STAKING.isUserMigrated(account) == False
+    STAKING.migrateUserBalances({"from": account})
+    assert STAKING.isUserMigrated(account) == True
+
+    STAKING.earned(account, {"from": account})
     
     assert False

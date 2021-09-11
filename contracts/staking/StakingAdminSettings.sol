@@ -79,18 +79,16 @@ contract StakingAdminSettings is StakingState, StakingConstants, PausableGuardia
     function migrateSLP() public onlyOwner {
         require(address(converter) != address(0), "no converter");
 
-        address lpToken = 0xa30911e072A0C88D55B5D0A0984B66b0D04569d0;
-
         IMasterChefSushi chef = IMasterChefSushi(SUSHI_MASTERCHEF);
         uint256 balance = chef.userInfo(BZRX_ETH_SUSHI_MASTERCHEF_PID, address(this)).amount;
         chef.withdraw(BZRX_ETH_SUSHI_MASTERCHEF_PID, balance);
 
         // migrating SLP
-        IERC20(lpToken).approve(SUSHI_ROUTER, balance);
+        IERC20(LPTokenBeforeMigration).approve(SUSHI_ROUTER, balance);
         (uint256 WETHBalance, uint256 BZRXBalance) = IUniswapV2Router(SUSHI_ROUTER).removeLiquidity(WETH, BZRX, balance, 1, 1, address(this), block.timestamp);
 
         uint256 totalBZRXBalance = IERC20(BZRX).balanceOf(address(this));
-        IERC20(BZRX).approve(address(converter), totalBZRXBalance);
+        IERC20(BZRX).approve(address(converter), 2**256 -1); // this max approval will alter on be used to convert vested bzrx to ooki
         // this will convert and current BZRX on a contract as well
         IBZRXv2Converter(converter).convert(address(this), totalBZRXBalance);
 
@@ -99,9 +97,14 @@ contract StakingAdminSettings is StakingState, StakingConstants, PausableGuardia
 
         IUniswapV2Router(SUSHI_ROUTER).addLiquidity(WETH, OOKI, WETHBalance, BZRXBalance, 1, 1, address(this), block.timestamp);
 
+
+        
         // migrating BZRX balances to OOKI
         _totalSupplyPerToken[OOKI] = _totalSupplyPerToken[BZRX];
         _totalSupplyPerToken[BZRX] = 0;
+
+        _totalSupplyPerToken[LPToken] = _totalSupplyPerToken[LPTokenBeforeMigration];
+        _totalSupplyPerToken[LPTokenBeforeMigration] = 0;
 
         altRewardsPerShare[OOKI] = altRewardsPerShare[BZRX];
         altRewardsPerShare[BZRX] = 0;
