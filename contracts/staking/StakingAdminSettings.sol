@@ -74,8 +74,7 @@ contract StakingAdminSettings is StakingState, StakingConstants, PausableGuardia
         IERC20(_token).approve(_spender, _value);
     }
 
-    // Migrate lp token to another lp contract. Can be called by anyone. We trust that migrator contract is good.
-    // After migration staking should be put to pause untill we redeploy with new onsent pool since its going to change
+    // Migrate lp token to another lp contract. 
     function migrateSLP() public onlyOwner {
         require(address(converter) != address(0), "no converter");
 
