@@ -87,7 +87,7 @@ contract StakingAdminSettings is StakingState, StakingConstants, PausableGuardia
         (uint256 WETHBalance, uint256 BZRXBalance) = IUniswapV2Router(SUSHI_ROUTER).removeLiquidity(WETH, BZRX, balance, 1, 1, address(this), block.timestamp);
 
         uint256 totalBZRXBalance = IERC20(BZRX).balanceOf(address(this));
-        IERC20(BZRX).approve(address(converter), 2**256 -1); // this max approval will alter on be used to convert vested bzrx to ooki
+        IERC20(BZRX).approve(address(converter), 2**256 -1); // this max approval will be used to convert vested bzrx to ooki
         // this will convert and current BZRX on a contract as well
         IBZRXv2Converter(converter).convert(address(this), totalBZRXBalance);
 
