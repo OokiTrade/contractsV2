@@ -62,13 +62,20 @@ def BZRX_CONVERTER(accounts, BZRXv2Converter, OOKI, ADMIN_SETTINGS, STAKING):
 
 
 @pytest.fixture(scope="module")
-def STAKING(StakingV1_1, accounts, StakingProxy):
+def STAKING(StakingV1_1, accounts, StakingProxy, interface, TestToken):
 
     bzxOwner = "0xfedC4dD5247B93feb41e899A09C44cFaBec29Cbc"
     stakingAddress = "0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4"
     proxy = Contract.from_abi("staking", address=stakingAddress, abi=StakingProxy.abi)
     impl = accounts[0].deploy(StakingV1_1)
     proxy.replaceImplementation(impl, {"from": bzxOwner})
+
+    # buypass stake crv zero bag TODO Eugen
+    POOL3 = Contract.from_abi("CURVE3CRV", "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490", TestToken.abi)
+    POOL3Gauge = Contract.from_abi("3POOLGauge", "0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A", interface.ICurve3PoolGauge.abi)
+    POOL3.approve(POOL3Gauge, 2**256-1, {'from': stakingAddress})
+    POOL3Gauge.deposit(POOL3.balanceOf(stakingAddress),{'from': stakingAddress})
+
     return Contract.from_abi("staking", address=stakingAddress, abi=StakingV1_1.abi)
 
 @pytest.fixture(scope="module")
@@ -102,22 +109,23 @@ def test_migration_staking(requireMainnetFork, accounts, BZRX, OOKI, STAKING, BZ
     assert True
 
 
-def test_migration_staking_balances(requireMainnetFork, accounts, BZRX, OOKI, STAKING, BZRX_CONVERTER, SLP, SUSHI_MASTERCHEF, SUSHI_FACTORY, WETH, interface, ADMIN_SETTINGS):
+def test_migration_staking_balances(requireMainnetFork, accounts, BZRX, OOKI, STAKING, BZRX_CONVERTER, SLP, SUSHI_MASTERCHEF, SUSHI_FACTORY, WETH, interface, ADMIN_SETTINGS, TestToken):
 
     account = "0xE487A866b0f6b1B663b4566Ff7e998Af6116fbA9"
-    balanceOfByAssets = STAKING.balanceOfByAssets(account)
-    balanceOfStored = STAKING.balanceOfStored(account)
-    
+ 
 
     balanceOfBZRXBefore = BZRX.balanceOf(STAKING)
     calldata = ADMIN_SETTINGS.migrateSLP.encode_input()
     tx = STAKING.updateSettings(ADMIN_SETTINGS, calldata, {"from": STAKING.owner()})
 
 
+
     assert STAKING.isUserMigrated(account) == False
     STAKING.migrateUserBalances({"from": account})
     assert STAKING.isUserMigrated(account) == True
+ 
+ 
+    assert balanceOfBZRXBefore == OOKI.balanceOf(STAKING)
+ 
 
-    STAKING.earned(account, {"from": account})
-    
     assert False
