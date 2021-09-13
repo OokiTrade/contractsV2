@@ -75,11 +75,9 @@ def BGOV_BNB(accounts, interface):
 def masterChef(accounts, MasterChef_BSC, interface, iBNB, iETH, iWBTC, iUSDT, govToken, Proxy):
     masterChefProxy = Contract.from_abi("masterChefProxy", address="0x1FDCA2422668B961E162A8849dc0C2feaDb58915", abi=Proxy.abi)
     masterChefImpl = MasterChef_BSC.deploy({'from': masterChefProxy.owner()})
-    masterChefProxy.replaceImplementation(masterChefImpl, {'from': masterChefProxy.owner()})
+    #masterChefProxy.replaceImplementation(masterChefImpl, {'from': masterChefProxy.owner()})
     masterChef = Contract.from_abi("masterChef", address=masterChefProxy, abi=MasterChef_BSC.abi)
-    masterChef.massMigrateToBalanceOf({'from': masterChef.owner()})
-    masterChef.togglePause(False, {'from': masterChef.owner()})
-    masterChef.set(7, 190000, True, {'from': masterChef.owner()})
+    masterChef.setInitialAltRewardsPerShare({'from': masterChef.owner()})
     return masterChef
 
 @pytest.fixture(scope="module", autouse=True)
