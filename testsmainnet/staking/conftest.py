@@ -16,6 +16,11 @@ def stakingV1_1(bzx, StakingProxy, StakingV1_1, TestToken, accounts, LPT_OLD):
     res = Contract.from_abi("StakingV1_1", stakingProxy.address, StakingV1_1.abi, owner=accounts[9])
     return res;
 
+@pytest.fixture(scope="module", autouse=True)
+def stakingAdminSettings(bzx, StakingAdminSettings,stakingV1_1, accounts):
+    res = StakingAdminSettings.deploy({'from': stakingV1_1.owner()})
+    return res;
+
 @pytest.fixture(scope="module")
 def bzx(accounts, LoanTokenLogicStandard, interface):
     return Contract.from_abi("bzx", address="0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f",  abi=interface.IBZx.abi, owner=accounts[0])
@@ -25,6 +30,9 @@ def bzx(accounts, LoanTokenLogicStandard, interface):
 def isolate(fn_isolation):
     pass
 
+@pytest.fixture(scope="module")
+def CRV(accounts, TestToken):
+   return Contract.from_abi("CRV", "0xD533a949740bb3306d119CC777fa900bA034cd52", TestToken.abi)
 
 
 @pytest.fixture(scope="module")
