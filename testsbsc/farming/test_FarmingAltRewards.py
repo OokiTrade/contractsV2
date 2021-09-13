@@ -14,6 +14,7 @@ GOV_POOL_PID = 7
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
 def testFarming_alt_reward1(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, govToken):
     # Precondition
+    assert False
     lpToken = tokens[lpTokenName]
     token = tokens[tokenName]
     account1 = accounts[1]
@@ -22,7 +23,6 @@ def testFarming_alt_reward1(requireFork, tokens, tokenName, lpTokenName, pid, ac
     initBalance(account2, token, lpToken, INITIAL_LP_TOKEN_ACCOUNT_AMOUNT)
 
     masterChef.togglePause(True, {'from': masterChef.owner()})
-    masterChef.massMigrateToBalanceOf({'from': masterChef.owner()})
     masterChef.togglePause(False, {'from': masterChef.owner()})
 
     masterChef.setLocked(pid, True, {'from': masterChef.owner()})
@@ -36,14 +36,12 @@ def testFarming_alt_reward1(requireFork, tokens, tokenName, lpTokenName, pid, ac
     value = 10e18
 
     masterChefBalanceBefore = masterChef.balance()
-
     tx1 = masterChef.addAltReward({'from': account1, 'value': value})
 
     pendingAltReward = masterChef.pendingAltRewards(account1)
     balanceBefore = account1.balance()
-    assert masterChef.balance() == value
+    assert masterChef.balance() - masterChefBalanceBefore == value
     assert masterChef.balance() > masterChefBalanceBefore
-    assert masterChef.altRewardsRounds(GOV_POOL_PID, 0) > 10000
     assert pendingAltReward > 10000
     assert masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][3] == pendingAltReward
 
@@ -71,7 +69,6 @@ def testFarming_alt_reward2(requireFork, tokens, tokenName, lpTokenName, pid, ac
     govToken.approve(masterChef, 2**256-1, {'from': account1})
     masterChef.deposit(GOV_POOL_PID, govToken.balanceOf(account1), {'from': account1})
     masterChef.togglePause(True, {'from': masterChef.owner()})
-    masterChef.massMigrateToBalanceOf({'from': masterChef.owner()})
     masterChef.togglePause(False, {'from': masterChef.owner()})
 
     masterChef.setLocked(pid, False, {'from': masterChef.owner()})
@@ -97,7 +94,6 @@ def testFarming_alt_reward3(requireFork, tokens, tokenName, lpTokenName, pid, ac
     govToken.approve(masterChef, 2**256-1, {'from': account1})
     masterChef.deposit(GOV_POOL_PID, govToken.balanceOf(account1), {'from': account1})
     masterChef.togglePause(True, {'from': masterChef.owner()})
-    masterChef.massMigrateToBalanceOf({'from': masterChef.owner()})
     masterChef.togglePause(False, {'from': masterChef.owner()})
 
     masterChef.setLocked(pid, False, {'from': masterChef.owner()})

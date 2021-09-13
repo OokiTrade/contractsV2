@@ -15,7 +15,6 @@ import "../utils/MathUtil.sol";
 import "../farm/interfaces/IMasterChefSushi.sol";
 import "../../interfaces/IStaking.sol";
 import "../governance/PausableGuardian.sol";
-import "../interfaces/IUniswapV2Router.sol";
 
 contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     using MathUtil for uint256;
@@ -41,27 +40,27 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         uint256 pendingSushi = IMasterChefSushi(SUSHI_MASTERCHEF)
             .pendingSushi(BZRX_ETH_SUSHI_MASTERCHEF_PID, address(this));
 
+        uint256 totalSupply = _totalSupplyPerToken[LPToken];
         return _pendingAltRewards(
             SUSHI,
             _user,
             balanceOfByAsset(LPToken, _user),
-            pendingSushi.mul(1e12).div(_totalSupplyPerToken[LPToken])
+            totalSupply != 0 ? pendingSushi.mul(1e12).div(totalSupply) : 0
         );
     }
 
-    function _pendingCrvRewards(address _user)
+    function _pendingCrvRewards(address _user, uint256 stableCoinRewardsEarned)
         internal
         returns (uint256)
     {
+        uint256 totalSupply = curve3PoolGauge.balanceOf(address(this));
         uint256 pendingCrv = curve3PoolGauge.claimable_tokens(address(this));
-        (,uint256 earnedStable,,) = _earned(_user, bzrxPerTokenStored, stableCoinPerTokenStored);
-        uint256 res = _pendingAltRewards(
+        return _pendingAltRewards(
             CRV,
             _user,
-            earnedStable,
-            pendingCrv.mul(1e12).div(curve3PoolGauge.balanceOf(address(this)))
+            stableCoinRewardsEarned,
+            (totalSupply != 0) ? pendingCrv.mul(1e12).div(totalSupply) : 0
         );
-        return res;
     }
 
     function _pendingAltRewards(address token, address _user, uint256 userSupply, uint256 extraRewardsPerShare)
@@ -112,8 +111,8 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         internal
     {
 
-        if(amount != 0)
-            curve3PoolGauge.deposit(amount);
+        if(amount == 0)
+            curve3PoolGauge.deposit(curve3Crv.balanceOf(address(this)));
 
         //Trigger claim rewards from curve pool
         uint256 crvBalanceBefore = IERC20(CRV).balanceOf(address(this));
@@ -448,7 +447,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     {
         stableCoinRewardsEarned = stableCoinRewards[msg.sender];
         if (stableCoinRewardsEarned != 0) {
-            uint256 pendingCrv = _pendingCrvRewards(msg.sender);
+            uint256 pendingCrv = _pendingCrvRewards(msg.sender, stableCoinRewardsEarned);
             uint256 curve3CrvBalance = curve3Crv.balanceOf(address(this));
             _withdrawFrom3Pool(stableCoinRewardsEarned);
 
@@ -497,7 +496,8 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         address _user = msg.sender;
 
         _depositTo3Pool(0);
-        uint256 pendingCrv = _pendingCrvRewards(_user);
+        (,uint256 stableCoinRewardsEarned,,) = _earned(_user, bzrxPerTokenStored, stableCoinPerTokenStored);
+        uint256 pendingCrv = _pendingCrvRewards(_user, stableCoinRewardsEarned);
 
         userAltRewardsPerShare[_user][CRV] = IStaking.AltRewardsUserInfo({
                 rewardsPerShare: altRewardsPerShare[CRV],
@@ -632,6 +632,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             bzrxPerTokenStored,
             stableCoinPerTokenStored
         );
+
         (bzrxRewardsEarned, stableCoinRewardsEarned) = _syncVesting(
             account,
             bzrxRewardsEarned,
@@ -639,6 +640,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             bzrxRewardsVesting,
             stableCoinRewardsVesting
         );
+
         // discount vesting amounts for vesting time
         uint256 multiplier = vestedBalanceForAmount(
             1e36,
@@ -663,10 +665,10 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             SUSHI,
             account,
             balanceOfByAsset(LPToken, account),
-            pendingSushi.mul(1e12).div(_totalSupplyPerToken[LPToken])
+            (_totalSupplyPerToken[LPToken] != 0) ? pendingSushi.mul(1e12).div(_totalSupplyPerToken[LPToken]) : 0
         );
 
-        crvRewardsEarned  = _pendingCrvRewards(account);
+        crvRewardsEarned  = _pendingCrvRewards(account, stableCoinRewardsEarned);
     }
 
     function _earned(
@@ -1117,28 +1119,15 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             return 0;
         }
 
-        uint256 _vBZRXBalance = _balancesPerToken[vBZRX][account];
-        if (_vBZRXBalance != 0) {
-            // staked vBZRX is prorated based on total vested
-            totalVotes = _vBZRXBalance
-                .mul(_startingVBZRXBalance -
-                    vestedBalanceForAmount( // overflow not possible
-                        _startingVBZRXBalance,
-                        0,
-                        proposal.proposalTime
-                    )
-                ).div(_startingVBZRXBalance);
-
-            // user is attributed a staked balance of vested OOKI, from their last update to the present
-            totalVotes = vestedBalanceForAmount(
-                _vBZRXBalance,
-                _vestingLastSync,
-                proposal.proposalTime
-            ).add(totalVotes);
-        }
+        // user is attributed a staked balance of vested OOKI, from their last update to the present
+        totalVotes = vestedBalanceForAmount(
+            _balancesPerToken[vBZRX][account],
+            _vestingLastSync,
+            proposal.proposalTime
+        );
 
         totalVotes = _balancesPerToken[OOKI][account]
-            .add(bzrxRewards[account]) // unclaimed OOKI rewards count as votes
+            .add(bzrxRewards[account]) // unclaimed BZRX rewards count as votes
             .add(totalVotes);
 
         totalVotes = _balancesPerToken[iOOKI][account]

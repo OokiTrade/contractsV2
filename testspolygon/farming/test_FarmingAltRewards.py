@@ -25,10 +25,6 @@ def testFarming_alt_reward1(requireFork, tokens, tokenName, lpTokenName, pid, ac
     initBalance(account1, token, lpToken, INITIAL_LP_TOKEN_ACCOUNT_AMOUNT)
     initBalance(account2, token, lpToken, INITIAL_LP_TOKEN_ACCOUNT_AMOUNT)
 
-    masterChef.togglePause(True, {'from': masterChef.owner()})
-    masterChef.massMigrateToBalanceOf({'from': masterChef.owner()})
-    masterChef.togglePause(False, {'from': masterChef.owner()})
-
     masterChef.setLocked(pid, True, {'from': masterChef.owner()})
 
     for account in [account1, account2]:
@@ -48,14 +44,11 @@ def testFarming_alt_reward1(requireFork, tokens, tokenName, lpTokenName, pid, ac
     value = 10e18
 
     masterChefBalanceBefore = masterChef.balance()
-
     tx1 = masterChef.addAltReward({'from': account1, 'value': value})
 
     pendingAltReward = masterChef.pendingAltRewards(account1)
     balanceBefore = account1.balance()
-    assert masterChef.balance() == value
-    assert masterChef.balance() > masterChefBalanceBefore
-    assert masterChef.altRewardsRounds(GOV_POOL_PID, 0) > 10000
+    assert masterChef.balance() - value - masterChefBalanceBefore == 0
     assert pendingAltReward > 10000
     assert masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][3] == pendingAltReward
     withdrawAmount1 = masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0];
@@ -80,10 +73,6 @@ def testFarming_alt_reward2(requireFork, tokens, tokenName, lpTokenName, pid, ac
     token = tokens[tokenName]
     account1 = accounts[1]
     initBalance(account1, token, lpToken, INITIAL_LP_TOKEN_ACCOUNT_AMOUNT)
-
-    masterChef.togglePause(True, {'from': masterChef.owner()})
-    masterChef.massMigrateToBalanceOf({'from': masterChef.owner()})
-    masterChef.togglePause(False, {'from': masterChef.owner()})
 
     masterChef.setLocked(pid, False, {'from': masterChef.owner()})
 
@@ -119,10 +108,6 @@ def testFarming_alt_reward3(requireFork, tokens, tokenName, lpTokenName, pid, ac
     token = tokens[tokenName]
     account1 = accounts[1]
     initBalance(account1, token, lpToken, INITIAL_LP_TOKEN_ACCOUNT_AMOUNT)
-
-    masterChef.togglePause(True, {'from': masterChef.owner()})
-    masterChef.massMigrateToBalanceOf({'from': masterChef.owner()})
-    masterChef.togglePause(False, {'from': masterChef.owner()})
 
     masterChef.setLocked(pid, False, {'from': masterChef.owner()})
     masterChef.setLocked(GOV_POOL_PID, True, {'from': masterChef.owner()})

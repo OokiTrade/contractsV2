@@ -14,7 +14,7 @@ interface GovTokenLike {
 }
 
 // bsc: 0x68d57B33Fe3B691Ef96dFAf19EC8FA794899f2ac
-contract MintCoordinator is Ownable {
+contract MintCoordinator_BSC is Ownable {
 
     GovTokenLike public constant govToken = GovTokenLike(0xf8E026dC4C0860771f691EcFFBbdfe2fa51c77CF);
 
