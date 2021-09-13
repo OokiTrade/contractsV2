@@ -15,8 +15,8 @@ def BZRX(accounts, TestToken):
 
 
 @pytest.fixture(scope="module")
-def OOKI(accounts, TestToken, BZRXv2Token):
-    return Contract.from_abi("OOKI", address="0xC5c66f91fE2e395078E0b872232A20981bc03B15", abi=BZRXv2Token.abi)
+def OOKI(accounts, TestToken, OokiToken):
+    return Contract.from_abi("OOKI", address="0xC5c66f91fE2e395078E0b872232A20981bc03B15", abi=OokiToken.abi)
 
 
 @pytest.fixture(scope="module")
@@ -128,4 +128,4 @@ def test_migration_staking_balances(requireMainnetFork, accounts, BZRX, OOKI, ST
     assert balanceOfBZRXBefore == OOKI.balanceOf(STAKING)
  
 
-    assert False
+    assert True
