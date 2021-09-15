@@ -325,8 +325,13 @@ def testFarming_lockedPgovPoolWithdraw2(requireFork, tokens, tokenName, lpTokenN
     assert ((govToken.balanceOf(account1) - pgovBalance - pendingGOV)/1e18) / (withdrawAmount/1e18) > 0.99
 
     withdrawAmount1 = masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0];
-    tx = masterChef.withdraw(GOV_POOL_PID, withdrawAmount1, {'from': account1})
-    assert masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0] == masterChef.lockedRewards(account1)+masterChef.unlockedRewards(account1)
+
+    amounnt1 = masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0] - masterChef.lockedRewards(account1)
+
+    tx1 = masterChef.withdraw(GOV_POOL_PID, withdrawAmount1, {'from': account1})
+    chain.mine()
+    eventAmount = tx1.events['Withdraw'][0]['amount']
+    assert amounnt1 / eventAmount > 0.9999
 
 
 ## GovPool locked
@@ -412,11 +417,12 @@ def testFarming_lockedPgovPoolWithdraw4(requireFork, tokens, tokenName, lpTokenN
 
     withdrawAmount1 = masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0];
 
-    tx1 = masterChef.withdraw(GOV_POOL_PID, withdrawAmount1, {'from': account1})
-    assert masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0] == masterChef.lockedRewards(account1)+masterChef.unlockedRewards(account1)
-    eventAmount = tx1.events['Withdraw'][0]['amount']
-    assert eventAmount  == 0
+    amounnt1 = masterChef.getOptimisedUserInfos(account1)[GOV_POOL_PID][0] - masterChef.lockedRewards(account1)
 
+    tx1 = masterChef.withdraw(GOV_POOL_PID, withdrawAmount1, {'from': account1})
+    chain.mine()
+    eventAmount = tx1.events['Withdraw'][0]['amount']
+    assert amounnt1 / eventAmount > 0.9999
 
 @pytest.mark.parametrize("tokenName, lpTokenName, pid", testdata)
 def testFarming_upgradeMasterChefBalanceOf(requireFork, tokens, tokenName, lpTokenName, pid, accounts, masterChef, govToken):

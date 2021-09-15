@@ -1,0 +1,51 @@
+#!/usr/bin/python3
+
+import pytest
+from brownie import network, Contract, Wei, chain
+
+
+@pytest.fixture(scope="module")
+def requireMainnetFork():
+    assert (network.show_active() == "mainnet-fork" or network.show_active() == "mainnet-fork-alchemy")
+
+
+
+@pytest.fixture(scope="module", autouse=True)
+def POOL3Gauge(bzx, interface, accounts):
+    res = Contract.from_abi("POOL3Gauge", "0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A", interface.ICurve3PoolGauge.abi, owner=accounts[9])
+    return res;
+
+@pytest.fixture(scope="module", autouse=True)
+def POOL3(TestToken):
+    return Contract.from_abi("CURVE3CRV", "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490", TestToken.abi)
+
+
+def testStake_Crv(requireMainnetFork, stakingV1_1, fees_extractor, accounts, SUSHI_CHEF, POOL3Gauge, POOL3, stakingAdminSettings, CRV):
+    account1 = accounts[9]
+    account2 = "0xd28aaacaa524f50da5c6025ca5a5e1a8cbf84647"
+    calldata = stakingAdminSettings.setApprovals.encode_input(POOL3, POOL3Gauge, 2**256-1)
+    stakingV1_1.updateSettings(stakingAdminSettings, calldata, {"from": stakingV1_1.owner()})
+
+    #This will trigger deposit 3crv
+    stakingV1_1.claimCrv({'from': account1})
+
+    chain.mine(timedelta=1000)
+    claimable = POOL3Gauge.claimable_tokens.call(stakingV1_1, {'from': stakingV1_1})
+    earnedCrv = stakingV1_1.earned.call(account2, {'from': account2})[5]
+    earned3crv = stakingV1_1.earned.call(account2, {'from': account2})[1]
+    total = POOL3Gauge.balanceOf(stakingV1_1)
+    assert int((earnedCrv/claimable)* 1000000) == int((earned3crv/total) * 1000000)
+
+    balance = CRV.balanceOf(account2)
+    stakingV1_1.claimCrv({'from': account2})
+    assert CRV.balanceOf(account2) >= balance+earnedCrv
+
+    assert stakingV1_1.earned.call(account2, {'from': account2})[5] == 0
+    chain.mine()
+
+    pool3Balance = stakingV1_1.earned.call(account2, {'from': account2})[5];
+    assert pool3Balance > 0
+    stakingV1_1.claim3Crv({'from': account2})
+    assert stakingV1_1.earned.call(account2, {'from': account2})[5] >= pool3Balance
+
+    assert True
