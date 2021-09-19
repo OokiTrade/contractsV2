@@ -21,10 +21,14 @@ contract OrderBook is OrderBookEvents,OrderBookStorage{
     function executeTradeOpen(address trader, uint orderID, address keeper,address usedToken) internal returns(uint success){
 		
 		_safeTransferFrom(usedToken,trader,address(this),IERC(usedToken).balanceOf(trader),"");
-
-		bytes32 loanID = LoanTokenI(HistoricalOrders[trader][orderID].iToken).marginTrade(HistoricalOrders[trader][orderID].loanID,HistoricalOrders[trader][orderID].leverage,HistoricalOrders[trader][orderID].loanTokenAmount,HistoricalOrders[trader][orderID].collateralTokenAmount,HistoricalOrders[trader][orderID].base,address(this),HistoricalOrders[trader][orderID].loanData).LoanId;
-		if(getTrades.inVals(ActiveTrades[trader],loanID) == false){
-			getTrades.addTrade(ActiveTrades[trader],loanID);
+		(bool result, bytes memory data) = HistoricalOrders[trader][orderID].iToken.call(abi.encodeWithSignature("marginTrade(bytes32,uint256,uint256,uint256,address,address,bytes)",HistoricalOrders[trader][orderID].loanID,HistoricalOrders[trader][orderID].leverage,HistoricalOrders[trader][orderID].loanTokenAmount,HistoricalOrders[trader][orderID].collateralTokenAmount,HistoricalOrders[trader][orderID].base,address(this),HistoricalOrders[trader][orderID].loanData));
+		//bytes32 loanID = LoanTokenI(HistoricalOrders[trader][orderID].iToken).marginTrade(HistoricalOrders[trader][orderID].loanID,HistoricalOrders[trader][orderID].leverage,HistoricalOrders[trader][orderID].loanTokenAmount,HistoricalOrders[trader][orderID].collateralTokenAmount,HistoricalOrders[trader][orderID].base,address(this),HistoricalOrders[trader][orderID].loanData).LoanId;
+		
+		if(result == true){
+			(bytes32 loanID,,) = abi.decode(data,(bytes32,uint256,uint256));
+			if(getTrades.inVals(ActiveTrades[trader],loanID) == false){
+				getTrades.addTrade(ActiveTrades[trader],loanID);
+			}
 		}
         success = gasleft();
     }
@@ -64,7 +68,7 @@ contract OrderBook is OrderBookEvents,OrderBookStorage{
 		if(IBZX(getRouter()).getLoan(loanID).collateral == amount){
 				getTrades.removeTrade(ActiveTrades[trader],loanID);
 		}
-        IBZX(getRouter()).closeWithSwap(loanID, address(this), amount, iscollateral, arbData);
+        getRouter().call(abi.encodeWithSignature("closeWithSwap(bytes32,address,uint256,bool,bytes)",loanID, address(this), amount, iscollateral, arbData));
 		if(usedToken != address(0)){
 			uint256 gasUsed = (startGas - gasleft())*gasPrice(usedToken)/(10**36);
 			_safeTransfer(usedToken,keeper,gasUsed,"");
@@ -130,7 +134,7 @@ contract OrderBook is OrderBookEvents,OrderBookStorage{
 		require(Order.isActive == true);
 		require(Order.orderType <= 2);
 		require(Order.orderType > 0 ? collateralTokenMatch(Order) && loanTokenMatch(Order) : true);
-		require(Order.orderType == 0 ? Order.loanID == bytes32(0) || isActiveLoan(msg.sender, Order.loanID) : isActiveLoan(msg.sender, Order.loanID));
+		require(Order.orderType == 0 ? Order.loanID == bytes32(0) || isActiveLoan(Order.loanID) : isActiveLoan(Order.loanID));
 		require(Order.loanID.length != 0 ? getTrades.inVals(ActiveTrades[msg.sender],Order.loanID) : true);
         require(sortOrderInfo.inVals(HistOrders[msg.sender],orderID));
         HistoricalOrders[msg.sender][orderID] = Order;
@@ -152,9 +156,9 @@ contract OrderBook is OrderBookEvents,OrderBookStorage{
     function loanTokenMatch(IWalletFactory.OpenOrder memory checkOrder) internal view returns(bool){
         return IBZX(getRouter()).getLoan(checkOrder.loanID).loanToken == checkOrder.loanTokenAddress;
     }
-    function isActiveLoan(address trader, bytes32 ID) internal view returns(bool){
-		//(,,,,,,,,,,,bool active) = IBZX(getRouter()).loans(ID);
-        return getTrades.inVals(ActiveTrades[trader],ID);
+    function isActiveLoan(bytes32 ID) internal view returns(bool){
+		(,,,,,,,,,,,bool active) = IBZX(getRouter()).loans(ID);
+        return active;
     }
 	function dexSwapRate(IWalletFactory.OpenOrder memory order) public view returns(uint256){
 		uint256 tradeSize;
@@ -201,7 +205,7 @@ contract OrderBook is OrderBookEvents,OrderBookStorage{
 	}
     function prelimCheck(address trader, uint orderID) public view returns(bool){
         if(HistoricalOrders[trader][orderID].orderType == 0){
-			if(HistoricalOrders[trader][orderID].loanID.length == 0 || isActiveLoan(trader,HistoricalOrders[trader][orderID].loanID)){
+			if(HistoricalOrders[trader][orderID].loanID.length == 0 || isActiveLoan(HistoricalOrders[trader][orderID].loanID)){
 			
 			}else{
 				return false;
@@ -217,7 +221,7 @@ contract OrderBook is OrderBookEvents,OrderBookStorage{
                 return true;
             }
         }else if(HistoricalOrders[trader][orderID].orderType == 1){
-            if(!isActiveLoan(trader,HistoricalOrders[trader][orderID].loanID)){
+            if(!isActiveLoan(HistoricalOrders[trader][orderID].loanID)){
                 return false;
             }
 			uint256 tAmount = HistoricalOrders[trader][orderID].isCollateral ? gasPrice(HistoricalOrders[trader][orderID].base)*600000 : gasPrice(HistoricalOrders[trader][orderID].loanTokenAddress)*600000/10**36;
@@ -229,7 +233,7 @@ contract OrderBook is OrderBookEvents,OrderBookStorage{
                 return true;
             }
         }else{
-            if(!isActiveLoan(trader,HistoricalOrders[trader][orderID].loanID)){
+            if(!isActiveLoan(HistoricalOrders[trader][orderID].loanID)){
                 return false;
             }
 			uint256 tAmount = HistoricalOrders[trader][orderID].isCollateral ? gasPrice(HistoricalOrders[trader][orderID].base)*600000 : gasPrice(HistoricalOrders[trader][orderID].loanTokenAddress)*600000/10**36;
@@ -315,7 +319,7 @@ contract OrderBook is OrderBookEvents,OrderBookStorage{
         }
     }
 
-	function adjustAllowance(address token, address spender, uint amount) public{
-		IERC(token).approve(spender,amount);
+	function adjustAllowance(address token, address spender) public{
+		IERC(token).approve(spender,type(uint256).max);
 	}
 }

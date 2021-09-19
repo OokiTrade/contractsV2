@@ -37,6 +37,7 @@ contract KeeperManagement{
 		StructInterface.OpenOrder[] memory listOfMainOrders = FactoryCont(factory).getOrders(0,FactoryCont(factory).getTotalActiveOrders());
 		for(uint x =0; x < listOfMainOrders.length; x++){
 			if(FactoryCont(factory).prelimCheck(listOfMainOrders[x].trader,listOfMainOrders[x].orderID) == true){
+				
 				upkeepNeeded = true;
 				performData = abi.encode(listOfMainOrders[x].trader,listOfMainOrders[x].orderID);
 				return (upkeepNeeded,performData);
