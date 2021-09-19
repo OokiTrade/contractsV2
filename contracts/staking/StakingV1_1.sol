@@ -8,6 +8,7 @@ pragma experimental ABIEncoderV2;
 
 import "./StakingState.sol";
 import "./StakingConstants.sol";
+import "./StakingVoteDelegator.sol";
 import "../interfaces/IVestingToken.sol";
 import "../../interfaces/IBZx.sol";
 import "../../interfaces/IPriceFeeds.sol";
@@ -149,8 +150,9 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     {
         require(tokens.length == values.length, "count mismatch");
 
-        /*address currentDelegate = delegate[msg.sender];
-        if (currentDelegate == address(0)) {
+        StakingVoteDelegator _voteDelegator = StakingVoteDelegator(voteDelegator);
+        address currentDelegate = _voteDelegator.delegates(msg.sender);
+        /*if (currentDelegate == address(0)) {
             currentDelegate = msg.sender;
             delegate[msg.sender] = currentDelegate;
             _delegatedSet.addAddress(msg.sender);
@@ -189,13 +191,15 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
                     }
                 );
             }
+
             emit Stake(
                 msg.sender,
                 token,
-                msg.sender, //currentDelegate,
+                currentDelegate,
                 stakeAmount
             );
         }
+        _voteDelegator.delegate(currentDelegate);
     }
 
     function unstake(
@@ -208,7 +212,8 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     {
         require(tokens.length == values.length, "count mismatch");
 
-        //address currentDelegate = delegate[msg.sender];
+        StakingVoteDelegator _voteDelegator = StakingVoteDelegator(voteDelegator);
+        address currentDelegate = _voteDelegator.delegates(msg.sender);
 
         address token;
         uint256 unstakeAmount;
@@ -251,13 +256,13 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
                 );
 
             }
-
+            _voteDelegator.delegate(currentDelegate);
             IERC20(token).safeTransfer(msg.sender, unstakeAmount);
 
             emit Unstake(
                 msg.sender,
                 token,
-                msg.sender, //currentDelegate,
+                currentDelegate,
                 unstakeAmount
             );
         }
@@ -514,7 +519,9 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         uint256 amount)
         internal
     {
-        //address currentDelegate = delegate[account];
+        StakingVoteDelegator _voteDelegator = StakingVoteDelegator(voteDelegator);
+        address currentDelegate = _voteDelegator.delegates(msg.sender);
+
         _balancesPerToken[BZRX][account] = _balancesPerToken[BZRX][account]
             .add(amount);
 
@@ -524,10 +531,12 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         /*delegatedPerToken[currentDelegate][BZRX] = delegatedPerToken[currentDelegate][BZRX]
             .add(amount);*/
 
+        _voteDelegator.delegate(currentDelegate);
+
         emit Stake(
             account,
             BZRX,
-            account, //currentDelegate,
+            currentDelegate,
             amount
         );
     }
@@ -1056,7 +1065,9 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         }
     }
 
+    event Logger(string name, uint256 amount);
 
+    //event LoggerAddress(string name, address logAddress);
     // Governance Logic //
 
     function votingBalanceOf(
@@ -1066,7 +1077,17 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         view
         returns (uint256 totalVotes)
     {
-        return _votingBalanceOf(account, _proposalState[proposalId]);
+        (,,,uint256 startBlock,,,,,,) = GovernorBravoDelegateStorageV1(governor).proposals(proposalId);
+
+        if(startBlock == 0) return 1;
+        StakingVoteDelegator _voteDelegator = StakingVoteDelegator(voteDelegator);
+        address _delegate = _voteDelegator.delegates(account);
+
+        if(_delegate == ZERO_ADDRESS){ //has not delegated yet
+            return _voteDelegator.getPriorVotes(account, startBlock-1).add(_votingBalanceOf(account, _proposalState[proposalId]));
+        }
+
+        return _voteDelegator.getPriorVotes(_delegate, startBlock-1);
     }
 
     function votingBalanceOfNow(
@@ -1134,10 +1155,10 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             .add(totalVotes);
 
         // LPToken votes are measured based on amount of underlying BZRX staked
-        totalVotes = proposal.lpBZRXBalance
-            .mul(_balancesPerToken[LPToken][account])
-            .div(proposal.lpTotalSupply)
-            .add(totalVotes);
+//        totalVotes = proposal.lpBZRXBalance
+//            .mul(_balancesPerToken[LPToken][account])
+//            .div(proposal.lpTotalSupply)
+//            .add(totalVotes);
     }
 
     // OnlyOwner functions

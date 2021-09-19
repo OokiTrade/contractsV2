@@ -8,6 +8,12 @@ pragma experimental ABIEncoderV2;
 
 interface IStaking {
 
+    struct ProposalState {
+        uint256 proposalTime;
+        uint256 iBZRXWeight;
+        uint256 lpBZRXBalance;
+        uint256 lpTotalSupply;
+    }
 
     struct AltRewardsUserInfo {
         uint256 rewardsPerShare;
@@ -165,5 +171,10 @@ interface IStaking {
 
     function addAltRewards(address token, uint256 amount)
         external;
+
+    function governor()
+        external
+        view
+    returns(address);
 
 }

@@ -117,4 +117,11 @@ contract StakingAdminSettings is StakingState, StakingConstants, PausableGuardia
     {
         IERC20(_token).approve(_spender, _value);
     }
+
+    function setVoteDelegator(address stakingGovernance)
+        external
+        onlyOwner
+    {
+        voteDelegator = stakingGovernance;
+    }
 }
