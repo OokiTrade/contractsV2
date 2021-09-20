@@ -127,9 +127,7 @@ contract StakingVoteDelegator is StakingVoteDelegatorState, StakingVoteDelegator
         return checkpoints[account][lower].votes;
     }
 
-    function _delegate(address delegator, address delegatee)
-        internal
-    {
+    function _delegate(address delegator, address delegatee) internal {
         address currentDelegate = _delegates[delegator];
         uint256 delegatorBalance = staking.votingBalanceOfNow(delegator);
         _delegates[delegator] = delegatee;
