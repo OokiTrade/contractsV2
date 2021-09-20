@@ -20,11 +20,7 @@ contract StakingVoteDelegator is StakingVoteDelegatorState, StakingVoteDelegator
      * @notice Delegate votes from `msg.sender` to `delegatee`
      * @param delegator The address to get delegatee for
      */
-    function delegates(address delegator)
-        external
-        view
-    returns (address)
-    {
+    function delegates(address delegator) external view returns (address) {
         return _delegates[delegator];
     }
 
@@ -45,16 +41,7 @@ contract StakingVoteDelegator is StakingVoteDelegatorState, StakingVoteDelegator
      * @param r Half of the ECDSA signature pair
      * @param s Half of the ECDSA signature pair
      */
-    function delegateBySig(
-        address delegatee,
-        uint nonce,
-        uint expiry,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    )
-    external
-    {
+    function delegateBySig(address delegatee, uint nonce, uint expiry, uint8 v, bytes32 r, bytes32 s) external {
         bytes32 domainSeparator = keccak256(
             abi.encode(
                 DOMAIN_TYPEHASH,
@@ -93,11 +80,7 @@ contract StakingVoteDelegator is StakingVoteDelegatorState, StakingVoteDelegator
      * @param account The address to get votes balance
      * @return The number of current votes for `account`
      */
-    function getCurrentVotes(address account)
-        external
-        view
-    returns (uint256)
-    {
+    function getCurrentVotes(address account) external view returns (uint256) {
         uint32 nCheckpoints = numCheckpoints[account];
         return nCheckpoints > 0 ? checkpoints[account][nCheckpoints - 1].votes : 0;
     }
@@ -110,11 +93,7 @@ contract StakingVoteDelegator is StakingVoteDelegatorState, StakingVoteDelegator
      * @param blockNumber The block number to get the vote balance at
      * @return The number of votes the account had as of the given block
      */
-    function getPriorVotes(address account, uint blockNumber)
-        public
-        view
-    returns (uint256)
-    {
+    function getPriorVotes(address account, uint blockNumber) public view returns (uint256) {
         require(blockNumber < block.number, "Staking::getPriorVotes: not yet determined");
 
         uint32 nCheckpoints = numCheckpoints[account];
@@ -180,14 +159,7 @@ contract StakingVoteDelegator is StakingVoteDelegatorState, StakingVoteDelegator
         }
     }
 
-    function _writeCheckpoint(
-        address delegatee,
-        uint32 nCheckpoints,
-        uint256 oldVotes,
-        uint256 newVotes
-    )
-    internal
-    {
+    function _writeCheckpoint(address delegatee, uint32 nCheckpoints, uint256 oldVotes, uint256 newVotes) internal {
         uint32 blockNumber = safe32(block.number, "Staking::_writeCheckpoint: block number exceeds 32 bits");
 
         if (nCheckpoints > 0 && checkpoints[delegatee][nCheckpoints - 1].fromBlock == blockNumber) {

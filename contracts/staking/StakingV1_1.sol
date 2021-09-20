@@ -1065,11 +1065,6 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         }
     }
 
-    event Logger(string name, uint256 amount);
-
-    //event LoggerAddress(string name, address logAddress);
-    // Governance Logic //
-
     function votingBalanceOf(
         address account,
         uint256 proposalId)
@@ -1079,15 +1074,15 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     {
         (,,,uint256 startBlock,,,,,,) = GovernorBravoDelegateStorageV1(governor).proposals(proposalId);
 
-        if(startBlock == 0) return 1;
+        if (startBlock == 0) return 0;
         StakingVoteDelegator _voteDelegator = StakingVoteDelegator(voteDelegator);
         address _delegate = _voteDelegator.delegates(account);
 
-        if(_delegate == ZERO_ADDRESS){ //has not delegated yet
-            return _voteDelegator.getPriorVotes(account, startBlock-1).add(_votingBalanceOf(account, _proposalState[proposalId]));
+        if(_delegate == ZERO_ADDRESS) { // has not delegated yet
+            return _voteDelegator.getPriorVotes(account, startBlock - 1).add(_votingBalanceOf(account, _proposalState[proposalId]));
         }
 
-        return _voteDelegator.getPriorVotes(_delegate, startBlock-1);
+        return _voteDelegator.getPriorVotes(_delegate, startBlock - 1);
     }
 
     function votingBalanceOfNow(
