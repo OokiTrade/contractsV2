@@ -152,11 +152,9 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 
         StakingVoteDelegator _voteDelegator = StakingVoteDelegator(voteDelegator);
         address currentDelegate = _voteDelegator.delegates(msg.sender);
-        /*if (currentDelegate == address(0)) {
+        if (currentDelegate == ZERO_ADDRESS) {
             currentDelegate = msg.sender;
-            delegate[msg.sender] = currentDelegate;
-            _delegatedSet.addAddress(msg.sender);
-        }*/
+        }
 
         address token;
         uint256 stakeAmount;
@@ -214,7 +212,9 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 
         StakingVoteDelegator _voteDelegator = StakingVoteDelegator(voteDelegator);
         address currentDelegate = _voteDelegator.delegates(msg.sender);
-
+        if (currentDelegate == ZERO_ADDRESS) {
+            currentDelegate = msg.sender;
+        }
         address token;
         uint256 unstakeAmount;
         uint256 stakedAmount;
@@ -521,6 +521,9 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     {
         StakingVoteDelegator _voteDelegator = StakingVoteDelegator(voteDelegator);
         address currentDelegate = _voteDelegator.delegates(msg.sender);
+        if (currentDelegate == ZERO_ADDRESS) {
+            currentDelegate = msg.sender;
+        }
 
         _balancesPerToken[BZRX][account] = _balancesPerToken[BZRX][account]
             .add(amount);
