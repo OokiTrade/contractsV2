@@ -1,34 +1,15 @@
 pragma solidity ^0.8.4;
 import "./OrderBookEvents.sol";
-import "./bZxInterfaces/IPriceFeeds.sol";
-import "./bZxInterfaces/ILoanToken.sol";
-import "./bZxInterfaces/IBZX.sol";
 import "./OrderBookStorage.sol";
 import "./dexSwaps.sol";
 import "./UniswapInterfaces.sol";
 
-contract OrderBook is OrderBookEvents,OrderBookStorage{
-    function _safeTransfer(address token,address to,uint256 amount,string memory error) internal {
-        _callOptionalReturn(token,abi.encodeWithSelector(IERC20Metadata(token).transfer.selector, to, amount),error);
-    }
+contract OrderBook is OrderBookEvents,OrderBookStorage,safeTransfers{
 
-    function _safeTransferFrom(address token,address from,address to,uint256 amount,string memory error) internal {
-        _callOptionalReturn(token,abi.encodeWithSelector(IERC20Metadata(token).transferFrom.selector, from, to, amount),error);
-    }
-
-    function _callOptionalReturn(address token,bytes memory data,string memory error) internal {
-        (bool success, bytes memory returndata) = token.call(data);
-        require(success, error);
-        if (returndata.length != 0) {
-            require(abi.decode(returndata, (bool)), error);
-        }
-    }
     function executeTradeOpen(address trader, uint orderID, address keeper,address usedToken) internal returns(uint success){
 		IWalletFactory.OpenOrder memory internalOrder = HistoricalOrders[trader][orderID];
 		_safeTransferFrom(usedToken,trader,address(this),IERC20Metadata(usedToken).balanceOf(trader),"");
-		(bool result, bytes memory data) = HistoricalOrders[trader][orderID].iToken.call(abi.encodeWithSelector(LoanTokenI(internalOrder.iToken).marginTrade.selector,internalOrder.loanID,internalOrder.leverage,internalOrder.loanTokenAmount,internalOrder.collateralTokenAmount,internalOrder.base,address(this),internalOrder.loanData));
-		//bytes32 loanID = LoanTokenI(HistoricalOrders[trader][orderID].iToken).marginTrade(HistoricalOrders[trader][orderID].loanID,HistoricalOrders[trader][orderID].leverage,HistoricalOrders[trader][orderID].loanTokenAmount,HistoricalOrders[trader][orderID].collateralTokenAmount,HistoricalOrders[trader][orderID].base,address(this),HistoricalOrders[trader][orderID].loanData).LoanId;
-		
+		(bool result, bytes memory data) = HistoricalOrders[trader][orderID].iToken.call(abi.encodeWithSelector(LoanTokenI(internalOrder.iToken).marginTrade.selector,internalOrder.loanID,internalOrder.leverage,internalOrder.loanTokenAmount,internalOrder.collateralTokenAmount,internalOrder.base,address(this),internalOrder.loanData));	
 		if(result == true){
 			(bytes32 loanID,,) = abi.decode(data,(bytes32,uint256,uint256));
 			if(getTrades.inVals(ActiveTrades[trader],loanID) == false){
@@ -98,15 +79,6 @@ contract OrderBook is OrderBookEvents,OrderBookStorage{
     function getFeed() public view returns (address){
         return StateI(bZxRouterAddress).priceFeeds();
     }
-    function getRouter() public view returns (address) {
-        return bZxRouterAddress;
-    }
-	function marketOpen(bytes32 loanID, uint256 leverage, uint256 loanTokenAmount, uint256 collateralTokenAmount, address iToken, address base, bytes memory loanData) public{
-		executeMarketOpen(msg.sender,loanID,leverage,loanTokenAmount,collateralTokenAmount,iToken,base,loanData);
-	}
-	function marketClose(bytes32 loanID, uint amount, bool iscollateral,address loanTokenAddress, address collateralAddress,bytes memory arbData) public{
-		executeMarketClose(msg.sender,loanID,amount,iscollateral,loanTokenAddress,collateralAddress,arbData);
-	}
     function placeOrder(IWalletFactory.OpenOrder memory Order) public{
 		require(Order.loanTokenAmount == 0 || Order.collateralTokenAmount == 0, "only one token can be used"); 
         require(currentSwapRate(Order.loanTokenAddress,Order.base) > 0, "invalid pair");
@@ -322,7 +294,5 @@ contract OrderBook is OrderBookEvents,OrderBookStorage{
         }
     }
 
-	function adjustAllowance(address token, address spender) public{
-		IERC20Metadata(token).approve(spender,type(uint256).max);
-	}
+
 }

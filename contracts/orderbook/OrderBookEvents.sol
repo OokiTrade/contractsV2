@@ -3,9 +3,7 @@ import "./EnumLimits.sol";
 import "./EnumTraders.sol";
 import "./EnumOrders.sol";
 import "./IWalletFactor.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./WrappedToken.sol";
 contract OrderBookEvents is Ownable{
     using sortOrderInfo for sortOrderInfo.orderSet;
     mapping(address=>bool) internal  hasSmartWallet;

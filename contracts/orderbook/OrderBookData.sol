@@ -2,6 +2,12 @@ pragma solidity ^0.8.4;
 import "./OrderBookEvents.sol";
 import "./OrderBookStorage.sol";
 contract OrderBookData is OrderBookEvents,OrderBookStorage{
+    function getRouter() public view returns (address) {
+        return bZxRouterAddress;
+    }
+	function adjustAllowance(address token, address spender) public{
+		IERC20Metadata(token).approve(spender,type(uint256).max);
+	}
     function getActiveOrders(address smartWallet, uint start, uint count) public view returns(IWalletFactory.OpenOrder[] memory fullList){
         uint[] memory idSet = sortOrderInfo.enums(HistOrders[smartWallet],start,count);
         
