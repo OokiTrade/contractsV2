@@ -165,8 +165,9 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
         internal
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
     {
+		address swapImplementation = IDexRecords(swapsImpl).retreiveDexAddress(dexNumber);
         bytes memory data = abi.encodeWithSelector(
-            ISwapsImpl(swapsImpl).dexSwap.selector,
+            ISwapsImpl(IDexRecords(swapImplementation).retreiveDexAddress(dexNumber)).dexSwap.selector,
             addrs[0], // sourceToken
             addrs[1], // destToken
             addrs[2], // receiverAddress
@@ -178,7 +179,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
         );
 
         bool success;
-        (success, data) = swapsImpl.delegatecall(data);
+        (success, data) = swapImplementation.delegatecall(data);
         if (!success) {
             assembly {
                 let ptr := mload(0x40)
