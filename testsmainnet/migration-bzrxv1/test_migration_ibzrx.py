@@ -66,37 +66,37 @@ def iUSDC(accounts, LoanTokenLogicStandard):
     return Contract.from_abi("iUSDC", address="0x32E4c68B3A4a813b710595AebA7f6B7604Ab9c15", abi=LoanTokenLogicStandard.abi)
 
 
-def test_migration_ibzrx(requireMainnetFork, BZRX, OOKI, MIGRATOR, accounts, MINT_COORDINATOR, iBZRX, LoanTokenSettings, BZX, USDC, iUSDC, LoanTokenLogicStandard):
-    loanTokenSettings = accounts[0].deploy(LoanTokenSettings)
+def test_migration_ibzrx(requireMainnetFork, BZRX, OOKI, MIGRATOR, accounts, MINT_COORDINATOR, iBZRX, LoanTokenMigration, BZX, USDC, iUSDC, LoanTokenLogicStandard):
+    loanTokenMigration = accounts[0].deploy(LoanTokenMigration)
 
     # record balance before
     balanceOfBZRX = BZRX.balanceOf(iBZRX)
 
-    calldata = loanTokenSettings.migrate.encode_input(MIGRATOR)
-    iBZRX.updateSettings(loanTokenSettings, calldata, {"from": iBZRX.owner()})
+    calldata = loanTokenMigration.migrate.encode_input(MIGRATOR)
+    iBZRX.updateSettings(loanTokenMigration, calldata, {"from": iBZRX.owner()})
 
     balanceOfOOKI = OOKI.balanceOf(iBZRX)
     assert balanceOfBZRX == balanceOfOOKI
     assert iBZRX.loanTokenAddress() == OOKI
-    assert 
+    assert True
     
-    # TODO migrate loan params, this will be in the governance proposal
-    poolList = BZX.getLoanPoolsList(0, 20)
-    hashBorrow = web3.soliditySha3(["address", "bool"], [BZRX.address, True])
-    hashTrade = web3.soliditySha3(["address", "bool"], [BZRX.address, False])
-    for pool in poolList:
-        if pool == iBZRX or pool == "0xaB45Bf58c6482b87DA85D6688C4d9640E093BE98": # LEND
-            continue
-        iToken = Contract.from_abi("iToken", address=pool, abi=LoanTokenLogicStandard.abi)
-        print(iToken)
-        loanParamIdBorrow = iToken.loanParamsIds(hashBorrow)
-        time.sleep(1)
-        loanParamIdTrade = iToken.loanParamsIds(hashTrade)
-        time.sleep(1)
-        loanParamsBorrow = BZX.loanParams(loanParamIdBorrow)
-        time.sleep(1)
-        loanParamsTrade = BZX.loanParams(loanParamIdTrade)
-        print(loanParamsBorrow)
-        print(loanParamsTrade)
-        time.sleep(1)
-    assert False
+    # # TODO migrate loan params, this will be in the governance proposal
+    # poolList = BZX.getLoanPoolsList(0, 20)
+    # hashBorrow = web3.soliditySha3(["address", "bool"], [BZRX.address, True])
+    # hashTrade = web3.soliditySha3(["address", "bool"], [BZRX.address, False])
+    # for pool in poolList:
+    #     if pool == iBZRX or pool == "0xaB45Bf58c6482b87DA85D6688C4d9640E093BE98": # LEND
+    #         continue
+    #     iToken = Contract.from_abi("iToken", address=pool, abi=LoanTokenLogicStandard.abi)
+    #     print(iToken)
+    #     loanParamIdBorrow = iToken.loanParamsIds(hashBorrow)
+    #     time.sleep(1)
+    #     loanParamIdTrade = iToken.loanParamsIds(hashTrade)
+    #     time.sleep(1)
+    #     loanParamsBorrow = BZX.loanParams(loanParamIdBorrow)
+    #     time.sleep(1)
+    #     loanParamsTrade = BZX.loanParams(loanParamIdTrade)
+    #     print(loanParamsBorrow)
+    #     print(loanParamsTrade)
+    #     time.sleep(1)
+    

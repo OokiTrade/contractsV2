@@ -9,7 +9,6 @@ pragma experimental ABIEncoderV2;
 import "./AdvancedTokenStorage.sol";
 import "../../../interfaces/IBZx.sol";
 import "../../interfaces/IERC20Detailed.sol";
-import "../../../interfaces/IBZRXv2Converter.sol";
 
 contract LoanTokenSettings is AdvancedTokenStorage {
     using SafeMath for uint256;
@@ -23,8 +22,6 @@ contract LoanTokenSettings is AdvancedTokenStorage {
     bytes32 internal constant iToken_LowerAdminAddress = 0x7ad06df6a0af6bd602d90db766e0d5f253b45187c3717a0f9026ea8b10ff0d4b;    // keccak256("iToken_LowerAdminAddress")
     bytes32 internal constant iToken_LowerAdminContract = 0x34b31cff1dbd8374124bd4505521fc29cab0f9554a5386ba7d784a4e611c7e31;   // keccak256("iToken_LowerAdminContract")
 
-    address public constant OOKI = 0xC5c66f91fE2e395078E0b872232A20981bc03B15;
-    address public constant BZRX = 0x56d811088235F11C8920698a204A5010a788f4b3;
 
     function()
         external
@@ -121,23 +118,5 @@ contract LoanTokenSettings is AdvancedTokenStorage {
         decimals = IERC20Detailed(loanTokenAddress).decimals();
 
         initialPrice = WEI_PRECISION; // starting price of 1
-    }
-
-
-    function migrate(address converter) 
-        public
-    {
-        // migrates underlying BZRX
-        IERC20(BZRX).approve(address(converter), 2**256 - 1);
-        IBZRXv2Converter(converter).convert(address(this), IERC20(BZRX).balanceOf(address(this)));
-
-        // rename iBZRX -> iOOKI
-        loanTokenAddress = OOKI;
-        name = "OOKI";
-        symbol = "Fulcrum OOKI iToken";
-
-        // migrate loanParams
-        // is done separately calling `setupLoanParams` 
-
     }
 }
