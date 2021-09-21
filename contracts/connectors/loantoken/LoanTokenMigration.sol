@@ -5,10 +5,8 @@
 
 pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
-
-import "../../../interfaces/IBZx.sol";
-import "./AdvancedTokenStorage.sol";
-import "../../interfaces/IERC20Detailed.sol";
+ 
+import "./AdvancedTokenStorage.sol"; 
 import "../../../interfaces/IBZRXv2Converter.sol";
 
 contract LoanTokenMigration is AdvancedTokenStorage {
