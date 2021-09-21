@@ -108,11 +108,11 @@ contract OrderBook is OrderBookEvents,OrderBookStorage{
 		executeMarketClose(msg.sender,loanID,amount,iscollateral,loanTokenAddress,collateralAddress,arbData);
 	}
     function placeOrder(IWalletFactory.OpenOrder memory Order) public{
-		require(Order.loanTokenAmount == 0 || Order.collateralTokenAmount == 0); 
-        require(currentSwapRate(Order.loanTokenAddress,Order.base) > 0);
-		require(Order.orderType != IWalletFactory.OrderType.LIMIT_OPEN ? collateralTokenMatch(Order) && loanTokenMatch(Order) : true);
-		require(Order.orderType == IWalletFactory.OrderType.LIMIT_OPEN ? Order.loanID.length == 0 || isActiveLoan(Order.loanID) : isActiveLoan(Order.loanID));
-		require(Order.loanID.length != 0 ? getTrades.inVals(ActiveTrades[msg.sender],Order.loanID) : true);
+		require(Order.loanTokenAmount == 0 || Order.collateralTokenAmount == 0, "only one token can be used"); 
+        require(currentSwapRate(Order.loanTokenAddress,Order.base) > 0, "invalid pair");
+		require(Order.orderType != IWalletFactory.OrderType.LIMIT_OPEN ? collateralTokenMatch(Order) && loanTokenMatch(Order) : true, "incorrect collateral and/or loan token specified");
+		require(Order.orderType == IWalletFactory.OrderType.LIMIT_OPEN ? Order.loanID.length == 0 || isActiveLoan(Order.loanID) : isActiveLoan(Order.loanID), "inactive loan");
+		require(Order.loanID.length != 0 ? getTrades.inVals(ActiveTrades[msg.sender],Order.loanID) : true, "trader does not own the loan");
         HistoricalOrderIDs[msg.sender]++;
 		mainOBID++;
         Order.orderID = HistoricalOrderIDs[msg.sender];
@@ -122,8 +122,8 @@ contract OrderBook is OrderBookEvents,OrderBookStorage{
         HistoricalOrders[msg.sender][HistoricalOrderIDs[msg.sender]] = Order;
 		AllOrders[mainOBID].trader = msg.sender;
 		AllOrders[mainOBID].orderID = Order.orderID;
-        require(sortOrderInfo.addOrderNum(HistOrders[msg.sender],HistoricalOrderIDs[msg.sender]));
-		require(sortOrderInfo.addOrderNum(AllOrderIDs,mainOBID));
+        sortOrderInfo.addOrderNum(HistOrders[msg.sender],HistoricalOrderIDs[msg.sender]);
+		sortOrderInfo.addOrderNum(AllOrderIDs,mainOBID);
 		matchingID[msg.sender][HistoricalOrderIDs[msg.sender]] = mainOBID;
 		if(getActiveTraders.inVals(activeTraders,msg.sender) == false){
 			getActiveTraders.addTrader(activeTraders,msg.sender);
@@ -131,20 +131,20 @@ contract OrderBook is OrderBookEvents,OrderBookStorage{
         emit OrderPlaced(msg.sender,Order.orderType,Order.price,HistoricalOrderIDs[msg.sender],Order.base,Order.loanTokenAddress);            
     }
     function amendOrder(IWalletFactory.OpenOrder memory Order,uint orderID) public{
-		require(Order.loanTokenAmount == 0 || Order.collateralTokenAmount == 0); 
-        require(currentSwapRate(Order.loanTokenAddress,Order.base) > 0);
-		require(Order.trader == msg.sender);
-		require(Order.orderID == HistoricalOrders[msg.sender][orderID].orderID);
-		require(Order.isActive == true);
-		require(Order.orderType != IWalletFactory.OrderType.LIMIT_OPEN ? collateralTokenMatch(Order) && loanTokenMatch(Order) : true);
-		require(Order.orderType == IWalletFactory.OrderType.LIMIT_OPEN ? Order.loanID == bytes32(0) || isActiveLoan(Order.loanID) : isActiveLoan(Order.loanID));
-		require(Order.loanID.length != 0 ? getTrades.inVals(ActiveTrades[msg.sender],Order.loanID) : true);
+		require(Order.loanTokenAmount == 0 || Order.collateralTokenAmount == 0, "only one token can be used"); 
+        require(currentSwapRate(Order.loanTokenAddress,Order.base) > 0, "invalid pair");
+		require(Order.trader == msg.sender,"trader of order != sender");
+		require(Order.orderID == HistoricalOrders[msg.sender][orderID].orderID, "improper ID");
+		require(Order.isActive == true, "inactive order specified");
+		require(Order.orderType != IWalletFactory.OrderType.LIMIT_OPEN ? collateralTokenMatch(Order) && loanTokenMatch(Order) : true, "incorrect collateral and/or loan token specified");
+		require(Order.orderType == IWalletFactory.OrderType.LIMIT_OPEN ? Order.loanID == bytes32(0) || isActiveLoan(Order.loanID) : isActiveLoan(Order.loanID), "inactive loan");
+		require(Order.loanID.length != 0 ? getTrades.inVals(ActiveTrades[msg.sender],Order.loanID) : true, "trader does not own the loan");
         require(sortOrderInfo.inVals(HistOrders[msg.sender],orderID));
         HistoricalOrders[msg.sender][orderID] = Order;
         emit OrderAmended(msg.sender,Order.orderType,Order.price,orderID,Order.base,Order.loanTokenAddress); 
     }
     function cancelOrder(uint orderID) public{
-        require(HistoricalOrders[msg.sender][orderID].isActive == true);
+        require(HistoricalOrders[msg.sender][orderID].isActive == true, "inactive order");
         HistoricalOrders[msg.sender][orderID].isActive = false;
         sortOrderInfo.removeOrderNum(HistOrders[msg.sender],orderID);
 		sortOrderInfo.removeOrderNum(AllOrderIDs,matchingID[msg.sender][orderID]);
@@ -282,7 +282,7 @@ contract OrderBook is OrderBookEvents,OrderBookStorage{
         require(HistoricalOrders[trader][orderID].isActive, "non active" );
 		//HistoricalOrders[trader][orderID].collateralTokenAmount > 0 ? checkCollateralAllowance(HistoricalOrders[trader][orderID]) : checkLoanTokenAllowance(HistoricalOrders[trader][orderID]);
         if(HistoricalOrders[trader][orderID].orderType == IWalletFactory.OrderType.LIMIT_OPEN){
-            require(HistoricalOrders[trader][orderID].price >= dexSwapRate(HistoricalOrders[trader][orderID]));
+            require(HistoricalOrders[trader][orderID].price >= dexSwapRate(HistoricalOrders[trader][orderID]),"invalid swap rate");
 			address usedToken = HistoricalOrders[trader][orderID].collateralTokenAmount > HistoricalOrders[trader][orderID].loanTokenAmount ? HistoricalOrders[trader][orderID].base : HistoricalOrders[trader][orderID].loanTokenAddress;
 
 			_safeTransfer(usedToken,keeper,(startGas - executeTradeOpen(trader, orderID, keeper,usedToken))*gasPrice(usedToken)/(10**36),""); 
@@ -297,7 +297,7 @@ contract OrderBook is OrderBookEvents,OrderBookStorage{
             return;
         }
         if(HistoricalOrders[trader][orderID].orderType == IWalletFactory.OrderType.LIMIT_CLOSE){
-            require(HistoricalOrders[trader][orderID].price <= dexSwapRate(HistoricalOrders[trader][orderID]));
+            require(HistoricalOrders[trader][orderID].price <= dexSwapRate(HistoricalOrders[trader][orderID]),"invalid swap rate");
             executeTradeClose(trader, keeper,HistoricalOrders[trader][orderID].loanID,HistoricalOrders[trader][orderID].collateralTokenAmount,HistoricalOrders[trader][orderID].isCollateral, HistoricalOrders[trader][orderID].loanTokenAddress, HistoricalOrders[trader][orderID].base,startGas,HistoricalOrders[trader][orderID].loanData);
             HistoricalOrders[trader][orderID].isActive = false;
             sortOrderInfo.removeOrderNum(AllOrderIDs,matchingID[trader][orderID]);
@@ -309,7 +309,7 @@ contract OrderBook is OrderBookEvents,OrderBookStorage{
             return;
         }
         if(HistoricalOrders[trader][orderID].orderType == IWalletFactory.OrderType.MARKET_STOP){
-            require(HistoricalOrders[trader][orderID].price >= currentSwapRate(HistoricalOrders[trader][orderID].base,HistoricalOrders[trader][orderID].loanTokenAddress) && priceCheck(HistoricalOrders[trader][orderID].loanTokenAddress,HistoricalOrders[trader][orderID].base));
+            require(HistoricalOrders[trader][orderID].price >= currentSwapRate(HistoricalOrders[trader][orderID].base,HistoricalOrders[trader][orderID].loanTokenAddress) && priceCheck(HistoricalOrders[trader][orderID].loanTokenAddress,HistoricalOrders[trader][orderID].base),"invalid swap rate");
             executeTradeClose(trader, keeper,HistoricalOrders[trader][orderID].loanID,HistoricalOrders[trader][orderID].collateralTokenAmount,HistoricalOrders[trader][orderID].isCollateral, HistoricalOrders[trader][orderID].loanTokenAddress, HistoricalOrders[trader][orderID].base,startGas,HistoricalOrders[trader][orderID].loanData);
             HistoricalOrders[trader][orderID].isActive = false;
 			sortOrderInfo.removeOrderNum(AllOrderIDs,matchingID[trader][orderID]);
