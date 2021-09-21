@@ -152,9 +152,6 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 
         StakingVoteDelegator _voteDelegator = StakingVoteDelegator(voteDelegator);
         address currentDelegate = _voteDelegator.delegates(msg.sender);
-        if (currentDelegate == ZERO_ADDRESS) {
-            currentDelegate = msg.sender;
-        }
 
         address token;
         uint256 stakeAmount;
@@ -197,7 +194,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
                 stakeAmount
             );
         }
-        _voteDelegator.delegate(currentDelegate);
+        _voteDelegator.delegate(msg.sender, currentDelegate);
     }
 
     function unstake(
@@ -212,9 +209,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 
         StakingVoteDelegator _voteDelegator = StakingVoteDelegator(voteDelegator);
         address currentDelegate = _voteDelegator.delegates(msg.sender);
-        if (currentDelegate == ZERO_ADDRESS) {
-            currentDelegate = msg.sender;
-        }
+
         address token;
         uint256 unstakeAmount;
         uint256 stakedAmount;
@@ -256,7 +251,6 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
                 );
 
             }
-            _voteDelegator.delegate(currentDelegate);
             IERC20(token).safeTransfer(msg.sender, unstakeAmount);
 
             emit Unstake(
@@ -266,6 +260,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
                 unstakeAmount
             );
         }
+        _voteDelegator.delegate(msg.sender, currentDelegate);
     }
 
     /*function changeDelegate(
@@ -521,9 +516,6 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     {
         StakingVoteDelegator _voteDelegator = StakingVoteDelegator(voteDelegator);
         address currentDelegate = _voteDelegator.delegates(msg.sender);
-        if (currentDelegate == ZERO_ADDRESS) {
-            currentDelegate = msg.sender;
-        }
 
         _balancesPerToken[BZRX][account] = _balancesPerToken[BZRX][account]
             .add(amount);
@@ -534,14 +526,14 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         /*delegatedPerToken[currentDelegate][BZRX] = delegatedPerToken[currentDelegate][BZRX]
             .add(amount);*/
 
-        _voteDelegator.delegate(currentDelegate);
-
         emit Stake(
             account,
             BZRX,
             currentDelegate,
             amount
         );
+
+        _voteDelegator.delegate(msg.sender, currentDelegate);
     }
 
     function exit()
@@ -1068,33 +1060,35 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         }
     }
 
+    function stakingVotes(address account)
+        external
+        view
+        returns (uint256 totalVotes)
+    {
+        return _votingBalanceOf(account, _getProposalState(), true);
+    }
+
     function votingBalanceOf(
         address account,
         uint256 proposalId)
-        public
+        external
         view
         returns (uint256 totalVotes)
     {
         (,,,uint256 startBlock,,,,,,) = GovernorBravoDelegateStorageV1(governor).proposals(proposalId);
 
         if (startBlock == 0) return 0;
-        StakingVoteDelegator _voteDelegator = StakingVoteDelegator(voteDelegator);
-        address _delegate = _voteDelegator.delegates(account);
 
-        if(_delegate == ZERO_ADDRESS) { // has not delegated yet
-            return _voteDelegator.getPriorVotes(account, startBlock - 1).add(_votingBalanceOf(account, _proposalState[proposalId]));
-        }
-
-        return _voteDelegator.getPriorVotes(_delegate, startBlock - 1);
+        return __votingBalanceOf(account, _proposalState[proposalId], startBlock - 1);
     }
 
     function votingBalanceOfNow(
         address account)
-        public
+        external
         view
         returns (uint256 totalVotes)
     {
-        return _votingBalanceOf(account, _getProposalState());
+        return __votingBalanceOf(account,  _getProposalState(), block.number - 1);
     }
 
     function _setProposalVals(
@@ -1108,7 +1102,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         ProposalState memory newProposal = _getProposalState();
         _proposalState[proposalId] = newProposal;
 
-        return _votingBalanceOf(account, newProposal);
+        return __votingBalanceOf(account,  _getProposalState(), block.number - 1);
     }
 
     function _getProposalState()
@@ -1126,13 +1120,13 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 
     function _votingBalanceOf(
         address account,
-        ProposalState memory proposal)
+        ProposalState memory proposal, bool skipVestingLastSyncCheck)
         internal
         view
         returns (uint256 totalVotes)
     {
         uint256 _vestingLastSync = vestingLastSync[account];
-        if (proposal.proposalTime == 0 || _vestingLastSync > proposal.proposalTime - 1) {
+        if (proposal.proposalTime == 0 || (!skipVestingLastSyncCheck && _vestingLastSync > proposal.proposalTime - 1)) {
             return 0;
         }
 
@@ -1157,6 +1151,25 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 //            .mul(_balancesPerToken[LPToken][account])
 //            .div(proposal.lpTotalSupply)
 //            .add(totalVotes);
+    }
+
+    //Voting balance including delegated votes
+    function __votingBalanceOf(
+        address account,
+        ProposalState memory proposal,
+        uint blocknumber)
+    internal
+    view
+    returns (uint256 totalVotes)
+    {
+        StakingVoteDelegator _voteDelegator = StakingVoteDelegator(voteDelegator);
+        address _delegate = _voteDelegator.delegates(account);
+
+        if(_delegate == ZERO_ADDRESS) { // has not delegated yet
+            return _voteDelegator.getPriorVotes(account, blocknumber).add(_votingBalanceOf(account, proposal, false));
+        }
+
+        return _voteDelegator.getPriorVotes(account, blocknumber);
     }
 
     // OnlyOwner functions

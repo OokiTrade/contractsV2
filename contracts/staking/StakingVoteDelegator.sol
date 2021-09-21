@@ -29,7 +29,27 @@ contract StakingVoteDelegator is StakingVoteDelegatorState, StakingVoteDelegator
      * @param delegatee The address to delegate votes to
      */
     function delegate(address delegatee) external {
+        if(delegatee == ZERO_ADDRESS){
+            delegatee = msg.sender;
+        }
         return _delegate(msg.sender, delegatee);
+    }
+
+    /**
+     * @notice Delegate votes from `msg.sender` to `delegatee`
+     * @param delegatee The address to delegate votes to
+     * @param delegator The address to get delegatee for
+     */
+    function delegate(address delegator, address delegatee) external {
+        require(msg.sender == address(staking), "unauthorized");
+
+        if(delegatee == ZERO_ADDRESS){
+            delegatee = delegator;
+        }
+        if(delegator != delegatee){
+            _delegate(delegator, delegator);
+        }
+        _delegate(delegator, delegatee);
     }
 
     /**
@@ -129,7 +149,7 @@ contract StakingVoteDelegator is StakingVoteDelegatorState, StakingVoteDelegator
 
     function _delegate(address delegator, address delegatee) internal {
         address currentDelegate = _delegates[delegator];
-        uint256 delegatorBalance = staking.votingBalanceOfNow(delegator);
+        uint256 delegatorBalance = staking.stakingVotes(delegator);
         _delegates[delegator] = delegatee;
 
         emit DelegateChanged(delegator, currentDelegate, delegatee);
@@ -143,7 +163,7 @@ contract StakingVoteDelegator is StakingVoteDelegatorState, StakingVoteDelegator
                 // decrease old representative
                 uint32 srcRepNum = numCheckpoints[srcRep];
                 uint256 srcRepOld = srcRepNum > 0 ? checkpoints[srcRep][srcRepNum - 1].votes : 0;
-                uint256 srcRepNew = srcRepOld.sub(amount);
+                uint256 srcRepNew = srcRepOld.sub( (amount > srcRepOld)? srcRepOld : amount);
                 _writeCheckpoint(srcRep, srcRepNum, srcRepOld, srcRepNew);
             }
 

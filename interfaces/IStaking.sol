@@ -160,6 +160,12 @@ interface IStaking {
         view
         returns (uint256 totalVotes);
 
+    function stakingVotes(
+        address account)
+        external
+        view
+    returns (uint256 totalVotes);
+
     function _setProposalVals(
         address account,
         uint256 proposalId)

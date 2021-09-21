@@ -27,8 +27,8 @@ contract StakingState is StakingUpgradeable {
     mapping(address => uint256) internal _totalSupplyPerToken;                      // token => value
     mapping(address => mapping(address => uint256)) internal _balancesPerToken;     // token => account => value
 
-    mapping(address => address) public delegate;                                    // user => delegate
-    mapping(address => mapping(address => uint256)) public delegatedPerToken;       // token => user => value
+    mapping(address => address) internal delegate;                                    // user => delegate
+    mapping(address => mapping(address => uint256)) internal delegatedPerToken;       // token => user => value
 
     uint256 public bzrxPerTokenStored;
     mapping(address => uint256) public bzrxRewardsPerTokenPaid;                     // user => value
