@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021, bZxDao. All Rights Reserved.
+ * Copyright 2017-2021, bZeroX, LLC <https://bzx.network/>. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -10,7 +10,7 @@ import "../../interfaces/IPriceFeeds.sol";
 import "../events/SwapsEvents.sol";
 import "../mixins/FeesHelper.sol";
 import "./ISwapsImpl.sol";
-
+import "./IDexRecords.sol";
 
 contract SwapsUser is State, SwapsEvents, FeesHelper {
 
@@ -124,11 +124,11 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
         } else {
             require(vals[0] <= vals[1], "min greater than max");
         }
-
-        require(loanDataBytes.length == 0, "invalid state");
+	
         (destTokenAmountReceived, sourceTokenAmountUsed) = _swapsCall_internal(
             addrs,
-            vals
+            vals,
+			loanDataBytes
         );
 
         if (vals[2] == 0) {
@@ -160,7 +160,8 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
 
     function _swapsCall_internal(
         address[5] memory addrs,
-        uint256[3] memory vals)
+        uint256[3] memory vals,
+		bytes memory payload)
         internal
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
     {
@@ -172,7 +173,8 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
             addrs[3], // returnToSenderAddress
             vals[0],  // minSourceTokenAmount
             vals[1],  // maxSourceTokenAmount
-            vals[2]   // requiredDestTokenAmount
+            vals[2],   // requiredDestTokenAmount,
+			payload
         );
 
         bool success;
@@ -192,7 +194,8 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
     function _swapsExpectedReturn(
         address sourceToken,
         address destToken,
-        uint256 sourceTokenAmount)
+        uint256 sourceTokenAmount,
+		bytes memory payload)
         internal
         view
         returns (uint256 expectedReturn)
@@ -202,10 +205,9 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
             sourceTokenAmount = sourceTokenAmount
                 .sub(tradingFee);
         }
-
-        (expectedReturn,) = ISwapsImpl(swapsImpl).dexAmountOut(
-            sourceToken,
-            destToken,
+		(uint256 dexNumber,bytes memory route) = abi.decode(payload,(uint256,bytes));
+        (expectedReturn,) = ISwapsImpl(IDexRecords(swapsImpl).retreiveDexAddress(dexNumber)).dexAmountOut(
+            route,
             sourceTokenAmount
         );
     }

@@ -1,9 +1,9 @@
 /**
- * Copyright 2017-2021, bZxDao. All Rights Reserved.
+ * Copyright 2017-2021, bZeroX, LLC <https://bzx.network/>. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+pragma solidity ^0.5.17;
 
 
 interface ISwapsImpl {
@@ -14,7 +14,8 @@ interface ISwapsImpl {
         address returnToSenderAddress,
         uint256 minSourceTokenAmount,
         uint256 maxSourceTokenAmount,
-        uint256 requiredDestTokenAmount)
+        uint256 requiredDestTokenAmount,
+		bytes calldata payload)
         external
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed);
 
@@ -27,16 +28,14 @@ interface ISwapsImpl {
         returns (uint256);
 
     function dexAmountOut(
-        address sourceTokenAddress,
-        address destTokenAddress,
+		bytes calldata route,
         uint256 amountIn)
         external
         view
         returns (uint256 amountOut, address midToken);
 
     function dexAmountIn(
-        address sourceTokenAddress,
-        address destTokenAddress,
+        bytes calldata route,
         uint256 amountOut)
         external
         view
