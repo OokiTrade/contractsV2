@@ -126,11 +126,10 @@ contract LoanTokenSettings is AdvancedTokenStorage {
 
     function migrate(address converter) 
         public
-        onlyOwner 
     {
         // migrates underlying BZRX
-        // IERC20(BZRX).approve(address(converter), 2**256 - 1);
-        // IBZRXv2Converter(converter).convert(address(this), IERC20(BZRX).balanceOf(address(this)));
+        IERC20(BZRX).approve(address(converter), 2**256 - 1);
+        IBZRXv2Converter(converter).convert(address(this), IERC20(BZRX).balanceOf(address(this)));
 
         // rename iBZRX -> iOOKI
         loanTokenAddress = OOKI;
