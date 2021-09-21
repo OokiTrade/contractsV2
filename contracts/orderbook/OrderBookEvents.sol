@@ -3,8 +3,10 @@ import "./EnumLimits.sol";
 import "./EnumTraders.sol";
 import "./EnumOrders.sol";
 import "./IWalletFactor.sol";
-import "./IERC.sol";
-contract OrderBookEvents{
+import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "./WrappedToken.sol";
+contract OrderBookEvents is Ownable{
     using sortOrderInfo for sortOrderInfo.orderSet;
     mapping(address=>bool) internal  hasSmartWallet;
     mapping(address=>address) internal smartWalletOwnership;
@@ -19,22 +21,8 @@ contract OrderBookEvents{
 	sortOrderInfo.orderSet internal AllOrderIDs;
 	getActiveTraders.orderSet internal activeTraders;
     event OrderCancelled(address indexed smartWallet,uint nonce);
-    event OrderPlaced(address indexed smartWallet, uint indexed OrderType, uint indexed execPrice,uint orderID, address collateralTokenAddress, address loanTokenAddress);
+    event OrderPlaced(address indexed smartWallet, IWalletFactory.OrderType indexed OrderType, uint indexed execPrice,uint orderID, address collateralTokenAddress, address loanTokenAddress);
     event OrderExecuted(address indexed smartWallet,uint nonce);
-    event OrderAmended(address indexed smartWallet, uint indexed OrderType, uint indexed execPrice,uint orderID, address collateralTokenAddress, address loanTokenAddress);
-    function _safeTransfer(address token,address to,uint256 amount,string memory error) internal {
-        _callOptionalReturn(token,abi.encodeWithSelector(IERC(token).transfer.selector, to, amount),error);
-    }
+    event OrderAmended(address indexed smartWallet, IWalletFactory.OrderType indexed OrderType, uint indexed execPrice,uint orderID, address collateralTokenAddress, address loanTokenAddress);
 
-    function _safeTransferFrom(address token,address from,address to,uint256 amount,string memory error) internal {
-        _callOptionalReturn(token,abi.encodeWithSelector(IERC(token).transferFrom.selector, from, to, amount),error);
-    }
-
-    function _callOptionalReturn(address token,bytes memory data,string memory error) internal {
-        (bool success, bytes memory returndata) = token.call(data);
-        require(success, error);
-        if (returndata.length != 0) {
-            require(abi.decode(returndata, (bool)), error);
-        }
-    }
 }

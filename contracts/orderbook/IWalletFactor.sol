@@ -1,5 +1,10 @@
 pragma solidity ^0.8.4;
 interface IWalletFactory{
+	enum OrderType{
+		LIMIT_OPEN,
+		LIMIT_CLOSE,
+		MARKET_STOP
+	}
     struct OpenOrder{
         address trader;
         bytes32 loanID;
@@ -11,11 +16,12 @@ interface IWalletFactory{
         uint collateralTokenAmount;
         bool isActive;
         address base;
-        uint orderType;
+        OrderType orderType;
         bool isCollateral;
         uint orderID;
         bytes loanData;
     }
+
 	struct OrderQueue{
 		address trader;
 		uint orderID;
