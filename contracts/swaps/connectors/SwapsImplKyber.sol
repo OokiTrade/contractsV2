@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021, bZxDao. All Rights Reserved.
+ * Copyright 2017-2021, bZeroX, LLC <https://bzx.network/>. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -7,7 +7,7 @@ pragma solidity 0.5.17;
 
 import "../../core/State.sol";
 import "../../../interfaces/IPriceFeeds.sol";
-import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
+import "../../openzeppelin/SafeERC20.sol";
 import "../ISwapsImpl.sol";
 
 

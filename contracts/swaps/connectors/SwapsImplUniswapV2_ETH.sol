@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021, bZxDao. All Rights Reserved.
+ * Copyright 2017-2021, bZeroX, LLC. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -7,7 +7,7 @@ pragma solidity 0.5.17;
 
 import "../../core/State.sol";
 import "../../interfaces/IUniswapV2Router.sol";
-import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
+import "../../openzeppelin/SafeERC20.sol";
 import "../ISwapsImpl.sol";
 
 
@@ -29,7 +29,8 @@ contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
         address returnToSenderAddress,
         uint256 minSourceTokenAmount,
         uint256 maxSourceTokenAmount,
-        uint256 requiredDestTokenAmount)
+        uint256 requiredDestTokenAmount,
+		bytes memory payload)
         public
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
     {
@@ -69,13 +70,13 @@ contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
     }
 
     function dexAmountOut(
-        address sourceTokenAddress,
-        address destTokenAddress,
+        bytes memory route,
         uint256 amountIn)
         public
         view
         returns (uint256 amountOut, address midToken)
     {
+		(address sourceTokenAddress,address destTokenAddress) = abi.decode(route,(address,address));
         if (sourceTokenAddress == destTokenAddress) {
             amountOut = amountIn;
         } else if (amountIn != 0) {
@@ -129,13 +130,13 @@ contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
     }
 
     function dexAmountIn(
-        address sourceTokenAddress,
-        address destTokenAddress,
+        bytes memory route,
         uint256 amountOut)
         public
         view
         returns (uint256 amountIn, address midToken)
     {
+		(address sourceTokenAddress,address destTokenAddress) = abi.decode(route,(address,address));
         if (sourceTokenAddress == destTokenAddress) {
             amountIn = amountOut;
         } else if (amountOut != 0) {
