@@ -1,6 +1,6 @@
 pragma solidity ^0.8.4;
-import "./OrderBookStorage.sol";
-import "./OrderBookEvents.sol";
+import "./Storage/OrderBookStorage.sol";
+import "./Storage/OrderBookEvents.sol";
 
 contract OrderBookProxy is OrderBookEvents, OrderBookStorage{
 	mapping(bytes4 => address) internal implMatch;
