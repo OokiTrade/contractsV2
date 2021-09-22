@@ -156,6 +156,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         address token;
         uint256 stakeAmount;
 
+        uint256 votingBalanceBefore = _votingBalanceOf(msg.sender, _getProposalState(), true);
 
         for (uint256 i = 0; i < tokens.length; i++) {
             token = tokens[i];
@@ -194,7 +195,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
                 stakeAmount
             );
         }
-        _voteDelegator.delegate(msg.sender, currentDelegate);
+        _voteDelegator.moveDelegates(ZERO_ADDRESS, currentDelegate, _votingBalanceOf(msg.sender, _getProposalState(), true) - votingBalanceBefore);
     }
 
     function unstake(
@@ -213,6 +214,8 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         address token;
         uint256 unstakeAmount;
         uint256 stakedAmount;
+
+        uint256 votingBalanceBefore = _votingBalanceOf(msg.sender, _getProposalState(), true);
 
         for (uint256 i = 0; i < tokens.length; i++) {
             token = tokens[i];
@@ -260,7 +263,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
                 unstakeAmount
             );
         }
-        _voteDelegator.delegate(msg.sender, currentDelegate);
+        _voteDelegator.moveDelegates(currentDelegate, ZERO_ADDRESS, votingBalanceBefore - _votingBalanceOf(msg.sender, _getProposalState(), true));
     }
 
     /*function changeDelegate(
@@ -516,7 +519,8 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     {
         StakingVoteDelegator _voteDelegator = StakingVoteDelegator(voteDelegator);
         address currentDelegate = _voteDelegator.delegates(msg.sender);
-
+        uint256 votingBalanceBefore = _votingBalanceOf(msg.sender, _getProposalState(), true);
+        
         _balancesPerToken[BZRX][account] = _balancesPerToken[BZRX][account]
             .add(amount);
 
@@ -533,7 +537,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             amount
         );
 
-        _voteDelegator.delegate(msg.sender, currentDelegate);
+        _voteDelegator.moveDelegates(ZERO_ADDRESS, currentDelegate, _votingBalanceOf(msg.sender, _getProposalState(), true) - votingBalanceBefore);
     }
 
     function exit()

@@ -11,10 +11,12 @@ import "../governance/GovernorBravoDelegate.sol";
 import "../../interfaces/IStaking.sol";
 import "./StakingVoteDelegatorState.sol";
 import "./StakingVoteDelegatorConstants.sol";
+import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 
 
 contract StakingVoteDelegator is StakingVoteDelegatorState, StakingVoteDelegatorConstants {
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
 
     /**
      * @notice Delegate votes from `msg.sender` to `delegatee`
@@ -33,23 +35,6 @@ contract StakingVoteDelegator is StakingVoteDelegatorState, StakingVoteDelegator
             delegatee = msg.sender;
         }
         return _delegate(msg.sender, delegatee);
-    }
-
-    /**
-     * @notice Delegate votes from `msg.sender` to `delegatee`
-     * @param delegatee The address to delegate votes to
-     * @param delegator The address to get delegatee for
-     */
-    function delegate(address delegator, address delegatee) external {
-        require(msg.sender == address(staking), "unauthorized");
-
-        if(delegatee == ZERO_ADDRESS){
-            delegatee = delegator;
-        }
-        if(delegator != delegatee){
-            _delegate(delegator, delegator);
-        }
-        _delegate(delegator, delegatee);
     }
 
     /**
@@ -157,13 +142,18 @@ contract StakingVoteDelegator is StakingVoteDelegatorState, StakingVoteDelegator
         _moveDelegates(currentDelegate, delegatee, delegatorBalance);
     }
 
+    function moveDelegates(address srcRep, address dstRep, uint256 amount) public {
+        require(msg.sender == address(staking) , "unauthorized");
+        _moveDelegates(srcRep, dstRep, amount);
+    }
+
     function _moveDelegates(address srcRep, address dstRep, uint256 amount) internal {
         if (srcRep != dstRep && amount > 0) {
             if (srcRep != address(0)) {
                 // decrease old representative
                 uint32 srcRepNum = numCheckpoints[srcRep];
                 uint256 srcRepOld = srcRepNum > 0 ? checkpoints[srcRep][srcRepNum - 1].votes : 0;
-                uint256 srcRepNew = srcRepOld.sub( (amount > srcRepOld)? srcRepOld : amount);
+                uint256 srcRepNew = srcRepOld.sub((amount > srcRepOld)? srcRepOld : amount);
                 _writeCheckpoint(srcRep, srcRepNum, srcRepOld, srcRepNew);
             }
 
