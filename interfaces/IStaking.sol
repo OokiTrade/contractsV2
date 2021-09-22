@@ -160,11 +160,11 @@ interface IStaking {
         view
         returns (uint256 totalVotes);
 
-    function stakingVotes(
+    function votingFromStakedBalanceOf(
         address account)
         external
         view
-    returns (uint256 totalVotes);
+        returns (uint256 totalVotes);
 
     function _setProposalVals(
         address account,
@@ -181,6 +181,6 @@ interface IStaking {
     function governor()
         external
         view
-    returns(address);
+        returns(address);
 
 }

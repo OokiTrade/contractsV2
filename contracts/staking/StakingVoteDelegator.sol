@@ -134,7 +134,7 @@ contract StakingVoteDelegator is StakingVoteDelegatorState, StakingVoteDelegator
 
     function _delegate(address delegator, address delegatee) internal {
         address currentDelegate = _delegates[delegator];
-        uint256 delegatorBalance = staking.stakingVotes(delegator);
+        uint256 delegatorBalance = staking.votingFromStakedBalanceOf(delegator);
         _delegates[delegator] = delegatee;
 
         emit DelegateChanged(delegator, currentDelegate, delegatee);
@@ -143,7 +143,7 @@ contract StakingVoteDelegator is StakingVoteDelegatorState, StakingVoteDelegator
     }
 
     function moveDelegates(address srcRep, address dstRep, uint256 amount) public {
-        require(msg.sender == address(staking) , "unauthorized");
+        require(msg.sender == address(staking), "unauthorized");
         _moveDelegates(srcRep, dstRep, amount);
     }
 
