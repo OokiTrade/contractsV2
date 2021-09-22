@@ -6,12 +6,12 @@
 pragma solidity 0.5.17;
 
 import "../../core/State.sol";
-import "../../interfaces/IUniswapV2Router.sol";
+import "../../interface/IUniswapV2Router.sol";
 import "../../openzeppelin/SafeERC20.sol";
 import "../ISwapsImpl.sol";
 
 
-contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
+contract SwapsImplUniswapV2_ETH is State {
     using SafeERC20 for IERC20;
 
     // mainnet

@@ -165,6 +165,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
         internal
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
     {
+		(uint256 dexNumber,bytes memory route) = abi.decode(payload,(uint256,bytes));
 		address swapImplementation = IDexRecords(swapsImpl).retreiveDexAddress(dexNumber);
         bytes memory data = abi.encodeWithSelector(
             ISwapsImpl(IDexRecords(swapImplementation).retreiveDexAddress(dexNumber)).dexSwap.selector,
@@ -175,7 +176,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
             vals[0],  // minSourceTokenAmount
             vals[1],  // maxSourceTokenAmount
             vals[2],   // requiredDestTokenAmount,
-			payload
+			route
         );
 
         bool success;
@@ -207,7 +208,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
                 .sub(tradingFee);
         }
 		(uint256 dexNumber,bytes memory route) = abi.decode(payload,(uint256,bytes));
-        (expectedReturn,) = ISwapsImpl(IDexRecords(swapsImpl).retreiveDexAddress(dexNumber)).dexAmountOut(
+        expectedReturn = ISwapsImpl(IDexRecords(swapsImpl).retreiveDexAddress(dexNumber)).dexAmountOut(
             route,
             sourceTokenAmount
         );

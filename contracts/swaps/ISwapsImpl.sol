@@ -32,14 +32,14 @@ interface ISwapsImpl {
         uint256 amountIn)
         external
         view
-        returns (uint256 amountOut, address midToken);
+        returns (uint256 amountOut);
 
     function dexAmountIn(
         bytes calldata route,
         uint256 amountOut)
         external
         view
-        returns (uint256 amountIn, address midToken);
+        returns (uint256 amountIn);
 
     function setSwapApprovals(
         address[] calldata tokens)

@@ -1,4 +1,5 @@
 pragma solidity 0.5.17;
+pragma experimental ABIEncoderV2;
 
 
 interface IUniswapV3SwapRouter{
@@ -36,8 +37,8 @@ interface IUniswapV3SwapRouter{
         uint256 amountOut;
         uint256 amountInMaximum;
     }
-	  function exactInput(ExactInputParams params
+	  function exactInput(ExactInputParams calldata params
 	  ) external returns (uint256 amountOut);
-	  function exactOutput(ExactOutputParams params
+	  function exactOutput(ExactOutputParams calldata params
 	  ) external returns (uint256 amountIn);
 }

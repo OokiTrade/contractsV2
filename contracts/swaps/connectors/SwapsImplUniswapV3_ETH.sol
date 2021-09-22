@@ -4,9 +4,8 @@
  */
 
 pragma solidity 0.5.17;
-
+pragma experimental ABIEncoderV2;
 import "../../core/State.sol";
-import "../../interfaces/IUniswapV2Router.sol";
 import "../../openzeppelin/SafeERC20.sol";
 import "../ISwapsImpl.sol";
 import "../v3Interfaces/IUniswapV3SwapRouter.sol";
@@ -14,15 +13,9 @@ import "../v3Interfaces/uniswapQuoter.sol";
 
 contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
     using SafeERC20 for IERC20;
-
-    // mainnet
-    //address public constant uniswapRouter = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;   // uniswap
-    address public constant uniswapRouter = 0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F;     // sushiswap
-    address public constant dai = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
-    address public constant usdc = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-    address public constant usdt = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
-
-
+	
+	address public uniswapSwapRouter;
+	address public uniswapQuoteContract;
     function dexSwap(
         address sourceTokenAddress,
         address destTokenAddress,
@@ -105,15 +98,16 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
 
     function _getAmountOut(
         uint256 amountIn,
-        address[] memory path)
+        bytes memory path)
         public
         view
-        returns (uint256 amountOut)
+        returns (uint256)
     {
-        amountOut = uniswapQuoter.quoteExactInput(path,amountIn);
+        (uint256 amountOut,,,) = uniswapQuoter(uniswapQuoteContract).quoteExactInput(path,amountIn);
         if (amountOut == 0) {
             amountOut = uint256(-1);
         }
+		return amountOut;
     }
 
     function _getAmountIn(
@@ -121,12 +115,13 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
         bytes memory path)
         public
         view
-        returns (uint256 amountIn)
+        returns (uint256)
     {
-        amountIn = uniswapQuoter.quoteExactOutput(path,amoutOut);
+        (uint256 amountIn,,,) = uniswapQuoter(uniswapQuoteContract).quoteExactOutput(path,amountOut);
         if (amountIn == 0) {
             amountIn = uint256(-1);
         }
+		return amountIn;
     }
 
     function setSwapApprovals(
@@ -134,8 +129,8 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
         public
     {
         for (uint256 i = 0; i < tokens.length; i++) {
-            IERC20(tokens[i]).safeApprove(uniswapRouter, 0);
-            IERC20(tokens[i]).safeApprove(uniswapRouter, uint256(-1));
+            IERC20(tokens[i]).safeApprove(uniswapSwapRouter, 0);
+            IERC20(tokens[i]).safeApprove(uniswapSwapRouter, uint256(-1));
         }
     }
 
@@ -180,7 +175,7 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                 amountOutMinimum: 1
             });
 		
-        destTokenAmountReceived = IUniswapV3SwapRouter(uniswapRouter).exactInput(swapParams);
+        destTokenAmountReceived = IUniswapV3SwapRouter(uniswapSwapRouter).exactInput(swapParams);
 		require(destToken.balanceOf(receiverAddress)-startingBalance==destTokenAmountReceived,"improper receive token");
     }
 }
