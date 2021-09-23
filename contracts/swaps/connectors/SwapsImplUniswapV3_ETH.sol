@@ -13,9 +13,10 @@ import "../v3Interfaces/uniswapQuoter.sol";
 
 contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
     using SafeERC20 for IERC20;
-	
-	address public uniswapSwapRouter;
-	address public uniswapQuoteContract;
+
+    address public uniswapSwapRouter;
+    address public uniswapQuoteContract;
+
     function dexSwap(
         address sourceTokenAddress,
         address destTokenAddress,
@@ -24,12 +25,17 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
         uint256 minSourceTokenAmount,
         uint256 maxSourceTokenAmount,
         uint256 requiredDestTokenAmount,
-		bytes memory payload)
+        bytes memory payload
+    )
         public
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
     {
         require(sourceTokenAddress != destTokenAddress, "source == dest");
-        require(supportedTokens[sourceTokenAddress] && supportedTokens[destTokenAddress], "invalid tokens");
+        require(
+            supportedTokens[sourceTokenAddress] &&
+                supportedTokens[destTokenAddress],
+            "invalid tokens"
+        );
 
         IERC20 sourceToken = IERC20(sourceTokenAddress);
         address _thisAddress = address(this);
@@ -41,14 +47,17 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
             minSourceTokenAmount,
             maxSourceTokenAmount,
             requiredDestTokenAmount,
-			payload
+            payload
         );
 
-        if (returnToSenderAddress != _thisAddress && sourceTokenAmountUsed < maxSourceTokenAmount) {
+        if (
+            returnToSenderAddress != _thisAddress &&
+            sourceTokenAmountUsed < maxSourceTokenAmount
+        ) {
             // send unused source token back
             sourceToken.safeTransfer(
                 returnToSenderAddress,
-                maxSourceTokenAmount-sourceTokenAmountUsed
+                maxSourceTokenAmount - sourceTokenAmountUsed
             );
         }
     }
@@ -56,20 +65,15 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
     function dexExpectedRate(
         address sourceTokenAddress,
         address destTokenAddress,
-        uint256 sourceTokenAmount)
-        public
-        view
-        returns (uint256 expectedRate)
-    {
+        uint256 sourceTokenAmount
+    ) public view returns (uint256 expectedRate) {
         revert("unsupported");
     }
 
-    function dexAmountOut(
-        bytes memory route,
-        uint256 amountIn)
+    function dexAmountOut(bytes memory route, uint256 amountIn)
         public
         view
-        returns (uint256 amountOut)
+        returns (uint256 amountOut, address midToken)
     {
         if (amountIn == 0) {
             amountOut = 0;
@@ -78,56 +82,49 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
         }
     }
 
-    function dexAmountIn(
-        bytes memory route,
-        uint256 amountOut)
+    function dexAmountIn(bytes memory route, uint256 amountOut)
         public
         view
-        returns (uint256 amountIn)
+        returns (uint256 amountIn, address midToken)
     {
         if (amountOut != 0) {
             amountIn = _getAmountIn(amountOut, route);
-			
+
             if (amountIn == uint256(-1)) {
                 amountIn = 0;
             }
-        }else{
-			amountIn = 0;
-		}
+        } else {
+            amountIn = 0;
+        }
     }
 
-    function _getAmountOut(
-        uint256 amountIn,
-        bytes memory path)
+    function _getAmountOut(uint256 amountIn, bytes memory path)
         public
         view
         returns (uint256)
     {
-        (uint256 amountOut,,,) = uniswapQuoter(uniswapQuoteContract).quoteExactInput(path,amountIn);
+        (uint256 amountOut, , , ) = uniswapQuoter(uniswapQuoteContract)
+            .quoteExactInput(path, amountIn);
         if (amountOut == 0) {
             amountOut = uint256(-1);
         }
-		return amountOut;
+        return amountOut;
     }
 
-    function _getAmountIn(
-        uint256 amountOut,
-        bytes memory path)
+    function _getAmountIn(uint256 amountOut, bytes memory path)
         public
         view
         returns (uint256)
     {
-        (uint256 amountIn,,,) = uniswapQuoter(uniswapQuoteContract).quoteExactOutput(path,amountOut);
+        (uint256 amountIn, , , ) = uniswapQuoter(uniswapQuoteContract)
+            .quoteExactOutput(path, amountOut);
         if (amountIn == 0) {
             amountIn = uint256(-1);
         }
-		return amountIn;
+        return amountIn;
     }
 
-    function setSwapApprovals(
-        address[] memory tokens)
-        public
-    {
+    function setSwapApprovals(address[] memory tokens) public {
         for (uint256 i = 0; i < tokens.length; i++) {
             IERC20(tokens[i]).safeApprove(uniswapSwapRouter, 0);
             IERC20(tokens[i]).safeApprove(uniswapSwapRouter, uint256(-1));
@@ -141,24 +138,28 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
         uint256 minSourceTokenAmount,
         uint256 maxSourceTokenAmount,
         uint256 requiredDestTokenAmount,
-		bytes memory payload)
+        bytes memory payload
+    )
         internal
         returns (uint256 sourceTokenAmountUsed, uint256 destTokenAmountReceived)
     {
         IERC20 destToken = IERC20(destTokenAddress);
-		uint256 startingBalance = destToken.balanceOf(receiverAddress);
+        uint256 startingBalance = destToken.balanceOf(receiverAddress);
         if (requiredDestTokenAmount != 0) {
-            (sourceTokenAmountUsed) = dexAmountIn(
+            (sourceTokenAmountUsed, ) = dexAmountIn(
                 payload,
                 requiredDestTokenAmount
             );
             if (sourceTokenAmountUsed == 0) {
                 return (0, 0);
             }
-            require(sourceTokenAmountUsed <= maxSourceTokenAmount, "source amount too high");
+            require(
+                sourceTokenAmountUsed <= maxSourceTokenAmount,
+                "source amount too high"
+            );
         } else {
             sourceTokenAmountUsed = minSourceTokenAmount;
-            (destTokenAmountReceived) = dexAmountOut(
+            (destTokenAmountReceived, ) = dexAmountOut(
                 payload,
                 sourceTokenAmountUsed
             );
@@ -166,16 +167,21 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                 return (0, 0);
             }
         }
-        IUniswapV3SwapRouter.ExactInputParams memory swapParams =
-            IUniswapV3SwapRouter.ExactInputParams({
+        IUniswapV3SwapRouter.ExactInputParams
+            memory swapParams = IUniswapV3SwapRouter.ExactInputParams({
                 path: payload,
                 recipient: receiverAddress,
                 deadline: block.timestamp,
                 amountIn: sourceTokenAmountUsed,
                 amountOutMinimum: 1
             });
-		
-        destTokenAmountReceived = IUniswapV3SwapRouter(uniswapSwapRouter).exactInput(swapParams);
-		require(destToken.balanceOf(receiverAddress)-startingBalance==destTokenAmountReceived,"improper receive token");
+
+        destTokenAmountReceived = IUniswapV3SwapRouter(uniswapSwapRouter)
+            .exactInput(swapParams);
+        require(
+            destToken.balanceOf(receiverAddress) - startingBalance ==
+                destTokenAmountReceived,
+            "improper receive token"
+        );
     }
 }

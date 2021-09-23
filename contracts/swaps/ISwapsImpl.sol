@@ -5,7 +5,6 @@
 
 pragma solidity ^0.5.17;
 
-
 interface ISwapsImpl {
     function dexSwap(
         address sourceTokenAddress,
@@ -15,33 +14,29 @@ interface ISwapsImpl {
         uint256 minSourceTokenAmount,
         uint256 maxSourceTokenAmount,
         uint256 requiredDestTokenAmount,
-		bytes calldata payload)
+        bytes calldata payload
+    )
         external
-        returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed);
+        returns (
+            uint256 destTokenAmountReceived,
+            uint256 sourceTokenAmountUsed
+        );
 
     function dexExpectedRate(
         address sourceTokenAddress,
         address destTokenAddress,
-        uint256 sourceTokenAmount)
+        uint256 sourceTokenAmount
+    ) external view returns (uint256);
+
+    function dexAmountOut(bytes calldata route, uint256 amountIn)
         external
         view
-        returns (uint256);
+        returns (uint256 amountOut, address midToken);
 
-    function dexAmountOut(
-		bytes calldata route,
-        uint256 amountIn)
+    function dexAmountIn(bytes calldata route, uint256 amountOut)
         external
         view
-        returns (uint256 amountOut);
+        returns (uint256 amountIn, address midToken);
 
-    function dexAmountIn(
-        bytes calldata route,
-        uint256 amountOut)
-        external
-        view
-        returns (uint256 amountIn);
-
-    function setSwapApprovals(
-        address[] calldata tokens)
-        external;
+    function setSwapApprovals(address[] calldata tokens) external;
 }
