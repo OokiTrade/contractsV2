@@ -6,7 +6,6 @@ description = "Upgrade DAO, Staking, maintenance and B.Protocol"
 
 
 DAOGuardiansMultisig = "0x2a599cEba64CAb8C88549c2c7314ea02A161fC70"
-DAOTimeLockTreasury = "0xfedC4dD5247B93feb41e899A09C44cFaBec29Cbc"
 
 targets = []
 values = []
