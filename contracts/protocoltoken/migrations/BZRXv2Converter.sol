@@ -39,7 +39,7 @@ contract BZRXv2Converter is Ownable {
         );
 
         // we mint burned amount
-        MINT_COORDINATOR.mint(receiver, _tokenAmount);
+        MINT_COORDINATOR.mint(receiver, _tokenAmount * 10); // we do a 10x split
 
         // overflow condition cannot be reached since the above will throw for bad amounts
         totalConverted += _tokenAmount;
