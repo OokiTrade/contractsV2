@@ -30,11 +30,6 @@ interface IStaking {
         view
         returns (uint256);
 
-    //Temporary, will remove it after migrationn
-    function stakingRewards(address)
-        external
-        view
-        returns (uint256);
 
     function isPaused()
         external
@@ -72,25 +67,12 @@ interface IStaking {
     )
         external;
 
-    function stake(
-        address[] calldata tokens,
-        uint256[] calldata values,
-        bool claimSushi
-    )
-        external;
-
     function unstake(
         address[] calldata tokens,
         uint256[] calldata values
     )
         external;
 
-    function unstake(
-        address[] calldata tokens,
-        uint256[] calldata values,
-        bool claimSushi
-    )
-        external;
 
     function earned(address account)
         external
@@ -100,9 +82,19 @@ interface IStaking {
             uint256 stableCoinRewardsEarned,
             uint256 bzrxRewardsVesting,
             uint256 stableCoinRewardsVesting,
-            uint256 sushiRewardsEarned,
-            uint256 crvRewardsEarned
+            uint256 sushiRewardsEarned
         );
+
+    function pendingCrvRewards(address account)
+    external
+    view
+    returns (
+        uint256 bzrxRewardsEarned,
+        uint256 stableCoinRewardsEarned,
+        uint256 bzrxRewardsVesting,
+        uint256 stableCoinRewardsVesting,
+        uint256 sushiRewardsEarned
+    );
 
     function getVariableWeights()
         external

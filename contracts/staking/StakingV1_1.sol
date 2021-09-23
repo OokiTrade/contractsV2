@@ -50,6 +50,24 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         );
     }
 
+
+    function pendingCrvRewards(address account) external returns(uint256){
+        (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned, uint256 bzrxRewardsVesting, uint256 stableCoinRewardsVesting) = _earned(
+            account,
+            bzrxPerTokenStored,
+            stableCoinPerTokenStored
+        );
+
+        (,stableCoinRewardsEarned) = _syncVesting(
+            account,
+            bzrxRewardsEarned,
+            stableCoinRewardsEarned,
+            bzrxRewardsVesting,
+            stableCoinRewardsVesting
+        );
+        return _pendingCrvRewards(account, stableCoinRewardsEarned);
+    }
+
     function _pendingCrvRewards(address _user, uint256 stableCoinRewardsEarned)
         internal
         returns (uint256)
@@ -523,8 +541,9 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     function earned(
         address account)
         external
+        view
         returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned, uint256 bzrxRewardsVesting,
-            uint256 stableCoinRewardsVesting, uint256 sushiRewardsEarned, uint256 crvRewardsEarned)
+            uint256 stableCoinRewardsVesting, uint256 sushiRewardsEarned)
     {
         (bzrxRewardsEarned, stableCoinRewardsEarned, bzrxRewardsVesting, stableCoinRewardsVesting) = _earned(
             account,
@@ -566,8 +585,6 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             balanceOfByAsset(LPToken, account),
             (_totalSupplyPerToken[LPToken] != 0) ? pendingSushi.mul(1e12).div(_totalSupplyPerToken[LPToken]) : 0
         );
-
-        crvRewardsEarned  = _pendingCrvRewards(account, stableCoinRewardsEarned);
     }
 
     function _earned(
