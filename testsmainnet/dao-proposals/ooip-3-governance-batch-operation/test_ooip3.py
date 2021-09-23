@@ -68,6 +68,8 @@ def testGovernanceProposal(requireMainnetFork, accounts, DAO, BZRX, TIMELOCK):
     # upgrade DAO implementation
     implementation = DAO.implementation()
     assert implementation == daoImpl
+    assert DAO.proposalMaxOperations() == 100
+    assert DAO.quorumVotes() == 41200000e18
     
     # upgrade STAKING implementation
     assert stakingProxy.implementation() == stakingImpl
