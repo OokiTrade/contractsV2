@@ -732,6 +732,15 @@ interface IBZx {
 
     function getGuardian() external view returns (address guardian);
 
+    /// Loan Cleanup Interface
+
+    function cleanupLoans(
+        address loanToken,
+        bytes32[] calldata loanIds)
+        external
+        payable
+        returns (uint256 totalPrincipalIn);
+
     struct LoanParams {
         bytes32 id;
         bool active;
