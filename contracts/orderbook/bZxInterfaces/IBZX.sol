@@ -1,25 +1,26 @@
 pragma solidity ^0.8.4;
-abstract contract IBZX{
+
+abstract contract IBZX {
     enum LoanType {
         All,
         Margin,
         NonMargin
     }
     struct Loan {
-        bytes32 id;                 // id of the loan
-        bytes32 loanParamsId;       // the linked loan params id
-        bytes32 pendingTradesId;    // the linked pending trades id
-        uint256 principal;          // total borrowed amount outstanding
-        uint256 collateral;         // total collateral escrowed for the loan
-        uint256 startTimestamp;     // loan start time
-        uint256 endTimestamp;       // for active loans, this is the expected loan end time, for in-active loans, is the actual (past) end time
-        uint256 startMargin;        // initial margin when the loan opened
-        uint256 startRate;          // reference rate when the loan opened for converting collateralToken to loanToken
-        address borrower;           // borrower of this loan
-        address lender;             // lender of this loan
-        bool active;                // if false, the loan has been fully closed
+        bytes32 id; // id of the loan
+        bytes32 loanParamsId; // the linked loan params id
+        bytes32 pendingTradesId; // the linked pending trades id
+        uint256 principal; // total borrowed amount outstanding
+        uint256 collateral; // total collateral escrowed for the loan
+        uint256 startTimestamp; // loan start time
+        uint256 endTimestamp; // for active loans, this is the expected loan end time, for in-active loans, is the actual (past) end time
+        uint256 startMargin; // initial margin when the loan opened
+        uint256 startRate; // reference rate when the loan opened for converting collateralToken to loanToken
+        address borrower; // borrower of this loan
+        address lender; // lender of this loan
+        bool active; // if false, the loan has been fully closed
     }
-	mapping (bytes32 => Loan) public loans; 
+    mapping(bytes32 => Loan) public loans;
     struct LoanReturnData {
         bytes32 loanId; // id of the loan
         uint96 endTimestamp; // loan end timestamp
@@ -39,36 +40,40 @@ abstract contract IBZX{
         uint256 depositValueAsLoanToken; // net value of deposit denominated as loanToken
         uint256 depositValueAsCollateralToken; // net value of deposit denominated as collateralToken
     }
-        function closeWithSwap(
+
+    function closeWithSwap(
         bytes32 loanId,
         address receiver,
         uint256 swapAmount, // denominated in collateralToken
         bool returnTokenIsCollateral, // true: withdraws collateralToken, false: withdraws loanToken
-        bytes calldata loanDataBytes)
-        external virtual
+        bytes calldata loanDataBytes
+    )
+        external
+        virtual
         returns (
             uint256 loanCloseAmount,
             uint256 withdrawAmount,
-            address withdrawToken);
+            address withdrawToken
+        );
+
     function getUserLoans(
         address user,
         uint256 start,
         uint256 count,
         LoanType loanType,
         bool isLender,
-        bool unsafeOnly)
-        external virtual
+        bool unsafeOnly
+    ) external view virtual returns (LoanReturnData[] memory loansData);
+
+    function getUserLoansCount(address user, bool isLender)
+        external
         view
-        returns (LoanReturnData[] memory loansData);
-    function getUserLoansCount(
-        address user,
-        bool isLender)
-        external virtual
-        view
+        virtual
         returns (uint256);
-    function getLoan(
-        bytes32 loanId)
-        external virtual
+
+    function getLoan(bytes32 loanId)
+        external
         view
+        virtual
         returns (LoanReturnData memory loanData);
 }
