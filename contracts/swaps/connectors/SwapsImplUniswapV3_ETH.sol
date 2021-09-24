@@ -186,9 +186,8 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
             ).multicall(encodedTXs);
             uint256 totaledAmountIn = 0;
             for (uint256 x = 0; x < trueAmountsIn.length; x++) {
-                totaledAmountIn =
-                    totaledAmountIn +
-                    abi.decode(trueAmountsIn[x], (uint256));
+                uint256 tempAmountIn = abi.decode(trueAmountsIn[x], (uint256));
+                totaledAmountIn = totaledAmountIn + tempAmountIn;
             }
             sourceTokenAmountUsed = totaledAmountIn;
             destTokenAmountReceived = requiredDestTokenAmount;
@@ -220,15 +219,17 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                 );
             }
             sourceTokenAmountUsed = totalAmounts;
-            require(totalAmounts <= maxSourceTokenAmount);
+            require(totalAmounts == minSourceTokenAmount);
             bytes[] memory trueAmountsOut = IUniswapV3SwapRouter(
                 uniswapSwapRouter
             ).multicall(encodedTXs);
             uint256 totaledAmountOut = 0;
             for (uint256 x = 0; x < trueAmountsOut.length; x++) {
-                totaledAmountOut =
-                    totaledAmountOut +
-                    abi.decode(trueAmountsOut[x], (uint256));
+                uint256 tempAmountOut = abi.decode(
+                    trueAmountsOut[x],
+                    (uint256)
+                );
+                totaledAmountOut = totaledAmountOut + tempAmountOut;
             }
             destTokenAmountReceived = totaledAmountOut;
         }
