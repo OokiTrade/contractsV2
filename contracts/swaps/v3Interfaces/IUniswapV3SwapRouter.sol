@@ -1,4 +1,4 @@
-pragma solidity 0.5.17;
+pragma solidity 0.6.0;
 pragma experimental ABIEncoderV2;
 
 interface IUniswapV3SwapRouter {
@@ -44,4 +44,5 @@ interface IUniswapV3SwapRouter {
     function exactOutput(ExactOutputParams calldata params)
         external
         returns (uint256 amountIn);
+	function multicall(bytes[] calldata data) external payable override returns (bytes[] memory results)
 }

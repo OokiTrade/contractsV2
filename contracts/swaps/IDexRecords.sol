@@ -1,4 +1,4 @@
-pragma solidity ^0.5.17;
+pragma solidity 0.6.0;
 
 interface IDexRecords {
     function retreiveDexAddress(uint256 dexNumber)
