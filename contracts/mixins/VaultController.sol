@@ -8,7 +8,6 @@ pragma solidity 0.5.17;
 import "../core/Constants.sol";
 import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 
-
 contract VaultController is Constants {
     using SafeERC20 for IERC20;
 
@@ -23,26 +22,14 @@ contract VaultController is Constants {
         uint256 amount
     );
 
-    function vaultEtherDeposit(
-        address from,
-        uint256 value)
-        internal
-    {
+    function vaultEtherDeposit(address from, uint256 value) internal {
         IWethERC20 _wethToken = wethToken;
         _wethToken.deposit.value(value)();
 
-        emit VaultDeposit(
-            address(_wethToken),
-            from,
-            value
-        );
+        emit VaultDeposit(address(_wethToken), from, value);
     }
 
-    function vaultEtherWithdraw(
-        address to,
-        uint256 value)
-        internal
-    {
+    function vaultEtherWithdraw(address to, uint256 value) internal {
         if (value != 0) {
             IWethERC20 _wethToken = wethToken;
             uint256 balance = address(this).balance;
@@ -51,52 +38,31 @@ contract VaultController is Constants {
             }
             Address.sendValue(address(uint160(to)), value);
 
-            emit VaultWithdraw(
-                address(_wethToken),
-                to,
-                value
-            );
+            emit VaultWithdraw(address(_wethToken), to, value);
         }
     }
 
     function vaultDeposit(
         address token,
         address from,
-        uint256 value)
-        internal
-    {
+        uint256 value
+    ) internal {
         if (value != 0) {
-            IERC20(token).safeTransferFrom(
-                from,
-                address(this),
-                value
-            );
+            IERC20(token).safeTransferFrom(from, address(this), value);
 
-            emit VaultDeposit(
-                token,
-                from,
-                value
-            );
+            emit VaultDeposit(token, from, value);
         }
     }
 
     function vaultWithdraw(
         address token,
         address to,
-        uint256 value)
-        internal
-    {
+        uint256 value
+    ) internal {
         if (value != 0) {
-            IERC20(token).safeTransfer(
-                to,
-                value
-            );
+            IERC20(token).safeTransfer(to, value);
 
-            emit VaultWithdraw(
-                token,
-                to,
-                value
-            );
+            emit VaultWithdraw(token, to, value);
         }
     }
 
@@ -104,21 +70,13 @@ contract VaultController is Constants {
         address token,
         address from,
         address to,
-        uint256 value)
-        internal
-    {
+        uint256 value
+    ) internal {
         if (value != 0) {
             if (from == address(this)) {
-                IERC20(token).safeTransfer(
-                    to,
-                    value
-                );
+                IERC20(token).safeTransfer(to, value);
             } else {
-                IERC20(token).safeTransferFrom(
-                    from,
-                    to,
-                    value
-                );
+                IERC20(token).safeTransferFrom(from, to, value);
             }
         }
     }
@@ -126,9 +84,8 @@ contract VaultController is Constants {
     function vaultApprove(
         address token,
         address to,
-        uint256 value)
-        internal
-    {
+        uint256 value
+    ) internal {
         if (value != 0 && IERC20(token).allowance(address(this), to) != 0) {
             IERC20(token).safeApprove(to, 0);
         }

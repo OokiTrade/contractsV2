@@ -44,5 +44,10 @@ interface IUniswapV3SwapRouter {
     function exactOutput(ExactOutputParams calldata params)
         external
         returns (uint256 amountIn);
-	function multicall(bytes[] calldata data) external payable override returns (bytes[] memory results)
+
+    function multicall(bytes[] calldata data)
+        external
+        payable
+        override
+        returns (bytes[] memory results);
 }
