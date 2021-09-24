@@ -16,8 +16,8 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
     using SafeERC20 for IERC20;
     using Path for bytes;
     using BytesLib for bytes;
-    address public uniswapSwapRouter;
-    address public uniswapQuoteContract;
+    address public uniswapSwapRouter = 0xE592427A0AEce92De3Edee1F18E0157C05861564; //mainnet
+    address public uniswapQuoteContract = 0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6; //mainnet
 
     function dexSwap(
         address sourceTokenAddress,
