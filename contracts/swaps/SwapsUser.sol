@@ -4,6 +4,7 @@
  */
 
 pragma solidity 0.6.0;
+pragma experimental ABIEncoderV2;
 
 import "../core/State.sol";
 import "../../interfaces/IPriceFeeds.sol";
@@ -196,7 +197,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
         if (!success) {
             assembly {
                 let ptr := mload(0x40)
-                let size := returndatasize
+                let size := returndatasize()
                 returndatacopy(ptr, 0, size)
                 revert(ptr, size)
             }
@@ -213,7 +214,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
         address destToken,
         uint256 sourceTokenAmount,
         bytes memory payload
-    ) internal view returns (uint256 expectedReturn) {
+    ) internal returns (uint256 expectedReturn, address midToken) {
         uint256 tradingFee = _getTradingFee(sourceTokenAmount);
         if (tradingFee != 0) {
             sourceTokenAmount = sourceTokenAmount.sub(tradingFee);
@@ -222,7 +223,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
             payload,
             (uint256, bytes)
         );
-        expectedReturn = ISwapsImpl(
+        (expectedReturn, midToken) = ISwapsImpl(
             IDexRecords(swapsImpl).retreiveDexAddress(dexNumber)
         ).dexAmountOut(route, sourceTokenAmount);
     }

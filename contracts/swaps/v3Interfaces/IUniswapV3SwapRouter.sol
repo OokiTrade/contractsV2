@@ -48,6 +48,5 @@ interface IUniswapV3SwapRouter {
     function multicall(bytes[] calldata data)
         external
         payable
-        override
         returns (bytes[] memory results);
 }
