@@ -16,8 +16,10 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
     using SafeERC20 for IERC20;
     using Path for bytes;
     using BytesLib for bytes;
-    address public uniswapSwapRouter = 0xE592427A0AEce92De3Edee1F18E0157C05861564; //mainnet
-    address public uniswapQuoteContract = 0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6; //mainnet
+    address public uniswapSwapRouter =
+        0xE592427A0AEce92De3Edee1F18E0157C05861564; //mainnet
+    address public uniswapQuoteContract =
+        0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6; //mainnet
 
     function dexSwap(
         address sourceTokenAddress,
@@ -30,7 +32,7 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
         bytes memory payload
     )
         public
-		override
+        override
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
     {
         require(sourceTokenAddress != destTokenAddress, "source == dest");
@@ -68,13 +70,13 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
         address sourceTokenAddress,
         address destTokenAddress,
         uint256 sourceTokenAmount
-    ) public override view returns (uint256 expectedRate) {
+    ) public view override returns (uint256 expectedRate) {
         revert("unsupported");
     }
 
     function dexAmountOut(bytes memory route, uint256 amountIn)
         public
-		override
+        override
         returns (uint256 amountOut, address midToken)
     {
         if (amountIn == 0) {
@@ -86,7 +88,7 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
 
     function dexAmountIn(bytes memory route, uint256 amountOut)
         public
-		override
+        override
         returns (uint256 amountIn, address midToken)
     {
         if (amountOut != 0) {
@@ -124,7 +126,7 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
         return amountIn;
     }
 
-    function setSwapApprovals(address[] memory tokens) public override{
+    function setSwapApprovals(address[] memory tokens) public override {
         for (uint256 i = 0; i < tokens.length; i++) {
             IERC20(tokens[i]).safeApprove(uniswapSwapRouter, 0);
             IERC20(tokens[i]).safeApprove(uniswapSwapRouter, uint256(-1));
@@ -143,19 +145,24 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
         returns (uint256 sourceTokenAmountUsed, uint256 destTokenAmountReceived)
     {
         if (requiredDestTokenAmount != 0) {
-            (
-                IUniswapV3SwapRouter.ExactOutputParams[] memory exactParams
-            ) = abi.decode(payload, (IUniswapV3SwapRouter.ExactOutputParams[]));
+            IUniswapV3SwapRouter.ExactOutputParams[] memory exactParams = abi
+                .decode(payload, (IUniswapV3SwapRouter.ExactOutputParams[]));
             bytes[] memory encodedTXs = new bytes[](exactParams.length);
             uint256 totalAmountsOut = 0;
             uint256 totalAmountsInMax = 0;
             for (uint256 x = 0; x < exactParams.length; x++) {
-				
                 (, address tokenIn, ) = exactParams[x].path.decodeFirstPool();
                 require(tokenIn == sourceTokenAddress, "improper route");
-                require(exactParams[x].path.toAddress(exactParams[x].path.length - 20) == destTokenAddress, "improper destination");
+                require(
+                    exactParams[x].path.toAddress(
+                        exactParams[x].path.length - 20
+                    ) == destTokenAddress,
+                    "improper destination"
+                );
                 totalAmountsOut = totalAmountsOut + exactParams[x].amountOut;
-                totalAmountsInMax = totalAmountsInMax + exactParams[x].amountInMaximum;
+                totalAmountsInMax =
+                    totalAmountsInMax +
+                    exactParams[x].amountInMaximum;
                 encodedTXs[x] = abi.encodeWithSelector(
                     IUniswapV3SwapRouter(uniswapSwapRouter)
                         .exactOutput
@@ -178,16 +185,16 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
             sourceTokenAmountUsed = totaledAmountIn;
             destTokenAmountReceived = requiredDestTokenAmount;
         } else {
-            (IUniswapV3SwapRouter.ExactInputParams[] memory exactParams) = abi.decode(
-                payload,
-                (IUniswapV3SwapRouter.ExactInputParams[])
-            );
+            IUniswapV3SwapRouter.ExactInputParams[] memory exactParams = abi
+                .decode(payload, (IUniswapV3SwapRouter.ExactInputParams[]));
             bytes[] memory encodedTXs = new bytes[](exactParams.length);
             uint256 totalAmounts = 0;
             for (uint256 x = 0; x < exactParams.length; x++) {
                 (, address tokenIn, ) = exactParams[x].path.decodeFirstPool();
                 require(tokenIn == sourceTokenAddress, "improper route");
-                address tokenOut = exactParams[x].path.toAddress(exactParams[x].path.length - 20);
+                address tokenOut = exactParams[x].path.toAddress(
+                    exactParams[x].path.length - 20
+                );
                 require(tokenOut == destTokenAddress, "improper destination");
                 totalAmounts = totalAmounts + exactParams[x].amountIn;
                 encodedTXs[x] = abi.encodeWithSelector(
