@@ -28,6 +28,10 @@ def WBTC(accounts, TestToken):
 def USDT(accounts, TestToken):
     return Contract.from_abi("USDT", "0xc2132D05D31c914a87C6611C10748AEb04B58e8F", TestToken.abi)
 
+@pytest.fixture(scope="module", autouse=True)
+def BZRX(accounts, TestToken):
+    return Contract.from_abi("BZRX", "0x54cFe73f2c7d0c4b62Ab869B473F5512Dc0944D2", TestToken.abi)
+
 
 @pytest.fixture(scope="module")
 def BZX(accounts,LoanMaintenance_2, interface):
