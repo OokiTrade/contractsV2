@@ -33,20 +33,20 @@ def testStake_Multiple_People(requireMainnetFork, stakingV1_1, fees_extractor, b
     stakingV1_1.stake([vBZRX], [100e18], {'from': accounts[3]})
     stakingV1_1.stake([vBZRX], [50e18], {'from': accounts[4]})
 
-    earned1 = stakingV1_1.earned(accounts[1])
-    earned2 = stakingV1_1.earned(accounts[2])
-    earned3 = stakingV1_1.earned(accounts[3])
-    earned4 = stakingV1_1.earned(accounts[4])
+    earned1 = stakingV1_1.earned.call(accounts[1])
+    earned2 = stakingV1_1.earned.call(accounts[2])
+    earned3 = stakingV1_1.earned.call(accounts[3])
+    earned4 = stakingV1_1.earned.call(accounts[4])
 
     # due to staking and stake block difference, people who stake first have more vesties inside
     assert earned1[0] >= earned2[0] >= earned3[0] >= earned4[0]
 
     makeSomeFees(BZRX, accounts, fees_extractor, iUSDC)
 
-    earned1After = stakingV1_1.earned(accounts[1])
-    earned2After = stakingV1_1.earned(accounts[2])
-    earned3After = stakingV1_1.earned(accounts[3])
-    earned4After = stakingV1_1.earned(accounts[4])
+    earned1After = stakingV1_1.earned.call(accounts[1])
+    earned2After = stakingV1_1.earned.call(accounts[2])
+    earned3After = stakingV1_1.earned.call(accounts[3])
+    earned4After = stakingV1_1.earned.call(accounts[4])
 
     print(earned1After)
     print(earned2After)
@@ -108,10 +108,10 @@ def testStake_Multiple_VestiesMoveTime(requireMainnetFork, stakingV1_1, bzx,  BZ
 
     bzrxBalanceOf = BZRX.balanceOf(stakingV1_1)
 
-    print(stakingV1_1.earned(accounts[1]))
-    print(stakingV1_1.earned(accounts[2]))
-    print(stakingV1_1.earned(accounts[3]))
-    print(stakingV1_1.earned(accounts[4]))
+    print(stakingV1_1.earned.call(accounts[1]))
+    print(stakingV1_1.earned.call(accounts[2]))
+    print(stakingV1_1.earned.call(accounts[3]))
+    print(stakingV1_1.earned.call(accounts[4]))
 
     stakingV1_1.claim(False, {'from': accounts[1]})
     stakingV1_1.claim(False, {'from': accounts[2]})
@@ -193,10 +193,10 @@ def testStake_Multiple_VestiesMoveMultipleTime(requireMainnetFork, stakingV1_1, 
     assert BZRX.balanceOf(stakingV1_1) < bzrxBalanceOf
 
     print(BZRX.balanceOf(stakingV1_1))
-    print(stakingV1_1.earned(accounts[1]))
-    print(stakingV1_1.earned(accounts[2]))
-    print(stakingV1_1.earned(accounts[3]))
-    print(stakingV1_1.earned(accounts[4]))
+    print(stakingV1_1.earned.call(accounts[1]))
+    print(stakingV1_1.earned.call(accounts[2]))
+    print(stakingV1_1.earned.call(accounts[3]))
+    print(stakingV1_1.earned.call(accounts[4]))
 
     #half way thru vesting
     # chain.sleep(1665604800 - chain.time())

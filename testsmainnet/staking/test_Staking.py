@@ -47,7 +47,6 @@ def testStake_UnStake(requireMainnetFork, stakingV1_1, bzx,  BZRX, vBZRX, iBZRX,
     for index, stakedEvent in enumerate(stakedEvents, 0):
         assert(stakedEvent['user'] == accounts[0])
         assert(stakedEvent['token'] == tokens[index])
-        assert(stakedEvent['delegate'] == accounts[0])
         assert(stakedEvent['amount'] == amounts[index])
 
     transferEvents = tx.events['Transfer']
@@ -67,7 +66,6 @@ def testStake_UnStake(requireMainnetFork, stakingV1_1, bzx,  BZRX, vBZRX, iBZRX,
     for index, unStakedEvent in enumerate(unStakedEvents, 0):
         assert(unStakedEvent['user'] == accounts[0])
         assert(unStakedEvent['token'] == tokens[index])
-        assert(unStakedEvent['delegate'] == accounts[0])
         assert(unStakedEvent['amount'] == amounts[index])
 
     transferEvents = tx.events['Transfer']
@@ -242,8 +240,7 @@ def testStake_VestingFees(requireMainnetFork, fees_extractor, stakingV1_1, bzx, 
 
     earningsDuringVesting = stakingV1_1.earned(accounts[0])
     # vesting already started
-    assert(earningsDuringVesting[0] >
-           0 and earningsDuringVesting[0]/10**18 < 1)
+    assert(earningsDuringVesting[0] > 0 and earningsDuringVesting[0]/10**18 < 1)
     assert(earningsDuringVesting[1] > 0)
     assert(earningsDuringVesting[2] > 0)
     assert(earningsDuringVesting[3] > 0)

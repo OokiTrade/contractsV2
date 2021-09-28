@@ -8,17 +8,8 @@ from brownie.network.state import _add_contract, _remove_contract
 
 
 @pytest.fixture(scope="module", autouse=True)
-def stakingV1_1(bzx, StakingProxy, StakingV1_1, TestToken, accounts, LPT_OLD):
-    stakingProxy = Contract.from_abi("proxy", "0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4", StakingProxy.abi)
-    stakingImpl = StakingV1_1.deploy({'from': stakingProxy.owner()})
-    stakingProxy.replaceImplementation(stakingImpl, {'from': stakingProxy.owner()})
-
-    res = Contract.from_abi("StakingV1_1", stakingProxy.address, StakingV1_1.abi, owner=accounts[9])
-    return res;
-
-@pytest.fixture(scope="module", autouse=True)
-def stakingAdminSettings(bzx, StakingAdminSettings,stakingV1_1, accounts):
-    res = StakingAdminSettings.deploy({'from': stakingV1_1.owner()})
+def stakingAdminSettings(bzx, StakingAdminSettings, accounts):
+    res = StakingAdminSettings.deploy({'from': accounts[0]})
     return res;
 
 @pytest.fixture(scope="module")
@@ -26,13 +17,55 @@ def bzx(accounts, LoanTokenLogicStandard, interface):
     return Contract.from_abi("bzx", address="0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f",  abi=interface.IBZx.abi, owner=accounts[0])
     # return Contract.from_explorer("0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f")
 
+@pytest.fixture(scope="module")
+def stakingVoteDelegator(accounts, StakingVoteDelegator):
+    res = StakingVoteDelegator.deploy({'from': accounts[0]})
+    return res;
+
+@pytest.fixture(scope="module")
+def governance(accounts, GovernorBravoDelegate):
+    return Contract.from_abi("governorBravoDelegator", address="0x9da41f7810c2548572f4Fa414D06eD9772cA9e6E", abi=GovernorBravoDelegate.abi)
+
+@pytest.fixture(scope="module")
+def USDC(accounts, TestToken):
+    return Contract.from_abi("USDC", address="0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", abi=TestToken.abi, owner=accounts[0])
+
+
+@pytest.fixture(scope="module")
+def iUSDC(accounts, LoanTokenLogicStandard):
+    return Contract.from_abi("iUSDC", address=bzx.underlyingToLoanPool(USDC.address), abi=LoanTokenLogicStandard.abi, owner=accounts[0])
+
+
+@pytest.fixture(scope="module", autouse=True)
+def stakingV1_1(bzx, StakingProxy, StakingV1_1, POOL3Gauge, accounts, POOL3, stakingAdminSettings, stakingVoteDelegator):
+    stakingProxy = Contract.from_abi("proxy", "0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4", StakingProxy.abi)
+    stakingImpl = StakingV1_1.deploy({'from': stakingProxy.owner()})
+    stakingProxy.replaceImplementation(stakingImpl, {'from': stakingProxy.owner()})
+
+    res = Contract.from_abi("StakingV1_1", stakingProxy.address, StakingV1_1.abi, owner=accounts[9])
+
+    calldata = stakingAdminSettings.setApprovals.encode_input(POOL3, POOL3Gauge, 2**256-1)
+    res.updateSettings(stakingAdminSettings, calldata, {"from": res.owner()})
+
+    calldata = stakingAdminSettings.setVoteDelegator.encode_input(stakingVoteDelegator.address)
+    res.updateSettings(stakingAdminSettings, calldata, {"from": res.owner()})
+
+    #this will trigger deposit to curve, otherwise claim() will fail, because it will try to withdraw from pool
+    res.claimCrv({'from': res.owner()})
+    return res;
+
 @pytest.fixture(scope="function", autouse=True)
 def isolate(fn_isolation):
     pass
 
 @pytest.fixture(scope="module")
 def CRV(accounts, TestToken):
-   return Contract.from_abi("CRV", "0xD533a949740bb3306d119CC777fa900bA034cd52", TestToken.abi)
+    return Contract.from_abi("CRV", "0xD533a949740bb3306d119CC777fa900bA034cd52", TestToken.abi)
+
+
+@pytest.fixture(scope="module")
+def POOL3Gauge(interface):
+   return Contract.from_abi("POOL3Gauge", "0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A", interface.ICurve3PoolGauge.abi)
 
 
 @pytest.fixture(scope="module")
