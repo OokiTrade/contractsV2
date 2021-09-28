@@ -173,14 +173,15 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
       * @notice Gets the current voting quroum
       * @return The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
       */
+    // TODO: Update for OOKI. Handle OOKI surplus mint
     function quorumVotes() public view returns (uint256) {
         uint256 vestingSupply = IERC20(0x56d811088235F11C8920698a204A5010a788f4b3) // BZRX
             .balanceOf(0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F); // vBZRX
         uint256 circulatingSupply = 1030000000e18 - vestingSupply; // no overflow
-        uint256 quorum = circulatingSupply * 8 / 100;
-        if (quorum > 41200000e18) {
-            // max quorum is 4% of totalSupply
-            quorum = 41200000e18;
+        uint256 quorum = circulatingSupply * 4 / 100;
+        if (quorum < 15450000e18) {
+            // min quorum is 1.5% of totalSupply
+            quorum = 15450000e18;
         }
         return quorum;
     }
