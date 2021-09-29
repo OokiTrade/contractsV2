@@ -1,6 +1,7 @@
 pragma solidity ^0.5.16;
 pragma experimental ABIEncoderV2;
 
+import "@openzeppelin-2.5.0/token/ERC20/IERC20.sol";
 import "./GovernorBravoInterfaces.sol";
 
 contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoEvents {
@@ -26,17 +27,16 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
     /// @notice The max setable voting delay
     uint public constant MAX_VOTING_DELAY = 40320; // About 1 week
 
-    /// @notice The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
-    uint public constant quorumVotes = 41200000e18; // 41,200,000 = 4% of BZRX
-
     /// @notice The maximum number of actions that can be included in a proposal
-    uint public constant proposalMaxOperations = 10; // 10 actions
+    uint public constant proposalMaxOperations = 100; // 100 actions
 
     /// @notice The EIP-712 typehash for the contract's domain
     bytes32 public constant DOMAIN_TYPEHASH = keccak256("EIP712Domain(string name,uint256 chainId,address verifyingContract)");
 
     /// @notice The EIP-712 typehash for the ballot struct used by the contract
     bytes32 public constant BALLOT_TYPEHASH = keccak256("Ballot(uint256 proposalId,uint8 support)");
+
+    mapping (uint => uint) public quorumVotesForProposal; // proposalId => quorum votes required
 
     /**
       * @notice Used to initialize the contract during delegator contructor
@@ -111,6 +111,7 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
 
         proposals[proposalId] = newProposal;
         latestProposalIds[msg.sender] = proposalId;
+        quorumVotesForProposal[proposalId] = quorumVotes();
 
         emit ProposalCreated(proposalId, msg.sender, targets, values, signatures, calldatas, startBlock, endBlock, description);
         return proposalId;
@@ -169,6 +170,23 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
     }
 
     /**
+      * @notice Gets the current voting quroum
+      * @return The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
+      */
+    // TODO: Update for OOKI. Handle OOKI surplus mint
+    function quorumVotes() public view returns (uint256) {
+        uint256 vestingSupply = IERC20(0x56d811088235F11C8920698a204A5010a788f4b3) // BZRX
+            .balanceOf(0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F); // vBZRX
+        uint256 circulatingSupply = 1030000000e18 - vestingSupply; // no overflow
+        uint256 quorum = circulatingSupply * 4 / 100;
+        if (quorum < 15450000e18) {
+            // min quorum is 1.5% of totalSupply
+            quorum = 15450000e18;
+        }
+        return quorum;
+    }
+
+    /**
       * @notice Gets actions of a proposal
       * @param proposalId the id of the proposal
       * @return Targets, values, signatures, and calldatas of the proposal actions
@@ -202,7 +220,7 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
             return ProposalState.Pending;
         } else if (block.number <= proposal.endBlock) {
             return ProposalState.Active;
-        } else if (proposal.forVotes <= proposal.againstVotes || proposal.forVotes < quorumVotes) {
+        } else if (proposal.forVotes <= proposal.againstVotes || proposal.forVotes < quorumVotesForProposal[proposalId]) {
             return ProposalState.Defeated;
         } else if (proposal.eta == 0) {
             return ProposalState.Succeeded;

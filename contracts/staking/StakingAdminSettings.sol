@@ -10,8 +10,11 @@ import "./StakingState.sol";
 import "./StakingConstants.sol";
 import "../farm/interfaces/IMasterChefSushi.sol";
 import "../governance/PausableGuardian.sol";
+import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 
 contract StakingAdminSettings is StakingState, StakingConstants, PausableGuardian {
+    using SafeERC20 for IERC20;
+
     // Withdraw all from sushi masterchef
     function exitSushi() external onlyOwner {
         IMasterChefSushi chef = IMasterChefSushi(SUSHI_MASTERCHEF);
@@ -66,12 +69,18 @@ contract StakingAdminSettings is StakingState, StakingConstants, PausableGuardia
         altRewardsPerShare[SUSHI] = altRewardsRounds[SUSHI][index - 1];
     }
 
-    function setApprovals(
-        address _token,
-        address _spender,
-        uint256 _value
-    ) external onlyOwner {
-        IERC20(_token).approve(_spender, _value);
+    function setApprovals(address _token, address _spender, uint _value)
+        external
+        onlyOwner
+    {
+        IERC20(_token).safeApprove(_spender, _value);
+    }
+
+    function setVoteDelegator(address stakingGovernance)
+        external
+        onlyOwner
+    {
+        voteDelegator = stakingGovernance;
     }
 
     // Migrate lp token to another lp contract. 
