@@ -8,47 +8,51 @@ from brownie import chain, reverts
 
 
 
-def testFarming_migrate(requireFork, FixedSwapTokenMigrator, accounts, masterChef,BZRX,TestToken, USDT,BZX, govToken):
+def testFarming_migrate(requireFork, FixedSwapTokenConverter, accounts, masterChef,BZRX,TestToken, USDT,BZX, govToken):
     owner = accounts[0]
     user = accounts[1]
-
+    DEAD = '0x000000000000000000000000000000000000dEaD'
     #get some balance
     govToken.transfer(user, 200e18, {'from': masterChef})
-    BZRX.transfer(user, 200e18, {'from': BZX})
     ookiBalance = 30000000e18;
     OOKI = TestToken.deploy("OOKI", "OOKI",18, ookiBalance, {'from':  owner})
-    migrator = FixedSwapTokenMigrator.deploy(OOKI, [BZRX, govToken], [10e6, 1e6/20], {'from':  owner})
-    OOKI.transfer(migrator, ookiBalance, {'from': owner})
-    assert 0 == OOKI.balanceOf(owner)
-    govToken.approve(migrator, 2**256-1, {'from': user})
-    BZRX.approve(migrator, 2**256-1, {'from': user})
-    migrator.migrate(govToken, 100e18, {'from': user}) #100 / 20 = 5
-    assert OOKI.balanceOf(user)/1e18 == 5
-    migrator.migrate(BZRX, 100e18, {'from': user}) #100 * 10 = 10000
-    assert OOKI.balanceOf(user)/1e18 == 1005
-
-    #More than have
-    with reverts("Token low balance"):
-        migrator.migrate(BZRX, 101e18, {'from': user})
+    govOokiConnverter = FixedSwapTokenConverter.deploy(govToken, OOKI, 1e6/20, {'from':  owner})
+    OOKI.transfer(govOokiConnverter, ookiBalance, {'from': owner})
 
     #More than approved
-    BZRX.approve(migrator, 99e18, {'from': user})
+    BZRX.approve(govOokiConnverter, 99e18, {'from': user})
     with reverts("ERC20: transfer amount exceeds allowance"):
-        migrator.migrate(BZRX, 100e18, {'from': user})
+        govOokiConnverter.convert(govToken, 100e18, {'from': user})
+
+    assert 0 == OOKI.balanceOf(owner)
+    deadBalance = govToken.balanceOf(DEAD);
+    govToken.approve(govOokiConnverter, 2**256-1, {'from': user})
+    govOokiConnverter.convert(user, 100e18, {'from': user}) #100 / 20 = 5
+    assert OOKI.balanceOf(user)/1e18 == 5
+    assert govToken.balanceOf(govOokiConnverter) == 0
+    assert (govToken.balanceOf(DEAD) - deadBalance)/1e18 == 100
+
+
+    #More than have
+    govOokiConnverter.convert(user, 200e18, {'from': user}) #100 / 20 = 5
+    assert OOKI.balanceOf(user)/1e18 == 10
+    assert govOokiConnverter.totalConverted() == 200e18
 
 
     with reverts("Ownable: caller is not the owner"):
-        migrator.withdraw(OOKI, OOKI.balanceOf(migrator), {'from': user})
+        govOokiConnverter.rescue(user, OOKI.balanceOf(govOokiConnverter), OOKI, {'from': user})
 
-    migrator.withdraw(OOKI, OOKI.balanceOf(migrator), {'from': owner})
-    assert OOKI.balanceOf(migrator) == 0
-    assert OOKI.balanceOf(owner) > 0
+    govOokiConnverter.rescue(user, OOKI.balanceOf(govOokiConnverter), OOKI, {'from': owner})
+    assert OOKI.balanceOf(govOokiConnverter) == 0
+    assert OOKI.balanceOf(owner) == 0
+    assert OOKI.balanceOf(user) > 0
 
     with reverts("Ownable: caller is not the owner"):
-        migrator.setSwapRate(USDT, 1e18, {'from': user})
+        govOokiConnverter.setSwapRate(1e18, {'from': user})
     with reverts("Ownable: caller is not the owner"):
-        migrator.setTokenOut(USDT, {'from': user})
-    migrator.setSwapRate(USDT, 1e18, {'from': owner})
-    assert migrator.swapRate(USDT) == 1e18
-    migrator.setTokenOut(USDT, {'from': owner})
-    assert migrator.tokenOut() == USDT
+        govOokiConnverter.setTokens(BZRX, USDT, {'from': user})
+    govOokiConnverter.setSwapRate(1e18, {'from': owner})
+    assert govOokiConnverter.swapRate() == 1e18
+    govOokiConnverter.setTokens(BZRX, USDT, {'from': owner})
+    assert govOokiConnverter.tokenOut() == USDT
+    assert govOokiConnverter.tokenIn() == BZRX
