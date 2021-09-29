@@ -16,7 +16,7 @@ def testFarming_migrate(requireFork, FixedSwapTokenConverter, accounts, masterCh
     govToken.transfer(user, 200e18, {'from': masterChef})
     ookiBalance = 30000000e18;
     OOKI = TestToken.deploy("OOKI", "OOKI",18, ookiBalance, {'from':  owner})
-    govOokiConnverter = FixedSwapTokenConverter.deploy(govToken, OOKI, 1e6/20, {'from':  owner})
+    govOokiConnverter = FixedSwapTokenConverter.deploy(govToken, OOKI, 20e6, {'from':  owner})
     OOKI.transfer(govOokiConnverter, ookiBalance, {'from': owner})
 
     #More than approved

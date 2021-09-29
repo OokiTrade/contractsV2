@@ -54,7 +54,7 @@ contract FixedSwapTokenConverter is Ownable {
             return;
         }
 
-        uint256 _amountOut = _tokenAmount.mul(swapRate).div(1e6);
+        uint256 _amountOut = _tokenAmount.div(swapRate.div(1e6));
         require(IERC20(tokenOut).balanceOf(address(this)) >= _amountOut, "Migrator: low balance");
 
         IERC20(tokenIn).transferFrom(
