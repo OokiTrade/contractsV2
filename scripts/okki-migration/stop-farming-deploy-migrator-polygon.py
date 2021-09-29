@@ -15,5 +15,6 @@ swapRate = 19e6
 govConverter = FixedSwapTokenConverter.deploy(PGOV, BZRX, swapRate, {'from':  deployer})
 
 
-
+FEE_EXTRACTOR = Contract.from_abi("ext", address=BZX.feesController(), abi=FeeExtractAndDistribute_Polygon.abi)
+FEE_EXTRACTOR.togglePause(True, {'from': deployer})
 
