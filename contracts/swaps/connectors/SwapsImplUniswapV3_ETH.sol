@@ -16,9 +16,9 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
     using SafeERC20 for IERC20;
     using Path for bytes;
     using BytesLib for bytes;
-    address public uniswapSwapRouter =
+    address public constant uniswapSwapRouter =
         0xE592427A0AEce92De3Edee1F18E0157C05861564; //mainnet
-    address public uniswapQuoteContract =
+    address public constant uniswapQuoteContract =
         0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6; //mainnet
 
     function dexSwap(
@@ -44,7 +44,6 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
 
         IERC20 sourceToken = IERC20(sourceTokenAddress);
         address _thisAddress = address(this);
-
         (sourceTokenAmountUsed, destTokenAmountReceived) = _swapWithUni(
             sourceTokenAddress,
             destTokenAddress,
@@ -151,7 +150,8 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
             uint256 totalAmountsOut = 0;
             uint256 totalAmountsInMax = 0;
             for (uint256 x = 0; x < exactParams.length; x++) {
-                (, address tokenIn, ) = exactParams[x].path.decodeFirstPool();
+                require(receiverAddress == exactParams[x].recipient);
+                address tokenIn = exactParams[x].path.toAddress(0);
                 require(tokenIn == sourceTokenAddress, "improper route");
                 require(
                     exactParams[x].path.toAddress(
@@ -190,7 +190,8 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
             bytes[] memory encodedTXs = new bytes[](exactParams.length);
             uint256 totalAmounts = 0;
             for (uint256 x = 0; x < exactParams.length; x++) {
-                (, address tokenIn, ) = exactParams[x].path.decodeFirstPool();
+                require(receiverAddress == exactParams[x].recipient);
+                address tokenIn = exactParams[x].path.toAddress(0);
                 require(tokenIn == sourceTokenAddress, "improper route");
                 address tokenOut = exactParams[x].path.toAddress(
                     exactParams[x].path.length - 20
@@ -203,7 +204,7 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                 );
             }
             sourceTokenAmountUsed = totalAmounts;
-            require(totalAmounts == sourceTokenAmount);
+            require(totalAmounts == sourceTokenAmount, "improper swap amounts");
             bytes[] memory trueAmountsOut = IUniswapV3SwapRouter(
                 uniswapSwapRouter
             ).multicall(encodedTXs);

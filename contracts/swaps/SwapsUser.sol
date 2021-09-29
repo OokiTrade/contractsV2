@@ -175,12 +175,12 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
             payload,
             (uint256, bytes)
         );
-        address swapImplementation = IDexRecords(swapsImpl).retreiveDexAddress(
+        address swapImplementation = IDexRecords(swapsImpl).retrieveDexAddress(
             dexNumber
         );
         bytes memory data = abi.encodeWithSelector(
             ISwapsImpl(
-                IDexRecords(swapImplementation).retreiveDexAddress(dexNumber)
+                IDexRecords(swapImplementation).retrieveDexAddress(dexNumber)
             ).dexSwap.selector,
             addrs[0], // sourceToken
             addrs[1], // destToken
@@ -224,7 +224,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
             (uint256, bytes)
         );
         (expectedReturn, midToken) = ISwapsImpl(
-            IDexRecords(swapsImpl).retreiveDexAddress(dexNumber)
+            IDexRecords(swapsImpl).retrieveDexAddress(dexNumber)
         ).dexAmountOut(route, sourceTokenAmount);
     }
 
