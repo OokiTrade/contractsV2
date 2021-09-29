@@ -697,7 +697,7 @@ contract MasterChef_Polygon is Upgradeable {
             userInfos[pid][0] = userInfo[pid][_user].amount;
             userInfos[pid][1] = _pendingGOV(pid, _user);
             userInfos[pid][2] = isLocked[pid] ? 1 : 0;
-            userInfos[pid][3] = pid == GOV_POOL_ID ? _pendingAltRewards(GOV_POOL_ID, msg.sender) : 0;
+            userInfos[pid][3] = pid == GOV_POOL_ID ? _pendingAltRewards(GOV_POOL_ID, _user) : 0;
         }
     }
 
