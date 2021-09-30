@@ -12,11 +12,10 @@ contract FixedSwapTokenConverter is Ownable {
     using SafeMath for uint256;
     address constant DEAD = 0x000000000000000000000000000000000000dEaD;
 
-    //ooki per token *1e6
-    uint256 public swapRate;
-    address public tokenIn;
+    //toke => ooki per token *1e6
+    mapping(address => uint256) public tokenIn;
     address public tokenOut;
-    uint256 public totalConverted;
+    mapping(address => uint256) public totalConverted;
 
     event FixedSwapTokenConvert(
         address indexed sender,
@@ -28,24 +27,28 @@ contract FixedSwapTokenConverter is Ownable {
     );
 
 
-    function setTokens(address _tokenIn, address _tokenOut) public onlyOwner {
-        tokenIn = _tokenIn;
+    function setTokenOut(address _tokenOut) public onlyOwner {
         tokenOut = _tokenOut;
     }
 
-    function setSwapRate(uint256 _rate) public onlyOwner {
-        swapRate = _rate;
+    function setTokenIn(address _tokenIn, uint256 _swapRate) public onlyOwner {
+        require(_tokenIn != address(0), "address(0)");
+        tokenIn[_tokenIn] = _swapRate;
     }
 
-    constructor(address _tokenIn, address _tokenOut, uint256 _swapRate) public {
-        tokenIn = _tokenIn;
+    constructor(address[] memory _tokensIn, uint256[] memory _swapRates, address _tokenOut) public {
+        require(_tokensIn.length == _swapRates.length, "!length");
         tokenOut = _tokenOut;
-        swapRate = _swapRate;
+        for(uint256 i = 0; i< _tokensIn.length; i++){
+            tokenIn[_tokensIn[i]] = _swapRates[i];
+        }
     }
 
-    function convert(address receiver, uint256 _tokenAmount) public {
-
-        uint256 _balance = IERC20(tokenIn).balanceOf(msg.sender);
+    event Logger(string name, uint256 amount);
+    function convert(address token, address receiver, uint256 _tokenAmount) public {
+        uint256 _swapRate = tokenIn[token];
+        require(_swapRate > 0, "swapRate == 0");
+        uint256 _balance = IERC20(token).balanceOf(msg.sender);
         if(_tokenAmount > _balance){
             _tokenAmount = _balance;
         }
@@ -54,18 +57,21 @@ contract FixedSwapTokenConverter is Ownable {
             return;
         }
 
-        uint256 _amountOut = _tokenAmount.div(swapRate.div(1e6));
+        uint256 _amountOut = _tokenAmount.mul(_swapRate).div(1e6);
+        emit Logger("_tokenAmount", _tokenAmount);
+        emit Logger("_swapRate", _swapRate);
+        emit Logger("_amountOut", _amountOut);
         require(IERC20(tokenOut).balanceOf(address(this)) >= _amountOut, "Migrator: low balance");
 
-        IERC20(tokenIn).transferFrom(
+        IERC20(token).transferFrom(
             msg.sender,
             DEAD,
             _tokenAmount
         );
 
-        totalConverted += _tokenAmount;
+        totalConverted[token] += _tokenAmount;
         IERC20(tokenOut).safeTransfer(receiver, _amountOut);
-        emit FixedSwapTokenConvert(msg.sender, receiver, tokenIn, _tokenAmount, tokenOut, _amountOut);
+        emit FixedSwapTokenConvert(msg.sender, receiver, token, _tokenAmount, tokenOut, _amountOut);
     }
 
     function rescue(
