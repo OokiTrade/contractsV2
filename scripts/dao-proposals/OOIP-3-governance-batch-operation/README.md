@@ -33,6 +33,7 @@
 - Disable old protocol CHI module for swaps 
 - disable LEND pool. 
 - As part of the B.Protocol proposal send 250k BZRX to them
+- As part of token migration create new iOOKI token
 
 ## Proposal Calls
 
@@ -42,6 +43,9 @@
 4. BZX.setLoanPool(...) to disable LEND pool
 5. BZRX.transferFrom(Timelock, 0x2a599cEba64CAb8C88549c2c7314ea02A161fC70) 250k transfer for B.Protocol to guardian multisig
 6. BZX.replaceContract to deploy ProtocolPausableGuardian module
+7. bzx.setLoanPool([iOOKI], [OOKI])
+8. bzx.setSupportedTokens([OOKI], [True])
+9. bzx.setLiquidationIncentivePercent(...)
 
 
 

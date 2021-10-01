@@ -47,6 +47,33 @@ calldata = BZX.replaceContract.encode_input(pausableGuardianImpl)
 targets.append(BZX)
 calldatas.append(calldata)
 
+# 7. bzx.setLoanPool([iOOKI], [OOKI])
+OOKI = "0xC5c66f91fE2e395078E0b872232A20981bc03B15"
+iOOKI = "0x05d5160cbc6714533ef44CEd6dd32112d56Ad7da"
+calldatat = BZX.setLoanPool.encode_input([iOOKI], [OOKI])
+targets.append(BZX)
+calldatas.append(calldata)
+
+# # 8. bzx.setSupportedTokens([OOKI], [True])
+# calldatat = BZX.setSupportedTokens.encode_input([OOKI], [True], True)
+# targets.append(BZX)
+# calldatas.append(calldata)
+
+# # 9. bzx.setLiquidationIncentivePercent(...) 
+# loanTokens = []
+# collateralTokens = []
+# amounts = []
+# iTokens = BZX.getLoanPoolsList(0, 30)
+# for iToken in iTokens:
+#     loanTokens.append(iToken)
+#     collateralTokens.append(BZX.loanPoolToUnderlying(iToken))
+#     amounts.append(7*1e18)
+# calldatat = BZX.setLiquidationIncentivePercent.encode_input(loanTokens, collateralTokens, amounts)
+# targets.append(BZX)
+# calldatas.append(calldata)
+
+
+
 values = [0] * len(targets)  # empty array
 signatures = [""] * len(targets)  # empty signatures array
 
