@@ -78,7 +78,7 @@ def govToken(accounts, GovToken):
 
 @pytest.fixture(scope="module", autouse=True)
 def mintCoordinator(accounts, MintCoordinator_Polygon, govToken):
-    res = Contract.from_abi("mintCoordinator", address="0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440", abi=MintCoordinator_Polygon.abi, owner=accounts[0]);
+    res = Contract.from_abi("mintCoordinator", address="0x52fb1688B829BDb2BF70058f0BBfFD38af26cc2b", abi=MintCoordinator_Polygon.abi, owner=accounts[0]);
     return res
 
 @pytest.fixture(scope="module", autouse=True)
@@ -96,7 +96,6 @@ def masterChef(accounts, chain, MasterChef_Polygon, iMATIC, iETH, iUSDC, iWBTC, 
     # newMintCoordinator.addMinter(masterChef)
     # newMintCoordinator.transferOwnership(masterChef)
     # masterChef.setMintCoordinator(newMintCoordinator, {'from': masterChef.owner()})
-    # govToken.transferOwnership(newMintCoordinator, {'from': govToken.owner()})
 
     # masterChef.massMigrateToBalanceOf({'from': masterChef.owner()})
     masterChef.togglePause(False, {'from': masterChef.owner()})

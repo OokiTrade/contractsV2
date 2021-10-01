@@ -109,7 +109,7 @@ contract MasterChef_Polygon is Upgradeable {
     //pid -- (user -- altRewardsPerShare)
     mapping(uint256 => mapping(address => uint256)) public userAltRewardsPerShare;
 
-    bool public vestingEnabled;
+    bool public vestingDisabled;
 
     function initialize(
         GovToken _GOV,
@@ -387,7 +387,7 @@ contract MasterChef_Polygon is Upgradeable {
         returns (uint256)
     {
         //Unlock everything
-        if(!vestingEnabled){
+        if(vestingDisabled){
             return _locked;
         }
         //Vesting is not started
@@ -413,8 +413,8 @@ contract MasterChef_Polygon is Upgradeable {
         return _lockedRewards[_user].sub(unlockedRewards(_user));
     }
 
-    function toggleVestingEnabled(bool _isEnabled) external onlyOwner {
-        vestingEnabled = _isEnabled;
+    function toggleVesting(bool _isEnabled) external onlyOwner {
+        vestingDisabled = !_isEnabled;
     }
 
     function togglePause(bool _isPaused) external onlyOwner {

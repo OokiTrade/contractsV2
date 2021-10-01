@@ -14,10 +14,11 @@ CHEF.setGOVPerBlock(0, {'from': deployer})
 FEE_EXTRACTOR = Contract.from_abi("ext", address=BZX.feesController(), abi=FeeExtractAndDistribute_Polygon.abi)
 FEE_EXTRACTOR.togglePause(True, {'from': deployer})
 
-govOokiConnverter = FixedSwapTokenConverter.deploy(
+govOokiConverter = FixedSwapTokenConverter.deploy(
     [PGOV, BZRX],
-    [1e6/1.9, 10e6], #19 gov == 1 bzrx == 10 ooki, 1 bzrx = 10 ooki
+    [1e6/1.9, 10e6], #19 gov == 1 bzrx == 10 ooki, 1.9 gov == 1 ooki
     OOKI,
+    BZRX,
     {'from':  deployer}
 )
 
