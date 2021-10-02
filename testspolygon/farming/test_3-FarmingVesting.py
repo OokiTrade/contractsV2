@@ -10,7 +10,7 @@ testdata = [
     ('MATIC', 'iMATIC', 8)
 ]
 
-INITIAL_LP_TOKEN_ACCOUNT_AMOUNT = 100 * 10 ** 18;
+INITIAL_LP_TOKEN_ACCOUNT_AMOUNT = 10 * 10 ** 18;
 GOV_POOL_PID = 0
 ## GovPool locked
 ## LPPool locked
@@ -49,6 +49,11 @@ def testFarming_Vesting1(requireFork, tokens, tokenName, lpTokenName, pid, accou
 
     assert masterChef.unlockedRewards(account1) > 0
     assert masterChef.lockedRewards(account1) < lockedRewards1
+    masterChef.toggleVesting(False,{'from': masterChef.owner()});
+
+    lockedRewards = masterChef.lockedRewards(account1)
+    masterChef.toggleVesting(True,{'from': masterChef.owner()});
+    assert lockedRewards == 0
 
 
 def testFarming_Vesting2(requireFork, masterChef):
