@@ -5,7 +5,7 @@ masterChefProxy = Contract.from_abi("masterChefProxy", address=CHEF, abi=Proxy.a
 masterChefImpl = MasterChef_Polygon.deploy({'from': deployer})
 masterChefProxy.replaceImplementation(masterChefImpl, {'from': deployer})
 CHEF.setInitialAltRewardsPerShare({'from': deployer})
-CHEF.toggleVestingEnabled(False, {'from': deployer})
+CHEF.toggleVesting(False, {'from': deployer})
 
 CHEF.setLocked(0, False, {'from': deployer})
 CHEF.setLocked(2, False, {'from': deployer})
