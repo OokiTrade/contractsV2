@@ -126,13 +126,13 @@ def test_migration_staking_balances(requireMainnetFork, BZRX, OOKI, SLP, ADMIN_S
     tx = STAKING.updateSettings(ADMIN_SETTINGS, calldata, {"from": STAKING.owner()})
 
 
-
+    assert False
     assert STAKING.isUserMigrated(account) == False
     STAKING.migrateUserBalances({"from": account})
     assert STAKING.isUserMigrated(account) == True
  
  
-    assert balanceOfBZRXBefore == OOKI.balanceOf(STAKING)
+    assert balanceOfBZRXBefore * 10 == OOKI.balanceOf(STAKING)
  
 
     assert False

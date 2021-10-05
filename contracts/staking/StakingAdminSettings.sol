@@ -138,7 +138,7 @@ contract StakingAdminSettings is StakingState, StakingConstants, PausableGuardia
         uint256 balance = chef.userInfo(BZRX_ETH_SUSHI_MASTERCHEF_PID, address(this)).amount;
         
         chef.withdraw(BZRX_ETH_SUSHI_MASTERCHEF_PID, balance);
-        emit LoggerString("balance", balance);
+        emit LoggerString("SLP", balance);
         emit LoggerString("BZRXBalance", IERC20(BZRX).balanceOf(address(this)));
         // migrating SLP
         IERC20(LPTokenBeforeMigration).approve(SUSHI_ROUTER, balance);
@@ -156,16 +156,16 @@ contract StakingAdminSettings is StakingState, StakingConstants, PausableGuardia
         IERC20(WETH).approve(SUSHI_ROUTER, WETHBalance);
         IERC20(OOKI).approve(SUSHI_ROUTER, BZRXBalance);
 
-        IUniswapV2Router(SUSHI_ROUTER).addLiquidity(WETH, OOKI, WETHBalance, BZRXBalance, 1, 1, address(this), block.timestamp);
-
+        (,,uint256 SLPAfter) = IUniswapV2Router(SUSHI_ROUTER).addLiquidity(WETH, OOKI, WETHBalance, BZRXBalance, 1, 1, address(this), block.timestamp);
+        emit LoggerString("SLP", SLPAfter);
         // migrating BZRX balances to OOKI
         _totalSupplyPerToken[OOKI] = _totalSupplyPerToken[BZRX] * 10;
         _totalSupplyPerToken[BZRX] = 0;
         
 
         // BIG TODO since thsese are not migrated 1:1
-        _totalSupplyPerToken[LPToken] = _totalSupplyPerToken[LPTokenBeforeMigration];
-        _totalSupplyPerToken[LPTokenBeforeMigration] = 0;
+        _totalSupplyPerToken[LPToken] = SLPAfter;
+        // _totalSupplyPerToken[LPTokenBeforeMigration] = 0; I don't zero out this so I can use to calc proportion when migrating user balance
     }
 
     function setConverter(IBZRXv2Converter _converter) public onlyOwner {
