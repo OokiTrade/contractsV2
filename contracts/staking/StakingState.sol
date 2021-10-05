@@ -10,7 +10,7 @@ import "@openzeppelin-2.5.0/math/SafeMath.sol";
 import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 import "../mixins/EnumerableBytes32Set.sol";
 import "../../interfaces/IStaking.sol";
-
+import "../../interfaces/IBZRXv2Converter.sol";
 
 contract StakingState is StakingUpgradeable {
     using SafeMath for uint256;
@@ -41,7 +41,7 @@ contract StakingState is StakingUpgradeable {
     mapping(address => uint256) public stableCoinVesting;                           // user => value
 
     uint256 public vBZRXWeightStored;
-    uint256 public iBZRXWeightStored;
+    uint256 public iOOKIWeightStored;
     uint256 public LPTokenWeightStored;
 
     EnumerableBytes32Set.Bytes32Set internal _delegatedSet;
@@ -61,7 +61,7 @@ contract StakingState is StakingUpgradeable {
 
     struct ProposalState {
         uint256 proposalTime;
-        uint256 iBZRXWeight;
+        uint256 iOOKIWeight;
         uint256 lpBZRXBalance;
         uint256 lpTotalSupply;
     }
@@ -75,5 +75,6 @@ contract StakingState is StakingUpgradeable {
     mapping(address => mapping(address => IStaking.AltRewardsUserInfo)) public userAltRewardsPerShare;
 
     address public voteDelegator;
+    IBZRXv2Converter public converter;
 
 }

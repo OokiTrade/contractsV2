@@ -177,7 +177,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 
         for (uint256 i = 0; i < tokens.length; i++) {
             address token = tokens[i];
-            require(token == BZRX || token == vBZRX || token == iBZRX || token == LPToken, "invalid token");
+            require(token == BZRX || token == vBZRX || token == iOOKI || token == LPToken, "invalid token");
 
             uint256 stakeAmount = values[i];
             if (stakeAmount == 0) {
@@ -231,7 +231,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 
         for (uint256 i = 0; i < tokens.length; i++) {
             address token = tokens[i];
-            require(token == BZRX || token == vBZRX || token == iBZRX || token == LPToken || token == LPTokenOld, "invalid token");
+            require(token == OOKI || token == vBZRX || token == iOOKI || token == LPToken || token == LPTokenOld || token == iBZRX, "invalid token");
 
             uint256 unstakeAmount = values[i];
             uint256 stakedAmount = _balancesPerToken[token][msg.sender];
@@ -491,24 +491,24 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         _voteDelegator.moveDelegates(ZERO_ADDRESS, currentDelegate, _votingFromStakedBalanceOf(msg.sender, _proposalState, true).sub(votingBalanceBefore));
     }
 
-    function exit()
-        public
-        // unstake() does check pausable
-    {
-        address[] memory tokens = new address[](4);
-        uint256[] memory values = new uint256[](4);
-        tokens[0] = iBZRX;
-        tokens[1] = LPToken;
-        tokens[2] = vBZRX;
-        tokens[3] = BZRX;
-        values[0] = uint256(-1);
-        values[1] = uint256(-1);
-        values[2] = uint256(-1);
-        values[3] = uint256(-1);
+    // function exit()
+    //     public
+    //     // unstake() does check pausable
+    // {
+    //     address[] memory tokens = new address[](4);
+    //     uint256[] memory values = new uint256[](4);
+    //     tokens[0] = iOOKI;
+    //     tokens[1] = LPToken;
+    //     tokens[2] = vBZRX;
+    //     tokens[3] = BZRX;
+    //     values[0] = uint256(-1);
+    //     values[1] = uint256(-1);
+    //     values[2] = uint256(-1);
+    //     values[3] = uint256(-1);
         
-        unstake(tokens, values); // calls updateRewards
-        _claim(false);
-    }
+    //     unstake(tokens, values); // calls updateRewards
+    //     _claim(false);
+    // }
 
     modifier updateRewards(address account) {
         uint256 _bzrxPerTokenStored = bzrxPerTokenStored;
@@ -766,7 +766,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         uint256 newStableCoin)
         internal
     {
-        (vBZRXWeightStored, iBZRXWeightStored, LPTokenWeightStored) = getVariableWeights();
+        (vBZRXWeightStored, iOOKIWeightStored, LPTokenWeightStored) = getVariableWeights();
 
         uint256 totalTokens = totalSupplyStored();
         require(totalTokens != 0, "nothing staked");
@@ -813,7 +813,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     function getVariableWeights()
         public
         view
-        returns (uint256 vBZRXWeight, uint256 iBZRXWeight, uint256 LPTokenWeight)
+        returns (uint256 vBZRXWeight, uint256 iOOKIWeight, uint256 LPTokenWeight)
     {
         uint256 totalVested = vestedBalanceForAmount(
             _startingVBZRXBalance,
@@ -824,7 +824,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         vBZRXWeight = SafeMath.mul(_startingVBZRXBalance - totalVested, 1e18) // overflow not possible
             .div(_startingVBZRXBalance);
 
-        iBZRXWeight = _calcIBZRXWeight();
+        iOOKIWeight = _calcIBZRXWeight();
 
         uint256 lpTokenSupply = _totalSupplyPerToken[LPToken];
         if (lpTokenSupply != 0) {
@@ -844,9 +844,9 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         view
         returns (uint256)
     {
-        return IERC20(BZRX).balanceOf(iBZRX)
+        return IERC20(BZRX).balanceOf(iOOKI)
             .mul(1e50)
-            .div(IERC20(iBZRX).totalSupply());
+            .div(IERC20(iOOKI).totalSupply());
     }
 
     function balanceOfByAsset(
@@ -865,7 +865,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         view
         returns (
             uint256 bzrxBalance,
-            uint256 iBZRXBalance,
+            uint256 iOOKIBalance,
             uint256 vBZRXBalance,
             uint256 LPTokenBalance,
             uint256 LPTokenBalanceOld
@@ -873,7 +873,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     {
         return (
             balanceOfByAsset(BZRX, account),
-            balanceOfByAsset(iBZRX, account),
+            balanceOfByAsset(iOOKI, account),
             balanceOfByAsset(vBZRX, account),
             balanceOfByAsset(LPToken, account),
             balanceOfByAsset(LPTokenOld, account)
@@ -895,10 +895,10 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 
         vestedBalance = _balancesPerToken[BZRX][account];
 
-        balance = _balancesPerToken[iBZRX][account];
+        balance = _balancesPerToken[iOOKI][account];
         if (balance != 0) {
             vestedBalance = balance
-                .mul(iBZRXWeightStored)
+                .mul(iOOKIWeightStored)
                 .div(1e50)
                 .add(vestedBalance);
         }
@@ -933,8 +933,8 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         supply = _totalSupplyPerToken[BZRX]
             .add(supply);
 
-        supply = _totalSupplyPerToken[iBZRX]
-            .mul(iBZRXWeightStored)
+        supply = _totalSupplyPerToken[iOOKI]
+            .mul(iOOKIWeightStored)
             .div(1e50)
             .add(supply);
 
@@ -1027,7 +1027,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     {
         return ProposalState({
             proposalTime: block.timestamp - 1,
-            iBZRXWeight: _calcIBZRXWeight(),
+            iOOKIWeight: _calcIBZRXWeight(),
             lpBZRXBalance: 0, // IERC20(BZRX).balanceOf(LPToken),
             lpTotalSupply: 0  //IERC20(LPToken).totalSupply()
         });
@@ -1058,8 +1058,8 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             .add(bzrxRewards[account]) // unclaimed BZRX rewards count as votes
             .add(totalVotes);
 
-        totalVotes = _balancesPerToken[iBZRX][account]
-            .mul(proposal.iBZRXWeight)
+        totalVotes = _balancesPerToken[iOOKI][account]
+            .mul(proposal.iOOKIWeight)
             .div(1e50)
             .add(totalVotes);
 
@@ -1087,6 +1087,21 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         }
 
         return _voteDelegator.getPriorVotes(account, blocknumber);
+    }
+
+    function migrateUserBalances() public {
+
+        _balancesPerToken[OOKI][msg.sender] = _balancesPerToken[BZRX][msg.sender] * 10;
+        _balancesPerToken[BZRX][msg.sender] = 0;
+
+        // TODO calculate LP
+        _balancesPerToken[LPToken][msg.sender] = _balancesPerToken[LPTokenBeforeMigration][msg.sender] * 10;
+        _balancesPerToken[LPTokenBeforeMigration][msg.sender] = 0;
+    }
+
+    function isUserMigrated(address account) public view returns(bool) {
+        return _balancesPerToken[LPTokenBeforeMigration][account] == 0 &&
+        _balancesPerToken[BZRX][account] == 0;
     }
 
     // OnlyOwner functions
