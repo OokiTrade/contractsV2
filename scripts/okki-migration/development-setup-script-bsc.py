@@ -1,15 +1,9 @@
 #!!!!! For development & testing only
 assert (network.show_active().find("-fork")>=0)
 
-#OOKI
-OOKI = OokiToken.deploy({'from': accounts[0]})
 exec(open("./scripts/okki-migration/deploy-migrator-bsc.py").read())
-OOKI.transferOwnership(deployer,{'from': accounts[0]})
 
-OOKI.mint(govOokiConverter, 1e26, {'from': deployer})
-
-print("OOKI: ", OOKI)
-
+BZRX.transfer(govOokiConverter, 100000e18, {'from': BZX})
 
 
 
