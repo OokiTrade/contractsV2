@@ -98,7 +98,7 @@ def test_migration_staking_balances(requireMainnetFork, accounts, BZRX, OOKI, SL
     assert balanceOfStored == STAKING.balanceOfStored(account)
     # assert votingBalanceOfNow == STAKING.votingBalanceOfNow(account) voting change due to lp total supply change
 
-    assert balanceOfBZRXBefore == OOKI.balanceOf(STAKING)
+    assert balanceOfBZRXBefore * 10 == OOKI.balanceOf(STAKING)
     # assert earned == STAKING.earned.call(account) # all balances mismatche because time change, lp change
 
     assert True

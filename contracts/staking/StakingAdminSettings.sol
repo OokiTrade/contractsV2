@@ -139,6 +139,7 @@ contract StakingAdminSettings is StakingState, StakingConstants, PausableGuardia
         
         chef.withdraw(BZRX_ETH_SUSHI_MASTERCHEF_PID, balance);
         emit LoggerString("balance", balance);
+        emit LoggerString("BZRXBalance", IERC20(BZRX).balanceOf(address(this)));
         // migrating SLP
         IERC20(LPTokenBeforeMigration).approve(SUSHI_ROUTER, balance);
         (uint256 WETHBalance, uint256 BZRXBalance) = IUniswapV2Router(SUSHI_ROUTER).removeLiquidity(WETH, BZRX, balance, 1, 1, address(this), block.timestamp);
@@ -146,11 +147,12 @@ contract StakingAdminSettings is StakingState, StakingConstants, PausableGuardia
         uint256 totalBZRXBalance = IERC20(BZRX).balanceOf(address(this));
         emit LoggerString("totalBZRXBalance", totalBZRXBalance);
         emit LoggerString("BZRXBalance", BZRXBalance);
-        BZRXBalance = BZRXBalance * 10; // 10x split
+
         IERC20(BZRX).approve(address(converter), 2**256 -1); // this max approval will be used to convert vested bzrx to ooki
         // this will convert and current BZRX on a contract as well
         IBZRXv2Converter(converter).convert(address(this), totalBZRXBalance);
-
+        
+        BZRXBalance = BZRXBalance * 10; // 10x split, this is ooki balance now
         IERC20(WETH).approve(SUSHI_ROUTER, WETHBalance);
         IERC20(OOKI).approve(SUSHI_ROUTER, BZRXBalance);
 
