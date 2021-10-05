@@ -6,7 +6,7 @@ from brownie import network, Contract, Wei, chain, reverts
 
 @pytest.fixture(scope="module")
 def requireMainnetFork():
-    assert (network.show_active() == "mainnet-fork" or network.show_active() == "mainnet-fork-alchemy")
+    assert (network.show_active() == "mainnet-fork" or network.show_active() == "mainnet-alchemy-fork")
 
 
 @pytest.fixture(scope="module")
@@ -109,12 +109,15 @@ def isolate(fn_isolation):
 #     assert True
 
 
-def test_migration_staking_balances(requireMainnetFork, BZRX, OOKI, STAKING, SLP, ADMIN_SETTINGS):
+def test_migration_staking_balances(requireMainnetFork, BZRX, OOKI, STAKING, SLP, ADMIN_SETTINGS, BZRX_CONVERTER):
     account = "0xE487A866b0f6b1B663b4566Ff7e998Af6116fbA9"
- 
+    assert False
 
     balanceOfBZRXBefore = BZRX.balanceOf(STAKING)
     calldata = ADMIN_SETTINGS.migrateSLP.encode_input()
+    chain.mine()
+    chain.sleep(10)
+    
     tx = STAKING.updateSettings(ADMIN_SETTINGS, calldata, {"from": STAKING.owner()})
 
 

@@ -1095,7 +1095,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         _balancesPerToken[BZRX][msg.sender] = 0;
 
         // TODO calculate LP
-        _balancesPerToken[LPToken][msg.sender] = _balancesPerToken[LPTokenBeforeMigration][msg.sender] * 10;
+        _balancesPerToken[LPToken][msg.sender] = _balancesPerToken[LPTokenBeforeMigration][msg.sender];
         _balancesPerToken[LPTokenBeforeMigration][msg.sender] = 0;
     }
 
