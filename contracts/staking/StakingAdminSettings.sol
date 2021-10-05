@@ -129,20 +129,24 @@ contract StakingAdminSettings is StakingState, StakingConstants, PausableGuardia
     }
 
 
-
+    event LoggerString(string name, uint256 amount);
     // Migrate lp token to another lp contract. 
     function migrateSLP() public onlyOwner {
         require(address(converter) != address(0), "no converter");
 
         IMasterChefSushi chef = IMasterChefSushi(SUSHI_MASTERCHEF);
         uint256 balance = chef.userInfo(BZRX_ETH_SUSHI_MASTERCHEF_PID, address(this)).amount;
+        
         chef.withdraw(BZRX_ETH_SUSHI_MASTERCHEF_PID, balance);
-
+        emit LoggerString("balance", balance);
         // migrating SLP
         IERC20(LPTokenBeforeMigration).approve(SUSHI_ROUTER, balance);
         (uint256 WETHBalance, uint256 BZRXBalance) = IUniswapV2Router(SUSHI_ROUTER).removeLiquidity(WETH, BZRX, balance, 1, 1, address(this), block.timestamp);
 
         uint256 totalBZRXBalance = IERC20(BZRX).balanceOf(address(this));
+        emit LoggerString("totalBZRXBalance", totalBZRXBalance);
+        emit LoggerString("BZRXBalance", BZRXBalance);
+        BZRXBalance = BZRXBalance * 10; // 10x split
         IERC20(BZRX).approve(address(converter), 2**256 -1); // this max approval will be used to convert vested bzrx to ooki
         // this will convert and current BZRX on a contract as well
         IBZRXv2Converter(converter).convert(address(this), totalBZRXBalance);

@@ -2,7 +2,7 @@
 
 import pytest
 from brownie import network, Contract, Wei, chain, reverts
-
+import pdb
 
 @pytest.fixture(scope="module")
 def requireMainnetFork():
@@ -67,7 +67,12 @@ def STAKING(StakingV1_1, accounts, StakingProxy, interface, TestToken):
     bzxOwner = "0xfedC4dD5247B93feb41e899A09C44cFaBec29Cbc"
     stakingAddress = "0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4"
     proxy = Contract.from_abi("staking", address=stakingAddress, abi=StakingProxy.abi)
+    chain.mine()
+    chain.sleep(1)
+    pdb.set_trace()
     impl = accounts[0].deploy(StakingV1_1)
+    chain.mine()
+
     proxy.replaceImplementation(impl, {"from": bzxOwner})
 
     # # buypass stake crv zero bag TODO Eugen
@@ -109,9 +114,9 @@ def isolate(fn_isolation):
 #     assert True
 
 
-def test_migration_staking_balances(requireMainnetFork, BZRX, OOKI, STAKING, SLP, ADMIN_SETTINGS, BZRX_CONVERTER):
+def test_migration_staking_balances(requireMainnetFork, BZRX, OOKI, SLP, ADMIN_SETTINGS, BZRX_CONVERTER, STAKING, SUSHI_FACTORY, WETH, interface):
     account = "0xE487A866b0f6b1B663b4566Ff7e998Af6116fbA9"
-    assert False
+   
 
     balanceOfBZRXBefore = BZRX.balanceOf(STAKING)
     calldata = ADMIN_SETTINGS.migrateSLP.encode_input()

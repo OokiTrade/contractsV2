@@ -1103,7 +1103,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         return _balancesPerToken[LPTokenBeforeMigration][account] == 0 &&
         _balancesPerToken[BZRX][account] == 0;
     }
-
+    event LoggerString(string name, uint256 amount);
     // OnlyOwner functions
     function updateSettings(
         address settingsTarget,

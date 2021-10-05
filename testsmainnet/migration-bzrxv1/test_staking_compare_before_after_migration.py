@@ -34,9 +34,9 @@ def SUSHI_MASTERCHEF(accounts, TestToken, interface):
     return Contract.from_abi("SUSHI_MASTERCHEF", address="0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd", abi=interface.IMasterChefSushi.abi)
 
 
-# @pytest.fixture(scope="module")
-# def SUSHI_FACTORY(accounts, TestToken, interface):
-#     return Contract.from_abi("SUSHI_FACTORY", address="0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac", abi=interface.IUniswapV2Factory.abi)
+@pytest.fixture(scope="module")
+def SUSHI_FACTORY(accounts, TestToken, interface):
+    return Contract.from_abi("SUSHI_FACTORY", address="0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac", abi=interface.IUniswapV2Factory.abi)
 
 
 @pytest.fixture(scope="module")
