@@ -113,7 +113,8 @@ contract OrderBook is OrderBookEvents, OrderBookStorage {
 
     function placeOrder(IWalletFactory.OpenOrder memory Order) public {
         require(
-            Order.loanTokenAmount == 0 || Order.collateralTokenAmount == 0,
+            (Order.loanTokenAmount == 0 && Order.collateralTokenAmount > 0) ||
+                (Order.loanTokenAmount > 0 && Order.collateralTokenAmount == 0),
             "only one token can be used"
         );
         require(
@@ -121,7 +122,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage {
             "invalid pair"
         );
         require(
-            Order.orderType != IWalletFactory.OrderType.LIMIT_OPEN
+            Order.loanID != 0
                 ? collateralTokenMatch(Order) && loanTokenMatch(Order)
                 : true,
             "incorrect collateral and/or loan token specified"
@@ -170,7 +171,8 @@ contract OrderBook is OrderBookEvents, OrderBookStorage {
         public
     {
         require(
-            Order.loanTokenAmount == 0 || Order.collateralTokenAmount == 0,
+            (Order.loanTokenAmount == 0 && Order.collateralTokenAmount > 0) ||
+                (Order.loanTokenAmount > 0 && Order.collateralTokenAmount == 0),
             "only one token can be used"
         );
         require(
@@ -187,7 +189,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage {
             "inactive order specified"
         );
         require(
-            Order.orderType != IWalletFactory.OrderType.LIMIT_OPEN
+            Order.loanID != 0
                 ? collateralTokenMatch(Order) && loanTokenMatch(Order)
                 : true,
             "incorrect collateral and/or loan token specified"
