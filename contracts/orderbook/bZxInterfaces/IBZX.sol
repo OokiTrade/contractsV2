@@ -76,4 +76,6 @@ abstract contract IBZX {
         view
         virtual
         returns (LoanReturnData memory loanData);
+
+    function isLoanPool(address loanPool) external view virtual returns (bool);
 }

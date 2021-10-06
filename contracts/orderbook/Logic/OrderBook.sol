@@ -20,6 +20,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage {
             address(this),
             IERC20Metadata(usedToken).balanceOf(trader)
         );
+
         (bool result, bytes memory data) = HistoricalOrders[trader][orderID]
             .iToken
             .call(
@@ -46,80 +47,6 @@ contract OrderBook is OrderBookEvents, OrderBookStorage {
         success = gasleft();
     }
 
-    function executeMarketOpen(
-        address trader,
-        bytes32 lID,
-        uint256 leverage,
-        uint256 loanTokenAmount,
-        uint256 collateralTokenAmount,
-        address iToken,
-        address base,
-        bytes memory loanData
-    ) internal {
-        address usedToken = collateralTokenAmount > loanTokenAmount
-            ? base
-            : LoanTokenI(iToken).loanTokenAddress();
-
-        SafeERC20.safeTransferFrom(
-            IERC20(usedToken),
-            trader,
-            address(this),
-            IERC20Metadata(usedToken).balanceOf(trader)
-        );
-
-        bytes32 loanID = LoanTokenI(iToken)
-            .marginTrade(
-                lID,
-                leverage,
-                loanTokenAmount,
-                collateralTokenAmount,
-                base,
-                address(this),
-                loanData
-            )
-            .LoanId;
-        if (OrderEntry.inVals(ActiveTrades[trader], loanID) == false) {
-            OrderEntry.addTrade(ActiveTrades[trader], loanID);
-        }
-    }
-
-    function executeMarketClose(
-        address trader,
-        bytes32 loanID,
-        uint256 amount,
-        bool iscollateral,
-        address loanTokenAddress,
-        address collateralAddress,
-        bytes memory arbData
-    ) internal {
-        address usedToken;
-        if (
-            (iscollateral == true && collateralAddress != wrapToken) ||
-            (iscollateral == false && loanTokenAddress != wrapToken)
-        ) {
-            usedToken = iscollateral ? collateralAddress : loanTokenAddress;
-            uint256 traderB = IERC20Metadata(usedToken).balanceOf(trader);
-            SafeERC20.safeTransferFrom(
-                IERC20(usedToken),
-                trader,
-                address(this),
-                traderB
-            );
-        } else {
-            usedToken = address(0);
-        }
-        if (IBZX(bZxRouterAddress).getLoan(loanID).collateral == amount) {
-            OrderEntry.removeTrade(ActiveTrades[trader], loanID);
-        }
-        IBZX(bZxRouterAddress).closeWithSwap(
-            loanID,
-            address(this),
-            amount,
-            iscollateral,
-            arbData
-        );
-    }
-
     function executeTradeClose(
         address trader,
         address payable keeper,
@@ -132,21 +59,14 @@ contract OrderBook is OrderBookEvents, OrderBookStorage {
         bytes memory arbData
     ) internal returns (bool success) {
         address usedToken;
-        if (
-            (iscollateral == true && collateralAddress != wrapToken) ||
-            (iscollateral == false && loanTokenAddress != wrapToken)
-        ) {
-            usedToken = iscollateral ? collateralAddress : loanTokenAddress;
-            uint256 traderB = IERC20Metadata(usedToken).balanceOf(trader);
-            SafeERC20.safeTransferFrom(
-                IERC20(usedToken),
-                trader,
-                address(this),
-                traderB
-            );
-        } else {
-            usedToken = address(0);
-        }
+        usedToken = iscollateral ? collateralAddress : loanTokenAddress;
+        uint256 traderB = IERC20Metadata(usedToken).balanceOf(trader);
+        SafeERC20.safeTransferFrom(
+            IERC20(usedToken),
+            trader,
+            address(this),
+            traderB
+        );
         if (IBZX(bZxRouterAddress).getLoan(loanID).collateral == amount) {
             OrderEntry.removeTrade(ActiveTrades[trader], loanID);
         }
@@ -160,27 +80,17 @@ contract OrderBook is OrderBookEvents, OrderBookStorage {
                 arbData
             )
         );
-        if (usedToken != address(0)) {
-            uint256 gasUsed = ((startGas - gasleft()) * gasPrice(usedToken)) /
-                (10**36);
-            SafeERC20.safeTransfer(IERC20(usedToken), keeper, gasUsed);
-            SafeERC20.safeTransfer(
-                IERC20(usedToken),
-                trader,
-                IERC20Metadata(usedToken).balanceOf(address(this))
-            );
-        } else {
-            uint256 gasUsed = ((startGas - gasleft()) * gasPrice(wrapToken)) /
-                (10**36);
-            keeper.call{value: gasUsed}("");
-            uint256 depositAmount = address(this).balance;
+        if (usedToken == wrapToken) {
             WrappedToken(wrapToken).deposit{value: address(this).balance}();
-            SafeERC20.safeTransfer(
-                IERC20(usedToken),
-                trader,
-                IERC20Metadata(wrapToken).balanceOf(address(this))
-            );
         }
+        uint256 gasUsed = ((startGas - gasleft()) * gasPrice(usedToken)) /
+            (10**36);
+        SafeERC20.safeTransfer(IERC20(usedToken), keeper, gasUsed);
+        SafeERC20.safeTransfer(
+            IERC20(usedToken),
+            trader,
+            IERC20Metadata(usedToken).balanceOf(address(this))
+        );
 
         success = true;
     }
@@ -218,12 +128,12 @@ contract OrderBook is OrderBookEvents, OrderBookStorage {
         );
         require(
             Order.orderType == IWalletFactory.OrderType.LIMIT_OPEN
-                ? Order.loanID.length == 0 || isActiveLoan(Order.loanID)
+                ? Order.loanID == 0 || isActiveLoan(Order.loanID)
                 : isActiveLoan(Order.loanID),
             "inactive loan"
         );
         require(
-            Order.loanID.length != 0
+            Order.loanID != 0
                 ? OrderEntry.inVals(ActiveTrades[msg.sender], Order.loanID)
                 : true,
             "trader does not own the loan"
@@ -272,7 +182,10 @@ contract OrderBook is OrderBookEvents, OrderBookStorage {
             Order.orderID == HistoricalOrders[msg.sender][orderID].orderID,
             "improper ID"
         );
-        require(Order.isActive == true, "inactive order specified");
+        require(
+            HistoricalOrders[msg.sender][orderID].isActive == true,
+            "inactive order specified"
+        );
         require(
             Order.orderType != IWalletFactory.OrderType.LIMIT_OPEN
                 ? collateralTokenMatch(Order) && loanTokenMatch(Order)
@@ -292,6 +205,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage {
             "trader does not own the loan"
         );
         require(OrderRecords.inVals(HistOrders[msg.sender], orderID));
+        Order.loanData = "";
         HistoricalOrders[msg.sender][orderID] = Order;
         emit OrderAmended(
             msg.sender,
@@ -467,7 +381,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage {
             IWalletFactory.OrderType.LIMIT_OPEN
         ) {
             if (
-                HistoricalOrders[trader][orderID].loanID.length == 0 ||
+                HistoricalOrders[trader][orderID].loanID == 0 ||
                 isActiveLoan(HistoricalOrders[trader][orderID].loanID)
             ) {} else {
                 return false;
@@ -513,7 +427,8 @@ contract OrderBook is OrderBookEvents, OrderBookStorage {
                 return false;
             }
             uint256 tAmount = HistoricalOrders[trader][orderID].isCollateral
-                ? gasPrice(HistoricalOrders[trader][orderID].base) * 600000
+                ? (gasPrice(HistoricalOrders[trader][orderID].base) * 600000) /
+                    10**36
                 : (gasPrice(
                     HistoricalOrders[trader][orderID].loanTokenAddress
                 ) * 600000) / 10**36;
@@ -541,7 +456,8 @@ contract OrderBook is OrderBookEvents, OrderBookStorage {
                 return false;
             }
             uint256 tAmount = HistoricalOrders[trader][orderID].isCollateral
-                ? gasPrice(HistoricalOrders[trader][orderID].base) * 600000
+                ? (gasPrice(HistoricalOrders[trader][orderID].base) * 600000) /
+                    10**36
                 : (gasPrice(
                     HistoricalOrders[trader][orderID].loanTokenAddress
                 ) * 600000) / 10**36;

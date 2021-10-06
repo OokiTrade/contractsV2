@@ -63,7 +63,7 @@ contract OrderBookMarketOrders is OrderBookEvents, OrderBookStorage {
             address(this),
             IERC20Metadata(usedToken).balanceOf(trader)
         );
-
+        loanData = "";
         bytes32 loanID = LoanTokenI(iToken)
             .marginTrade(
                 lID,
@@ -90,6 +90,7 @@ contract OrderBookMarketOrders is OrderBookEvents, OrderBookStorage {
         bytes memory arbData
     ) internal {
         address usedToken;
+        arbData = "";
         if (
             (iscollateral == true && collateralAddress != wrapToken) ||
             (iscollateral == false && loanTokenAddress != wrapToken)
