@@ -141,8 +141,8 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     function _withdrawFrom3Pool(uint256 amount)
         internal
     {
-        if(amount != 0)
-            curve3PoolGauge.withdraw(amount);
+        // if(amount != 0)
+            // curve3PoolGauge.withdraw(amount); TODO
 
         //Trigger claim rewards from curve pool
         uint256 crvBalanceBefore = IERC20(CRV).balanceOf(address(this));
@@ -208,69 +208,69 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         _voteDelegator.moveDelegates(ZERO_ADDRESS, currentDelegate, _votingFromStakedBalanceOf(msg.sender, _proposalState, true).sub(votingBalanceBefore));
     }
 
-    function unstake(
-        address[] memory tokens,
-        uint256[] memory values
-    )
-        public
-        pausable
-        updateRewards(msg.sender)
-    {
-        require(tokens.length == values.length, "count mismatch");
+    // function unstake(
+    //     address[] memory tokens,
+    //     uint256[] memory values
+    // )
+    //     public
+    //     pausable
+    //     updateRewards(msg.sender)
+    // {
+    //     require(tokens.length == values.length, "count mismatch");
 
-        StakingVoteDelegator _voteDelegator = StakingVoteDelegator(voteDelegator);
-        address currentDelegate = _voteDelegator.delegates(msg.sender);
+    //     StakingVoteDelegator _voteDelegator = StakingVoteDelegator(voteDelegator);
+    //     address currentDelegate = _voteDelegator.delegates(msg.sender);
 
-        ProposalState memory _proposalState = _getProposalState();
-        uint256 votingBalanceBefore = _votingFromStakedBalanceOf(msg.sender, _proposalState, true);
+    //     ProposalState memory _proposalState = _getProposalState();
+    //     uint256 votingBalanceBefore = _votingFromStakedBalanceOf(msg.sender, _proposalState, true);
 
-        for (uint256 i = 0; i < tokens.length; i++) {
-            address token = tokens[i];
-            require(token == OOKI || token == vBZRX || token == iOOKI || token == LPToken || token == LPTokenOld || token == iBZRX, "invalid token");
+    //     for (uint256 i = 0; i < tokens.length; i++) {
+    //         address token = tokens[i];
+    //         require(token == OOKI || token == vBZRX || token == iOOKI || token == LPToken || token == LPTokenOld || token == iBZRX, "invalid token");
 
-            uint256 unstakeAmount = values[i];
-            uint256 stakedAmount = _balancesPerToken[token][msg.sender];
-            if (unstakeAmount == 0 || stakedAmount == 0) {
-                continue;
-            }
-            if (unstakeAmount > stakedAmount) {
-                unstakeAmount = stakedAmount;
-            }
+    //         uint256 unstakeAmount = values[i];
+    //         uint256 stakedAmount = _balancesPerToken[token][msg.sender];
+    //         if (unstakeAmount == 0 || stakedAmount == 0) {
+    //             continue;
+    //         }
+    //         if (unstakeAmount > stakedAmount) {
+    //             unstakeAmount = stakedAmount;
+    //         }
 
-            uint256 pendingBefore = (token == LPToken) ? _pendingSushiRewards(msg.sender) : 0;
+    //         uint256 pendingBefore = (token == LPToken) ? _pendingSushiRewards(msg.sender) : 0;
 
-            _balancesPerToken[token][msg.sender] = stakedAmount - unstakeAmount; // will not overflow
-            _totalSupplyPerToken[token] = _totalSupplyPerToken[token] - unstakeAmount; // will not overflow
+    //         _balancesPerToken[token][msg.sender] = stakedAmount - unstakeAmount; // will not overflow
+    //         _totalSupplyPerToken[token] = _totalSupplyPerToken[token] - unstakeAmount; // will not overflow
 
-            if (token == OOKI && IERC20(OOKI).balanceOf(address(this)) < unstakeAmount) {
-                // settle vested BZRX only if needed
-                IVestingToken(vBZRX).claim();
-                IBZRXv2Converter(converter).convert(address(this), IERC20(BZRX).balanceOf(address(this)));
-            }
+    //         if (token == OOKI && IERC20(OOKI).balanceOf(address(this)) < unstakeAmount) {
+    //             // settle vested BZRX only if needed
+    //             IVestingToken(vBZRX).claim();
+    //             IBZRXv2Converter(converter).convert(address(this), IERC20(BZRX).balanceOf(address(this)));
+    //         }
 
-            // Withdraw to sushi masterchef
-            if (token == LPToken) {
-                _withdrawFromSushiMasterchef(unstakeAmount);
+    //         // Withdraw to sushi masterchef
+    //         if (token == LPToken) {
+    //             _withdrawFromSushiMasterchef(unstakeAmount);
 
-                userAltRewardsPerShare[msg.sender][SUSHI] = IStaking.AltRewardsUserInfo({
-                        rewardsPerShare: altRewardsPerShare[SUSHI],
-                        pendingRewards: pendingBefore
-                    }
-                );
+    //             userAltRewardsPerShare[msg.sender][SUSHI] = IStaking.AltRewardsUserInfo({
+    //                     rewardsPerShare: altRewardsPerShare[SUSHI],
+    //                     pendingRewards: pendingBefore
+    //                 }
+    //             );
 
-            }
-            IERC20(token).safeTransfer(msg.sender, unstakeAmount);
+    //         }
+    //         IERC20(token).safeTransfer(msg.sender, unstakeAmount);
 
-            emit Unstake(
-                msg.sender,
-                token,
-                currentDelegate,
-                unstakeAmount
-            );
-        }
+    //         emit Unstake(
+    //             msg.sender,
+    //             token,
+    //             currentDelegate,
+    //             unstakeAmount
+    //         );
+    //     }
 
-        _voteDelegator.moveDelegates(currentDelegate, ZERO_ADDRESS, votingBalanceBefore.sub(_votingFromStakedBalanceOf(msg.sender, _proposalState, true)));
-    }
+    //     _voteDelegator.moveDelegates(currentDelegate, ZERO_ADDRESS, votingBalanceBefore.sub(_votingFromStakedBalanceOf(msg.sender, _proposalState, true)));
+    // }
 
     function claim(
         bool restake)
@@ -460,7 +460,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 
         return pendingCrv;
     }
-
+    event LoggerString(string name, uint256 amount);
     function _restakeBZRX(
         address account,
         uint256 amount)
@@ -1086,15 +1086,19 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         return _voteDelegator.getPriorVotes(account, blocknumber);
     }
 
-    function migrateUserBalances() public {
+    function migrateUserBalances(address account) public {
+        // TODO make sure you can't migrate twice
+        _balancesPerToken[OOKI][account] = _balancesPerToken[BZRX][account] * 10;
+        _balancesPerToken[BZRX][account] = 0;
+        
 
-        _balancesPerToken[OOKI][msg.sender] = _balancesPerToken[BZRX][msg.sender] * 10;
-        _balancesPerToken[BZRX][msg.sender] = 0;
 
         // TODO calculate LP userBalance = CurrentTotalSupply/BeforeTotalSupply * userBalance
-        _balancesPerToken[LPToken][msg.sender] = (_totalSupplyPerToken[LPToken].mul(_balancesPerToken[LPTokenBeforeMigration][msg.sender])).div(_totalSupplyPerToken[LPTokenBeforeMigration]);
+        _balancesPerToken[LPToken][account] = (_totalSupplyPerToken[LPToken].mul(_balancesPerToken[LPTokenBeforeMigration][account])).div(_totalSupplyPerToken[LPTokenBeforeMigration]);
         
-        _balancesPerToken[LPTokenBeforeMigration][msg.sender] = 0;
+        _balancesPerToken[LPTokenBeforeMigration][account] = 0;
+
+        bzrxRewardsPerTokenPaid[account] = bzrxRewardsPerTokenPaid[account] * 10;
     }
 
     function isUserMigrated(address account) public view returns(bool) {

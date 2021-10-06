@@ -122,13 +122,19 @@ def test_migration_staking_balances(requireMainnetFork, BZRX, OOKI, SLP, ADMIN_S
     calldata = ADMIN_SETTINGS.migrateSLP.encode_input()
     chain.mine()
     chain.sleep(10)
-    
+    assert False
+    stableCoinPerTokenStored = STAKING.stableCoinPerTokenStored()
+    earned = STAKING.earned(account)
+
     tx = STAKING.updateSettings(ADMIN_SETTINGS, calldata, {"from": STAKING.owner()})
 
-
-    assert False
+    stableCoinPerTokenStoredAfter = STAKING.stableCoinPerTokenStored()
+    earnedAftee = STAKING.earned(account)
+    
     assert STAKING.isUserMigrated(account) == False
-    STAKING.migrateUserBalances({"from": account})
+    
+    STAKING.migrateUserBalances(account, {"from": account})
+    STAKING.claimAltRewards({"from": account})
     assert STAKING.isUserMigrated(account) == True
  
  
