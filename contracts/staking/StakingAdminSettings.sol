@@ -34,13 +34,13 @@ contract StakingAdminSettings is StakingState, StakingConstants, PausableGuardia
 
     // OnlyOwner functions
 
-    function togglePause(
-        bool _isPaused)
-        external
-        onlyOwner
-    {
-        isPaused = _isPaused;
-    }
+    // function togglePause(
+    //     bool _isPaused)
+    //     external
+    //     onlyOwner
+    // {
+    //     isPaused = _isPaused;
+    // }
 
     function setFundsWallet(
         address _fundsWallet)
@@ -135,9 +135,9 @@ contract StakingAdminSettings is StakingState, StakingConstants, PausableGuardia
         require(address(converter) != address(0), "no converter");
 
         IMasterChefSushi chef = IMasterChefSushi(SUSHI_MASTERCHEF);
-        uint256 balance = chef.userInfo(BZRX_ETH_SUSHI_MASTERCHEF_PID, address(this)).amount;
+        uint256 balance = chef.userInfo(188, address(this)).amount;
         
-        chef.withdraw(BZRX_ETH_SUSHI_MASTERCHEF_PID, balance);
+        chef.withdraw(188, balance);
         emit LoggerString("SLP", balance);
         emit LoggerString("BZRXBalance", IERC20(BZRX).balanceOf(address(this)));
         // migrating SLP

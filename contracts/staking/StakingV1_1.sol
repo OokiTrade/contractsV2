@@ -20,11 +20,6 @@ import "../governance/PausableGuardian.sol";
 contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     using MathUtil for uint256;
 
-    modifier onlyEOA() {
-        require(msg.sender == tx.origin, "unauthorized");
-        _;
-    }
-
     function getCurrentFeeTokens()
         external
         view
@@ -177,7 +172,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 
         for (uint256 i = 0; i < tokens.length; i++) {
             address token = tokens[i];
-            require(token == BZRX || token == vBZRX || token == iOOKI || token == LPToken, "invalid token");
+            require(token == OOKI || token == vBZRX || token == iOOKI || token == LPToken, "invalid token");
 
             uint256 stakeAmount = values[i];
             if (stakeAmount == 0) {
@@ -247,9 +242,10 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             _balancesPerToken[token][msg.sender] = stakedAmount - unstakeAmount; // will not overflow
             _totalSupplyPerToken[token] = _totalSupplyPerToken[token] - unstakeAmount; // will not overflow
 
-            if (token == BZRX && IERC20(BZRX).balanceOf(address(this)) < unstakeAmount) {
+            if (token == OOKI && IERC20(OOKI).balanceOf(address(this)) < unstakeAmount) {
                 // settle vested BZRX only if needed
                 IVestingToken(vBZRX).claim();
+                IBZRXv2Converter(converter).convert(address(this), IERC20(BZRX).balanceOf(address(this)));
             }
 
             // Withdraw to sushi masterchef
@@ -384,12 +380,13 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
                     bzrxRewardsEarned
                 );
             } else {
-                if (IERC20(BZRX).balanceOf(address(this)) < bzrxRewardsEarned) {
+                if (IERC20(OOKI).balanceOf(address(this)) < bzrxRewardsEarned) {
                     // settle vested BZRX only if needed
                     IVestingToken(vBZRX).claim();
+                    IBZRXv2Converter(converter).convert(address(this), IERC20(BZRX).balanceOf(address(this)));
                 }
 
-                IERC20(BZRX).transfer(msg.sender, bzrxRewardsEarned);
+                IERC20(OOKI).transfer(msg.sender, bzrxRewardsEarned);
             }
         }
     }
@@ -475,15 +472,15 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         ProposalState memory _proposalState = _getProposalState();
         uint256 votingBalanceBefore = _votingFromStakedBalanceOf(msg.sender, _proposalState, true);
         
-        _balancesPerToken[BZRX][account] = _balancesPerToken[BZRX][account]
+        _balancesPerToken[OOKI][account] = _balancesPerToken[OOKI][account]
             .add(amount);
 
-        _totalSupplyPerToken[BZRX] = _totalSupplyPerToken[BZRX]
+        _totalSupplyPerToken[OOKI] = _totalSupplyPerToken[OOKI]
             .add(amount);
 
         emit Stake(
             account,
-            BZRX,
+            OOKI,
             currentDelegate,
             amount
         );
@@ -692,7 +689,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             if (bzrxRewardsVesting != 0) {
                 rewardsVested = bzrxRewardsVesting
                     .mul(multiplier)
-                    .div(1e36);
+                    .div(1e35); // before migration was 1e36, since 10x split existing 1 vbzrx earns 10x ooki
                 bzrxRewardsEarned += rewardsVested;
             }
 
@@ -734,7 +731,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             stableCoinTotal = stableCoinTotal.add(stableCoinAmounts[i]);
         }
         if (bzrxTotal != 0) {
-            IERC20(BZRX).transferFrom(msg.sender, address(this), bzrxTotal);
+            IERC20(OOKI).transferFrom(msg.sender, address(this), bzrxTotal);
         }
         if (stableCoinTotal != 0) {
             curve3Crv.transferFrom(msg.sender, address(this), stableCoinTotal);
@@ -752,7 +749,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         if (newBZRX != 0 || newStableCoin != 0) {
             _addRewards(newBZRX, newStableCoin);
             if (newBZRX != 0) {
-                IERC20(BZRX).transferFrom(msg.sender, address(this), newBZRX);
+                IERC20(OOKI).transferFrom(msg.sender, address(this), newBZRX);
             }
             if (newStableCoin != 0) {
                 curve3Crv.transferFrom(msg.sender, address(this), newStableCoin);
@@ -811,7 +808,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     }
 
     function getVariableWeights()
-        public
+        internal
         view
         returns (uint256 vBZRXWeight, uint256 iOOKIWeight, uint256 LPTokenWeight)
     {
@@ -831,7 +828,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             // staked LP tokens are assumed to represent the total unstaked supply (circulated supply - staked BZRX)
             uint256 normalizedLPTokenSupply = initialCirculatingSupply +
                 totalVested -
-                _totalSupplyPerToken[BZRX];
+                _totalSupplyPerToken[OOKI];
 
             LPTokenWeight = normalizedLPTokenSupply
                 .mul(1e18)
@@ -844,7 +841,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         view
         returns (uint256)
     {
-        return IERC20(BZRX).balanceOf(iOOKI)
+        return IERC20(OOKI).balanceOf(iOOKI)
             .mul(1e50)
             .div(IERC20(iOOKI).totalSupply());
     }
@@ -872,7 +869,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         )
     {
         return (
-            balanceOfByAsset(BZRX, account),
+            balanceOfByAsset(OOKI, account),
             balanceOfByAsset(iOOKI, account),
             balanceOfByAsset(vBZRX, account),
             balanceOfByAsset(LPToken, account),
@@ -893,7 +890,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
                 .div(1e18);
         }
 
-        vestedBalance = _balancesPerToken[BZRX][account];
+        vestedBalance = _balancesPerToken[OOKI][account];
 
         balance = _balancesPerToken[iOOKI][account];
         if (balance != 0) {
@@ -922,7 +919,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     }
 
     function totalSupplyStored()
-        public
+        internal
         view
         returns (uint256 supply)
     {
@@ -930,7 +927,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             .mul(vBZRXWeightStored)
             .div(1e18);
 
-        supply = _totalSupplyPerToken[BZRX]
+        supply = _totalSupplyPerToken[OOKI]
             .add(supply);
 
         supply = _totalSupplyPerToken[iOOKI]
@@ -948,7 +945,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         uint256 tokenBalance,
         uint256 lastUpdate,
         uint256 vestingEndTime)
-        public
+        internal
         view
         returns (uint256 vested)
     {
@@ -1054,7 +1051,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             proposal.proposalTime
         );
 
-        totalVotes = _balancesPerToken[BZRX][account]
+        totalVotes = _balancesPerToken[OOKI][account]
             .add(bzrxRewards[account]) // unclaimed BZRX rewards count as votes
             .add(totalVotes);
 
@@ -1094,10 +1091,8 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         _balancesPerToken[OOKI][msg.sender] = _balancesPerToken[BZRX][msg.sender] * 10;
         _balancesPerToken[BZRX][msg.sender] = 0;
 
-        // TODO calculate LP
-        uint256 totalLPBeforeMigration = _totalSupplyPerToken[LPTokenBeforeMigration];
-        uint256 totalLPAfterMigration = _totalSupplyPerToken[LPToken];
-        _balancesPerToken[LPToken][msg.sender] = (totalLPAfterMigration.mul(_balancesPerToken[LPTokenBeforeMigration][msg.sender])).div(totalLPBeforeMigration);
+        // TODO calculate LP userBalance = CurrentTotalSupply/BeforeTotalSupply * userBalance
+        _balancesPerToken[LPToken][msg.sender] = (_totalSupplyPerToken[LPToken].mul(_balancesPerToken[LPTokenBeforeMigration][msg.sender])).div(_totalSupplyPerToken[LPTokenBeforeMigration]);
         
         _balancesPerToken[LPTokenBeforeMigration][msg.sender] = 0;
     }
@@ -1106,7 +1101,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         return _balancesPerToken[LPTokenBeforeMigration][account] == 0 &&
         _balancesPerToken[BZRX][account] == 0;
     }
-    event LoggerString(string name, uint256 amount);
+    // event LoggerString(string name, uint256 amount);
     // OnlyOwner functions
     function updateSettings(
         address settingsTarget,

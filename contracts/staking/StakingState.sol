@@ -17,10 +17,10 @@ contract StakingState is StakingUpgradeable {
     using SafeERC20 for IERC20;
     using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
 
-    uint256 public constant initialCirculatingSupply = 1030000000e18 - 889389933e18;
+    uint256 internal constant initialCirculatingSupply = 1030000000e18 - 889389933e18;
     address internal constant ZERO_ADDRESS = address(0);
 
-    bool public isPaused;
+    bool internal _NOT_USED; // NOT USED
 
     address public fundsWallet;
 
@@ -57,7 +57,7 @@ contract StakingState is StakingUpgradeable {
     uint256 public maxCurveDisagreement = 3e18;
     uint256 public callerRewardDivisor = 100;
 
-    address[] public currentFeeTokens;
+    address[] internal currentFeeTokens;
 
     struct ProposalState {
         uint256 proposalTime;

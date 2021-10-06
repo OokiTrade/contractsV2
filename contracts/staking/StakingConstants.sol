@@ -35,8 +35,8 @@ contract StakingConstants {
     ICurve3Pool public constant curve3pool = ICurve3Pool(0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7);
     IBZx public constant bZx = IBZx(0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f);
 
-    uint256 public constant cliffDuration =                15768000; // 86400 * 365 * 0.5
-    uint256 public constant vestingDuration =              126144000; // 86400 * 365 * 4
+    uint256 internal constant cliffDuration =                15768000; // 86400 * 365 * 0.5
+    uint256 internal constant vestingDuration =              126144000; // 86400 * 365 * 4
     uint256 internal constant vestingDurationAfterCliff =  110376000; // 86400 * 365 * 3.5
     uint256 internal constant vestingStartTimestamp =      1594648800; // start_time
     uint256 internal constant vestingCliffTimestamp =      vestingStartTimestamp + cliffDuration;
@@ -45,7 +45,7 @@ contract StakingConstants {
 
     address internal constant SUSHI_MASTERCHEF = 0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd;
     address internal constant SUSHI_ROUTER = 0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F;
-    uint256 internal constant BZRX_ETH_SUSHI_MASTERCHEF_PID =  188;
+    uint256 internal constant BZRX_ETH_SUSHI_MASTERCHEF_PID =  188; // TODO get new masterchief pid
 
     uint256 public constant BZRXWeightStored = 1e18;
 
