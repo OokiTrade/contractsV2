@@ -41,6 +41,7 @@ compiler:
         remappings: 
             - "@openzeppelin-3.4.0=./node_modules/openzeppelin-3.4.0"
             - "@openzeppelin-2.5.0=./node_modules/openzeppelin-2.5.0"
+            - "@openzeppelin=./node_modules/@openzeppelin"
 
 console:
     show_colors: true
