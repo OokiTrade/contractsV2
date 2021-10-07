@@ -10,19 +10,14 @@ import "../../openzeppelin/SafeERC20.sol";
 import "../ISwapsImpl.sol";
 import "../v3Interfaces/ICurve.sol";
 import "../../mixins/Path.sol";
+import "../CurvePoolRegistration/ICurvePoolRegistration.sol";
 
 contract SwapsImpl3Curve_ETH is State, ISwapsImpl {
     using SafeERC20 for IERC20;
     using Path for bytes;
     using BytesLib for bytes;
-    address public constant curveSwapRouter =
+    address public constant PoolRegistry =
         0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7; //mainnet
-    address public constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
-    address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-    address public constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
-    uint128 public constant DAI_NUMBER = 0;
-    uint128 public constant USDC_NUMBER = 1;
-    uint128 public constant USDT_NUMBER = 2;
 
     function dexSwap(
         address sourceTokenAddress,
@@ -109,11 +104,11 @@ contract SwapsImpl3Curve_ETH is State, ISwapsImpl {
         public
         returns (uint256)
     {
-        (uint128 tokenIn, uint128 tokenOut) = abi.decode(
+        (address curvePool, uint128 tokenIn, uint128 tokenOut) = abi.decode(
             path,
-            (uint128, uint128)
+            (address, uint128, uint128)
         );
-        uint256 amountOut = ICurve(curveSwapRouter).get_dy(
+        uint256 amountOut = ICurve(curvePool).get_dy(
             tokenIn,
             tokenOut,
             amountIn
@@ -128,11 +123,11 @@ contract SwapsImpl3Curve_ETH is State, ISwapsImpl {
         public
         returns (uint256)
     {
-        (uint128 tokenIn, uint128 tokenOut) = abi.decode(
+        (address curvePool, uint128 tokenIn, uint128 tokenOut) = abi.decode(
             path,
-            (uint128, uint128)
+            (address, uint128, uint128)
         );
-        uint256 amountIn = ICurve(curveSwapRouter).get_dy(
+        uint256 amountIn = ICurve(curvePool).get_dy(
             tokenOut,
             tokenIn,
             amountOut
@@ -144,22 +139,21 @@ contract SwapsImpl3Curve_ETH is State, ISwapsImpl {
     }
 
     function setSwapApprovals(address[] memory tokens) public override {
-        for (uint256 i = 0; i < tokens.length; i++) {
-            IERC20(tokens[i]).safeApprove(curveSwapRouter, 0);
-            IERC20(tokens[i]).safeApprove(curveSwapRouter, uint256(-1));
+        require(
+            ICurvePoolRegistration(PoolRegistry).CheckPoolValidity(tokens[0])
+        );
+        for (uint256 i = 1; i < tokens.length; i++) {
+            IERC20(tokens[i]).safeApprove(tokens[0], 0);
+            IERC20(tokens[i]).safeApprove(tokens[0], uint256(-1));
         }
     }
 
-    function _getDexNumber(address token) internal view returns (uint128) {
-        if (token == DAI) {
-            return DAI_NUMBER;
-        }
-        if (token == USDC) {
-            return USDC_NUMBER;
-        }
-        if (token == USDT) {
-            return USDT_NUMBER;
-        }
+    function _getDexNumber(address pool, address token)
+        internal
+        view
+        returns (uint128)
+    {
+        return ICurvePoolRegistration(PoolRegistry).GetTokenPoolID(pool, token);
     }
 
     function _swapWithCurve(
@@ -175,12 +169,17 @@ contract SwapsImpl3Curve_ETH is State, ISwapsImpl {
         returns (uint256 sourceTokenAmountUsed, uint256 destTokenAmountReceived)
     {
         if (requiredDestTokenAmount != 0) {
-            (uint128 tokenIn, uint128 tokenOut) = abi.decode(
+            (address curvePool, uint128 tokenIn, uint128 tokenOut) = abi.decode(
                 payload,
-                (uint128, uint128)
+                (address, uint128, uint128)
             );
-            require(tokenIn == _getDexNumber(sourceTokenAddress));
-            require(tokenOut == _getDexNumber(destTokenAddress));
+            require(
+                ICurvePoolRegistration(PoolRegistry).CheckPoolValidity(
+                    curvePool
+                )
+            );
+            require(tokenIn == _getDexNumber(curvePool, sourceTokenAddress));
+            require(tokenOut == _getDexNumber(curvePool, destTokenAddress));
             (uint256 amountIn, ) = dexAmountIn(
                 payload,
                 requiredDestTokenAmount
@@ -189,7 +188,7 @@ contract SwapsImpl3Curve_ETH is State, ISwapsImpl {
                 amountIn >= minSourceTokenAmount &&
                     amountIn <= sourceTokenAmount
             );
-            ICurve(curveSwapRouter).exchange(tokenIn, tokenOut, amountIn, 1);
+            ICurve(curvePool).exchange(tokenIn, tokenOut, amountIn, 1);
             if (receiverAddress != address(this)) {
                 IERC20(destTokenAddress).safeTransfer(
                     receiverAddress,
@@ -199,14 +198,14 @@ contract SwapsImpl3Curve_ETH is State, ISwapsImpl {
             sourceTokenAmountUsed = amountIn;
             destTokenAmountReceived = requiredDestTokenAmount;
         } else {
-            (uint128 tokenIn, uint128 tokenOut) = abi.decode(
+            (address curvePool, uint128 tokenIn, uint128 tokenOut) = abi.decode(
                 payload,
-                (uint128, uint128)
+                (address, uint128, uint128)
             );
-            require(tokenIn == _getDexNumber(sourceTokenAddress));
-            require(tokenOut == _getDexNumber(destTokenAddress));
+            require(tokenIn == _getDexNumber(curvePool, sourceTokenAddress));
+            require(tokenOut == _getDexNumber(curvePool, destTokenAddress));
             (uint256 recv, ) = dexAmountOut(payload, minSourceTokenAmount);
-            ICurve(curveSwapRouter).exchange(
+            ICurve(curvePool).exchange(
                 tokenIn,
                 tokenOut,
                 minSourceTokenAmount,
