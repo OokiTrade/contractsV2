@@ -16,9 +16,7 @@ contract SwapsImpl3Curve_ETH is State, ISwapsImpl {
     using Path for bytes;
     using BytesLib for bytes;
     address public constant curveSwapRouter =
-        0xE592427A0AEce92De3Edee1F18E0157C05861564; //mainnet
-    address public constant uniswapQuoteContract =
-        0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6; //mainnet
+        0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7; //mainnet
     address public constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
     address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     address public constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
