@@ -138,15 +138,13 @@ contract StakingAdminSettings is StakingState, StakingConstants, PausableGuardia
         uint256 balance = chef.userInfo(188, address(this)).amount;
         
         chef.withdraw(188, balance);
-        emit LoggerString("SLP", balance);
-        emit LoggerString("BZRXBalance", IERC20(BZRX).balanceOf(address(this)));
+
         // migrating SLP
         IERC20(LPTokenBeforeMigration).approve(SUSHI_ROUTER, balance);
         (uint256 WETHBalance, uint256 BZRXBalance) = IUniswapV2Router(SUSHI_ROUTER).removeLiquidity(WETH, BZRX, balance, 1, 1, address(this), block.timestamp);
 
         uint256 totalBZRXBalance = IERC20(BZRX).balanceOf(address(this));
-        emit LoggerString("totalBZRXBalance", totalBZRXBalance);
-        emit LoggerString("BZRXBalance", BZRXBalance);
+
 
         IERC20(BZRX).approve(address(converter), 2**256 -1); // this max approval will be used to convert vested bzrx to ooki
         // this will convert and current BZRX on a contract as well
@@ -157,7 +155,7 @@ contract StakingAdminSettings is StakingState, StakingConstants, PausableGuardia
         IERC20(OOKI).approve(SUSHI_ROUTER, BZRXBalance);
 
         (,,uint256 SLPAfter) = IUniswapV2Router(SUSHI_ROUTER).addLiquidity(WETH, OOKI, WETHBalance, BZRXBalance, 1, 1, address(this), block.timestamp);
-        emit LoggerString("SLP", SLPAfter);
+
         // migrating BZRX balances to OOKI
         _totalSupplyPerToken[OOKI] = _totalSupplyPerToken[BZRX] * 10;
         _totalSupplyPerToken[BZRX] = 0;
@@ -167,7 +165,8 @@ contract StakingAdminSettings is StakingState, StakingConstants, PausableGuardia
         _totalSupplyPerToken[LPToken] = SLPAfter;
         // _totalSupplyPerToken[LPTokenBeforeMigration] = 0; I don't zero out this so I can use to calc proportion when migrating user balance
         // TODO ? is this correct
-        bzrxPerTokenStored = bzrxPerTokenStored * 10;
+        // bzrxPerTokenStored = bzrxPerTokenStored * 10;
+        // stableCoinPerTokenStored = stableCoinPerTokenStored;
     }
 
     function setConverter(IBZRXv2Converter _converter) public onlyOwner {

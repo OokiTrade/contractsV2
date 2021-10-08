@@ -54,8 +54,8 @@ def BZRX_CONVERTER(accounts, BZRXv2Converter, OOKI, ADMIN_SETTINGS, STAKING):
     converter = accounts[0].deploy(BZRXv2Converter)
     converter.initialize(OOKI)
 
-    calldata = ADMIN_SETTINGS.setConverter.encode_input(converter)
-    STAKING.updateSettings(ADMIN_SETTINGS, calldata, {"from": STAKING.owner()})
+    # calldata = ADMIN_SETTINGS.setConverter.encode_input(converter)
+    # STAKING.updateSettings(ADMIN_SETTINGS, calldata, {"from": STAKING.owner()})
 
     OOKI.transferOwnership(converter, {'from': OOKI.owner()})
     return converter
@@ -64,24 +64,30 @@ def BZRX_CONVERTER(accounts, BZRXv2Converter, OOKI, ADMIN_SETTINGS, STAKING):
 @pytest.fixture(scope="module")
 def STAKING(StakingV1_1, accounts, StakingProxy, interface, TestToken):
 
+   
+
     bzxOwner = "0xfedC4dD5247B93feb41e899A09C44cFaBec29Cbc"
     stakingAddress = "0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4"
-    proxy = Contract.from_abi("staking", address=stakingAddress, abi=StakingProxy.abi)
-    chain.mine()
-    chain.sleep(1)
-    pdb.set_trace()
-    impl = accounts[0].deploy(StakingV1_1)
-    chain.mine()
 
-    proxy.replaceImplementation(impl, {"from": bzxOwner})
+    # res = Contract.from_abi("StakingV1_1", stakingAddress, StakingV1_1.abi)
+    # res.stake([], [], {"from": "0xE487A866b0f6b1B663b4566Ff7e998Af6116fbA9"})
 
-    # # buypass stake crv zero bag TODO Eugen
+    # proxy = Contract.from_abi("staking", address=stakingAddress, abi=StakingProxy.abi)
+    # chain.mine()
+    # chain.sleep(1)
+    # pdb.set_trace()
+    # impl = accounts[0].deploy(StakingV1_1)
+    # chain.mine()
+
+    # proxy.replaceImplementation(impl, {"from": bzxOwner})
+
+    # # # buypass stake crv zero bag TODO Eugen
     # POOL3 = Contract.from_abi("CURVE3CRV", "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490", TestToken.abi)
     # POOL3Gauge = Contract.from_abi("3POOLGauge", "0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A", interface.ICurve3PoolGauge.abi)
     # POOL3.approve(POOL3Gauge, 2**256-1, {'from': stakingAddress})
     # POOL3Gauge.deposit(POOL3.balanceOf(stakingAddress),{'from': stakingAddress})
 
-    return Contract.from_abi("staking", address=stakingAddress, abi=StakingV1_1.abi)
+    return Contract.from_abi("staking", address=stakingAddress, abi=StakingV1_1.abi, owner="0xE487A866b0f6b1B663b4566Ff7e998Af6116fbA9")
 
 @pytest.fixture(scope="module")
 def ADMIN_SETTINGS(StakingAdminSettings, accounts):
@@ -114,30 +120,57 @@ def isolate(fn_isolation):
 #     assert True
 
 
-def test_migration_staking_balances(requireMainnetFork, BZRX, OOKI, SLP, ADMIN_SETTINGS, BZRX_CONVERTER, STAKING, SUSHI_FACTORY, WETH, interface):
+def test_migration_staking_balances(requireMainnetFork, BZRX, OOKI, SLP, ADMIN_SETTINGS, BZRX_CONVERTER, STAKING, SUSHI_FACTORY, WETH, interface, StakingV1_1, StakingProxy, accounts):
     account = "0xE487A866b0f6b1B663b4566Ff7e998Af6116fbA9"
    
+    stableCoinPerTokenStored = STAKING.stableCoinPerTokenStored()
+    earned = STAKING.earned(account)
+    balances = STAKING.balanceOfByAssets(account)
+
+
+    bzxOwner = "0xfedC4dD5247B93feb41e899A09C44cFaBec29Cbc"
+    stakingAddress = "0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4"
+    res = Contract.from_abi("StakingV1_1", stakingAddress, StakingV1_1.abi)
+    res.stake([], [], {"from": "0xE487A866b0f6b1B663b4566Ff7e998Af6116fbA9"})
+    proxy = Contract.from_abi("staking", address=stakingAddress, abi=StakingProxy.abi)
+    chain.mine()
+    chain.sleep(1)
+    pdb.set_trace()
+    impl = accounts[0].deploy(StakingV1_1)
+    chain.mine()
+    proxy.replaceImplementation(impl, {"from": bzxOwner})
+
+
+    calldata = ADMIN_SETTINGS.setConverter.encode_input(BZRX_CONVERTER)
+    STAKING.updateSettings(ADMIN_SETTINGS, calldata, {"from": STAKING.owner()})
+
 
     balanceOfBZRXBefore = BZRX.balanceOf(STAKING)
     calldata = ADMIN_SETTINGS.migrateSLP.encode_input()
     chain.mine()
     chain.sleep(10)
-    assert False
-    stableCoinPerTokenStored = STAKING.stableCoinPerTokenStored()
-    earned = STAKING.earned(account)
+ 
+
 
     tx = STAKING.updateSettings(ADMIN_SETTINGS, calldata, {"from": STAKING.owner()})
 
     stableCoinPerTokenStoredAfter = STAKING.stableCoinPerTokenStored()
-    earnedAftee = STAKING.earned(account)
+    earnedAfter = STAKING.earned(account)
+    balancesAfter = STAKING.balanceOfByAssets(account)
+    
     
     assert STAKING.isUserMigrated(account) == False
     
     STAKING.migrateUserBalances(account, {"from": account})
-    STAKING.claimAltRewards({"from": account})
+    # STAKING.claimAltRewards({"from": account})
+    
     assert STAKING.isUserMigrated(account) == True
- 
- 
+
+
+    balancesAfterUserMigration = STAKING.balanceOfByAssets(account)
+    earnedAfterUserMigration = STAKING.earned(account)
+    assert False
+    # earnedAfter[0]/1e18, earnedAfter[1]/1e18, earnedAfter[2]/1e18, earnedAfter[3]/1e18
     assert balanceOfBZRXBefore * 10 == OOKI.balanceOf(STAKING)
  
 

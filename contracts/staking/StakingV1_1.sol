@@ -142,7 +142,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         internal
     {
         // if(amount != 0)
-            // curve3PoolGauge.withdraw(amount); TODO
+        //     curve3PoolGauge.withdraw(amount); // TODO disabled for now
 
         //Trigger claim rewards from curve pool
         uint256 crvBalanceBefore = IERC20(CRV).balanceOf(address(this));
@@ -689,7 +689,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             if (bzrxRewardsVesting != 0) {
                 rewardsVested = bzrxRewardsVesting
                     .mul(multiplier)
-                    .div(1e35); // before migration was 1e36, since 10x split existing 1 vbzrx earns 10x ooki
+                    .div(1e36);
                 bzrxRewardsEarned += rewardsVested;
             }
 
@@ -1098,7 +1098,9 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         
         _balancesPerToken[LPTokenBeforeMigration][account] = 0;
 
-        bzrxRewardsPerTokenPaid[account] = bzrxRewardsPerTokenPaid[account] * 10;
+        // bzrxRewardsPerTokenPaid[account] = bzrxRewardsPerTokenPaid[account] * 10;
+        // bzrxVesting[account] = bzrxVesting[account] * 10;
+        // stableCoinRewardsPerTokenPaid[account] = stableCoinRewardsPerTokenPaid[account] * 10;
     }
 
     function isUserMigrated(address account) public view returns(bool) {
