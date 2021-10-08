@@ -41,7 +41,7 @@
 2. upgrade STAKING implementation
 3. BZX.setTargets(...) to disable CHI modules
 4. BZX.setLoanPool(...) to disable LEND pool
-5. BZRX.transferFrom(Timelock, 0x2a599cEba64CAb8C88549c2c7314ea02A161fC70) 250k transfer for B.Protocol to guardian multisig
+5. BZRX.transferFrom(Timelock, 0x2a599cEba64CAb8C88549c2c7314ea02A161fC70) 250k transfer for B.Protocol to guardian multisig, also allocate funds for BGOV PGOV buyout
 6. BZX.replaceContract to deploy ProtocolPausableGuardian module
 7. bzx.setLoanPool([iOOKI], [OOKI])
 8. bzx.setSupportedTokens([OOKI], [True])

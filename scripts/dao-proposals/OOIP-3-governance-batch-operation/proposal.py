@@ -1,5 +1,5 @@
 exec(open("./scripts/env/set-eth.py").read())
-
+import math
 acct = accounts.at("0x54e88185eb636c0a75d67dccc70e9abe169ba55e", True)
 
 description = "Upgrade DAO, Staking, maintenance and B.Protocol"
@@ -36,8 +36,11 @@ targets.append(BZX)
 calldatas.append(calldata)
 
 # 5. BZRX.transferFrom(Timelock, 0x2a599cEba64CAb8C88549c2c7314ea02A161fC70)
-BZRXAmount = 250000*1e18 # 250k BZRX
-calldata = BZRX.transfer.encode_input(DAOGuardiansMultisig, BZRXAmount)
+BZRXAmount = 250000*10**18 # 250k BZRX
+# TotalSupply: 185416043.744399669180168401 PGOV and 252681074.289343767474252583 BGOV
+BZRXBuyoutAmount = math.ceil((185416043.744399669180168401 + 252681074.289343767474252583)/20) * 10**18 # 21,904,856 ~21.9m
+
+calldata = BZRX.transfer.encode_input(DAOGuardiansMultisig, BZRXAmount + BZRXBuyoutAmount)
 targets.append(BZRX)
 calldatas.append(calldata)
 
