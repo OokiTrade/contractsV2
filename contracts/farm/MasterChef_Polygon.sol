@@ -109,6 +109,7 @@ contract MasterChef_Polygon is Upgradeable {
     //pid -- (user -- altRewardsPerShare)
     mapping(uint256 => mapping(address => uint256)) public userAltRewardsPerShare;
 
+    bool public vestingDisabled;
 
     function initialize(
         GovToken _GOV,
@@ -124,6 +125,8 @@ contract MasterChef_Polygon is Upgradeable {
         bonusEndBlock = _bonusEndBlock;
         startBlock = _startBlock;
     }
+
+
 
     function setVestingDuration(uint256 _vestingDuration)
         external
@@ -370,6 +373,7 @@ contract MasterChef_Polygon is Upgradeable {
         returns (uint256)
     {
         uint256 _locked = _lockedRewards[_user];
+
         if(_locked == 0) {
             return 0;
         }
@@ -382,6 +386,10 @@ contract MasterChef_Polygon is Upgradeable {
         view
         returns (uint256)
     {
+        //Unlock everything
+        if(vestingDisabled){
+            return _locked;
+        }
         //Vesting is not started
         if(startVestingStamp == 0 || vestingDuration == 0){
             return 0;
@@ -403,6 +411,10 @@ contract MasterChef_Polygon is Upgradeable {
         returns (uint256)
     {
         return _lockedRewards[_user].sub(unlockedRewards(_user));
+    }
+
+    function toggleVesting(bool _isEnabled) external onlyOwner {
+        vestingDisabled = !_isEnabled;
     }
 
     function togglePause(bool _isPaused) external onlyOwner {
@@ -697,7 +709,7 @@ contract MasterChef_Polygon is Upgradeable {
             userInfos[pid][0] = userInfo[pid][_user].amount;
             userInfos[pid][1] = _pendingGOV(pid, _user);
             userInfos[pid][2] = isLocked[pid] ? 1 : 0;
-            userInfos[pid][3] = pid == GOV_POOL_ID ? _pendingAltRewards(GOV_POOL_ID, msg.sender) : 0;
+            userInfos[pid][3] = pid == GOV_POOL_ID ? _pendingAltRewards(GOV_POOL_ID, _user) : 0;
         }
     }
 

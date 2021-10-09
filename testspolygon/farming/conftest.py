@@ -28,6 +28,10 @@ def WBTC(accounts, TestToken):
 def USDT(accounts, TestToken):
     return Contract.from_abi("USDT", "0xc2132D05D31c914a87C6611C10748AEb04B58e8F", TestToken.abi)
 
+@pytest.fixture(scope="module", autouse=True)
+def BZRX(accounts, TestToken):
+    return Contract.from_abi("BZRX", "0x54cFe73f2c7d0c4b62Ab869B473F5512Dc0944D2", TestToken.abi)
+
 
 @pytest.fixture(scope="module")
 def BZX(accounts,LoanMaintenance_2, interface):
@@ -74,7 +78,7 @@ def govToken(accounts, GovToken):
 
 @pytest.fixture(scope="module", autouse=True)
 def mintCoordinator(accounts, MintCoordinator_Polygon, govToken):
-    res = Contract.from_abi("mintCoordinator", address="0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440", abi=MintCoordinator_Polygon.abi, owner=accounts[0]);
+    res = Contract.from_abi("mintCoordinator", address="0x52fb1688B829BDb2BF70058f0BBfFD38af26cc2b", abi=MintCoordinator_Polygon.abi, owner=accounts[0]);
     return res
 
 @pytest.fixture(scope="module", autouse=True)
@@ -92,7 +96,6 @@ def masterChef(accounts, chain, MasterChef_Polygon, iMATIC, iETH, iUSDC, iWBTC, 
     # newMintCoordinator.addMinter(masterChef)
     # newMintCoordinator.transferOwnership(masterChef)
     # masterChef.setMintCoordinator(newMintCoordinator, {'from': masterChef.owner()})
-    # govToken.transferOwnership(newMintCoordinator, {'from': govToken.owner()})
 
     # masterChef.massMigrateToBalanceOf({'from': masterChef.owner()})
     masterChef.togglePause(False, {'from': masterChef.owner()})

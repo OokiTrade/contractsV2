@@ -18,13 +18,10 @@ contract BZRXv2Converter is Ownable {
     );
 
     IERC20 public constant BZRXv1 = IERC20(0x56d811088235F11C8920698a204A5010a788f4b3);
-    // IERC20 public constant vBZRXv1 = IERC20(0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F);
     MintCoordinator public MINT_COORDINATOR;
-    // VBZRXv2VestingToken public vBZRXv2;
     address constant DEAD = 0x000000000000000000000000000000000000dEaD;
 
     uint256 public totalConverted;
-    uint256 public totalVestingConverted;
     uint256 public terminationTimestamp;
 
     function convert(
@@ -39,7 +36,7 @@ contract BZRXv2Converter is Ownable {
         );
 
         // we mint burned amount
-        MINT_COORDINATOR.mint(receiver, _tokenAmount);
+        MINT_COORDINATOR.mint(receiver, _tokenAmount * 10); // we do a 10x split
 
         // overflow condition cannot be reached since the above will throw for bad amounts
         totalConverted += _tokenAmount;
