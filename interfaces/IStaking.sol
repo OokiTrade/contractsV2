@@ -8,6 +8,12 @@ pragma experimental ABIEncoderV2;
 
 interface IStaking {
 
+    struct ProposalState {
+        uint256 proposalTime;
+        uint256 iBZRXWeight;
+        uint256 lpBZRXBalance;
+        uint256 lpTotalSupply;
+    }
 
     struct AltRewardsUserInfo {
         uint256 rewardsPerShare;
@@ -24,11 +30,6 @@ interface IStaking {
         view
         returns (uint256);
 
-    //Temporary, will remove it after migrationn
-    function stakingRewards(address)
-        external
-        view
-        returns (uint256);
 
     function isPaused()
         external
@@ -66,25 +67,12 @@ interface IStaking {
     )
         external;
 
-    function stake(
-        address[] calldata tokens,
-        uint256[] calldata values,
-        bool claimSushi
-    )
-        external;
-
     function unstake(
         address[] calldata tokens,
         uint256[] calldata values
     )
         external;
 
-    function unstake(
-        address[] calldata tokens,
-        uint256[] calldata values,
-        bool claimSushi
-    )
-        external;
 
     function earned(address account)
         external
@@ -94,9 +82,19 @@ interface IStaking {
             uint256 stableCoinRewardsEarned,
             uint256 bzrxRewardsVesting,
             uint256 stableCoinRewardsVesting,
-            uint256 sushiRewardsEarned,
-            uint256 crvRewardsEarned
+            uint256 sushiRewardsEarned
         );
+
+    function pendingCrvRewards(address account)
+    external
+    view
+    returns (
+        uint256 bzrxRewardsEarned,
+        uint256 stableCoinRewardsEarned,
+        uint256 bzrxRewardsVesting,
+        uint256 stableCoinRewardsVesting,
+        uint256 sushiRewardsEarned
+    );
 
     function getVariableWeights()
         external
@@ -154,6 +152,12 @@ interface IStaking {
         view
         returns (uint256 totalVotes);
 
+    function votingFromStakedBalanceOf(
+        address account)
+        external
+        view
+        returns (uint256 totalVotes);
+
     function _setProposalVals(
         address account,
         uint256 proposalId)
@@ -165,5 +169,10 @@ interface IStaking {
 
     function addAltRewards(address token, uint256 amount)
         external;
+
+    function governor()
+        external
+        view
+        returns(address);
 
 }

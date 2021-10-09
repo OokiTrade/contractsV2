@@ -27,22 +27,22 @@ from brownie import *
 
 def testFarming_limit_minting(accounts, masterChef, mintCoordinator, govToken, MasterChef_Polygon):
 
-    totalSupply = govToken.totalSupply()
-    maxSupply = 250*1e6*1e18 # 250 m
+    totalSupply = mintCoordinator.totalMinted()
+    maxSupply = mintCoordinator.MAX_MINTED()  # 250 m
     # below deposit to trigger first mint to set totalMint in coordinator
     masterChef.deposit(0, 0 , {'from': accounts[0]})
-
     mintCoordinator.mint(accounts[0], maxSupply - totalSupply, {'from': masterChef})
 
     masterChef.deposit(0, 0 , {'from': accounts[0]})
 
     masterChef.deposit(0, 0 , {'from': accounts[0]})
     masterChef.deposit(0, 0 , {'from': accounts[0]})
-    
-    totalSupply = govToken.totalSupply()
-    assert maxSupply - totalSupply == 0 # no more minting
+
+    assert mintCoordinator.totalMinted() - mintCoordinator.MAX_MINTED() == 0 # no more minting
     assert masterChef.poolInfo(0)[1] == 0 # pool disabled
+    govBalanceBefore = govToken.balanceOf(accounts[0]);
     mintCoordinator.mint(accounts[0], 1e6*1e18, {'from': masterChef})
+    assert govToken.balanceOf(accounts[0]) - govBalanceBefore == 0
 
 
     

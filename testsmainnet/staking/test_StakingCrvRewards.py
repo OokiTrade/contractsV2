@@ -23,16 +23,13 @@ def POOL3(TestToken):
 def testStake_Crv(requireMainnetFork, stakingV1_1, fees_extractor, accounts, SUSHI_CHEF, POOL3Gauge, POOL3, stakingAdminSettings, CRV):
     account1 = accounts[9]
     account2 = "0xd28aaacaa524f50da5c6025ca5a5e1a8cbf84647"
-    calldata = stakingAdminSettings.setApprovals.encode_input(POOL3, POOL3Gauge, 2**256-1)
-    stakingV1_1.updateSettings(stakingAdminSettings, calldata, {"from": stakingV1_1.owner()})
-
     #This will trigger deposit 3crv
     stakingV1_1.claimCrv({'from': account1})
 
     chain.mine(timedelta=1000)
     claimable = POOL3Gauge.claimable_tokens.call(stakingV1_1, {'from': stakingV1_1})
-    earnedCrv = stakingV1_1.earned.call(account2, {'from': account2})[5]
-    earned3crv = stakingV1_1.earned.call(account2, {'from': account2})[1]
+    earnedCrv = stakingV1_1.pendingCrvRewards.call(account2)
+    earned3crv = stakingV1_1.earned(account2)[1]
     total = POOL3Gauge.balanceOf(stakingV1_1)
     assert int((earnedCrv/claimable)* 1000000) == int((earned3crv/total) * 1000000)
 
@@ -40,12 +37,12 @@ def testStake_Crv(requireMainnetFork, stakingV1_1, fees_extractor, accounts, SUS
     stakingV1_1.claimCrv({'from': account2})
     assert CRV.balanceOf(account2) >= balance+earnedCrv
 
-    assert stakingV1_1.earned.call(account2, {'from': account2})[5] == 0
+    assert stakingV1_1.pendingCrvRewards.call(account2) == 0
     chain.mine()
 
-    pool3Balance = stakingV1_1.earned.call(account2, {'from': account2})[5];
+    pool3Balance = stakingV1_1.pendingCrvRewards.call(account2);
     assert pool3Balance > 0
     stakingV1_1.claim3Crv({'from': account2})
-    assert stakingV1_1.earned.call(account2, {'from': account2})[5] >= pool3Balance
+    assert stakingV1_1.pendingCrvRewards.call(account2) >= pool3Balance
 
     assert True
