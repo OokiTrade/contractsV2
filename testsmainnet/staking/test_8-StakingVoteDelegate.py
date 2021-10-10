@@ -16,7 +16,9 @@ def resetdelegators(stakingVoteDelegator):
     stakingVoteDelegator.delegate(proposer, {'from': proposer})
     stakingVoteDelegator.delegate(acct, {'from': acct})
 
-def testStake_VoteDelegateWF1(requireMainnetFork, stakingV1_1, governance,LPT, accounts,stakingVoteDelegator, BZRX, iUSDC, vBZRX):
+
+def testStake_VoteDelegateWF1(requireMainnetFork, stakingV1_1, governance,LPT, accounts,stakingVoteDelegator, BZRX, iUSDC, vBZRX, bzx):
+    BZRX.transfer(proposer,  BZRX.balanceOf(bzx), {'from': bzx})
     resetdelegators(stakingVoteDelegator)
     stakingV1_1.stake([BZRX], [BZRX.balanceOf(proposer)], {'from': proposer})
     vp1 = stakingV1_1.votingBalanceOfNow(acct)
@@ -50,7 +52,8 @@ def testStake_VoteDelegateWF1(requireMainnetFork, stakingV1_1, governance,LPT, a
     governance.cancel(proposalId, {"from": accounts[0]})
     assert True
 
-def testStake_VoteDelegateCreateProposal(requireMainnetFork, stakingV1_1, governance,LPT, accounts,stakingVoteDelegator, BZRX, iUSDC, vBZRX):
+def testStake_VoteDelegateCreateProposal(requireMainnetFork, stakingV1_1, governance,LPT, accounts,stakingVoteDelegator, BZRX, iUSDC, vBZRX,bzx):
+    BZRX.transfer(proposer,  BZRX.balanceOf(bzx), {'from': bzx})
     resetdelegators(stakingVoteDelegator)
     stakingV1_1.stake([BZRX], [BZRX.balanceOf(proposer)], {'from': proposer})
     vp1 = stakingV1_1.votingBalanceOfNow(proposer)
@@ -69,7 +72,8 @@ def testStake_VoteDelegateCreateProposal(requireMainnetFork, stakingV1_1, govern
 
     assert True
 
-def testStake_VoteDelegate2Delegates(requireMainnetFork, stakingV1_1, governance,LPT, accounts,stakingVoteDelegator, BZRX, iUSDC, vBZRX):
+def testStake_VoteDelegate2Delegates(requireMainnetFork, stakingV1_1, governance,LPT, accounts,stakingVoteDelegator, BZRX, iUSDC, vBZRX, bzx):
+    BZRX.transfer(proposer,  BZRX.balanceOf(bzx), {'from': bzx})
     resetdelegators(stakingVoteDelegator)
     stakingV1_1.stake([BZRX], [BZRX.balanceOf(proposer)], {'from': proposer})
     vp1 = stakingV1_1.votingBalanceOfNow(acct)
@@ -87,9 +91,11 @@ def testStake_VoteDelegate2Delegates(requireMainnetFork, stakingV1_1, governance
     assert True
 
 
-def testStake_VoteDelegateCancel(requireMainnetFork, stakingV1_1, governance,LPT, accounts,stakingVoteDelegator, BZRX, iUSDC, vBZRX):
+def testStake_VoteDelegateCancel(requireMainnetFork, stakingV1_1, governance,LPT, accounts,stakingVoteDelegator, BZRX, iUSDC, vBZRX, bzx):
+    BZRX.transfer(proposer,  BZRX.balanceOf(bzx), {'from': bzx})
     resetdelegators(stakingVoteDelegator)
     stakingV1_1.stake([BZRX], [BZRX.balanceOf(proposer)], {'from': proposer})
+    stakingVoteDelegator.delegate(proposer, {'from': acct})
     governance.propose([iUSDC.address],[0],[""],[""],"asdf", {"from": proposer})
     proposalId = governance.proposalCount()
     proposal = governance.proposals(governance.proposalCount())
