@@ -88,5 +88,5 @@ def testGovernanceProposal(requireMainnetFork, accounts, DAO, BZRX, TIMELOCK, BZ
     assert BZRX.balanceOf("0x2a599cEba64CAb8C88549c2c7314ea02A161fC70") == 250000 * 1e18 + 21904856 * 1e18 # dao guardians multisig
 
     # BZBZX.replaceContract to deploy ProtocolPausableGuardian module
-    assert BZX.getTarget("toggleFunctionPause(bytes4)") == pausableGuardianImpl
-    assert True
+    # assert BZX.getTarget("toggleFunctionPause(bytes4)") == pausableGuardianImpl
+    assert False

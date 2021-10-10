@@ -50,32 +50,49 @@ calldata = BZX.replaceContract.encode_input(pausableGuardianImpl)
 targets.append(BZX)
 calldatas.append(calldata)
 
-# 7. bzx.setLoanPool([iOOKI], [OOKI])
-OOKI = "0xC5c66f91fE2e395078E0b872232A20981bc03B15"
-iOOKI = "0x05d5160cbc6714533ef44CEd6dd32112d56Ad7da"
-calldata = BZX.setLoanPool.encode_input([iOOKI], [OOKI])
-targets.append(BZX)
+# # 7. bzx.setLoanPool([iOOKI], [OOKI])
+# OOKI = "0xC5c66f91fE2e395078E0b872232A20981bc03B15"
+# iOOKI = "0x05d5160cbc6714533ef44CEd6dd32112d56Ad7da"
+# calldata = BZX.setLoanPool.encode_input([iOOKI], [OOKI])
+# targets.append(BZX)
+# calldatas.append(calldata)
+
+# # 8. bzx.setSupportedTokens([OOKI], [True])
+# calldata = BZX.setSupportedTokens.encode_input([OOKI], [True], True)
+# targets.append(BZX)
+# calldatas.append(calldata)
+
+# # 9. bzx.setLiquidationIncentivePercent(...) 
+# loanTokens = []
+# collateralTokens = []
+# amounts = []
+# iTokens = BZX.getLoanPoolsList(0, 30)
+# for iToken in iTokens:
+#     loanTokens.append(iToken)
+#     collateralTokens.append(BZX.loanPoolToUnderlying(iToken))
+#     amounts.append(7*1e18)
+# calldata = BZX.setLiquidationIncentivePercent.encode_input(loanTokens, collateralTokens, amounts)
+# targets.append(BZX)
+# calldatas.append(calldata)
+
+stakingAdminSettings = acct.deploy(StakingAdminSettings)
+POOL3Gauge = Contract.from_abi("POOL3Gauge", "0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A", interface.ICurve3PoolGauge.abi)
+POOL3 = Contract.from_abi("POOL3", "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490", TestToken.abi)
+
+calldata = stakingAdminSettings.setApprovals.encode_input(POOL3, POOL3Gauge, 2**256-1)
+calldata = STAKING.updateSettings.encode_input(stakingAdminSettings, calldata)
+targets.append(STAKING)
 calldatas.append(calldata)
 
-# 8. bzx.setSupportedTokens([OOKI], [True])
-calldata = BZX.setSupportedTokens.encode_input([OOKI], [True], True)
-targets.append(BZX)
+stakingVoteDelegatorImpl = acct.deploy(StakingVoteDelegator)
+stakingVoteDelegatorProxy = acct.deploy(Proxy_0_5, stakingVoteDelegatorImpl)
+calldata = stakingAdminSettings.setVoteDelegator.encode_input(stakingVoteDelegatorProxy.address)
+calldata = STAKING.updateSettings.encode_input(stakingAdminSettings, calldata)
+targets.append(STAKING)
 calldatas.append(calldata)
 
-# 9. bzx.setLiquidationIncentivePercent(...) 
-loanTokens = []
-collateralTokens = []
-amounts = []
-iTokens = BZX.getLoanPoolsList(0, 30)
-for iToken in iTokens:
-    loanTokens.append(iToken)
-    collateralTokens.append(BZX.loanPoolToUnderlying(iToken))
-    amounts.append(7*1e18)
-calldata = BZX.setLiquidationIncentivePercent.encode_input(loanTokens, collateralTokens, amounts)
-targets.append(BZX)
-calldatas.append(calldata)
-
-
+# #this will trigger deposit to curve, otherwise claim() will fail, because it will try to withdraw from pool
+# TODO STAKING.claimCrv({'from': res.owner()})
 
 values = [0] * len(targets)  # empty array
 signatures = [""] * len(targets)  # empty signatures array
