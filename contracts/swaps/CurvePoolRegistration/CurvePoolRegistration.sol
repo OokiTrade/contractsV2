@@ -1,6 +1,8 @@
 pragma solidity 0.5.17;
 
-contract CurvePoolRegistration {
+import "@openzeppelin-2.5.0/ownership/Ownable.sol";
+
+contract CurvePoolRegistration is Ownable {
     mapping(address => mapping(address => uint128)) public TokenPoolID;
     mapping(address => bool) public validPool;
     mapping(address => mapping(address => bool)) public validTokenForPool;
@@ -9,7 +11,7 @@ contract CurvePoolRegistration {
         address tokenPool,
         address[] memory tokensInPool,
         uint128[] memory tokenIDs
-    ) public {
+    ) public onlyOwner {
         validPool[tokenPool] = true;
         for (uint256 x = 0; x < tokensInPool.length; x++) {
             TokenPoolID[tokenPool][tokensInPool[x]] = tokenIDs[x];
@@ -17,7 +19,7 @@ contract CurvePoolRegistration {
         }
     }
 
-    function disablePool(address tokenPool) public {
+    function disablePool(address tokenPool) public onlyOwner {
         validPool[tokenPool] = false;
     }
 

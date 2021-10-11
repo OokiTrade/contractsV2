@@ -30,7 +30,6 @@ contract SwapsImpl3Curve_ETH is State, ISwapsImpl {
         bytes memory payload
     )
         public
-        
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
     {
         require(sourceTokenAddress != destTokenAddress, "source == dest");
@@ -68,13 +67,12 @@ contract SwapsImpl3Curve_ETH is State, ISwapsImpl {
         address sourceTokenAddress,
         address destTokenAddress,
         uint256 sourceTokenAmount
-    ) public view  returns (uint256 expectedRate) {
+    ) public view returns (uint256 expectedRate) {
         revert("unsupported");
     }
 
     function dexAmountOut(bytes memory route, uint256 amountIn)
         public
-        
         returns (uint256 amountOut, address midToken)
     {
         if (amountIn == 0) {
@@ -86,7 +84,6 @@ contract SwapsImpl3Curve_ETH is State, ISwapsImpl {
 
     function dexAmountIn(bytes memory route, uint256 amountOut)
         public
-        
         returns (uint256 amountIn, address midToken)
     {
         if (amountOut != 0) {
@@ -138,7 +135,7 @@ contract SwapsImpl3Curve_ETH is State, ISwapsImpl {
         return amountIn;
     }
 
-    function setSwapApprovals(address[] memory tokens) public  {
+    function setSwapApprovals(address[] memory tokens) public {
         require(
             ICurvePoolRegistration(PoolRegistry).CheckPoolValidity(tokens[0])
         );
