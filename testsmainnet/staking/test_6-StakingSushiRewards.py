@@ -20,9 +20,15 @@ def loadContractFromAbi(address, alias, abi):
 
 def testStake_Sushi(requireMainnetFork, stakingV1_1, bzx,LPT,SUSHI, accounts, SUSHI_CHEF):
     account1 = accounts[9]
-    #this accounnt has never claimed sushi yet, good to calculate proportions
     account2 = "0xd28aaacaa524f50da5c6025ca5a5e1a8cbf84647"
+
+    account3 = accounts[8]
+
+    stakingV1_1.unstake([LPT], [stakingV1_1.balanceOfByAsset(LPT, account2)], {'from': account2})
+    LPT.transfer(account3, LPT.balanceOf(account2), {'from': account2})
+
     LPT.approve(stakingV1_1, 2**256-1, {'from': account1})
+    LPT.approve(stakingV1_1, 2**256-1, {'from': account3})
 
     #From first account
 
@@ -31,36 +37,36 @@ def testStake_Sushi(requireMainnetFork, stakingV1_1, bzx,LPT,SUSHI, accounts, SU
     stakingV1_1.stake([LPT], [2e18], {'from': account1})
     assert lpBalanceBefore + 2e18 == SUSHI_CHEF.userInfo(188,stakingV1_1)[0]
 
-
     lpBalanceBefore = SUSHI_CHEF.userInfo(188,stakingV1_1)[0]
     stakingV1_1.claimSushi({'from': account1}) # Triggers sushi send rewards to staking
     assert lpBalanceBefore == SUSHI_CHEF.userInfo(188,stakingV1_1)[0]
 
-    initialPendingSushi = stakingV1_1.earned(account2)[4]
-    poolShare = stakingV1_1.balanceOfByAsset(LPT, account2)/stakingV1_1.totalSupplyByAsset(LPT)
-    sushiShare = initialPendingSushi/SUSHI.balanceOf(stakingV1_1)
-
-    assert (int)(poolShare*100) == (int)(sushiShare*100)
+    stakingV1_1.stake([LPT], [LPT.balanceOf(account3)], {'from': account3})
     chain.mine(1000)
-    sushiBalance1 = SUSHI.balanceOf(account2)
-    stakingV1_1.claimSushi({'from': account2})
-    sushiBalance = SUSHI.balanceOf(account2) - sushiBalance1
-    sushiShare = sushiBalance/SUSHI.balanceOf(stakingV1_1)
-    assert (int)(poolShare*100) == (int)(sushiShare*100)
+    initialPendingSushi = stakingV1_1.earned(account3)[4]
+    poolShare = stakingV1_1.balanceOfByAsset(LPT, account3)/stakingV1_1.totalSupplyByAsset(LPT)
+    sushiShare =  initialPendingSushi/SUSHI_CHEF.pendingSushi(188,stakingV1_1)
+
+    assert (int)(poolShare*100) == (int)(sushiShare * 100)
+    sushiBalanceStaking = SUSHI.balanceOf(stakingV1_1)
+    sushiBalance1 = SUSHI.balanceOf(account3)
+    stakingV1_1.claimSushi({'from': account3})
+    sushiBalance = SUSHI.balanceOf(account3) - sushiBalance1
+    assert (initialPendingSushi/sushiBalance) > 0.99
     chain.mine(100);
-    assert initialPendingSushi > stakingV1_1.earned(account2)[4]
-    assert stakingV1_1.earned(account2)[4] > 0
+    assert initialPendingSushi > stakingV1_1.earned(account3)[4]
+    assert stakingV1_1.earned(account3)[4] > 0
 
 
 
     chain.mine()
-    assert stakingV1_1.earned(account2)[4] == stakingV1_1.earned.call(account2)[4]
+    assert stakingV1_1.earned(account3)[4] == stakingV1_1.earned.call(account3)[4]
 
     lpBalanceBefore = SUSHI_CHEF.userInfo(188,stakingV1_1)[0]
-    stakingV1_1.unstake([LPT], [2e18], {'from': account2})
+    stakingV1_1.unstake([LPT], [2e18], {'from': account3})
     assert lpBalanceBefore - 2e18 == SUSHI_CHEF.userInfo(188,stakingV1_1)[0]
 
-    LPT.transfer(account1, 2e18, {'from': account2})
+    LPT.transfer(account1, 2e18, {'from': account3})
     pendingBefore1 = stakingV1_1.earned(account1)[4]
     stakingV1_1.stake([LPT], [2e18], {'from': account1})
     pendingBefore2 = stakingV1_1.earned(account1)[4]
@@ -74,11 +80,10 @@ def testStake_Sushi(requireMainnetFork, stakingV1_1, bzx,LPT,SUSHI, accounts, SU
     assert SUSHI.balanceOf(account1) > sushiBalanceBefore
 
     chain.mine(1000)
-    sushiBalanceBefore1 = SUSHI.balanceOf(account2);
+    pendingBefore1 = stakingV1_1.earned(account3)[4]
+    sushiBalanceBefore1 = SUSHI.balanceOf(account3);
     sushiBalanceBefore2 = SUSHI.balanceOf(stakingV1_1);
-    stakingV1_1.claimSushi({'from': account2})
-    sushiBalanceAfter =  SUSHI.balanceOf(account2) - sushiBalanceBefore1
-    sushiShare = sushiBalanceAfter/(SUSHI.balanceOf(stakingV1_1)-sushiBalanceBefore2 + sushiBalanceAfter)
-    assert (int)(poolShare*100) == (int)(sushiShare*100)
+    stakingV1_1.claimSushi({'from': account3})
+    assert pendingBefore1/(SUSHI.balanceOf(account3) - sushiBalanceBefore1) > 0.99
 
     assert True

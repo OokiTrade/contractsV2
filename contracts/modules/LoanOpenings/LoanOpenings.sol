@@ -117,6 +117,10 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         view
         returns (uint256 value)
     {
+        if (loanTokenSent < newPrincipal) {
+            return 0;
+        }
+
         uint256 maxLoanTerm = 2419200; // 28 days
 
         uint256 owedPerDay = newPrincipal
@@ -126,6 +130,10 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         uint256 interestAmountRequired = maxLoanTerm
             .mul(owedPerDay)
             .div(1 days);
+
+        if (loanTokenSent < interestAmountRequired) {
+            return 0;
+        }
 
         value = _swapsExpectedReturn(
             loanToken,
