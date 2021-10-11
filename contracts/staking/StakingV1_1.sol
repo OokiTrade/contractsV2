@@ -866,6 +866,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             uint256 vBZRXBalance,
             uint256 LPTokenBalance,
             uint256 LPTokenBalanceOld
+            // uint256 iBZRXBalance
         )
     {
         return (
@@ -874,6 +875,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             balanceOfByAsset(vBZRX, account),
             balanceOfByAsset(LPToken, account),
             balanceOfByAsset(LPTokenOld, account)
+            // balanceOfByAsset(iBZRX, account)
         );
     }
 

@@ -31,17 +31,6 @@ contract StakingAdminSettings is StakingState, StakingConstants, PausableGuardia
     }
 
 
-
-    // OnlyOwner functions
-
-    // function togglePause(
-    //     bool _isPaused)
-    //     external
-    //     onlyOwner
-    // {
-    //     isPaused = _isPaused;
-    // }
-
     function setFundsWallet(
         address _fundsWallet)
         external
@@ -129,8 +118,6 @@ contract StakingAdminSettings is StakingState, StakingConstants, PausableGuardia
     }
 
 
-    event LoggerString(string name, uint256 amount);
-    // Migrate lp token to another lp contract. 
     function migrateSLP() public onlyOwner {
         require(address(converter) != address(0), "no converter");
 
@@ -161,7 +148,7 @@ contract StakingAdminSettings is StakingState, StakingConstants, PausableGuardia
         _totalSupplyPerToken[BZRX] = 0;
         
 
-        // BIG TODO since thsese are not migrated 1:1
+        // BIG TODO since these are not migrated 1:1
         _totalSupplyPerToken[LPToken] = SLPAfter;
         // _totalSupplyPerToken[LPTokenBeforeMigration] = 0; I don't zero out this so I can use to calc proportion when migrating user balance
         // TODO ? is this correct
