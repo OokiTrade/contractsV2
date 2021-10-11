@@ -4,8 +4,8 @@ import "../WrappedToken.sol";
 import "../bZxInterfaces/IPriceFeeds.sol";
 import "../bZxInterfaces/ILoanToken.sol";
 import "../bZxInterfaces/IBZX.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin-4.3.2/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin-4.3.2/token/ERC20/extensions/IERC20Metadata.sol";
 
 contract OrderBookStorage {
     address internal bZxRouterAddress = address(0);
