@@ -1089,7 +1089,9 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     }
 
     function migrateUserBalances(address account) public {
-        // TODO make sure you can't migrate twice
+        
+        require(isUserMigrated(account), "1"); // make sure you can't migrate twice
+        
         _balancesPerToken[OOKI][account] = _balancesPerToken[BZRX][account] * 10;
         _balancesPerToken[BZRX][account] = 0;
         
