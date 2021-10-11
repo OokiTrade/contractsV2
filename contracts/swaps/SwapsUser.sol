@@ -3,7 +3,7 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.6.0;
+pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
 import "../core/State.sol";
@@ -11,7 +11,7 @@ import "../../interfaces/IPriceFeeds.sol";
 import "../events/SwapsEvents.sol";
 import "../mixins/FeesHelper.sol";
 import "./ISwapsImpl.sol";
-import "./IDexRecords.sol";
+import "../interfaces/IDexRecords.sol";
 
 contract SwapsUser is State, SwapsEvents, FeesHelper {
     function _loanSwap(

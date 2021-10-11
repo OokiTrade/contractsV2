@@ -3,14 +3,14 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.6.0;
+pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 import "../../core/State.sol";
-import "../../openzeppelin/SafeERC20.sol";
+import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 import "../ISwapsImpl.sol";
-import "../v3Interfaces/ICurve.sol";
+import "../../interfaces/ICurve.sol";
 import "../../mixins/Path.sol";
-import "../CurvePoolRegistration/ICurvePoolRegistration.sol";
+import "../../interfaces/ICurvePoolRegistration.sol";
 
 contract SwapsImpl3Curve_ETH is State, ISwapsImpl {
     using SafeERC20 for IERC20;
@@ -30,7 +30,7 @@ contract SwapsImpl3Curve_ETH is State, ISwapsImpl {
         bytes memory payload
     )
         public
-        override
+        
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
     {
         require(sourceTokenAddress != destTokenAddress, "source == dest");
@@ -68,13 +68,13 @@ contract SwapsImpl3Curve_ETH is State, ISwapsImpl {
         address sourceTokenAddress,
         address destTokenAddress,
         uint256 sourceTokenAmount
-    ) public view override returns (uint256 expectedRate) {
+    ) public view  returns (uint256 expectedRate) {
         revert("unsupported");
     }
 
     function dexAmountOut(bytes memory route, uint256 amountIn)
         public
-        override
+        
         returns (uint256 amountOut, address midToken)
     {
         if (amountIn == 0) {
@@ -86,7 +86,7 @@ contract SwapsImpl3Curve_ETH is State, ISwapsImpl {
 
     function dexAmountIn(bytes memory route, uint256 amountOut)
         public
-        override
+        
         returns (uint256 amountIn, address midToken)
     {
         if (amountOut != 0) {
@@ -138,7 +138,7 @@ contract SwapsImpl3Curve_ETH is State, ISwapsImpl {
         return amountIn;
     }
 
-    function setSwapApprovals(address[] memory tokens) public override {
+    function setSwapApprovals(address[] memory tokens) public  {
         require(
             ICurvePoolRegistration(PoolRegistry).CheckPoolValidity(tokens[0])
         );

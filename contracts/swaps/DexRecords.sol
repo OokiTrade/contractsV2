@@ -1,4 +1,4 @@
-pragma solidity 0.6.0;
+pragma solidity 0.5.17;
 
 contract DexRecords {
     mapping(uint256 => address) public dexes;

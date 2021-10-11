@@ -3,11 +3,12 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.6.0;
+pragma solidity 0.5.17;
+pragma experimental ABIEncoderV2;
 
 import "../../core/State.sol";
-import "../../interface/IUniswapV2Router.sol";
-import "../../openzeppelin/SafeERC20.sol";
+import "../../interfaces/IUniswapV2Router.sol";
+import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 import "../ISwapsImpl.sol";
 
 contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
@@ -32,7 +33,6 @@ contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
         bytes memory payload
     )
         public
-        override
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
     {
         require(sourceTokenAddress != destTokenAddress, "source == dest");
@@ -70,13 +70,13 @@ contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
         address sourceTokenAddress,
         address destTokenAddress,
         uint256 sourceTokenAmount
-    ) public view override returns (uint256 expectedRate) {
+    ) public view  returns (uint256 expectedRate) {
         revert("unsupported");
     }
 
     function dexAmountOut(bytes memory route, uint256 amountIn)
         public
-        override
+        
         returns (uint256 amountOut, address midToken)
     {
         (address sourceTokenAddress, address destTokenAddress) = abi.decode(
@@ -140,7 +140,7 @@ contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
 
     function dexAmountIn(bytes memory route, uint256 amountOut)
         public
-        override
+        
         returns (uint256 amountIn, address midToken)
     {
         (address sourceTokenAddress, address destTokenAddress) = abi.decode(
@@ -249,7 +249,7 @@ contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
         }
     }
 
-    function setSwapApprovals(address[] memory tokens) public override {
+    function setSwapApprovals(address[] memory tokens) public  {
         for (uint256 i = 0; i < tokens.length; i++) {
             IERC20(tokens[i]).safeApprove(uniswapRouter, 0);
             IERC20(tokens[i]).safeApprove(uniswapRouter, uint256(-1));

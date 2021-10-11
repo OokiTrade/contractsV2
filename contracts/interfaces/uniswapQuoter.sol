@@ -1,4 +1,4 @@
-pragma solidity 0.6.0;
+pragma solidity 0.5.17;
 
 interface uniswapQuoter {
     function quoteExactInput(bytes calldata path, uint256 amountIn)
