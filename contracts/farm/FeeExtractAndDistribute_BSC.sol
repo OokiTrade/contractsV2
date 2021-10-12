@@ -43,6 +43,8 @@ contract FeeExtractAndDistribute_BSC is Upgradeable {
 
     mapping(IERC20 => uint256) public tokenHeld;
 
+    address payable public treasuryWallet;
+
     event ExtractAndDistribute();
 
     event AssetSwap(
@@ -113,7 +115,7 @@ contract FeeExtractAndDistribute_BSC is Upgradeable {
         }
 
         if (bnbOutput != 0) {
-            amount = (bnbOutput * 15e18) / 1e20; // burn (15%)
+            /*amount = (bnbOutput * 15e18) / 1e20; // burn (15%)
             uint256 sellAmount = amount; // sell for BZRX (15%)
             uint256 distributeAmount = (bnbOutput * 50e18) / 1e20; // distribute to stakers (50%)
             bnbOutput -= (amount + sellAmount + distributeAmount);
@@ -126,7 +128,11 @@ contract FeeExtractAndDistribute_BSC is Upgradeable {
                 0x000000000000000000000000000000000000dEaD,
                 bgovAmount
             );
-            emit AssetBurn(msg.sender, BGOV, bgovAmount);
+            emit AssetBurn(msg.sender, BGOV, bgovAmount);*/
+
+            uint256 sellAmount = (bnbOutput * 30e18) / 1e20; // sell for BZRX (30%)
+            uint256 distributeAmount = (bnbOutput * 50e18) / 1e20; // distribute to stakers (50%)
+            bnbOutput -= (sellAmount + distributeAmount);
 
             // buy and distribute BZRX
             uint256 buyAmount = IPriceFeeds(bZx.priceFeeds()).queryReturn(
@@ -155,7 +161,8 @@ contract FeeExtractAndDistribute_BSC is Upgradeable {
 
             IWethERC20(BNB).withdraw(bnbOutput + sellAmount + distributeAmount);
             chef.addAltReward.value(distributeAmount)();
-            Address.sendValue(fundsWallet, bnbOutput + sellAmount);
+            Address.sendValue(fundsWallet, sellAmount);
+            Address.sendValue(treasuryWallet, bnbOutput);
 
             emit ExtractAndDistribute();
         }
@@ -187,8 +194,12 @@ contract FeeExtractAndDistribute_BSC is Upgradeable {
         isPaused = _isPaused;
     }
 
-    function setFundsWallet(address payable _fundsWallet) external onlyOwner {
-        fundsWallet = _fundsWallet;
+    function setFundsWallet(address payable _wallet) external onlyOwner {
+        fundsWallet = _wallet;
+    }
+
+    function setTreasuryWallet(address payable _wallet) external onlyOwner {
+        treasuryWallet = _wallet;
     }
 
     function setFeeTokens(address[] calldata tokens) external onlyOwner {
@@ -200,8 +211,8 @@ contract FeeExtractAndDistribute_BSC is Upgradeable {
                 uint256(-1)
             );
         }
-        IERC20(BGOV).safeApprove(address(chef), 0);
-        IERC20(BGOV).safeApprove(address(chef), uint256(-1));
+        //IERC20(BGOV).safeApprove(address(chef), 0);
+        //IERC20(BGOV).safeApprove(address(chef), uint256(-1));
     }
 
     function depositToken(IERC20 token, uint256 amount) external onlyOwner {
