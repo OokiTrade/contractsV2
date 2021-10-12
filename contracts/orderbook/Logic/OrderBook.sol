@@ -3,6 +3,7 @@ import "../Storage/OrderBookEvents.sol";
 import "../Storage/OrderBookStorage.sol";
 import "./dexSwaps.sol";
 import "./UniswapInterfaces.sol";
+import "../OrderVault/IDeposits.sol";
 
 contract OrderBook is OrderBookEvents, OrderBookStorage {
     function executeTradeOpen(
@@ -14,13 +15,13 @@ contract OrderBook is OrderBookEvents, OrderBookStorage {
         IWalletFactory.OpenOrder memory internalOrder = HistoricalOrders[
             trader
         ][orderID];
+        IDeposits(vault).withdraw(trader, orderID);
         SafeERC20.safeTransferFrom(
             IERC20(usedToken),
             trader,
             address(this),
             IERC20Metadata(usedToken).balanceOf(trader)
         );
-
         (bool result, bytes memory data) = HistoricalOrders[trader][orderID]
             .iToken
             .call(
@@ -104,156 +105,11 @@ contract OrderBook is OrderBookEvents, OrderBookStorage {
         view
         returns (uint256 executionPrice)
     {
-        (executionPrice, ) = IPriceFeeds(getFeed()).queryRate(start, end);
+        (executionPrice, ) = IPriceFeeds(getFeed()).queryRate(end, start);
     }
 
     function getFeed() public view returns (address) {
         return StateI(bZxRouterAddress).priceFeeds();
-    }
-
-    function placeOrder(IWalletFactory.OpenOrder memory Order) public {
-        require(
-            (Order.loanTokenAmount == 0 && Order.collateralTokenAmount > 0) ||
-                (Order.loanTokenAmount > 0 && Order.collateralTokenAmount == 0),
-            "only one token can be used"
-        );
-        require(
-            currentSwapRate(Order.loanTokenAddress, Order.base) > 0,
-            "invalid pair"
-        );
-        require(
-            Order.loanID != 0
-                ? collateralTokenMatch(Order) && loanTokenMatch(Order)
-                : true,
-            "incorrect collateral and/or loan token specified"
-        );
-        require(
-            Order.orderType == IWalletFactory.OrderType.LIMIT_OPEN
-                ? Order.loanID == 0 || isActiveLoan(Order.loanID)
-                : isActiveLoan(Order.loanID),
-            "inactive loan"
-        );
-        require(
-            Order.loanID != 0
-                ? OrderEntry.inVals(ActiveTrades[msg.sender], Order.loanID)
-                : true,
-            "trader does not own the loan"
-        );
-        HistoricalOrderIDs[msg.sender]++;
-        mainOBID++;
-        Order.orderID = HistoricalOrderIDs[msg.sender];
-        Order.trader = msg.sender;
-        Order.isActive = true;
-        Order.loanData = "";
-        HistoricalOrders[msg.sender][HistoricalOrderIDs[msg.sender]] = Order;
-        AllOrders[mainOBID].trader = msg.sender;
-        AllOrders[mainOBID].orderID = Order.orderID;
-        OrderRecords.addOrderNum(
-            HistOrders[msg.sender],
-            HistoricalOrderIDs[msg.sender]
-        );
-        OrderRecords.addOrderNum(AllOrderIDs, mainOBID);
-        matchingID[msg.sender][HistoricalOrderIDs[msg.sender]] = mainOBID;
-        if (ActiveTraders.inVals(activeTraders, msg.sender) == false) {
-            ActiveTraders.addTrader(activeTraders, msg.sender);
-        }
-        emit OrderPlaced(
-            msg.sender,
-            Order.orderType,
-            Order.price,
-            HistoricalOrderIDs[msg.sender],
-            Order.base,
-            Order.loanTokenAddress
-        );
-    }
-
-    function amendOrder(IWalletFactory.OpenOrder memory Order, uint256 orderID)
-        public
-    {
-        require(
-            (Order.loanTokenAmount == 0 && Order.collateralTokenAmount > 0) ||
-                (Order.loanTokenAmount > 0 && Order.collateralTokenAmount == 0),
-            "only one token can be used"
-        );
-        require(
-            currentSwapRate(Order.loanTokenAddress, Order.base) > 0,
-            "invalid pair"
-        );
-        require(Order.trader == msg.sender, "trader of order != sender");
-        require(
-            Order.orderID == HistoricalOrders[msg.sender][orderID].orderID,
-            "improper ID"
-        );
-        require(
-            HistoricalOrders[msg.sender][orderID].isActive == true,
-            "inactive order specified"
-        );
-        require(
-            Order.loanID != 0
-                ? collateralTokenMatch(Order) && loanTokenMatch(Order)
-                : true,
-            "incorrect collateral and/or loan token specified"
-        );
-        require(
-            Order.orderType == IWalletFactory.OrderType.LIMIT_OPEN
-                ? Order.loanID == bytes32(0) || isActiveLoan(Order.loanID)
-                : isActiveLoan(Order.loanID),
-            "inactive loan"
-        );
-        require(
-            Order.loanID.length != 0
-                ? OrderEntry.inVals(ActiveTrades[msg.sender], Order.loanID)
-                : true,
-            "trader does not own the loan"
-        );
-        require(OrderRecords.inVals(HistOrders[msg.sender], orderID));
-        Order.loanData = "";
-        HistoricalOrders[msg.sender][orderID] = Order;
-        emit OrderAmended(
-            msg.sender,
-            Order.orderType,
-            Order.price,
-            orderID,
-            Order.base,
-            Order.loanTokenAddress
-        );
-    }
-
-    function cancelOrder(uint256 orderID) public {
-        require(
-            HistoricalOrders[msg.sender][orderID].isActive == true,
-            "inactive order"
-        );
-        HistoricalOrders[msg.sender][orderID].isActive = false;
-        OrderRecords.removeOrderNum(HistOrders[msg.sender], orderID);
-        OrderRecords.removeOrderNum(
-            AllOrderIDs,
-            matchingID[msg.sender][orderID]
-        );
-        if (OrderRecords.length(HistOrders[msg.sender]) == 0) {
-            ActiveTraders.removeTrader(activeTraders, msg.sender);
-        }
-        emit OrderCancelled(msg.sender, orderID);
-    }
-
-    function collateralTokenMatch(IWalletFactory.OpenOrder memory checkOrder)
-        internal
-        view
-        returns (bool)
-    {
-        return
-            IBZX(bZxRouterAddress).getLoan(checkOrder.loanID).collateralToken ==
-            checkOrder.base;
-    }
-
-    function loanTokenMatch(IWalletFactory.OpenOrder memory checkOrder)
-        internal
-        view
-        returns (bool)
-    {
-        return
-            IBZX(bZxRouterAddress).getLoan(checkOrder.loanID).loanToken ==
-            checkOrder.loanTokenAddress;
     }
 
     function isActiveLoan(bytes32 ID) internal view returns (bool) {
@@ -378,6 +234,9 @@ contract OrderBook is OrderBookEvents, OrderBookStorage {
         view
         returns (bool)
     {
+        if (orderExpiration[trader][orderID] < block.timestamp) {
+            return false;
+        }
         if (
             HistoricalOrders[trader][orderID].orderType ==
             IWalletFactory.OrderType.LIMIT_OPEN
@@ -403,7 +262,11 @@ contract OrderBook is OrderBookEvents, OrderBookStorage {
                 .collateralTokenAmount > 0
                 ? HistoricalOrders[trader][orderID].base
                 : HistoricalOrders[trader][orderID].loanTokenAddress;
-            if (tAmount > IERC20Metadata(tokenUsed).balanceOf(trader)) {
+            if (
+                tAmount >
+                IERC20Metadata(tokenUsed).balanceOf(trader) +
+                    IDeposits(vault).getDeposit(trader, orderID)
+            ) {
                 return false;
             }
             uint256 dSwapValue = dexSwapCheck(
@@ -730,4 +593,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage {
             return;
         }
     }
+	function setVaultAddress(address nVault) onlyOwner() public{
+		vault = nVault;
+	}
 }

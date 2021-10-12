@@ -56,12 +56,14 @@ contract OrderBookMarketOrders is OrderBookEvents, OrderBookStorage {
         address usedToken = collateralTokenAmount > loanTokenAmount
             ? base
             : LoanTokenI(iToken).loanTokenAddress();
-
+        uint256 transferAmount = collateralTokenAmount > loanTokenAmount
+            ? collateralTokenAmount
+            : loanTokenAmount;
         SafeERC20.safeTransferFrom(
             IERC20(usedToken),
             trader,
             address(this),
-            IERC20Metadata(usedToken).balanceOf(trader)
+            transferAmount
         );
         loanData = "";
         bytes32 loanID = LoanTokenI(iToken)

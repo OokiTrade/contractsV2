@@ -10,7 +10,7 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
     function adjustAllowance(address spender, address token) public {
         require(
             IBZX(bZxRouterAddress).isLoanPool(spender) ||
-                bZxRouterAddress == spender,
+                bZxRouterAddress == spender || vault == spender,
             "invalid spender"
         );
         IERC20Metadata(token).approve(spender, type(uint256).max);
