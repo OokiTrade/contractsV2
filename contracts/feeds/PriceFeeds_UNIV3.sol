@@ -4,11 +4,11 @@
  */
  /// SPDX-License-Identifier: Apache License, Version 2.0.
 
-pragma solidity >=0.5.0 <0.8.0;
+pragma solidity 0.5.17;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin-2.5.0/math/SafeMath.sol";
+import "@openzeppelin-2.5.0/ownership/Ownable.sol";
+import "@openzeppelin-2.5.0/token/ERC20/ERC20Detailed.sol";
 import "../core/Constants.sol";
 import "./IPriceFeedsExt.sol";
 
@@ -296,7 +296,7 @@ contract PriceFeeds_UNIV3 is Constants, Ownable {
     }
 
     function setDecimals(
-        IERC20[] calldata tokens)
+        ERC20Detailed[] calldata tokens)
         external
         onlyOwner
     {
@@ -368,11 +368,11 @@ contract PriceFeeds_UNIV3 is Constants, Ownable {
         } else {
             uint256 sourceTokenDecimals = decimals[sourceToken];
             if (sourceTokenDecimals == 0)
-                sourceTokenDecimals = IERC20(sourceToken).decimals();
+                sourceTokenDecimals = ERC20Detailed(sourceToken).decimals();
 
             uint256 destTokenDecimals = decimals[destToken];
             if (destTokenDecimals == 0)
-                destTokenDecimals = IERC20(destToken).decimals();
+                destTokenDecimals = ERC20Detailed(destToken).decimals();
 
             if (destTokenDecimals >= sourceTokenDecimals)
                 return 10**(SafeMath.sub(18, destTokenDecimals-sourceTokenDecimals));

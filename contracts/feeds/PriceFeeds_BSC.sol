@@ -5,9 +5,9 @@
 
 pragma solidity 0.5.17;
 
-import "../openzeppelin/SafeMath.sol";
-import "../openzeppelin/Ownable.sol";
-import "../interfaces/IERC20.sol";
+import "@openzeppelin-2.5.0/math/SafeMath.sol";
+import "@openzeppelin-2.5.0/ownership/Ownable.sol";
+import "@openzeppelin-2.5.0/token/ERC20/ERC20Detailed.sol";
 import "../core/Constants.sol";
 import "./IPriceFeedsExt.sol";
 
@@ -295,7 +295,7 @@ contract PriceFeeds_BSC is Constants, Ownable {
     }
 
     function setDecimals(
-        IERC20[] calldata tokens)
+        ERC20Detailed[] calldata tokens)
         external
         onlyOwner
     {
@@ -367,11 +367,11 @@ contract PriceFeeds_BSC is Constants, Ownable {
         } else {
             uint256 sourceTokenDecimals = decimals[sourceToken];
             if (sourceTokenDecimals == 0)
-                sourceTokenDecimals = IERC20(sourceToken).decimals();
+                sourceTokenDecimals = ERC20Detailed(sourceToken).decimals();
 
             uint256 destTokenDecimals = decimals[destToken];
             if (destTokenDecimals == 0)
-                destTokenDecimals = IERC20(destToken).decimals();
+                destTokenDecimals = ERC20Detailed(destToken).decimals();
 
             if (destTokenDecimals >= sourceTokenDecimals)
                 return 10**(SafeMath.sub(18, destTokenDecimals-sourceTokenDecimals));
