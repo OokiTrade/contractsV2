@@ -1,14 +1,13 @@
 /**
- * Copyright 2017-2021, bZeroX, LLC. All Rights Reserved.
+ * Copyright 2017-2021, bZxDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
 pragma solidity 0.5.17;
 
 import "../../core/State.sol";
-import "../../feeds/IPriceFeeds.sol";
 import "../../interfaces/IUniswapV2Router.sol";
-import "../../openzeppelin/SafeERC20.sol";
+import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 import "../ISwapsImpl.sol";
 
 
@@ -16,10 +15,12 @@ contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
     using SafeERC20 for IERC20;
 
     // mainnet
-    address public constant uniswapRouter = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
+    //address public constant uniswapRouter = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;   // uniswap
+    address public constant uniswapRouter = 0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F;     // sushiswap
     address public constant dai = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
     address public constant usdc = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     address public constant usdt = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+
 
     function dexSwap(
         address sourceTokenAddress,
@@ -64,21 +65,7 @@ contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
         view
         returns (uint256 expectedRate)
     {
-        uint256 sourceToDestPrecision = IPriceFeeds(priceFeeds).queryPrecision(
-            sourceTokenAddress,
-            destTokenAddress
-        );
-        if (sourceToDestPrecision == 0) {
-            return 0;
-        }
-
-        (uint256 amountOut,) = dexAmountOut(
-            sourceTokenAddress,
-            destTokenAddress,
-            sourceTokenAmount);
-        return amountOut
-            .mul(sourceToDestPrecision)
-            .div(sourceTokenAmount);
+        revert("unsupported");
     }
 
     function dexAmountOut(

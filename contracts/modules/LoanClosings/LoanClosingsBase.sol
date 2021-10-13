@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021, bZeroX, LLC. All Rights Reserved.
+ * Copyright 2017-2021, bZxDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -13,9 +13,10 @@ import "../../mixins/InterestUser.sol";
 import "../../mixins/LiquidationHelper.sol";
 import "../../swaps/SwapsUser.sol";
 import "../../interfaces/ILoanPool.sol";
+import "../../governance/PausableGuardian.sol";
 
 
-contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, InterestUser, SwapsUser, LiquidationHelper {
+contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, InterestUser, SwapsUser, LiquidationHelper, PausableGuardian {
 
     enum CloseTypes {
         Deposit,
@@ -28,6 +29,7 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         address receiver,
         uint256 closeAmount)
         internal
+        pausable
         returns (
             uint256 loanCloseAmount,
             uint256 seizedAmount,
@@ -147,6 +149,7 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         uint256 startingGas,
         bytes memory /*loanDataBytes*/) // for future use
         internal
+        pausable
         returns (
             address rebateToken,
             uint256 gasRebate
@@ -297,6 +300,7 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         address receiver,
         uint256 depositAmount) // denominated in loanToken
         internal
+        pausable
         returns (
             uint256 loanCloseAmount,
             uint256 withdrawAmount,
@@ -368,6 +372,7 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         bool returnTokenIsCollateral,
         bytes memory loanDataBytes)
         internal
+        pausable
         returns (
             uint256 loanCloseAmount,
             uint256 withdrawAmount,

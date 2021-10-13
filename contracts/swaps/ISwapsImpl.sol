@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021, bZeroX, LLC <https://bzx.network/>. All Rights Reserved.
+ * Copyright 2017-2021, bZxDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -25,6 +25,22 @@ interface ISwapsImpl {
         external
         view
         returns (uint256);
+
+    function dexAmountOut(
+        address sourceTokenAddress,
+        address destTokenAddress,
+        uint256 amountIn)
+        external
+        view
+        returns (uint256 amountOut, address midToken);
+
+    function dexAmountIn(
+        address sourceTokenAddress,
+        address destTokenAddress,
+        uint256 amountOut)
+        external
+        view
+        returns (uint256 amountIn, address midToken);
 
     function setSwapApprovals(
         address[] calldata tokens)

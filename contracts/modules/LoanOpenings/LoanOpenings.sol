@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021, bZeroX, LLC. All Rights Reserved.
+ * Copyright 2017-2021, bZxDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -11,9 +11,10 @@ import "../../events/LoanOpeningsEvents.sol";
 import "../../mixins/VaultController.sol";
 import "../../mixins/InterestUser.sol";
 import "../../swaps/SwapsUser.sol";
+import "../../governance/PausableGuardian.sol";
 
 
-contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUser, SwapsUser {
+contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUser, SwapsUser, PausableGuardian {
 
     function initialize(
         address target)
@@ -50,6 +51,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         external
         payable
         nonReentrant
+        pausable
         returns (LoanOpenData memory)
     {
         require(msg.value == 0 || loanDataBytes.length != 0, "loanDataBytes required with ether");
@@ -92,6 +94,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         address delegated,
         bool toggle)
         external
+        pausable
     {
         require(loans[loanId].borrower == msg.sender, "unauthorized");
 
@@ -114,6 +117,10 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         view
         returns (uint256 value)
     {
+        if (loanTokenSent < newPrincipal) {
+            return 0;
+        }
+
         uint256 maxLoanTerm = 2419200; // 28 days
 
         uint256 owedPerDay = newPrincipal
@@ -123,6 +130,10 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         uint256 interestAmountRequired = maxLoanTerm
             .mul(owedPerDay)
             .div(1 days);
+
+        if (loanTokenSent < interestAmountRequired) {
+            return 0;
+        }
 
         value = _swapsExpectedReturn(
             loanToken,

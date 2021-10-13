@@ -1,11 +1,11 @@
 /**
- * Copyright 2017-2021, bZeroX, LLC. All Rights Reserved.
+ * Copyright 2017-2021, bZxDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
 pragma solidity 0.6.12;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin-3.4.0/access/Ownable.sol";
 
 
 interface GovTokenLike {
@@ -14,7 +14,7 @@ interface GovTokenLike {
 }
 
 // bsc: 0x68d57B33Fe3B691Ef96dFAf19EC8FA794899f2ac
-contract MintCoordinator is Ownable {
+contract MintCoordinator_BSC is Ownable {
 
     GovTokenLike public constant govToken = GovTokenLike(0xf8E026dC4C0860771f691EcFFBbdfe2fa51c77CF);
 

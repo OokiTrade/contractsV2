@@ -3,41 +3,18 @@ pragma experimental ABIEncoderV2;
 
 /// SPDX-License-Identifier: MIT
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin-3.4.0/token/ERC20/IERC20.sol";
+import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
 import "./interfaces/Upgradeable.sol";
 import "./GovToken.sol";
 import "./MintCoordinator_Polygon.sol";
+import "./interfaces/IMasterChef.sol";
 
 
 contract MasterChef_Polygon is Upgradeable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    // Info of each user.
-    struct UserInfo {
-        uint256 amount; // How many LP tokens the user has provided.
-        uint256 rewardDebt; // Reward debt. See explanation below.
-        //
-        // We do some fancy math here. Basically, any point in time, the amount of GOVs
-        // entitled to a user but is pending to be distributed is:
-        //
-        //   pending reward = (user.amount * pool.accGOVPerShare) - user.rewardDebt
-        //
-        // Whenever a user deposits or withdraws LP tokens to a pool. Here's what happens:
-        //   1. The pool's `accGOVPerShare` (and `lastRewardBlock`) gets updated.
-        //   2. User receives the pending reward sent to his/her address.
-        //   3. User's `amount` gets updated.
-        //   4. User's `rewardDebt` gets updated.
-    }
-    // Info of each pool.
-    struct PoolInfo {
-        IERC20 lpToken; // Address of LP token contract.
-        uint256 allocPoint; // How many allocation points assigned to this pool. GOVs to distribute per block.
-        uint256 lastRewardBlock; // Last block number that GOVs distribution occurs.
-        uint256 accGOVPerShare; // Accumulated GOVs per share, times 1e12. See below.
-    }
     // The GOV TOKEN!
     GovToken public GOV;
     // Dev address.
@@ -51,9 +28,9 @@ contract MasterChef_Polygon is Upgradeable {
     // unused
     address public migrator;
     // Info of each pool.
-    PoolInfo[] public poolInfo;
+    IMasterChef.PoolInfo[] public poolInfo;
     // Info of each user that stakes LP tokens.
-    mapping(uint256 => mapping(address => UserInfo)) public userInfo;
+    mapping(uint256 => mapping(address => IMasterChef.UserInfo)) public userInfo;
     // Total allocation poitns. Must be the sum of all allocation points in all pools.
     uint256 public totalAllocPoint = 0;
     // The block number when GOV mining starts.
@@ -74,9 +51,10 @@ contract MasterChef_Polygon is Upgradeable {
         uint256 amount
     );
 
-    MintCoordinator_Polygon public constant coordinator = MintCoordinator_Polygon(0x21baFa16512D6B318Cca8Ad579bfF04f7b7D3440);
+    MintCoordinator_Polygon public constant coordinator = MintCoordinator_Polygon(0x52fb1688B829BDb2BF70058f0BBfFD38af26cc2b);
 
     mapping(IERC20 => bool) public poolExists;
+
     modifier nonDuplicated(IERC20 _lpToken) {
         require(!poolExists[_lpToken], "pool exists");
         _;
@@ -89,19 +67,79 @@ contract MasterChef_Polygon is Upgradeable {
     mapping(uint256 => bool) public isLocked;
 
     // total locked rewards for a user
-    mapping(address => uint256) public lockedRewards;
+    mapping(address => uint256) internal _lockedRewards;
+
+
+    bool public notPaused;
+
+    modifier checkNoPause() {
+        require(notPaused || msg.sender == owner(), "paused");
+        _;
+    }
+
+    // vestingStamp for a user
+    mapping(address => uint256) public userStartVestingStamp;
+
+    //default value if userStartVestingStamp[user] == 0
+    uint256 public startVestingStamp;
+
+    uint256 public vestingDuration; // 15768000 6 months (6 * 365 * 24 * 60 * 60)
+
+
+    event AddAltReward(
+        address indexed sender,
+        uint256 indexed pid,
+        uint256 amount
+    );
+
+    event ClaimAltRewards(
+        address indexed user,
+        uint256 amount
+    );
+
+    //Mapping pid -- accumulated bnbPerGov
+    mapping(uint256 => uint256[]) public altRewardsRounds;   // Old
+
+    //user => lastClaimedRound
+    mapping(address => uint256) public userAltRewardsRounds; // Old
+
+    //pid -- altRewardsPerShare
+    mapping(uint256 => uint256) public altRewardsPerShare;
+
+    //pid -- (user -- altRewardsPerShare)
+    mapping(uint256 => mapping(address => uint256)) public userAltRewardsPerShare;
+
+    bool public vestingDisabled;
 
     function initialize(
         GovToken _GOV,
         address _devaddr,
         uint256 _GOVPerBlock,
-        uint256 _startBlock
+        uint256 _startBlock,
+        uint256 _bonusEndBlock
     ) public onlyOwner {
         require(address(GOV) == address(0), "unauthorized");
         GOV = _GOV;
         devaddr = _devaddr;
         GOVPerBlock = _GOVPerBlock;
+        bonusEndBlock = _bonusEndBlock;
         startBlock = _startBlock;
+    }
+
+
+
+    function setVestingDuration(uint256 _vestingDuration)
+        external
+        onlyOwner
+    {
+        vestingDuration = _vestingDuration;
+    }
+
+    function setStartVestingStamp(uint256 _startVestingStamp)
+        external
+        onlyOwner
+    {
+        startVestingStamp = _startVestingStamp;
     }
 
     function poolLength() external view returns (uint256) {
@@ -122,7 +160,7 @@ contract MasterChef_Polygon is Upgradeable {
         totalAllocPoint = totalAllocPoint.add(_allocPoint);
         poolExists[_lpToken] = true;
         poolInfo.push(
-            PoolInfo({
+            IMasterChef.PoolInfo({
                 lpToken: _lpToken,
                 allocPoint: _allocPoint,
                 lastRewardBlock: lastRewardBlock,
@@ -140,7 +178,7 @@ contract MasterChef_Polygon is Upgradeable {
             massUpdatePools();
         }
 
-        PoolInfo storage pool = poolInfo[_pid];
+        IMasterChef.PoolInfo storage pool = poolInfo[_pid];
         require(address(pool.lpToken) != address(0) && poolExists[pool.lpToken], "pool not exists");
         totalAllocPoint = totalAllocPoint.sub(pool.allocPoint).add(
             _allocPoint
@@ -173,6 +211,13 @@ contract MasterChef_Polygon is Upgradeable {
         isLocked[_pid] = _toggle;
     }
 
+    function setGOVPerBlock(uint256 _GOVPerBlock)
+        public
+        onlyOwner
+    {
+        massUpdatePools();
+        GOVPerBlock = _GOVPerBlock;
+    }
 
     function getMultiplier(uint256 _from, uint256 _to)
         public
@@ -203,6 +248,8 @@ contract MasterChef_Polygon is Upgradeable {
         view
         returns (uint256)
     {
+        return _to.sub(_from).mul(1e18);
+        /*
         // _periodBlocks = 1296000 = 60 * 60 * 24 * 30 / 2 = blocks_in_30_days (assume 2 second blocks)
         uint256 _bonusEndBlock = _bonusStartBlock + 1296000;
 
@@ -243,7 +290,7 @@ contract MasterChef_Polygon is Upgradeable {
             return _bonusEndBlock.sub(_from).mul(_avgMultiplier).add(
                     _to.sub(_bonusEndBlock).mul(1e18)
                 );
-        }
+        }*/
     }
     
     function _pendingGOV(uint256 _pid, address _user)
@@ -251,8 +298,8 @@ contract MasterChef_Polygon is Upgradeable {
         view
         returns (uint256)
     {
-        PoolInfo storage pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][_user];
+        IMasterChef.PoolInfo storage pool = poolInfo[_pid];
+        IMasterChef.UserInfo storage user = userInfo[_pid][_user];
         uint256 accGOVPerShare = pool.accGOVPerShare.mul(1e18);
         uint256 lpSupply = balanceOf[_pid];
         if (block.number > pool.lastRewardBlock && lpSupply != 0) {
@@ -270,6 +317,47 @@ contract MasterChef_Polygon is Upgradeable {
     }
 
 
+    function pendingAltRewards(address _user)
+        external
+        view
+        returns (uint256)
+    {
+        return _pendingAltRewards(GOV_POOL_ID, _user);
+    }
+
+    //Splitted by pid in case if we want to distribute altRewards to other pids like bzrx
+    function _pendingAltRewards(uint256 pid, address _user)
+        internal
+        view
+        returns (uint256)
+    {
+        uint256 userSupply = userInfo[pid][_user].amount;
+        uint256 _altRewardsPerShare = altRewardsPerShare[pid];
+        if (_altRewardsPerShare == 0)
+            return 0;
+
+        if (userSupply == 0)
+            return 0;
+
+        uint256 _userAltRewardsPerShare = userAltRewardsPerShare[pid][_user];
+
+        //Handle the backcapability,
+        //when all user claim altrewards at least once we can remove this check
+        if(_userAltRewardsPerShare == 0){
+            //Or didnt claim or didnt migrate
+
+            //check if migrate
+            uint256 _lastClaimedRound = userAltRewardsRounds[_user];
+            //Never claimed yet
+            if (_lastClaimedRound != 0) {
+                _lastClaimedRound -= 1; //correct index to start from 0
+                _userAltRewardsPerShare = altRewardsRounds[GOV_POOL_ID][_lastClaimedRound];
+            }
+        }
+
+        return (_altRewardsPerShare.sub(_userAltRewardsPerShare)).mul(userSupply).div(1e12);
+    }
+
     // View function to see pending GOVs on frontend.
     function pendingGOV(uint256 _pid, address _user)
         external
@@ -279,31 +367,101 @@ contract MasterChef_Polygon is Upgradeable {
         return _pendingGOV(_pid, _user);
     }
 
+    function unlockedRewards(address _user)
+        public
+        view
+        returns (uint256)
+    {
+        uint256 _locked = _lockedRewards[_user];
+
+        if(_locked == 0) {
+            return 0;
+        }
+
+        return calculateUnlockedRewards(_locked, now, userStartVestingStamp[_user]);
+    }
+
+    function calculateUnlockedRewards(uint256 _locked, uint256 currentStamp, uint256 _userStartVestingStamp)
+        public
+        view
+        returns (uint256)
+    {
+        //Unlock everything
+        if(vestingDisabled){
+            return _locked;
+        }
+        //Vesting is not started
+        if(startVestingStamp == 0 || vestingDuration == 0){
+            return 0;
+        }
+
+        if(_userStartVestingStamp == 0) {
+            _userStartVestingStamp = startVestingStamp;
+        }
+        uint256 _cliffDuration = currentStamp.sub(_userStartVestingStamp);
+        if(_cliffDuration >= vestingDuration)
+            return _locked;
+
+        return _cliffDuration.mul(_locked.div(vestingDuration)); // _locked.div(vestingDuration) is unlockedPerSecond
+    }
+
+    function lockedRewards(address _user)
+        public
+        view
+        returns (uint256)
+    {
+        return _lockedRewards[_user].sub(unlockedRewards(_user));
+    }
+
+    function toggleVesting(bool _isEnabled) external onlyOwner {
+        vestingDisabled = !_isEnabled;
+    }
+
+    function togglePause(bool _isPaused) external onlyOwner {
+        notPaused = !_isPaused;
+    }
 
     // Update reward vairables for all pools. Be careful of gas spending!
-    function massUpdatePools() public {
+    function massUpdatePools() public checkNoPause {
         uint256 length = poolInfo.length;
         for (uint256 pid = 0; pid < length; ++pid) {
             updatePool(pid);
         }
     }
 
+    function massMigrateToBalanceOf() public onlyOwner {
+        require(!notPaused, "!paused");
+        uint256 length = poolInfo.length;
+        for (uint256 pid = 0; pid < length; ++pid) {
+            balanceOf[pid] = poolInfo[pid].lpToken.balanceOf(address(this));
+        }
+        massUpdatePools();
+    }
+
     // Update reward variables of the given pool to be up-to-date.
-    function updatePool(uint256 _pid) public {
-        PoolInfo storage pool = poolInfo[_pid];
+    function updatePool(uint256 _pid) public checkNoPause {
+        IMasterChef.PoolInfo storage pool = poolInfo[_pid];
         if (block.number <= pool.lastRewardBlock) {
             return;
         }
         uint256 lpSupply = balanceOf[_pid];
-        if (lpSupply == 0) {
+        uint256 _GOVPerBlock = GOVPerBlock;
+        uint256 _allocPoint = pool.allocPoint;
+        if (lpSupply == 0 || _GOVPerBlock == 0 || _allocPoint == 0) {
             pool.lastRewardBlock = block.number;
             return;
         }
         uint256 multiplier = getMultiplierPrecise(pool.lastRewardBlock, block.number);
         uint256 GOVReward =
-            multiplier.mul(GOVPerBlock).mul(pool.allocPoint).div(
+            multiplier.mul(_GOVPerBlock).mul(_allocPoint).div(
                 totalAllocPoint
             );
+        // 250m = 250 * 1e6
+        if (coordinator.totalMinted() >= 250*1e6*1e18) {
+            pool.allocPoint = 0;
+            return;
+        }
+
         coordinator.mint(devaddr, GOVReward.div(1e19));
         coordinator.mint(address(this), GOVReward.div(1e18));
         pool.accGOVPerShare = pool.accGOVPerShare.add(
@@ -313,8 +471,8 @@ contract MasterChef_Polygon is Upgradeable {
     }
 
     // Anyone can contribute GOV to a given pool
-    function addExternalReward(uint256 _amount) public {
-        PoolInfo storage pool = poolInfo[GOV_POOL_ID];
+    function addExternalReward(uint256 _amount) public checkNoPause {
+        IMasterChef.PoolInfo storage pool = poolInfo[GOV_POOL_ID];
         require(block.number > pool.lastRewardBlock, "rewards not started");
 
         uint256 lpSupply = balanceOf[GOV_POOL_ID];
@@ -334,8 +492,24 @@ contract MasterChef_Polygon is Upgradeable {
         emit AddExternalReward(msg.sender, GOV_POOL_ID, _amount);
     }
 
+    // Anyone can contribute native token rewards to GOV pool stakers
+    function addAltReward() public payable checkNoPause {
+        IMasterChef.PoolInfo storage pool = poolInfo[GOV_POOL_ID];
+        require(block.number > pool.lastRewardBlock, "rewards not started");
+
+        uint256 lpSupply = balanceOf[GOV_POOL_ID];
+        require(lpSupply != 0, "no deposits");
+
+        updatePool(GOV_POOL_ID);
+
+        altRewardsPerShare[GOV_POOL_ID] = altRewardsPerShare[GOV_POOL_ID]
+            .add(msg.value.mul(1e12).div(lpSupply));
+
+        emit AddAltReward(msg.sender, GOV_POOL_ID, msg.value);
+    }
+
     // Deposit LP tokens to MasterChef for GOV allocation.
-    function deposit(uint256 _pid, uint256 _amount) public {
+    function deposit(uint256 _pid, uint256 _amount) public checkNoPause {
         poolInfo[_pid].lpToken.safeTransferFrom(
             address(msg.sender),
             address(this),
@@ -345,17 +519,25 @@ contract MasterChef_Polygon is Upgradeable {
     }
 
     function _deposit(uint256 _pid, uint256 _amount) internal {
-        PoolInfo storage pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
+        IMasterChef.PoolInfo storage pool = poolInfo[_pid];
+        IMasterChef.UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
 
         uint256 userAmount = user.amount;
         uint256 pending;
-        if (userAmount > 0) {
+        uint256 pendingAlt;
+
+        if (userAmount != 0) {
             pending = userAmount
                 .mul(pool.accGOVPerShare)
                 .div(1e12)
                 .sub(user.rewardDebt);
+        }
+
+        if (_pid == GOV_POOL_ID) {
+            pendingAlt = _pendingAltRewards(GOV_POOL_ID, msg.sender);
+            //Update userAltRewardsPerShare even if user got nothing in the current round
+            userAltRewardsPerShare[GOV_POOL_ID][msg.sender] = altRewardsPerShare[GOV_POOL_ID];
         }
 
         if (_amount != 0) {
@@ -365,15 +547,18 @@ contract MasterChef_Polygon is Upgradeable {
         }
         user.rewardDebt = userAmount.mul(pool.accGOVPerShare).div(1e12);
         user.amount = userAmount;
-
+        //user vestingStartStamp recalculation is done in safeGOVTransfer
         safeGOVTransfer(_pid, pending);
+        if (pendingAlt != 0) {
+            sendValueIfPossible(msg.sender, pendingAlt);
+        }
     }
 
-    function claimReward(uint256 _pid) public {
+    function claimReward(uint256 _pid) public checkNoPause {
         _deposit(_pid, 0);
     }
 
-    function compoundReward(uint256 _pid) public {
+    function compoundReward(uint256 _pid) public checkNoPause {
         uint256 balance = GOV.balanceOf(msg.sender);
         _deposit(_pid, 0);
 
@@ -386,9 +571,9 @@ contract MasterChef_Polygon is Upgradeable {
     }
 
     // Withdraw LP tokens from MasterChef.
-    function withdraw(uint256 _pid, uint256 _amount) public {
-        PoolInfo storage pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
+    function withdraw(uint256 _pid, uint256 _amount) public checkNoPause {
+        IMasterChef.PoolInfo storage pool = poolInfo[_pid];
+        IMasterChef.UserInfo storage user = userInfo[_pid][msg.sender];
         uint256 userAmount = user.amount;
         require(_amount != 0 && userAmount >= _amount, "withdraw: not good");
         updatePool(_pid);
@@ -398,36 +583,49 @@ contract MasterChef_Polygon is Upgradeable {
             .div(1e12)
             .sub(user.rewardDebt);
 
+        uint256 pendingAlt;
         IERC20 lpToken = pool.lpToken;
         if (lpToken == GOV) {
-            uint256 availableAmount = userAmount.sub(lockedRewards[msg.sender]);
+            uint256 availableAmount = userAmount.sub(lockedRewards(msg.sender));
             if (_amount > availableAmount) {
                 _amount = availableAmount;
             }
+
+            pendingAlt = _pendingAltRewards(GOV_POOL_ID, msg.sender);
+            //Update userAltRewardsPerShare even if user got nothing in the current round
+            userAltRewardsPerShare[GOV_POOL_ID][msg.sender] = altRewardsPerShare[GOV_POOL_ID];
         }
 
         balanceOf[_pid] = balanceOf[_pid].sub(_amount);
         userAmount = userAmount.sub(_amount);
         user.rewardDebt = userAmount.mul(pool.accGOVPerShare).div(1e12);
         user.amount = userAmount;
+
         lpToken.safeTransfer(address(msg.sender), _amount);
         emit Withdraw(msg.sender, _pid, _amount);
-
+        //user vestingStartStamp recalculation is done in safeGOVTransfer
         safeGOVTransfer(_pid, pending);
+        if (pendingAlt != 0) {
+            sendValueIfPossible(msg.sender, pendingAlt);
+        }
     }
 
     // Withdraw without caring about rewards. EMERGENCY ONLY.
-    function emergencyWithdraw(uint256 _pid) public {
-        PoolInfo storage pool = poolInfo[_pid];
-        UserInfo storage user = userInfo[_pid][msg.sender];
+    function emergencyWithdraw(uint256 _pid) public checkNoPause {
+        IMasterChef.PoolInfo storage pool = poolInfo[_pid];
+        IMasterChef.UserInfo storage user = userInfo[_pid][msg.sender];
 
         uint256 _amount = user.amount;
+        uint256 pendingAlt;
         IERC20 lpToken = pool.lpToken;
         if (lpToken == GOV) {
-            uint256 availableAmount = _amount.sub(lockedRewards[msg.sender]);
+            uint256 availableAmount = _amount.sub(lockedRewards(msg.sender));
             if (_amount > availableAmount) {
                 _amount = availableAmount;
             }
+            pendingAlt = _pendingAltRewards(GOV_POOL_ID, msg.sender);
+            //Update userAltRewardsPerShare even if user got nothing in the current round
+            userAltRewardsPerShare[GOV_POOL_ID][msg.sender] = altRewardsPerShare[GOV_POOL_ID];
         }
 
         lpToken.safeTransfer(address(msg.sender), _amount);
@@ -435,6 +633,10 @@ contract MasterChef_Polygon is Upgradeable {
         balanceOf[_pid] = balanceOf[_pid].sub(_amount);
         user.amount = user.amount.sub(_amount);
         user.rewardDebt = user.amount.mul(pool.accGOVPerShare).div(1e12);
+
+        if (pendingAlt != 0) {
+            sendValueIfPossible(msg.sender, pendingAlt);
+        }
     }
 
     function safeGOVTransfer(uint256 _pid, uint256 _amount) internal {
@@ -447,11 +649,41 @@ contract MasterChef_Polygon is Upgradeable {
         }
 
         if (isLocked[_pid]) {
-            lockedRewards[msg.sender] = lockedRewards[msg.sender].add(_amount);
+            uint256 _locked = _lockedRewards[msg.sender];
+            _lockedRewards[msg.sender] = _locked.add(_amount);
+
+            userStartVestingStamp[msg.sender] = calculateVestingStartStamp(now, userStartVestingStamp[msg.sender], _locked, _amount);
             _deposit(GOV_POOL_ID, _amount);
         } else {
             GOV.transfer(msg.sender, _amount);
         }
+    }
+
+    //This function will be internal after testing,
+    function calculateVestingStartStamp(uint256 currentStamp, uint256 _userStartVestingStamp, uint256 _lockedAmount, uint256 _depositAmount)
+        public
+        view
+        returns(uint256)
+    {
+        //VestingStartStamp will be distributed between
+        //_userStartVestingStamp (min) and currentStamp (max) depends on _lockedAmount and _depositAmount
+
+        //To avoid calculation on limit values
+        if(_lockedAmount == 0) return startVestingStamp;
+        if(_depositAmount >= _lockedAmount) return currentStamp;
+        if(_depositAmount == 0) return _userStartVestingStamp;
+
+        //Vesting is not started, set 0 as default value
+        if(startVestingStamp == 0 || vestingDuration == 0){
+            return 0;
+        }
+
+        if(_userStartVestingStamp == 0) {
+            _userStartVestingStamp = startVestingStamp;
+        }
+        uint256 cliffDuration = currentStamp.sub(_userStartVestingStamp);
+        uint256 depositShare = _depositAmount.mul(1e12).div(_lockedAmount);
+        return _userStartVestingStamp.add(cliffDuration.mul(depositShare).div(1e12));
     }
 
     // Update dev address by the previous dev.
@@ -462,35 +694,34 @@ contract MasterChef_Polygon is Upgradeable {
 
 
     // Custom logic - helpers
-
-
-    function getPoolInfos() external view returns(PoolInfo[] memory poolInfos){
+    function getPoolInfos() external view returns(IMasterChef.PoolInfo[] memory poolInfos) {
         uint256 length = poolInfo.length;
-        poolInfos = new PoolInfo[](length);
+        poolInfos = new IMasterChef.PoolInfo[](length);
         for (uint256 pid = 0; pid < length; ++pid) {
             poolInfos[pid] = poolInfo[pid];
         }
     }
 
-    function getOptimisedUserInfos(address _user) external view returns(uint256[3][] memory userInfos){
+    function getOptimisedUserInfos(address _user) external view returns(uint256[4][] memory userInfos) {
         uint256 length = poolInfo.length;
-        userInfos = new uint256[3][](length);
+        userInfos = new uint256[4][](length);
         for (uint256 pid = 0; pid < length; ++pid) {
             userInfos[pid][0] = userInfo[pid][_user].amount;
             userInfos[pid][1] = _pendingGOV(pid, _user);
             userInfos[pid][2] = isLocked[pid] ? 1 : 0;
+            userInfos[pid][3] = pid == GOV_POOL_ID ? _pendingAltRewards(GOV_POOL_ID, _user) : 0;
         }
     }
 
-    function getUserInfos(address _wallet) external view returns(UserInfo[] memory userInfos){
+    function getUserInfos(address _wallet) external view returns(IMasterChef.UserInfo[] memory userInfos) {
         uint256 length = poolInfo.length;
-        userInfos = new UserInfo[](length);
+        userInfos = new IMasterChef.UserInfo[](length);
         for (uint256 pid = 0; pid < length; ++pid) {
             userInfos[pid] = userInfo[pid][_wallet];
         }
     }
 
-    function getPendingGOV(address _user) external view returns(uint256[] memory pending){
+    function getPendingGOV(address _user) external view returns(uint256[] memory pending) {
         uint256 length = poolInfo.length;
         pending = new uint256[](length);
         for (uint256 pid = 0; pid < length; ++pid) {
@@ -498,4 +729,30 @@ contract MasterChef_Polygon is Upgradeable {
         }
     }
 
+    function sendValueIfPossible(address payable recipient, uint256 amount) internal {
+        require(address(this).balance >= amount, "Address: insufficient balance");
+        (bool success, ) = recipient.call{ value: amount }("");
+        if (!success) {
+            (success, ) = devaddr.call{ value: amount }("");
+            if (success)
+                emit ClaimAltRewards(devaddr, amount);
+        } else {
+            emit ClaimAltRewards(recipient, amount);
+        }
+    }
+
+    //Should be called only once after migration to new calculation
+    function setInitialAltRewardsPerShare()
+        external
+        onlyOwner
+    {
+        uint256 index = altRewardsRounds[GOV_POOL_ID].length;
+        if(index == 0) {
+            return;
+        }
+        uint256 _currentRound = altRewardsRounds[GOV_POOL_ID].length;
+        uint256 currentAccumulatedAltRewards = altRewardsRounds[GOV_POOL_ID][_currentRound-1];
+
+        altRewardsPerShare[GOV_POOL_ID] = currentAccumulatedAltRewards;
+    }
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021, bZeroX, LLC. All Rights Reserved.
+ * Copyright 2017-2021, bZxDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -7,7 +7,7 @@ pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
 import "./AdvancedTokenStorage.sol";
-import "./interfaces/ProtocolSettingsLike.sol";
+import "../../../interfaces/IBZx.sol";
 
 
 contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage {
@@ -39,7 +39,7 @@ contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage {
     }
 
     function setupLoanParams(
-        LoanParamsStruct.LoanParams[] memory loanParamsList,
+        IBZx.LoanParams[] memory loanParamsList,
         bool areTorqueLoans)
         public
         onlyAdmin
@@ -51,7 +51,7 @@ contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage {
             loanParamsList[i].loanToken = _loanTokenAddress;
             loanParamsList[i].maxLoanTerm = areTorqueLoans ? 0 : 28 days;
         }
-        loanParamsIdList = ProtocolSettingsLike(bZxContract).setupLoanParams(loanParamsList);
+        loanParamsIdList = IBZx(bZxContract).setupLoanParams(loanParamsList);
         for (uint256 i = 0; i < loanParamsIdList.length; i++) {
             loanParamsIds[uint256(keccak256(abi.encodePacked(
                 loanParamsList[i].collateralToken,
@@ -78,7 +78,7 @@ contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage {
             delete loanParamsIds[id];
         }
 
-        ProtocolSettingsLike(bZxContract).disableLoanParams(loanParamsIdList);
+        IBZx(bZxContract).disableLoanParams(loanParamsIdList);
     }
 
     // These params should be percentages represented like so: 5% = 5000000000000000000

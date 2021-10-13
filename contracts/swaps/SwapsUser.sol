@@ -1,12 +1,12 @@
 /**
- * Copyright 2017-2021, bZeroX, LLC <https://bzx.network/>. All Rights Reserved.
+ * Copyright 2017-2021, bZxDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
 pragma solidity 0.5.17;
 
 import "../core/State.sol";
-import "../feeds/IPriceFeeds.sol";
+import "../../interfaces/IPriceFeeds.sol";
 import "../events/SwapsEvents.sol";
 import "../mixins/FeesHelper.sol";
 import "./ISwapsImpl.sol";
@@ -177,7 +177,14 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
 
         bool success;
         (success, data) = swapsImpl.delegatecall(data);
-        require(success, "swap failed");
+        if (!success) {
+            assembly {
+                let ptr := mload(0x40)
+                let size := returndatasize
+                returndatacopy(ptr, 0, size)
+                revert(ptr, size)
+            }
+        }
 
         (destTokenAmountReceived, sourceTokenAmountUsed) = abi.decode(data, (uint256, uint256));
     }
@@ -188,7 +195,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
         uint256 sourceTokenAmount)
         internal
         view
-        returns (uint256)
+        returns (uint256 expectedReturn)
     {
         uint256 tradingFee = _getTradingFee(sourceTokenAmount);
         if (tradingFee != 0) {
@@ -196,19 +203,11 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
                 .sub(tradingFee);
         }
 
-        uint256 sourceToDestRate = ISwapsImpl(swapsImpl).dexExpectedRate(
+        (expectedReturn,) = ISwapsImpl(swapsImpl).dexAmountOut(
             sourceToken,
             destToken,
             sourceTokenAmount
         );
-        uint256 sourceToDestPrecision = IPriceFeeds(priceFeeds).queryPrecision(
-            sourceToken,
-            destToken
-        );
-
-        return sourceTokenAmount
-            .mul(sourceToDestRate)
-            .div(sourceToDestPrecision);
     }
 
     function _checkSwapSize(

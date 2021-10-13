@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021, bZeroX, LLC. All Rights Reserved.
+ * Copyright 2017-2021, bZxDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -50,6 +50,12 @@ contract LoanMaintenanceEvents {
         address indexed receiver,
         address indexed token,
         uint256 amount
+    );
+
+    event TransferLoan(
+        address indexed currentOwner,
+        address indexed newOwner,
+        bytes32 indexed loanId
     );
 
     enum LoanType {

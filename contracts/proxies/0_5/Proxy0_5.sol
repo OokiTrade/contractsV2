@@ -1,12 +1,12 @@
 /**
- * Copyright 2017-2021, bZeroX, LLC. All Rights Reserved.
+ * Copyright 2017-2021, bZxDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
 pragma solidity 0.5.17;
 
 
-import "../../openzeppelin/Address.sol";
+import "@openzeppelin-2.5.0/utils/Address.sol";
 import "./Upgradeable_0_5.sol";
 
 

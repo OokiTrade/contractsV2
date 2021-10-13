@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021, bZeroX, LLC. All Rights Reserved.
+ * Copyright 2017-2021, bZxDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -98,7 +98,7 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
         external
         payable
         nonReentrant
-        pausable(msg.sig)
+        pausable
         settlesInterest
         returns (bytes memory)
     {
@@ -166,7 +166,7 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
         address receiver,
         bytes memory /*loanDataBytes*/) // arbitrary order data (for future use)
         internal
-        returns (ProtocolLike.LoanOpenData memory loanOpenData)
+        returns (IBZx.LoanOpenData memory loanOpenData)
     {
         loanOpenData = super._borrow(
             loanId,
@@ -194,7 +194,7 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
         address trader,
         bytes memory loanDataBytes)
         internal
-        returns (ProtocolLike.LoanOpenData memory loanOpenData)
+        returns (IBZx.LoanOpenData memory loanOpenData)
     {
         loanOpenData = super._marginTrade(
             loanId,
@@ -484,7 +484,7 @@ contract LoanTokenLogicDai is LoanTokenLogicStandard {
 
             uint256 rate = _avgBorrowInterestRate(assetBorrow)
                 .mul(_utilRate)
-                .mul(SafeMath.sub(WEI_PERCENT_PRECISION, ProtocolLike(bZxContract).lendingFeePercent()))
+                .mul(SafeMath.sub(WEI_PERCENT_PRECISION, IBZx(bZxContract).lendingFeePercent()))
                 .div(WEI_PERCENT_PRECISION);
             return rate
                 .add(_dsr)

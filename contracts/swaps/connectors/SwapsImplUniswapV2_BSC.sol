@@ -1,14 +1,13 @@
 /**
- * Copyright 2017-2021, bZeroX, LLC. All Rights Reserved.
+ * Copyright 2017-2021, bZxDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
 pragma solidity 0.5.17;
 
 import "../../core/State.sol";
-import "../../feeds/IPriceFeeds.sol";
 import "../../interfaces/IUniswapV2Router.sol";
-import "../../openzeppelin/SafeERC20.sol";
+import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 import "../ISwapsImpl.sol";
 
 
@@ -65,21 +64,7 @@ contract SwapsImplUniswapV2_BSC is State, ISwapsImpl {
         view
         returns (uint256 expectedRate)
     {
-        uint256 sourceToDestPrecision = IPriceFeeds(priceFeeds).queryPrecision(
-            sourceTokenAddress,
-            destTokenAddress
-        );
-        if (sourceToDestPrecision == 0) {
-            return 0;
-        }
-
-        (uint256 amountOut,) = dexAmountOut(
-            sourceTokenAddress,
-            destTokenAddress,
-            sourceTokenAmount);
-        return amountOut
-            .mul(sourceToDestPrecision)
-            .div(sourceTokenAmount);
+        revert("unsupported");
     }
 
     function dexAmountOut(

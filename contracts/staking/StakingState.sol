@@ -1,14 +1,15 @@
 /**
- * Copyright 2017-2021, bZeroX, LLC. All Rights Reserved.
+ * Copyright 2017-2021, bZxDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
 pragma solidity 0.5.17;
 
 import "./StakingUpgradeable.sol";
-import "../openzeppelin/SafeMath.sol";
-import "../openzeppelin/SafeERC20.sol";
+import "@openzeppelin-2.5.0/math/SafeMath.sol";
+import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 import "../mixins/EnumerableBytes32Set.sol";
+import "../../interfaces/IStaking.sol";
 
 
 contract StakingState is StakingUpgradeable {
@@ -26,8 +27,8 @@ contract StakingState is StakingUpgradeable {
     mapping(address => uint256) internal _totalSupplyPerToken;                      // token => value
     mapping(address => mapping(address => uint256)) internal _balancesPerToken;     // token => account => value
 
-    mapping(address => address) public delegate;                                    // user => delegate
-    mapping(address => mapping(address => uint256)) public delegatedPerToken;       // token => user => value
+    mapping(address => address) internal delegate;                                    // user => delegate (DEPRECIATED)
+    mapping(address => mapping(address => uint256)) internal delegatedPerToken;       // token => user => value (DEPRECIATED)
 
     uint256 public bzrxPerTokenStored;
     mapping(address => uint256) public bzrxRewardsPerTokenPaid;                     // user => value
@@ -57,4 +58,22 @@ contract StakingState is StakingUpgradeable {
     uint256 public callerRewardDivisor = 100;
 
     address[] public currentFeeTokens;
+
+    struct ProposalState {
+        uint256 proposalTime;
+        uint256 iBZRXWeight;
+        uint256 lpBZRXBalance;
+        uint256 lpTotalSupply;
+    }
+    address public governor;
+    mapping(uint256 => ProposalState) internal _proposalState;
+
+    mapping(address => uint256[]) public altRewardsRounds;                          // depreciated
+    mapping(address => uint256) public altRewardsPerShare;                          // token => value
+
+    // Token => (User => Info)
+    mapping(address => mapping(address => IStaking.AltRewardsUserInfo)) public userAltRewardsPerShare;
+
+    address public voteDelegator;
+
 }

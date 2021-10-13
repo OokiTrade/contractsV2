@@ -1,20 +1,20 @@
 /**
- * Copyright 2017-2021, bZeroX, LLC. All Rights Reserved.
+ * Copyright 2017-2021, bZxDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
 pragma solidity 0.5.17;
 
-import "../../openzeppelin/SafeMath.sol";
-import "../../openzeppelin/SignedSafeMath.sol";
-import "../../openzeppelin/ReentrancyGuard.sol";
-import "../../openzeppelin/Ownable.sol";
-import "../../openzeppelin/Address.sol";
+import "@openzeppelin-2.5.0/math/SafeMath.sol";
+import "../../utils/SignedSafeMath.sol";
+import "../../utils/ReentrancyGuard.sol";
+import "@openzeppelin-2.5.0/ownership/Ownable.sol";
+import "@openzeppelin-2.5.0/utils/Address.sol";
 import "../../interfaces/IWethERC20.sol";
-import "./Pausable.sol";
+import "../../governance/PausableGuardian.sol";
 
 
-contract LoanTokenBase is ReentrancyGuard, Ownable, Pausable {
+contract LoanTokenBase is ReentrancyGuard, Ownable, PausableGuardian {
 
     uint256 internal constant WEI_PRECISION = 10**18;
     uint256 internal constant WEI_PERCENT_PRECISION = 10**20;
