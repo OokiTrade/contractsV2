@@ -821,7 +821,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         vBZRXWeight = SafeMath.mul(_startingVBZRXBalance - totalVested, 1e18) // overflow not possible
             .div(_startingVBZRXBalance);
 
-        iOOKIWeight = _calcIBZRXWeight();
+        iOOKIWeight = _calcIOOKIWeight();
 
         uint256 lpTokenSupply = _totalSupplyPerToken[LPToken];
         if (lpTokenSupply != 0) {
@@ -836,7 +836,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         }
     }
 
-    function _calcIBZRXWeight()
+    function _calcIOOKIWeight()
         internal
         view
         returns (uint256)
@@ -969,7 +969,8 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             }
 
             uint256 timeSinceClaim = vestingEndTime.sub(lastUpdate);
-            vested = tokenBalance.mul(timeSinceClaim) / vestingDurationAfterCliff; // will never divide by 0
+            vested = tokenBalance.mul(timeSinceClaim) / vestingDurationAfterCliff // will never divide by 0
+                * 10; // BZRX -> OOKI
         }
     }
 
@@ -1026,7 +1027,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     {
         return ProposalState({
             proposalTime: block.timestamp - 1,
-            iOOKIWeight: _calcIBZRXWeight(),
+            iOOKIWeight: _calcIOOKIWeight(),
             lpBZRXBalance: 0, // IERC20(BZRX).balanceOf(LPToken),
             lpTotalSupply: 0  //IERC20(LPToken).totalSupply()
         });
@@ -1088,29 +1089,34 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         return _voteDelegator.getPriorVotes(account, blocknumber);
     }
 
-    function migrateUserBalances(address account) public {
-        
-        require(isUserMigrated(account), "1"); // make sure you can't migrate twice
-        
+    function migrateBalances(address account) public {
+
+        require(!migrated[account], "already migrated");
+        migrated[account] = true;
+
+        if (account == address(0)) {
+            require(msg.sender == owner(), "unauthorized");
+
+            // handle contract wide migration
+            bzrxPerTokenStored *= 10;
+            (vBZRXWeightStored, iOOKIWeightStored, LPTokenWeightStored) = getVariableWeights();
+
+            return;
+        }
+
         _balancesPerToken[OOKI][account] = _balancesPerToken[BZRX][account] * 10;
         _balancesPerToken[BZRX][account] = 0;
-        
-
 
         // TODO calculate LP userBalance = CurrentTotalSupply/BeforeTotalSupply * userBalance
         _balancesPerToken[LPToken][account] = (_totalSupplyPerToken[LPToken].mul(_balancesPerToken[LPTokenBeforeMigration][account])).div(_totalSupplyPerToken[LPTokenBeforeMigration]);
-        
+
         _balancesPerToken[LPTokenBeforeMigration][account] = 0;
 
-        // bzrxRewardsPerTokenPaid[account] = bzrxRewardsPerTokenPaid[account] * 10;
-        // bzrxVesting[account] = bzrxVesting[account] * 10;
-        // stableCoinRewardsPerTokenPaid[account] = stableCoinRewardsPerTokenPaid[account] * 10;
+        bzrxRewards[account] *= 10;
+        bzrxVesting[account] *= 10;
+        bzrxRewardsPerTokenPaid[account] * 10;
     }
 
-    function isUserMigrated(address account) public view returns(bool) {
-        return _balancesPerToken[LPTokenBeforeMigration][account] == 0 &&
-        _balancesPerToken[BZRX][account] == 0;
-    }
     // event LoggerString(string name, uint256 amount);
     // OnlyOwner functions
     function updateSettings(

@@ -41,7 +41,7 @@ contract StakingConstants {
     uint256 internal constant vestingStartTimestamp =      1594648800; // start_time
     uint256 internal constant vestingCliffTimestamp =      vestingStartTimestamp + cliffDuration;
     uint256 internal constant vestingEndTimestamp =        vestingStartTimestamp + vestingDuration;
-    uint256 internal constant _startingVBZRXBalance =      889389933e18; // 889,389,933 BZRX
+    uint256 internal constant _startingVBZRXBalance =       8893899330e18; // 8,893,899,330 OOKI
 
     address internal constant SUSHI_MASTERCHEF = 0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd;
     address internal constant SUSHI_ROUTER = 0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F;
@@ -52,6 +52,9 @@ contract StakingConstants {
     ICurveMinter public constant curveMinter = ICurveMinter(0xd061D61a4d941c39E5453435B6345Dc261C2fcE0);
     ICurve3PoolGauge public constant curve3PoolGauge = ICurve3PoolGauge(0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A);
     address public constant CRV = 0xD533a949740bb3306d119CC777fa900bA034cd52;
+
+    uint256 internal constant initialCirculatingSupply = 10300000000e18 - _startingVBZRXBalance;
+    address internal constant ZERO_ADDRESS = address(0);
 
     struct DelegatedTokens {
         address user;
@@ -121,5 +124,4 @@ contract StakingConstants {
         address indexed token,
         uint256 amount
     );
-
 }

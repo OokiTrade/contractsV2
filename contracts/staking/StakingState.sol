@@ -17,9 +17,6 @@ contract StakingState is StakingUpgradeable {
     using SafeERC20 for IERC20;
     using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
 
-    uint256 internal constant initialCirculatingSupply = 1030000000e18 - 889389933e18;
-    address internal constant ZERO_ADDRESS = address(0);
-
     bool internal _NOT_USED; // NOT USED
 
     address public fundsWallet;
@@ -77,4 +74,5 @@ contract StakingState is StakingUpgradeable {
     address public voteDelegator;
     IBZRXv2Converter public converter;
 
+    mapping(address => bool) public migrated;                                       // user => bool
 }
