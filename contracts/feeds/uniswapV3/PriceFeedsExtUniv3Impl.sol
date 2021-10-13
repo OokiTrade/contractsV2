@@ -19,7 +19,7 @@ contract PriceFeedsExtUniv3Impl is IPriceFeedsExt {
       period = _period;
       baseAmount = _baseAmount; //set to 10**token0Decimals;
       pool = _pool;
-	  (token0, token1) = _tokenA < _tokenB ? (_tokenA,_tokenB) : (_tokenB,_tokenA);
+	  (token0, token1) = (_tokenA, _tokenB);
       
   }
 
@@ -28,9 +28,4 @@ contract PriceFeedsExtUniv3Impl is IPriceFeedsExt {
     uint256 quoteAmount = OracleLibrary.getQuoteAtTick(timeWeightedAverageTick, baseAmount, token0, token1);
     return int256(quoteAmount);
   }
-  function getGas() public view returns(uint256){
-	uint256 initGas = gasleft();
-	latestAnswer();
-	return initGas-gasleft();
-	}
 }
