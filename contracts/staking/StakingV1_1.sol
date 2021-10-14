@@ -208,69 +208,69 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         _voteDelegator.moveDelegates(ZERO_ADDRESS, currentDelegate, _votingFromStakedBalanceOf(msg.sender, _proposalState, true).sub(votingBalanceBefore));
     }
 
-    // function unstake(
-    //     address[] memory tokens,
-    //     uint256[] memory values
-    // )
-    //     public
-    //     pausable
-    //     updateRewards(msg.sender)
-    // {
-    //     require(tokens.length == values.length, "count mismatch");
+    function unstake(
+        address[] memory tokens,
+        uint256[] memory values
+    )
+        public
+        pausable
+        updateRewards(msg.sender)
+    {
+        require(tokens.length == values.length, "count mismatch");
 
-    //     StakingVoteDelegator _voteDelegator = StakingVoteDelegator(voteDelegator);
-    //     address currentDelegate = _voteDelegator.delegates(msg.sender);
+        StakingVoteDelegator _voteDelegator = StakingVoteDelegator(voteDelegator);
+        address currentDelegate = _voteDelegator.delegates(msg.sender);
 
-    //     ProposalState memory _proposalState = _getProposalState();
-    //     uint256 votingBalanceBefore = _votingFromStakedBalanceOf(msg.sender, _proposalState, true);
+        ProposalState memory _proposalState = _getProposalState();
+        uint256 votingBalanceBefore = _votingFromStakedBalanceOf(msg.sender, _proposalState, true);
 
-    //     for (uint256 i = 0; i < tokens.length; i++) {
-    //         address token = tokens[i];
-    //         require(token == OOKI || token == vBZRX || token == iOOKI || token == LPToken || token == LPTokenOld || token == iBZRX, "invalid token");
+        for (uint256 i = 0; i < tokens.length; i++) {
+            address token = tokens[i];
+            require(token == OOKI || token == vBZRX || token == iOOKI || token == LPToken || token == LPTokenOld || token == iBZRX, "invalid token");
 
-    //         uint256 unstakeAmount = values[i];
-    //         uint256 stakedAmount = _balancesPerToken[token][msg.sender];
-    //         if (unstakeAmount == 0 || stakedAmount == 0) {
-    //             continue;
-    //         }
-    //         if (unstakeAmount > stakedAmount) {
-    //             unstakeAmount = stakedAmount;
-    //         }
+            uint256 unstakeAmount = values[i];
+            uint256 stakedAmount = _balancesPerToken[token][msg.sender];
+            if (unstakeAmount == 0 || stakedAmount == 0) {
+                continue;
+            }
+            if (unstakeAmount > stakedAmount) {
+                unstakeAmount = stakedAmount;
+            }
 
-    //         uint256 pendingBefore = (token == LPToken) ? _pendingSushiRewards(msg.sender) : 0;
+            uint256 pendingBefore = (token == LPToken) ? _pendingSushiRewards(msg.sender) : 0;
 
-    //         _balancesPerToken[token][msg.sender] = stakedAmount - unstakeAmount; // will not overflow
-    //         _totalSupplyPerToken[token] = _totalSupplyPerToken[token] - unstakeAmount; // will not overflow
+            _balancesPerToken[token][msg.sender] = stakedAmount - unstakeAmount; // will not overflow
+            _totalSupplyPerToken[token] = _totalSupplyPerToken[token] - unstakeAmount; // will not overflow
 
-    //         if (token == OOKI && IERC20(OOKI).balanceOf(address(this)) < unstakeAmount) {
-    //             // settle vested BZRX only if needed
-    //             IVestingToken(vBZRX).claim();
-    //             IBZRXv2Converter(converter).convert(address(this), IERC20(BZRX).balanceOf(address(this)));
-    //         }
+            if (token == OOKI && IERC20(OOKI).balanceOf(address(this)) < unstakeAmount) {
+                // settle vested BZRX only if needed
+                IVestingToken(vBZRX).claim();
+                IBZRXv2Converter(converter).convert(address(this), IERC20(BZRX).balanceOf(address(this)));
+            }
 
-    //         // Withdraw to sushi masterchef
-    //         if (token == LPToken) {
-    //             _withdrawFromSushiMasterchef(unstakeAmount);
+            // Withdraw to sushi masterchef
+            if (token == LPToken) {
+                _withdrawFromSushiMasterchef(unstakeAmount);
 
-    //             userAltRewardsPerShare[msg.sender][SUSHI] = IStaking.AltRewardsUserInfo({
-    //                     rewardsPerShare: altRewardsPerShare[SUSHI],
-    //                     pendingRewards: pendingBefore
-    //                 }
-    //             );
+                userAltRewardsPerShare[msg.sender][SUSHI] = IStaking.AltRewardsUserInfo({
+                        rewardsPerShare: altRewardsPerShare[SUSHI],
+                        pendingRewards: pendingBefore
+                    }
+                );
 
-    //         }
-    //         IERC20(token).safeTransfer(msg.sender, unstakeAmount);
+            }
+            IERC20(token).safeTransfer(msg.sender, unstakeAmount);
 
-    //         emit Unstake(
-    //             msg.sender,
-    //             token,
-    //             currentDelegate,
-    //             unstakeAmount
-    //         );
-    //     }
+            emit Unstake(
+                msg.sender,
+                token,
+                currentDelegate,
+                unstakeAmount
+            );
+        }
 
-    //     _voteDelegator.moveDelegates(currentDelegate, ZERO_ADDRESS, votingBalanceBefore.sub(_votingFromStakedBalanceOf(msg.sender, _proposalState, true)));
-    // }
+        _voteDelegator.moveDelegates(currentDelegate, ZERO_ADDRESS, votingBalanceBefore.sub(_votingFromStakedBalanceOf(msg.sender, _proposalState, true)));
+    }
 
     function claim(
         bool restake)

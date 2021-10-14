@@ -147,13 +147,7 @@ contract StakingAdminSettings is StakingState, StakingConstants, PausableGuardia
         _totalSupplyPerToken[OOKI] = _totalSupplyPerToken[BZRX] * 10;
         _totalSupplyPerToken[BZRX] = 0;
         
-
-        // BIG TODO since these are not migrated 1:1
         _totalSupplyPerToken[LPToken] = SLPAfter;
-        // _totalSupplyPerToken[LPTokenBeforeMigration] = 0; I don't zero out this so I can use to calc proportion when migrating user balance
-        // TODO ? is this correct
-        // bzrxPerTokenStored = bzrxPerTokenStored * 10;
-        // stableCoinPerTokenStored = stableCoinPerTokenStored;
     }
 
     function setConverter(IBZRXv2Converter _converter) public onlyOwner {
