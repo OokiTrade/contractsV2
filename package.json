@@ -19,6 +19,8 @@
     "husky": "^4.2.5",
     "prettier": "^2.0.5",
     "prettier-plugin-solidity": "^1.0.0-alpha.49",
+    "openzeppelin-2.5.0": "npm:@openzeppelin/contracts@^2.5.0",
+    "openzeppelin-3.4.0": "npm:@openzeppelin/contracts@^3.4.0",
     "solhint": "^3.0.0",
     "solhint-plugin-prettier": "^0.0.4"
   },
@@ -31,5 +33,8 @@
     "hooks": {
       "pre-commit-disabled": "yarn analyize-contracts && yarn lint-contracts && yarn test"
     }
+  },
+  "dependencies": {
+    "@uniswap/v3-periphery": "^1.2.1"
   }
 }

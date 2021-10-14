@@ -1,14 +1,13 @@
 /**
- * Copyright 2017-2021, bZeroX, LLC <https://bzx.network/>. All Rights Reserved.
+ * Copyright 2017-2021, bZxDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 // SPDX-License-Identifier: Apache License, Version 2.0.
 pragma solidity 0.6.12;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "./VBZRXv2VestingToken.sol";
-import "./BZRXv2Token.sol";
+import "@openzeppelin-3.4.0/token/ERC20/ERC20.sol";
+import "@openzeppelin-3.4.0/access/Ownable.sol";
+import "./MintCoordinator.sol";
 
 
 contract BZRXv2Converter is Ownable {
@@ -19,13 +18,10 @@ contract BZRXv2Converter is Ownable {
     );
 
     IERC20 public constant BZRXv1 = IERC20(0x56d811088235F11C8920698a204A5010a788f4b3);
-    // IERC20 public constant vBZRXv1 = IERC20(0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F);
-    BZRXv2Token public BZRXv2;
-    // VBZRXv2VestingToken public vBZRXv2;
+    MintCoordinator public MINT_COORDINATOR;
     address constant DEAD = 0x000000000000000000000000000000000000dEaD;
 
     uint256 public totalConverted;
-    uint256 public totalVestingConverted;
     uint256 public terminationTimestamp;
 
     function convert(
@@ -40,7 +36,7 @@ contract BZRXv2Converter is Ownable {
         );
 
         // we mint burned amount
-        BZRXv2.mint(receiver, _tokenAmount);
+        MINT_COORDINATOR.mint(receiver, _tokenAmount * 10); // we do a 10x split
 
         // overflow condition cannot be reached since the above will throw for bad amounts
         totalConverted += _tokenAmount;
@@ -52,14 +48,13 @@ contract BZRXv2Converter is Ownable {
     }
 
     // open convert tool to the public
-    function initialize(BZRXv2Token _BZRXv2 /*, VBZRXv2VestingToken _vBZRXv2*/)
+    function initialize(MintCoordinator _MINT_COORDINATOR)
         external
         onlyOwner
     {
         require(terminationTimestamp == 0, "already initialized");
         terminationTimestamp = _getTimestamp() + 60 * 60 * 24 * 365; // one year from now
-        BZRXv2 = _BZRXv2;
-        // vBZRXv2 = _vBZRXv2;
+        MINT_COORDINATOR = _MINT_COORDINATOR;
     }
 
     // funds unclaimed after one year can be rescued

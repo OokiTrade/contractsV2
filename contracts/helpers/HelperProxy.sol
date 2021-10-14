@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021, bZeroX, LLC. All Rights Reserved.
+ * Copyright 2017-2021, bZxDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -8,8 +8,8 @@ pragma solidity ^0.7.6;
 
 /// SPDX-License-Identifier: MIT
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin-3.4.0/access/Ownable.sol";
+import "@openzeppelin-3.4.0/utils/Address.sol";
 
 
 contract HelperProxy is Ownable {

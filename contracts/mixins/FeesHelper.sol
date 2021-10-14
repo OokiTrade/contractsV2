@@ -1,18 +1,19 @@
 /**
- * Copyright 2017-2021, bZeroX, LLC. All Rights Reserved.
+ * Copyright 2017-2021, bZxDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
 pragma solidity 0.5.17;
 
 import "../core/State.sol";
-import "../openzeppelin/SafeERC20.sol";
-import "../feeds/IPriceFeeds.sol";
+import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
+import "../../interfaces/IPriceFeeds.sol";
 import "../events/FeesEvents.sol";
-
+import "../utils/MathUtil.sol";
 
 contract FeesHelper is State, FeesEvents {
     using SafeERC20 for IERC20;
+    using MathUtil for uint256;
 
     // calculate trading fee
     function _getTradingFee(

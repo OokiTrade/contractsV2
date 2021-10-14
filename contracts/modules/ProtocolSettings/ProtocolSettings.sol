@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021, bZeroX, LLC. All Rights Reserved.
+ * Copyright 2017-2021, bZxDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -8,12 +8,13 @@ pragma experimental ABIEncoderV2;
 
 import "../../core/State.sol";
 import "../../events/ProtocolSettingsEvents.sol";
-import "../../openzeppelin/SafeERC20.sol";
+import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 import "../../interfaces/IVestingToken.sol";
-
+import "../../utils/MathUtil.sol";
 
 contract ProtocolSettings is State, ProtocolSettingsEvents {
     using SafeERC20 for IERC20;
+    using MathUtil for uint256;
 
     function initialize(
         address target)

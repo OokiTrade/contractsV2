@@ -5,9 +5,9 @@
 
 pragma solidity 0.5.17;
 
-import "../../openzeppelin/Ownable.sol";
-import "../../openzeppelin/SafeMath.sol";
-import "../../openzeppelin/SafeERC20.sol";
+import "@openzeppelin-2.5.0/ownership/Ownable.sol";
+import "@openzeppelin-2.5.0/math/SafeMath.sol";
+import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 import "../../mixins/EnumerableBytes32Set.sol";
 
 

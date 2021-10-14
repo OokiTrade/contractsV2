@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021, bZeroX, LLC. All Rights Reserved.
+ * Copyright 2017-2021, bZxDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -10,10 +10,10 @@ import "../../core/State.sol";
 import "../../mixins/VaultController.sol";
 import "../../swaps/SwapsUser.sol";
 import "../../swaps/ISwapsImpl.sol";
-import "../../connectors/gastoken/GasTokenUser.sol";
+import "../../governance/PausableGuardian.sol";
 
 
-contract SwapsExternal is State, VaultController, SwapsUser, GasTokenUser {
+contract SwapsExternal is State, VaultController, SwapsUser, PausableGuardian {
 
     function initialize(
         address target)
@@ -21,7 +21,6 @@ contract SwapsExternal is State, VaultController, SwapsUser, GasTokenUser {
         onlyOwner
     {
         _setTarget(this.swapExternal.selector, target);
-        _setTarget(this.swapExternalWithGasToken.selector, target);
         _setTarget(this.getSwapExpectedReturn.selector, target);
     }
 
@@ -35,32 +34,6 @@ contract SwapsExternal is State, VaultController, SwapsUser, GasTokenUser {
         bytes memory swapData)
         public
         payable
-        nonReentrant
-        returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
-    {
-        return _swapExternal(
-            sourceToken,
-            destToken,
-            receiver,
-            returnToSender,
-            sourceTokenAmount,
-            requiredDestTokenAmount,
-            swapData
-        );
-    }
-
-    function swapExternalWithGasToken(
-        address sourceToken,
-        address destToken,
-        address receiver,
-        address returnToSender,
-        address gasTokenUser,
-        uint256 sourceTokenAmount,
-        uint256 requiredDestTokenAmount,
-        bytes calldata swapData)
-        external
-        payable
-        usesGasToken(gasTokenUser)
         nonReentrant
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
     {

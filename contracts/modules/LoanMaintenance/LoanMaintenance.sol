@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021, bZeroX, LLC. All Rights Reserved.
+ * Copyright 2017-2021, bZxDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -12,9 +12,10 @@ import "../../mixins/VaultController.sol";
 import "../../mixins/InterestUser.sol";
 import "../../mixins/LiquidationHelper.sol";
 import "../../swaps/SwapsUser.sol";
+import "../../governance/PausableGuardian.sol";
 
 
-contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, InterestUser, SwapsUser, LiquidationHelper {
+contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, InterestUser, SwapsUser, LiquidationHelper, PausableGuardian {
 
     function initialize(
         address target)
@@ -35,6 +36,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         _setTarget(this.getUserLoansCount.selector, target);
         _setTarget(this.getLoan.selector, target);
         _setTarget(this.getActiveLoans.selector, target);
+        _setTarget(this.getActiveLoansAdvanced.selector, target);
         _setTarget(this.getActiveLoansCount.selector, target);
     }
 
@@ -44,6 +46,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         external
         payable
         nonReentrant
+        pausable
     {
         require(depositAmount != 0, "depositAmount is 0");
 
@@ -105,6 +108,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         uint256 withdrawAmount)
         external
         nonReentrant
+        pausable
         returns (uint256 actualWithdrawAmount)
     {
         require(withdrawAmount != 0, "withdrawAmount is 0");
@@ -179,6 +183,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
     function withdrawAccruedInterest(
         address loanToken)
         external
+        pausable
     {
         // pay outstanding interest to lender
         _payInterest(
@@ -195,6 +200,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         external
         payable
         nonReentrant
+        pausable
         returns (uint256 secondsExtended)
     {
         require(depositAmount != 0, "depositAmount is 0");
@@ -310,6 +316,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         uint256 withdrawAmount)
         external
         nonReentrant
+        pausable
         returns (uint256 secondsReduced)
     {
         require(withdrawAmount != 0, "withdrawAmount is 0");
@@ -410,6 +417,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
     function claimRewards(
         address receiver)
         external
+        pausable
         returns (uint256 claimAmount)
     {
         bytes32 slot = keccak256(abi.encodePacked(msg.sender, UserRewardsID));
@@ -612,6 +620,30 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         view
         returns (LoanReturnData[] memory loansData)
     {
+        return _getActiveLoans(start, count, unsafeOnly, false);
+    }
+
+    function getActiveLoansAdvanced(
+        uint256 start,
+        uint256 count,
+        bool unsafeOnly,
+        bool isLiquidatable)
+        external
+        view
+        returns (LoanReturnData[] memory loansData) 
+    {
+        return _getActiveLoans(start, count, unsafeOnly, isLiquidatable);
+    }
+
+    function _getActiveLoans(
+        uint256 start,
+        uint256 count,
+        bool unsafeOnly,
+        bool isLiquidatable)
+        internal
+        view 
+        returns (LoanReturnData[] memory loansData)
+    {
         uint256 end = start.add(count).min256(activeLoansSet.length());
         if (start >= end) {
             return loansData;
@@ -627,7 +659,17 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
                 LoanType.All,
                 unsafeOnly
             );
+
             if (loanData.loanId == 0) {
+                if (i == 0) {
+                    break;
+                } else {
+                    continue;
+                }
+            }
+
+            if (isLiquidatable && loanData.currentMargin == 0) {
+                // we skip, not adding it to result set
                 if (i == 0) {
                     break;
                 } else {
