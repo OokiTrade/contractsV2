@@ -6,6 +6,7 @@
 pragma solidity 0.6.12;
 
 import "@openzeppelin-3.4.0/token/ERC20/ERC20.sol";
+import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
 import "@openzeppelin-3.4.0/access/Ownable.sol";
 import "./MintCoordinator.sol";
 
@@ -18,11 +19,10 @@ contract BZRXv2Converter is Ownable {
     );
 
     IERC20 public constant BZRXv1 = IERC20(0x56d811088235F11C8920698a204A5010a788f4b3);
-    MintCoordinator public MINT_COORDINATOR;
     address constant DEAD = 0x000000000000000000000000000000000000dEaD;
 
+    MintCoordinator public MINT_COORDINATOR;
     uint256 public totalConverted;
-    uint256 public terminationTimestamp;
 
     function convert(
         address receiver,
@@ -48,36 +48,21 @@ contract BZRXv2Converter is Ownable {
     }
 
     // open convert tool to the public
-    function initialize(MintCoordinator _MINT_COORDINATOR)
+    function initialize(
+        MintCoordinator _MINT_COORDINATOR)
         external
         onlyOwner
     {
-        require(terminationTimestamp == 0, "already initialized");
-        terminationTimestamp = _getTimestamp() + 60 * 60 * 24 * 365; // one year from now
+        require(address(MINT_COORDINATOR) == address(0), "already initialized");
         MINT_COORDINATOR = _MINT_COORDINATOR;
     }
 
-    // funds unclaimed after one year can be rescued
+    // allows the DAO to rescue tokens accidently sent to the contract
     function rescue(
-        address _receiver,
-        uint256 _amount,
-        address _token)
+        IERC20 _token)
         external
         onlyOwner
     {
-        require(_getTimestamp() > terminationTimestamp, "unauthorized");
-
-        IERC20(_token).transfer(
-            _receiver,
-            _amount
-        );
-    }
-
-    function _getTimestamp()
-        internal
-        view
-        returns (uint256)
-    {
-        return block.timestamp;
+        SafeERC20.safeTransfer(_token, msg.sender, _token.balanceOf(address(this)));
     }
 }

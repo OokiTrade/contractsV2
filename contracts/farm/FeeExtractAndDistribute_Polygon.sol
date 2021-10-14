@@ -115,7 +115,7 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable {
         }
 
         if (maticOutput != 0) {
-            amount = (maticOutput * 15e18) / 1e20; // burn (15%)
+            /*amount = (maticOutput * 15e18) / 1e20; // burn (15%)
             uint256 sellAmount = amount; // sell for BZRX (15%)
             uint256 distributeAmount = (maticOutput * 50e18) / 1e20; // distribute to stakers (50%)
             maticOutput -= (amount + sellAmount + distributeAmount);
@@ -129,7 +129,11 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable {
             //     pgovAmount
             // );
             IERC20Burnable(PGOV).burn(pgovAmount);
-            emit AssetBurn(msg.sender, PGOV, pgovAmount);
+            emit AssetBurn(msg.sender, PGOV, pgovAmount);*/
+
+            uint256 sellAmount = (maticOutput * 30e18) / 1e20; // sell for BZRX (30%)
+            uint256 distributeAmount = (maticOutput * 50e18) / 1e20; // distribute to stakers (50%)
+            maticOutput -= (sellAmount + distributeAmount);
 
             // buy and distribute BZRX
             uint256 buyAmount = IPriceFeeds(bZx.priceFeeds()).queryReturn(
@@ -208,8 +212,8 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable {
                 uint256(-1)
             );
         }
-        IERC20(PGOV).safeApprove(address(chef), 0);
-        IERC20(PGOV).safeApprove(address(chef), uint256(-1));
+        //IERC20(PGOV).safeApprove(address(chef), 0);
+        //IERC20(PGOV).safeApprove(address(chef), uint256(-1));
     }
 
     function depositToken(IERC20 token, uint256 amount) external onlyOwner {
