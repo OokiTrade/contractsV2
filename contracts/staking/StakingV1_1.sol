@@ -558,7 +558,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 
         // discount vesting amounts for vesting time
         uint256 multiplier = vestedBalanceForAmount(
-            1e36,
+            1e37,
             0,
             block.timestamp
         );
@@ -630,7 +630,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
                 // true up earned amount to vBZRX vesting schedule
                 lastSync = vestingLastSync[account];
                 multiplier = vestedBalanceForAmount(
-                    1e36,
+                    1e37,
                     0,
                     lastSync
                 );
@@ -652,7 +652,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
                 if (lastSync == 0) {
                     lastSync = vestingLastSync[account];
                     multiplier = vestedBalanceForAmount(
-                        1e36,
+                        1e37,
                         0,
                         lastSync
                     );
@@ -681,7 +681,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         if (lastVestingSync != block.timestamp) {
             uint256 rewardsVested;
             uint256 multiplier = vestedBalanceForAmount(
-                1e36,
+                1e37,
                 lastVestingSync,
                 block.timestamp
             );
@@ -1052,7 +1052,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 
         // user is attributed a staked balance of vested BZRX, from their last update to the present
         totalVotes = vestedBalanceForAmount(
-            _balancesPerToken[vBZRX][account],
+            _balancesPerToken[vBZRX][account] * 10,
             _vestingLastSync,
             proposal.proposalTime
         );
