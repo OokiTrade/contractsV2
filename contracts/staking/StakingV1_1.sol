@@ -460,7 +460,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 
         return pendingCrv;
     }
-    event LoggerString(string name, uint256 amount);
+
     function _restakeBZRX(
         address account,
         uint256 amount)
@@ -841,6 +841,9 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         view
         returns (uint256)
     {
+        if (IERC20(iOOKI).totalSupply() == 0) {
+            return 0;
+        }
         return IERC20(OOKI).balanceOf(iOOKI)
             .mul(1e50)
             .div(IERC20(iOOKI).totalSupply());
@@ -969,8 +972,8 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             }
 
             uint256 timeSinceClaim = vestingEndTime.sub(lastUpdate);
-            vested = tokenBalance.mul(timeSinceClaim) / vestingDurationAfterCliff // will never divide by 0
-                * 10; // BZRX -> OOKI
+            vested = tokenBalance.mul(timeSinceClaim) / vestingDurationAfterCliff; // will never divide by 0
+                // * 10; // BZRX -> OOKI
         }
     }
 
