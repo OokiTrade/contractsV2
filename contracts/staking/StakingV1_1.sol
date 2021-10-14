@@ -558,7 +558,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 
         // discount vesting amounts for vesting time
         uint256 multiplier = vestedBalanceForAmount(
-            1e37,
+            1e36,
             0,
             block.timestamp
         );
@@ -630,7 +630,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
                 // true up earned amount to vBZRX vesting schedule
                 lastSync = vestingLastSync[account];
                 multiplier = vestedBalanceForAmount(
-                    1e37,
+                    1e36,
                     0,
                     lastSync
                 );
@@ -652,7 +652,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
                 if (lastSync == 0) {
                     lastSync = vestingLastSync[account];
                     multiplier = vestedBalanceForAmount(
-                        1e37,
+                        1e36,
                         0,
                         lastSync
                     );
@@ -681,7 +681,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         if (lastVestingSync != block.timestamp) {
             uint256 rewardsVested;
             uint256 multiplier = vestedBalanceForAmount(
-                1e37,
+                1e36,
                 lastVestingSync,
                 block.timestamp
             );
@@ -818,8 +818,8 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             block.timestamp
         );
 
-        vBZRXWeight = SafeMath.mul(_startingVBZRXBalance - totalVested, 1e18) // overflow not possible
-            .div(_startingVBZRXBalance);
+        vBZRXWeight = SafeMath.mul(_startingVBZRXBalance * 10 - totalVested, 1e18) // overflow not possible
+            .div(_startingVBZRXBalance * 10);
 
         iOOKIWeight = _calcIOOKIWeight();
 
@@ -972,8 +972,8 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             }
 
             uint256 timeSinceClaim = vestingEndTime.sub(lastUpdate);
-            vested = tokenBalance.mul(timeSinceClaim) / vestingDurationAfterCliff; // will never divide by 0
-                // * 10; // BZRX -> OOKI
+            vested = tokenBalance.mul(timeSinceClaim) / vestingDurationAfterCliff // will never divide by 0
+                * 10; // BZRX -> OOKI
         }
     }
 
@@ -1052,7 +1052,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 
         // user is attributed a staked balance of vested BZRX, from their last update to the present
         totalVotes = vestedBalanceForAmount(
-            _balancesPerToken[vBZRX][account] * 10,
+            _balancesPerToken[vBZRX][account],
             _vestingLastSync,
             proposal.proposalTime
         );
@@ -1119,7 +1119,6 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         bzrxVesting[account] *= 10;
         bzrxRewardsPerTokenPaid[account] * 10;
     }
-
     // event LoggerString(string name, uint256 amount);
     // OnlyOwner functions
     function updateSettings(
