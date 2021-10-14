@@ -565,12 +565,12 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         bzrxRewardsVesting = bzrxRewardsVesting
             .sub(bzrxRewardsVesting
                 .mul(multiplier)
-                .div(1e36)
+                .div(1e37)
             );
         stableCoinRewardsVesting = stableCoinRewardsVesting
             .sub(stableCoinRewardsVesting
                 .mul(multiplier)
-                .div(1e36)
+                .div(1e37)
             );
 
         uint256 pendingSushi = IMasterChefSushi(SUSHI_MASTERCHEF)
