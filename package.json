@@ -14,20 +14,21 @@
     "url": "https://github.com/bZxNetwork/contractsV2/issues"
   },
   "devDependencies": {
-    "@openzeppelin/contracts": "^3.3.0",
+    "@types/node": "^16.6.1",
     "cross-env": "^7.0.2",
     "husky": "^4.2.5",
-    "prettier": "^2.0.5",
-    "prettier-plugin-solidity": "^1.0.0-alpha.49",
     "openzeppelin-2.5.0": "npm:@openzeppelin/contracts@^2.5.0",
     "openzeppelin-3.4.0": "npm:@openzeppelin/contracts@^3.4.0",
+    "prettier": "^2.0.5",
+    "prettier-plugin-solidity": "^1.0.0-alpha.49",
     "solhint": "^3.0.0",
     "solhint-plugin-prettier": "^0.0.4"
   },
   "scripts": {
     "analyize-contracts": "slither .",
     "lint-contracts": "solhint contracts/**/*.sol",
-    "test": "brownie test"
+    "test": "brownie test",
+    "generate-merkle-root:output": "ts-node scripts/merkle-distributor/generate-merkle-root.ts --input scripts/merkle-distributor/output.json"
   },
   "husky": {
     "hooks": {
@@ -35,6 +36,10 @@
     }
   },
   "dependencies": {
-    "@uniswap/v3-periphery": "^1.2.1"
+    "commander": "^6.1.0",
+    "ethereumjs-util": "^7.1.0",
+    "ethers": "^5.4.4",
+    "ts-node": "^10.2.0",
+    "typescript": "^4.3.5"
   }
 }

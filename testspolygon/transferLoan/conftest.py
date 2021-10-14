@@ -4,7 +4,7 @@ import pytest
 from brownie import Contract, network, Wei
 
 @pytest.fixture(scope="module")
-def requireFork():
+def requireMaticFork():
     assert (network.show_active().find("-fork")>=0)
 
 @pytest.fixture(scope="module", autouse=True)
@@ -30,9 +30,13 @@ def USDT(accounts, TestToken):
 
 
 @pytest.fixture(scope="module")
-def BZX(accounts, interface):
-    return Contract.from_abi("bzx", address="0xfe4F0eb0A1Ad109185c9AaDE64C48ff8e928e54B",
+def BZX(accounts,LoanMaintenance_2, interface):
+    bzx =  Contract.from_abi("bzx", address="0xfe4F0eb0A1Ad109185c9AaDE64C48ff8e928e54B",
                       abi=interface.IBZx.abi, owner=accounts[0])
+
+    bzx.replaceContract(LoanMaintenance_2.deploy({'from':bzx.owner()}), {'from':bzx.owner()})
+    return bzx
+
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -79,11 +83,11 @@ def SUSHI_PGOV_MATIC(accounts, interface):
 @pytest.fixture(scope="module", autouse=True)
 def masterChef(accounts, chain, MasterChef_Polygon, iMATIC, iETH, iUSDC, iWBTC, iUSDT, pgovToken, Proxy, MintCoordinator_Polygon):
     masterChefProxy = Contract.from_abi("masterChefProxy", address="0xd39Ff512C3e55373a30E94BB1398651420Ae1D43", abi=Proxy.abi)
-    masterChefImpl = MasterChef_Polygon.deploy({'from': masterChefProxy.owner()})
-    masterChefProxy.replaceImplementation(masterChefImpl, {'from': masterChefProxy.owner()})
+    # masterChefImpl = MasterChef_Polygon.deploy({'from': masterChefProxy.owner()})
+    # masterChefProxy.replaceImplementation(masterChefImpl, {'from': masterChefProxy.owner()})
     masterChef = Contract.from_abi("masterChef", address=masterChefProxy, abi=MasterChef_Polygon.abi)
 
-    masterChef.setStartBlock(chain.height-100, {'from': masterChef.owner()})
+    # masterChef.setStartBlock(chain.height-100, {'from': masterChef.owner()})
 
     # if(len(masterChef.getPoolInfos())==2):
     #     masterChef.add(12500, iMATIC, True, {'from': masterChef.owner()})
@@ -95,9 +99,9 @@ def masterChef(accounts, chain, MasterChef_Polygon, iMATIC, iETH, iUSDC, iWBTC, 
     # pgovToken.transferOwnership(mintCoordinator, {"from": pgovToken.owner()})
 
 
-    for i in range(0,len(masterChef.getPoolInfos())):
-        masterChef.set(i, 12500, True, {'from': masterChef.owner()})
-        masterChef.setLocked(0,False,{'from': masterChef.owner()})
+    # for i in range(0,len(masterChef.getPoolInfos())):
+    #     masterChef.set(i, 12500, True, {'from': masterChef.owner()})
+    #     masterChef.setLocked(0,False,{'from': masterChef.owner()})
 
     return masterChef
 

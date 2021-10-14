@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021, bZeroX, LLC. All Rights Reserved.
+ * Copyright 2017-2021, bZxDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -7,7 +7,8 @@ pragma solidity 0.5.17;
 
 import "@openzeppelin-2.5.0/math/SafeMath.sol";
 import "@openzeppelin-2.5.0/ownership/Ownable.sol";
-import "@openzeppelin-2.5.0/token/ERC20/ERC20Detailed.sol";
+import "@openzeppelin-2.5.0/token/ERC20/IERC20.sol";
+import "../interfaces/IERC20Detailed.sol";
 import "../core/Constants.sol";
 import "./IPriceFeedsExt.sol";
 
@@ -295,7 +296,7 @@ contract PriceFeeds_POLYGON is Constants, Ownable {
     }
 
     function setDecimals(
-        ERC20Detailed[] calldata tokens)
+        IERC20Detailed[] calldata tokens)
         external
         onlyOwner
     {
@@ -367,11 +368,11 @@ contract PriceFeeds_POLYGON is Constants, Ownable {
         } else {
             uint256 sourceTokenDecimals = decimals[sourceToken];
             if (sourceTokenDecimals == 0)
-                sourceTokenDecimals = ERC20Detailed(sourceToken).decimals();
+                sourceTokenDecimals = IERC20Detailed(sourceToken).decimals();
 
             uint256 destTokenDecimals = decimals[destToken];
             if (destTokenDecimals == 0)
-                destTokenDecimals = ERC20Detailed(destToken).decimals();
+                destTokenDecimals = IERC20Detailed(destToken).decimals();
 
             if (destTokenDecimals >= sourceTokenDecimals)
                 return 10**(SafeMath.sub(18, destTokenDecimals-sourceTokenDecimals));
