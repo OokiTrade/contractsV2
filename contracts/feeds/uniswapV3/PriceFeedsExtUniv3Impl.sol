@@ -15,18 +15,20 @@ contract PriceFeedsExtUniv3Impl is IPriceFeedsExt {
   address public pool;
   address public token0;
   address public token1;
+  address public assignedToken0;
   constructor(address _pool, uint32 _period, address _tokenA, address _tokenB) {
       period = _period;
-	  address token0Address = _tokenA < _tokenB ? _tokenA : _tokenB;
-      baseAmount = uint128(10**(ERC20(token0Address).decimals())); //set to 10**token0Decimals
-      pool = _pool;
-	  (token0, token1) = (_tokenA, _tokenB);
       
+      pool = _pool;
+	  (token0, token1) = _tokenA < _tokenB ? (_tokenA,_tokenB):(_tokenB,_tokenA);
+	  baseAmount = uint128(10**(ERC20(token0).decimals())); //set to 10**token0Decimals
+      assignedToken0 = _tokenA;
   }
 
   function latestAnswer() public view override returns (int256){
     int24 timeWeightedAverageTick = OracleLibrary.consult(pool, period);
     uint256 quoteAmount = OracleLibrary.getQuoteAtTick(timeWeightedAverageTick, baseAmount, token0, token1);
+	quoteAmount = assignedToken0 == token0 ? quoteAmount : 1e36/quoteAmount;
     return int256(quoteAmount);
   }
 }
