@@ -28,7 +28,7 @@ contract MintCoordinator is Ownable {
     function burn(uint256 _amount) public {
         require(burners[msg.sender], "unauthorized");
         OOKI.transferFrom(msg.sender, address(this), _amount);
-        OOKI.burn(_amount);
+        // OOKI.burn(_amount);
     }
 
     function transferTokenOwnership(address newOwner) public onlyOwner {
