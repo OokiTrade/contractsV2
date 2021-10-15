@@ -1,5 +1,4 @@
 deployer = accounts[0]
-admin = accounts[1] # only admin can upgrade, also admin can't call functions,
 
 ookiImpl = deployer.deploy(OokiToken)
 ookiProxy = deployer.deploy(OokiOwnableProxy, ookiImpl, b"")
