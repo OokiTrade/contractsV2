@@ -1117,7 +1117,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 
         bzrxRewards[account] *= 10;
         bzrxVesting[account] *= 10;
-        bzrxRewardsPerTokenPaid[account] * 10;
+        bzrxRewardsPerTokenPaid[account] *= 10;
     }
 
     // event LoggerString(string name, uint256 amount);
