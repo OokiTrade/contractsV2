@@ -2,13 +2,11 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin-4.3.2/token/ERC20/ERC20.sol";
 import "@openzeppelin-4.3.2/token/ERC20/extensions/ERC20Burnable.sol";
-import "@openzeppelin-4.3.2/token/ERC20/extensions/ERC20FlashMint.sol"; // TODO TOM?
 import "@openzeppelin-4.3.2/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin-4.3.2/access/Ownable.sol";
 
-contract OokiToken is Ownable, ERC20Burnable, ERC20FlashMint {
+contract OokiToken is Ownable, ERC20Burnable {
     bytes32 public DOMAIN_SEPARATOR;
     // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
     bytes32 public constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
