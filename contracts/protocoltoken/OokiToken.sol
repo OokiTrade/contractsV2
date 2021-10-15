@@ -1,29 +1,65 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.6.12;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin-3.4.0/token/ERC20/ERC20.sol";
-import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
-import "@openzeppelin-3.4.0/access/Ownable.sol";
+import "@openzeppelin-4.3.2/token/ERC20/ERC20.sol";
+import "@openzeppelin-4.3.2/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin-4.3.2/token/ERC20/extensions/ERC20FlashMint.sol"; // TODO TOM?
+import "@openzeppelin-4.3.2/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin-4.3.2/access/Ownable.sol";
 
+contract OokiToken is Ownable, ERC20Burnable, ERC20FlashMint {
+    bytes32 public DOMAIN_SEPARATOR;
+    // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
+    bytes32 public constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
 
-contract OokiToken is ERC20, Ownable {
-    constructor() ERC20("Ooki Token", "OOKI") public {}
+    mapping(address => uint256) public nonces;
 
-    uint256 public totalMinted;
-    uint256 public totalBurned;
+    constructor() ERC20("Ooki Token", "OOKI") {}
+
+    function initialize() public onlyOwner {
+        DOMAIN_SEPARATOR = keccak256(
+            abi.encode(
+                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                keccak256(bytes("Ooki Token")),
+                keccak256(bytes("1")),
+                block.chainid,
+                address(this)
+            )
+        );
+    }
 
     function mint(address _to, uint256 _amount) public onlyOwner {
         _mint(_to, _amount);
-        totalMinted = totalMinted.add(_amount);
-    }
-
-    function burn(uint256 _amount) public onlyOwner {
-        _burn(msg.sender, _amount);
-        totalBurned = totalBurned.add(_amount);
     }
 
     function rescue(IERC20 _token) public onlyOwner {
         SafeERC20.safeTransfer(_token, msg.sender, _token.balanceOf(address(this)));
+    }
+
+    // constructor does not modify proxy storage
+    function name() public view override returns (string memory) {
+        return "Ooki Token";
+    }
+
+    // constructor does not modify proxy storage
+    function symbol() public view override returns (string memory) {
+        return "OOKI";
+    }
+
+    function permit(
+        address owner,
+        address spender,
+        uint256 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external {
+        require(deadline >= block.timestamp, "OOKI: EXPIRED");
+        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline))));
+        address recoveredAddress = ecrecover(digest, v, r, s);
+        require(recoveredAddress != address(0) && recoveredAddress == owner, "OOKI: INVALID_SIGNATURE");
+        _approve(owner, spender, value);
     }
 }

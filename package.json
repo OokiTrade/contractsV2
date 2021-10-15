@@ -19,6 +19,7 @@
     "husky": "^4.2.5",
     "openzeppelin-2.5.0": "npm:@openzeppelin/contracts@^2.5.0",
     "openzeppelin-3.4.0": "npm:@openzeppelin/contracts@^3.4.0",
+    "openzeppelin-4.3.2": "npm:@openzeppelin/contracts@^4.3.2",
     "prettier": "^2.0.5",
     "prettier-plugin-solidity": "^1.0.0-alpha.49",
     "solhint": "^3.0.0",
