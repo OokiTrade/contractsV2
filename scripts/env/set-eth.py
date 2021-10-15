@@ -29,6 +29,8 @@ SLP = Contract.from_abi("SLP", "0xa30911e072A0C88D55B5D0A0984B66b0D04569d0", Tes
 HELPER = Contract.from_abi("HELPER", "0x3B55369bfeA51822eb3E85868c299E8127E13c56", HelperImpl.abi)
 PRICE_FEED = Contract.from_abi("PRICE_FEED", BZX.priceFeeds(), abi = PriceFeeds.abi)
 STAKING = Contract.from_abi("STAKING", "0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4", StakingV1_1.abi)
+SWEEP_FEES = Contract.from_abi("STAKING", "0x93B02EE3132D10c938dd178C03a66595154f2940", FeeExtractAndDistribute_ETH.abi)
+
 SUSHI_ROUTER = Contract.from_abi("router", "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F", interface.IPancakeRouter02.abi)
 SUSHI = Contract.from_abi("SUSHI", "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2", TestToken.abi)
 

@@ -1,8 +1,12 @@
 BZX = Contract.from_abi("BZX", "0xfe4F0eb0A1Ad109185c9AaDE64C48ff8e928e54B", interface.IBZx.abi)
 TOKEN_REGISTRY = Contract.from_abi("TOKEN_REGISTRY", "0x5a6f1e81334C63DE0183A4a3864bD5CeC4151c27", TokenRegistry.abi)
+SWEEP_FEES = Contract.from_abi("STAKING", "0xf970FA9E6797d0eBfdEE8e764FC5f3123Dc6befD", FeeExtractAndDistribute_Polygon.abi)
 
 list = TOKEN_REGISTRY.getTokens(0, 100)
 for l in list:
+    import time
+    time.sleep(1)
+    print("help", l)
     iTokenTemp = Contract.from_abi("iTokenTemp", l[0], LoanTokenLogicStandard.abi)
     globals()[iTokenTemp.symbol()] = iTokenTemp
 
