@@ -4,9 +4,6 @@ SWEEP_FEES = Contract.from_abi("STAKING", "0xf970FA9E6797d0eBfdEE8e764FC5f3123Dc
 
 list = TOKEN_REGISTRY.getTokens(0, 100)
 for l in list:
-    import time
-    time.sleep(1)
-    print("help", l)
     iTokenTemp = Contract.from_abi("iTokenTemp", l[0], LoanTokenLogicStandard.abi)
     globals()[iTokenTemp.symbol()] = iTokenTemp
 
