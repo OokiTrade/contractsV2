@@ -77,6 +77,23 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
     uint256 public maxSwapSize = 1500 ether;                                                // maximum supported swap size in ETH
 
 
+    /**** OOIPx start */
+    struct OOIPx {
+        mapping(address => uint256) poolLastUpdateTime; // per itoken  <- PoolInterest.updatedTimestamp
+
+        mapping(address => uint256) poolVariableRatePrincipal; // per itoken
+        mapping(address => uint256) poolVariableRatePerTokenStored; // per itoken
+
+        mapping(address => uint256) poolFixedRatePrincipal; // per itoken
+        mapping(address => uint256) poolFixedRatePerTokenStored; // per itoken
+        mapping(address => uint256) poolFixedAverageRatePerSecond; // per itoken
+
+        mapping(bytes32 => uint256) loanRatePerTokenPaid; // per loan
+    }
+    OOIPx internal _ooipx;
+    /**** OOIPx end */
+
+
     function _setTarget(
         bytes4 sig,
         address target)

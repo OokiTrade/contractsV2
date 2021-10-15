@@ -9,8 +9,10 @@ pragma experimental ABIEncoderV2;
 import "../../core/State.sol";
 import "../../events/LoanSettingsEvents.sol";
 import "../../utils/MathUtil.sol";
+import "../../mixins/InterestHandler.sol";
 
-contract LoanSettings is State, LoanSettingsEvents {
+
+contract LoanSettings is State, InterestHandler, LoanSettingsEvents {
     using MathUtil for uint256;
     
     function initialize(
@@ -23,6 +25,8 @@ contract LoanSettings is State, LoanSettingsEvents {
         _setTarget(this.getLoanParams.selector, target);
         _setTarget(this.getLoanParamsList.selector, target);
         _setTarget(this.getTotalPrincipal.selector, target);
+        _setTarget(this.getPoolPrincipalStored.selector, target);
+        _setTarget(this.getLoanPrincipal.selector, target);
     }
 
     function setupLoanParams(
@@ -114,12 +118,45 @@ contract LoanSettings is State, LoanSettingsEvents {
 
     function getTotalPrincipal(
         address lender,
-        address loanToken)
+        address /*loanToken*/)
         external
         view
         returns (uint256)
     {
-        return lenderInterest[lender][loanToken].principalTotal;
+        return _getTotalPrincipal(
+            lender,
+            loanPoolToUnderlying[lender]
+        );
+    }
+
+    function getPoolPrincipalStored(
+        address pool)
+        external
+        view
+        returns (uint256)
+    {
+        return _ooipx.poolVariableRatePrincipal[pool];
+    }
+
+    function getLoanPrincipal(
+        bytes32 loanId)
+        external
+        view
+        returns (uint256)
+    {
+        Loan memory loanLocal = loans[loanId];
+        if (!loanLocal.active) {
+            return 0;
+        }
+
+        LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
+
+        return _getLoanPrincipal(
+            loanLocal.lender,
+            loanParamsLocal.loanToken,
+            loanId,
+            loanParamsLocal.maxLoanTerm == 0 // isFixedInterest
+        );
     }
 
     function _setupLoanParams(
