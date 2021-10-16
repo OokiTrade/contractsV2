@@ -9,7 +9,7 @@ pragma experimental ABIEncoderV2;
 import "./AdvancedToken.sol";
 import "../../../interfaces/IBZx.sol";
 import "../../../interfaces/IPriceFeeds.sol";
-
+import "../../modules/FlashBorrowFees/FlashBorrowFeesHelper.sol";
 
 contract LoanTokenLogicStandard is AdvancedToken {
     using SafeMath for uint256;
@@ -43,6 +43,8 @@ contract LoanTokenLogicStandard is AdvancedToken {
     bytes32 internal constant iToken_LowerAdminAddress = 0x7ad06df6a0af6bd602d90db766e0d5f253b45187c3717a0f9026ea8b10ff0d4b;    // keccak256("iToken_LowerAdminAddress")
     bytes32 internal constant iToken_LowerAdminContract = 0x34b31cff1dbd8374124bd4505521fc29cab0f9554a5386ba7d784a4e611c7e31;   // keccak256("iToken_LowerAdminContract")
 
+	uint256 public flashBorrowFeePercent; //set to 0.03%
+	
 
     constructor(
         address _newOwner)
@@ -135,7 +137,16 @@ contract LoanTokenLogicStandard is AdvancedToken {
 
         // unlock totalAssetSupply
         _flTotalAssetSupply = 0;
-
+		
+		// pay flash borrow fees
+		(success,) = bZxContract.call( //can re-use success to avoid stack too deep error
+			abi.encodeWithSelector(
+				FlashBorrowFeesHelper(bZxContract)._payFlashBorrowFees.selector,
+				msg.sender,
+				borrowAmount,
+				flashBorrowFeePercent));
+		require(success);
+	
         // verifies return of flash loan
         require(
             address(this).balance >= beforeEtherBalance &&
@@ -1291,6 +1302,10 @@ contract LoanTokenLogicStandard is AdvancedToken {
             return(ptr, size)
         }
     }
+	
+	function updateFlashBorrowFeePercent(uint256 newFeePercent) onlyOwner() public{
+		flashBorrowFeePercent = newFeePercent;
+	}
 }
 
 /*
