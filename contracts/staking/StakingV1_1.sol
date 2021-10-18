@@ -141,8 +141,8 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     function _withdrawFrom3Pool(uint256 amount)
         internal
     {
-        // if(amount != 0)
-        //     curve3PoolGauge.withdraw(amount); // TODO disabled for now
+        if(amount != 0)
+            curve3PoolGauge.withdraw(amount); // TODO disabled for now
 
         //Trigger claim rewards from curve pool
         uint256 crvBalanceBefore = IERC20(CRV).balanceOf(address(this));

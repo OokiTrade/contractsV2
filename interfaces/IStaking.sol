@@ -131,7 +131,14 @@ interface IStaking {
         view
         returns (uint256 supply);
 
-
+    function vestedBalanceForAmount(
+        uint256 tokenBalance,
+        uint256 lastUpdate,
+        uint256 vestingEndTime)
+        external
+        view
+        returns (uint256 vested);
+        
     function votingBalanceOf(
         address account,
         uint256 proposalId)
