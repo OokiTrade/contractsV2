@@ -12,16 +12,28 @@ contract OokiTokenProxy is Upgradeable_0_8 {
 
     fallback() external {
         address impl = implementation;
-
-        bytes memory data = msg.data;
+        // below is snippet from openzeppelin
         assembly {
-            let result := delegatecall(gas(), impl, add(data, 0x20), mload(data), 0, 0)
-            let size := returndatasize()
-            let ptr := mload(0x40)
-            returndatacopy(ptr, 0, size)
+            // Copy msg.data. We take full control of memory in this inline assembly
+            // block because it will not return to Solidity code. We overwrite the
+            // Solidity scratch pad at memory position 0.
+            calldatacopy(0, 0, calldatasize())
+
+            // Call the implementation.
+            // out and outsize are 0 because we don't know the size yet.
+            let result := delegatecall(gas(), implementation, 0, calldatasize(), 0, 0)
+
+            // Copy the returned data.
+            returndatacopy(0, 0, returndatasize())
+
             switch result
-            case 0 { revert(ptr, size) }
-            default { return(ptr, size) }
+            // delegatecall returns 0 on error.
+            case 0 {
+                revert(0, returndatasize())
+            }
+            default {
+                return(0, returndatasize())
+            }
         }
     }
 
