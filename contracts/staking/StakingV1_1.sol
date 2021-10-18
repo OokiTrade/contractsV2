@@ -142,7 +142,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         internal
     {
         if(amount != 0)
-            curve3PoolGauge.withdraw(amount); // TODO disabled for now
+            curve3PoolGauge.withdraw(amount);
 
         //Trigger claim rewards from curve pool
         uint256 crvBalanceBefore = IERC20(CRV).balanceOf(address(this));
@@ -487,25 +487,6 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 
         _voteDelegator.moveDelegates(ZERO_ADDRESS, currentDelegate, _votingFromStakedBalanceOf(msg.sender, _proposalState, true).sub(votingBalanceBefore));
     }
-
-    // function exit()
-    //     public
-    //     // unstake() does check pausable
-    // {
-    //     address[] memory tokens = new address[](4);
-    //     uint256[] memory values = new uint256[](4);
-    //     tokens[0] = iOOKI;
-    //     tokens[1] = LPToken;
-    //     tokens[2] = vBZRX;
-    //     tokens[3] = BZRX;
-    //     values[0] = uint256(-1);
-    //     values[1] = uint256(-1);
-    //     values[2] = uint256(-1);
-    //     values[3] = uint256(-1);
-        
-    //     unstake(tokens, values); // calls updateRewards
-    //     _claim(false);
-    // }
 
     modifier updateRewards(address account) {
         uint256 _bzrxPerTokenStored = bzrxPerTokenStored;

@@ -138,7 +138,7 @@ interface IStaking {
         external
         view
         returns (uint256 vested);
-        
+
     function votingBalanceOf(
         address account,
         uint256 proposalId)
