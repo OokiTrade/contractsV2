@@ -16,7 +16,7 @@ contract MintCoordinator is Ownable {
     mapping (address => bool) public burners;
     
 
-    constructor() public {
+    constructor() {
         // minters[TODO] = true;
     }
 

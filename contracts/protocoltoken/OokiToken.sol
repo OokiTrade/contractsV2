@@ -66,7 +66,7 @@ contract OokiToken is Upgradeable_0_8, ERC20Burnable {
         address /*from*/,
         address to,
         uint256 /*amount*/
-    ) internal {
+    ) internal override {
         require(to != address(this), "ERC20: transfer to self");
     }
 }

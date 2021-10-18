@@ -1,4 +1,7 @@
-// SPDX-License-Identifier: MIT
+/**
+ * Copyright 2017-2021, bZxDao. All Rights Reserved.
+ * Licensed under the Apache License, Version 2.0.
+ */
 
 pragma solidity ^0.8.0;
 
@@ -6,7 +9,7 @@ import "./Upgradeable_0_8.sol";
 import "@openzeppelin-4.3.2/utils/Address.sol";
 
 contract Proxy_0_8 is Upgradeable_0_8 {
-    constructor(address _impl) public payable {
+    constructor(address _impl) payable {
         replaceImplementation(_impl);
     }
 
