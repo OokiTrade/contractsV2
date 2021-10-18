@@ -1,3 +1,7 @@
+/**
+ * Copyright 2017-2021, OokiDao. All Rights Reserved.
+ * Licensed under the Apache License, Version 2.0.
+ */
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.0;
