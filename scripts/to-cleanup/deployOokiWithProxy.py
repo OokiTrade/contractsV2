@@ -17,3 +17,10 @@ ookiUpgrade = deployer.deploy(OokiToken)
 ookiProxy.replaceImplementation(ookiUpgrade, {"from": deployer})
 
 assert ooki.name() == "Ooki Token"
+
+ooki.mint(accounts[0], 10e18, {"from": accounts[0]})
+
+assert ooki.balanceOf(accounts[0]) == 10e18
+ooki.burn(5e18, {"from": accounts[0]})
+
+assert ooki.balanceOf(accounts[0]) == 5e18
