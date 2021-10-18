@@ -67,6 +67,6 @@ contract OokiToken is Upgradeable_0_8, ERC20Burnable {
         address to,
         uint256 /*amount*/
     ) internal override {
-        require(to != address(this), "ERC20: transfer to token contract disallowed");
+        require(to != address(this), "ERC20: contract transfer disallowed");
     }
 }
