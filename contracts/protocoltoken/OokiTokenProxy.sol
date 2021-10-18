@@ -12,16 +12,17 @@ contract OokiTokenProxy is Upgradeable_0_8 {
 
     fallback() external {
         address impl = implementation;
-
-        bytes memory data = msg.data;
         assembly {
-            let result := delegatecall(gas(), impl, add(data, 0x20), mload(data), 0, 0)
-            let size := returndatasize()
-            let ptr := mload(0x40)
-            returndatacopy(ptr, 0, size)
+            calldatacopy(0, 0, calldatasize())
+            let result := delegatecall(gas(), impl, 0, calldatasize(), 0, 0)
+            returndatacopy(0, 0, returndatasize())
             switch result
-            case 0 { revert(ptr, size) }
-            default { return(ptr, size) }
+            case 0 {
+                revert(0, returndatasize())
+            }
+            default {
+                return(0, returndatasize())
+            }
         }
     }
 
