@@ -3,10 +3,10 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.6.12;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
-import "@openzeppelin-3.4.0/access/Ownable.sol";
+import "@openzeppelin-4.3.2/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin-4.3.2/access/Ownable.sol";
 import "../OokiToken.sol";
  
 contract MintCoordinator is Ownable {
@@ -16,7 +16,7 @@ contract MintCoordinator is Ownable {
     mapping (address => bool) public burners;
     
 
-    constructor() public {
+    constructor() {
         // minters[TODO] = true;
     }
 
@@ -28,7 +28,7 @@ contract MintCoordinator is Ownable {
     function burn(uint256 _amount) public {
         require(burners[msg.sender], "unauthorized");
         OOKI.transferFrom(msg.sender, address(this), _amount);
-        OOKI.burn(_amount);
+        // OOKI.burn(_amount);
     }
 
     function transferTokenOwnership(address newOwner) public onlyOwner {
