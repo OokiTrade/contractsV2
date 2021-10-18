@@ -61,4 +61,12 @@ contract OokiToken is Upgradeable_0_8, ERC20Burnable {
         require(recoveredAddress != address(0) && recoveredAddress == owner, "OOKI: INVALID_SIGNATURE");
         _approve(owner, spender, value);
     }
+
+    function _beforeTokenTransfer(
+        address /*from*/,
+        address to,
+        uint256 /*amount*/
+    ) internal {
+        require(to != address(this), "ERC20: transfer to self");
+    }
 }
