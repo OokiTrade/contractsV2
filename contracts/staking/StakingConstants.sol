@@ -15,12 +15,12 @@ import "../../interfaces/IBZx.sol";
 
 contract StakingConstants {
 
-    address internal constant OOKI = 0xC5c66f91fE2e395078E0b872232A20981bc03B15;
+    address internal constant OOKI = 0x0De05F6447ab4D22c8827449EE4bA2D5C288379B;
     address internal constant BZRX = 0x56d811088235F11C8920698a204A5010a788f4b3;
     address internal constant vBZRX = 0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F;
     address internal constant iBZRX = 0x18240BD9C07fA6156Ce3F3f61921cC82b2619157;
     address internal constant iOOKI = 0x05d5160cbc6714533ef44CEd6dd32112d56Ad7da;
-    address internal constant LPToken = 0x81c3061Ea82ce5f261c801C97535F485E1e101EC; // ooki sushiswap calculated upfront
+    address internal constant LPToken = 0xEaaddE1E14C587a7Fb4Ba78eA78109BB32975f1e; // ooki sushiswap calculated upfront
     address internal constant LPTokenBeforeMigration = 0xa30911e072A0C88D55B5D0A0984B66b0D04569d0; // sushiswap
     address internal constant LPTokenOld = 0xe26A220a341EAca116bDa64cF9D5638A935ae629; // balancer
     IERC20 public constant curve3Crv = IERC20(0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490);

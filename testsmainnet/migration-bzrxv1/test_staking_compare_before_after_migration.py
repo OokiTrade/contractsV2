@@ -16,7 +16,7 @@ def BZRX(accounts, TestToken):
 
 @pytest.fixture(scope="module")
 def OOKI(accounts, TestToken, OokiToken):
-    return Contract.from_abi("OOKI", address="0xC5c66f91fE2e395078E0b872232A20981bc03B15", abi=OokiToken.abi)
+    return Contract.from_abi("OOKI", address="0x0De05F6447ab4D22c8827449EE4bA2D5C288379B", abi=OokiToken.abi)
 
 
 @pytest.fixture(scope="module")
@@ -78,12 +78,6 @@ def test_migration_staking_balances(requireMainnetFork, accounts, BZRX, OOKI, SL
     STAKING.updateSettings(ADMIN_SETTINGS, calldata, {"from": STAKING.owner()})
 
     OOKI.transferOwnership(converter, {'from': OOKI.owner()})
-
-    # buypass stake crv zero bag TODO Eugen
-    POOL3 = Contract.from_abi("CURVE3CRV", "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490", TestToken.abi)
-    POOL3Gauge = Contract.from_abi("3POOLGauge", "0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A", interface.ICurve3PoolGauge.abi)
-    POOL3.approve(POOL3Gauge, 2**256-1, {'from': stakingAddress})
-    POOL3Gauge.deposit(POOL3.balanceOf(stakingAddress), {'from': stakingAddress})
     
     calldata = ADMIN_SETTINGS.migrateSLP.encode_input()
     tx = STAKING.updateSettings(ADMIN_SETTINGS, calldata, {"from": STAKING.owner()})
@@ -101,4 +95,7 @@ def test_migration_staking_balances(requireMainnetFork, accounts, BZRX, OOKI, SL
     assert balanceOfBZRXBefore == OOKI.balanceOf(STAKING)
     # assert earned == STAKING.earned.call(account) # all balances mismatche because time change, lp change
 
+    # STAKING.claimAltRewards() TODO this does not work yet because sushi lp not in masterchief. pendign request to sushi team
+
+    
     assert True

@@ -16,7 +16,7 @@ def BZRX(accounts, TestToken):
 
 @pytest.fixture(scope="module")
 def OOKI(accounts, TestToken, OokiToken):
-    return Contract.from_abi("OOKI", address="0xC5c66f91fE2e395078E0b872232A20981bc03B15", abi=OokiToken.abi)
+    return Contract.from_abi("OOKI", address="0x0De05F6447ab4D22c8827449EE4bA2D5C288379B", abi=OokiToken.abi)
 
 
 @pytest.fixture(scope="module")
@@ -99,26 +99,6 @@ def isolate(fn_isolation):
     pass
 
 
-# def test_migration_staking(requireMainnetFork, accounts, BZRX, OOKI, STAKING, BZRX_CONVERTER, SLP, SUSHI_MASTERCHEF, SUSHI_FACTORY, WETH, interface, ADMIN_SETTINGS):
-
-#     balanceOfBZRXBefore = BZRX.balanceOf(STAKING)
-#     calldata = ADMIN_SETTINGS.migrateSLP.encode_input()
-#     tx = STAKING.updateSettings(ADMIN_SETTINGS, calldata, {"from": STAKING.owner()})
-
-#     assert OOKI.balanceOf(STAKING) == balanceOfBZRXBefore
-#     assert BZRX.balanceOf(STAKING) == 0 # all bzrx was migrated
-#     assert SLP.balanceOf(STAKING) == 0 # all slp was migrated
-
-#     pair = SUSHI_FACTORY.getPair(OOKI, WETH)
-#     assert pair != "0x0000000000000000000000000000000000000000"
-#     PAIR = Contract.from_abi("PAIR", address=pair, abi=interface.IUniswapV2Pair.abi)
-#     assert PAIR.balanceOf(STAKING) == PAIR.totalSupply() - 1000 # 1000 minting fee
-
-#     OLDPAIR = Contract.from_abi("OLDPAIR", address="0xa30911e072A0C88D55B5D0A0984B66b0D04569d0", abi=interface.IUniswapV2Pair.abi)
-#     assert OLDPAIR.balanceOf(STAKING) == 0
-    
-#     assert True
-
 
 def test_migration_staking_balances(requireMainnetFork, BZRX, OOKI, SLP, ADMIN_SETTINGS, BZRX_CONVERTER, STAKING, SUSHI_FACTORY, WETH, interface, StakingV1_1, StakingProxy, accounts):
     account = "0xE487A866b0f6b1B663b4566Ff7e998Af6116fbA9"
@@ -167,10 +147,29 @@ def test_migration_staking_balances(requireMainnetFork, BZRX, OOKI, SLP, ADMIN_S
     
     balancesAfterUserMigration = STAKING.balanceOfByAssets(account)
     earnedAfterUserMigration = STAKING.earned(account)
-    assert False
     
     # earnedAfter[0]/1e18, earnedAfter[1]/1e18, earnedAfter[2]/1e18, earnedAfter[3]/1e18
     assert balanceOfBZRXBefore * 10 == OOKI.balanceOf(STAKING)
- 
+    
+    STAKING.claim(True, {"from": account})
 
-    assert False
+    balances = STAKING.balanceOfByAssets(account)
+    STAKING.unstake([OOKI], [2**256-1])
+
+    assert OOKI.balanceOf(account) == balances[0]
+
+
+
+    pair = SUSHI_FACTORY.getPair(OOKI, WETH)
+    assert pair != "0x0000000000000000000000000000000000000000"
+    PAIR = Contract.from_abi("PAIR", address=pair, abi=interface.IUniswapV2Pair.abi)
+    assert PAIR.balanceOf(STAKING) == PAIR.totalSupply() - 1000 # 1000 minting fee
+
+
+    assert BZRX.balanceOf(STAKING) == 0 # all bzrx was migrated
+    assert SLP.balanceOf(STAKING) == 0 # all slp was migrated
+
+    OLDPAIR = Contract.from_abi("OLDPAIR", address="0xa30911e072A0C88D55B5D0A0984B66b0D04569d0", abi=interface.IUniswapV2Pair.abi)
+    assert OLDPAIR.balanceOf(STAKING) == 0
+
+    assert True
