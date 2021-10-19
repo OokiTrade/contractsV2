@@ -9,7 +9,6 @@ pragma experimental ABIEncoderV2;
 import "./AdvancedToken.sol";
 import "../../../interfaces/IBZx.sol";
 import "../../../interfaces/IPriceFeeds.sol";
-import "../../modules/FlashBorrowFees/FlashBorrowFeesHelper.sol";
 
 contract LoanTokenLogicStandard is AdvancedToken {
     using SafeMath for uint256;
@@ -107,9 +106,9 @@ contract LoanTokenLogicStandard is AdvancedToken {
 
         // save before balances
         uint256 beforeEtherBalance = address(this).balance.sub(msg.value);
+		
         uint256 beforeAssetsBalance = _underlyingBalance()
             .add(totalAssetBorrow());
-
         // lock totalAssetSupply for duration of flash loan
         _flTotalAssetSupply = beforeAssetsBalance;
 
@@ -124,7 +123,6 @@ contract LoanTokenLogicStandard is AdvancedToken {
         } else {
             callData = abi.encodePacked(bytes4(keccak256(bytes(signature))), data);
         }
-
         // arbitrary call
         (bool success, bytes memory returnData) = arbitraryCaller.call.value(msg.value)(
             abi.encodeWithSelector(
@@ -139,13 +137,10 @@ contract LoanTokenLogicStandard is AdvancedToken {
         _flTotalAssetSupply = 0;
 		
 		// pay flash borrow fees
-		(success,) = bZxContract.call( //can re-use success to avoid stack too deep error
-			abi.encodeWithSelector(
-				FlashBorrowFeesHelper(bZxContract)._payFlashBorrowFees.selector,
-				msg.sender,
-				borrowAmount,
-				flashBorrowFeePercent));
-		require(success);
+		IBZx(bZxContract)._payFlashBorrowFees(
+			borrower,
+			borrowAmount,
+			flashBorrowFeePercent);
 	
         // verifies return of flash loan
         require(

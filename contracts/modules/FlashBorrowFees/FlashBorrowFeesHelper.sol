@@ -6,7 +6,20 @@ import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 import "@openzeppelin-2.5.0/token/ERC20/IERC20.sol";
 
 contract FlashBorrowFeesHelper is State{
+	event PayFlashBorrowFee(
+        address indexed payer,
+        address indexed token,
+        uint256 amount
+	);
 	using MathUtil for uint256;
+	
+    function initialize(
+        address target)
+        external
+        onlyOwner
+    {
+		_setTarget(this._payFlashBorrowFees.selector, target);
+	}
 	function _payFlashBorrowFees(
 		address user,
 		uint256 borrowAmount,
@@ -20,6 +33,13 @@ contract FlashBorrowFeesHelper is State{
 		if(feeTokenAmount != 0){
 			borrowingFeeTokensHeld[feeToken] = borrowingFeeTokensHeld[feeToken].add(feeTokenAmount);
 		}
+		emit PayFlashBorrowFee(
+			user,
+			feeToken,
+			feeTokenAmount
+		);
 	}
+	
+
 
 }

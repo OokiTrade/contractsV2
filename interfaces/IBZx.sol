@@ -819,4 +819,11 @@ interface IBZx {
         uint256 depositTotal; // total escrowed interest for loan
         uint256 updatedTimestamp; // last update
     }
+	
+	////// Flash Borrow Fees //////
+	function _payFlashBorrowFees(
+			address user,
+			uint256 borrowAmount,
+			uint256 feeAmountInWEI)
+			external;
 }

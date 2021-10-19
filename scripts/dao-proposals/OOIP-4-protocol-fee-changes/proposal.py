@@ -43,7 +43,7 @@ def main():
     iOOKI = "0x05d5160cbc6714533ef44CEd6dd32112d56Ad7da"
     calldata = BZX.setLoanPool.encode_input([iOOKI], [OOKI])
     targets.append(BZX)
-     calldatas.append(calldata)
+    calldatas.append(calldata)
 
      # 4. bzx.setSupportedTokens([OOKI], [True])
      calldata = BZX.setSupportedTokens.encode_input([OOKI], [True], True)

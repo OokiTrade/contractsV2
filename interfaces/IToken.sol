@@ -190,4 +190,7 @@ interface IToken {
         uint256 principal;
         uint256 collateral;
     }
+	
+	//flash borrow fees
+	function updateFlashBorrowFeePercent(uint256 newFeePercent) external;
 }
