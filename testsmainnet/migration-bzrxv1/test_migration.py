@@ -19,7 +19,7 @@ def BZRX(accounts, TestToken):
 
 @pytest.fixture(scope="module")
 def OOKI(accounts, OokiToken):
-    return Contract.from_abi("OOKI", address="0xC5c66f91fE2e395078E0b872232A20981bc03B15", abi=OokiToken.abi)
+    return Contract.from_abi("OOKI", address="0x0De05F6447ab4D22c8827449EE4bA2D5C288379B", abi=OokiToken.abi)
 
 @pytest.fixture(scope="module")
 def MIGRATOR(accounts, BZRXv2Converter, MINT_COORDINATOR):
