@@ -28,18 +28,18 @@ def main():
     for iToken in iTokens:
         iTokenProxy = Contract.from_abi("LoanToken", iToken, LoanToken.abi) # attire proxy interface
         calldata = iTokenProxy.setTarget.encode_input(loanTokenLogicImpl)
-        targets.append(daoProxy)
+        targets.append(iTokenProxy)
         calldatas.append(calldata)
 
     # 2. upgrade PROTOCOL implementation
     flashBorrowFeeImpl = "" # acct.deploy(FlashBorrowFeesHelper)
-    bzxProxy = Contract.from_abi("PROTOCOL", BZX, bZxProtocol.abi) # attire proxy interface
-    calldata = bzxProxy.setTargets.encode_input(["_payFlashBorrowFees(address,uint256,uint256)"],[flashBorrowFeeImpl])
-    targets.append(BZX)
+    bzxProxy = Contract.from_abi("PROTOCOL", BZX.address, bZxProtocol.abi) # attire proxy interface
+    calldata = bzxProxy.replaceContract.encode_input(flashBorrowFeeImpl)
+    targets.append(bzxProxy)
     calldatas.append(calldata)
 
      # 3. bzx.setLoanPool([iOOKI], [OOKI])
-    OOKI = "0xC5c66f91fE2e395078E0b872232A20981bc03B15"
+    OOKI = "0x0De05F6447ab4D22c8827449EE4bA2D5C288379B"
     iOOKI = "0x05d5160cbc6714533ef44CEd6dd32112d56Ad7da"
     calldata = BZX.setLoanPool.encode_input([iOOKI], [OOKI])
     targets.append(BZX)
@@ -72,9 +72,6 @@ def main():
     calldata = STAKING.updateSettings.encode_input(stakingAdminSettings, calldata)
     targets.append(STAKING)
     calldatas.append(calldata)
-
-    # #this will trigger deposit to curve, otherwise claim() will fail, because it will try to withdraw from pool
-    # TODO STAKING.claimCrv({'from': res.owner()})
 
     values = [0] * len(targets)  # empty array
     signatures = [""] * len(targets)  # empty signatures array
