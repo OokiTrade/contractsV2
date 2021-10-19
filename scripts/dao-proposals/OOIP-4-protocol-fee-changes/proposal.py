@@ -30,6 +30,9 @@ def main():
         calldata = iTokenProxy.setTarget.encode_input(loanTokenLogicImpl)
         targets.append(iTokenProxy)
         calldatas.append(calldata)
+        calldataSetFee = iTokenProxy.updateFlashBorrowFeePercent.encode_input(int(0.03e18)) #set to 0.03% in WEI Precision
+        targets.append(iTokenProxy)
+        calldata.append(calldataSetFee)
 
     # 2. upgrade PROTOCOL implementation
     flashBorrowFeeImpl = "" # acct.deploy(FlashBorrowFeesHelper)
@@ -38,19 +41,24 @@ def main():
     targets.append(bzxProxy)
     calldatas.append(calldata)
 
-     # 3. bzx.setLoanPool([iOOKI], [OOKI])
+    # 3. bzx.setBorrowingFeePercent(0)
+    calldata = BZX.setBorrowingFeePercent.encode_input(0)
+    targets.append(BZX)
+    calldatas.append(calldata)
+
+     # 4. bzx.setLoanPool([iOOKI], [OOKI])
     OOKI = "0x0De05F6447ab4D22c8827449EE4bA2D5C288379B"
     iOOKI = "0x05d5160cbc6714533ef44CEd6dd32112d56Ad7da"
     calldata = BZX.setLoanPool.encode_input([iOOKI], [OOKI])
     targets.append(BZX)
     calldatas.append(calldata)
 
-     # 4. bzx.setSupportedTokens([OOKI], [True])
+     # 5. bzx.setSupportedTokens([OOKI], [True])
      calldata = BZX.setSupportedTokens.encode_input([OOKI], [True], True)
      targets.append(BZX)
      calldatas.append(calldata)
 
-     # 5. bzx.setLiquidationIncentivePercent(...) 
+     # 6. bzx.setLiquidationIncentivePercent(...) 
      calldata = BZX.setLiquidationIncentivePercent.encode_input(loanTokens, collateralTokens, amounts)
      targets.append(BZX)
      calldatas.append(calldata)

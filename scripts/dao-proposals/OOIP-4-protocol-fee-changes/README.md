@@ -37,9 +37,10 @@
 
 1. upgrade LOANTOKEN implementation
 2. upgrade PROTOCOL logic
-3. bzx.setLoanPool([iOOKI], [OOKI])
-4. bzx.setSupportedTokens([OOKI], [True])
-5. bzx.setLiquidationIncentivePercent(...)
+3. bzx.setBorrowingFeePercent(0)
+4. bzx.setLoanPool([iOOKI], [OOKI])
+5. bzx.setSupportedTokens([OOKI], [True])
+6. bzx.setLiquidationIncentivePercent(...)
 
 
 
