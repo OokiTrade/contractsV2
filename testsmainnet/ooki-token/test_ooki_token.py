@@ -34,6 +34,9 @@ def test_ooki(requireMainnetFork, BZRX, OOKI, accounts, web3):
     # TransferFrom
     # permit
 
+    with reverts("Ownable: caller is not the owner"):
+        OOKI.mint(accounts[0], 100e18, {"from": accounts[0]})
+
     OOKI.mint(accounts[0], 100e18, {"from": OOKI.owner()})
     assert OOKI.balanceOf(accounts[0]) == 100e18
 
@@ -67,7 +70,7 @@ def test_ooki(requireMainnetFork, BZRX, OOKI, accounts, web3):
     local = accounts.add(private_key="0x416b8a7d9290502f5661da81f0cf43893e3d19cb9aea3c426cfb36e8186e9c09")
     DEADLINE = chain.time()+ 1000
 
-    part1 = web3.soliditySha3(["bytes32", "address", "address", "uint256", "uint256", "uint256"],
+    part1 = web3.solidityKeccak(["bytes32", "address", "address", "uint256", "uint256", "uint256"],
             [PERMIT_TYPEHASH,
             local.address,
             local.address,
@@ -76,7 +79,7 @@ def test_ooki(requireMainnetFork, BZRX, OOKI, accounts, web3):
             DEADLINE]
         )
 
-    part2 = web3.soliditySha3(['bytes1', 'bytes1', 'bytes32', 'bytes32'], 
+    part2 = web3.solidityKeccak(['bytes1', 'bytes1', 'bytes32', 'bytes32'], 
         [
             "0x19",
             "0x01",
