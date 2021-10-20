@@ -7,7 +7,7 @@ deployer = CHEF.owner();
 
 govConverter = FixedSwapTokenConverter.deploy(
     [BGOV],
-    [1e6/19], #19 gov == 1 bzrx
+    [1e18/19], #19 gov == 1 bzrx
     BZRX,
     BGOV,
     {'from':  deployer}

@@ -1,7 +1,11 @@
+/**
+ * Copyright 2017-2021, OokiDao. All Rights Reserved.
+ * Licensed under the Apache License, Version 2.0.
+ */
+/// SPDX-License-Identifier: MIT
+
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
-
-/// SPDX-License-Identifier: MIT
 
 import "@openzeppelin-3.4.0/token/ERC20/IERC20.sol";
 import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
@@ -12,7 +16,7 @@ contract FixedSwapTokenConverter is Ownable {
     using SafeMath for uint256;
     address constant DEAD = 0x000000000000000000000000000000000000dEaD;
 
-    //token => ooki per token *1e6
+    //token => ooki per token *1e18
     mapping(address => uint256) public tokenIn;
     address public tokenOut;
     mapping(address => uint256) public totalConverted;
@@ -52,21 +56,22 @@ contract FixedSwapTokenConverter is Ownable {
     }
 
     function _convert(address receiver, address _token, uint256 _tokenAmount) internal {
+        
         uint256 _swapRate = tokenIn[_token];
-        require(_swapRate > 0, "swapRate == 0");
+        require(_swapRate != 0, "swapRate == 0");
+        
         uint256 _balance = IERC20(_token).balanceOf(msg.sender);
         if(_tokenAmount > _balance){
             _tokenAmount = _balance;
         }
-
-        if(_tokenAmount == 0){
+        if(_tokenAmount == 0) {
             return;
         }
 
-        uint256 _amountOut = _tokenAmount.mul(_swapRate).div(1e6);
+        uint256 _amountOut = _tokenAmount.mul(_swapRate).div(1e18);
         require(IERC20(tokenOut).balanceOf(address(this)) >= _amountOut, "Migrator: low balance");
 
-        IERC20(_token).transferFrom(
+        IERC20(_token).safeTransferFrom(
             msg.sender,
             DEAD,
             _tokenAmount
@@ -88,20 +93,7 @@ contract FixedSwapTokenConverter is Ownable {
         }
     }
 
-
-    function rescue(
-            address _receiver,
-            uint256 _amount,
-            address _token
-        )
-        external
-        onlyOwner
-        {
-            uint256 _balance = IERC20(_token).balanceOf(address(this));
-            if(_amount > _balance){
-                _amount = _balance;
-            }
-
-        IERC20(_token).safeTransfer(_receiver, _amount);
+    function rescue(IERC20 _token) public onlyOwner {
+        _token.safeTransfer(msg.sender, _token.balanceOf(address(this)));
     }
 }
