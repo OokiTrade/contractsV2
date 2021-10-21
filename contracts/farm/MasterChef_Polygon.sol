@@ -44,7 +44,7 @@ contract MasterChef_Polygon is Upgradeable {
     );
 
     // add the GOV pool first to have ID 0
-    uint256 internal constant GOV_POOL_ID = 0;
+    uint256 internal constant GOV_POOL_ID = 2;
     event AddExternalReward(
         address indexed sender,
         uint256 indexed pid,
@@ -327,7 +327,7 @@ contract MasterChef_Polygon is Upgradeable {
 
     //Splitted by pid in case if we want to distribute altRewards to other pids like bzrx
     function _pendingAltRewards(uint256 pid, address _user)
-        internal
+        public
         view
         returns (uint256)
     {
@@ -343,7 +343,7 @@ contract MasterChef_Polygon is Upgradeable {
 
         //Handle the backcapability,
         //when all user claim altrewards at least once we can remove this check
-        if(_userAltRewardsPerShare == 0){
+        if(_userAltRewardsPerShare == 0 && pid == 0){
             //Or didnt claim or didnt migrate
 
             //check if migrate
