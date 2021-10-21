@@ -44,7 +44,7 @@ contract MasterChef_Polygon is Upgradeable {
     );
 
     // add the GOV pool first to have ID 0
-    uint256 internal constant GOV_POOL_ID = 2;
+    uint256 internal constant GOV_POOL_ID = 0;
     event AddExternalReward(
         address indexed sender,
         uint256 indexed pid,
@@ -494,6 +494,8 @@ contract MasterChef_Polygon is Upgradeable {
 
     // Anyone can contribute native token rewards to GOV pool stakers
     function addAltReward() public payable checkNoPause {
+        uint256 GOV_POOL_ID = 2; // new altrewards go to iBZRX(2)
+
         IMasterChef.PoolInfo storage pool = poolInfo[GOV_POOL_ID];
         require(block.number > pool.lastRewardBlock, "rewards not started");
 
