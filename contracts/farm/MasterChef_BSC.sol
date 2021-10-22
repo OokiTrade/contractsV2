@@ -323,7 +323,7 @@ contract MasterChef_BSC is Upgradeable {
 
     //Splitted by pid in case if we want to distribute altRewards to other pids like bzrx
     function _pendingAltRewards(uint256 pid, address _user)
-        internal
+        public
         view
         returns (uint256)
     {
@@ -339,7 +339,7 @@ contract MasterChef_BSC is Upgradeable {
 
         //Handle the backcapability,
         //when all user claim altrewards at least once we can remove this check
-        if(_userAltRewardsPerShare == 0){
+        if(_userAltRewardsPerShare == 0 && pid == 0){
             //Or didnt claim or didnt migrate
 
             //check if migrate
@@ -475,6 +475,7 @@ contract MasterChef_BSC is Upgradeable {
 
     // Anyone can contribute native token rewards to GOV pool stakers
     function addAltReward() public payable checkNoPause {
+        uint256 GOV_POOL_ID = 5; // new altrewards go to iBZRX(5) its pool5 on bsc
         IMasterChef.PoolInfo storage pool = poolInfo[GOV_POOL_ID];
         require(block.number > pool.lastRewardBlock, "rewards not started");
 

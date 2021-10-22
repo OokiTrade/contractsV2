@@ -45,7 +45,7 @@ contract FeeExtractAndDistribute_BSC is Upgradeable {
 
     address payable public treasuryWallet;
 
-    event ExtractAndDistribute();
+    event ExtractAndDistribute(uint256 amountTreasury, uint256 amountStakers);
 
     event AssetSwap(
         address indexed sender,
@@ -115,56 +115,22 @@ contract FeeExtractAndDistribute_BSC is Upgradeable {
         }
 
         if (bnbOutput != 0) {
-            /*amount = (bnbOutput * 15e18) / 1e20; // burn (15%)
-            uint256 sellAmount = amount; // sell for BZRX (15%)
-            uint256 distributeAmount = (bnbOutput * 50e18) / 1e20; // distribute to stakers (50%)
-            bnbOutput -= (amount + sellAmount + distributeAmount);
-
-            uint256 bgovAmount = _swapWithPair(BNB, BGOV, amount);
-            emit AssetSwap(msg.sender, BNB, BGOV, amount, bgovAmount);
-
-            // burn baby burn (15% of original amount)
-            IERC20(BGOV).transfer(
-                0x000000000000000000000000000000000000dEaD,
-                bgovAmount
-            );
-            emit AssetBurn(msg.sender, BGOV, bgovAmount);*/
-
-            uint256 sellAmount = (bnbOutput * 30e18) / 1e20; // sell for BZRX (30%)
-            uint256 distributeAmount = (bnbOutput * 50e18) / 1e20; // distribute to stakers (50%)
-            bnbOutput -= (sellAmount + distributeAmount);
-
-            // buy and distribute BZRX
-            uint256 buyAmount = IPriceFeeds(bZx.priceFeeds()).queryReturn(
-                BNB,
-                BZRX,
-                sellAmount
-            );
-            uint256 availableForBuy = tokenHeld[IERC20(BZRX)];
-            if (buyAmount > availableForBuy) {
-                amount = sellAmount.mul(availableForBuy).div(buyAmount);
-                buyAmount = availableForBuy;
-
-                exportedFees[BNB] += (sellAmount - amount); // retain excess BNB for next time
-                sellAmount = amount;
-            }
-            tokenHeld[IERC20(BZRX)] = availableForBuy - buyAmount;
-
             // add any BZRX extracted from fees
-            buyAmount += exportedFees[BZRX];
+            uint256 bzrxAmount = exportedFees[BZRX];
             exportedFees[BZRX] = 0;
 
-            if (buyAmount != 0) {
-                IERC20(BZRX).safeTransfer(iBZRX, buyAmount);
-                emit AssetSwap(msg.sender, BNB, BZRX, sellAmount, buyAmount);
+            if (bzrxAmount != 0) {
+                IERC20(BZRX).safeTransfer(iBZRX, bzrxAmount);
+                emit AssetSwap(msg.sender, BNB, BZRX, 0, bzrxAmount);
             }
 
-            IWethERC20(BNB).withdraw(bnbOutput + sellAmount + distributeAmount);
-            chef.addAltReward.value(distributeAmount)();
-            Address.sendValue(fundsWallet, sellAmount);
+            IWethERC20(BNB).withdraw(bnbOutput);
+            bnbOutput = bnbOutput / 2;
+            chef.addAltReward.value(bnbOutput)();
+
             Address.sendValue(treasuryWallet, bnbOutput);
 
-            emit ExtractAndDistribute();
+            emit ExtractAndDistribute(bnbOutput, bnbOutput);
         }
     }
 
