@@ -45,7 +45,7 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable {
 
     address payable public treasuryWallet;
 
-    event ExtractAndDistribute();
+    event ExtractAndDistribute(uint256 amountTreasury, uint256 amountStakers);
 
     event AssetSwap(
         address indexed sender,
@@ -131,41 +131,42 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable {
             IERC20Burnable(PGOV).burn(pgovAmount);
             emit AssetBurn(msg.sender, PGOV, pgovAmount);*/
 
-            uint256 sellAmount = (maticOutput * 30e18) / 1e20; // sell for BZRX (30%)
-            uint256 distributeAmount = (maticOutput * 50e18) / 1e20; // distribute to stakers (50%)
-            maticOutput -= (sellAmount + distributeAmount);
+            // uint256 sellAmount = (maticOutput * 30e18) / 1e20; // sell for BZRX (30%)
+            // uint256 distributeAmount = (maticOutput * 50e18) / 1e20; // distribute to stakers (50%)
+            // maticOutput -= (sellAmount + distributeAmount);
 
-            // buy and distribute BZRX
-            uint256 buyAmount = IPriceFeeds(bZx.priceFeeds()).queryReturn(
-                MATIC,
-                BZRX,
-                sellAmount
-            );
-            uint256 availableForBuy = tokenHeld[IERC20(BZRX)];
-            if (buyAmount > availableForBuy) {
-                amount = sellAmount.mul(availableForBuy).div(buyAmount);
-                buyAmount = availableForBuy;
+            // // buy and distribute BZRX
+            // uint256 buyAmount = IPriceFeeds(bZx.priceFeeds()).queryReturn(
+            //     MATIC,
+            //     BZRX,
+            //     sellAmount
+            // );
+            // uint256 availableForBuy = tokenHeld[IERC20(BZRX)];
+            // if (buyAmount > availableForBuy) {
+            //     amount = sellAmount.mul(availableForBuy).div(buyAmount);
+            //     buyAmount = availableForBuy;
 
-                exportedFees[MATIC] += (sellAmount - amount); // retain excess MATIC for next time
-                sellAmount = amount;
-            }
-            tokenHeld[IERC20(BZRX)] = availableForBuy - buyAmount;
+            //     exportedFees[MATIC] += (sellAmount - amount); // retain excess MATIC for next time
+            //     sellAmount = amount;
+            // }
+            // tokenHeld[IERC20(BZRX)] = availableForBuy - buyAmount;
 
             // add any BZRX extracted from fees
-            buyAmount += exportedFees[BZRX];
+            uint256 bzrxAmount = exportedFees[BZRX];
             exportedFees[BZRX] = 0;
 
-            if (buyAmount != 0) {
-                IERC20(BZRX).safeTransfer(iBZRX, buyAmount);
-                emit AssetSwap(msg.sender, MATIC, BZRX, sellAmount, buyAmount);
+            if (bzrxAmount != 0) {
+                IERC20(BZRX).safeTransfer(iBZRX, bzrxAmount);
+                emit AssetSwap(msg.sender, MATIC, BZRX, 0, bzrxAmount); // this event just for tracking purphose
             }
 
-            IWethERC20(MATIC).withdraw(maticOutput + sellAmount + distributeAmount);
-            chef.addAltReward.value(distributeAmount)();
-            Address.sendValue(fundsWallet, sellAmount);
-            Address.sendValue(treasuryWallet, maticOutput);
+            IWethERC20(MATIC).withdraw(maticOutput);
+            maticOutput = maticOutput/2
+            chef.addAltReward.value(maticOutput)(); // 50% of matic + whatever bzrx was send to iBZRX contract
+            // Address.sendValue(fundsWallet, maticOutput/2);
+            Address.sendValue(treasuryWallet, maticOutput); // 50% 
 
-            emit ExtractAndDistribute();
+            emit ExtractAndDistribute(maticOutput, maticOutput);
         }
     }
 
