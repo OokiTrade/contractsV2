@@ -16,7 +16,7 @@ FEE_EXTRACTOR.togglePause(True, {'from': deployer})
 
 govConverter = FixedSwapTokenConverter.deploy(
     [PGOV],
-    [1e6/19], #19 gov == 1 bzrx
+    [1e18/19], #19 gov == 1 bzrx
     BZRX,
     PGOV,
     {'from':  deployer}
