@@ -101,12 +101,6 @@ interface IStaking {
         view
         returns (uint256 vBZRXWeight, uint256 iBZRXWeight, uint256 LPTokenWeight);
 
-    function balanceOfByAsset(
-        address token,
-        address account)
-        external
-        view
-        returns (uint256 balance);
 
     function balanceOfByAssets(
         address account)
@@ -114,7 +108,7 @@ interface IStaking {
         view
         returns (
             uint256 bzrxBalance,
-            uint256 iBZRXBalance,
+            uint256 iOOKIBalance,
             uint256 vBZRXBalance,
             uint256 LPTokenBalance,
             uint256 LPTokenBalanceOld
@@ -173,6 +167,20 @@ interface IStaking {
     function governor()
         external
         view
-        returns(address);
+        returns (address);
 
+    function  stableCoinPerTokenStored() 
+        external 
+        returns (uint256);
+    
+    function updateSettings(
+        address settingsTarget,
+        bytes calldata callData)
+        external
+        returns(bytes memory);
+    
+    function migrateBalances(address account) external;
+
+    function owner() external view returns (address);
+    function migrated(address account) external view returns (bool);
 }

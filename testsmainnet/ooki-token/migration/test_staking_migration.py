@@ -13,6 +13,9 @@ def requireMainnetFork():
 def BZRX(accounts, TestToken):
     return Contract.from_abi("BZRX", address="0x56d811088235F11C8920698a204A5010a788f4b3", abi=TestToken.abi)
 
+@pytest.fixture(scope="module")
+def iBZRX(accounts, BZRX, LoanTokenLogicStandard):
+    return Contract.from_abi("iBZRX", address="0x18240BD9C07fA6156Ce3F3f61921cC82b2619157", abi=LoanTokenLogicStandard.abi)
 
 @pytest.fixture(scope="module")
 def OOKI(accounts, TestToken, OokiToken):
@@ -38,9 +41,9 @@ def SUSHI_MASTERCHEF(accounts, TestToken, interface):
 def SUSHI_FACTORY(accounts, TestToken, interface):
     return Contract.from_abi("SUSHI_FACTORY", address="0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac", abi=interface.IUniswapV2Factory.abi)
 
-# @pytest.fixture(scope="module")
-# def SUSHI_FACTORY(accounts, TestToken, interface):
-#     return Contract.from_abi("SUSHI_FACTORY", address="0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac", abi=interface.IUniswapV2Factory.abi)
+@pytest.fixture(scope="module")
+def SUSHI(accounts, TestToken, interface):
+    return Contract.from_abi("SUSHI", address="0x6B3595068778DD592e39A122f4f5a5cF09C90fE2", abi=TestToken.abi)
 
 
 # @pytest.fixture(scope="module")
@@ -87,7 +90,7 @@ def STAKING(StakingV1_1, accounts, StakingProxy, interface, TestToken):
     # POOL3.approve(POOL3Gauge, 2**256-1, {'from': stakingAddress})
     # POOL3Gauge.deposit(POOL3.balanceOf(stakingAddress),{'from': stakingAddress})
 
-    return Contract.from_abi("staking", address=stakingAddress, abi=StakingV1_1.abi, owner="0xE487A866b0f6b1B663b4566Ff7e998Af6116fbA9")
+    return Contract.from_abi("staking", address=stakingAddress, abi=interface.IStaking.abi)
 
 @pytest.fixture(scope="module")
 def ADMIN_SETTINGS(StakingAdminSettings, accounts):
@@ -100,20 +103,23 @@ def isolate(fn_isolation):
 
 
 
-def test_migration_staking_balances(requireMainnetFork, BZRX, OOKI, SLP, ADMIN_SETTINGS, BZRX_CONVERTER, STAKING, SUSHI_FACTORY, WETH, interface, StakingV1_1, StakingProxy, accounts):
+def test_migration_staking_balances(requireMainnetFork, BZRX, OOKI, SLP, ADMIN_SETTINGS, BZRX_CONVERTER, STAKING, SUSHI_FACTORY, WETH, interface, StakingV1_1, StakingProxy, accounts, iBZRX, SUSHI_MASTERCHEF, SUSHI):
     account = "0xE487A866b0f6b1B663b4566Ff7e998Af6116fbA9"
-   
-    stableCoinPerTokenStored = STAKING.stableCoinPerTokenStored()
+    
+    iBZRX.transfer(account, 1000e18, {"from": "0x9fF797e6076b27D9218327eBcDb5E4faF41Ce800"}) # make sure have some iBZRX for checking
+    iBZRX.approve(STAKING, 2**256-1, {"from": account})
+    STAKING.stake([iBZRX], [1000e18], {"from": account})
+    stableCoinPerTokenStored = STAKING.stableCoinPerTokenStored.call()
     earned = STAKING.earned(account)
     balances = STAKING.balanceOfByAssets(account)
 
     bzxOwner = "0xfedC4dD5247B93feb41e899A09C44cFaBec29Cbc"
     stakingAddress = "0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4"
-    res = Contract.from_abi("StakingV1_1", stakingAddress, StakingV1_1.abi)
-    res.stake([], [], {"from": "0xE487A866b0f6b1B663b4566Ff7e998Af6116fbA9"})
+    # res = Contract.from_abi("StakingV1_1", stakingAddress, StakingV1_1.abi)
+    # res.stake([], [], {"from": "0xE487A866b0f6b1B663b4566Ff7e998Af6116fbA9"})
     proxy = Contract.from_abi("staking", address=stakingAddress, abi=StakingProxy.abi)
     impl = accounts[0].deploy(StakingV1_1)
-    chain.mine()
+    
     proxy.replaceImplementation(impl, {"from": bzxOwner})
 
     
@@ -129,11 +135,7 @@ def test_migration_staking_balances(requireMainnetFork, BZRX, OOKI, SLP, ADMIN_S
 
     
     tx = STAKING.updateSettings(ADMIN_SETTINGS, calldata, {"from": STAKING.owner()})
-
-    # below doesn't work because user not migrated
-    # stableCoinPerTokenStoredAfter = STAKING.stableCoinPerTokenStored()
-    # earnedAfter = STAKING.earned(account)
-    # balancesAfter = STAKING.balanceOfByAssets(account)
+    STAKING = Contract.from_abi("STAKING", address=STAKING, abi=StakingV1_1.abi)
     
     STAKING.migrateBalances(ZERO_ADDRESS, {"from": bzxOwner})
     
@@ -144,10 +146,24 @@ def test_migration_staking_balances(requireMainnetFork, BZRX, OOKI, SLP, ADMIN_S
     
     assert STAKING.migrated(account) == True
 
+    # add sushi masterchief 
+    pair = SUSHI_FACTORY.getPair(OOKI, WETH)
+    SUSHI_MASTERCHEF.add(0, pair, False, {"from": SUSHI_MASTERCHEF.owner()})
+
+    assert pair != "0x0000000000000000000000000000000000000000"
+    PAIR = Contract.from_abi("PAIR", address=pair, abi=interface.IUniswapV2Pair.abi)
+    
+    PAIR.approve(SUSHI_MASTERCHEF, 2**256-1, {"from": STAKING}) # TODO not to forgoth to add infinite approval in proposal
+
+    # STAKING.claimSushi({"from": account}) # claim works now
     
     balancesAfterUserMigration = STAKING.balanceOfByAssets(account)
     earnedAfterUserMigration = STAKING.earned(account)
+
+
     
+    # pdb.set_trace()
+    assert False
     # earnedAfter[0]/1e18, earnedAfter[1]/1e18, earnedAfter[2]/1e18, earnedAfter[3]/1e18
     assert balanceOfBZRXBefore * 10 == OOKI.balanceOf(STAKING)
     
@@ -160,9 +176,8 @@ def test_migration_staking_balances(requireMainnetFork, BZRX, OOKI, SLP, ADMIN_S
 
 
 
-    pair = SUSHI_FACTORY.getPair(OOKI, WETH)
-    assert pair != "0x0000000000000000000000000000000000000000"
-    PAIR = Contract.from_abi("PAIR", address=pair, abi=interface.IUniswapV2Pair.abi)
+    
+
     assert PAIR.balanceOf(STAKING) == PAIR.totalSupply() - 1000 # 1000 minting fee
 
 
@@ -172,4 +187,4 @@ def test_migration_staking_balances(requireMainnetFork, BZRX, OOKI, SLP, ADMIN_S
     OLDPAIR = Contract.from_abi("OLDPAIR", address="0xa30911e072A0C88D55B5D0A0984B66b0D04569d0", abi=interface.IUniswapV2Pair.abi)
     assert OLDPAIR.balanceOf(STAKING) == 0
 
-    assert True
+    assert False

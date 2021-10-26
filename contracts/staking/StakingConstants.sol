@@ -21,7 +21,7 @@ contract StakingConstants {
     address internal constant iBZRX = 0x18240BD9C07fA6156Ce3F3f61921cC82b2619157;
     address internal constant iOOKI = 0x05d5160cbc6714533ef44CEd6dd32112d56Ad7da;
     address internal constant LPToken = 0xEaaddE1E14C587a7Fb4Ba78eA78109BB32975f1e; // ooki sushiswap calculated upfront
-    address internal constant LPTokenBeforeMigration = 0xa30911e072A0C88D55B5D0A0984B66b0D04569d0; // sushiswap
+    address internal constant LPToken_SUSHI_BZRX_ETH = 0xa30911e072A0C88D55B5D0A0984B66b0D04569d0; // sushiswap
     address internal constant LPTokenOld = 0xe26A220a341EAca116bDa64cF9D5638A935ae629; // balancer
     IERC20 public constant curve3Crv = IERC20(0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490);
 
@@ -45,7 +45,8 @@ contract StakingConstants {
 
     address internal constant SUSHI_MASTERCHEF = 0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd;
     address internal constant SUSHI_ROUTER = 0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F;
-    uint256 internal constant BZRX_ETH_SUSHI_MASTERCHEF_PID =  188; // TODO get new masterchief pid
+    uint256 internal constant BZRX_ETH_SUSHI_MASTERCHEF_PID =  188; // we still need this to exit pool
+    uint256 internal constant OOKI_ETH_SUSHI_MASTERCHEF_PID =  327; // TODO this is estimated on a fork
 
     uint256 public constant BZRXWeightStored = 1e18;
 

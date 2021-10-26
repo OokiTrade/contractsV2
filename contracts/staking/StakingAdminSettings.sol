@@ -127,7 +127,7 @@ contract StakingAdminSettings is StakingState, StakingConstants, PausableGuardia
         chef.withdraw(188, balance);
 
         // migrating SLP
-        IERC20(LPTokenBeforeMigration).approve(SUSHI_ROUTER, balance);
+        IERC20(LPToken_SUSHI_BZRX_ETH).approve(SUSHI_ROUTER, balance);
         (uint256 WETHBalance, uint256 BZRXBalance) = IUniswapV2Router(SUSHI_ROUTER).removeLiquidity(WETH, BZRX, balance, 1, 1, address(this), block.timestamp);
 
         uint256 totalBZRXBalance = IERC20(BZRX).balanceOf(address(this));

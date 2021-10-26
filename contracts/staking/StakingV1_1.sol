@@ -34,7 +34,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         returns (uint256)
     {
         uint256 pendingSushi = IMasterChefSushi(SUSHI_MASTERCHEF)
-            .pendingSushi(BZRX_ETH_SUSHI_MASTERCHEF_PID, address(this));
+            .pendingSushi(OOKI_ETH_SUSHI_MASTERCHEF_PID, address(this));
 
         uint256 totalSupply = _totalSupplyPerToken[LPToken];
         return _pendingAltRewards(
@@ -97,7 +97,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     {
         uint256 sushiBalanceBefore = IERC20(SUSHI).balanceOf(address(this));
         IMasterChefSushi(SUSHI_MASTERCHEF).deposit(
-            BZRX_ETH_SUSHI_MASTERCHEF_PID,
+            OOKI_ETH_SUSHI_MASTERCHEF_PID,
             amount
         );
         uint256 sushiRewards = IERC20(SUSHI).balanceOf(address(this)) - sushiBalanceBefore;
@@ -111,7 +111,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     {
         uint256 sushiBalanceBefore = IERC20(SUSHI).balanceOf(address(this));
         IMasterChefSushi(SUSHI_MASTERCHEF).withdraw(
-            BZRX_ETH_SUSHI_MASTERCHEF_PID,
+            OOKI_ETH_SUSHI_MASTERCHEF_PID,
             amount
         );
         uint256 sushiRewards = IERC20(SUSHI).balanceOf(address(this)) - sushiBalanceBefore;
@@ -320,6 +320,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         updateRewards(msg.sender)
         returns (uint256 stableCoinRewardsEarned)
     {
+        migrateBalances(msg.sender); // this will migrate user balances if not migrated
         stableCoinRewardsEarned = _claim3Crv();
 
         emit Claim(
@@ -345,6 +346,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         pausable
         returns (uint256 crvRewardsEarned)
     {
+        migrateBalances(msg.sender); // this will migrate user balances if not migrated
         crvRewardsEarned = _claimCrv();
         if(crvRewardsEarned != 0){
             emit ClaimAltRewards(msg.sender, CRV, crvRewardsEarned);
@@ -417,6 +419,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         returns (uint256)
     {
         address _user = msg.sender;
+        migrateBalances(_user); // this will migrate user balances if not migrated
         uint256 lptUserSupply = balanceOfByAsset(LPToken, _user);
 
         //This will trigger claim rewards from sushi masterchef
@@ -489,6 +492,8 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     }
 
     modifier updateRewards(address account) {
+        migrateBalances(account); // this will migrate user balances if not migrated
+
         uint256 _bzrxPerTokenStored = bzrxPerTokenStored;
         uint256 _stableCoinPerTokenStored = stableCoinPerTokenStored;
 
@@ -555,7 +560,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             );
 
         uint256 pendingSushi = IMasterChefSushi(SUSHI_MASTERCHEF)
-            .pendingSushi(BZRX_ETH_SUSHI_MASTERCHEF_PID, address(this));
+            .pendingSushi(OOKI_ETH_SUSHI_MASTERCHEF_PID, address(this));
 
         sushiRewardsEarned = _pendingAltRewards(
             SUSHI,
@@ -694,31 +699,8 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         return (bzrxRewardsEarned, stableCoinRewardsEarned);
     }
 
-    // note: anyone can contribute rewards to the contract
-    function addDirectRewards(
-        address[] calldata accounts,
-        uint256[] calldata bzrxAmounts,
-        uint256[] calldata stableCoinAmounts)
-        external
-        pausable
-        returns (uint256 bzrxTotal, uint256 stableCoinTotal)
-    {
-        require(accounts.length == bzrxAmounts.length && accounts.length == stableCoinAmounts.length, "count mismatch");
+    // we can do the same thru merkle tree
 
-        for (uint256 i = 0; i < accounts.length; i++) {
-            bzrxRewards[accounts[i]] = bzrxRewards[accounts[i]].add(bzrxAmounts[i]);
-            bzrxTotal = bzrxTotal.add(bzrxAmounts[i]);
-            stableCoinRewards[accounts[i]] = stableCoinRewards[accounts[i]].add(stableCoinAmounts[i]);
-            stableCoinTotal = stableCoinTotal.add(stableCoinAmounts[i]);
-        }
-        if (bzrxTotal != 0) {
-            IERC20(OOKI).transferFrom(msg.sender, address(this), bzrxTotal);
-        }
-        if (stableCoinTotal != 0) {
-            curve3Crv.transferFrom(msg.sender, address(this), stableCoinTotal);
-            _depositTo3Pool(stableCoinTotal);
-        }
-    }
 
     // note: anyone can contribute rewards to the contract
     function addRewards(
@@ -833,7 +815,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     function balanceOfByAsset(
         address token,
         address account)
-        public
+        internal
         view
         returns (uint256 balance)
     {
@@ -848,9 +830,10 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             uint256 bzrxBalance,
             uint256 iOOKIBalance,
             uint256 vBZRXBalance,
-            uint256 LPTokenBalance,
-            uint256 LPTokenBalanceOld
-            // uint256 iBZRXBalance
+            uint256 LPTokenBalance_SUSHI_OOKI_ETH,
+            uint256 LPTokenBalanceOld,
+            uint256 LPTokenBalance_SUSHI_BZRX_ETH,
+            uint256 iBZRXBalance
         )
     {
         return (
@@ -858,8 +841,9 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             balanceOfByAsset(iOOKI, account),
             balanceOfByAsset(vBZRX, account),
             balanceOfByAsset(LPToken, account),
-            balanceOfByAsset(LPTokenOld, account)
-            // balanceOfByAsset(iBZRX, account)
+            balanceOfByAsset(LPTokenOld, account),
+            balanceOfByAsset(LPToken_SUSHI_BZRX_ETH, account),
+            balanceOfByAsset(iBZRX, account)
         );
     }
 
@@ -1075,7 +1059,10 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 
     function migrateBalances(address account) public {
 
-        require(!migrated[account], "already migrated");
+        if (migrated[account]) {
+            return;
+        }
+        // require(!migrated[account], "already migrated");
         migrated[account] = true;
 
         if (account == address(0)) {
@@ -1092,9 +1079,9 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         _balancesPerToken[BZRX][account] = 0;
 
         // TODO calculate LP userBalance = CurrentTotalSupply/BeforeTotalSupply * userBalance
-        _balancesPerToken[LPToken][account] = (_totalSupplyPerToken[LPToken].mul(_balancesPerToken[LPTokenBeforeMigration][account])).div(_totalSupplyPerToken[LPTokenBeforeMigration]);
+        _balancesPerToken[LPToken][account] = (_totalSupplyPerToken[LPToken].mul(_balancesPerToken[LPToken_SUSHI_BZRX_ETH][account])).div(_totalSupplyPerToken[LPToken_SUSHI_BZRX_ETH]);
 
-        _balancesPerToken[LPTokenBeforeMigration][account] = 0;
+        _balancesPerToken[LPToken_SUSHI_BZRX_ETH][account] = 0;
 
         bzrxRewards[account] *= 10;
         bzrxVesting[account] *= 10;

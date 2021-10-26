@@ -31,4 +31,13 @@ interface IMasterChefSushi {
         view
         returns (uint256);
 
+    function add(uint256 _allocPoint, address _lpToken, bool _withUpdate)
+        external;
+        
+    function owner() external view returns (address);
+
+    function poolLength()
+        external
+        view
+        returns (uint256);
 }
