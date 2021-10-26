@@ -41,7 +41,7 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
 
         LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
-        _settleInterest(loanLocal.lender, loanParamsLocal.loanToken, loanId, false); // TODO
+        _settleInterest(loanLocal.lender, loanParamsLocal.loanToken, loanId); // TODO
 
         (uint256 currentMargin, uint256 collateralToLoanRate) = _getCurrentMargin(
             loanParamsLocal.loanToken,
@@ -156,7 +156,7 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
 
         LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
-        _settleInterest(loanLocal.lender, loanParamsLocal.loanToken, loanId, false); // TODO
+        _settleInterest(loanLocal.lender, loanParamsLocal.loanToken, loanId); // TODO
 
         // can't close more than the full principal
         loanCloseAmount = depositAmount > loanLocal.principal ?
@@ -223,7 +223,7 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
 
         LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
-        _settleInterest(loanLocal.lender, loanParamsLocal.loanToken, loanId, false); // TODO
+        _settleInterest(loanLocal.lender, loanParamsLocal.loanToken, loanId); // TODO
 
         if (swapAmount > loanLocal.collateral) {
             swapAmount = loanLocal.collateral;

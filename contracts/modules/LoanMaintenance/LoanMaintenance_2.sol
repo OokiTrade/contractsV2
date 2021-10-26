@@ -52,15 +52,13 @@ contract LoanMaintenance_2 is State, LoanMaintenanceEvents, PausableGuardian, In
     }
 
     function settleInterest(
-        bytes32 loanId,
-        bool isFixedInterest)
+        bytes32 loanId)
         external
     {
         _settleInterest(
             msg.sender, // pool
             loanPoolToUnderlying[msg.sender], // loanToken
-            loanId,
-            isFixedInterest
+            loanId
         );
     }
     

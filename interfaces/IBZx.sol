@@ -527,8 +527,7 @@ interface IBZx {
 
     /// @dev settles accrued interest for all active loans from a loan pool
     /// @param loanId existing loan id
-    /// @param isFixedInterest True if Torque loan
-    function settleInterest(bytes32 loanId, bool isFixedInterest) external;
+    function settleInterest(bytes32 loanId) external;
 
     /*/// @dev extends loan duration by depositing more collateral
     /// @param loanId id of the existing loan

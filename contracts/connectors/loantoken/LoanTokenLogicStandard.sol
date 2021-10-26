@@ -102,7 +102,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
     {
         require(borrowAmount != 0, "38");
 
-        _settleInterest(0, false);
+        _settleInterest(0);
 
         // save before balances
         uint256 beforeEtherBalance = address(this).balance.sub(msg.value);
@@ -606,7 +606,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
     {
         require (depositAmount != 0, "17");
 
-        _settleInterest(0, false);
+        _settleInterest(0);
 
         uint256 currentPrice = _tokenPrice(_totalAssetSupply(_totalAssetBorrowStored()));
         mintAmount = depositAmount
@@ -636,7 +636,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
     {
         require(burnAmount != 0, "19");
 
-        _settleInterest(0, false);
+        _settleInterest(0);
 
         if (burnAmount > balanceOf(msg.sender)) {
             require(burnAmount == uint256(-1), "32");
@@ -683,7 +683,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         // ensures authorized use of existing loan
         require(loanId == 0 || msg.sender == borrower, "13");
 
-        _settleInterest(loanId, true);
+        _settleInterest(loanId);
 
         if (loanId == 0) {
             loanId = keccak256(abi.encodePacked(
@@ -753,7 +753,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         // ensures authorized use of existing loan
         require(loanId == 0 || msg.sender == trader, "13");
 
-        _settleInterest(loanId, false);
+        _settleInterest(loanId);
 
         if (loanId == 0) {
             loanId = keccak256(abi.encodePacked(
@@ -816,11 +816,10 @@ contract LoanTokenLogicStandard is AdvancedToken {
     }
 
     function _settleInterest(
-        bytes32 loanId,
-        bool isFixedInterest)
+        bytes32 loanId)
         internal
     {
-        IBZx(bZxContract).settleInterest(loanId, isFixedInterest);
+        IBZx(bZxContract).settleInterest(loanId);
         /*uint88 ts = uint88(block.timestamp);
         if (lastSettleTime_ != ts) {
             IBZx(bZxContract).withdrawAccruedInterest(

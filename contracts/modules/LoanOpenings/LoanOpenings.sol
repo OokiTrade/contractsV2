@@ -327,21 +327,8 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
             sentValues
         );
 
-        if (loanParamsLocal.maxLoanTerm == 0) {
-            // torque loan
-
-            uint256 _poolFixedRatePrincipal = _ooipx.poolFixedRatePrincipal[loanLocal.lender];
-
-            _addFixedAverageRatePerSecond(loanLocal.lender, _poolFixedRatePrincipal, sentValues[1]);
-
-            _ooipx.poolFixedRatePrincipal[loanLocal.lender] = _poolFixedRatePrincipal
-                .add(sentValues[1]); // newPrincipal*/
-        } else {
-            // margin trade
-
-            _ooipx.poolVariableRatePrincipal[loanLocal.lender] = _ooipx.poolVariableRatePrincipal[loanLocal.lender]
-                .add(sentValues[1]); // newPrincipal*/
-        }
+        _ooipx.poolTotalPrincipal[loanLocal.lender] = _ooipx.poolTotalPrincipal[loanLocal.lender]
+            .add(sentValues[1]); // newPrincipal*/
 
         uint256 amount;
         if (isTorqueLoan) {

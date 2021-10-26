@@ -135,7 +135,7 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents {
         view
         returns (uint256)
     {
-        return _ooipx.poolVariableRatePrincipal[pool];
+        return _ooipx.poolTotalPrincipal[pool];
     }
 
     function getLoanPrincipal(
@@ -154,8 +154,7 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents {
         return _getLoanPrincipal(
             loanLocal.lender,
             loanParamsLocal.loanToken,
-            loanId,
-            loanParamsLocal.maxLoanTerm == 0 // isFixedInterest
+            loanId
         );
     }
 
