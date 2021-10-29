@@ -15,3 +15,5 @@ HELPER = Contract.from_abi("HELPER", "0xE05999ACcb887D32c9bd186e8C9dfE0e1E7814dE
 BGOV = Contract.from_abi("PGOV", "0xf8E026dC4C0860771f691EcFFBbdfe2fa51c77CF", GovToken.abi)
 
 CHEF =  Contract.from_abi("CHEF", CHEF.address, interface.IMasterChef.abi)
+
+SWEEP_FEES = Contract.from_abi("STAKING", "0x5c9b515f05a0E2a9B14C171E2675dDc1655D9A1c", FeeExtractAndDistribute_BSC.abi)

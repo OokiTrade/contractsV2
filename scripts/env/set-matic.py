@@ -1,5 +1,6 @@
 BZX = Contract.from_abi("BZX", "0xfe4F0eb0A1Ad109185c9AaDE64C48ff8e928e54B", interface.IBZx.abi)
 TOKEN_REGISTRY = Contract.from_abi("TOKEN_REGISTRY", "0x5a6f1e81334C63DE0183A4a3864bD5CeC4151c27", TokenRegistry.abi)
+SWEEP_FEES = Contract.from_abi("STAKING", "0xf970FA9E6797d0eBfdEE8e764FC5f3123Dc6befD", FeeExtractAndDistribute_Polygon.abi)
 
 list = TOKEN_REGISTRY.getTokens(0, 100)
 for l in list:
@@ -15,3 +16,5 @@ PGOV_MATIC_LP = Contract.from_abi("PGOV", "0xC698b8a1391F88F497A4EF169cA85b49286
 HELPER = Contract.from_abi("HELPER", "0xCc0fD6AA1F92e18D103A7294238Fdf558008725a", HelperImpl.abi)
 PRICE_FEED = Contract.from_abi("PRICE_FEED", BZX.priceFeeds(), abi = PriceFeeds.abi)
 SUSHI_ROUTER = Contract.from_abi("router", "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506", interface.IPancakeRouter02.abi)
+
+CONVERTER =  Contract.from_abi("CONVERTER", "0x91c78Bd238AcC14459673d5cf4fE460AeE7BF692", FixedSwapTokenConverter.abi)
