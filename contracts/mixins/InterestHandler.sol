@@ -13,14 +13,15 @@ import "../interfaces/ILoanPool.sol";
 contract InterestHandler is State, FeesHelper {
     using SafeERC20 for IERC20;
 
+    // returns up to date loan principal (with interest) or 0 is not applicable
     function _settleInterest(
         address pool,
         address loanToken,
         bytes32 loanId)
         internal
+        returns (uint256 _loanPrincipalTotal)
     {
         uint256 _loanRatePerTokenPaid;
-        uint256 _loanPrincipalTotal;
         (
             _ooipx.poolTotalPrincipal[pool],
             _ooipx.poolRatePerTokenStored[pool],
@@ -95,30 +96,14 @@ contract InterestHandler is State, FeesHelper {
          if (loanId != 0) {
             _loanPrincipalTotal = loans[loanId].principal;
             if (_loanPrincipalTotal != 0) {
-                _loanRatePerTokenPaid = _poolRatePerTokenStored;
-
                 _loanPrincipalTotal = _getUpdatedPrincipal(
                     _loanPrincipalTotal,
                     _poolRatePerTokenStored.sub(_ooipx.loanRatePerTokenPaid[loanId]) // _loanRatePerTokenUnpaid
                 );
+
+                _loanRatePerTokenPaid = _poolRatePerTokenStored;
             }
         }
-    }
-
-    function _currentPoolUtil(
-        address loanToken,
-        address pool,
-        uint256 principal)
-        internal
-        view
-        returns (uint256)
-    {
-        uint256 totalSupply = IERC20(loanToken).balanceOf(pool) // underlying balance
-            .add(principal);
-
-        return principal
-            .mul(10**20)
-            .div(totalSupply); // principal + free_liquidity
     }
 
     function _getRatePerTokenNewAmount(

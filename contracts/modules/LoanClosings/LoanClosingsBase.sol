@@ -41,7 +41,7 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
 
         LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
-        _settleInterest(loanLocal.lender, loanParamsLocal.loanToken, loanId); // TODO
+        loanLocal.principal = _settleInterest(loanLocal.lender, loanParamsLocal.loanToken, loanId);
 
         (uint256 currentMargin, uint256 collateralToLoanRate) = _getCurrentMargin(
             loanParamsLocal.loanToken,
@@ -84,20 +84,12 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
 
         require(loanCloseAmount != 0, "nothing to liquidate");
 
-        // liquidator deposits the principal being closed
+        // liquidator pays off the principal being closed
         _returnPrincipalWithDeposit(
             loanParamsLocal.loanToken,
-            address(this),
+            loanLocal.lender,
             loanCloseAmount
         );
-
-        if (loanCloseAmount != 0) {
-            vaultWithdraw(
-                loanParamsLocal.loanToken,
-                loanLocal.lender,
-                loanCloseAmount
-            );
-        }
 
         seizedToken = loanParamsLocal.collateralToken;
 
@@ -156,7 +148,7 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
 
         LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
-        _settleInterest(loanLocal.lender, loanParamsLocal.loanToken, loanId); // TODO
+        loanLocal.principal = _settleInterest(loanLocal.lender, loanParamsLocal.loanToken, loanId);
 
         // can't close more than the full principal
         loanCloseAmount = depositAmount > loanLocal.principal ?
@@ -223,7 +215,7 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
 
         LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
-        _settleInterest(loanLocal.lender, loanParamsLocal.loanToken, loanId); // TODO
+        loanLocal.principal = _settleInterest(loanLocal.lender, loanParamsLocal.loanToken, loanId);
 
         if (swapAmount > loanLocal.collateral) {
             swapAmount = loanLocal.collateral;

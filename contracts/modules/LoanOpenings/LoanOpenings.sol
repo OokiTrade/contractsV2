@@ -127,48 +127,6 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
                 .add(value);
         }
     }
-/*
-    function getEstimatedMarginExposure(
-        address loanToken,
-        address collateralToken,
-        uint256 loanTokenSent,
-        uint256 collateralTokenSent,
-        uint256 interestRate,
-        uint256 newPrincipal)
-        external
-        view
-        returns (uint256 value)
-    {
-        if (loanTokenSent < newPrincipal) {
-            return 0;
-        }
-
-        uint256 maxLoanTerm = 2419200; // 28 days
-
-        uint256 owedPerDay = newPrincipal
-            .mul(interestRate)
-            .div(DAYS_IN_A_YEAR * WEI_PERCENT_PRECISION);
-
-        uint256 interestAmountRequired = maxLoanTerm
-            .mul(owedPerDay)
-            .div(1 days);
-
-        if (loanTokenSent < interestAmountRequired) {
-            return 0;
-        }
-
-        value = _swapsExpectedReturn(
-            loanToken,
-            collateralToken,
-            loanTokenSent
-                .sub(interestAmountRequired)
-        );
-        if (value != 0) {
-            return collateralTokenSent
-                .add(value);
-        }
-    }
-*/
 
     function getRequiredCollateral(
         address loanToken,
@@ -382,13 +340,6 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
             .add(sentValues[4])
             .sub(amount); // borrowingFee
 
-        /*if (isTorqueLoan) {
-            // reclaiming varaible -> interestDuration
-            sentValues[2] = loanLocal.endTimestamp.sub(block.timestamp);
-        } else {
-            // reclaiming varaible -> entryLeverage = 100 / initialMargin
-            sentValues[2] = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, initialMargin);
-        }*/
         if (!isTorqueLoan) {
             // reclaiming varaible -> entryLeverage = 100 / initialMargin
             sentValues[2] = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, initialMargin);

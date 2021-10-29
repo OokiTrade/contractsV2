@@ -15,11 +15,6 @@ contract LoanTokenLogicStandard is AdvancedToken {
     using SafeMath for uint256;
     using SignedSafeMath for int256;
 
-    /*modifier settlesInterest() {
-        _settleInterest();
-        _;
-    }*/
-
     address internal target_;
 
     uint256 public constant VERSION = 6;
@@ -480,11 +475,8 @@ contract LoanTokenLogicStandard is AdvancedToken {
     {
         uint256 initialMargin = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, leverageAmount);
         return marketLiquidity()
-            .mul(initialMargin);
-            /*.div(_adjustValue(
-                WEI_PERCENT_PRECISION, // maximum possible interest (100%)
-                2419200, // 28 day duration for margin trades
-                initialMargin));*/
+            .mul(initialMargin)
+            .div(WEI_PERCENT_PRECISION);
     }
 
     // returns the user's balance of underlying token
@@ -714,16 +706,6 @@ contract LoanTokenLogicStandard is AdvancedToken {
         //sentAmounts[3] = 0; // loanTokenSent
         sentAmounts[4] = collateralTokenSent;
 
-        // interestRate, interestInitialAmount, borrowAmount (newBorrowAmount)
-        /*(sentAmounts[0], sentAmounts[2], sentAmounts[1]) = _getInterestRateAndBorrowAmount(
-            withdrawAmount,
-            _totalAssetSupply(),
-            initialLoanDuration
-        );*/
-        /*sentAmounts[0] = _nextBorrowInterestRate2(
-            withdrawAmount,
-            _totalAssetSupply()
-        );*/
         sentAmounts[1] = withdrawAmount;
         sentAmounts[2] = 0; // interestInitialAmount (depreciated)
 
@@ -820,14 +802,6 @@ contract LoanTokenLogicStandard is AdvancedToken {
         internal
     {
         IBZx(bZxContract).settleInterest(loanId);
-        /*uint88 ts = uint88(block.timestamp);
-        if (lastSettleTime_ != ts) {
-            IBZx(bZxContract).withdrawAccruedInterest(
-                loanTokenAddress
-            );
-
-            lastSettleTime_ = ts;
-        }*/
     }
 
     function _totalDeposit(
@@ -856,35 +830,6 @@ contract LoanTokenLogicStandard is AdvancedToken {
                 .add(totalDeposit);
         }
     }
-
-    /*function _getInterestRateAndBorrowAmount(
-        uint256 borrowAmount,
-        uint256 assetSupply,
-        uint256 initialLoanDuration) // duration in seconds
-        internal
-        view
-        returns (uint256 interestRate, uint256 interestInitialAmount, uint256 newBorrowAmount)
-    {
-        interestRate = _nextBorrowInterestRate2(
-            borrowAmount,
-            assetSupply
-        );
-
-        // newBorrowAmount = borrowAmount * 10^18 / (10^18 - (interestRate * initialLoanDuration * 10^18 / (31536000 * 10^20)))
-        newBorrowAmount = borrowAmount
-            .mul(WEI_PRECISION)
-            .div(
-                SafeMath.sub(WEI_PRECISION,
-                    interestRate
-                        .mul(initialLoanDuration)
-                        .mul(WEI_PRECISION)
-                        .div(31536000 * WEI_PERCENT_PRECISION) // 365 * 86400 * WEI_PERCENT_PRECISION
-                )
-            );
-
-        interestInitialAmount = newBorrowAmount
-            .sub(borrowAmount);
-    }*/
 
     // returns newPrincipal
     function _borrowOrTrade(
@@ -1185,20 +1130,9 @@ contract LoanTokenLogicStandard is AdvancedToken {
 
         uint256 initialMargin = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, leverageAmount);
 
-        /*interestRate = _nextBorrowInterestRate2(
-            totalDeposit
-                .mul(WEI_PERCENT_PRECISION)
-                .div(initialMargin),
-            _totalAssetSupply()
-        );*/
-
         // assumes that loan and collateral token are the same
         borrowAmount = totalDeposit
-            .mul(WEI_PERCENT_PRECISION * WEI_PERCENT_PRECISION)
-            /*.div(_adjustValue(
-                interestRate,
-                2419200, // 28 day duration for margin trades
-                initialMargin))*/
+            .mul(WEI_PERCENT_PRECISION)
             .div(initialMargin);
     }
 
@@ -1214,24 +1148,6 @@ contract LoanTokenLogicStandard is AdvancedToken {
                 .add(totalBorrow);
         }
     }
-
-    /*function _adjustValue(
-        uint256 interestRate,
-        uint256 maxDuration,
-        uint256 marginAmount)
-        internal
-        pure
-        returns (uint256)
-    {
-        return maxDuration != 0 ?
-            interestRate
-                .mul(WEI_PERCENT_PRECISION)
-                .mul(maxDuration)
-                .div(31536000) // 86400 * 365
-                .div(marginAmount)
-                .add(WEI_PERCENT_PRECISION) :
-            WEI_PERCENT_PRECISION;
-    }*/
 
     function _utilizationRate(
         uint256 assetBorrow,
