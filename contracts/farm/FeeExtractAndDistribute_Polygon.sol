@@ -121,7 +121,7 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable {
 
             if (bzrxAmount != 0) {
                 IERC20(BZRX).safeTransfer(iBZRX, bzrxAmount);
-                emit AssetSwap(msg.sender, MATIC, BZRX, 0, bzrxAmount); // this event just for tracking purphose
+                emit AssetSwap(msg.sender, address(0), BZRX, 0, bzrxAmount); // this event just for tracking purphose
             }
 
             IWethERC20(MATIC).withdraw(maticOutput);

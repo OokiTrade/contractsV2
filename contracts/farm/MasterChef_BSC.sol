@@ -339,7 +339,7 @@ contract MasterChef_BSC is Upgradeable {
 
         //Handle the backcapability,
         //when all user claim altrewards at least once we can remove this check
-        if(_userAltRewardsPerShare == 0 && pid == 0){
+        if(_userAltRewardsPerShare == 0 && pid == GOV_POOL_ID){
             //Or didnt claim or didnt migrate
 
             //check if migrate

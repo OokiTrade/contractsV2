@@ -121,7 +121,7 @@ contract FeeExtractAndDistribute_BSC is Upgradeable {
 
             if (bzrxAmount != 0) {
                 IERC20(BZRX).safeTransfer(iBZRX, bzrxAmount);
-                emit AssetSwap(msg.sender, BNB, BZRX, 0, bzrxAmount);
+                emit AssetSwap(msg.sender, address(0), BZRX, 0, bzrxAmount);
             }
 
             IWethERC20(BNB).withdraw(bnbOutput);
