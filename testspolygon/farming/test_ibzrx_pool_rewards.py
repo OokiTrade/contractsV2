@@ -5,7 +5,7 @@ import pytest
 from brownie import *
 
 
-def test_ibzrx_pool_rewards(requireFork, masterChef, FeeExtractAndDistribute_Polygon, Proxy_0_5, LoanTokenLogicStandard):
+def test_ibzrx_pool_rewards(requireFork, BZRX, masterChef, FeeExtractAndDistribute_Polygon, Proxy_0_5, LoanTokenLogicStandard):
 
     deployer = accounts.at(masterChef.owner(), True)
 
@@ -30,7 +30,7 @@ def test_ibzrx_pool_rewards(requireFork, masterChef, FeeExtractAndDistribute_Pol
     balance = account.balance()
     tokenPrice = iBZRX.tokenPrice() 
 
-    assert masterChef._pendingAltRewards(IBZRX_POOL_PID, account) == 0
+    assert masterChef.pendingAltRewards(IBZRX_POOL_PID, account) == 0
 
     treasury = accounts.at(SWEEP_FEES.treasuryWallet(), True)
 
@@ -39,9 +39,9 @@ def test_ibzrx_pool_rewards(requireFork, masterChef, FeeExtractAndDistribute_Pol
     tx = SWEEP_FEES.sweepFees({"from": accounts[0], "gas_limit": 10000000, "required_confs": 0})
     assert iBZRX.tokenPrice() > tokenPrice
 
-    earnings = masterChef._pendingAltRewards(IBZRX_POOL_PID, account)
+    earnings = masterChef.pendingAltRewards(IBZRX_POOL_PID, account)
 
     masterChef.claimReward(IBZRX_POOL_PID, {"from": account})
 
     assert balance + earnings == account.balance()
-    assert True
+    assert False

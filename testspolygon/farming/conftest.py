@@ -99,7 +99,7 @@ def masterChef(accounts, chain, MasterChef_Polygon, iMATIC, iETH, iUSDC, iWBTC, 
 
     # masterChef.massMigrateToBalanceOf({'from': masterChef.owner()})
     masterChef.togglePause(False, {'from': masterChef.owner()})
-    masterChef.setInitialAltRewardsPerShare({'from': masterChef.owner()})
+    #masterChef.setInitialAltRewardsPerShare({'from': masterChef.owner()})
     return masterChef
 
 @pytest.fixture(scope="module", autouse=True)
