@@ -111,7 +111,7 @@ contract MasterChef_Polygon is Upgradeable {
 
     bool public vestingDisabled;
 
-    uint256 internal constant  IBZRX_POOL_ID = 2; // new altrewards go to iBZRX(2)
+    uint256 internal constant  IBZRX_POOL_ID = 2;
 
     function initialize(
         GovToken _GOV,
@@ -494,13 +494,8 @@ contract MasterChef_Polygon is Upgradeable {
         emit AddExternalReward(msg.sender, GOV_POOL_ID, _amount);
     }
 
-
-
-    event Logger(string name, uint256 amount);
-
     // Anyone can contribute native token rewards to GOV pool stakers
     function addAltReward() public payable checkNoPause {
-        emit Logger("IBZRX_POOL_ID", IBZRX_POOL_ID);
         IMasterChef.PoolInfo storage pool = poolInfo[IBZRX_POOL_ID];
         require(block.number > pool.lastRewardBlock, "rewards not started");
 
@@ -747,5 +742,20 @@ contract MasterChef_Polygon is Upgradeable {
         } else {
             emit ClaimAltRewards(recipient, amount);
         }
+    }
+
+    //Should be called only once after migration to new calculation
+    function setInitialAltRewardsPerShare()
+        external
+        onlyOwner
+    {
+        uint256 index = altRewardsRounds[GOV_POOL_ID].length;
+        if(index == 0) {
+            return;
+        }
+        uint256 _currentRound = altRewardsRounds[GOV_POOL_ID].length;
+        uint256 currentAccumulatedAltRewards = altRewardsRounds[GOV_POOL_ID][_currentRound-1];
+
+        altRewardsPerShare[GOV_POOL_ID] = currentAccumulatedAltRewards;
     }
 }

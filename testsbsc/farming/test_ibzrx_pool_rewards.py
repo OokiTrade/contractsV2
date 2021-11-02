@@ -5,27 +5,28 @@ import pytest
 from brownie import *
 
 
-def test_ibzrx_pool_rewards(requireFork, BZRX, masterChef, FeeExtractAndDistribute_Polygon, Proxy_0_5, LoanTokenLogicStandard):
+def test_ibzrx_pool_rewards(requireFork,BZX, masterChef, FeeExtractAndDistribute_BSC, Proxy_0_5, LoanTokenLogicStandard):
 
     deployer = accounts.at(masterChef.owner(), True)
 
-    SWEEP_FEES = Contract.from_abi("SWEEP_FEES", "0xf970FA9E6797d0eBfdEE8e764FC5f3123Dc6befD", FeeExtractAndDistribute_Polygon.abi)
-    iBZRX = Contract.from_abi("iBZRX", "0x97dfbEF4eD5a7f63781472Dbc69Ab8e5d7357cB9", LoanTokenLogicStandard.abi)
+    SWEEP_FEES = Contract.from_abi("SWEEP_FEES", BZX.feesController(), FeeExtractAndDistribute_BSC.abi)
+    iBZRX = Contract.from_abi("iBZRX", "0xA726F2a7B200b03beB41d1713e6158e0bdA8731F", LoanTokenLogicStandard.abi)
 
-    sweepImpl = deployer.deploy(FeeExtractAndDistribute_Polygon)
+    sweepImpl = deployer.deploy(FeeExtractAndDistribute_BSC)
     sweepProxy = Contract.from_abi("sweepProxy", SWEEP_FEES, Proxy_0_5.abi)
     sweepProxy.replaceImplementation(sweepImpl, {"from": deployer})
 
-    IBZRX_POOL_PID = 2
-    GOV_POOL_PID = 0
+    IBZRX_POOL_PID = 5
+    GOV_POOL_PID = 7
 
     SWEEP_FEES.togglePause(False, {"from": deployer})
  
-    account = "0x4b8eafcc1c609ce3489e9b209e2fb020077210d0"
+    account = "0x5edd6b56f827549a84952dbc79327876d410c22b"
     account = accounts.at(account, True)
 
-    iBZRX.transfer(account, iBZRX.balanceOf("0xd39ff512c3e55373a30e94bb1398651420ae1d43"), {'from': "0xd39ff512c3e55373a30e94bb1398651420ae1d43"})
+    iBZRX.transfer(account, iBZRX.balanceOf("0x1fdca2422668b961e162a8849dc0c2feadb58915"), {'from': "0x1fdca2422668b961e162a8849dc0c2feadb58915"})
     iBZRX.approve(masterChef, 2**256-1, {'from': account})
+
     masterChef.deposit(IBZRX_POOL_PID, iBZRX.balanceOf(account), {"from": account})
 
     balance = account.balance()

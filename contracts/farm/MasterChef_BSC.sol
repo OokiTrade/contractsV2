@@ -108,7 +108,7 @@ contract MasterChef_BSC is Upgradeable {
     //pid -- (user -- altRewardsPerShare)
     mapping(uint256 => mapping(address => uint256)) public userAltRewardsPerShare;
 
-    uint256 internal constant  IBZRX_POOL_ID = 5; // new altrewards go to iBZRX(2)
+    uint256 internal constant  IBZRX_POOL_ID = 5;
 
     function initialize(
         GovToken _GOV,
@@ -124,8 +124,6 @@ contract MasterChef_BSC is Upgradeable {
         bonusEndBlock = _bonusEndBlock;
         startBlock = _startBlock;
     }
-
-
 
     function setVestingDuration(uint256 _vestingDuration)
         external
@@ -372,7 +370,6 @@ contract MasterChef_BSC is Upgradeable {
         returns (uint256)
     {
         uint256 _locked = _lockedRewards[_user];
-
         if(_locked == 0) {
             return 0;
         }
@@ -725,5 +722,20 @@ contract MasterChef_BSC is Upgradeable {
         } else {
             emit ClaimAltRewards(recipient, amount);
         }
+    }
+
+    //Should be called only once after migration to new calculation
+    function setInitialAltRewardsPerShare()
+        external
+        onlyOwner
+    {
+        uint256 index = altRewardsRounds[GOV_POOL_ID].length;
+        if(index == 0) {
+            return;
+        }
+        uint256 _currentRound = altRewardsRounds[GOV_POOL_ID].length;
+        uint256 currentAccumulatedAltRewards = altRewardsRounds[GOV_POOL_ID][_currentRound-1];
+
+        altRewardsPerShare[GOV_POOL_ID] = currentAccumulatedAltRewards;
     }
 }
