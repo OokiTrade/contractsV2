@@ -20,6 +20,7 @@ OOKI = Contract.from_abi("OOKI", "0x0De05F6447ab4D22c8827449EE4bA2D5C288379B", O
 MINT_COORDINATOR = Contract.from_abi("MINT_COORDINATOR", "0x93c608Dc45FcDd9e7c5457ce6fc7f4dDec235b68", MintCoordinator.abi)
 
 STAKING = Contract.from_abi("STAKING", "0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4", StakingV1_1.abi)
+STAKING_VOTE_DELEGATOR = Contract.from_abi("STAKING_VOTE_DELEGATOR", "0x7e9d7A0ff725f88Cc6Ab3ccF714a1feA68aC160b", StakingVoteDelegator.abi)
 
 vBZRX = Contract.from_abi("vBZRX", "0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F", BZRXVestingToken.abi)
 POOL3 = Contract.from_abi("CURVE3CRV", "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490", TestToken.abi)
