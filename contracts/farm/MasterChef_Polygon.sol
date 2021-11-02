@@ -353,7 +353,7 @@ contract MasterChef_Polygon is Upgradeable {
             //Never claimed yet
             if (_lastClaimedRound != 0) {
                 _lastClaimedRound -= 1; //correct index to start from 0
-                _userAltRewardsPerShare = altRewardsRounds[GOV_POOL_ID][_lastClaimedRound];
+                _userAltRewardsPerShare = altRewardsRounds[pid][_lastClaimedRound];
             }
         }
 
@@ -494,8 +494,13 @@ contract MasterChef_Polygon is Upgradeable {
         emit AddExternalReward(msg.sender, GOV_POOL_ID, _amount);
     }
 
+
+
+    event Logger(string name, uint256 amount);
+
     // Anyone can contribute native token rewards to GOV pool stakers
     function addAltReward() public payable checkNoPause {
+        emit Logger("IBZRX_POOL_ID", IBZRX_POOL_ID);
         IMasterChef.PoolInfo storage pool = poolInfo[IBZRX_POOL_ID];
         require(block.number > pool.lastRewardBlock, "rewards not started");
 
