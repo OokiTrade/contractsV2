@@ -114,7 +114,6 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         uint256 interestRate,
         uint256 newPrincipal)
         external
-        view
         returns (uint256 value)
     {
         if (loanTokenSent < newPrincipal) {

@@ -117,7 +117,6 @@ contract SwapsExternal is State, VaultController, SwapsUser, PausableGuardian {
         address destToken,
         uint256 sourceTokenAmount)
         external
-        view
         returns (uint256)
     {
         return _swapsExpectedReturn(

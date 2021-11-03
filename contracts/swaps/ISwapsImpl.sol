@@ -14,7 +14,8 @@ interface ISwapsImpl {
         address returnToSenderAddress,
         uint256 minSourceTokenAmount,
         uint256 maxSourceTokenAmount,
-        uint256 requiredDestTokenAmount)
+        uint256 requiredDestTokenAmount,
+		bytes calldata payload)
         external
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed);
 
@@ -27,19 +28,15 @@ interface ISwapsImpl {
         returns (uint256);
 
     function dexAmountOut(
-        address sourceTokenAddress,
-        address destTokenAddress,
+		bytes calldata route,
         uint256 amountIn)
         external
-        view
         returns (uint256 amountOut, address midToken);
 
     function dexAmountIn(
-        address sourceTokenAddress,
-        address destTokenAddress,
+		bytes calldata route,
         uint256 amountOut)
         external
-        view
         returns (uint256 amountIn, address midToken);
 
     function setSwapApprovals(

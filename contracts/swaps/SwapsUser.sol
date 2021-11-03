@@ -10,6 +10,7 @@ import "../../interfaces/IPriceFeeds.sol";
 import "../events/SwapsEvents.sol";
 import "../mixins/FeesHelper.sol";
 import "./ISwapsImpl.sol";
+import "../interfaces/IDexRecords.sol";
 
 
 contract SwapsUser is State, SwapsEvents, FeesHelper {
@@ -125,10 +126,10 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
             require(vals[0] <= vals[1], "min greater than max");
         }
 
-        require(loanDataBytes.length == 0, "invalid state");
         (destTokenAmountReceived, sourceTokenAmountUsed) = _swapsCall_internal(
             addrs,
-            vals
+            vals,
+			loanDataBytes
         );
 
         if (vals[2] == 0) {
@@ -160,19 +161,28 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
 
     function _swapsCall_internal(
         address[5] memory addrs,
-        uint256[3] memory vals)
+        uint256[3] memory vals,
+		bytes memory loanDataBytes)
         internal
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
     {
+		address swapImplAddress = address(0);
+		if(loanDataBytes.length==0){
+			swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(1); //if nothing specified, default to first dex option available. ensure it does not require any input data or else this will break
+		}else{
+			(uint256 DexNumber, bytes memory loanDataBytes) = abi.decode(loanDataBytes,(uint256,bytes));
+			swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(DexNumber);
+		}
         bytes memory data = abi.encodeWithSelector(
-            ISwapsImpl(swapsImpl).dexSwap.selector,
+            ISwapsImpl(swapImplAddress).dexSwap.selector,
             addrs[0], // sourceToken
             addrs[1], // destToken
             addrs[2], // receiverAddress
             addrs[3], // returnToSenderAddress
             vals[0],  // minSourceTokenAmount
             vals[1],  // maxSourceTokenAmount
-            vals[2]   // requiredDestTokenAmount
+            vals[2],  // requiredDestTokenAmount
+			loanDataBytes
         );
 
         bool success;
@@ -194,7 +204,6 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
         address destToken,
         uint256 sourceTokenAmount)
         internal
-        view
         returns (uint256 expectedReturn)
     {
         uint256 tradingFee = _getTradingFee(sourceTokenAmount);
@@ -202,10 +211,9 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
             sourceTokenAmount = sourceTokenAmount
                 .sub(tradingFee);
         }
-
+		
         (expectedReturn,) = ISwapsImpl(swapsImpl).dexAmountOut(
-            sourceToken,
-            destToken,
+            abi.encode(sourceToken, destToken),
             sourceTokenAmount
         );
     }
