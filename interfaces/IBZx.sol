@@ -821,7 +821,7 @@ interface IBZx {
     }
 	
 	////// Flash Borrow Fees //////
-	function _payFlashBorrowFees(
+	function payFlashBorrowFees(
 			address user,
 			uint256 borrowAmount,
 			uint256 feeAmountInWEI)

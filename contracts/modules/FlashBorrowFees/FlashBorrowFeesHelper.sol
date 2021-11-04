@@ -20,7 +20,7 @@ contract FlashBorrowFeesHelper is State{
     {
 		_setTarget(this._payFlashBorrowFees.selector, target);
 	}
-	function _payFlashBorrowFees(
+	function payFlashBorrowFees(
 		address user,
 		uint256 borrowAmount,
 		uint256 feeAmountInWEI)

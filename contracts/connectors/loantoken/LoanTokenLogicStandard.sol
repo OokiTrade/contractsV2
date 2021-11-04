@@ -137,7 +137,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         _flTotalAssetSupply = 0;
 		
 		// pay flash borrow fees
-		IBZx(bZxContract)._payFlashBorrowFees(
+		IBZx(bZxContract).payFlashBorrowFees(
 			borrower,
 			borrowAmount,
 			flashBorrowFeePercent);
