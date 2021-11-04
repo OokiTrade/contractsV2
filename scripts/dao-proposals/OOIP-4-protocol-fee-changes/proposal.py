@@ -36,9 +36,8 @@ def main():
 
     # 2. upgrade PROTOCOL implementation
     flashBorrowFeeImpl = "" # acct.deploy(FlashBorrowFeesHelper)
-    bzxProxy = Contract.from_abi("PROTOCOL", BZX.address, bZxProtocol.abi) # attire proxy interface
-    calldata = bzxProxy.replaceContract.encode_input(flashBorrowFeeImpl)
-    targets.append(bzxProxy)
+    calldata = BZX.replaceContract.encode_input(flashBorrowFeeImpl)
+    targets.append(BZX)
     calldatas.append(calldata)
 
     # 3. bzx.setBorrowingFeePercent(0)
@@ -53,32 +52,14 @@ def main():
     targets.append(BZX)
     calldatas.append(calldata)
 
-     # 5. bzx.setSupportedTokens([OOKI], [True])
-     calldata = BZX.setSupportedTokens.encode_input([OOKI], [True], True)
-     targets.append(BZX)
-     calldatas.append(calldata)
-
-     # 6. bzx.setLiquidationIncentivePercent(...) 
-     calldata = BZX.setLiquidationIncentivePercent.encode_input(loanTokens, collateralTokens, amounts)
-     targets.append(BZX)
-     calldatas.append(calldata)
-
-    # acct.deploy(StakingAdminSettings)
-    stakingAdminSettings = Contract.from_abi("stakingAdminSettings", "0x83f8BA6B6472820CF5C0087990c1e7f4E744Df48", StakingAdminSettings.abi)
-    POOL3Gauge = Contract.from_abi("POOL3Gauge", "0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A", interface.ICurve3PoolGauge.abi)
-    POOL3 = Contract.from_abi("POOL3", "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490", TestToken.abi)
-
-    calldata = stakingAdminSettings.setApprovals.encode_input(POOL3, POOL3Gauge, 2**256-1)
-    calldata = STAKING.updateSettings.encode_input(stakingAdminSettings, calldata)
-    targets.append(STAKING)
+    # 5. bzx.setSupportedTokens([OOKI], [True])
+    calldata = BZX.setSupportedTokens.encode_input([OOKI], [True], True)
+    targets.append(BZX)
     calldatas.append(calldata)
 
-    # stakingVoteDelegatorImpl = acct.deploy(StakingVoteDelegator)
-    # acct.deploy(Proxy_0_5, stakingVoteDelegatorImpl)
-    stakingVoteDelegatorProxy = Contract.from_abi("stakingAdminSettings", "0x7e9d7A0ff725f88Cc6Ab3ccF714a1feA68aC160b", StakingVoteDelegator.abi)
-    calldata = stakingAdminSettings.setVoteDelegator.encode_input(stakingVoteDelegatorProxy.address)
-    calldata = STAKING.updateSettings.encode_input(stakingAdminSettings, calldata)
-    targets.append(STAKING)
+    # 6. bzx.setLiquidationIncentivePercent(...) 
+    calldata = BZX.setLiquidationIncentivePercent.encode_input(loanTokens, collateralTokens, amounts)
+    targets.append(BZX)
     calldatas.append(calldata)
 
     values = [0] * len(targets)  # empty array
