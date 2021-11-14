@@ -4,6 +4,7 @@
  */
 
 pragma solidity 0.5.17;
+pragma experimental ABIEncoderV2;
 
 import "../core/State.sol";
 import "../../interfaces/IPriceFeeds.sol";
@@ -166,27 +167,40 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
         internal
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
     {
-		address swapImplAddress = address(0);
+		bytes memory data;
+		address swapImplAddress;
 		if(loanDataBytes.length==0){
 			swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(1); //if nothing specified, default to first dex option available. ensure it does not require any input data or else this will break
+			data = abi.encodeWithSelector(
+				ISwapsImpl(swapImplAddress).dexSwap.selector,
+				addrs[0], // sourceToken
+				addrs[1], // destToken
+				addrs[2], // receiverAddress
+				addrs[3], // returnToSenderAddress
+				vals[0],  // minSourceTokenAmount
+				vals[1],  // maxSourceTokenAmount
+				vals[2],  // requiredDestTokenAmount
+				loanDataBytes
+			);
 		}else{
-			(uint256 DexNumber, bytes memory loanDataBytes) = abi.decode(loanDataBytes,(uint256,bytes));
+			(uint256 DexNumber, bytes memory SwapData) = abi.decode(loanDataBytes,(uint256,bytes));
 			swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(DexNumber);
+			data = abi.encodeWithSelector(
+				ISwapsImpl(swapImplAddress).dexSwap.selector,
+				addrs[0], // sourceToken
+				addrs[1], // destToken
+				addrs[2], // receiverAddress
+				addrs[3], // returnToSenderAddress
+				vals[0],  // minSourceTokenAmount
+				vals[1],  // maxSourceTokenAmount
+				vals[2],  // requiredDestTokenAmount
+				SwapData
+			);
 		}
-        bytes memory data = abi.encodeWithSelector(
-            ISwapsImpl(swapImplAddress).dexSwap.selector,
-            addrs[0], // sourceToken
-            addrs[1], // destToken
-            addrs[2], // receiverAddress
-            addrs[3], // returnToSenderAddress
-            vals[0],  // minSourceTokenAmount
-            vals[1],  // maxSourceTokenAmount
-            vals[2],  // requiredDestTokenAmount
-			loanDataBytes
-        );
+
 
         bool success;
-        (success, data) = swapsImpl.delegatecall(data);
+        (success, data) = swapImplAddress.delegatecall(data);
         if (!success) {
             assembly {
                 let ptr := mload(0x40)
@@ -202,7 +216,8 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
     function _swapsExpectedReturn(
         address sourceToken,
         address destToken,
-        uint256 sourceTokenAmount)
+        uint256 sourceTokenAmount,
+		bytes memory payload)
         internal
         returns (uint256 expectedReturn)
     {
@@ -211,11 +226,22 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
             sourceTokenAmount = sourceTokenAmount
                 .sub(tradingFee);
         }
-		
-        (expectedReturn,) = ISwapsImpl(swapsImpl).dexAmountOut(
-            abi.encode(sourceToken, destToken),
-            sourceTokenAmount
-        );
+		if(payload.length==0){
+			address swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(1); //default dex address
+			bytes memory dataToSend = abi.encode(sourceToken, destToken);
+			(expectedReturn,) = ISwapsImpl(swapImplAddress).dexAmountOut(
+				dataToSend,
+				sourceTokenAmount
+			);
+		}else{
+			(uint256 DexNumber, bytes memory dataToSend) = abi.decode(payload,(uint256,bytes));
+			address swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(DexNumber);
+			(expectedReturn,) = ISwapsImpl(swapImplAddress).dexAmountOut(
+				dataToSend,
+				sourceTokenAmount
+			);
+		}
+
     }
 
     function _checkSwapSize(
