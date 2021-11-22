@@ -23,23 +23,4 @@ contract StakingPausableGuardian is StakingStateV2, PausableGuardian {
         _setTarget(this.changeGuardian.selector, target);
         _setTarget(this.getGuardian.selector, target);
     }
-
-
-    // OnlyOwner functions
-    function updateSettings(
-        address settingsTarget,
-        bytes memory callData)
-        public
-        onlyOwner
-        returns(bytes memory)
-    {
-        (bool result,) = settingsTarget.delegatecall(callData);
-        assembly {
-            let size := returndatasize
-            let ptr := mload(0x40)
-            returndatacopy(ptr, 0, size)
-            if eq(result, 0) { revert(ptr, size) }
-            return(ptr, size)
-        }
-    }
 }

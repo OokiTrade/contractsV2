@@ -20,13 +20,6 @@ contract StakingStateV2 is StakingConstantsV2, Ownable {
     mapping(bytes4 => address) public logicTargets;
     EnumerableBytes32Set.Bytes32Set internal logicTargetsSet;
 
-    uint256 public constant initialCirculatingSupply = 1030000000e18 - 889389933e18;
-    address internal constant ZERO_ADDRESS = address(0);
-
-    bool public isPaused;
-
-    address public fundsWallet;
-
     mapping(address => uint256) internal _totalSupplyPerToken; // token => value
     mapping(address => mapping(address => uint256)) internal _balancesPerToken; // token => account => value
 
@@ -44,18 +37,7 @@ contract StakingStateV2 is StakingConstantsV2, Ownable {
     uint256 public iBZRXWeightStored;
     uint256 public LPTokenWeightStored;
 
-    uint256 public lastRewardsAddTime;
-
     mapping(address => uint256) public vestingLastSync;
-
-    mapping(address => address[]) public swapPaths;
-    mapping(address => uint256) public stakingRewards;
-    uint256 public rewardPercent = 50e18;
-    uint256 public maxUniswapDisagreement = 3e18;
-    uint256 public maxCurveDisagreement = 3e18;
-    uint256 public callerRewardDivisor = 100;
-
-    address[] public currentFeeTokens;
 
     struct ProposalState {
         uint256 proposalTime;

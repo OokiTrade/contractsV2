@@ -12,9 +12,12 @@ import "./Common.sol";
 import "../../governance/GovernorBravoInterfaces.sol";
 import "../../staking/StakingVoteDelegator.sol";
 
-contract Voting is StakingStateV2, PausableGuardian, Common {
+contract Voting is Common {
     function initialize(address target) external onlyOwner {
-        // _setTarget(this._isPaused.selector, target);
+        _setTarget(this.votingFromStakedBalanceOf.selector, target);
+        _setTarget(this.votingBalanceOf.selector, target);
+        _setTarget(this.votingBalanceOfNow.selector, target);
+        _setTarget(this._setProposalVals.selector, target);
     }
 
     function votingFromStakedBalanceOf(address account) external view returns (uint256 totalVotes) {

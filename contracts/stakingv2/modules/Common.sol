@@ -13,10 +13,6 @@ import "../../utils/MathUtil.sol";
 contract Common is StakingStateV2, PausableGuardian {
     using MathUtil for uint256;
 
-    function initialize(address target) external onlyOwner {
-        // _setTarget(this._isPaused.selector, target);
-    }
-
     function _getProposalState() internal view returns (ProposalState memory) {
         return
             ProposalState({
@@ -30,7 +26,7 @@ contract Common is StakingStateV2, PausableGuardian {
     function _calcIBZRXWeight() internal view returns (uint256) {
         return IERC20(BZRX).balanceOf(iBZRX).mul(1e50).div(IERC20(iBZRX).totalSupply());
     }
-
+ 
     function vestedBalanceForAmount(
         uint256 tokenBalance,
         uint256 lastUpdate,

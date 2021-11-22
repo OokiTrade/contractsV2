@@ -15,6 +15,9 @@ import "../../interfaces/IBZx.sol";
 
 contract StakingConstantsV2 {
 
+    uint256 public constant initialCirculatingSupply = 1030000000e18 - 889389933e18;
+    address internal constant ZERO_ADDRESS = address(0);
+
     address public constant BZRX = 0x56d811088235F11C8920698a204A5010a788f4b3;
     address public constant vBZRX = 0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F;
     address public constant iBZRX = 0x18240BD9C07fA6156Ce3F3f61921cC82b2619157;
