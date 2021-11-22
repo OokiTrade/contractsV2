@@ -210,7 +210,11 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             );
         }
 
-        _voteDelegator.moveDelegates(ZERO_ADDRESS, currentDelegate, _votingFromStakedBalanceOf(msg.sender, _proposalState, true).sub(votingBalanceBefore));
+        _voteDelegator.moveDelegatesByVotingBalance(
+            votingBalanceBefore,
+            _votingFromStakedBalanceOf(msg.sender, _proposalState, true),
+            msg.sender
+        );
     }
 
     function unstake(
@@ -272,8 +276,11 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
                 unstakeAmount
             );
         }
-
-        _voteDelegator.moveDelegates(currentDelegate, ZERO_ADDRESS, votingBalanceBefore.sub(_votingFromStakedBalanceOf(msg.sender, _proposalState, true)));
+        _voteDelegator.moveDelegatesByVotingBalance(
+            votingBalanceBefore,
+            _votingFromStakedBalanceOf(msg.sender, _proposalState, true),
+            msg.sender
+        );
     }
 
     function claim(
@@ -375,6 +382,9 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         internal
         returns (uint256 bzrxRewardsEarned)
     {
+        ProposalState memory _proposalState = _getProposalState();
+        uint256 votingBalanceBefore = _votingFromStakedBalanceOf(msg.sender, _proposalState, true);
+
         bzrxRewardsEarned = bzrxRewards[msg.sender];
         if (bzrxRewardsEarned != 0) {
             bzrxRewards[msg.sender] = 0;
@@ -392,6 +402,11 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
                 IERC20(BZRX).transfer(msg.sender, bzrxRewardsEarned);
             }
         }
+        StakingVoteDelegator(voteDelegator).moveDelegatesByVotingBalance(
+            votingBalanceBefore,
+            _votingFromStakedBalanceOf(msg.sender, _proposalState, true),
+            msg.sender
+        );
     }
 
     function _claim3Crv()
@@ -469,12 +484,6 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         uint256 amount)
         internal
     {
-        StakingVoteDelegator _voteDelegator = StakingVoteDelegator(voteDelegator);
-        address currentDelegate = _voteDelegator.delegates(msg.sender);
-
-        ProposalState memory _proposalState = _getProposalState();
-        uint256 votingBalanceBefore = _votingFromStakedBalanceOf(msg.sender, _proposalState, true);
-        
         _balancesPerToken[BZRX][account] = _balancesPerToken[BZRX][account]
             .add(amount);
 
@@ -484,11 +493,10 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         emit Stake(
             account,
             BZRX,
-            currentDelegate,
+            account, //currentDelegate,
             amount
         );
 
-        _voteDelegator.moveDelegates(ZERO_ADDRESS, currentDelegate, _votingFromStakedBalanceOf(msg.sender, _proposalState, true).sub(votingBalanceBefore));
     }
 
     function exit()
@@ -1080,13 +1088,14 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         returns (uint256 totalVotes)
     {
         StakingVoteDelegator _voteDelegator = StakingVoteDelegator(voteDelegator);
-        address _delegate = _voteDelegator.delegates(account);
-
-        if(_delegate == ZERO_ADDRESS) { // has not delegated yet
-            return _voteDelegator.getPriorVotes(account, blocknumber).add(_votingFromStakedBalanceOf(account, proposal, false));
+        if(_voteDelegator._isPaused(_voteDelegator.delegate.selector) || _voteDelegator._isPaused(_voteDelegator.delegateBySig.selector)){
+            totalVotes = _votingFromStakedBalanceOf(account, proposal, false);
         }
-
-        return _voteDelegator.getPriorVotes(account, blocknumber);
+        else{
+            address currentDelegate = _voteDelegator.delegates(account);
+            totalVotes = _voteDelegator.getPriorVotes(account, blocknumber)
+                .add((currentDelegate == ZERO_ADDRESS)?_votingFromStakedBalanceOf(account, proposal, false):0);
+        }
     }
 
     // OnlyOwner functions
@@ -1094,7 +1103,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         address settingsTarget,
         bytes memory callData)
         public
-        onlyOwner
+        onlyGuardian
         returns(bytes memory)
     {
         (bool result,) = settingsTarget.delegatecall(callData);
