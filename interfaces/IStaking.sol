@@ -20,11 +20,6 @@ interface IStaking {
         uint256 pendingRewards;
     }
 
-    function vestingLastSync(address account)
-        external
-        view
-        returns (uint256);
-
     function getCurrentFeeTokens()
         external
         view

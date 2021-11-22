@@ -12,15 +12,14 @@ import "../../interfaces/IStaking.sol";
 import "./StakingVoteDelegatorState.sol";
 import "./StakingVoteDelegatorConstants.sol";
 import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
-import "../governance/PausableGuardian.sol";
 
 
-contract StakingVoteDelegator is StakingVoteDelegatorState, StakingVoteDelegatorConstants, PausableGuardian {
+contract StakingVoteDelegator is StakingVoteDelegatorState, StakingVoteDelegatorConstants {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     /**
-     * @notice Getter
+     * @notice Delegate votes from `msg.sender` to `delegatee`
      * @param delegator The address to get delegatee for
      */
     function delegates(address delegator) external view returns (address) {
@@ -31,9 +30,9 @@ contract StakingVoteDelegator is StakingVoteDelegatorState, StakingVoteDelegator
      * @notice Delegate votes from `msg.sender` to `delegatee`
      * @param delegatee The address to delegate votes to
      */
-    function delegate(address delegatee) pausable external {
-        if(delegatee == msg.sender){
-            delegatee = ZERO_ADDRESS;
+    function delegate(address delegatee) external {
+        if(delegatee == ZERO_ADDRESS){
+            delegatee = msg.sender;
         }
         return _delegate(msg.sender, delegatee);
     }
@@ -47,11 +46,7 @@ contract StakingVoteDelegator is StakingVoteDelegatorState, StakingVoteDelegator
      * @param r Half of the ECDSA signature pair
      * @param s Half of the ECDSA signature pair
      */
-    function delegateBySig(address delegatee, uint nonce, uint expiry, uint8 v, bytes32 r, bytes32 s) pausable external {
-        if(delegatee == msg.sender){
-            delegatee = ZERO_ADDRESS;
-        }
-
+    function delegateBySig(address delegatee, uint nonce, uint expiry, uint8 v, bytes32 r, bytes32 s) external {
         bytes32 domainSeparator = keccak256(
             abi.encode(
                 DOMAIN_TYPEHASH,
@@ -79,7 +74,7 @@ contract StakingVoteDelegator is StakingVoteDelegatorState, StakingVoteDelegator
         );
 
         address signatory = ecrecover(digest, v, r, s);
-        require(signatory != ZERO_ADDRESS, "Staking::delegateBySig: invalid signature");
+        require(signatory != address(0), "Staking::delegateBySig: invalid signature");
         require(nonce == nonces[signatory]++, "Staking::delegateBySig: invalid nonce");
         require(now <= expiry, "Staking::delegateBySig: signature expired");
         return _delegate(signatory, delegatee);
@@ -138,73 +133,23 @@ contract StakingVoteDelegator is StakingVoteDelegatorState, StakingVoteDelegator
     }
 
     function _delegate(address delegator, address delegatee) internal {
-        if(delegatee == delegator || delegator == ZERO_ADDRESS)
-            return;
-
-        address oldDelegate = _delegates[delegator];
-
+        address currentDelegate = _delegates[delegator];
         uint256 delegatorBalance = staking.votingFromStakedBalanceOf(delegator);
         _delegates[delegator] = delegatee;
 
-        //ZERO_ADDRESS means that user wants to revoke delegation
-        if(delegatee == ZERO_ADDRESS && oldDelegate != ZERO_ADDRESS){
-            if(totalDelegators[oldDelegate] > 0)
-                totalDelegators[oldDelegate]--;
+        emit DelegateChanged(delegator, currentDelegate, delegatee);
 
-            if(totalDelegators[oldDelegate] == 0 && oldDelegate != ZERO_ADDRESS){
-                uint32 dstRepNum = numCheckpoints[oldDelegate];
-                uint256 dstRepOld = dstRepNum > 0 ? checkpoints[oldDelegate][dstRepNum - 1].votes : 0;
-                uint256 dstRepNew = 0;
-                _writeCheckpoint(oldDelegate, dstRepNum, dstRepOld, dstRepNew);
-                return;
-            }
-        }
-        else if(delegatee != ZERO_ADDRESS){
-            totalDelegators[delegatee]++;
-            if(totalDelegators[oldDelegate] > 0)
-                totalDelegators[oldDelegate]--;
-        }
-
-        emit DelegateChanged(delegator, oldDelegate, delegatee);
-        _moveDelegates(oldDelegate, delegatee, delegatorBalance);
+        _moveDelegates(currentDelegate, delegatee, delegatorBalance);
     }
 
-    function moveDelegates(
-        address srcRep,
-        address dstRep,
-        uint256 amount
-    ) public {
+    function moveDelegates(address srcRep, address dstRep, uint256 amount) public {
         require(msg.sender == address(staking), "unauthorized");
         _moveDelegates(srcRep, dstRep, amount);
     }
 
-    function moveDelegatesByVotingBalance(
-        uint256 votingBalanceBefore,
-        uint256 votingBalanceAfter,
-        address account
-    )
-    public
-    {
-        require(msg.sender == address(staking), "unauthorized");
-        address currentDelegate = _delegates[account];
-        if(currentDelegate == ZERO_ADDRESS)
-            return;
-
-        if(votingBalanceBefore > votingBalanceAfter){
-            _moveDelegates(currentDelegate, ZERO_ADDRESS,
-                votingBalanceBefore.sub(votingBalanceAfter)
-            );
-        }
-        else{
-            _moveDelegates(ZERO_ADDRESS, currentDelegate,
-                votingBalanceAfter.sub(votingBalanceBefore)
-            );
-        }
-    }
-
     function _moveDelegates(address srcRep, address dstRep, uint256 amount) internal {
         if (srcRep != dstRep && amount > 0) {
-            if (srcRep != ZERO_ADDRESS) {
+            if (srcRep != address(0)) {
                 // decrease old representative
                 uint32 srcRepNum = numCheckpoints[srcRep];
                 uint256 srcRepOld = srcRepNum > 0 ? checkpoints[srcRep][srcRepNum - 1].votes : 0;
@@ -212,7 +157,7 @@ contract StakingVoteDelegator is StakingVoteDelegatorState, StakingVoteDelegator
                 _writeCheckpoint(srcRep, srcRepNum, srcRepOld, srcRepNew);
             }
 
-            if (dstRep != ZERO_ADDRESS) {
+            if (dstRep != address(0)) {
                 // increase new representative
                 uint32 dstRepNum = numCheckpoints[dstRep];
                 uint256 dstRepOld = dstRepNum > 0 ? checkpoints[dstRep][dstRepNum - 1].votes : 0;
