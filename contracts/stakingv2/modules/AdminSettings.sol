@@ -20,8 +20,8 @@ contract AdminSettings is StakingStateV2 {
     // Withdraw all from sushi masterchef
     function exitSushi() external onlyOwner {
         IMasterChefSushi chef = IMasterChefSushi(SUSHI_MASTERCHEF);
-        uint256 balance = chef.userInfo(BZRX_ETH_SUSHI_MASTERCHEF_PID, address(this)).amount;
-        chef.withdraw(BZRX_ETH_SUSHI_MASTERCHEF_PID, balance);
+        uint256 balance = chef.userInfo(OOKI_ETH_SUSHI_MASTERCHEF_PID, address(this)).amount;
+        chef.withdraw(OOKI_ETH_SUSHI_MASTERCHEF_PID, balance);
     }
 
     // OnlyOwner functions

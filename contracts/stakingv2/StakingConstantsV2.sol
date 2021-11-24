@@ -21,7 +21,7 @@ contract StakingConstantsV2 {
     address public constant OOKI = 0x0De05F6447ab4D22c8827449EE4bA2D5C288379B;
     address public constant vBZRX = 0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F;
     address public constant iOOKI = 0x05d5160cbc6714533ef44CEd6dd32112d56Ad7da;
-    address public constant LPToken = 0xEaaddE1E14C587a7Fb4Ba78eA78109BB32975f1e; // sushiswap
+    address public constant OOKI_ETH_LP = 0xEaaddE1E14C587a7Fb4Ba78eA78109BB32975f1e; // sushiswap
 
 
 
@@ -33,7 +33,7 @@ contract StakingConstantsV2 {
     uint256 internal constant vestingEndTimestamp =        vestingStartTimestamp + vestingDuration;
  
     address internal constant SUSHI_MASTERCHEF = 0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd;
-    uint256 internal constant BZRX_ETH_SUSHI_MASTERCHEF_PID =  335;
+    uint256 internal constant OOKI_ETH_SUSHI_MASTERCHEF_PID =  335;
     address public constant SUSHI = 0x6B3595068778DD592e39A122f4f5a5cF09C90fE2;
 
     ICurve3Pool public constant curve3pool = ICurve3Pool(0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7);
