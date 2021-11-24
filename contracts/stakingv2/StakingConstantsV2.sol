@@ -11,15 +11,16 @@ import "../interfaces/curve/ICurve3Pool.sol";
 import "../interfaces/curve/ICurveMinter.sol";
 import "../interfaces/curve/ICurve3PoolGauge.sol";
 import "../../interfaces/IBZx.sol";
-
+import "../../interfaces/IBZRXv2Converter.sol";
 
 contract StakingConstantsV2 {
 
     address internal constant ZERO_ADDRESS = address(0);
 
-    address public constant OOKI = 0x56d811088235F11C8920698a204A5010a788f4b3;
+    address public constant BZRX = 0x56d811088235F11C8920698a204A5010a788f4b3;
+    address public constant OOKI = 0x0De05F6447ab4D22c8827449EE4bA2D5C288379B;
     address public constant vBZRX = 0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F;
-    address public constant iOOKI = 0x18240BD9C07fA6156Ce3F3f61921cC82b2619157;
+    address public constant iOOKI = 0x05d5160cbc6714533ef44CEd6dd32112d56Ad7da;
     address public constant LPToken = 0xEaaddE1E14C587a7Fb4Ba78eA78109BB32975f1e; // sushiswap
 
 
@@ -41,6 +42,9 @@ contract StakingConstantsV2 {
     ICurveMinter public constant curveMinter = ICurveMinter(0xd061D61a4d941c39E5453435B6345Dc261C2fcE0);
     ICurve3PoolGauge public constant curve3PoolGauge = ICurve3PoolGauge(0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A);
     address public constant CRV = 0xD533a949740bb3306d119CC777fa900bA034cd52;
+
+
+    IBZRXv2Converter public converter = IBZRXv2Converter(0x6BE9B7406260B6B6db79a1D4997e7f8f5c9D7400);
 
     event Stake(
         address indexed user,

@@ -46,3 +46,4 @@ CRV = Contract.from_abi("CRV", "0xD533a949740bb3306d119CC777fa900bA034cd52", Tes
 CRV_MINER  = Contract.from_abi("ICurveMinter", "0xd061D61a4d941c39E5453435B6345Dc261C2fcE0", interface.ICurveMinter.abi)
 POOL3Gauge = Contract.from_abi("3POOLGauge", "0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A", interface.ICurve3PoolGauge.abi)
 
+BZRX_V2_CONVERTER = _Contract.from_abi("BZRX_V2_CONVERTER", "0x6BE9B7406260B6B6db79a1D4997e7f8f5c9D7400", BZRXv2Converter.abi)
