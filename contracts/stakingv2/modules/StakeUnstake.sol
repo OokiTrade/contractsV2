@@ -121,7 +121,7 @@ contract StakeUnstake is Common {
 
         for (uint256 i = 0; i < tokens.length; i++) {
             address token = tokens[i];
-            require(token == BZRX || token == vBZRX || token == iBZRX || token == LPToken, "invalid token");
+            require(token == OOKI || token == vBZRX || token == iOOKI || token == LPToken, "invalid token");
 
             uint256 stakeAmount = values[i];
             if (stakeAmount == 0) {
@@ -157,7 +157,7 @@ contract StakeUnstake is Common {
 
         for (uint256 i = 0; i < tokens.length; i++) {
             address token = tokens[i];
-            require(token == BZRX || token == vBZRX || token == iBZRX || token == LPToken, "invalid token");
+            require(token == OOKI || token == vBZRX || token == iOOKI || token == LPToken, "invalid token");
 
             uint256 unstakeAmount = values[i];
             uint256 stakedAmount = _balancesPerToken[token][msg.sender];
@@ -173,7 +173,7 @@ contract StakeUnstake is Common {
             _balancesPerToken[token][msg.sender] = stakedAmount - unstakeAmount; // will not overflow
             _totalSupplyPerToken[token] = _totalSupplyPerToken[token] - unstakeAmount; // will not overflow
 
-            if (token == BZRX && IERC20(BZRX).balanceOf(address(this)) < unstakeAmount) {
+            if (token == OOKI && IERC20(OOKI).balanceOf(address(this)) < unstakeAmount) {
                 // settle vested BZRX only if needed
                 IVestingToken(vBZRX).claim();
             }
@@ -250,12 +250,12 @@ contract StakeUnstake is Common {
             if (restake) {
                 _restakeBZRX(msg.sender, bzrxRewardsEarned);
             } else {
-                if (IERC20(BZRX).balanceOf(address(this)) < bzrxRewardsEarned) {
+                if (IERC20(OOKI).balanceOf(address(this)) < bzrxRewardsEarned) {
                     // settle vested BZRX only if needed
                     IVestingToken(vBZRX).claim();
                 }
 
-                IERC20(BZRX).transfer(msg.sender, bzrxRewardsEarned);
+                IERC20(OOKI).transfer(msg.sender, bzrxRewardsEarned);
             }
         }
         StakingVoteDelegator(voteDelegator).moveDelegatesByVotingBalance(votingBalanceBefore, _votingFromStakedBalanceOf(msg.sender, _proposalState, true), msg.sender);
@@ -308,13 +308,13 @@ contract StakeUnstake is Common {
     }
 
     function _restakeBZRX(address account, uint256 amount) internal {
-        _balancesPerToken[BZRX][account] = _balancesPerToken[BZRX][account].add(amount);
+        _balancesPerToken[OOKI][account] = _balancesPerToken[OOKI][account].add(amount);
 
-        _totalSupplyPerToken[BZRX] = _totalSupplyPerToken[BZRX].add(amount);
+        _totalSupplyPerToken[OOKI] = _totalSupplyPerToken[OOKI].add(amount);
 
         emit Stake(
             account,
-            BZRX,
+            OOKI,
             account, //currentDelegate,
             amount
         );
@@ -507,8 +507,8 @@ contract StakeUnstake is Common {
         )
     {
         return (
-            balanceOfByAsset(BZRX, account),
-            balanceOfByAsset(iBZRX, account),
+            balanceOfByAsset(OOKI, account),
+            balanceOfByAsset(iOOKI, account),
             balanceOfByAsset(vBZRX, account),
             balanceOfByAsset(LPToken, account)
         );
@@ -520,9 +520,9 @@ contract StakeUnstake is Common {
             vestingBalance = balance.mul(vBZRXWeightStored).div(1e18);
         }
 
-        vestedBalance = _balancesPerToken[BZRX][account];
+        vestedBalance = _balancesPerToken[OOKI][account];
 
-        balance = _balancesPerToken[iBZRX][account];
+        balance = _balancesPerToken[iOOKI][account];
         if (balance != 0) {
             vestedBalance = balance.mul(iBZRXWeightStored).div(1e50).add(vestedBalance);
         }

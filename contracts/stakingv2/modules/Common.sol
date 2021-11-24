@@ -18,13 +18,13 @@ contract Common is StakingStateV2, PausableGuardian {
             ProposalState({
                 proposalTime: block.timestamp - 1,
                 iBZRXWeight: _calcIBZRXWeight(),
-                lpBZRXBalance: 0, // IERC20(BZRX).balanceOf(LPToken),
+                lpBZRXBalance: 0, // IERC20(OOKI).balanceOf(LPToken),
                 lpTotalSupply: 0 //IERC20(LPToken).totalSupply()
             });
     }
 
     function _calcIBZRXWeight() internal view returns (uint256) {
-        return IERC20(BZRX).balanceOf(iBZRX).mul(1e50).div(IERC20(iBZRX).totalSupply());
+        return IERC20(OOKI).balanceOf(iOOKI).mul(1e50).div(IERC20(iOOKI).totalSupply());
     }
  
     function vestedBalanceForAmount(
@@ -67,9 +67,9 @@ contract Common is StakingStateV2, PausableGuardian {
         // user is attributed a staked balance of vested BZRX, from their last update to the present
         totalVotes = vestedBalanceForAmount(_balancesPerToken[vBZRX][account], _vestingLastSync, proposal.proposalTime);
 
-        totalVotes = _balancesPerToken[BZRX][account].add(bzrxRewards[account]).add(totalVotes); // unclaimed BZRX rewards count as votes
+        totalVotes = _balancesPerToken[OOKI][account].add(bzrxRewards[account]).add(totalVotes); // unclaimed BZRX rewards count as votes
 
-        totalVotes = _balancesPerToken[iBZRX][account].mul(proposal.iBZRXWeight).div(1e50).add(totalVotes);
+        totalVotes = _balancesPerToken[iOOKI][account].mul(proposal.iBZRXWeight).div(1e50).add(totalVotes);
 
         // LPToken votes are measured based on amount of underlying BZRX staked
         /*totalVotes = proposal.lpBZRXBalance
