@@ -360,9 +360,9 @@ contract StakeUnstake is Common {
         (bzrxRewardsEarned, stableCoinRewardsEarned) = _syncVesting(account, bzrxRewardsEarned, stableCoinRewardsEarned, bzrxRewardsVesting, stableCoinRewardsVesting);
 
         // discount vesting amounts for vesting time
-        uint256 multiplier = vestedBalanceForAmount(1e36, 0, block.timestamp);
-        bzrxRewardsVesting = bzrxRewardsVesting.sub(bzrxRewardsVesting.mul(multiplier).div(1e36));
-        stableCoinRewardsVesting = stableCoinRewardsVesting.sub(stableCoinRewardsVesting.mul(multiplier).div(1e36));
+        uint256 multiplier = vestedBalanceForAmount(1e37, 0, block.timestamp);
+        bzrxRewardsVesting = bzrxRewardsVesting.sub(bzrxRewardsVesting.mul(multiplier).div(1e37));
+        stableCoinRewardsVesting = stableCoinRewardsVesting.sub(stableCoinRewardsVesting.mul(multiplier).div(1e37));
 
         uint256 pendingSushi = IMasterChefSushi(SUSHI_MASTERCHEF).pendingSushi(OOKI_ETH_SUSHI_MASTERCHEF_PID, address(this));
 
@@ -419,7 +419,7 @@ contract StakeUnstake is Common {
 
                 // true up earned amount to vBZRX vesting schedule
                 lastSync = vestingLastSync[account];
-                multiplier = vestedBalanceForAmount(1e36, 0, lastSync);
+                multiplier = vestedBalanceForAmount(1e37, 0, lastSync);
                 value = value.mul(multiplier);
                 value /= 1e36;
                 bzrxRewardsEarned = bzrxRewardsEarned.add(value);
@@ -433,7 +433,7 @@ contract StakeUnstake is Common {
                 // true up earned amount to vBZRX vesting schedule
                 if (lastSync == 0) {
                     lastSync = vestingLastSync[account];
-                    multiplier = vestedBalanceForAmount(1e36, 0, lastSync);
+                    multiplier = vestedBalanceForAmount(1e37, 0, lastSync);
                 }
                 value = value.mul(multiplier);
                 value /= 1e36;
@@ -453,7 +453,7 @@ contract StakeUnstake is Common {
 
         if (lastVestingSync != block.timestamp) {
             uint256 rewardsVested;
-            uint256 multiplier = vestedBalanceForAmount(1e36, lastVestingSync, block.timestamp);
+            uint256 multiplier = vestedBalanceForAmount(1e37, lastVestingSync, block.timestamp);
 
             if (bzrxRewardsVesting != 0) {
                 rewardsVested = bzrxRewardsVesting.mul(multiplier).div(1e36);
