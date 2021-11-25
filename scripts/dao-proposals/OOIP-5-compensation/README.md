@@ -26,12 +26,12 @@
 
 ## Introduction
 
-- Allocate 49m to guardian multisig to compensate victims who lost BZRX due to hack (positions, lend, infinite approval)
+- Allocate 30m to guardian multisig to compensate victims who lost BZRX due to hack (positions, lend, infinite approval), and 32m vBZRX to team lost funds
 
 ## Proposal Calls
 
 1. BZRX.transferFrom(TIMELOCK, GUARDIAN_MULTISIG)
-2. vBZRX.transferFrom(...)
+2. vBZRX.transferFrom(TIMELOCK, TEAM_WALLET)
 
 
 
