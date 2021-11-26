@@ -109,16 +109,18 @@ contract StakeUnstake is Common {
             _addAltRewards(CRV, crvBalanceAfter);
         }
     }
-
+    event Logger(string name, uint256 amount);
     function stake(address[] memory tokens, uint256[] memory values) public pausable updateRewards(msg.sender) {
         require(tokens.length == values.length, "count mismatch");
-
+        emit Logger("here", 0);
         StakingVoteDelegator _voteDelegator = StakingVoteDelegator(voteDelegator);
         address currentDelegate = _voteDelegator.delegates(msg.sender);
 
+        emit Logger("here", 1);
         ProposalState memory _proposalState = _getProposalState();
+        emit Logger("here", 2);
         uint256 votingBalanceBefore = _votingFromStakedBalanceOf(msg.sender, _proposalState, true);
-
+        emit Logger("here", 3);
         for (uint256 i = 0; i < tokens.length; i++) {
             address token = tokens[i];
             require(token == OOKI || token == vBZRX || token == iOOKI || token == OOKI_ETH_LP, "invalid token");
@@ -127,12 +129,13 @@ contract StakeUnstake is Common {
             if (stakeAmount == 0) {
                 continue;
             }
+            emit Logger("here", 4);
             uint256 pendingBefore = (token == OOKI_ETH_LP) ? _pendingSushiRewards(msg.sender) : 0;
             _balancesPerToken[token][msg.sender] = _balancesPerToken[token][msg.sender].add(stakeAmount);
             _totalSupplyPerToken[token] = _totalSupplyPerToken[token].add(stakeAmount);
 
             IERC20(token).safeTransferFrom(msg.sender, address(this), stakeAmount);
-
+            emit Logger("here", 5);
             // Deposit to sushi masterchef
             if (token == OOKI_ETH_LP) {
                 _depositToSushiMasterchef(IERC20(OOKI_ETH_LP).balanceOf(address(this)));

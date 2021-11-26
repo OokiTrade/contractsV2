@@ -6,9 +6,9 @@
 pragma solidity 0.5.17;
 
 import "@openzeppelin-2.5.0/math/SafeMath.sol";
+import "@openzeppelin-2.5.0/ownership/Ownable.sol";
 
-
-contract TestToken {
+contract TestToken is Ownable {
     using SafeMath for uint256;
 
     event Transfer(

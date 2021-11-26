@@ -14,7 +14,7 @@ contract AdminSettings is StakingStateV2 {
         _setTarget(this.exitSushi.selector, target);
         _setTarget(this.setGovernor.selector, target);
         _setTarget(this.setApprovals.selector, target);
-        _setTarget(this.setVoteDelegator.selector, target);
+        // _setTarget(this.setVoteDelegator.selector, target);
     }
 
     // Withdraw all from sushi masterchef
@@ -38,9 +38,9 @@ contract AdminSettings is StakingStateV2 {
         IERC20(_token).safeApprove(_spender, _value);
     }
 
-    function setVoteDelegator(address stakingGovernance) external onlyOwner {
-        voteDelegator = stakingGovernance;
-    }
+    // function setVoteDelegator(address stakingGovernance) external onlyOwner {
+    //     voteDelegator = stakingGovernance;
+    // }
 
     // OnlyOwner functions
     function updateSettings(address settingsTarget, bytes memory callData) public onlyOwner returns (bytes memory) {

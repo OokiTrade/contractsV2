@@ -6,7 +6,7 @@
 pragma solidity >=0.5.0 <=0.8.4;
 pragma experimental ABIEncoderV2;
 
-interface IStaking {
+interface IStakingV2 {
     struct ProposalState {
         uint256 proposalTime;
         uint256 iBZRXWeight;
@@ -79,8 +79,7 @@ interface IStaking {
             uint256 bzrxBalance,
             uint256 iBZRXBalance,
             uint256 vBZRXBalance,
-            uint256 LPTokenBalance,
-            uint256 LPTokenBalanceOld
+            uint256 LPTokenBalance
         );
 
     function balanceOfStored(address account) external view returns (uint256 vestedBalance, uint256 vestingBalance);

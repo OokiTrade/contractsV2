@@ -43,7 +43,7 @@ contract StakingConstantsV2 {
     ICurve3PoolGauge public constant curve3PoolGauge = ICurve3PoolGauge(0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A);
     address public constant CRV = 0xD533a949740bb3306d119CC777fa900bA034cd52;
 
-
+    address public constant voteDelegator = 0x7e9d7A0ff725f88Cc6Ab3ccF714a1feA68aC160b;
     IBZRXv2Converter public converter = IBZRXv2Converter(0x6BE9B7406260B6B6db79a1D4997e7f8f5c9D7400);
 
     event Stake(
