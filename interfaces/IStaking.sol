@@ -7,6 +7,7 @@ pragma solidity >=0.5.0 <=0.8.4;
 pragma experimental ABIEncoderV2;
 
 interface IStaking {
+
     struct ProposalState {
         uint256 proposalTime;
         uint256 iBZRXWeight;
@@ -19,25 +20,59 @@ interface IStaking {
         uint256 pendingRewards;
     }
 
-    function getCurrentFeeTokens() external view returns (address[] memory);
+    function getCurrentFeeTokens()
+        external
+        view
+        returns (address[] memory);
 
-    function maxUniswapDisagreement() external view returns (uint256);
+    function maxUniswapDisagreement()
+        external
+        view
+        returns (uint256);
 
-    function isPaused() external view returns (bool);
 
-    function fundsWallet() external view returns (address);
+    function isPaused()
+        external
+        view
+        returns (bool);
 
-    function callerRewardDivisor() external view returns (uint256);
+    function fundsWallet()
+        external
+        view
+        returns (address);
 
-    function maxCurveDisagreement() external view returns (uint256);
 
-    function rewardPercent() external view returns (uint256);
+    function callerRewardDivisor()
+        external
+        view
+        returns (uint256);
 
-    function addRewards(uint256 newBZRX, uint256 newStableCoin) external;
 
-    function stake(address[] calldata tokens, uint256[] calldata values) external;
+    function maxCurveDisagreement()
+        external
+        view
+        returns (uint256);
 
-    function unstake(address[] calldata tokens, uint256[] calldata values) external;
+    function rewardPercent()
+        external
+        view
+        returns (uint256);
+
+    function addRewards(uint256 newBZRX, uint256 newStableCoin)
+        external;
+
+    function stake(
+        address[] calldata tokens,
+        uint256[] calldata values
+    )
+        external;
+
+    function unstake(
+        address[] calldata tokens,
+        uint256[] calldata values
+    )
+        external;
+
 
     function earned(address account)
         external
@@ -51,28 +86,30 @@ interface IStaking {
         );
 
     function pendingCrvRewards(address account)
-        external
-        view
-        returns (
-            uint256 bzrxRewardsEarned,
-            uint256 stableCoinRewardsEarned,
-            uint256 bzrxRewardsVesting,
-            uint256 stableCoinRewardsVesting,
-            uint256 sushiRewardsEarned
-        );
+    external
+    view
+    returns (
+        uint256 bzrxRewardsEarned,
+        uint256 stableCoinRewardsEarned,
+        uint256 bzrxRewardsVesting,
+        uint256 stableCoinRewardsVesting,
+        uint256 sushiRewardsEarned
+    );
 
     function getVariableWeights()
         external
         view
-        returns (
-            uint256 vBZRXWeight,
-            uint256 iBZRXWeight,
-            uint256 LPTokenWeight
-        );
+        returns (uint256 vBZRXWeight, uint256 iBZRXWeight, uint256 LPTokenWeight);
 
-    function balanceOfByAsset(address token, address account) external view returns (uint256 balance);
+    function balanceOfByAsset(
+        address token,
+        address account)
+        external
+        view
+        returns (uint256 balance);
 
-    function balanceOfByAssets(address account)
+    function balanceOfByAssets(
+        address account)
         external
         view
         returns (
@@ -83,60 +120,59 @@ interface IStaking {
             uint256 LPTokenBalanceOld
         );
 
-    function balanceOfStored(address account) external view returns (uint256 vestedBalance, uint256 vestingBalance);
+    function balanceOfStored(
+        address account)
+        external
+        view
+        returns (uint256 vestedBalance, uint256 vestingBalance);
 
-    function totalSupplyStored() external view returns (uint256 supply);
+    function totalSupplyStored()
+        external
+        view
+        returns (uint256 supply);
 
     function vestedBalanceForAmount(
         uint256 tokenBalance,
         uint256 lastUpdate,
-        uint256 vestingEndTime
-    ) external view returns (uint256 vested);
+        uint256 vestingEndTime)
+        external
+        view
+        returns (uint256 vested);
 
-    function votingBalanceOf(address account, uint256 proposalId) external view returns (uint256 totalVotes);
+    function votingBalanceOf(
+        address account,
+        uint256 proposalId)
+        external
+        view
+        returns (uint256 totalVotes);
 
-    function votingBalanceOfNow(address account) external view returns (uint256 totalVotes);
+    function votingBalanceOfNow(
+        address account)
+        external
+        view
+        returns (uint256 totalVotes);
 
-    function votingFromStakedBalanceOf(address account) external view returns (uint256 totalVotes);
+    function votingFromStakedBalanceOf(
+        address account)
+        external
+        view
+        returns (uint256 totalVotes);
 
-    function _setProposalVals(address account, uint256 proposalId) external returns (uint256);
+    function _setProposalVals(
+        address account,
+        uint256 proposalId)
+        external
+        returns (uint256);
 
-    function exit() external;
+    function exit()
+        external;
 
-    function addAltRewards(address token, uint256 amount) external;
+    function addAltRewards(address token, uint256 amount)
+        external;
 
-    function governor() external view returns (address);
+    function governor()
+        external
+        view
+        returns(address);
 
-    function owner() external view returns (address);
-
-    function transferOwnership(address newOwner) external;
-
-    /// Guardian Interface
-
-    function _isPaused(bytes4 sig) external view returns (bool isPaused);
-
-    function toggleFunctionPause(bytes4 sig) external;
-
-    function toggleFunctionUnPause(bytes4 sig) external;
-
-    function changeGuardian(address newGuardian) external;
-
-    function getGuardian() external view returns (address guardian);
-
-    // Admin functions
-
-    // Withdraw all from sushi masterchef
-    function exitSushi() external;
-
-    function setGovernor(address _governor) external;
-
-    function setApprovals(
-        address _token,
-        address _spender,
-        uint256 _value
-    ) external;
-
-    function setVoteDelegator(address stakingGovernance) external;
-
-    function updateSettings(address settingsTarget, bytes calldata callData) external;
 }
