@@ -10,7 +10,7 @@ import "../StakingStateV2.sol";
 import "../../governance/PausableGuardian.sol";
 import "./Common.sol";
 import "../../governance/GovernorBravoInterfaces.sol";
-import "../../staking/StakingVoteDelegator.sol";
+import "../delegation/VoteDelegator.sol";
 
 contract Voting is Common {
     function initialize(address target) external onlyOwner {
@@ -51,7 +51,7 @@ contract Voting is Common {
         ProposalState memory proposal,
         uint256 blocknumber
     ) internal view returns (uint256 totalVotes) {
-        StakingVoteDelegator _voteDelegator = StakingVoteDelegator(voteDelegator);
+        VoteDelegator _voteDelegator = VoteDelegator(voteDelegator);
         address _delegate = _voteDelegator.delegates(account);
 
         if (_delegate == ZERO_ADDRESS) {

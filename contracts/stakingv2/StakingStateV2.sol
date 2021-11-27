@@ -8,7 +8,7 @@ pragma solidity 0.5.17;
 import "@openzeppelin-2.5.0/math/SafeMath.sol";
 import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 import "../mixins/EnumerableBytes32Set.sol";
-import "../../interfaces/IStaking.sol";
+import "../../interfaces/IStakingV2.sol";
 import "@openzeppelin-2.5.0/ownership/Ownable.sol";
 import "./StakingConstantsV2.sol";
 
@@ -52,7 +52,7 @@ contract StakingStateV2 is StakingConstantsV2, Ownable {
     mapping(address => uint256) public altRewardsPerShare; // token => value
 
     // Token => (User => Info)
-    mapping(address => mapping(address => IStaking.AltRewardsUserInfo)) public userAltRewardsPerShare;
+    mapping(address => mapping(address => IStakingV2.AltRewardsUserInfo)) public userAltRewardsPerShare;
 
 
     function _setTarget(bytes4 sig, address target) internal {

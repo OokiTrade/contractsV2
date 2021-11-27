@@ -9,7 +9,7 @@ pragma experimental ABIEncoderV2;
 import "../StakingStateV2.sol";
 import "./StakingPausableGuardian.sol";
 import "../../farm/interfaces/IMasterChefSushi.sol";
-import "../../staking/StakingVoteDelegator.sol";
+import "../delegation/VoteDelegator.sol";
 import "../../interfaces/IVestingToken.sol";
 import "./Common.sol";
 
@@ -64,7 +64,7 @@ contract StakeUnstake is Common {
         uint256 _altRewardsPerShare = altRewardsPerShare[token].add(extraRewardsPerShare);
         if (_altRewardsPerShare == 0) return 0;
 
-        IStaking.AltRewardsUserInfo memory altRewardsUserInfo = userAltRewardsPerShare[_user][token];
+        IStakingV2.AltRewardsUserInfo memory altRewardsUserInfo = userAltRewardsPerShare[_user][token];
         return altRewardsUserInfo.pendingRewards.add((_altRewardsPerShare.sub(altRewardsUserInfo.rewardsPerShare)).mul(userSupply).div(1e12));
     }
 
@@ -113,7 +113,7 @@ contract StakeUnstake is Common {
     function stake(address[] memory tokens, uint256[] memory values) public pausable updateRewards(msg.sender) {
         require(tokens.length == values.length, "count mismatch");
         emit Logger("here", 0);
-        StakingVoteDelegator _voteDelegator = StakingVoteDelegator(voteDelegator);
+        VoteDelegator _voteDelegator = VoteDelegator(voteDelegator);
         address currentDelegate = _voteDelegator.delegates(msg.sender);
 
         emit Logger("here", 1);
@@ -140,7 +140,7 @@ contract StakeUnstake is Common {
             if (token == OOKI_ETH_LP) {
                 _depositToSushiMasterchef(IERC20(OOKI_ETH_LP).balanceOf(address(this)));
 
-                userAltRewardsPerShare[msg.sender][SUSHI] = IStaking.AltRewardsUserInfo({rewardsPerShare: altRewardsPerShare[SUSHI], pendingRewards: pendingBefore});
+                userAltRewardsPerShare[msg.sender][SUSHI] = IStakingV2.AltRewardsUserInfo({rewardsPerShare: altRewardsPerShare[SUSHI], pendingRewards: pendingBefore});
             }
 
             emit Stake(msg.sender, token, currentDelegate, stakeAmount);
@@ -152,7 +152,7 @@ contract StakeUnstake is Common {
     function unstake(address[] memory tokens, uint256[] memory values) public pausable updateRewards(msg.sender) {
         require(tokens.length == values.length, "count mismatch");
 
-        StakingVoteDelegator _voteDelegator = StakingVoteDelegator(voteDelegator);
+        VoteDelegator _voteDelegator =VoteDelegator(voteDelegator);
         address currentDelegate = _voteDelegator.delegates(msg.sender);
 
         ProposalState memory _proposalState = _getProposalState();
@@ -186,7 +186,7 @@ contract StakeUnstake is Common {
             if (token == OOKI_ETH_LP) {
                 _withdrawFromSushiMasterchef(unstakeAmount);
 
-                userAltRewardsPerShare[msg.sender][SUSHI] = IStaking.AltRewardsUserInfo({rewardsPerShare: altRewardsPerShare[SUSHI], pendingRewards: pendingBefore});
+                userAltRewardsPerShare[msg.sender][SUSHI] = IStakingV2.AltRewardsUserInfo({rewardsPerShare: altRewardsPerShare[SUSHI], pendingRewards: pendingBefore});
             }
             IERC20(token).safeTransfer(msg.sender, unstakeAmount);
 
@@ -263,7 +263,7 @@ contract StakeUnstake is Common {
                 IERC20(OOKI).transfer(msg.sender, bzrxRewardsEarned);
             }
         }
-        StakingVoteDelegator(voteDelegator).moveDelegatesByVotingBalance(votingBalanceBefore, _votingFromStakedBalanceOf(msg.sender, _proposalState, true), msg.sender);
+        VoteDelegator(voteDelegator).moveDelegatesByVotingBalance(votingBalanceBefore, _votingFromStakedBalanceOf(msg.sender, _proposalState, true), msg.sender);
     }
 
     function _claim3Crv() internal returns (uint256 stableCoinRewardsEarned) {
@@ -273,7 +273,7 @@ contract StakeUnstake is Common {
             uint256 curve3CrvBalance = curve3Crv.balanceOf(address(this));
             _withdrawFrom3Pool(stableCoinRewardsEarned);
 
-            userAltRewardsPerShare[msg.sender][CRV] = IStaking.AltRewardsUserInfo({rewardsPerShare: altRewardsPerShare[CRV], pendingRewards: pendingCrv});
+            userAltRewardsPerShare[msg.sender][CRV] = IStakingV2.AltRewardsUserInfo({rewardsPerShare: altRewardsPerShare[CRV], pendingRewards: pendingCrv});
 
             stableCoinRewards[msg.sender] = 0;
             curve3Crv.transfer(msg.sender, stableCoinRewardsEarned);
@@ -289,7 +289,7 @@ contract StakeUnstake is Common {
 
         uint256 pendingSushi = _pendingAltRewards(SUSHI, _user, lptUserSupply, 0);
 
-        userAltRewardsPerShare[_user][SUSHI] = IStaking.AltRewardsUserInfo({rewardsPerShare: altRewardsPerShare[SUSHI], pendingRewards: 0});
+        userAltRewardsPerShare[_user][SUSHI] = IStakingV2.AltRewardsUserInfo({rewardsPerShare: altRewardsPerShare[SUSHI], pendingRewards: 0});
         if (pendingSushi != 0) {
             IERC20(SUSHI).safeTransfer(_user, pendingSushi);
         }
@@ -304,7 +304,7 @@ contract StakeUnstake is Common {
         (, uint256 stableCoinRewardsEarned, , ) = _earned(_user, bzrxPerTokenStored, stableCoinPerTokenStored);
         uint256 pendingCrv = _pendingCrvRewards(_user, stableCoinRewardsEarned);
 
-        userAltRewardsPerShare[_user][CRV] = IStaking.AltRewardsUserInfo({rewardsPerShare: altRewardsPerShare[CRV], pendingRewards: 0});
+        userAltRewardsPerShare[_user][CRV] = IStakingV2.AltRewardsUserInfo({rewardsPerShare: altRewardsPerShare[CRV], pendingRewards: 0});
         if (pendingCrv != 0) {
             IERC20(CRV).safeTransfer(_user, pendingCrv);
         }
