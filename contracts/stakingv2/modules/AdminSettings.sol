@@ -38,9 +38,9 @@ contract AdminSettings is StakingStateV2 {
         IERC20(_token).safeApprove(_spender, _value);
     }
 
-    // function setVoteDelegator(address stakingGovernance) external onlyOwner {
-    //     voteDelegator = stakingGovernance;
-    // }
+    function setVoteDelegator(address stakingGovernance) external onlyOwner {
+        voteDelegator = stakingGovernance;
+    }
 
     // OnlyOwner functions
     function updateSettings(address settingsTarget, bytes memory callData) public onlyOwner returns (bytes memory) {

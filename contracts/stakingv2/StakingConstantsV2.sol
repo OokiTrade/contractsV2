@@ -44,12 +44,7 @@ contract StakingConstantsV2 {
     address public constant CRV = 0xD533a949740bb3306d119CC777fa900bA034cd52;
 
     IBZRXv2Converter public converter = IBZRXv2Converter(0x6BE9B7406260B6B6db79a1D4997e7f8f5c9D7400);
-    address public voteDelegator = 0x7e9d7A0ff725f88Cc6Ab3ccF714a1feA68aC160b;
 
-    // TODO for testing DON'T deploy like that !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    function setVoteDelegator(address _voteDelegator) public {
-        voteDelegator = _voteDelegator;
-    }
 
     event Stake(
         address indexed user,
