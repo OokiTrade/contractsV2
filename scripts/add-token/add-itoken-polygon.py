@@ -1,5 +1,22 @@
 #!/usr/bin/python3
 
+
+'''
+Polygon Addresses ->
+
+bzxAddress: 0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8
+TokenRegistry: 0x4B234781Af34E9fD756C27a47675cbba19DC8765
+HelperProxy: 0xdb2800b894FDa88F6c49c38379398b257062dF80
+DAppHelper: 0x15bFe513e143D7CBC3242265B4AA481D81196301
+
+iMATIC: 0x81b91c9a68b94f88f3dfc4f375f101223ddd5007
+iETH: 0xB8329B5458B1E493EFd8D9DA8C3B5E6D68e67C21
+iWBTC: 0x1a7189Af4e5f58Ddd0b9B195a53E5f4e4b55c949
+iLINK: 0x76F3Fca193Aa9aD86347F70D82F013c19060D22C
+iUSDC: 0xC3f6816C860e7d7893508C8F8568d5AF190f6d7d
+iUSDT: 0x5BFAC8a40782398fb662A69bac8a89e6EDc574b1
+'''
+
 from brownie import *
 from brownie import network, accounts
 from brownie.network.contract import InterfaceContainer
@@ -8,11 +25,9 @@ from brownie.network.contract import Contract
 import time
 import pdb
 
-acct = accounts.load("deployer1")
+acct = accounts.load("fresh_deployer1")
 
-# TODO insert real price feed below (usdc now)
-#chainlinkFeedAddress = "0xA9F9F897dD367C416e350c33a92fC12e53e1Cee5"
-bzxAddress = "0xfe4F0eb0A1Ad109185c9AaDE64C48ff8e928e54B"
+bzxAddress = "0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8"
 
 bzx = Contract.from_abi("bzx", address=bzxAddress,
     abi=interface.IBZx.abi, owner=acct)
@@ -22,46 +37,46 @@ def main():
 
     #deployment()
     #marginSettings()
-    demandCurve()
+    #demandCurve()
 
 def deployment():
-    underlyingSymbol = "BZRX"
+    underlyingSymbol = "USDT"
     iTokenSymbol = "i{}".format(underlyingSymbol)
     iTokenName = "Fulcrum {} iToken ({})".format(underlyingSymbol, iTokenSymbol)  
 
-    loanTokenAddress = "0x54cFe73f2c7d0c4b62Ab869B473F5512Dc0944D2"
+    loanTokenAddress = "0xc2132D05D31c914a87C6611C10748AEb04B58e8F"
 
     #LoanTokenLogicStandard deployed at: 0xa9651b36101E00E43dA389A2b491E94Ca9F807b6
     loanTokenLogicStandard = Contract.from_abi(
-        "LoanTokenLogicStandard", address="0xbd36f94b35dF4DD5135d3d16C449ba2655f12a8C", abi=LoanTokenLogicStandard.abi, owner=acct)
+        "LoanTokenLogicStandard", address="0xb1F7F49245e98519cE617F1bFE403fd28e23E4Cc", abi=LoanTokenLogicStandard.abi, owner=acct)
     #loanTokenLogicStandard = acct.deploy(LoanTokenLogicWeth, acct).address
 
     
-
-
     # Deployment
 
-    iTokenProxy = LoanToken.deploy(acct, loanTokenLogicStandard, {"from": acct, "gas_price": 1e9})
+    iTokenProxy = LoanToken.deploy(acct, loanTokenLogicStandard, {"from": acct})
     #iTokenProxy = Contract.from_abi("loanTokenProxy",
-    #                        "0x97dfbEF4eD5a7f63781472Dbc69Ab8e5d7357cB9", LoanToken.abi, acct)
+    #                        "0x81b91c9a68b94f88f3dfc4f375f101223ddd5007", LoanToken.abi, acct)
 
     #loanTokenSettings = acct.deploy(LoanTokenSettings)
     #LoanTokenSettingsLowerAdmin deployed at: 0xA1988005a5D6e68a3572F43a18460708CB29ABe0
     #LoanTokenSettings deployed at: 0xbB4e3A0A540819EfdF0A9C88dFcD9B1D628802dF
 
     loanTokenSettings = Contract.from_abi(
-        "loanToken", address="0x49646513609085f39D9e44b413c74530Ba6E2c0F", abi=LoanTokenSettings.abi, owner=acct)
-
-
-    calldata = loanTokenSettings.initialize.encode_input(
-        loanTokenAddress, iTokenName, iTokenSymbol)
+        "loanToken", address="0x3ff9BFe18206f81d073e35072b1c4D61f866663f", abi=LoanTokenSettings.abi, owner=acct)
 
     iToken = Contract.from_abi("loanTokenLogicStandard",
                             iTokenProxy, LoanTokenLogicStandard.abi, acct)
 
+    calldata = loanTokenSettings.initialize.encode_input(
+        loanTokenAddress, iTokenName, iTokenSymbol)
+    iToken.updateSettings(loanTokenSettings, calldata, {"from": acct})
 
-    iToken.updateSettings(loanTokenSettings, calldata, {"from": acct, "gas_price": 1e9})
-
+    calldata = loanTokenSettings.setLowerAdminValues.encode_input(
+        "0x01F569df8A270eCA78597aFe97D30c65D8a8ca80", # polygon guardian multisig
+        "0x91EB15A8EC9aE2280B7003824b2d1e9Caf802b6C"  # LoanTokenSettingsLowerAdmin contract
+    )
+    iToken.updateSettings(loanTokenSettings, calldata, {"from": acct})
 
 
     # Setting price Feed
@@ -70,7 +85,7 @@ def deployment():
     #priceFeed.setPriceFeed([loanTokenAddress], [chainlinkFeedAddress], {'from': acct})
 
 
-    bzx.setLoanPool([iToken], [loanTokenAddress], {"from": acct, "gas_price": 1e9})
+    bzx.setLoanPool([iToken], [loanTokenAddress], {"from": acct})
     #bzx.setSupportedTokens([loanTokenAddress], [True])
 
 
@@ -79,7 +94,7 @@ def marginSettings():
     # Setting margin settings
 
     loanTokenSettingsLowerAdmin = Contract.from_abi(
-        "loanToken", address="0x23979985d63c6d14F59B348De11f7200b469e967", abi=LoanTokenSettingsLowerAdmin.abi, owner=acct)
+        "loanToken", address="0x91EB15A8EC9aE2280B7003824b2d1e9Caf802b6C", abi=LoanTokenSettingsLowerAdmin.abi, owner=acct)
     base_data = [
         b"0x0",  # id
         False,  # active
@@ -93,7 +108,7 @@ def marginSettings():
 
     params = []
     
-    bzxRegistry = Contract.from_abi("bzxRegistry", address="0x5a6f1e81334C63DE0183A4a3864bD5CeC4151c27", abi=TokenRegistry.abi)
+    bzxRegistry = Contract.from_abi("bzxRegistry", address="0x4B234781Af34E9fD756C27a47675cbba19DC8765", abi=TokenRegistry.abi)
     supportedTokenAssetsPairs = bzxRegistry.getTokens(0, 100) # TODO move this into a loop for permissionless to support more than 100
     loanTokensArr = []
     collateralTokensArr = []
@@ -123,8 +138,8 @@ def marginSettings():
                 continue
 
             ## skipping BZRX for now
-            if existingITokenLoanTokenAddress == "0x54cFe73f2c7d0c4b62Ab869B473F5512Dc0944D2" or collateralTokenAddress == "0x54cFe73f2c7d0c4b62Ab869B473F5512Dc0944D2":
-                continue
+            #if existingITokenLoanTokenAddress == "0x54cFe73f2c7d0c4b62Ab869B473F5512Dc0944D2" or collateralTokenAddress == "0x54cFe73f2c7d0c4b62Ab869B473F5512Dc0944D2":
+            #    continue
 
             ## only BZRX for now
             #if existingITokenLoanTokenAddress != "0x54cFe73f2c7d0c4b62Ab869B473F5512Dc0944D2" and collateralTokenAddress != "0x54cFe73f2c7d0c4b62Ab869B473F5512Dc0944D2":
@@ -165,28 +180,28 @@ def marginSettings():
         if (len(params) != 0):
             ## Torque loans
             calldata = loanTokenSettingsLowerAdmin.setupLoanParams.encode_input(params, True)
-            existingIToken.updateSettings(loanTokenSettingsLowerAdmin.address, calldata, {"from": acct, "gas_price": 1e9})
+            existingIToken.updateSettings(loanTokenSettingsLowerAdmin.address, calldata, {"from": acct})
 
             ## Margin trades
             calldata = loanTokenSettingsLowerAdmin.setupLoanParams.encode_input(params, False)
-            existingIToken.updateSettings(loanTokenSettingsLowerAdmin.address, calldata, {"from": acct, "gas_price": 1e9})
+            existingIToken.updateSettings(loanTokenSettingsLowerAdmin.address, calldata, {"from": acct})
 
-        bzx.setLiquidationIncentivePercent(loanTokensArr, collateralTokensArr, amountsArr, {"from": acct, "gas_price": 1e9})
+        bzx.setLiquidationIncentivePercent(loanTokensArr, collateralTokensArr, amountsArr, {"from": acct})
 
 
 def demandCurve():
 
-    bzxRegistry = Contract.from_abi("bzxRegistry", address="0x5a6f1e81334C63DE0183A4a3864bD5CeC4151c27", abi=TokenRegistry.abi)
+    bzxRegistry = Contract.from_abi("bzxRegistry", address="0x4B234781Af34E9fD756C27a47675cbba19DC8765", abi=TokenRegistry.abi)
     supportedTokenAssetsPairs = bzxRegistry.getTokens(0, 100) # TODO move this into a loop for permissionless to support more than 100
 
     loanTokenSettingsLowerAdmin = Contract.from_abi(
-        "loanToken", address="0x23979985d63c6d14F59B348De11f7200b469e967", abi=LoanTokenSettingsLowerAdmin.abi, owner=acct)
+        "loanToken", address="0x91EB15A8EC9aE2280B7003824b2d1e9Caf802b6C", abi=LoanTokenSettingsLowerAdmin.abi, owner=acct)
 
     for tokenAssetPairA in supportedTokenAssetsPairs:
         
         ## no BZRX params
-        if (tokenAssetPairA[0] == "0x97dfbEF4eD5a7f63781472Dbc69Ab8e5d7357cB9"):
-            continue
+        #if (tokenAssetPairA[0] == "0x97dfbEF4eD5a7f63781472Dbc69Ab8e5d7357cB9"):
+        #    continue
 
         ## only BZRX params
         #if (tokenAssetPairA[0] != "0x97dfbEF4eD5a7f63781472Dbc69Ab8e5d7357cB9"):
@@ -209,4 +224,4 @@ def demandCurve():
         print("itoken", existingIToken.name(), tokenAssetPairA[0])
         
         calldata = loanTokenSettingsLowerAdmin.setDemandCurve.encode_input(0, 20*10**18, 0, 0, 60*10**18, 80*10**18, 120*10**18)
-        existingIToken.updateSettings(loanTokenSettingsLowerAdmin.address, calldata, {"from": acct, "gas_price": 1e9})
+        existingIToken.updateSettings(loanTokenSettingsLowerAdmin.address, calldata, {"from": acct})
