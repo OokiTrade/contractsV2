@@ -145,7 +145,7 @@ and PGOV, PGOV/MATIC, and wvBZRX on the farming page
             True, # MATIC
             True, # ETH
             True, # WBTC
-            #True, # LINK
+            True, # LINK
             True, # USDC
             True, # USDT
             #True, # AAVE
