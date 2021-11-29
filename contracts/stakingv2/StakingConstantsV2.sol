@@ -31,6 +31,8 @@ contract StakingConstantsV2 {
     uint256 internal constant vestingStartTimestamp =      1594648800; // start_time
     uint256 internal constant vestingCliffTimestamp =      vestingStartTimestamp + cliffDuration;
     uint256 internal constant vestingEndTimestamp =        vestingStartTimestamp + vestingDuration;
+    uint256 internal constant _startingVBZRXBalance =      8893899330e18; // 889,389,933 BZRX
+    uint256 public constant initialCirculatingSupply = 10300000000e18 - 8893899330e18;
  
     address internal constant SUSHI_MASTERCHEF = 0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd;
     uint256 internal constant OOKI_ETH_SUSHI_MASTERCHEF_PID =  335;
@@ -77,5 +79,12 @@ contract StakingConstantsV2 {
         address indexed token,
         uint256 amount
     );
+
+    event AddRewards(
+        address indexed sender,
+        uint256 bzrxAmount,
+        uint256 stableCoinAmount
+    );
+
 
 }

@@ -23,8 +23,6 @@ interface IStakingV2 {
 
     function maxUniswapDisagreement() external view returns (uint256);
 
-    function isPaused() external view returns (bool);
-
     function fundsWallet() external view returns (address);
 
     function callerRewardDivisor() external view returns (uint256);

@@ -37,6 +37,7 @@ contract StakingStateV2 is StakingConstantsV2, Ownable {
     uint256 public iBZRXWeightStored;
     uint256 public LPTokenWeightStored;
 
+    uint256 public lastRewardsAddTime;
     mapping(address => uint256) public vestingLastSync;
 
     struct ProposalState {

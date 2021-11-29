@@ -14,7 +14,7 @@ contract AdminSettings is StakingStateV2 {
         _setTarget(this.exitSushi.selector, target);
         _setTarget(this.setGovernor.selector, target);
         _setTarget(this.setApprovals.selector, target);
-        // _setTarget(this.setVoteDelegator.selector, target);
+        _setTarget(this.setVoteDelegator.selector, target);
     }
 
     // Withdraw all from sushi masterchef

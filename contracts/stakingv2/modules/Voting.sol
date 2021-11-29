@@ -6,8 +6,6 @@
 pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
-import "../StakingStateV2.sol";
-import "../../governance/PausableGuardian.sol";
 import "./Common.sol";
 import "../../governance/GovernorBravoInterfaces.sol";
 import "../delegation/VoteDelegator.sol";
