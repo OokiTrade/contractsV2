@@ -38,6 +38,7 @@ def main():
     #deployment()
     #marginSettings()
     #demandCurve()
+    '''updateOwner()'''
 
 def deployment():
     underlyingSymbol = "LINK"
@@ -225,3 +226,63 @@ def demandCurve():
         
         calldata = loanTokenSettingsLowerAdmin.setDemandCurve.encode_input(0, 20*10**18, 0, 0, 60*10**18, 80*10**18, 120*10**18)
         existingIToken.updateSettings(loanTokenSettingsLowerAdmin.address, calldata, {"from": acct})
+
+'''
+def updateOwner():
+
+    guardian_multisig = "0x82cedB275BF513447300f670708915F99f085FD6"
+
+    ## bZxProtocol
+    c = Contract.from_abi("c", address="0xD154eE4982b83a87b0649E5a7DDA1514812aFE1f", abi=LoanToken.abi, owner=acct)
+    print("old owner:", c.owner())
+    c.transferOwnership(guardian_multisig, {"from": acct})
+    print("new owner:", c.owner())
+    print("----")
+
+    ## PriceFeeds_BSC
+    c = Contract.from_abi("c", address="0x43CCac29802332e1fd3A41264dDbe34cE3073a88", abi=LoanToken.abi, owner=acct)
+    print("old owner:", c.owner())
+    c.transferOwnership(guardian_multisig, {"from": acct})
+    print("new owner:", c.owner())
+    print("----")
+
+    ## SwapsImplUniswapV2_BSC
+    c = Contract.from_abi("c", address="0x6cb2adf7adb4efce3b10ce8933d8a8d70dba7f78", abi=LoanToken.abi, owner=acct)
+    print("old owner:", c.owner())
+    c.transferOwnership(guardian_multisig, {"from": acct})
+    print("new owner:", c.owner())
+    print("----")
+
+    ## FeeExtractAndDistribute_BSC_proxy
+    c = Contract.from_abi("c", address="0x5c9b515f05a0E2a9B14C171E2675dDc1655D9A1c", abi=LoanToken.abi, owner=acct)
+    print("old owner:", c.owner())
+    c.transferOwnership(guardian_multisig, {"from": acct})
+    print("new owner:", c.owner())
+    print("----")
+
+    ## TokenHolder
+    c = Contract.from_abi("c", address="0x55Eb3DD3f738cfdda986B8Eff3fa784477552C61", abi=LoanToken.abi, owner=acct)
+    print("old owner:", c.owner())
+    c.transferOwnership(guardian_multisig, {"from": acct})
+    print("new owner:", c.owner())
+    print("----")
+
+    ## FixedSwapTokenConverter
+    c = Contract.from_abi("c", address="0x5531188E72e63ee80e695099b36a15FDdDcEE6Aa", abi=LoanToken.abi, owner=acct)
+    print("old owner:", c.owner())
+    c.transferOwnership(guardian_multisig, {"from": acct})
+    print("new owner:", c.owner())
+    print("----")
+
+    bzxRegistry = Contract.from_abi("bzxRegistry", address="0x1BE70f29D30bB1D325E5D76Ee73109de3e50A57d", abi=TokenRegistry.abi)
+    supportedTokenAssetsPairs = bzxRegistry.getTokens(0, 100) # TODO move this into a loop for permissionless to support more than 100
+
+    for tokenAssetPairA in supportedTokenAssetsPairs:
+
+        existingIToken = Contract.from_abi("existingIToken", address=tokenAssetPairA[0], abi=LoanToken.abi, owner=acct)
+        print("itoken", existingIToken.name(), tokenAssetPairA[0])
+        print("old owner:", existingIToken.owner())
+        existingIToken.transferOwnership(guardian_multisig, {"from": acct})
+        print("new owner:", existingIToken.owner())
+        print("----")
+'''
