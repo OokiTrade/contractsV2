@@ -91,6 +91,9 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
             loanCloseAmount
         );
 
+        poolTotalPrincipal[loanLocal.lender] = poolTotalPrincipal[loanLocal.lender]
+            .sub(loanCloseAmount);
+
         seizedToken = loanParamsLocal.collateralToken;
 
         if (seizedAmount != 0) {
@@ -161,6 +164,9 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
                 loanLocal.lender,
                 loanCloseAmount
             );
+
+            poolTotalPrincipal[loanLocal.lender] = poolTotalPrincipal[loanLocal.lender]
+                .sub(loanCloseAmount);
         }
 
         if (loanCloseAmount == loanLocal.principal) {
@@ -247,6 +253,9 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
                 loanLocal.lender,
                 loanCloseAmount
             );
+
+            poolTotalPrincipal[loanLocal.lender] = poolTotalPrincipal[loanLocal.lender]
+                .sub(loanCloseAmount);
         }
 
         if (usedCollateral != 0) {

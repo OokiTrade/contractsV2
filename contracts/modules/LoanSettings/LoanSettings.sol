@@ -135,7 +135,7 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents {
         view
         returns (uint256)
     {
-        return _ooipx.poolTotalPrincipal[pool];
+        return poolTotalPrincipal[pool];
     }
 
     function getLoanPrincipal(
