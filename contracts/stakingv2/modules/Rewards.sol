@@ -20,7 +20,7 @@ contract Rewards is Common {
         if (newBZRX != 0 || newStableCoin != 0) {
             _addRewards(newBZRX, newStableCoin);
             if (newBZRX != 0) {
-                IERC20(BZRX).transferFrom(msg.sender, address(this), newBZRX);
+                IERC20(OOKI).transferFrom(msg.sender, address(this), newBZRX);
             }
             if (newStableCoin != 0) {
                 curve3Crv.transferFrom(msg.sender, address(this), newStableCoin);

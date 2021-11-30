@@ -108,6 +108,11 @@ interface IStakingV2 {
 
     function transferOwnership(address newOwner) external;
 
+    function claim(bool restake) external;
+
+    function claimAltRewards() external;
+    
+
     /// Guardian Interface
 
     function _isPaused(bytes4 sig) external view returns (bool isPaused);
