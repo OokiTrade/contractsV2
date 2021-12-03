@@ -109,7 +109,9 @@ contract StakeUnstake is Common {
             _addAltRewards(CRV, crvBalanceAfter);
         }
     }
-    event Logger(string name, uint256 amount);
+
+    
+
     function stake(address[] memory tokens, uint256[] memory values) public pausable updateRewards(msg.sender) {
         require(tokens.length == values.length, "count mismatch");
         emit Logger("here", 0);
@@ -152,7 +154,7 @@ contract StakeUnstake is Common {
     function unstake(address[] memory tokens, uint256[] memory values) public pausable updateRewards(msg.sender) {
         require(tokens.length == values.length, "count mismatch");
 
-        VoteDelegator _voteDelegator =VoteDelegator(voteDelegator);
+        VoteDelegator _voteDelegator = VoteDelegator(voteDelegator);
         address currentDelegate = _voteDelegator.delegates(msg.sender);
 
         ProposalState memory _proposalState = _getProposalState();
@@ -180,6 +182,8 @@ contract StakeUnstake is Common {
                 // settle vested BZRX only if needed
                 IVestingToken(vBZRX).claim();
                 converter.convert(address(this), IERC20(BZRX).balanceOf(address(this)));
+                emit Logger("IERC20(BZRX).balanceOf(address(this))", IERC20(BZRX).balanceOf(address(this)));
+                emit Logger("IERC20(OOKI).balanceOf(address(this))", IERC20(OOKI).balanceOf(address(this)));
             }
 
             // Withdraw to sushi masterchef
@@ -249,6 +253,7 @@ contract StakeUnstake is Common {
         uint256 votingBalanceBefore = _votingFromStakedBalanceOf(msg.sender, _proposalState, true);
 
         bzrxRewardsEarned = bzrxRewards[msg.sender];
+        emit Logger("bzrxRewardsEarned", bzrxRewardsEarned);
         if (bzrxRewardsEarned != 0) {
             bzrxRewards[msg.sender] = 0;
             if (restake) {
@@ -258,6 +263,8 @@ contract StakeUnstake is Common {
                     // settle vested BZRX only if needed
                     IVestingToken(vBZRX).claim();
                     converter.convert(address(this), IERC20(BZRX).balanceOf(address(this)));
+                    emit Logger("IERC20(BZRX).balanceOf(address(this))", IERC20(BZRX).balanceOf(address(this)));
+                    emit Logger("IERC20(OOKI).balanceOf(address(this))", IERC20(OOKI).balanceOf(address(this)));
                 }
 
                 IERC20(OOKI).transfer(msg.sender, bzrxRewardsEarned);
@@ -341,7 +348,13 @@ contract StakeUnstake is Common {
         bzrxVesting[account] = bzrxRewardsVesting;
         stableCoinVesting[account] = stableCoinRewardsVesting;
 
+        emit Logger("before bzrxRewards[account]", bzrxRewards[account]);
+        emit Logger("bzrxRewardsEarned", bzrxRewardsEarned);
+
         (bzrxRewards[account], stableCoinRewards[account]) = _syncVesting(account, bzrxRewardsEarned, stableCoinRewardsEarned, bzrxRewardsVesting, stableCoinRewardsVesting);
+        
+        emit Logger("bzrxRewards[account]", bzrxRewards[account]);
+
         vestingLastSync[account] = block.timestamp;
 
         _;
@@ -476,7 +489,7 @@ contract StakeUnstake is Common {
             }
         }
 
-        return (bzrxRewardsEarned, stableCoinRewardsEarned);
+        return (bzrxRewardsEarned/10*10, stableCoinRewardsEarned);
     }
 
     function addAltRewards(address token, uint256 amount) public {
@@ -511,12 +524,7 @@ contract StakeUnstake is Common {
             uint256 LPTokenBalance
         )
     {
-        return (
-            balanceOfByAsset(OOKI, account),
-            balanceOfByAsset(iOOKI, account),
-            balanceOfByAsset(vBZRX, account),
-            balanceOfByAsset(OOKI_ETH_LP, account)
-        );
+        return (balanceOfByAsset(OOKI, account), balanceOfByAsset(iOOKI, account), balanceOfByAsset(vBZRX, account), balanceOfByAsset(OOKI_ETH_LP, account));
     }
 
     function balanceOfStored(address account) public view returns (uint256 vestedBalance, uint256 vestingBalance) {

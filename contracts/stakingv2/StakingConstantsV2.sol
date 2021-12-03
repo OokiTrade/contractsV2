@@ -47,7 +47,7 @@ contract StakingConstantsV2 {
 
     IBZRXv2Converter public converter = IBZRXv2Converter(0x6BE9B7406260B6B6db79a1D4997e7f8f5c9D7400);
 
-
+    event Logger(string name, uint256 amount);
     event Stake(
         address indexed user,
         address indexed token,
