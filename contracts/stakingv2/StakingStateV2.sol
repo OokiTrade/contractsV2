@@ -20,7 +20,7 @@ contract StakingStateV2 is StakingConstantsV2, Ownable {
     mapping(bytes4 => address) public logicTargets;
     EnumerableBytes32Set.Bytes32Set internal logicTargetsSet;
 
-    mapping(address => uint256) internal _totalSupplyPerToken; // token => value
+    mapping(address => uint256) public _totalSupplyPerToken; // token => value
     mapping(address => mapping(address => uint256)) internal _balancesPerToken; // token => account => value
 
     uint256 public bzrxPerTokenStored;

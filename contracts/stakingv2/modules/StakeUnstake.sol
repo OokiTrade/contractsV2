@@ -29,6 +29,7 @@ contract StakeUnstake is Common {
         _setTarget(this.balanceOfByAsset.selector, target);
         _setTarget(this.balanceOfByAssets.selector, target);
         _setTarget(this.balanceOfStored.selector, target);
+        _setTarget(this.vestedBalanceForAmount.selector, target);
     }
 
     function _pendingSushiRewards(address _user) internal view returns (uint256) {
@@ -362,7 +363,7 @@ contract StakeUnstake is Common {
 
     function earned(address account)
         external
-        view
+         
         returns (
             uint256 bzrxRewardsEarned,
             uint256 stableCoinRewardsEarned,
@@ -396,7 +397,7 @@ contract StakeUnstake is Common {
         uint256 _stableCoinPerToken
     )
         internal
-        view
+        
         returns (
             uint256 bzrxRewardsEarned,
             uint256 stableCoinRewardsEarned,
@@ -411,6 +412,13 @@ contract StakeUnstake is Common {
         stableCoinRewardsEarned = stableCoinRewards[account];
         bzrxRewardsVesting = bzrxVesting[account];
         stableCoinRewardsVesting = stableCoinVesting[account];
+        emit Logger("_e bzrxRewardsEarned", bzrxRewardsEarned);
+        emit Logger("_e stableCoinRewardsEarned", stableCoinRewardsEarned);
+        emit Logger("_e bzrxRewardsVesting", bzrxRewardsVesting);
+        emit Logger("_e stableCoinRewardsVesting", stableCoinRewardsVesting);
+        emit Logger("_e stableCoinPerTokenUnpaid", stableCoinPerTokenUnpaid);
+        emit Logger("_e bzrxPerTokenUnpaid", bzrxPerTokenUnpaid);
+        emit Logger("_e bzrxRewardsPerTokenPaid[account]", bzrxRewardsPerTokenPaid[account]);
 
         if (bzrxPerTokenUnpaid != 0 || stableCoinPerTokenUnpaid != 0) {
             uint256 value;
@@ -418,13 +426,15 @@ contract StakeUnstake is Common {
             uint256 lastSync;
 
             (uint256 vestedBalance, uint256 vestingBalance) = balanceOfStored(account);
-
+            emit Logger("_e vestedBalance", vestedBalance);
+            emit Logger("_e vestingBalance", vestingBalance);
             value = vestedBalance.mul(bzrxPerTokenUnpaid);
             value /= 1e36;
             bzrxRewardsEarned = value.add(bzrxRewardsEarned);
-
+            emit Logger("_e1 bzrxRewardsEarned", bzrxRewardsEarned);
             value = vestedBalance.mul(stableCoinPerTokenUnpaid);
             value /= 1e36;
+            emit Logger("_e1 1 value", value);
             stableCoinRewardsEarned = value.add(stableCoinRewardsEarned);
 
             if (vestingBalance != 0 && bzrxPerTokenUnpaid != 0) {
@@ -432,15 +442,20 @@ contract StakeUnstake is Common {
                 value = vestingBalance.mul(bzrxPerTokenUnpaid);
                 value /= 1e36;
                 bzrxRewardsVesting = bzrxRewardsVesting.add(value);
-
+                emit Logger("_e2 2 bzrxRewardsVesting", bzrxRewardsVesting);
+                emit Logger("_e2 1 value", value);
                 // true up earned amount to vBZRX vesting schedule
                 lastSync = vestingLastSync[account];
+                emit Logger("_e2 lastSync", lastSync);
                 multiplier = vestedBalanceForAmount(1e37, 0, lastSync);
                 value = value.mul(multiplier);
                 value /= 1e36;
                 bzrxRewardsEarned = bzrxRewardsEarned.add(value);
+                emit Logger("_e2 2 value", value);
+                emit Logger("_e2 2 bzrxRewardsEarned", bzrxRewardsEarned);
             }
             if (vestingBalance != 0 && stableCoinPerTokenUnpaid != 0) {
+                
                 // add new vesting amount for 3crv
                 value = vestingBalance.mul(stableCoinPerTokenUnpaid);
                 value /= 1e36;
@@ -454,6 +469,7 @@ contract StakeUnstake is Common {
                 value = value.mul(multiplier);
                 value /= 1e36;
                 stableCoinRewardsEarned = stableCoinRewardsEarned.add(value);
+                emit Logger("_e2 stableCoinRewardsEarned", stableCoinRewardsEarned);
             }
         }
     }

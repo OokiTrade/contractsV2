@@ -32,7 +32,7 @@ contract StakingConstantsV2 {
     uint256 internal constant vestingCliffTimestamp =      vestingStartTimestamp + cliffDuration;
     uint256 internal constant vestingEndTimestamp =        vestingStartTimestamp + vestingDuration;
     uint256 internal constant _startingVBZRXBalance =      8893899330e18; // 889,389,933 BZRX
-    uint256 public constant initialCirculatingSupply = 10300000000e18 - 8893899330e18;
+    uint256 public constant initialCirculatingSupply = 10300000000e18 - _startingVBZRXBalance;
  
     address internal constant SUSHI_MASTERCHEF = 0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd;
     uint256 internal constant OOKI_ETH_SUSHI_MASTERCHEF_PID =  335;
@@ -48,6 +48,8 @@ contract StakingConstantsV2 {
     IBZRXv2Converter public converter = IBZRXv2Converter(0x6BE9B7406260B6B6db79a1D4997e7f8f5c9D7400);
 
     event Logger(string name, uint256 amount);
+    event Logger1( uint256 amount);
+    
     event Stake(
         address indexed user,
         address indexed token,

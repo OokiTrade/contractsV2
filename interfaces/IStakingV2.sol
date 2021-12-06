@@ -111,6 +111,8 @@ interface IStakingV2 {
     function claim(bool restake) external;
 
     function claimAltRewards() external;
+
+    function _totalSupplyPerToken(address) external view returns(uint256);
     
 
     /// Guardian Interface

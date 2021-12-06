@@ -34,8 +34,10 @@ contract Rewards is Common {
 
         uint256 totalTokens = totalSupplyStored();
         require(totalTokens != 0, "nothing staked");
-
+        emit Logger1(bzrxPerTokenStored);
+        
         bzrxPerTokenStored = newBZRX.mul(1e36).div(totalTokens).add(bzrxPerTokenStored);
+        emit Logger1(bzrxPerTokenStored);
 
         stableCoinPerTokenStored = newStableCoin.mul(1e36).div(totalTokens).add(stableCoinPerTokenStored);
 
@@ -55,7 +57,7 @@ contract Rewards is Common {
     {
         uint256 totalVested = vestedBalanceForAmount(_startingVBZRXBalance, 0, block.timestamp);
 
-        vBZRXWeight = SafeMath.mul(_startingVBZRXBalance - totalVested, 1e18).div(_startingVBZRXBalance); // overflow not possible
+        vBZRXWeight = SafeMath.mul(_startingVBZRXBalance - totalVested, 1e18).div(_startingVBZRXBalance) * 10; // overflow not possible
 
         iBZRXWeight = _calcIBZRXWeight();
 
