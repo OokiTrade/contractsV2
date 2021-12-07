@@ -9,7 +9,7 @@ import "@openzeppelin-2.5.0/math/SafeMath.sol";
 import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 import "./VoteDelegationUpgradeable.sol";
 import "../../mixins/EnumerableBytes32Set.sol";
-import "../../../interfaces/IStaking.sol";
+import "../../../interfaces/IStakingV2.sol";
 
 
 contract VoteDelegatorState is VoteDelegationUpgradeable {
@@ -17,7 +17,6 @@ contract VoteDelegatorState is VoteDelegationUpgradeable {
     // A record of each accounts delegate
     // delegator => delegatee
     mapping (address => address) internal _delegates;
-
 
     /// @notice A checkpoint for marking number of votes from a given block
     struct Checkpoint {
@@ -42,4 +41,5 @@ contract VoteDelegatorState is VoteDelegationUpgradeable {
 
     mapping (address => uint256) public totalDelegators;
 
+    IStakingV2 staking;
 }

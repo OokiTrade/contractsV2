@@ -354,6 +354,15 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
     }
 
     /**
+      * @notice Admin function for setting the staking address
+      * @param newStaking address of new staking
+      */
+    function __setStaking(address newStaking) external {
+        require(msg.sender == admin, "GovernorBravo::__setVotingPeriod: admin only");
+        require(newStaking != address(0) , "GovernorBravo::__setVotingPeriod: invalid voting period");
+    }
+
+    /**
       * @notice Admin function for setting the proposal threshold
       * @dev newProposalThreshold must be greater than the hardcoded min
       * @param newProposalThreshold new proposal threshold

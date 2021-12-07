@@ -247,4 +247,9 @@ contract VoteDelegator is VoteDelegatorState, VoteDelegatorConstants, PausableGu
         assembly { chainId := chainid() }
         return chainId;
     }
+
+    function setStaking(address _staking) public onlyOwner {
+        staking = IStakingV2(_staking);
+    }
+
 }
