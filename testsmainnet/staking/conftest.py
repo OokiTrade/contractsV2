@@ -18,9 +18,12 @@ def bzx(accounts, LoanTokenLogicStandard, interface):
     # return Contract.from_explorer("0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f")
 
 @pytest.fixture(scope="module")
-def stakingVoteDelegator(accounts, StakingVoteDelegator):
-    res = StakingVoteDelegator.deploy({'from': accounts[0]})
-    return res;
+def stakingVoteDelegator(accounts, StakingVoteDelegator,Proxy_0_5):
+    stakingVotedelegatorProxy = Contract.from_abi("proxy", "0x7e9d7A0ff725f88Cc6Ab3ccF714a1feA68aC160b", Proxy_0_5.abi)
+    stakingVotedelegatorImpl = StakingVoteDelegator.deploy({'from': accounts[0]})
+    stakingVotedelegatorProxy.replaceImplementation(stakingVotedelegatorImpl, {'from': stakingVotedelegatorProxy.owner()})
+
+    return Contract.from_abi("StakingVoteDelegator", stakingVotedelegatorProxy, StakingVoteDelegator.abi)
 
 @pytest.fixture(scope="module")
 def governance(accounts, GovernorBravoDelegate):
@@ -43,15 +46,6 @@ def stakingV1_1(bzx, StakingProxy, StakingV1_1, POOL3Gauge, accounts, POOL3, sta
     stakingProxy.replaceImplementation(stakingImpl, {'from': stakingProxy.owner()})
 
     res = Contract.from_abi("StakingV1_1", stakingProxy.address, StakingV1_1.abi, owner=accounts[9])
-
-    calldata = stakingAdminSettings.setApprovals.encode_input(POOL3, POOL3Gauge, 2**256-1)
-    res.updateSettings(stakingAdminSettings, calldata, {"from": res.owner()})
-
-    calldata = stakingAdminSettings.setVoteDelegator.encode_input(stakingVoteDelegator.address)
-    res.updateSettings(stakingAdminSettings, calldata, {"from": res.owner()})
-
-    #this will trigger deposit to curve, otherwise claim() will fail, because it will try to withdraw from pool
-    res.claimCrv({'from': res.owner()})
     return res;
 
 @pytest.fixture(scope="function", autouse=True)

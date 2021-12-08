@@ -12,7 +12,7 @@ def main():
 def deployProtocol():
     global deploys, bzx, tokens, constants, addresses, thisNetwork, acct
 
-    acct = accounts.load('deployer1')
+    acct = accounts.load('fresh_deployer1')
     print("Loaded account",acct)
 
     constants = shared.Constants()
@@ -21,14 +21,15 @@ def deployProtocol():
     ### DEPLOYMENT START ###
 
     print("Deploying bZxProtocol.")
-    #bzxproxy = acct.deploy(bZxProtocol)
-    bzx = Contract.from_abi("bzx", address="0xfe4F0eb0A1Ad109185c9AaDE64C48ff8e928e54B", abi=interface.IBZx.abi, owner=acct)
-    _add_contract(bzx)
+    #bzx = acct.deploy(bZxProtocol)
+    bzx = Contract.from_abi("bzx", address="0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8", abi=interface.IBZx.abi, owner=acct)
+    #_add_contract(bzx)
 
     ## PriceFeeds
     print("Deploying PriceFeeds.")
-    feeds = acct.deploy(PriceFeeds_POLYGON)
-    #feeds = Contract.from_abi("feeds", address=bzx.priceFeeds(), abi=PriceFeeds.abi, owner=acct)
+    #feeds = acct.deploy(PriceFeeds_POLYGON)
+    #feeds = Contract.from_abi("feeds", address=bzx.priceFeeds(), abi=PriceFeeds_POLYGON.abi, owner=acct)
+    feeds = Contract.from_abi("feeds", address="0x600F8E7B10CF6DA18871Ff79e4A61B13caCEd9BC", abi=PriceFeeds_POLYGON.abi, owner=acct)
     '''
 Tom Bean - bZx.network / fulcrum.trade, [21.05.21 11:09]
 list: MATIC, BZRX, ETH, WBTC, QUICK, AAVE, LINK, USDC, USDT
@@ -37,6 +38,7 @@ Tom Bean - bZx.network / fulcrum.trade, [21.05.21 11:09]
 and PGOV, PGOV/MATIC, and wvBZRX on the farming page
     '''
 
+    '''
     print("Calling setDecimals.")
     feeds.setDecimals(
         [
@@ -77,11 +79,12 @@ and PGOV, PGOV/MATIC, and wvBZRX on the farming page
             #"", # QUICK
         ]
     , {"from": acct})
-
+    '''
 
     ## SwapImpl
     print("Deploying Swaps.")
-    swaps = acct.deploy(SwapsImplUniswapV2_POLYGON)
+    #swaps = acct.deploy(SwapsImplUniswapV2_POLYGON)
+    swaps = Contract.from_abi("swaps", address="0x463c80e2c99965791865612EdD0C81C26AB5EbEC", abi=SwapsImplUniswapV2_POLYGON.abi, owner=acct)
 
     ## ProtocolSettings
     print("Deploying ProtocolSettings.")
@@ -134,8 +137,8 @@ and PGOV, PGOV/MATIC, and wvBZRX on the farming page
             "0x53e0bca35ec356bd5dddfebbd1fc0fd03fabad39", # LINK
             "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", # USDC
             "0xc2132D05D31c914a87C6611C10748AEb04B58e8F", # USDT
-            "0xD6DF932A45C0f255f85145f286eA0b292B21C90B", # AAVE
-            "0x54cFe73f2c7d0c4b62Ab869B473F5512Dc0944D2", # BZRX
+            #"0xD6DF932A45C0f255f85145f286eA0b292B21C90B", # AAVE
+            #"0x54cFe73f2c7d0c4b62Ab869B473F5512Dc0944D2", # BZRX
             #"0x831753DD7087CaC61aB5644b308642cc1c33Dc13", # QUICK
         ],
         [
@@ -145,8 +148,8 @@ and PGOV, PGOV/MATIC, and wvBZRX on the farming page
             True, # LINK
             True, # USDC
             True, # USDT
-            True, # AAVE
-            True, # BZRX
+            #True, # AAVE
+            #True, # BZRX
             #True, # QUICK
         ],
         True
@@ -161,7 +164,7 @@ and PGOV, PGOV/MATIC, and wvBZRX on the farming page
         external
         onlyOwner'''
 
-    bzx.setFeesController(acct.address)
+    bzx.setFeesController("0xf970FA9E6797d0eBfdEE8e764FC5f3123Dc6befD")
 
     ## LoanSettings
     print("Deploying LoanSettings.")
@@ -192,3 +195,11 @@ and PGOV, PGOV/MATIC, and wvBZRX on the farming page
     swapsExternal = acct.deploy(SwapsExternal)
     print("Calling replaceContract.")
     bzx.replaceContract(swapsExternal.address)
+
+    ## ProtocolPausableGuardian
+    print("Deploying ProtocolPausableGuardian.")
+    protocolPausableGuardian = acct.deploy(ProtocolPausableGuardian)
+    print("Calling replaceContract.")
+    bzx.replaceContract(protocolPausableGuardian)
+
+    bzx.changeGuardian("0x01F569df8A270eCA78597aFe97D30c65D8a8ca80")  # polygon guardian multisig

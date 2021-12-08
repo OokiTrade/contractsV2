@@ -15,7 +15,9 @@ import "../../interfaces/IStaking.sol";
 contract StakingVoteDelegatorState is StakingUpgradeable {
 
     // A record of each accounts delegate
+    // delegator => delegatee
     mapping (address => address) internal _delegates;
+
 
     /// @notice A checkpoint for marking number of votes from a given block
     struct Checkpoint {
@@ -37,5 +39,7 @@ contract StakingVoteDelegatorState is StakingUpgradeable {
 
     /// @notice A record of states for signing / validating signatures
     mapping (address => uint) public nonces;
+
+    mapping (address => uint256) public totalDelegators;
 
 }
