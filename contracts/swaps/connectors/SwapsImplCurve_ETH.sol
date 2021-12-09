@@ -16,7 +16,7 @@ contract SwapsImplCurve_ETH is State, ISwapsImpl {
     using SafeERC20 for IERC20;
     using Path for bytes;
     using BytesLib for bytes;
-	address public constant PoolRegistry = address(0); //set to address for monitoring Curve pools
+	address public constant PoolRegistry = 0x63fea6E447F120B8Faf85B53cdaD8348e645D80E; //set to address for monitoring Curve pools
 	bytes4 public constant ExchangeUnderlyingSig = bytes4(keccak256("exchange_underlying(uint256,uint256,uint256,uint256)"));
 	bytes4 public constant ExchangeSig = bytes4(keccak256("exchange(uint256,uint256,uint256,uint256)"));
 	bytes4 public constant GetDySig = bytes4(keccak256("get_dy(uint256,uint256,uint256)"));
@@ -113,14 +113,14 @@ contract SwapsImplCurve_ETH is State, ISwapsImpl {
 		uint256 amountOut;
 		if(sig == GetDySig || sig == ExchangeSig){
 			amountOut = ICurve(curvePool).get_dy(
-				tokenOut,
-				tokenIn,
+				int128(tokenOut),
+				int128(tokenIn),
 				amountIn
 			);
 		}else if(sig == GetDyUnderlyingSig || sig == ExchangeUnderlyingSig){
 			amountOut = ICurve(curvePool).get_dy_underlying(
-				tokenOut,
-				tokenIn,
+				int128(tokenOut),
+				int128(tokenIn),
 				amountIn
 			);	
 		}else{
@@ -143,14 +143,14 @@ contract SwapsImplCurve_ETH is State, ISwapsImpl {
 		uint256 amountIn;
 		if(sig == GetDySig || sig == ExchangeSig){
 			amountIn = ICurve(curvePool).get_dy(
-				tokenOut,
-				tokenIn,
+				int128(tokenOut),
+				int128(tokenIn),
 				amountOut
 			);
 		}else if(sig == GetDyUnderlyingSig || sig == ExchangeUnderlyingSig){
 			amountIn = ICurve(curvePool).get_dy_underlying(
-				tokenOut,
-				tokenIn,
+				int128(tokenOut),
+				int128(tokenIn),
 				amountOut
 			);	
 		}else{
@@ -162,13 +162,13 @@ contract SwapsImplCurve_ETH is State, ISwapsImpl {
         return amountIn;
     }
 
-    function setSwapApprovals(address[] memory tokens) public  {
+    function setSwapApprovalsCurve(address spender,address[] memory tokens) public  {
         require(
-            ICurvePoolRegistration(PoolRegistry).CheckPoolValidity(tokens[0])
+            ICurvePoolRegistration(PoolRegistry).CheckPoolValidity(spender)
         );
         for (uint256 i = 1; i < tokens.length; i++) {
-            IERC20(tokens[i]).safeApprove(tokens[0], 0);
-            IERC20(tokens[i]).safeApprove(tokens[0], uint256(-1));
+            IERC20(tokens[i]).safeApprove(spender, 0);
+            IERC20(tokens[i]).safeApprove(spender, uint256(-1));
         }
     }
 
@@ -176,7 +176,13 @@ contract SwapsImplCurve_ETH is State, ISwapsImpl {
         internal
         returns (address)
     {
-        return ICurve(pool).underlying_coins(tokenID);
+		address token = address(0);
+		if(ICurvePoolRegistration(PoolRegistry).getPoolType(pool) == 0){
+			token = ICurve(pool).underlying_coins(tokenID);
+		}else{
+			token = ICurve(pool).coins(tokenID);
+		}
+		return token;
     }
 
     function _swapWithCurve(
@@ -208,13 +214,12 @@ contract SwapsImplCurve_ETH is State, ISwapsImpl {
                 requiredDestTokenAmount
             );
             require(
-                amountIn >= minSourceTokenAmount &&
-                    amountIn <= sourceTokenAmount
+				amountIn <= sourceTokenAmount, "too much"
             );
 			if(sig==ExchangeUnderlyingSig){
-				ICurve(curvePool).exchange_underlying(tokenIn, tokenOut, amountIn, 1);
+				ICurve(curvePool).exchange_underlying(int128(tokenIn), int128(tokenOut), amountIn, 1);
 			}else if(sig==ExchangeSig){
-				ICurve(curvePool).exchange_underlying(tokenIn, tokenOut, amountIn, 1);
+				ICurve(curvePool).exchange(int128(tokenIn), int128(tokenOut), amountIn, 1);
 			}else{
 				revert("Unsupported Signature");
 			}
@@ -236,20 +241,22 @@ contract SwapsImplCurve_ETH is State, ISwapsImpl {
                     curvePool
                 )
             );
-            require(sourceTokenAddress == _getDexNumber(curvePool, tokenIn));
-            require(destTokenAddress == _getDexNumber(curvePool, tokenOut));
+			
+            require(sourceTokenAddress == _getDexNumber(curvePool, tokenIn),"source token number off");
+            require(destTokenAddress == _getDexNumber(curvePool, tokenOut),"dest token number off");
+
             (uint256 recv, ) = dexAmountOut(payload, minSourceTokenAmount);
 			if(sig == ExchangeUnderlyingSig){
 				ICurve(curvePool).exchange_underlying(
-					tokenIn,
-					tokenOut,
+					int128(tokenIn),
+					int128(tokenOut),
 					minSourceTokenAmount,
 					1
 				);
 			}else if(sig == ExchangeSig){
 				ICurve(curvePool).exchange(
-					tokenIn,
-					tokenOut,
+					int128(tokenIn),
+					int128(tokenOut),
 					minSourceTokenAmount,
 					1
 				);	

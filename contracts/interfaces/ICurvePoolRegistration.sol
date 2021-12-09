@@ -10,4 +10,6 @@ interface ICurvePoolRegistration {
     function disablePool(address tokenPool) external;
 
     function CheckPoolValidity(address pool) external view returns (bool);
+	
+	function getPoolType(address tokenPool) external view returns (uint256);
 }

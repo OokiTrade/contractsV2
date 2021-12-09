@@ -98,12 +98,13 @@ contract SwapsImplKyber is State, ISwapsImpl {
     }
 
     function setSwapApprovals(
+		address spender,
         address[] memory tokens)
         public
     {
         for (uint256 i = 0; i < tokens.length; i++) {
-            IERC20(tokens[i]).safeApprove(kyberContract, 0);
-            IERC20(tokens[i]).safeApprove(kyberContract, uint256(-1));
+            IERC20(tokens[i]).safeApprove(spender, 0);
+            IERC20(tokens[i]).safeApprove(spender, uint256(-1));
         }
     }
 

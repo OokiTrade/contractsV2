@@ -90,7 +90,7 @@ contract LoanClosings is LoanClosingsBase {
         address receiver,
         uint256 swapAmount, // denominated in collateralToken
         bool returnTokenIsCollateral, // true: withdraws collateralToken, false: withdraws loanToken
-        bytes memory /*loanDataBytes*/) // for future use
+        bytes memory loanDataBytes) // for future use
         public
         nonReentrant
         returns (
@@ -104,7 +104,7 @@ contract LoanClosings is LoanClosingsBase {
             receiver,
             swapAmount,
             returnTokenIsCollateral,
-            "" // loanDataBytes
+            loanDataBytes
         );
     }
 }

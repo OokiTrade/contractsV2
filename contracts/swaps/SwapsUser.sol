@@ -198,7 +198,6 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
 			);
 		}
 
-
         bool success;
         (success, data) = swapImplAddress.delegatecall(data);
         if (!success) {

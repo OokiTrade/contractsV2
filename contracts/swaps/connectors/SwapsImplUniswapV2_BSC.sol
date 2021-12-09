@@ -221,12 +221,13 @@ contract SwapsImplUniswapV2_BSC is State, ISwapsImpl {
     }
 
     function setSwapApprovals(
+		address spender,
         address[] memory tokens)
         public
     {
         for (uint256 i = 0; i < tokens.length; i++) {
-            IERC20(tokens[i]).safeApprove(uniswapRouter, 0);
-            IERC20(tokens[i]).safeApprove(uniswapRouter, uint256(-1));
+            IERC20(tokens[i]).safeApprove(spender, 0);
+            IERC20(tokens[i]).safeApprove(spender, uint256(-1));
         }
     }
 

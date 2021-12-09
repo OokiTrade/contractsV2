@@ -405,7 +405,6 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
                 .div(loanLocal.collateral);
         }
         require(loanCloseAmount != 0, "loanCloseAmount == 0");
-
         uint256 loanCloseAmountLessInterest = _settleInterestToPrincipal(
             loanLocal,
             loanParamsLocal,
