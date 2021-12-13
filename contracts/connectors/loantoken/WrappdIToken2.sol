@@ -9,12 +9,12 @@ pragma solidity ^0.8.0;
 import "@openzeppelin-4.3.2/token/ERC20/ERC20.sol";
 import "@openzeppelin-4.3.2/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin-4.3.2/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin-4.3.2/utils/math/SafeMath.sol";
+// import "@openzeppelin-4.3.2/utils/math/SafeMath.sol";
 import "../../proxies/0_8/Upgradeable_0_8.sol";
 import "../../../interfaces/IToken.sol";
 
 contract WrappdIToken2 is Upgradeable_0_8, ERC20Burnable {
-    using SafeMath for uint256;
+    // using SafeMath for uint256;
 
     uint256 public constant WEI_PRECISION = 10**20;
     address public loanTokenAddress;
@@ -86,11 +86,11 @@ contract WrappdIToken2 is Upgradeable_0_8, ERC20Burnable {
     }
 
     function balanceOf(address account) public view override returns (uint256) {
-        return super.balanceOf(account).mul(tokenPrice()).mul(100).div(WEI_PRECISION);
+        return super.balanceOf(account) * (tokenPrice()) * (100) / (WEI_PRECISION);
     }
 
     function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
-        amount = amount.mul(WEI_PRECISION).div(tokenPrice()).div(100);
+        amount = amount * (WEI_PRECISION) / (tokenPrice()) / (100);
         return super.transfer(recipient, amount);
     }
 
@@ -99,12 +99,12 @@ contract WrappdIToken2 is Upgradeable_0_8, ERC20Burnable {
         address recipient,
         uint256 amount
     ) public virtual override returns (bool) {
-        amount = amount.mul(WEI_PRECISION).div(tokenPrice()).div(100);
+        amount = amount * (WEI_PRECISION) / (tokenPrice()) / (100);
         return super.transferFrom(sender, recipient, amount);
     }
 
     function totalSupply() public view virtual override returns (uint256) {
-        return super.totalSupply().mul(tokenPrice());
+        return super.totalSupply() * (tokenPrice());
     }
 
     function mint(address recv, uint256 depositAmount) public {
