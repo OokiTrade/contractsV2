@@ -27,9 +27,9 @@ contract WrappdIToken2 is Upgradeable_0_8, ERC20Burnable {
 
     constructor() ERC20("TODO Token", "TODO") {}
 
-    function initialize(uint256 amount) public onlyOwner {
-        _mint(msg.sender, amount);
-    }
+    // function initialize(uint256 amount) public onlyOwner {
+    //     _mint(msg.sender, amount);
+    // }
 
     function initialize() public onlyOwner {
         DOMAIN_SEPARATOR = keccak256(
@@ -41,10 +41,6 @@ contract WrappdIToken2 is Upgradeable_0_8, ERC20Burnable {
                 address(this)
             )
         );
-    }
-
-    function mint(address _to, uint256 _amount) public onlyOwner {
-        _mint(_to, _amount);
     }
 
     function rescue(IERC20 _token) public onlyOwner {
@@ -95,8 +91,7 @@ contract WrappdIToken2 is Upgradeable_0_8, ERC20Burnable {
 
     function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
         amount = amount.mul(WEI_PRECISION).div(tokenPrice()).div(100);
-        _transfer(_msgSender(), recipient, amount);
-        return true;
+        return super.transfer(recipient, amount);
     }
 
     function transferFrom(
@@ -105,18 +100,25 @@ contract WrappdIToken2 is Upgradeable_0_8, ERC20Burnable {
         uint256 amount
     ) public virtual override returns (bool) {
         amount = amount.mul(WEI_PRECISION).div(tokenPrice()).div(100);
-        _transfer(sender, recipient, amount);
-
-        uint256 currentAllowance = super.allowance(sender, _msgSender());
-        require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
-        unchecked {
-            _approve(sender, _msgSender(), currentAllowance - amount);
-        }
-
-        return true;
+        return super.transferFrom(sender, recipient, amount);
     }
 
     function totalSupply() public view virtual override returns (uint256) {
         return super.totalSupply().mul(tokenPrice());
+    }
+
+    function mint(address recv, uint256 depositAmount) public {
+        IERC20(loanTokenAddress).transferFrom(msg.sender, address(this), depositAmount);
+        _mint(recv, depositAmount);
+    }
+
+    function burn(address recv, uint256 burnAmount) public {
+        uint256 amount = super.balanceOf(_msgSender());
+        if (burnAmount > amount) {
+            burnAmount = amount;
+        }
+
+        _burn(_msgSender(), burnAmount);
+        IERC20(loanTokenAddress).transfer(recv, burnAmount);
     }
 }
