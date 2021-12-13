@@ -89,6 +89,10 @@ contract WrappdIToken2 is Upgradeable_0_8, ERC20Burnable {
         return super.balanceOf(account) * (tokenPrice()) * (100) / (WEI_PRECISION);
     }
 
+	function balanceOfUnderlying(address account) public view returns (uint256) {
+		return super.balanceOf(account);
+	}
+
     function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
         amount = amount * (WEI_PRECISION) / (tokenPrice()) / (100);
         return super.transfer(recipient, amount);
@@ -104,7 +108,7 @@ contract WrappdIToken2 is Upgradeable_0_8, ERC20Burnable {
     }
 
     function totalSupply() public view virtual override returns (uint256) {
-        return super.totalSupply() * (tokenPrice());
+        return super.totalSupply() * (tokenPrice()) * (100) / (WEI_PRECISION);
     }
 
     function mint(address recv, uint256 depositAmount) public {
