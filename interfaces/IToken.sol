@@ -3,7 +3,7 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity >=0.5.0 <=0.8.4;
+pragma solidity >=0.5.0 <=0.8.6;
 pragma experimental ABIEncoderV2;
 // import "@openzeppelin-3.4.0/token/ERC20/IERC20.sol";
 
@@ -49,7 +49,7 @@ interface IToken {
         address collateralTokenAddress, // if address(0), this means ETH and ETH must be sent with the call or loanId must be provided
         address borrower,
         address receiver,
-        bytes memory /*loanDataBytes*/ // arbitrary order data (for future use)
+        bytes calldata /*loanDataBytes*/ // arbitrary order data (for future use)
     ) external payable returns (LoanOpenData memory);
 
     function borrowWithGasToken(
@@ -61,7 +61,7 @@ interface IToken {
         address borrower,
         address receiver,
         address gasTokenUser, // specifies an address that has given spend approval for gas/chi token
-        bytes memory /*loanDataBytes*/ // arbitrary order data (for future use)
+        bytes calldata /*loanDataBytes*/ // arbitrary order data (for future use)
     ) external payable returns (LoanOpenData memory);
 
     function marginTrade(
@@ -71,7 +71,7 @@ interface IToken {
         uint256 collateralTokenSent,
         address collateralTokenAddress,
         address trader,
-        bytes memory loanDataBytes // arbitrary order data
+        bytes calldata loanDataBytes // arbitrary order data
     ) external payable returns (LoanOpenData memory);
 
     function marginTradeWithGasToken(
@@ -82,7 +82,7 @@ interface IToken {
         address collateralTokenAddress,
         address trader,
         address gasTokenUser, // specifies an address that has given spend approval for gas/chi token
-        bytes memory loanDataBytes // arbitrary order data
+        bytes calldata loanDataBytes // arbitrary order data
     ) external payable returns (LoanOpenData memory);
 
     function profitOf(address user) external view returns (int256);
