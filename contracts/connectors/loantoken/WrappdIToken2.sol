@@ -122,11 +122,16 @@ contract WrappdIToken2 is Upgradeable_0_8, ERC20Burnable {
         _mint(recv, depositAmount);
     }
 
+/*	function setApproval() public {
+		IERC20(loanTokenAddress).approve(iTokenAddress,0);
+		IERC20(loanTokenAddress).approve(iTokenAddress,2**256 - 1);
+	}
+
 	function mintFromLoanToken(address recv, uint256 depositAmount) public {
         IERC20(loanTokenAddress).transferFrom(msg.sender, address(this), depositAmount);
 		_mint(recv, IToken(iTokenAddress).mint(address(this), depositAmount));
 	}
-
+*/
     function burn(address recv, uint256 burnAmount) public {
         uint256 amount = super.balanceOf(_msgSender());
         if (burnAmount > amount) {
@@ -137,7 +142,7 @@ contract WrappdIToken2 is Upgradeable_0_8, ERC20Burnable {
         IERC20(iTokenAddress).transfer(recv, burnAmount);
     }
 	
-	function burnToLoanToken(address recv, uint256 burnAmount) public {
+/*	function burnToLoanToken(address recv, uint256 burnAmount) public {
         uint256 amount = super.balanceOf(_msgSender());
         if (burnAmount > amount) {
             burnAmount = amount;
@@ -145,5 +150,5 @@ contract WrappdIToken2 is Upgradeable_0_8, ERC20Burnable {
 
         _burn(_msgSender(), burnAmount);
 		IERC20(loanTokenAddress).transfer(recv, IToken(iTokenAddress).burn(address(this),burnAmount));
-	}
+	}*/
 }
