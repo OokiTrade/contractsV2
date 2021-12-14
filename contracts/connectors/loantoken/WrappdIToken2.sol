@@ -17,7 +17,8 @@ contract WrappdIToken2 is Upgradeable_0_8, ERC20Burnable {
     // using SafeMath for uint256;
 
     uint256 public constant WEI_PRECISION = 10**20;
-    address public loanTokenAddress;
+    address public iTokenAddress;
+	address public loanTokenAddress;
 
     bytes32 public DOMAIN_SEPARATOR;
     // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
@@ -42,8 +43,13 @@ contract WrappdIToken2 is Upgradeable_0_8, ERC20Burnable {
             )
         );
     }
-
-    function rescue(IERC20 _token) public onlyOwner {
+	
+	function setLoanTokenAddress(address iToken, address loanToken) public onlyOwner{
+		iTokenAddress=iToken;
+		loanTokenAddress=loanToken;
+	}
+    
+	function rescue(IERC20 _token) public onlyOwner {
         SafeERC20.safeTransfer(_token, msg.sender, _token.balanceOf(address(this)));
     }
 
@@ -82,7 +88,7 @@ contract WrappdIToken2 is Upgradeable_0_8, ERC20Burnable {
     }
 
     function tokenPrice() public view returns (uint256) {
-        return IToken(loanTokenAddress).tokenPrice();
+        return IToken(iTokenAddress).tokenPrice();
     }
 
     function balanceOf(address account) public view override returns (uint256) {
@@ -110,11 +116,16 @@ contract WrappdIToken2 is Upgradeable_0_8, ERC20Burnable {
     function totalSupply() public view virtual override returns (uint256) {
         return super.totalSupply() * (tokenPrice()) * (100) / (WEI_PRECISION);
     }
-
+	
     function mint(address recv, uint256 depositAmount) public {
-        IERC20(loanTokenAddress).transferFrom(msg.sender, address(this), depositAmount);
+        IERC20(iTokenAddress).transferFrom(msg.sender, address(this), depositAmount);
         _mint(recv, depositAmount);
     }
+
+	function mintFromLoanToken(address recv, uint256 depositAmount) public {
+        IERC20(loanTokenAddress).transferFrom(msg.sender, address(this), depositAmount);
+		_mint(recv, IToken(iTokenAddress).mint(address(this), depositAmount));
+	}
 
     function burn(address recv, uint256 burnAmount) public {
         uint256 amount = super.balanceOf(_msgSender());
@@ -123,6 +134,16 @@ contract WrappdIToken2 is Upgradeable_0_8, ERC20Burnable {
         }
 
         _burn(_msgSender(), burnAmount);
-        IERC20(loanTokenAddress).transfer(recv, burnAmount);
+        IERC20(iTokenAddress).transfer(recv, burnAmount);
     }
+	
+	function burnToLoanToken(address recv, uint256 burnAmount) public {
+        uint256 amount = super.balanceOf(_msgSender());
+        if (burnAmount > amount) {
+            burnAmount = amount;
+        }
+
+        _burn(_msgSender(), burnAmount);
+		IERC20(loanTokenAddress).transfer(recv, IToken(iTokenAddress).burn(address(this),burnAmount));
+	}
 }
