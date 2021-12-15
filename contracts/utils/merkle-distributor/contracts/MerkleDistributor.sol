@@ -54,7 +54,7 @@ contract MerkleDistributor is IMerkleDistributor, Ownable {
         uint256 airdropIndex,
         address account,
         uint256 amount
-    ) external override onlyOwner {
+    ) external onlyOwner {
 
         address source = airdropSource[airdropIndex];
         address token = airdropToken[airdropIndex];
@@ -75,7 +75,7 @@ contract MerkleDistributor is IMerkleDistributor, Ownable {
         uint256 amount,
         address sendTo,
         bytes32[] calldata merkleProof
-    ) external override onlyOwner {
+    ) external onlyOwner {
         require(!isClaimed(airdropIndex, index), "MerkleDistributor: Drop already claimed.");
 
         // Verify the merkle proof.
