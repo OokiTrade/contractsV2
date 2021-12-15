@@ -26,7 +26,7 @@
 
 ## Introduction
 
-- Allocate 30m to guardian multisig to compensate victims who lost BZRX due to hack (positions, lend, infinite approval), and 32m vBZRX to team lost funds
+- convert treasury funds
 
 ## Proposal Calls
 
