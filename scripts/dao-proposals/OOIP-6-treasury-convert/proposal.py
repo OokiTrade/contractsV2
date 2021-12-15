@@ -1,4 +1,5 @@
 exec(open("./scripts/env/set-eth.py").read())
+exec(open("./scripts/env/common-functions.py").read())
 import math
 
 # def main():
@@ -71,5 +72,6 @@ signatures = [""] * len(targets)  # empty signatures array
 
 
 # Make proposal
-DAO.propose(targets, values, signatures, calldatas, description, {'from': acct, "required_confs": 1})
+calldata = DAO.propose.encode_input(targets, values, signatures, calldatas, description)
+safe = ApeSafe(TEAM_VOTING_MULTISIG)
 

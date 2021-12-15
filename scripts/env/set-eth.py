@@ -41,7 +41,8 @@ FEE_EXTRACTOR = Contract.from_abi("FEE_EXTRACTOR", BZX.feesController(), FeeExtr
 
 DAO = Contract.from_abi("governorBravoDelegator", address="0x9da41f7810c2548572f4Fa414D06eD9772cA9e6E", abi=GovernorBravoDelegate.abi)
 TIMELOCK = Contract.from_abi("TIMELOCK", address="0xfedC4dD5247B93feb41e899A09C44cFaBec29Cbc", abi=Timelock.abi)
-
+GUARDIAN_MULTISIG = "0x9B43a385E08EE3e4b402D4312dABD11296d09E93"
+TEAM_VOTING_MULTISIG = "0x02c6819c2cb8519ab72fd1204a8a0992b5050c6e"
 
 CRV = Contract.from_abi("CRV", "0xD533a949740bb3306d119CC777fa900bA034cd52", TestToken.abi)
 CRV_MINER  = Contract.from_abi("ICurveMinter", "0xd061D61a4d941c39E5453435B6345Dc261C2fcE0", interface.ICurveMinter.abi)
