@@ -105,6 +105,7 @@ contract MerkleDistributor is IMerkleDistributor, Ownable {
         bytes32[] calldata merkleProof
     ) external override {
         require(!isClaimed(airdropIndex, index), "MerkleDistributor: Drop already claimed.");
+        require(account == msg.sender, "MerkleDistributor: account != sender");
 
         // Verify the merkle proof.
         bytes32 node = keccak256(abi.encodePacked(index, account, amount));
