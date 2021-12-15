@@ -22,7 +22,7 @@
   
 </div>
 
-# OOIP-4 DAO proposal to compensate bzrx victim of the hack
+# OOIP-6 DAO treasury convert
 
 ## Introduction
 
