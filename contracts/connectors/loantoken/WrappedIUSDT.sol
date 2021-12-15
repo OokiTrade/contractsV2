@@ -14,7 +14,7 @@ import "@openzeppelin-4.3.2/token/ERC20/utils/SafeERC20.sol";
 import "../../proxies/0_8/Upgradeable_0_8.sol";
 import "../../../interfaces/IToken.sol";
 
-contract WrappdIToken2 is Upgradeable_0_8, ERC20Burnable {
+contract WrappedIUSDT is Upgradeable_0_8, ERC20Burnable {
     // using SafeMath for uint256;
 
     uint256 public constant WEI_PRECISION = 10**20;
@@ -59,12 +59,12 @@ contract WrappdIToken2 is Upgradeable_0_8, ERC20Burnable {
 
     // constructor does not modify proxy storage
     function name() public view override returns (string memory) {
-        return "TODO Token";
+        return "Wrapped iToken USDT";
     }
 
     // constructor does not modify proxy storage
     function symbol() public view override returns (string memory) {
-        return "TODO";
+        return "WIUSDT";
     }
 
     function permit(
