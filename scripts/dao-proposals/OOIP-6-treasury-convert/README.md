@@ -30,11 +30,12 @@
 
 ## Proposal Calls
 
-1. BZRX_CONVERTER.convert(TIMELOCK, BZRX.balanceOf(TIMELOCK), {'from': TIMELOCK})
-2. BZX.setFeeController(address(0))
-3. BZX.setBorrowingFeePercent(0)
-4. BZX.setLoanPool([iOOKI], [OOKI])
-5. BZX.setLiquidationIncentivePercent(...) for iOOKI, this doesn't enable it for trading nor being as collateral
+1. BZRX.approve(BZRX_CONVERTER, amount)
+2. BZRX_CONVERTER.convert(TIMELOCK, BZRX.balanceOf(TIMELOCK), {'from': TIMELOCK})
+3. BZX.setFeeController(address(0))
+4. BZX.setBorrowingFeePercent(0)
+5. BZX.setLoanPool([iOOKI], [OOKI])
+6. BZX.setLiquidationIncentivePercent(...) for iOOKI, this doesn't enable it for trading nor being as collateral
 
 
 
