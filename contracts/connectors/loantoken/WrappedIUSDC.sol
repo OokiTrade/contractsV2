@@ -26,7 +26,7 @@ contract WrappedIUSDC is Upgradeable_0_8, ERC20Burnable {
 
     mapping(address => uint256) public nonces;
 
-    constructor() ERC20("TODO Token", "TODO") {}
+    constructor() ERC20("Wrapped iToken USDC", "WIUSDC") {}
 
     // function initialize(uint256 amount) public onlyOwner {
     //     _mint(msg.sender, amount);
@@ -36,7 +36,7 @@ contract WrappedIUSDC is Upgradeable_0_8, ERC20Burnable {
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(
                 keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
-                keccak256(bytes("TODO Token")),
+                keccak256(bytes("Wrapped iToken USDC")),
                 keccak256(bytes("1")),
                 block.chainid,
                 address(this)
@@ -76,10 +76,10 @@ contract WrappedIUSDC is Upgradeable_0_8, ERC20Burnable {
         bytes32 r,
         bytes32 s
     ) external {
-        require(deadline >= block.timestamp, "TODO: EXPIRED");
+        require(deadline >= block.timestamp, "WIUSDC: EXPIRED");
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline))));
         address recoveredAddress = ecrecover(digest, v, r, s);
-        require(recoveredAddress != address(0) && recoveredAddress == owner, "TODO: INVALID_SIGNATURE");
+        require(recoveredAddress != address(0) && recoveredAddress == owner, "WIUSDC: INVALID_SIGNATURE");
         _approve(owner, spender, value);
     }
 
@@ -126,16 +126,16 @@ contract WrappedIUSDC is Upgradeable_0_8, ERC20Burnable {
         _mint(recv, depositAmount);
     }
 
-/*	function setApproval() public {
+	function setApproval() public onlyOwner {
 		IERC20(loanTokenAddress).approve(iTokenAddress,0);
-		IERC20(loanTokenAddress).approve(iTokenAddress,2**256 - 1);
+		IERC20(loanTokenAddress).approve(iTokenAddress,type(uint256).max);
 	}
 
 	function mintFromLoanToken(address recv, uint256 depositAmount) public {
         IERC20(loanTokenAddress).transferFrom(msg.sender, address(this), depositAmount);
 		_mint(recv, IToken(iTokenAddress).mint(address(this), depositAmount));
 	}
-*/
+
     function burn(address recv, uint256 burnAmount) public {
         uint256 amount = super.balanceOf(_msgSender());
         if (burnAmount > amount) {
@@ -146,13 +146,13 @@ contract WrappedIUSDC is Upgradeable_0_8, ERC20Burnable {
         IERC20(iTokenAddress).transfer(recv, burnAmount);
     }
 	
-/*	function burnToLoanToken(address recv, uint256 burnAmount) public {
+	function burnToLoanToken(address recv, uint256 burnAmount) public {
         uint256 amount = super.balanceOf(_msgSender());
         if (burnAmount > amount) {
             burnAmount = amount;
         }
 
         _burn(_msgSender(), burnAmount);
-		IERC20(loanTokenAddress).transfer(recv, IToken(iTokenAddress).burn(address(this),burnAmount));
-	}*/
+		IToken(iTokenAddress).burn(recv,burnAmount);
+	}
 }
