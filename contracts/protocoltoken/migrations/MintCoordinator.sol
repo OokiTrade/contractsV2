@@ -25,10 +25,12 @@ contract MintCoordinator is Ownable {
 
     function addMinter(address addr) public onlyOwner {
         minters[addr] = true;
+        emit AddMinter(addr);
     }
 
     function removeMinter(address addr) public onlyOwner {
         minters[addr] = false;
+        emit RemoeMinter(addr);
     }
 
     function rescue(IERC20 _token) public onlyOwner {
@@ -39,4 +41,7 @@ contract MintCoordinator is Ownable {
         OOKI.rescue(_token);
         rescue(_token);
     }
+
+    event AddMinter(address indexed minter);
+    event RemoeMinter(address indexed minter);
 }
