@@ -8,26 +8,33 @@ import json
 def requireFork():
     assert (network.show_active() == "fork" or "fork" in network.show_active())
 
+@pytest.fixture(scope="module")
+def BZRX(accounts, TestToken):
+    return Contract.from_abi("BZRX", address="0x54cFe73f2c7d0c4b62Ab869B473F5512Dc0944D2", abi=TestToken.abi)
 
 @pytest.fixture(scope="module")
 def P125(accounts, TestToken):
     return Contract.from_abi("P125", address="0x83000597e8420aD7e9EDD410b2883Df1b83823cF", abi=TestToken.abi)
 
 @pytest.fixture(scope="module")
-def MERKLEDISTRIBUITOR(accounts, MerkleDistributor, P125, Proxy_0_8):
+def MERKLEDISTRIBUITOR(accounts, MerkleDistributor, P125, BZRX, Proxy_0_8):
     multisign = '0x01F569df8A270eCA78597aFe97D30c65D8a8ca80'
 
-    merkleImpl = MerkleDistributor.deploy({'from': accounts[0]})
-    merkleProxy = Proxy_0_8.deploy(merkleImpl, {'from': accounts[0]})
-    merkle = Contract.from_abi("P125", address=merkleProxy, abi=MerkleDistributor.abi)
+    # merkleImpl = MerkleDistributor.deploy({'from': accounts[0]})
+    # merkleProxy = Proxy_0_8.deploy(merkleImpl, {'from': accounts[0]})
 
-    merkle.transferOwnership(multisign, {'from': accounts[0]})
-    P125.approve(merkle, 2**256-1, {'from': multisign})
+    #0x59a6579C039F84A758665Ca416394BdF6A05985d
+    merkle = Contract.from_abi("P125", address="0x59a6579C039F84A758665Ca416394BdF6A05985d", abi=MerkleDistributor.abi)
+
+
 
     merkleRootProof = "0x6ad0e1656269711e7dd825a7151218d39ae3cc20e7909eaf968dd4dbadcdcaa3" # this is from merkleproof.json
-    merkle.createAirdrop(P125, merkleRootProof, merkle, 674965755171273444902, {'from': merkle.owner()})
-    merkle.createAirdrop(P125, merkleRootProof, merkle, 674965755171273444902, {'from': merkle.owner()})
+    merkle.createAirdrop(P125, merkleRootProof, multisign, 674965755171273444902, {'from': merkle.owner()})
+    merkle.createAirdrop(P125, merkleRootProof, multisign, 674965755171273444902, {'from': merkle.owner()})
 
+    merkle.transferOwnership(multisign, {'from': merkle.owner()})
+    P125.approve(merkle, 2**256-1, {'from': multisign})
+    BZRX.approve(merkle, 2**256-1, {'from': multisign})
 
     return merkle
 
