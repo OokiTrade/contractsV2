@@ -285,7 +285,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
             sentValues
         );
 
-        _ooipx.poolTotalPrincipal[loanLocal.lender] = _ooipx.poolTotalPrincipal[loanLocal.lender]
+        poolTotalPrincipal[loanLocal.lender] = poolTotalPrincipal[loanLocal.lender]
             .add(sentValues[1]); // newPrincipal*/
 
         uint256 amount;

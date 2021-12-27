@@ -23,8 +23,8 @@ contract InterestHandler is State, FeesHelper {
     {
         uint256 _loanRatePerTokenPaid;
         (
-            _ooipx.poolTotalPrincipal[pool],
-            _ooipx.poolRatePerTokenStored[pool],
+            poolTotalPrincipal[pool],
+            poolRatePerTokenStored[pool],
             _loanRatePerTokenPaid,
             _loanPrincipalTotal) = _settleInterest2(
             pool,
@@ -33,11 +33,11 @@ contract InterestHandler is State, FeesHelper {
         );
 
         if (loanId != 0) {
-            _ooipx.loanRatePerTokenPaid[loanId] = _loanRatePerTokenPaid;
+            loanRatePerTokenPaid[loanId] = _loanRatePerTokenPaid;
             loans[loanId].principal = _loanPrincipalTotal;
         }
 
-        _ooipx.poolLastUpdateTime[pool] = block.timestamp;
+        poolLastUpdateTime[pool] = block.timestamp;
     }
 
     function _getTotalPrincipal(
@@ -81,7 +81,7 @@ contract InterestHandler is State, FeesHelper {
             uint256 _loanRatePerTokenPaid,
             uint256 _loanPrincipalTotal)
     {
-        _poolTotalPrincipal = _ooipx.poolTotalPrincipal[pool];
+        _poolTotalPrincipal = poolTotalPrincipal[pool];
         uint256 _poolVariableRatePerTokenNewAmount = _getRatePerTokenNewAmount(_poolTotalPrincipal, pool);
         if (_poolTotalPrincipal != 0) {
             _poolTotalPrincipal = _getUpdatedPrincipal(
@@ -89,7 +89,7 @@ contract InterestHandler is State, FeesHelper {
                 _poolVariableRatePerTokenNewAmount
             );
 
-            _poolRatePerTokenStored = _ooipx.poolRatePerTokenStored[pool]
+            _poolRatePerTokenStored = poolRatePerTokenStored[pool]
                 .add(_poolVariableRatePerTokenNewAmount);
         }
 
@@ -98,7 +98,7 @@ contract InterestHandler is State, FeesHelper {
             if (_loanPrincipalTotal != 0) {
                 _loanPrincipalTotal = _getUpdatedPrincipal(
                     _loanPrincipalTotal,
-                    _poolRatePerTokenStored.sub(_ooipx.loanRatePerTokenPaid[loanId]) // _loanRatePerTokenUnpaid
+                    _poolRatePerTokenStored.sub(loanRatePerTokenPaid[loanId]) // _loanRatePerTokenUnpaid
                 );
 
                 _loanRatePerTokenPaid = _poolRatePerTokenStored;
@@ -114,7 +114,7 @@ contract InterestHandler is State, FeesHelper {
         returns (uint256)
     {
         return block.timestamp
-            .sub(_ooipx.poolLastUpdateTime[pool])
+            .sub(poolLastUpdateTime[pool])
             .mul(ILoanPool(pool)._nextBorrowInterestRate(_poolPrincipalTotal, 0)) // rate per year
             .div(31536000); // seconds in a year
     }
