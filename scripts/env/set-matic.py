@@ -18,3 +18,7 @@ PRICE_FEED = Contract.from_abi("PRICE_FEED", BZX.priceFeeds(), abi = PriceFeeds.
 SUSHI_ROUTER = Contract.from_abi("router", "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506", interface.IPancakeRouter02.abi)
 
 CONVERTER =  Contract.from_abi("CONVERTER", "0x91c78Bd238AcC14459673d5cf4fE460AeE7BF692", FixedSwapTokenConverter.abi)
+MERKLEDISTRIBUITOR = Contract.from_abi("MERKLEDISTRIBUITOR", "0xFA079100e297253a1eb9783aa93646ecF2d5615e", MerkleDistributor.abi)
+GUARDIAN_MULTISIG = "0x01F569df8A270eCA78597aFe97D30c65D8a8ca80"
+P125 = Contract.from_abi("P125", "0x83000597e8420ad7e9edd410b2883df1b83823cf", P125Token.abi)
+
