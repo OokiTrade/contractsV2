@@ -13,9 +13,7 @@ import "../mixins/FeesHelper.sol";
 import "./ISwapsImpl.sol";
 import "../interfaces/IDexRecords.sol";
 
-
 contract SwapsUser is State, SwapsEvents, FeesHelper {
-
     function _loanSwap(
         bytes32 loanId,
         address sourceToken,
@@ -25,10 +23,16 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
         uint256 maxSourceTokenAmount,
         uint256 requiredDestTokenAmount,
         bool bypassFee,
-        bytes memory loanDataBytes)
+        bytes memory loanDataBytes
+    )
         internal
-        returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed, uint256 sourceToDestSwapRate)
+        returns (
+            uint256 destTokenAmountReceived,
+            uint256 sourceTokenAmountUsed,
+            uint256 sourceToDestSwapRate
+        )
     {
+		
         (destTokenAmountReceived, sourceTokenAmountUsed) = _swapsCall(
             [
                 sourceToken,
@@ -46,7 +50,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
             bypassFee,
             loanDataBytes
         );
-
+		
         // will revert if swap size too large
         _checkSwapSize(sourceToken, sourceTokenAmountUsed);
 
@@ -74,10 +78,8 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
         uint256[3] memory vals,
         bytes32 loanId,
         bool miscBool, // bypassFee
-        bytes memory loanDataBytes)
-        internal
-        returns (uint256, uint256)
-    {
+        bytes memory loanDataBytes
+    ) internal returns (uint256, uint256) {
         //addrs[0]: sourceToken
         //addrs[1]: destToken
         //addrs[2]: receiver
@@ -93,7 +95,8 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
         uint256 sourceTokenAmountUsed;
 
         uint256 tradingFee;
-        if (!miscBool) { // bypassFee
+        if (!miscBool) {
+            // bypassFee
             if (vals[2] == 0) {
                 // condition: vals[0] will always be used as sourceAmount
 
@@ -106,8 +109,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
                         tradingFee
                     );
 
-                    vals[0] = vals[0]
-                        .sub(tradingFee);
+                    vals[0] = vals[0].sub(tradingFee);
                 }
             } else {
                 // condition: unknown sourceAmount will be used
@@ -115,8 +117,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
                 tradingFee = _getTradingFee(vals[2]);
 
                 if (tradingFee != 0) {
-                    vals[2] = vals[2]
-                        .add(tradingFee);
+                    vals[2] = vals[2].add(tradingFee);
                 }
             }
         }
@@ -126,16 +127,19 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
         } else {
             require(vals[0] <= vals[1], "min greater than max");
         }
-
+		
         (destTokenAmountReceived, sourceTokenAmountUsed) = _swapsCall_internal(
             addrs,
             vals,
-			loanDataBytes
+            loanDataBytes
         );
-
+		
         if (vals[2] == 0) {
             // there's no minimum destTokenAmount, but all of vals[0] (minSourceTokenAmount) must be spent, and amount spent can't exceed vals[0]
-            require(sourceTokenAmountUsed == vals[0], "swap too large to fill");
+            require(
+                sourceTokenAmountUsed == vals[0],
+                "swap too large to fill test"
+            );
 
             if (tradingFee != 0) {
                 sourceTokenAmountUsed = sourceTokenAmountUsed + tradingFee; // will never overflow
@@ -143,7 +147,10 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
         } else {
             // there's a minimum destTokenAmount required, but sourceTokenAmountUsed won't be greater than vals[1] (maxSourceTokenAmount)
             require(sourceTokenAmountUsed <= vals[1], "swap fill too large");
-            require(destTokenAmountReceived >= vals[2], "insufficient swap liquidity");
+            require(
+                destTokenAmountReceived >= vals[2],
+                "insufficient swap liquidity"
+            );
 
             if (tradingFee != 0) {
                 _payTradingFee(
@@ -163,43 +170,54 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
     function _swapsCall_internal(
         address[5] memory addrs,
         uint256[3] memory vals,
-		bytes memory loanDataBytes)
+        bytes memory loanDataBytes
+    )
         internal
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
     {
-		bytes memory data;
-		address swapImplAddress;
-		if(loanDataBytes.length==0){
-			swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(1); //if nothing specified, default to first dex option available. ensure it does not require any input data or else this will break
-			data = abi.encodeWithSelector(
-				ISwapsImpl(swapImplAddress).dexSwap.selector,
-				addrs[0], // sourceToken
-				addrs[1], // destToken
-				addrs[2], // receiverAddress
-				addrs[3], // returnToSenderAddress
-				vals[0],  // minSourceTokenAmount
-				vals[1],  // maxSourceTokenAmount
-				vals[2],  // requiredDestTokenAmount
-				loanDataBytes
-			);
-		}else{
-			(uint256 DexNumber, bytes memory SwapData) = abi.decode(loanDataBytes,(uint256,bytes));
-			swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(DexNumber);
-			data = abi.encodeWithSelector(
-				ISwapsImpl(swapImplAddress).dexSwap.selector,
-				addrs[0], // sourceToken
-				addrs[1], // destToken
-				addrs[2], // receiverAddress
-				addrs[3], // returnToSenderAddress
-				vals[0],  // minSourceTokenAmount
-				vals[1],  // maxSourceTokenAmount
-				vals[2],  // requiredDestTokenAmount
-				SwapData
-			);
-		}
-
+        bytes memory data;
+        address swapImplAddress;
+		
+        if (loanDataBytes.length == 0) {
+            swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(1); //if nothing specified, default to first dex option available. ensure it does not require any input data or else this will break
+            data = abi.encodeWithSelector(
+                ISwapsImpl(swapImplAddress).dexSwap.selector,
+                addrs[0], // sourceToken
+                addrs[1], // destToken
+                addrs[2], // receiverAddress
+                addrs[3], // returnToSenderAddress
+                vals[0], // minSourceTokenAmount
+                vals[1], // maxSourceTokenAmount
+                vals[2], // requiredDestTokenAmount
+                loanDataBytes
+            );
+        } else {
+            (uint256 DexNumber, bytes memory SwapData) = abi.decode(
+                loanDataBytes,
+                (uint256, bytes)
+            );
+			
+            swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(
+                DexNumber
+            );
+			
+            data = abi.encodeWithSelector(
+                ISwapsImpl(swapImplAddress).dexSwap.selector,
+                addrs[0], // sourceToken
+                addrs[1], // destToken
+                addrs[2], // receiverAddress
+                addrs[3], // returnToSenderAddress
+                vals[0], // minSourceTokenAmount
+                vals[1], // maxSourceTokenAmount
+                vals[2], // requiredDestTokenAmount
+                SwapData
+            );
+			
+        }
+		
         bool success;
         (success, data) = swapImplAddress.delegatecall(data);
+		
         if (!success) {
             assembly {
                 let ptr := mload(0x40)
@@ -208,44 +226,47 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
                 revert(ptr, size)
             }
         }
-
-        (destTokenAmountReceived, sourceTokenAmountUsed) = abi.decode(data, (uint256, uint256));
+        (destTokenAmountReceived, sourceTokenAmountUsed) = abi.decode(
+            data,
+            (uint256, uint256)
+        );
     }
 
     function _swapsExpectedReturn(
         address sourceToken,
         address destToken,
         uint256 sourceTokenAmount,
-		bytes memory payload)
-        internal
-        returns (uint256 expectedReturn)
-    {
+        bytes memory payload
+    ) internal returns (uint256 expectedReturn) {
         uint256 tradingFee = _getTradingFee(sourceTokenAmount);
         if (tradingFee != 0) {
-            sourceTokenAmount = sourceTokenAmount
-                .sub(tradingFee);
+            sourceTokenAmount = sourceTokenAmount.sub(tradingFee);
         }
-		if(payload.length==0){
-			address swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(1); //default dex address
-			bytes memory dataToSend = abi.encode(sourceToken, destToken);
-			(expectedReturn,) = ISwapsImpl(swapImplAddress).dexAmountOut(
-				dataToSend,
-				sourceTokenAmount
-			);
-		}else{
-			(uint256 DexNumber, bytes memory dataToSend) = abi.decode(payload,(uint256,bytes));
-			address swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(DexNumber);
-			(expectedReturn,) = ISwapsImpl(swapImplAddress).dexAmountOut(
-				dataToSend,
-				sourceTokenAmount
-			);
-		}
-
+        if (payload.length == 0) {
+            address swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(
+                1
+            ); //default dex address
+            bytes memory dataToSend = abi.encode(sourceToken, destToken);
+            (expectedReturn, ) = ISwapsImpl(swapImplAddress).dexAmountOut(
+                dataToSend,
+                sourceTokenAmount
+            );
+        } else {
+            (uint256 DexNumber, bytes memory dataToSend) = abi.decode(
+                payload,
+                (uint256, bytes)
+            );
+            address swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(
+                DexNumber
+            );
+            (expectedReturn, ) = ISwapsImpl(swapImplAddress).dexAmountOut(
+                dataToSend,
+                sourceTokenAmount
+            );
+        }
     }
 
-    function _checkSwapSize(
-        address tokenAddress,
-        uint256 amount)
+    function _checkSwapSize(address tokenAddress, uint256 amount)
         internal
         view
     {
@@ -255,7 +276,10 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
             if (tokenAddress == address(wethToken)) {
                 amountInEth = amount;
             } else {
-                amountInEth = IPriceFeeds(priceFeeds).amountInEth(tokenAddress, amount);
+                amountInEth = IPriceFeeds(priceFeeds).amountInEth(
+                    tokenAddress,
+                    amount
+                );
             }
             require(amountInEth <= _maxSwapSize, "swap too large");
         }

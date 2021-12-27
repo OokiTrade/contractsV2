@@ -1,4 +1,4 @@
-pragma solidity 0.5.17;
+pragma solidity >=0.5.17;
 
 interface ICurvePoolRegistration {
     function addPool(
@@ -10,6 +10,6 @@ interface ICurvePoolRegistration {
     function disablePool(address tokenPool) external;
 
     function CheckPoolValidity(address pool) external view returns (bool);
-	
-	function getPoolType(address tokenPool) external view returns (uint256);
+
+    function getPoolType(address tokenPool) external view returns (uint256);
 }

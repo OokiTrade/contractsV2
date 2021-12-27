@@ -10,16 +10,17 @@ import "../../../interfaces/IPriceFeeds.sol";
 import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 import "../ISwapsImpl.sol";
 
-
-contract SwapsImplKyber is State, ISwapsImpl {
+contract SwapsImplKyber is State {
     using SafeERC20 for IERC20;
 
-    address internal constant feeWallet = 0x13ddAC8d492E463073934E2a101e419481970299;
+    address internal constant feeWallet =
+        0x13ddAC8d492E463073934E2a101e419481970299;
 
-    address public constant kyberContract = 0x818E6FECD516Ecc3849DAf6845e3EC868087B755; // mainnet
+    address public constant kyberContract =
+        0x818E6FECD516Ecc3849DAf6845e3EC868087B755; // mainnet
+
     //address public constant kyberContract = 0x692f391bCc85cefCe8C237C01e1f636BbD70EA4D; // kovan
     //address public constant kyberContract = 0x818E6FECD516Ecc3849DAf6845e3EC868087B755; // ropsten
-
 
     function dexSwap(
         address sourceTokenAddress,
@@ -28,12 +29,17 @@ contract SwapsImplKyber is State, ISwapsImpl {
         address returnToSenderAddress,
         uint256 minSourceTokenAmount,
         uint256 maxSourceTokenAmount,
-        uint256 requiredDestTokenAmount)
+        uint256 requiredDestTokenAmount
+    )
         public
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
     {
         require(sourceTokenAddress != destTokenAddress, "source == dest");
-        require(supportedTokens[sourceTokenAddress] && supportedTokens[destTokenAddress], "invalid tokens");
+        require(
+            supportedTokens[sourceTokenAddress] &&
+                supportedTokens[destTokenAddress],
+            "invalid tokens"
+        );
 
         bytes memory txnData = _getSwapTxnData(
             sourceTokenAddress,
@@ -57,13 +63,18 @@ contract SwapsImplKyber is State, ISwapsImpl {
         assembly {
             destTokenAmountReceived := mload(add(returnData, 32))
         }
-        sourceTokenAmountUsed = sourceBalanceBefore.sub(sourceToken.balanceOf(_thisAddress));
+        sourceTokenAmountUsed = sourceBalanceBefore.sub(
+            sourceToken.balanceOf(_thisAddress)
+        );
 
-        if (returnToSenderAddress != _thisAddress && sourceTokenAmountUsed < maxSourceTokenAmount) {
+        if (
+            returnToSenderAddress != _thisAddress &&
+            sourceTokenAmountUsed < maxSourceTokenAmount
+        ) {
             // send unused source token back
             sourceToken.safeTransfer(
                 returnToSenderAddress,
-                maxSourceTokenAmount-sourceTokenAmountUsed
+                maxSourceTokenAmount - sourceTokenAmountUsed
             );
         }
     }
@@ -71,11 +82,8 @@ contract SwapsImplKyber is State, ISwapsImpl {
     function dexExpectedRate(
         address sourceTokenAddress,
         address destTokenAddress,
-        uint256 sourceTokenAmount)
-        public
-        view
-        returns (uint256 expectedRate)
-    {
+        uint256 sourceTokenAmount
+    ) public view returns (uint256 expectedRate) {
         if (sourceTokenAddress == destTokenAddress) {
             expectedRate = WEI_PRECISION;
         } else if (sourceTokenAmount != 0) {
@@ -97,14 +105,10 @@ contract SwapsImplKyber is State, ISwapsImpl {
         return expectedRate;
     }
 
-    function setSwapApprovals(
-		address spender,
-        address[] memory tokens)
-        public
-    {
+    function setSwapApprovals(address[] memory tokens) public {
         for (uint256 i = 0; i < tokens.length; i++) {
-            IERC20(tokens[i]).safeApprove(spender, 0);
-            IERC20(tokens[i]).safeApprove(spender, uint256(-1));
+            IERC20(tokens[i]).safeApprove(kyberContract, 0);
+            IERC20(tokens[i]).safeApprove(kyberContract, uint256(-1));
         }
     }
 
@@ -114,31 +118,29 @@ contract SwapsImplKyber is State, ISwapsImpl {
         address receiverAddress,
         uint256 minSourceTokenAmount,
         uint256 maxSourceTokenAmount,
-        uint256 requiredDestTokenAmount)
-        internal
-        view
-        returns (bytes memory)
-    {
+        uint256 requiredDestTokenAmount
+    ) internal view returns (bytes memory) {
         uint256 estimatedSourceAmount;
         if (requiredDestTokenAmount != 0) {
-            uint256 sourceToDestPrecision = IPriceFeeds(priceFeeds).queryPrecision(
-                sourceTokenAddress,
-                destTokenAddress
-            );
+            uint256 sourceToDestPrecision = IPriceFeeds(priceFeeds)
+                .queryPrecision(sourceTokenAddress, destTokenAddress);
             if (sourceToDestPrecision == 0) {
                 return "";
             }
 
-            uint256 bufferMultiplier = sourceBufferPercent
-                .add(WEI_PERCENT_PRECISION);
+            uint256 bufferMultiplier = sourceBufferPercent.add(
+                WEI_PERCENT_PRECISION
+            );
 
             estimatedSourceAmount = requiredDestTokenAmount
                 .mul(sourceToDestPrecision)
-                .div(dexExpectedRate(
-                    sourceTokenAddress,
-                    destTokenAddress,
-                    minSourceTokenAmount
-                ));
+                .div(
+                    dexExpectedRate(
+                        sourceTokenAddress,
+                        destTokenAddress,
+                        minSourceTokenAmount
+                    )
+                );
             if (estimatedSourceAmount == 0) {
                 return "";
             }
@@ -154,18 +156,19 @@ contract SwapsImplKyber is State, ISwapsImpl {
             estimatedSourceAmount = minSourceTokenAmount;
         }
 
-        return abi.encodeWithSelector(
-            0x29589f61, // keccak("tradeWithHint(address,uint256,address,address,uint256,uint256,address,bytes)")
-            sourceTokenAddress,
-            estimatedSourceAmount,
-            destTokenAddress,
-            receiverAddress,
-            requiredDestTokenAmount == 0 || requiredDestTokenAmount > 10**28 ? // maxDestAmount
-                10**28 :
-                requiredDestTokenAmount,
-            0, // minConversionRate
-            feeWallet,
-            "" // hint
-        );
+        return
+            abi.encodeWithSelector(
+                0x29589f61, // keccak("tradeWithHint(address,uint256,address,address,uint256,uint256,address,bytes)")
+                sourceTokenAddress,
+                estimatedSourceAmount,
+                destTokenAddress,
+                receiverAddress,
+                requiredDestTokenAmount == 0 || requiredDestTokenAmount > 10**28 // maxDestAmount
+                    ? 10**28
+                    : requiredDestTokenAmount,
+                0, // minConversionRate
+                feeWallet,
+                "" // hint
+            );
     }
 }

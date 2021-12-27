@@ -8,14 +8,8 @@ pragma experimental ABIEncoderV2;
 
 import "./LoanClosingsBase.sol";
 
-
 contract LoanClosings is LoanClosingsBase {
-
-    function initialize(
-        address target)
-        external
-        onlyOwner
-    {
+    function initialize(address target) external onlyOwner {
         _setTarget(this.liquidate.selector, target);
         _setTarget(this.rollover.selector, target);
         _setTarget(this.closeWithDeposit.selector, target);
@@ -25,7 +19,8 @@ contract LoanClosings is LoanClosingsBase {
     function liquidate(
         bytes32 loanId,
         address receiver,
-        uint256 closeAmount) // denominated in loanToken
+        uint256 closeAmount // denominated in loanToken
+    )
         external
         payable
         nonReentrant
@@ -35,40 +30,31 @@ contract LoanClosings is LoanClosingsBase {
             address seizedToken
         )
     {
-        return _liquidate(
-            loanId,
-            receiver,
-            closeAmount
-        );
+        return _liquidate(loanId, receiver, closeAmount);
     }
 
     function rollover(
         bytes32 loanId,
-        bytes calldata /*loanDataBytes*/) // for future use
-        external
-        nonReentrant
-        returns (
-            address rebateToken,
-            uint256 gasRebate
-        )
-    {
-        uint256 startingGas = gasleft() +
-            21576; // estimated used gas ignoring loanDataBytes: 21000 + (4+32) * 16
+        bytes calldata /*loanDataBytes*/ // for future use
+    ) external nonReentrant returns (address rebateToken, uint256 gasRebate) {
+        uint256 startingGas = gasleft() + 21576; // estimated used gas ignoring loanDataBytes: 21000 + (4+32) * 16
 
         // restrict to EOAs to prevent griefing attacks, during interest rate recalculation
         require(msg.sender == tx.origin, "only EOAs can call");
 
-        return _rollover(
-            loanId,
-            startingGas,
-            "" // loanDataBytes
-        );
+        return
+            _rollover(
+                loanId,
+                startingGas,
+                "" // loanDataBytes
+            );
     }
 
     function closeWithDeposit(
         bytes32 loanId,
         address receiver,
-        uint256 depositAmount) // denominated in loanToken
+        uint256 depositAmount // denominated in loanToken
+    )
         public
         payable
         nonReentrant
@@ -78,11 +64,7 @@ contract LoanClosings is LoanClosingsBase {
             address withdrawToken
         )
     {
-        return _closeWithDeposit(
-            loanId,
-            receiver,
-            depositAmount
-        );
+        return _closeWithDeposit(loanId, receiver, depositAmount);
     }
 
     function closeWithSwap(
@@ -90,7 +72,8 @@ contract LoanClosings is LoanClosingsBase {
         address receiver,
         uint256 swapAmount, // denominated in collateralToken
         bool returnTokenIsCollateral, // true: withdraws collateralToken, false: withdraws loanToken
-        bytes memory loanDataBytes) // for future use
+        bytes memory loanDataBytes // for future use
+    )
         public
         nonReentrant
         returns (
@@ -99,12 +82,13 @@ contract LoanClosings is LoanClosingsBase {
             address withdrawToken
         )
     {
-        return _closeWithSwap(
-            loanId,
-            receiver,
-            swapAmount,
-            returnTokenIsCollateral,
-            loanDataBytes
-        );
+        return
+            _closeWithSwap(
+                loanId,
+                receiver,
+                swapAmount,
+                returnTokenIsCollateral,
+                loanDataBytes
+            );
     }
 }
