@@ -180,10 +180,26 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                     exactParams[x]
                 );
             }
+			if(totalAmountsOut<requiredDestTokenAmount){
+                exactParams[0].amountOut = exactParams[0]
+                    .amountOut
+                    .add(requiredDestTokenAmount.sub(totalAmountsOut)); //adds displacement to first swap set
+			}
+			if(totalAmountsInMax < maxSourceTokenAmount){
+                exactParams[0].amountInMaximum = exactParams[0]
+                    .amountInMaximum
+                    .add(maxSourceTokenAmount.sub(totalAmountsInMax)); //adds displacement to first swap set		
+			}
+			totalAmountsOut = totalAmountsOut.add(requiredDestTokenAmount.sub(totalAmountsOut)); //correcting value
+			totalAmountsInMax = totalAmountsInMax.add(maxSourceTokenAmount.sub(totalAmountsInMax)); //correcting value 
+			encodedTXs[0] = abi.encodeWithSelector(
+				IUniswapV3SwapRouter(uniswapSwapRouter).exactOutput.selector,
+				exactParams[0]
+			);
             require(
                 totalAmountsOut == requiredDestTokenAmount &&
-                    totalAmountsInMax <= maxSourceTokenAmount
-            );
+                    totalAmountsInMax == maxSourceTokenAmount
+            ); //redundant check
 
             bytes[] memory trueAmountsIn = IUniswapV3SwapRouter(
                 uniswapSwapRouter
@@ -219,6 +235,16 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                     exactParams[x]
                 );
             }
+			if(totalAmounts<minSourceTokenAmount){
+                exactParams[0].amountIn = exactParams[0]
+                    .amountIn
+                    .add(minSourceTokenAmount.sub(totalAmounts)); //adds displacement to first swap set
+                totalAmounts = totalAmounts.add(minSourceTokenAmount.sub(totalAmounts));
+                encodedTXs[0] = abi.encodeWithSelector(
+                    IUniswapV3SwapRouter(uniswapSwapRouter).exactInput.selector,
+                    exactParams[0]
+                );
+			}
             sourceTokenAmountUsed = totalAmounts;
             require(
                 totalAmounts == minSourceTokenAmount,

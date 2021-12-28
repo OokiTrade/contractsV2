@@ -341,7 +341,6 @@ contract LoanOpenings is
                 false, // bypassFee
                 loanDataBytes
             );
-			//require(1==2,"check4");
             sentValues[4] = sentValues[4].add(receivedAmount); // collateralTokenReceived
         }
 		
