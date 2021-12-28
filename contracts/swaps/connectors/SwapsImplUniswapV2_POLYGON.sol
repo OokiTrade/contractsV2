@@ -74,10 +74,10 @@ contract SwapsImplUniswapV2_POLYGON is State, ISwapsImpl {
     }
 
     function dexAmountOut(
-        address sourceTokenAddress,
-        address destTokenAddress,
+        bytes memory payload,
         uint256 amountIn
-    ) public view returns (uint256 amountOut, address midToken) {
+    ) public returns (uint256 amountOut, address midToken) {
+		(address sourceTokenAddress, address destTokenAddress) = abi.decode(payload,(address,address));
         if (sourceTokenAddress == destTokenAddress) {
             amountOut = amountIn;
         } else if (amountIn != 0) {
@@ -143,10 +143,10 @@ contract SwapsImplUniswapV2_POLYGON is State, ISwapsImpl {
     }
 
     function dexAmountIn(
-        address sourceTokenAddress,
-        address destTokenAddress,
+        bytes memory payload,
         uint256 amountOut
-    ) public view returns (uint256 amountIn, address midToken) {
+    ) public returns (uint256 amountIn, address midToken) {
+		(address sourceTokenAddress, address destTokenAddress) = abi.decode(payload,(address,address));
         if (sourceTokenAddress == destTokenAddress) {
             amountIn = amountOut;
         } else if (amountOut != 0) {
@@ -279,8 +279,7 @@ contract SwapsImplUniswapV2_POLYGON is State, ISwapsImpl {
         address midToken;
         if (requiredDestTokenAmount != 0) {
             (sourceTokenAmountUsed, midToken) = dexAmountIn(
-                sourceTokenAddress,
-                destTokenAddress,
+                abi.encode(sourceTokenAddress, destTokenAddress),
                 requiredDestTokenAmount
             );
             if (sourceTokenAmountUsed == 0) {
@@ -293,8 +292,7 @@ contract SwapsImplUniswapV2_POLYGON is State, ISwapsImpl {
         } else {
             sourceTokenAmountUsed = minSourceTokenAmount;
             (destTokenAmountReceived, midToken) = dexAmountOut(
-                sourceTokenAddress,
-                destTokenAddress,
+                abi.encode(sourceTokenAddress, destTokenAddress),
                 sourceTokenAmountUsed
             );
             if (destTokenAmountReceived == 0) {
