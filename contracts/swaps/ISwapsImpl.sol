@@ -36,6 +36,6 @@ interface ISwapsImpl {
         external
         returns (uint256 amountIn, address midToken);
 
-    function setSwapApprovals(address spender, address[] calldata tokens)
+    function setSwapApprovals(address[] calldata tokens)
         external;
 }

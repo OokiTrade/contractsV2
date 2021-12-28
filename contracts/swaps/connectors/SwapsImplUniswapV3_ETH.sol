@@ -12,7 +12,7 @@ import "../../interfaces/IUniswapV3SwapRouter.sol";
 import "../../interfaces/IUniswapQuoter.sol";
 import "../../mixins/Path.sol";
 
-contract SwapsImplUniswapV3_ETH is State {
+contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
     using SafeERC20 for IERC20;
     using Path for bytes;
     using BytesLib for bytes;

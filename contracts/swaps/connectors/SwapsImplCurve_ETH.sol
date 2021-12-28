@@ -12,7 +12,7 @@ import "../../interfaces/ICurve.sol";
 import "../../mixins/Path.sol";
 import "../../interfaces/ICurvePoolRegistration.sol";
 
-contract SwapsImplCurve_ETH is State {
+contract SwapsImplCurve_ETH is State, ISwapsImpl {
     using SafeERC20 for IERC20;
     using Path for bytes;
     using BytesLib for bytes;

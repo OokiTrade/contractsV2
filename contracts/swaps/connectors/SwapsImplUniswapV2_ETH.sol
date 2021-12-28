@@ -10,7 +10,7 @@ import "../../interfaces/IUniswapV2Router.sol";
 import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 import "../ISwapsImpl.sol";
 
-contract SwapsImplUniswapV2_ETH is State {
+contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
     using SafeERC20 for IERC20;
 
     // mainnet
@@ -29,7 +29,7 @@ contract SwapsImplUniswapV2_ETH is State {
         uint256 minSourceTokenAmount,
         uint256 maxSourceTokenAmount,
         uint256 requiredDestTokenAmount,
-		bytes memory /*payload*/
+		bytes memory payload
     )
         public
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
@@ -74,10 +74,10 @@ contract SwapsImplUniswapV2_ETH is State {
     }
 
     function dexAmountOut(
-        address sourceTokenAddress,
-        address destTokenAddress,
+        bytes memory payload,
         uint256 amountIn
-    ) public view returns (uint256 amountOut, address midToken) {
+    ) public returns (uint256 amountOut, address midToken) {
+		(address sourceTokenAddress, address destTokenAddress) = abi.decode(payload,(address,address));
         if (sourceTokenAddress == destTokenAddress) {
             amountOut = amountIn;
         } else if (amountIn != 0) {
@@ -134,10 +134,10 @@ contract SwapsImplUniswapV2_ETH is State {
     }
 
     function dexAmountIn(
-        address sourceTokenAddress,
-        address destTokenAddress,
+        bytes memory payload,
         uint256 amountOut
-    ) public view returns (uint256 amountIn, address midToken) {
+    ) public returns (uint256 amountIn, address midToken) {
+		(address sourceTokenAddress, address destTokenAddress) = abi.decode(payload,(address,address));
         if (sourceTokenAddress == destTokenAddress) {
             amountIn = amountOut;
         } else if (amountOut != 0) {
@@ -261,8 +261,7 @@ contract SwapsImplUniswapV2_ETH is State {
         address midToken;
         if (requiredDestTokenAmount != 0) {
             (sourceTokenAmountUsed, midToken) = dexAmountIn(
-                sourceTokenAddress,
-                destTokenAddress,
+                abi.encode(sourceTokenAddress,destTokenAddress),
                 requiredDestTokenAmount
             );
             if (sourceTokenAmountUsed == 0) {
@@ -275,8 +274,7 @@ contract SwapsImplUniswapV2_ETH is State {
         } else {
             sourceTokenAmountUsed = minSourceTokenAmount;
             (destTokenAmountReceived, midToken) = dexAmountOut(
-                sourceTokenAddress,
-                destTokenAddress,
+                abi.encode(sourceTokenAddress,destTokenAddress),
                 sourceTokenAmountUsed
             );
             if (destTokenAmountReceived == 0) {
