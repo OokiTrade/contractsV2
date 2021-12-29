@@ -12,6 +12,7 @@ def test_initTokens():
     print(wIUSDC.address)
     print(wIUSDT.address)
     assert(False)
+
 def token():
     GasPrice = 10000
     wIUSDC = Contract.from_abi('WIUSDC','',WrappedIUSDC.abi) #provide address

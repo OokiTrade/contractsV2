@@ -19,11 +19,10 @@ contract WrappedIUSDT is Upgradeable_0_8, ERC20Burnable {
 
     uint256 public constant WEI_PRECISION = 10**20;
     address public iTokenAddress;
-    address public loanTokenAddress;
+	  address public loanTokenAddress;
     bytes32 public DOMAIN_SEPARATOR;
     // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
-    bytes32 public constant PERMIT_TYPEHASH =
-        0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
+    bytes32 public constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
 
     mapping(address => uint256) public nonces;
 
@@ -36,9 +35,7 @@ contract WrappedIUSDT is Upgradeable_0_8, ERC20Burnable {
     function initialize() public onlyOwner {
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(
-                keccak256(
-                    "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
-                ),
+                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
                 keccak256(bytes("Wrapped iToken USDT")),
                 keccak256(bytes("1")),
                 block.chainid,
@@ -48,7 +45,7 @@ contract WrappedIUSDT is Upgradeable_0_8, ERC20Burnable {
     }
 
     function decimals() public view virtual override returns (uint8) {
-        return IERC20Metadata(iTokenAddress).decimals();
+        return IERC20Metadata(loanTokenAddress).decimals();
     }
 
     function setLoanTokenAddress(address iToken, address loanToken)
@@ -87,27 +84,9 @@ contract WrappedIUSDT is Upgradeable_0_8, ERC20Burnable {
         bytes32 s
     ) external {
         require(deadline >= block.timestamp, "WIUSDT: EXPIRED");
-        bytes32 digest = keccak256(
-            abi.encodePacked(
-                "\x19\x01",
-                DOMAIN_SEPARATOR,
-                keccak256(
-                    abi.encode(
-                        PERMIT_TYPEHASH,
-                        owner,
-                        spender,
-                        value,
-                        nonces[owner]++,
-                        deadline
-                    )
-                )
-            )
-        );
+        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline))));
         address recoveredAddress = ecrecover(digest, v, r, s);
-        require(
-            recoveredAddress != address(0) && recoveredAddress == owner,
-            "WIUSDT: INVALID_SIGNATURE"
-        );
+        require(recoveredAddress != address(0) && recoveredAddress == owner, "WIUSDT: INVALID_SIGNATURE");
         _approve(owner, spender, value);
     }
 
@@ -157,6 +136,7 @@ contract WrappedIUSDT is Upgradeable_0_8, ERC20Burnable {
     }
 
     function totalSupply() public view virtual override returns (uint256) {
+
         return (super.totalSupply() * (tokenPrice()) * (100)) / (WEI_PRECISION);
     }
 
