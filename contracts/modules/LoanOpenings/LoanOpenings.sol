@@ -113,7 +113,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         uint256 collateralTokenSent,
         uint256 /*interestRate*/,
         uint256 /*newPrincipal*/,
-		bytes calldata payload)
+		    bytes calldata payload)
         external
         returns (uint256 value)
     {
@@ -121,7 +121,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
             loanToken,
             collateralToken,
             loanTokenSent,
-			payload
+			      payload
         );
         if (value != 0) {
             return collateralTokenSent

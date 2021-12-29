@@ -31,8 +31,8 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Swaps
         _setTarget(this.setDepositAmount.selector, target);
         _setTarget(this.claimRewards.selector, target);
         _setTarget(this.rewardsBalanceOf.selector, target);
-        //_setTarget(this.getLenderInterestData.selector, target);
-        //_setTarget(this.getLoanInterestData.selector, target);
+        //_setTarget(this.getLenderInterestData.selector, target);  <-- remove target
+        //_setTarget(this.getLoanInterestData.selector, target);  <-- remove target
         _setTarget(this.getUserLoans.selector, target);
         _setTarget(this.getUserLoansCount.selector, target);
         _setTarget(this.getLoan.selector, target);

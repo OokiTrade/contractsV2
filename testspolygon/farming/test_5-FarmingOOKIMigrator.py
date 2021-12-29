@@ -8,7 +8,7 @@ from brownie import chain, reverts
 
 
 
-def testFarming_migrate(requireFork, FixedSwapTokenConverter, accounts, masterChef,BZRX,TestToken, USDT,BZX, govToken):
+def testFarming_migrate1(requireFork, FixedSwapTokenConverter, accounts, masterChef,BZRX,TestToken, USDT,BZX, govToken):
     owner = accounts[0]
     user = accounts[2]
     DEAD = '0x000000000000000000000000000000000000dEaD'

@@ -15,11 +15,6 @@ contract LoanTokenLogicStandard is AdvancedToken {
     using SafeMath for uint256;
     using SignedSafeMath for int256;
 
-    modifier settlesInterest() {
-        _settleInterest();
-        _;
-    }
-
     address internal target_;
 
     uint256 public constant VERSION = 6;
@@ -99,15 +94,16 @@ contract LoanTokenLogicStandard is AdvancedToken {
         payable
         nonReentrant
         pausable
-        settlesInterest
         returns (bytes memory)
     {
         require(borrowAmount != 0, "38");
 
+        _settleInterest(0);
+
         // save before balances
         uint256 beforeEtherBalance = address(this).balance.sub(msg.value);
         uint256 beforeAssetsBalance = _underlyingBalance()
-            .add(totalAssetBorrow());
+            .add(_totalAssetBorrowStored());
 
         // lock totalAssetSupply for duration of flash loan
         _flTotalAssetSupply = beforeAssetsBalance;
@@ -141,7 +137,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         require(
             address(this).balance >= beforeEtherBalance &&
             _underlyingBalance()
-                .add(totalAssetBorrow()) >= beforeAssetsBalance,
+                .add(_totalAssetBorrowStored()) >= beforeAssetsBalance,
             "40"
         );
 
@@ -356,12 +352,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         view
         returns (uint256) // price
     {
-        uint256 interestUnPaid;
-        if (lastSettleTime_ != uint88(block.timestamp)) {
-            (,interestUnPaid) = _getAllInterest();
-        }
-
-        return _tokenPrice(_totalAssetSupply(interestUnPaid));
+        return _tokenPrice(totalAssetSupply());
     }
 
     function checkpointPrice(
@@ -378,8 +369,8 @@ contract LoanTokenLogicStandard is AdvancedToken {
         view
         returns (uint256)
     {
-        uint256 totalSupply = _totalAssetSupply(0);
         uint256 totalBorrow = totalAssetBorrow();
+        uint256 totalSupply = _totalAssetSupply(totalBorrow);
         if (totalSupply > totalBorrow) {
             return totalSupply - totalBorrow;
         }
@@ -399,7 +390,10 @@ contract LoanTokenLogicStandard is AdvancedToken {
         view
         returns (uint256)
     {
-        return _nextBorrowInterestRate(0);
+        return _nextBorrowInterestRate(
+            totalAssetBorrow(),
+            0
+        );
     }
 
     function nextBorrowInterestRate(
@@ -408,7 +402,10 @@ contract LoanTokenLogicStandard is AdvancedToken {
         view
         returns (uint256)
     {
-        return _nextBorrowInterestRate(borrowAmount);
+        return _nextBorrowInterestRate(
+            totalAssetBorrow(),
+            borrowAmount
+        );
     }
 
     // interest that lenders are currently receiving when supplying to the pool
@@ -417,7 +414,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         view
         returns (uint256)
     {
-        return totalSupplyInterestRate(_totalAssetSupply(0));
+        return totalSupplyInterestRate(totalAssetSupply());
     }
 
     function nextSupplyInterestRate(
@@ -426,7 +423,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         view
         returns (uint256)
     {
-        return totalSupplyInterestRate(_totalAssetSupply(0).add(supplyAmount));
+        return totalSupplyInterestRate(totalAssetSupply().add(supplyAmount));
     }
 
     function totalSupplyInterestRate(
@@ -455,17 +452,20 @@ contract LoanTokenLogicStandard is AdvancedToken {
         );
     }
 
+    function _totalAssetBorrowStored()
+        internal
+        view
+        returns (uint256)
+    {
+        return IBZx(bZxContract).getPoolPrincipalStored(address(this));
+    }
+
     function totalAssetSupply()
         public
         view
         returns (uint256)
     {
-        uint256 interestUnPaid;
-        if (lastSettleTime_ != uint88(block.timestamp)) {
-            (,interestUnPaid) = _getAllInterest();
-        }
-
-        return _totalAssetSupply(interestUnPaid);
+        return _totalAssetSupply(totalAssetBorrow());
     }
 
     function getMaxEscrowAmount(
@@ -477,10 +477,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         uint256 initialMargin = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, leverageAmount);
         return marketLiquidity()
             .mul(initialMargin)
-            .div(_adjustValue(
-                WEI_PERCENT_PRECISION, // maximum possible interest (100%)
-                2419200, // 28 day duration for margin trades
-                initialMargin));
+            .div(WEI_PERCENT_PRECISION);
     }
 
     // returns the user's balance of underlying token
@@ -508,7 +505,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
             collateralTokenAddress = wethToken;
         }
 
-        (principal, interestRate,, collateralToLoanRate) = _getPreMarginData(
+        /*(principal,,,collateralToLoanRate) = _getPreMarginData(
             collateralTokenAddress,
             collateralTokenSent,
             loanTokenSent,
@@ -519,15 +516,24 @@ contract LoanTokenLogicStandard is AdvancedToken {
         }
 
         loanTokenSent = loanTokenSent
-            .add(principal);
+            .add(principal);*/
+        uint256 collateralToLoanPrecision;
+        (collateralToLoanRate, collateralToLoanPrecision) = IPriceFeeds(IBZx(bZxContract).priceFeeds()).queryRate(
+            collateralTokenAddress,
+            loanTokenAddress
+        );
+        require(collateralToLoanRate != 0 && collateralToLoanPrecision != 0, "20");
+        collateralToLoanRate = collateralToLoanRate
+            .mul(WEI_PRECISION)
+            .div(collateralToLoanPrecision);
 
         collateral = IBZx(bZxContract).getEstimatedMarginExposure(
             loanTokenAddress,
             collateralTokenAddress,
             loanTokenSent,
             collateralTokenSent,
-            interestRate,
-            principal
+            0, // interestRate (depreciated)
+            0 // principal
         );
     }
 
@@ -540,13 +546,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         returns (uint256) // depositAmount
     {
         if (borrowAmount != 0) {
-            (,,uint256 newBorrowAmount) = _getInterestRateAndBorrowAmount(
-                borrowAmount,
-                totalAssetSupply(),
-                initialLoanDuration
-            );
-
-            if (newBorrowAmount <= _underlyingBalance()) {
+            if (borrowAmount <= _underlyingBalance()) {
                 if (collateralTokenAddress == address(0)) {
                     collateralTokenAddress = wethToken;
                 }
@@ -555,7 +555,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
                         collateralTokenAddress,
                         true
                     )))],
-                    newBorrowAmount
+                    borrowAmount
                 ).add(10); // some dust to compensate for rounding errors
             }
         }
@@ -581,12 +581,6 @@ contract LoanTokenLogicStandard is AdvancedToken {
                 depositAmount
             );
 
-            (,,borrowAmount) = _getInterestRateAndBorrowAmount(
-                borrowAmount,
-                totalAssetSupply(),
-                initialLoanDuration
-            );
-
             if (borrowAmount > _underlyingBalance()) {
                 borrowAmount = 0;
             }
@@ -600,13 +594,14 @@ contract LoanTokenLogicStandard is AdvancedToken {
         address receiver,
         uint256 depositAmount)
         internal
-        settlesInterest
         pausable
         returns (uint256 mintAmount)
     {
         require (depositAmount != 0, "17");
 
-        uint256 currentPrice = _tokenPrice(_totalAssetSupply(0));
+        _settleInterest(0);
+
+        uint256 currentPrice = _tokenPrice(_totalAssetSupply(_totalAssetBorrowStored()));
         mintAmount = depositAmount
             .mul(WEI_PRECISION)
             .div(currentPrice);
@@ -629,18 +624,19 @@ contract LoanTokenLogicStandard is AdvancedToken {
     function _burnToken(
         uint256 burnAmount)
         internal
-        settlesInterest
         pausable
         returns (uint256 loanAmountPaid)
     {
         require(burnAmount != 0, "19");
+
+        _settleInterest(0);
 
         if (burnAmount > balanceOf(msg.sender)) {
             require(burnAmount == uint256(-1), "32");
             burnAmount = balanceOf(msg.sender);
         }
 
-        uint256 currentPrice = _tokenPrice(_totalAssetSupply(0));
+        uint256 currentPrice = _tokenPrice(_totalAssetSupply(_totalAssetBorrowStored()));
 
         uint256 loanAmountOwed = burnAmount
             .mul(currentPrice)
@@ -669,7 +665,6 @@ contract LoanTokenLogicStandard is AdvancedToken {
         bytes memory /*loanDataBytes*/) // arbitrary order data (for future use)
         internal
         pausable
-        settlesInterest
         returns (IBZx.LoanOpenData memory)
     {
         require(withdrawAmount != 0, "6");
@@ -680,6 +675,18 @@ contract LoanTokenLogicStandard is AdvancedToken {
 
         // ensures authorized use of existing loan
         require(loanId == 0 || msg.sender == borrower, "13");
+
+        _settleInterest(loanId);
+
+        if (loanId == 0) {
+            loanId = keccak256(abi.encodePacked(
+                collateralTokenAddress,
+                address(this),
+                msg.sender,
+                borrower,
+                block.timestamp
+            ));
+        }
 
         if (collateralTokenAddress == address(0)) {
             collateralTokenAddress = wethToken;
@@ -700,12 +707,8 @@ contract LoanTokenLogicStandard is AdvancedToken {
         //sentAmounts[3] = 0; // loanTokenSent
         sentAmounts[4] = collateralTokenSent;
 
-        // interestRate, interestInitialAmount, borrowAmount (newBorrowAmount)
-        (sentAmounts[0], sentAmounts[2], sentAmounts[1]) = _getInterestRateAndBorrowAmount(
-            withdrawAmount,
-            _totalAssetSupply(0), // interest is settled above
-            initialLoanDuration
-        );
+        sentAmounts[1] = withdrawAmount;
+        sentAmounts[2] = 0; // interestInitialAmount (depreciated)
 
         return _borrowOrTrade(
             loanId,
@@ -728,11 +731,22 @@ contract LoanTokenLogicStandard is AdvancedToken {
         bytes memory loanDataBytes)
         internal
         pausable
-        settlesInterest
         returns (IBZx.LoanOpenData memory loanOpenData)
     {
         // ensures authorized use of existing loan
         require(loanId == 0 || msg.sender == trader, "13");
+
+        _settleInterest(loanId);
+
+        if (loanId == 0) {
+            loanId = keccak256(abi.encodePacked(
+                collateralTokenAddress,
+                address(this),
+                msg.sender,
+                trader,
+                block.timestamp
+            ));
+        }
 
         if (collateralTokenAddress == address(0)) {
             collateralTokenAddress = wethToken;
@@ -755,7 +769,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
 
         uint256 totalDeposit;
         uint256 collateralToLoanRate;
-        (sentAmounts[1], sentAmounts[0], totalDeposit, collateralToLoanRate) = _getPreMarginData( // borrowAmount, interestRate, totalDeposit, collateralToLoanRate
+        (sentAmounts[1],, totalDeposit, collateralToLoanRate) = _getPreMarginData( // borrowAmount, interestRate, totalDeposit, collateralToLoanRate
             collateralTokenAddress,
             collateralTokenSent,
             loanTokenSent,
@@ -784,17 +798,11 @@ contract LoanTokenLogicStandard is AdvancedToken {
         return loanOpenData;
     }
 
-    function _settleInterest()
+    function _settleInterest(
+        bytes32 loanId)
         internal
     {
-        uint88 ts = uint88(block.timestamp);
-        if (lastSettleTime_ != ts) {
-            IBZx(bZxContract).withdrawAccruedInterest(
-                loanTokenAddress
-            );
-
-            lastSettleTime_ = ts;
-        }
+        IBZx(bZxContract).settleInterest(loanId);
     }
 
     function _totalDeposit(
@@ -822,35 +830,6 @@ contract LoanTokenLogicStandard is AdvancedToken {
                 .div(WEI_PRECISION)
                 .add(totalDeposit);
         }
-    }
-
-    function _getInterestRateAndBorrowAmount(
-        uint256 borrowAmount,
-        uint256 assetSupply,
-        uint256 initialLoanDuration) // duration in seconds
-        internal
-        view
-        returns (uint256 interestRate, uint256 interestInitialAmount, uint256 newBorrowAmount)
-    {
-        interestRate = _nextBorrowInterestRate2(
-            borrowAmount,
-            assetSupply
-        );
-
-        // newBorrowAmount = borrowAmount * 10^18 / (10^18 - (interestRate * initialLoanDuration * 10^18 / (31536000 * 10^20)))
-        newBorrowAmount = borrowAmount
-            .mul(WEI_PRECISION)
-            .div(
-                SafeMath.sub(WEI_PRECISION,
-                    interestRate
-                        .mul(initialLoanDuration)
-                        .mul(WEI_PRECISION)
-                        .div(31536000 * WEI_PERCENT_PRECISION) // 365 * 86400 * WEI_PERCENT_PRECISION
-                )
-            );
-
-        interestInitialAmount = newBorrowAmount
-            .sub(borrowAmount);
     }
 
     // returns newPrincipal
@@ -1043,8 +1022,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         returns (uint256)
     {
         if (assetBorrow != 0) {
-            (uint256 interestOwedPerDay,) = _getAllInterest();
-            return interestOwedPerDay
+            return _getOwedPerDay() // TODO: revise for new interest handling
                 .mul(365 * WEI_PERCENT_PRECISION)
                 .div(assetBorrow);
         }
@@ -1067,40 +1045,15 @@ contract LoanTokenLogicStandard is AdvancedToken {
     }
 
     function _nextBorrowInterestRate(
-        uint256 borrowAmount)
-        internal
-        view
-        returns (uint256)
-    {
-        uint256 interestUnPaid;
-        if (borrowAmount != 0) {
-            if (lastSettleTime_ != uint88(block.timestamp)) {
-                (,interestUnPaid) = _getAllInterest();
-            }
-
-            uint256 balance = _underlyingBalance()
-                .add(interestUnPaid);
-            if (borrowAmount > balance) {
-                borrowAmount = balance;
-            }
-        }
-
-        return _nextBorrowInterestRate2(
-            borrowAmount,
-            _totalAssetSupply(interestUnPaid)
-        );
-    }
-
-    function _nextBorrowInterestRate2(
-        uint256 newBorrowAmount,
-        uint256 assetSupply)
-        internal
+        uint256 totalBorrow,
+        uint256 newBorrow)
+        public
         view
         returns (uint256 nextRate)
     {
         uint256 utilRate = _utilizationRate(
-            totalAssetBorrow().add(newBorrowAmount),
-            assetSupply
+            totalBorrow.add(newBorrow),
+            _totalAssetSupply(totalBorrow)
         );
 
         uint256 thisMinRate;
@@ -1150,23 +1103,15 @@ contract LoanTokenLogicStandard is AdvancedToken {
         }
     }
 
-    function _getAllInterest()
+    function _getOwedPerDay()
         internal
         view
-        returns (
-            uint256 interestOwedPerDay,
-            uint256 interestUnPaid)
-    {
-        // interestPaid, interestPaidDate, interestOwedPerDay, interestUnPaid, interestFeePercent, principalTotal
-        uint256 interestFeePercent;
-        (,,interestOwedPerDay,interestUnPaid,interestFeePercent,) = IBZx(bZxContract).getLenderInterestData(
+        returns (uint256 interestOwedPerDay)
+    {   // TODO: revise for new interest handling
+        (,,interestOwedPerDay,,,) = IBZx(bZxContract).getLenderInterestData(
             address(this),
             loanTokenAddress
         );
-
-        interestUnPaid = interestUnPaid
-            .mul(SafeMath.sub(WEI_PERCENT_PRECISION, interestFeePercent))
-            .div(WEI_PERCENT_PRECISION);
     }
 
     function _getPreMarginData(
@@ -1186,57 +1131,23 @@ contract LoanTokenLogicStandard is AdvancedToken {
 
         uint256 initialMargin = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, leverageAmount);
 
-        interestRate = _nextBorrowInterestRate2(
-            totalDeposit
-                .mul(WEI_PERCENT_PRECISION)
-                .div(initialMargin),
-            _totalAssetSupply(0)
-        );
-
-        // assumes that loan, collateral, and interest token are the same
+        // assumes that loan and collateral token are the same
         borrowAmount = totalDeposit
-            .mul(WEI_PERCENT_PRECISION * WEI_PERCENT_PRECISION)
-            .div(_adjustValue(
-                interestRate,
-                2419200, // 28 day duration for margin trades
-                initialMargin))
+            .mul(WEI_PERCENT_PRECISION)
             .div(initialMargin);
     }
 
     function _totalAssetSupply(
-        uint256 interestUnPaid)
+        uint256 totalBorrow)
         internal
         view
-        returns (uint256) // assetSupply
+        returns (uint256 totalSupply)
     {
-        if (totalSupply_ != 0) {
-            uint256 assetsBalance = _flTotalAssetSupply; // temporary locked totalAssetSupply during a flash loan transaction
-            if (assetsBalance == 0) {
-                assetsBalance = _underlyingBalance()
-                    .add(totalAssetBorrow());
-            }
-
-            return assetsBalance
-                .add(interestUnPaid);
+        totalSupply = _flTotalAssetSupply; // temporary locked totalAssetSupply during a flash loan transaction
+        if (totalSupply == 0) {
+            totalSupply = _underlyingBalance()
+                .add(totalBorrow);
         }
-    }
-
-    function _adjustValue(
-        uint256 interestRate,
-        uint256 maxDuration,
-        uint256 marginAmount)
-        internal
-        pure
-        returns (uint256)
-    {
-        return maxDuration != 0 ?
-            interestRate
-                .mul(WEI_PERCENT_PRECISION)
-                .mul(maxDuration)
-                .div(31536000) // 86400 * 365
-                .div(marginAmount)
-                .add(WEI_PERCENT_PRECISION) :
-            WEI_PERCENT_PRECISION;
     }
 
     function _utilizationRate(
@@ -1246,7 +1157,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         pure
         returns (uint256)
     {
-        if (assetBorrow != 0 && assetSupply != 0) {
+        if (assetSupply != 0) {
             // U = total_borrow / total_supply
             return assetBorrow
                 .mul(WEI_PERCENT_PRECISION)
