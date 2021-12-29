@@ -17,8 +17,10 @@ for l in list:
 
 CHI = Contract.from_abi("CHI", "0x0000000000004946c0e9F43F4Dee607b0eF1fA1c", TestToken.abi)
 OOKI = Contract.from_abi("OOKI", "0x0De05F6447ab4D22c8827449EE4bA2D5C288379B", OokiToken.abi)
-MINT_COORDINATOR = Contract.from_abi("MINT_COORDINATOR", "0x93c608Dc45FcDd9e7c5457ce6fc7f4dDec235b68", MintCoordinator.abi)
+MINT_COORDINATOR = Contract.from_abi("MINT_COORDINATOR", "0x0a80894a62844e039C8E75E104E6560bbe445E87", MintCoordinator.abi)
 BZRX_CONVERTER = Contract.from_abi("MINT_COORDINATOR", "0x6BE9B7406260B6B6db79a1D4997e7f8f5c9D7400", BZRXv2Converter.abi)
+DAO_FUNDING = Contract.from_abi("DAO_FUNDING", "0x37cBA8d1308019594621438bd1527E5A6a34B49F", DaoFunding_tmp.abi)
+
 
 STAKING = Contract.from_abi("STAKING", "0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4", StakingV1_1.abi)
 STAKING_VOTE_DELEGATOR = Contract.from_abi("STAKING_VOTE_DELEGATOR", "0x7e9d7A0ff725f88Cc6Ab3ccF714a1feA68aC160b", StakingVoteDelegator.abi)
@@ -37,11 +39,12 @@ SWEEP_FEES = Contract.from_abi("STAKING", "0x93B02EE3132D10c938dd178C03a66595154
 SUSHI_ROUTER = Contract.from_abi("router", "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F", interface.IPancakeRouter02.abi)
 SUSHI = Contract.from_abi("SUSHI", "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2", TestToken.abi)
 
-FEE_EXTRACTOR = Contract.from_abi("FEE_EXTRACTOR", BZX.feesController(), FeeExtractAndDistribute_ETH.abi)
+# FEE_EXTRACTOR = Contract.from_abi("FEE_EXTRACTOR", BZX.feesController(), FeeExtractAndDistribute_ETH.abi)
 
 DAO = Contract.from_abi("governorBravoDelegator", address="0x9da41f7810c2548572f4Fa414D06eD9772cA9e6E", abi=GovernorBravoDelegate.abi)
 TIMELOCK = Contract.from_abi("TIMELOCK", address="0xfedC4dD5247B93feb41e899A09C44cFaBec29Cbc", abi=Timelock.abi)
 GUARDIAN_MULTISIG = "0x9B43a385E08EE3e4b402D4312dABD11296d09E93"
+INFRASTRUCTURE_MULTISIG = "0x2a599cEba64CAb8C88549c2c7314ea02A161fC70"
 TEAM_VOTING_MULTISIG = "0x02c6819c2cb8519ab72fd1204a8a0992b5050c6e"
 
 CRV = Contract.from_abi("CRV", "0xD533a949740bb3306d119CC777fa900bA034cd52", TestToken.abi)
