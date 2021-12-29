@@ -396,7 +396,7 @@ interface IBZx {
     /// @param receiver collateral token reciever address
     /// @param swapAmount amount of loan token to swap
     /// @param returnTokenIsCollateral boolean whether to return tokens is collateral
-    /// @param loanDataBytes reserved for future use
+    /// @param loanDataBytes custom payload for specifying swap implementation and data to pass
     /// @return loanCloseAmount loan close amount
     /// @return withdrawAmount loan token withdraw amount
     /// @return withdrawToken loan token address
@@ -405,27 +405,7 @@ interface IBZx {
         address receiver,
         uint256 swapAmount, // denominated in collateralToken
         bool returnTokenIsCollateral, // true: withdraws collateralToken, false: withdraws loanToken
-        bytes calldata loanDataBytes 
-		/** Format:
-			Uniswap v3: encode (uint256,bytes)
-				uint256 is the ID for uniswap v3 implementation on dex selector contract
-				bytes is payload for the routes for swapping on uniswap v3
-					Format: encode ExactInputParams[] or ExactOutputParams[] 
-						Allows for multiple swap routes and arbitrarily long swap route as long as start is the source asset and end is destination asset
-						amountIn/amountOut and amountOutMinimum/amountInMaximum are the percent value to allocate balance for each route IE 100% alloc would be 100 and 100 for the inputs
-						excess swap amount not accounted for due to incorrectly inputting percentages results in adding the swap amount to the first route
-			Sushiswap: enter nothing OR encode (uint256,bytes)
-				uint256 is 1 (sushiswap is always ID 1)
-				bytes is blank
-			Curve: encode (uint256,bytes)
-				uint256 is the ID for curve implementation on dex selector contract
-				bytes is payload for curve swap route and tokens
-					Format: encode (bytes4,address,uint128,uint128)
-						bytes4 is signature for style of execution (depends on Curve pool type)
-						address: curve pool address
-						uint128: source asset ID for curve pool (is validated to ensure the source asset matches the ID specified)
-						uint128: dest asset ID for curve pool (is validated to ensure the source asset matches the ID specified)
-		*/
+        bytes calldata loanDataBytes
     )
         external
         returns (
