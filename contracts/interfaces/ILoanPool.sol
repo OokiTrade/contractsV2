@@ -17,6 +17,13 @@ interface ILoanPool {
         view
         returns (uint256);
 
+    function _nextBorrowInterestRate(
+        uint256 totalBorrow,
+        uint256 newBorrow)
+        external
+        view
+        returns (uint256 nextRate);
+
     function totalAssetSupply()
         external
         view

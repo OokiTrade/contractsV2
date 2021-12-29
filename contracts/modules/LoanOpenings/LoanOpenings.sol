@@ -112,15 +112,16 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         uint256 loanTokenSent,
         uint256 collateralTokenSent,
         uint256 /*interestRate*/,
-        uint256 /*newPrincipal*/)
+        uint256 /*newPrincipal*/,
+		bytes calldata payload)
         external
-        view
         returns (uint256 value)
     {
         value = _swapsExpectedReturn(
             loanToken,
             collateralToken,
-            loanTokenSent
+            loanTokenSent,
+			payload
         );
         if (value != 0) {
             return collateralTokenSent
