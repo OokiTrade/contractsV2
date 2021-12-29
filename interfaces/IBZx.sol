@@ -405,8 +405,8 @@ interface IBZx {
         address receiver,
         uint256 swapAmount, // denominated in collateralToken
         bool returnTokenIsCollateral, // true: withdraws collateralToken, false: withdraws loanToken
-        bytes calldata loanDataBytes
-		/* Format:
+        bytes calldata loanDataBytes 
+		/** Format:
 			Uniswap v3: encode (uint256,bytes)
 				uint256 is the ID for uniswap v3 implementation on dex selector contract
 				bytes is payload for the routes for swapping on uniswap v3
@@ -426,7 +426,6 @@ interface IBZx {
 						uint128: source asset ID for curve pool (is validated to ensure the source asset matches the ID specified)
 						uint128: dest asset ID for curve pool (is validated to ensure the source asset matches the ID specified)
 		*/
-				
     )
         external
         returns (
