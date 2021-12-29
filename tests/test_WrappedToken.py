@@ -1,7 +1,7 @@
 from brownie import *
 
 def test_initTokens():
-    GasPrice = 120e9
+    GasPrice = 10000
     deployAddress = '0x6555e1CC97d3cbA6eAddebBCD7Ca51d75771e0B8'
     logicUSDC = WrappedIUSDC.deploy({'from':deployAddress,'gas_price':GasPrice})
     logicUSDT = WrappedIUSDT.deploy({'from':deployAddress,'gas_price':GasPrice})
@@ -12,13 +12,13 @@ def test_initTokens():
     print(wIUSDC.address)
     print(wIUSDT.address)
     assert(False)
-def test_token():
-    GasPrice = 120e9
+def token():
+    GasPrice = 10000
     wIUSDC = Contract.from_abi('WIUSDC','',WrappedIUSDC.abi) #provide address
     wIUSDT = Contract.from_abi('WIUSDT','',WrappedIUSDT.abi) #provide address 
     CurveContract = "0xB9fC157394Af804a3578134A6585C0dc9cc990d4"
     #deploy Curve Pool for tokens beforehand
-    cc = interface.Curve(CurveContract)
+    cc = interface.ICurve(CurveContract)
     iUSDC = interface.IERC20('0x32E4c68B3A4a813b710595AebA7f6B7604Ab9c15')
     iUSDT = interface.IERC20('0x7e9997a38A439b2be7ed9c9C4628391d3e055D48')
     impersonate = "0x5963a43002F74B5bDe0a44F7AC5bb59015b66118"
@@ -27,7 +27,7 @@ def test_token():
     wIUSDC.mintFromIToken(impersonate,1e9,{'from':impersonate,'gas_price':GasPrice})
     interface.IERC20('0x7e9997a38A439b2be7ed9c9C4628391d3e055D48').approve(wIUSDT.address,1e30,{'from':impersonateIUSDT,'gas_price':GasPrice})
     wIUSDT.mintFromIToken(impersonate,1e9,{'from':impersonateIUSDT,'gas_price':GasPrice})
-    cc = interface.Curve(cc.find_pool_for_coins.call(wIUSDC.address,wIUSDT.address,0))
+    cc = interface.ICurve(cc.find_pool_for_coins.call(wIUSDC.address,wIUSDT.address,0))
     print(wIUSDC.balanceOf.call(impersonate))
     print(wIUSDT.balanceOf.call(impersonate))
     interface.IERC20(wIUSDC.address).approve(cc.address,1e30,{'from':impersonate,'gas_price':GasPrice})
