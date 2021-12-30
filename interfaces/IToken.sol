@@ -49,7 +49,7 @@ interface IToken {
         address collateralTokenAddress, // if address(0), this means ETH and ETH must be sent with the call or loanId must be provided
         address borrower,
         address receiver,
-        bytes calldata loanDataBytes // arbitrary order data
+        bytes calldata /*loanDataBytes*/ // arbitrary order data
     ) external payable returns (LoanOpenData memory);
 
     function borrowWithGasToken(
