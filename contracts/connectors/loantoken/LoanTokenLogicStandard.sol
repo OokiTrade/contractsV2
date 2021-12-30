@@ -152,7 +152,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         address collateralTokenAddress, // if address(0), this means ETH and ETH must be sent with the call or loanId must be provided
         address borrower,
         address receiver,
-        bytes memory /*loanDataBytes*/) // arbitrary order data (for future use)
+        bytes memory loanDataBytes) // arbitrary order data
         public
         payable
         nonReentrant
@@ -662,7 +662,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         address collateralTokenAddress, // if address(0), this means ETH and ETH must be sent with the call or loanId must be provided
         address borrower,
         address receiver,
-        bytes memory /*loanDataBytes*/) // arbitrary order data (for future use)
+        bytes memory loanDataBytes) // arbitrary order data
         internal
         pausable
         returns (IBZx.LoanOpenData memory)
