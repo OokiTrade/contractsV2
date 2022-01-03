@@ -59,7 +59,7 @@ def STAKINGv2(accounts, StakingModularProxy, AdminSettings, StakeUnstake, Stakin
     staking.setApprovals(CRV3, POOL3_GAUGE, 1, {"from": staking.owner()})
 
     # reference vote delegator and staking to each other
-    VOTE_DELEGATOR.setStaking(staking, {"from": accounts[0]})
+    VOTE_DELEGATOR.setStaking(staking, {"from": VOTE_DELEGATOR.owner()})
     staking.setVoteDelegator(VOTE_DELEGATOR, {"from": accounts[0]})
     return staking
 
@@ -68,7 +68,7 @@ def STAKINGv2(accounts, StakingModularProxy, AdminSettings, StakeUnstake, Stakin
 def BZRXv2_CONVERTER(BZRXv2Converter, MINT_COORDINATOR):
     # set mint coordinator
     converter = Contract.from_abi("BZRXv2_CONVERTER", address="0x6BE9B7406260B6B6db79a1D4997e7f8f5c9D7400", abi=BZRXv2Converter.abi)
-    converter.initialize(MINT_COORDINATOR, {"from": converter.owner()})
+    # converter.initialize(MINT_COORDINATOR, {"from": converter.owner()})
     MINT_COORDINATOR.addMinter(converter, {"from": MINT_COORDINATOR.owner()})
     return converter
 
