@@ -3,7 +3,7 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity >=0.5.0 <=0.8.4;
+pragma solidity >=0.5.0 <=0.8.9;
 pragma experimental ABIEncoderV2;
 
 //0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A eth mainnet
