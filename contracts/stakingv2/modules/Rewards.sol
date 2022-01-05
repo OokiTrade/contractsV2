@@ -76,7 +76,8 @@ contract Rewards is Common {
     }
 
     function totalSupplyStored() public view returns (uint256 supply) {
-        supply = _totalSupplyPerToken[vBZRX].mul(vBZRXWeightStored).div(1e18);
+        supply = _totalSupplyPerToken[vBZRX].mul(vBZRXWeightStored)
+            .div(1e17); // OOKI is 10x BZRX
 
         supply = _totalSupplyPerToken[OOKI].add(supply);
 
