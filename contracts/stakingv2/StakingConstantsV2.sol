@@ -31,7 +31,9 @@ contract StakingConstantsV2 {
     uint256 internal constant vestingStartTimestamp =      1594648800; // start_time
     uint256 internal constant vestingCliffTimestamp =      vestingStartTimestamp + cliffDuration;
     uint256 internal constant vestingEndTimestamp =        vestingStartTimestamp + vestingDuration;
-    uint256 internal constant _startingVBZRXBalance =      8893899330e18; // 889,389,933 BZRX
+    
+    // these are 10x original balances for BZRX because of OOKI split
+    uint256 internal constant _startingVBZRXBalance = 8893899330e18;
     uint256 public constant initialCirculatingSupply = 10300000000e18 - _startingVBZRXBalance;
  
     address internal constant SUSHI_MASTERCHEF = 0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd;

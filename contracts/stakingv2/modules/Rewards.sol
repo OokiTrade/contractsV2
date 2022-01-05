@@ -57,7 +57,7 @@ contract Rewards is Common {
     {
         uint256 totalVested = vestedBalanceForAmount(_startingVBZRXBalance, 0, block.timestamp);
 
-        vBZRXWeight = SafeMath.mul(_startingVBZRXBalance - totalVested, 1e18).div(_startingVBZRXBalance) * 10; // overflow not possible
+        vBZRXWeight = SafeMath.mul(_startingVBZRXBalance - totalVested, 1e18).div(_startingVBZRXBalance); // overflow not possible
 
         iBZRXWeight = _calcIBZRXWeight();
 

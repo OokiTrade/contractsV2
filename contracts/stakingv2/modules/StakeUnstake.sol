@@ -377,9 +377,9 @@ contract StakeUnstake is Common {
         (bzrxRewardsEarned, stableCoinRewardsEarned) = _syncVesting(account, bzrxRewardsEarned, stableCoinRewardsEarned, bzrxRewardsVesting, stableCoinRewardsVesting);
 
         // discount vesting amounts for vesting time
-        uint256 multiplier = vestedBalanceForAmount(1e37, 0, block.timestamp);
-        bzrxRewardsVesting = bzrxRewardsVesting.sub(bzrxRewardsVesting.mul(multiplier).div(1e37));
-        stableCoinRewardsVesting = stableCoinRewardsVesting.sub(stableCoinRewardsVesting.mul(multiplier).div(1e37));
+        uint256 multiplier = vestedBalanceForAmount(1e36, 0, block.timestamp);
+        bzrxRewardsVesting = bzrxRewardsVesting.sub(bzrxRewardsVesting.mul(multiplier).div(1e36));
+        stableCoinRewardsVesting = stableCoinRewardsVesting.sub(stableCoinRewardsVesting.mul(multiplier).div(1e36));
 
         uint256 pendingSushi = IMasterChefSushi(SUSHI_MASTERCHEF).pendingSushi(OOKI_ETH_SUSHI_MASTERCHEF_PID, address(this));
 
@@ -447,7 +447,7 @@ contract StakeUnstake is Common {
                 // true up earned amount to vBZRX vesting schedule
                 lastSync = vestingLastSync[account];
                 emit Logger("_e2 lastSync", lastSync);
-                multiplier = vestedBalanceForAmount(1e37, 0, lastSync);
+                multiplier = vestedBalanceForAmount(1e36, 0, lastSync);
                 value = value.mul(multiplier);
                 value /= 1e36;
                 bzrxRewardsEarned = bzrxRewardsEarned.add(value);
@@ -464,7 +464,7 @@ contract StakeUnstake is Common {
                 // true up earned amount to vBZRX vesting schedule
                 if (lastSync == 0) {
                     lastSync = vestingLastSync[account];
-                    multiplier = vestedBalanceForAmount(1e37, 0, lastSync);
+                    multiplier = vestedBalanceForAmount(1e36, 0, lastSync);
                 }
                 value = value.mul(multiplier);
                 value /= 1e36;
@@ -485,7 +485,7 @@ contract StakeUnstake is Common {
 
         if (lastVestingSync != block.timestamp) {
             uint256 rewardsVested;
-            uint256 multiplier = vestedBalanceForAmount(1e37, lastVestingSync, block.timestamp);
+            uint256 multiplier = vestedBalanceForAmount(1e36, lastVestingSync, block.timestamp);
 
             if (bzrxRewardsVesting != 0) {
                 rewardsVested = bzrxRewardsVesting.mul(multiplier).div(1e36);
@@ -497,15 +497,17 @@ contract StakeUnstake is Common {
                 stableCoinRewardsEarned += rewardsVested;
             }
 
+            // OOKI is 10x BZRX
             uint256 vBZRXBalance = _balancesPerToken[vBZRX][account];
             if (vBZRXBalance != 0) {
-                // add vested BZRX to rewards balance
-                rewardsVested = vBZRXBalance.mul(multiplier).div(1e36);
+                // add vested OOKI to rewards balance
+                rewardsVested = vBZRXBalance.mul(multiplier)
+                    .div(1e35);  // OOKI is 10x BZRX
                 bzrxRewardsEarned += rewardsVested;
             }
         }
 
-        return (bzrxRewardsEarned/10*10, stableCoinRewardsEarned);
+        return (bzrxRewardsEarned, stableCoinRewardsEarned);
     }
 
     function addAltRewards(address token, uint256 amount) public {
@@ -546,7 +548,8 @@ contract StakeUnstake is Common {
     function balanceOfStored(address account) public view returns (uint256 vestedBalance, uint256 vestingBalance) {
         uint256 balance = _balancesPerToken[vBZRX][account];
         if (balance != 0) {
-            vestingBalance = balance.mul(vBZRXWeightStored).div(1e18);
+            vestingBalance = balance.mul(vBZRXWeightStored)
+                .div(1e17); // OOKI is 10x BZRX
         }
 
         vestedBalance = _balancesPerToken[OOKI][account];

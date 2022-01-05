@@ -64,7 +64,7 @@ contract Common is StakingStateV2, PausableGuardian {
             return 0;
         }
 
-        // user is attributed a staked balance of vested BZRX, from their last update to the present
+        // user is attributed a staked balance of vested OOKI, from their last update to the present (10x for OOKI)
         totalVotes = vestedBalanceForAmount(_balancesPerToken[vBZRX][account] * 10, _vestingLastSync, proposal.proposalTime);
 
         totalVotes = _balancesPerToken[OOKI][account].add(bzrxRewards[account]).add(totalVotes); // unclaimed BZRX rewards count as votes
