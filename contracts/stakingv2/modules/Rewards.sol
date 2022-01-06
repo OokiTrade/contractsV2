@@ -34,10 +34,8 @@ contract Rewards is Common {
 
         uint256 totalTokens = totalSupplyStored();
         require(totalTokens != 0, "nothing staked");
-        emit Logger1(bzrxPerTokenStored);
         
         bzrxPerTokenStored = newBZRX.mul(1e36).div(totalTokens).add(bzrxPerTokenStored);
-        emit Logger1(bzrxPerTokenStored);
 
         stableCoinPerTokenStored = newStableCoin.mul(1e36).div(totalTokens).add(stableCoinPerTokenStored);
 

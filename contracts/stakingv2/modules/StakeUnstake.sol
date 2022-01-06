@@ -115,15 +115,11 @@ contract StakeUnstake is Common {
 
     function stake(address[] memory tokens, uint256[] memory values) public pausable updateRewards(msg.sender) {
         require(tokens.length == values.length, "count mismatch");
-        emit Logger("here", 0);
         VoteDelegator _voteDelegator = VoteDelegator(voteDelegator);
         address currentDelegate = _voteDelegator.delegates(msg.sender);
 
-        emit Logger("here", 1);
         ProposalState memory _proposalState = _getProposalState();
-        emit Logger("here", 2);
         uint256 votingBalanceBefore = _votingFromStakedBalanceOf(msg.sender, _proposalState, true);
-        emit Logger("here", 3);
         for (uint256 i = 0; i < tokens.length; i++) {
             address token = tokens[i];
             require(token == OOKI || token == vBZRX || token == iOOKI || token == OOKI_ETH_LP, "invalid token");
@@ -132,13 +128,11 @@ contract StakeUnstake is Common {
             if (stakeAmount == 0) {
                 continue;
             }
-            emit Logger("here", 4);
             uint256 pendingBefore = (token == OOKI_ETH_LP) ? _pendingSushiRewards(msg.sender) : 0;
             _balancesPerToken[token][msg.sender] = _balancesPerToken[token][msg.sender].add(stakeAmount);
             _totalSupplyPerToken[token] = _totalSupplyPerToken[token].add(stakeAmount);
 
             IERC20(token).safeTransferFrom(msg.sender, address(this), stakeAmount);
-            emit Logger("here", 5);
             // Deposit to sushi masterchef
             if (token == OOKI_ETH_LP) {
                 _depositToSushiMasterchef(IERC20(OOKI_ETH_LP).balanceOf(address(this)));
@@ -183,8 +177,6 @@ contract StakeUnstake is Common {
                 // settle vested BZRX only if needed
                 IVestingToken(vBZRX).claim();
                 converter.convert(address(this), IERC20(BZRX).balanceOf(address(this)));
-                emit Logger("IERC20(BZRX).balanceOf(address(this))", IERC20(BZRX).balanceOf(address(this)));
-                emit Logger("IERC20(OOKI).balanceOf(address(this))", IERC20(OOKI).balanceOf(address(this)));
             }
 
             // Withdraw to sushi masterchef
@@ -254,7 +246,6 @@ contract StakeUnstake is Common {
         uint256 votingBalanceBefore = _votingFromStakedBalanceOf(msg.sender, _proposalState, true);
 
         bzrxRewardsEarned = bzrxRewards[msg.sender];
-        emit Logger("bzrxRewardsEarned", bzrxRewardsEarned);
         if (bzrxRewardsEarned != 0) {
             bzrxRewards[msg.sender] = 0;
             if (restake) {
@@ -264,8 +255,6 @@ contract StakeUnstake is Common {
                     // settle vested BZRX only if needed
                     IVestingToken(vBZRX).claim();
                     converter.convert(address(this), IERC20(BZRX).balanceOf(address(this)));
-                    emit Logger("IERC20(BZRX).balanceOf(address(this))", IERC20(BZRX).balanceOf(address(this)));
-                    emit Logger("IERC20(OOKI).balanceOf(address(this))", IERC20(OOKI).balanceOf(address(this)));
                 }
 
                 IERC20(OOKI).transfer(msg.sender, bzrxRewardsEarned);
@@ -349,12 +338,7 @@ contract StakeUnstake is Common {
         bzrxVesting[account] = bzrxRewardsVesting;
         stableCoinVesting[account] = stableCoinRewardsVesting;
 
-        emit Logger("before bzrxRewards[account]", bzrxRewards[account]);
-        emit Logger("bzrxRewardsEarned", bzrxRewardsEarned);
-
         (bzrxRewards[account], stableCoinRewards[account]) = _syncVesting(account, bzrxRewardsEarned, stableCoinRewardsEarned, bzrxRewardsVesting, stableCoinRewardsVesting);
-        
-        emit Logger("bzrxRewards[account]", bzrxRewards[account]);
 
         vestingLastSync[account] = block.timestamp;
 
@@ -412,13 +396,6 @@ contract StakeUnstake is Common {
         stableCoinRewardsEarned = stableCoinRewards[account];
         bzrxRewardsVesting = bzrxVesting[account];
         stableCoinRewardsVesting = stableCoinVesting[account];
-        emit Logger("_e bzrxRewardsEarned", bzrxRewardsEarned);
-        emit Logger("_e stableCoinRewardsEarned", stableCoinRewardsEarned);
-        emit Logger("_e bzrxRewardsVesting", bzrxRewardsVesting);
-        emit Logger("_e stableCoinRewardsVesting", stableCoinRewardsVesting);
-        emit Logger("_e stableCoinPerTokenUnpaid", stableCoinPerTokenUnpaid);
-        emit Logger("_e bzrxPerTokenUnpaid", bzrxPerTokenUnpaid);
-        emit Logger("_e bzrxRewardsPerTokenPaid[account]", bzrxRewardsPerTokenPaid[account]);
 
         if (bzrxPerTokenUnpaid != 0 || stableCoinPerTokenUnpaid != 0) {
             uint256 value;
@@ -426,15 +403,11 @@ contract StakeUnstake is Common {
             uint256 lastSync;
 
             (uint256 vestedBalance, uint256 vestingBalance) = balanceOfStored(account);
-            emit Logger("_e vestedBalance", vestedBalance);
-            emit Logger("_e vestingBalance", vestingBalance);
             value = vestedBalance.mul(bzrxPerTokenUnpaid);
             value /= 1e36;
             bzrxRewardsEarned = value.add(bzrxRewardsEarned);
-            emit Logger("_e1 bzrxRewardsEarned", bzrxRewardsEarned);
             value = vestedBalance.mul(stableCoinPerTokenUnpaid);
             value /= 1e36;
-            emit Logger("_e1 1 value", value);
             stableCoinRewardsEarned = value.add(stableCoinRewardsEarned);
 
             if (vestingBalance != 0 && bzrxPerTokenUnpaid != 0) {
@@ -442,17 +415,12 @@ contract StakeUnstake is Common {
                 value = vestingBalance.mul(bzrxPerTokenUnpaid);
                 value /= 1e36;
                 bzrxRewardsVesting = bzrxRewardsVesting.add(value);
-                emit Logger("_e2 2 bzrxRewardsVesting", bzrxRewardsVesting);
-                emit Logger("_e2 1 value", value);
                 // true up earned amount to vBZRX vesting schedule
                 lastSync = vestingLastSync[account];
-                emit Logger("_e2 lastSync", lastSync);
                 multiplier = vestedBalanceForAmount(1e36, 0, lastSync);
                 value = value.mul(multiplier);
                 value /= 1e36;
                 bzrxRewardsEarned = bzrxRewardsEarned.add(value);
-                emit Logger("_e2 2 value", value);
-                emit Logger("_e2 2 bzrxRewardsEarned", bzrxRewardsEarned);
             }
             if (vestingBalance != 0 && stableCoinPerTokenUnpaid != 0) {
                 
@@ -469,7 +437,6 @@ contract StakeUnstake is Common {
                 value = value.mul(multiplier);
                 value /= 1e36;
                 stableCoinRewardsEarned = stableCoinRewardsEarned.add(value);
-                emit Logger("_e2 stableCoinRewardsEarned", stableCoinRewardsEarned);
             }
         }
     }
