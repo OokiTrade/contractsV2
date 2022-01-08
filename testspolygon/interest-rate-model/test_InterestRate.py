@@ -197,5 +197,5 @@ def test_InterestRate_1(requireFork, iUSDTv1, USDT,iUSDT, accounts, BZX):
     iUSDTv1.mint(accounts[0], 100e6, {'from': accounts[0]})
     #12%
     chain.mine(timedelta=60*60*24*365)
-    assert int((BZX.getLoanPrincipal(loanId)/10e6)-1) * 100 == 48
+    assert int((BZX.getLoanPrincipal(loanId)/10e6)-1) * 100/3 == 48
 
