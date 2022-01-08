@@ -546,7 +546,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Swaps
             endTimestamp: uint96(loanLocal.endTimestamp),
             loanToken: loanParamsLocal.loanToken,
             collateralToken: loanParamsLocal.collateralToken,
-            principal: _getLoanPrincipal(loanLocal.lender,loanParamsLocal.loanToken,loanLocal.id),
+            principal: loanLocal.principal,
             collateral: loanLocal.collateral,
             interestOwedPerDay: loanType == LoanType.NonMargin ? loanInterestLocal.owedPerDay : 0,
             interestDepositRemaining: value,
