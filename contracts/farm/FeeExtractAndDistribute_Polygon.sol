@@ -3,31 +3,19 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.6.12;
+pragma solidity 0.8.4;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
-import "../interfaces/IERC20Burnable.sol";
-import "./interfaces/Upgradeable.sol";
-import "./interfaces/IWethERC20.sol";
+import "@openzeppelin-4.3.2/token/ERC20/IERC20.sol";
+import "../proxies/0_8/Upgradeable_0_8.sol";
 import "./interfaces/IUniswapV2Router.sol";
 import "../../interfaces/IBZx.sol";
-import "./interfaces/IMasterChefPartial.sol";
-import "./interfaces/IPriceFeeds.sol";
 
-contract FeeExtractAndDistribute_Polygon is Upgradeable {
-    using SafeMath for uint256;
-    using SafeERC20 for IERC20;
+contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
+    IBZx public constant bZx = IBZx(0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8);
 
-    IBZx public constant bZx = IBZx(0xfe4F0eb0A1Ad109185c9AaDE64C48ff8e928e54B);
-    IMasterChefPartial public constant chef =
-        IMasterChefPartial(0xd39Ff512C3e55373a30E94BB1398651420Ae1D43);
-
-    address public constant PGOV = 0xd5d84e75f48E75f01fb2EB6dFD8eA148eE3d0FEb;
     address public constant MATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
-    address public constant BZRX = 0x54cFe73f2c7d0c4b62Ab869B473F5512Dc0944D2;
-    address public constant iBZRX = 0x97dfbEF4eD5a7f63781472Dbc69Ab8e5d7357cB9;
-
+    address public constant USDC = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
     IUniswapV2Router public constant swapsRouterV2 =
         IUniswapV2Router(0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506); // Sushiswap
 
@@ -35,13 +23,9 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable {
 
     bool public isPaused;
 
-    address payable public fundsWallet;
-
     mapping(address => uint256) public exportedFees;
 
     address[] public currentFeeTokens;
-
-    mapping(IERC20 => uint256) public tokenHeld;
 
     address payable public treasuryWallet;
 
@@ -53,12 +37,6 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable {
         address indexed dstAsset,
         uint256 srcAmount,
         uint256 dstAmount
-    );
-
-    event AssetBurn(
-        address indexed sender,
-        address indexed asset,
-        uint256 amount
     );
 
     modifier onlyEOA() {
@@ -92,57 +70,40 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable {
         );
 
         for (uint256 i = 0; i < assets.length; i++) {
-            require(assets[i] != PGOV, "asset not supported");
-            exportedFees[assets[i]] = exportedFees[assets[i]].add(amounts[i]);
+            exportedFees[assets[i]] += amounts[i];
         }
 
-        uint256 maticOutput = exportedFees[MATIC];
-        exportedFees[MATIC] = 0;
+        uint256 usdcOutput = exportedFees[USDC];
+        exportedFees[USDC] = 0;
 
         address asset;
         uint256 amount;
         for (uint256 i = 0; i < assets.length; i++) {
             asset = assets[i];
-            if (asset == PGOV || asset == BZRX || asset == MATIC) {
-                continue;
-            }
+            if (asset == USDC) continue; //USDC already accounted for
             amount = exportedFees[asset];
             exportedFees[asset] = 0;
 
             if (amount != 0) {
-                maticOutput += _swapWithPair(asset, MATIC, amount);
+                usdcOutput += asset == MATIC
+                    ? _swapWithPair([asset, USDC], amount)
+                    : _swapWithPair([asset, MATIC, USDC], amount); //builds route for all tokens to route through MATIC
             }
         }
 
-        if (maticOutput != 0) {
-            // add any BZRX extracted from fees
-            uint256 bzrxAmount = exportedFees[BZRX];
-            exportedFees[BZRX] = 0;
-
-            if (bzrxAmount != 0) {
-                IERC20(BZRX).safeTransfer(iBZRX, bzrxAmount);
-                emit AssetSwap(msg.sender, address(0), BZRX, 0, bzrxAmount); // this event just for tracking purphose
-            }
-
-            IWethERC20(MATIC).withdraw(maticOutput);
-            maticOutput = maticOutput/2;
-            chef.addAltReward.value(maticOutput)(); // 50% of matic + whatever bzrx was send to iBZRX contract
-
-            Address.sendValue(treasuryWallet, maticOutput); // 50% 
-
-            emit ExtractAndDistribute(maticOutput, maticOutput);
+        if (usdcOutput != 0) {
+            IERC20(USDC).transfer(treasuryWallet, usdcOutput); //transfer to treasury/multisig
+            emit ExtractAndDistribute(usdcOutput, 0); //for tracking distribution amounts
         }
     }
 
-    function _swapWithPair(
-        address inAsset,
-        address outAsset,
-        uint256 inAmount
-    ) internal returns (uint256 returnAmount) {
+    function _swapWithPair(address[2] memory route, uint256 inAmount)
+        internal
+        returns (uint256 returnAmount)
+    {
         address[] memory path = new address[](2);
-        path[0] = inAsset;
-        path[1] = outAsset;
-
+        path[0] = route[0];
+        path[1] = route[1];
         uint256[] memory amounts = swapsRouterV2.swapExactTokensForTokens(
             inAmount,
             1, // amountOutMin
@@ -154,47 +115,43 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable {
         returnAmount = amounts[1];
     }
 
+    function _swapWithPair(address[3] memory route, uint256 inAmount)
+        internal
+        returns (uint256 returnAmount)
+    {
+        address[] memory path = new address[](3);
+        path[0] = route[0];
+        path[1] = route[1];
+        path[2] = route[2];
+        uint256[] memory amounts = swapsRouterV2.swapExactTokensForTokens(
+            inAmount,
+            1, // amountOutMin
+            path,
+            address(this),
+            block.timestamp
+        );
+
+        returnAmount = amounts[2];
+    }
+
     // OnlyOwner functions
 
-    function togglePause(bool _isPaused) external onlyOwner {
+    function togglePause(bool _isPaused) public onlyOwner {
         isPaused = _isPaused;
     }
 
-    function setFundsWallet(address payable _wallet) external onlyOwner {
-        fundsWallet = _wallet;
-    }
-
-    function setTreasuryWallet(address payable _wallet) external onlyOwner {
+    function setTreasuryWallet(address payable _wallet) public onlyOwner {
         treasuryWallet = _wallet;
     }
 
-    function setFeeTokens(address[] calldata tokens) external onlyOwner {
+    function setFeeTokens(address[] calldata tokens) public onlyOwner {
         currentFeeTokens = tokens;
         for (uint256 i = 0; i < tokens.length; i++) {
-            IERC20(tokens[i]).safeApprove(address(swapsRouterV2), 0);
-            IERC20(tokens[i]).safeApprove(
+            IERC20(tokens[i]).approve(address(swapsRouterV2), 0);
+            IERC20(tokens[i]).approve(
                 address(swapsRouterV2),
-                uint256(-1)
+                type(uint256).max
             );
         }
-        //IERC20(PGOV).safeApprove(address(chef), 0);
-        //IERC20(PGOV).safeApprove(address(chef), uint256(-1));
-    }
-
-    function depositToken(IERC20 token, uint256 amount) external onlyOwner {
-        token.safeTransferFrom(msg.sender, address(this), amount);
-
-        tokenHeld[token] = tokenHeld[token].add(amount);
-    }
-
-    function withdrawToken(IERC20 token, uint256 amount) external onlyOwner {
-        uint256 balance = tokenHeld[token];
-        if (amount > balance) {
-            amount = balance;
-        }
-
-        tokenHeld[token] = tokenHeld[token].sub(amount);
-
-        token.safeTransfer(msg.sender, amount);
     }
 }

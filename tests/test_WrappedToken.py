@@ -12,28 +12,30 @@ def test_initTokens():
     print(wIUSDC.address)
     print(wIUSDT.address)
     assert(False)
-def test_token():
+
+def token():
+    GasPrice = 10000
     wIUSDC = Contract.from_abi('WIUSDC','',WrappedIUSDC.abi) #provide address
     wIUSDT = Contract.from_abi('WIUSDT','',WrappedIUSDT.abi) #provide address 
     CurveContract = "0xB9fC157394Af804a3578134A6585C0dc9cc990d4"
     #deploy Curve Pool for tokens beforehand
-    cc = interface.Curve(CurveContract)
+    cc = interface.ICurve(CurveContract)
     iUSDC = interface.IERC20('0x32E4c68B3A4a813b710595AebA7f6B7604Ab9c15')
     iUSDT = interface.IERC20('0x7e9997a38A439b2be7ed9c9C4628391d3e055D48')
     impersonate = "0x5963a43002F74B5bDe0a44F7AC5bb59015b66118"
     impersonateIUSDT = "0x936805cf02Ba243D11aF7C68959cbDa0b99e83Dd"
     interface.IERC20('0x32E4c68B3A4a813b710595AebA7f6B7604Ab9c15').approve(wIUSDC.address,1e30,{'from':impersonate,'gas_price':GasPrice})
-    wIUSDC.mint(impersonate,1e9,{'from':impersonate,'gas_price':GasPrice})
+    wIUSDC.mintFromIToken(impersonate,1e9,{'from':impersonate,'gas_price':GasPrice})
     interface.IERC20('0x7e9997a38A439b2be7ed9c9C4628391d3e055D48').approve(wIUSDT.address,1e30,{'from':impersonateIUSDT,'gas_price':GasPrice})
-    wIUSDT.mint(impersonate,1e9,{'from':impersonateIUSDT,'gas_price':GasPrice})
-    cc = interface.Curve(cc.find_pool_for_coins.call(wIUSDC.address,wIUSDT.address,0))
+    wIUSDT.mintFromIToken(impersonate,1e9,{'from':impersonateIUSDT,'gas_price':GasPrice})
+    cc = interface.ICurve(cc.find_pool_for_coins.call(wIUSDC.address,wIUSDT.address,0))
     print(wIUSDC.balanceOf.call(impersonate))
     print(wIUSDT.balanceOf.call(impersonate))
     interface.IERC20(wIUSDC.address).approve(cc.address,1e30,{'from':impersonate,'gas_price':GasPrice})
     interface.IERC20(wIUSDT.address).approve(cc.address,1e30,{'from':impersonate,'gas_price':GasPrice})
     cc.add_liquidity([1e8,1e8],0,impersonate,{'from':impersonate,'gas_price':GasPrice})
     print(iUSDC.balanceOf.call(impersonate))
-    wIUSDC.burn(impersonate,1e6,{'from':impersonate,'gas_price':GasPrice})
+    wIUSDC.burnToIToken(impersonate,1e6,{'from':impersonate,'gas_price':GasPrice})
     print(iUSDC.balanceOf.call(impersonate))
     oldBalanceOfUnderlying = wIUSDT.balanceOfUnderlying.call(impersonate)
     print(oldBalanceOfUnderlying)
@@ -41,7 +43,7 @@ def test_token():
     print(tValue)
     print(wIUSDT.balanceOfUnderlying.call(impersonate))
     randomReceiver = '0xFc0556090C98a1D3045ff3aCA2cb4aD26C3445Ce'
-    wIUSDT.burn(randomReceiver,wIUSDT.balanceOfUnderlying.call(impersonate)-oldBalanceOfUnderlying,{'from':impersonate,'gas_price':GasPrice})
+    wIUSDT.burnToIToken(randomReceiver,wIUSDT.balanceOfUnderlying.call(impersonate)-oldBalanceOfUnderlying,{'from':impersonate,'gas_price':GasPrice})
     print(interface.IERC20(wIUSDT.iTokenAddress.call()).balanceOf.call(randomReceiver))
     print(wIUSDC.tokenPrice.call())
     print(wIUSDT.tokenPrice.call())
