@@ -14,18 +14,25 @@ import "./interfaces/IPriceGetterP125.sol";
 
 contract BuyBackAndBurn is Upgradeable_0_8 {
     IPriceGetterP125.V3Specs public specsForTWAP;
+    uint256 public maxPriceDisagreement; //set value as 100+x% on WEI_PRECISION_PERCENT
+    bool public isPaused;
+    address public treasuryWallet;
+    IPriceGetterP125 public priceGetter;
+
     address public constant USDC = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
     address public constant P125 = 0x83000597e8420aD7e9EDD410b2883Df1b83823cF;
     IUniswapV3SwapRouter public constant swapsRouterV3 =
         IUniswapV3SwapRouter(0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45); //uni v3
-    IQuoter public constant QuoteContract =
+    IQuoter public constant quoteContract =
         IQuoter(0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6); //uni v3 quote v2
-    uint256 public maxPriceDisagreement; //set value as 100+x% on WEI_PRECISION_PERCENT
-    IPriceGetterP125 public priceGetter;
     uint256 public constant WEI_PRECISION_PERCENT = 10**20; //1e18 precision on percentages
-    bool public isPaused;
-    event BuyBack(uint256 amountBought);
-    address public treasuryWallet;
+
+    event BuyBack(
+        uint256 indexed price,
+        uint256 amountIn,
+        uint256 amountBought
+    );
+
     modifier onlyEOA() {
         require(msg.sender == tx.origin, "unauthorized");
         _;
@@ -37,11 +44,7 @@ contract BuyBackAndBurn is Upgradeable_0_8 {
     }
 
     function getDebtTokenAmountOut(uint256 amountIn) public returns (uint256) {
-        uint256 amountOut = QuoteContract.quoteExactInput(
-            specsForTWAP.route,
-            amountIn
-        );
-        return amountOut;
+        return quoteContract.quoteExactInput(specsForTWAP.route, amountIn);
     }
 
     function worstExecPrice() public view returns (uint256) {
@@ -53,15 +56,20 @@ contract BuyBackAndBurn is Upgradeable_0_8 {
         uint256 buyAmount;
         uint256 fullBalance = IERC20Metadata(USDC).balanceOf(address(this));
         uint256 minAmountOut = (worstExecPrice() * fullBalance) / 10**6;
+        uint256 balanceUsed;
         if (getDebtTokenAmountOut(fullBalance) >= minAmountOut) {
-            buyAmount = _buyDebtToken(WEI_PRECISION_PERCENT); //uses full amount
+            (balanceUsed, buyAmount) = _buyDebtToken(WEI_PRECISION_PERCENT); //uses full amount
         } else {
-            buyAmount = _buyDebtToken(percentage); //uses partial
+            (balanceUsed, buyAmount) = _buyDebtToken(percentage); //uses partial
         }
-        emit BuyBack(buyAmount);
+        emit BuyBack(
+            getDebtTokenAmountOut(balanceUsed),
+            balanceUsed,
+            buyAmount
+        );
     }
 
-    function _buyDebtToken(uint256 percentage) internal returns (uint256) {
+    function _buyDebtToken(uint256 percentage) internal returns (uint256, uint256) {
         uint256 bought;
         uint256 balanceUsed = (IERC20Metadata(USDC).balanceOf(address(this)) *
             percentage) / WEI_PRECISION_PERCENT;
@@ -77,8 +85,7 @@ contract BuyBackAndBurn is Upgradeable_0_8 {
                 amountIn: balanceUsed,
                 amountOutMinimum: minAmountOut
             });
-        bought = swapsRouterV3.exactInput(params);
-        return bought;
+        return (balanceUsed, swapsRouterV3.exactInput(params));
     }
 
     // OnlyOwner functions
