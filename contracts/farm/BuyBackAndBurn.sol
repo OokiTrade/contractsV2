@@ -6,7 +6,7 @@
 pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin-4.3.2/token/ERC20/IERC20.sol";
+import "@openzeppelin-4.3.2/token/ERC20/extensions/IERC20Metadata.sol";
 import "../proxies/0_8/Upgradeable_0_8.sol";
 import "../interfaces/IUniswapV3SwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol";
@@ -24,8 +24,8 @@ contract BuyBackAndBurn is Upgradeable_0_8 {
     IPriceGetterP125 public priceGetter;
     uint256 public constant WEI_PRECISION_PERCENT = 10**20; //1e18 precision on percentages
     bool public isPaused;
-    event Burned(uint256 amountBurned);
-    address public burnWallet;
+    event BuyBack(uint256 amountBought);
+    address public treasuryWallet;
     modifier onlyEOA() {
         require(msg.sender == tx.origin, "unauthorized");
         _;
@@ -49,21 +49,21 @@ contract BuyBackAndBurn is Upgradeable_0_8 {
         return (quoteAmount * maxPriceDisagreement) / WEI_PRECISION_PERCENT;
     }
 
-    function buyBackAndBurn(uint256 percentage) public checkPause onlyEOA {
-        uint256 fullBalance = IERC20(USDC).balanceOf(address(this));
+    function buyBack(uint256 percentage) public checkPause onlyEOA {
+        uint256 buyAmount;
+        uint256 fullBalance = IERC20Metadata(USDC).balanceOf(address(this));
         uint256 minAmountOut = (worstExecPrice() * fullBalance) / 10**6;
         if (getDebtTokenAmountOut(fullBalance) >= minAmountOut) {
-            _buyDebtToken(WEI_PRECISION_PERCENT); //uses full amount
+            buyAmount = _buyDebtToken(WEI_PRECISION_PERCENT); //uses full amount
         } else {
-            _buyDebtToken(percentage); //uses partial
+            buyAmount = _buyDebtToken(percentage); //uses partial
         }
-        uint256 burnAmount = IERC20(P125).balanceOf(address(this));
-        IERC20(P125).transfer(burnWallet, burnAmount); //transfers full balance to multisig to be sent to Ethereum and burnt
-        emit Burned(burnAmount);
+        emit BuyBack(buyAmount);
     }
 
-    function _buyDebtToken(uint256 percentage) internal {
-        uint256 balanceUsed = (IERC20(USDC).balanceOf(address(this)) *
+    function _buyDebtToken(uint256 percentage) internal returns (uint256) {
+        uint256 bought;
+        uint256 balanceUsed = (IERC20Metadata(USDC).balanceOf(address(this)) *
             percentage) / WEI_PRECISION_PERCENT;
         uint256 minAmountOut = (worstExecPrice() * balanceUsed) / 10**6;
         require(
@@ -77,7 +77,8 @@ contract BuyBackAndBurn is Upgradeable_0_8 {
                 amountIn: balanceUsed,
                 amountOutMinimum: minAmountOut
             });
-        swapsRouterV3.exactInput(params);
+        bought = swapsRouterV3.exactInput(params);
+        return bought;
     }
 
     // OnlyOwner functions
@@ -86,17 +87,24 @@ contract BuyBackAndBurn is Upgradeable_0_8 {
         isPaused = _isPaused;
     }
 
+    function sendToTreasury() public onlyOwner {
+        IERC20Metadata(P125).transfer(
+            treasuryWallet,
+            IERC20Metadata(P125).balanceOf(address(this))
+        ); //transfers full balance to multisig to be sent to Ethereum and burnt
+    }
+
     function setApproval() public onlyOwner {
-        IERC20(USDC).approve(address(swapsRouterV3), 0);
-        IERC20(USDC).approve(address(swapsRouterV3), type(uint256).max);
+        IERC20Metadata(USDC).approve(address(swapsRouterV3), 0);
+        IERC20Metadata(USDC).approve(address(swapsRouterV3), type(uint256).max);
     }
 
     function setPriceGetter(IPriceGetterP125 _wallet) public onlyOwner {
         priceGetter = _wallet;
     }
 
-    function setBurnWallet(address _wallet) public onlyOwner {
-        burnWallet = _wallet;
+    function setTreasuryWallet(address _wallet) public onlyOwner {
+        treasuryWallet = _wallet;
     }
 
     function setMaxPriceDisagreement(uint256 value) public onlyOwner {
