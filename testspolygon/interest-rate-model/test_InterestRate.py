@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 import pytest
-from brownie import network, Contract, reverts
+from brownie import network, Contract, reverts, chain
 from brownie.convert.datatypes import  Wei
 import json
 
@@ -60,7 +60,7 @@ def BZX(accounts, interface, LoanSettings, LoanOpenings, LoanMaintenance_2, Loan
     return bzx
 
 
-def deployIToken(bzx, underlyingToken, acct, LoanTokenLogicStandard, LoanToken, loanTokenSettings, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGESTRY, LoanTokenSettingsLowerAdmin):
+def deployIToken(bzx, underlyingToken, acct, LoanTokenLogicStandard, LoanToken, loanTokenSettings, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGISTRY, LoanTokenSettingsLowerAdmin):
     underlyingSymbol = underlyingToken.symbol()
     iTokenSymbol = "i{}v1".format(underlyingSymbol)
     iTokenName = "Fulcrum {} iToken ({})".format(underlyingSymbol, iTokenSymbol)
@@ -81,12 +81,12 @@ def deployIToken(bzx, underlyingToken, acct, LoanTokenLogicStandard, LoanToken, 
     bzx.setLoanPool([iToken], [loanTokenAddress], {"from": acct})
     bzx.setSupportedTokens([loanTokenAddress], [True], True, {"from": acct})
 
-    marginSettings(bzx, underlyingToken, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGESTRY, acct, LoanTokenLogicStandard, LoanTokenSettingsLowerAdmin)
+    marginSettings(bzx, underlyingToken, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGISTRY, acct, LoanTokenLogicStandard, LoanTokenSettingsLowerAdmin)
     return iToken
 
 
 
-def marginSettings(bzx, underlyingToken, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGESTRY, acct, LoanTokenLogicStandard, LoanTokenSettingsLowerAdmin):
+def marginSettings(bzx, underlyingToken, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGISTRY, acct, LoanTokenLogicStandard, LoanTokenSettingsLowerAdmin):
     base_data = [
         b"0x0",  # id
         False,  # active
@@ -100,7 +100,7 @@ def marginSettings(bzx, underlyingToken, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGEST
 
     params = []
 
-    supportedTokenAssetsPairs = REGESTRY.getTokens(0, 100) # TODO move this into a loop for permissionless to support more than 100
+    supportedTokenAssetsPairs = REGISTRY.getTokens(0, 100) # TODO move this into a loop for permissionless to support more than 100
     loanTokensArr = []
     collateralTokensArr = []
     amountsArr = []
@@ -162,16 +162,16 @@ def iUSDT(accounts, LoanTokenLogicStandard):
     return Contract.from_abi("iUSDT", address="0x5BFAC8a40782398fb662A69bac8a89e6EDc574b1", abi=LoanTokenLogicStandard.abi)
 
 @pytest.fixture(scope="module")
-def iUSDTv1(accounts, USDT, LoanTokenLogicStandard,LoanToken, BZX, LOAN_TOKEN_SETTINGS, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGESTRY, LoanTokenSettingsLowerAdmin):
+def iUSDTv1(accounts, USDT, LoanTokenLogicStandard,LoanToken, BZX, LOAN_TOKEN_SETTINGS, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGISTRY, LoanTokenSettingsLowerAdmin):
     acct = BZX.owner()
-    return deployIToken(BZX, USDT, acct, LoanTokenLogicStandard, LoanToken, LOAN_TOKEN_SETTINGS, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGESTRY, LoanTokenSettingsLowerAdmin)
+    return deployIToken(BZX, USDT, acct, LoanTokenLogicStandard, LoanToken, LOAN_TOKEN_SETTINGS, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGISTRY, LoanTokenSettingsLowerAdmin)
 
 
 
 
 @pytest.fixture(scope="module")
-def REGESTRY(accounts, TokenRegistry):
-    return Contract.from_abi("REGESTRY", address="0x4B234781Af34E9fD756C27a47675cbba19DC8765",
+def REGISTRY(accounts, TokenRegistry):
+    return Contract.from_abi("REGISTRY", address="0x4B234781Af34E9fD756C27a47675cbba19DC8765",
                              abi=TokenRegistry.abi, owner=accounts[0])
 
 
@@ -185,10 +185,17 @@ def test_InterestRate_1(requireFork, iUSDTv1, USDT,iUSDT, accounts, BZX):
     collateralAmount = 10e18
     collateralAddress = "0x0000000000000000000000000000000000000000"
 
-    assert False
-    iUSDTv1.mint(accounts[0], 10e6, {'from': accounts[0]})
+
+    iUSDTv1.mint(accounts[0], 100e6, {'from': accounts[0]})
+    #12%
     txBorrow = iUSDTv1.borrow("", borrowAmount, borrowTime, collateralAmount, collateralAddress, accounts[0], accounts[0], b"", {'from': accounts[0], 'value': Wei(collateralAmount)})
-
-
-    assert False
+    loanId =  BZX.getUserLoans(accounts[0], 0,10,0, 0,0)[0][0]
+    chain.mine(timedelta=60*60*24*365)
+    iUSDTv1.burn(accounts[0], 80e6, {'from': accounts[0]})
+    #120%
+    chain.mine(timedelta=60*60*24*365)
+    iUSDTv1.mint(accounts[0], 100e6, {'from': accounts[0]})
+    #12%
+    chain.mine(timedelta=60*60*24*365)
+    assert int((BZX.getLoanPrincipal(loanId)/10e6)-1) * 100 == 48
 
