@@ -253,6 +253,13 @@ def updateOwner():
     print("new owner:", c.owner())
     print("----")
 
+    ## HelperProxy
+    c = Contract.from_abi("c", address="0xdb2800b894FDa88F6c49c38379398b257062dF80", abi=LoanToken.abi, owner=acct)
+    print("old owner:", c.owner())
+    c.transferOwnership(guardian_multisig, {"from": acct})
+    print("new owner:", c.owner())
+    print("----")
+
     ## FeeExtractAndDistribute_Polygon_proxy
     c = Contract.from_abi("c", address="0xf970FA9E6797d0eBfdEE8e764FC5f3123Dc6befD", abi=LoanToken.abi, owner=acct)
     print("old owner:", c.owner())
