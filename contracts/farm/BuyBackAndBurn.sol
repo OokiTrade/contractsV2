@@ -71,9 +71,9 @@ contract BuyBackAndBurn is Upgradeable_0_8 {
     function _buyDebtToken(uint256 percentage)
         internal
         returns (
-            uint256,
-            uint256,
-            uint256
+            uint256 price,
+            uint256 amountIn,
+            uint256 amountOut
         )
     {
         uint256 bought;
