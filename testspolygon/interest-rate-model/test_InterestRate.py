@@ -60,7 +60,7 @@ def BZX(accounts, interface, LoanSettings, LoanOpenings, LoanMaintenance_2, Loan
     return bzx
 
 
-def deployIToken(bzx, underlyingToken, acct, LoanTokenLogicStandard, LoanToken, loanTokenSettings, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGESTRY):
+def deployIToken(bzx, underlyingToken, acct, LoanTokenLogicStandard, LoanToken, loanTokenSettings, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGESTRY, LoanTokenSettingsLowerAdmin):
     underlyingSymbol = underlyingToken.symbol()
     iTokenSymbol = "i{}v1".format(underlyingSymbol)
     iTokenName = "Fulcrum {} iToken ({})".format(underlyingSymbol, iTokenSymbol)
@@ -81,12 +81,12 @@ def deployIToken(bzx, underlyingToken, acct, LoanTokenLogicStandard, LoanToken, 
     bzx.setLoanPool([iToken], [loanTokenAddress], {"from": acct})
     bzx.setSupportedTokens([loanTokenAddress], [True], True, {"from": acct})
 
-    marginSettings(bzx, underlyingToken, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGESTRY, acct, LoanTokenLogicStandard)
+    marginSettings(bzx, underlyingToken, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGESTRY, acct, LoanTokenLogicStandard, LoanTokenSettingsLowerAdmin)
     return iToken
 
 
 
-def marginSettings(bzx, underlyingToken, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGESTRY, acct, LoanTokenLogicStandard):
+def marginSettings(bzx, underlyingToken, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGESTRY, acct, LoanTokenLogicStandard, LoanTokenSettingsLowerAdmin):
     base_data = [
         b"0x0",  # id
         False,  # active
@@ -104,7 +104,8 @@ def marginSettings(bzx, underlyingToken, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGEST
     loanTokensArr = []
     collateralTokensArr = []
     amountsArr = []
-
+    loanTokenSettingsLowerAdmin = Contract.from_abi(
+        "loanToken", address="0x91EB15A8EC9aE2280B7003824b2d1e9Caf802b6C", abi=LoanTokenSettingsLowerAdmin.abi, owner=acct)
     for tokenAssetPairA in supportedTokenAssetsPairs:
         params.clear()
         loanTokensArr.clear()
@@ -147,7 +148,11 @@ def marginSettings(bzx, underlyingToken, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGEST
             existingIToken.updateSettings(LOAN_TOKEN_SETTINGS_LOWER_ADMIN.address, calldata, {"from": acct})
 
         bzx.setLiquidationIncentivePercent(loanTokensArr, collateralTokensArr, amountsArr, {"from": acct})
-
+        existingIToken.updateSettings(
+            loanTokenSettingsLowerAdmin.address,
+            loanTokenSettingsLowerAdmin.setDemandCurve.encode_input(0, 20*10**18, 0, 0, 60*10**18, 80*10**18, 120*10**18),
+             {"from": acct}
+        )
 @pytest.fixture(scope="module")
 def USDT(accounts, TestToken):
     return Contract.from_abi("USDT", address="0xc2132D05D31c914a87C6611C10748AEb04B58e8F", abi=TestToken.abi)
@@ -157,9 +162,9 @@ def iUSDT(accounts, LoanTokenLogicStandard):
     return Contract.from_abi("iUSDT", address="0x5BFAC8a40782398fb662A69bac8a89e6EDc574b1", abi=LoanTokenLogicStandard.abi)
 
 @pytest.fixture(scope="module")
-def iUSDTv1(accounts, USDT, LoanTokenLogicStandard,LoanToken, BZX, LOAN_TOKEN_SETTINGS, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGESTRY):
+def iUSDTv1(accounts, USDT, LoanTokenLogicStandard,LoanToken, BZX, LOAN_TOKEN_SETTINGS, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGESTRY, LoanTokenSettingsLowerAdmin):
     acct = BZX.owner()
-    return deployIToken(BZX, USDT, acct, LoanTokenLogicStandard, LoanToken, LOAN_TOKEN_SETTINGS, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGESTRY)
+    return deployIToken(BZX, USDT, acct, LoanTokenLogicStandard, LoanToken, LOAN_TOKEN_SETTINGS, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGESTRY, LoanTokenSettingsLowerAdmin)
 
 
 
@@ -170,17 +175,18 @@ def REGESTRY(accounts, TokenRegistry):
                              abi=TokenRegistry.abi, owner=accounts[0])
 
 
-def test_InterestRate_1(requireFork, iUSDTv1, USDT,iUSDT, accounts):
+def test_InterestRate_1(requireFork, iUSDTv1, USDT,iUSDT, accounts, BZX):
     amount = 100e18
     USDT.transfer(accounts[0], 1000e6, {'from': iUSDT})
     USDT.approve(iUSDTv1, 2**256-1, {'from': accounts[0]})
-    iUSDTv1.mint(accounts[0], 10e6, {'from': accounts[0]})
-
-    # create some fees
+    USDT.approve(BZX, 2**256-1, {'from': accounts[0]})
     borrowAmount = 10e6
     borrowTime = 7884000
-    collateralAmount = 10*10**18
+    collateralAmount = 10e18
     collateralAddress = "0x0000000000000000000000000000000000000000"
+
+    assert False
+    iUSDTv1.mint(accounts[0], 10e6, {'from': accounts[0]})
     txBorrow = iUSDTv1.borrow("", borrowAmount, borrowTime, collateralAmount, collateralAddress, accounts[0], accounts[0], b"", {'from': accounts[0], 'value': Wei(collateralAmount)})
 
 
