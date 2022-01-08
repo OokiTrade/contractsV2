@@ -501,7 +501,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Swaps
         }
 
         LoanInterest memory loanInterestLocal = loanInterest[loanId];
-
+        loanLocal.principal = _getLoanPrincipal(loanLocal.lender, loanParamsLocal.loanToken, loanLocal.id);
         (uint256 currentMargin, uint256 value) = IPriceFeeds(priceFeeds).getCurrentMargin( // currentMargin, collateralToLoanRate
             loanParamsLocal.loanToken,
             loanParamsLocal.collateralToken,
