@@ -12,8 +12,9 @@ import "../events/SwapsEvents.sol";
 import "../mixins/FeesHelper.sol";
 import "./ISwapsImpl.sol";
 import "../interfaces/IDexRecords.sol";
+import "../mixins/Flags.sol";
 
-contract SwapsUser is State, SwapsEvents, FeesHelper {
+contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
     function _loanSwap(
         bytes32 loanId,
         address sourceToken,
@@ -32,7 +33,6 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
             uint256 sourceToDestSwapRate
         )
     {
-		
         (destTokenAmountReceived, sourceTokenAmountUsed) = _swapsCall(
             [
                 sourceToken,
@@ -50,7 +50,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
             bypassFee,
             loanDataBytes
         );
-		
+
         // will revert if swap size too large
         _checkSwapSize(sourceToken, sourceTokenAmountUsed);
 
@@ -127,13 +127,28 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
         } else {
             require(vals[0] <= vals[1], "min greater than max");
         }
-		
-        (destTokenAmountReceived, sourceTokenAmountUsed) = _swapsCall_internal(
-            addrs,
-            vals,
-            loanDataBytes
-        );
-		
+        if (loanDataBytes.length == 0) {
+            (
+                destTokenAmountReceived,
+                sourceTokenAmountUsed
+            ) = _swapsCall_internal(addrs, vals, "");
+        } else {
+            (uint128 flags, bytes[] memory payload) = abi.decode(
+                loanDataBytes,
+                (uint128, bytes[])
+            );
+            if (flags & DEX_SELECTOR_FLAG != 0) {
+                (
+                    destTokenAmountReceived,
+                    sourceTokenAmountUsed
+                ) = _swapsCall_internal(addrs, vals, payload[0]);
+            } else {
+                (
+                    destTokenAmountReceived,
+                    sourceTokenAmountUsed
+                ) = _swapsCall_internal(addrs, vals, "");
+            }
+        }
         if (vals[2] == 0) {
             // there's no minimum destTokenAmount, but all of vals[0] (minSourceTokenAmount) must be spent, and amount spent can't exceed vals[0]
             require(
@@ -177,7 +192,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
     {
         bytes memory data;
         address swapImplAddress;
-		
+
         if (loanDataBytes.length == 0) {
             swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(1); //if nothing specified, default to first dex option available. ensure it does not require any input data or else this will break
             data = abi.encodeWithSelector(
@@ -189,18 +204,18 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
                 vals[0], // minSourceTokenAmount
                 vals[1], // maxSourceTokenAmount
                 vals[2], // requiredDestTokenAmount
-                loanDataBytes
+                ""
             );
         } else {
             (uint256 DexNumber, bytes memory SwapData) = abi.decode(
                 loanDataBytes,
                 (uint256, bytes)
             );
-			
+
             swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(
                 DexNumber
             );
-			
+
             data = abi.encodeWithSelector(
                 ISwapsImpl(swapImplAddress).dexSwap.selector,
                 addrs[0], // sourceToken
@@ -212,12 +227,11 @@ contract SwapsUser is State, SwapsEvents, FeesHelper {
                 vals[2], // requiredDestTokenAmount
                 SwapData
             );
-			
         }
-		
+
         bool success;
         (success, data) = swapImplAddress.delegatecall(data);
-		
+
         if (!success) {
             assembly {
                 let ptr := mload(0x40)

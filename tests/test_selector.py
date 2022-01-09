@@ -48,10 +48,12 @@ def trade_curve(mainState,dexSelector):
     sendOut = encode_abi(['uint256','bytes'],[2,sendOut])
     iToken = Contract.from_abi('i','0x32E4c68B3A4a813b710595AebA7f6B7604Ab9c15',LoanTokenLogicStandard.abi)
     interface.IERC20('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48').approve(iToken.address,1000000000000e6,{'from':trader,'gas_price':Gas})
+    sendOut = encode_abi(['uint128','bytes[]'],[2,[sendOut]]) #flag value of Base-2: 10
     tradeReturn = iToken.marginTrade(0,2e18,100000e6,0,"0xdac17f958d2ee523a2206206994597c13d831ec7",trader,sendOut.hex(),{'from':trader,'gas_price':Gas}).return_value
     print(""+str(tradeReturn[1])+" "+str(tradeReturn[2])) #prints principal and collateral
     sendOut = encode_abi(['bytes4','address','uint128','uint128'],[HexBytes(swapImpl.ExchangeSig.call()),"0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7",2,1])
     sendOut = encode_abi(['uint256','bytes'],[2,sendOut])
+    sendOut = encode_abi(['uint128','bytes[]'],[2,[sendOut]]) #flag value of Base-2: 10
     mainState.closeWithSwap(tradeReturn[0],trader,10e6,True,sendOut.hex(),{'from':trader,'gas_price':Gas})
 
 
@@ -60,10 +62,10 @@ def trade_univ3(mainState,dexSelector):
     mainState.setTargets(["setSwapApprovals(address[])"],[dexSelector.dexes.call(3)],{'from':timelock,'gas_price':Gas})
     swaps1 = Contract.from_abi('Impl',mainState.address,SwapsImplUniswapV3_ETH.abi)
     swaps1.setSwapApprovals(['0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48','0xdac17f958d2ee523a2206206994597c13d831ec7'],{'from':timelock,'gas_price':Gas})
-
     route = encode_abi_packed(['address','uint24','address'],["0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",500,"0xdAC17F958D2ee523a2206206994597C13D831ec7"])
     totalPassage = encode_abi(['(bytes,address,uint256,uint256,uint256)[]'],[[(route,mainState.address,1643224769,100,100)]])
     sendOut = encode_abi(['uint256','bytes'],[3,totalPassage])
+    sendOut = encode_abi(['uint128','bytes[]'],[2,[sendOut]]) #flag value of Base-2: 10
     iToken = Contract.from_abi('i','0x32E4c68B3A4a813b710595AebA7f6B7604Ab9c15',LoanTokenLogicStandard.abi)
     
     tradeReturn = iToken.marginTrade(0,2e18,100000e6,0,"0xdAC17F958D2ee523a2206206994597C13D831ec7",trader,sendOut.hex(),{'from':trader,'gas_price':Gas}).return_value
@@ -71,6 +73,7 @@ def trade_univ3(mainState,dexSelector):
     route = encode_abi_packed(['address','uint24','address'],["0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",500,"0xdAC17F958D2ee523a2206206994597C13D831ec7"])
     totalPassage = encode_abi(['(bytes,address,uint256,uint256,uint256)[]'],[[(route,mainState.address,1643224769,100,100)]])
     sendOut = encode_abi(['uint256','bytes'],[3,totalPassage])
+    sendOut = encode_abi(['uint128','bytes[]'],[2,[sendOut]]) #flag value of Base-2: 10
     mainState.closeWithSwap(tradeReturn[0],trader,10e6,True,sendOut.hex(),{'from':trader,'gas_price':Gas})
 
 def trade_univ2(mainState,dexSelector):
