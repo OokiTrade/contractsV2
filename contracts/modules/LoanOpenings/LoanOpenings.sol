@@ -121,7 +121,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
             loanToken,
             collateralToken,
             loanTokenSent,
-			      payload
+			payload
         );
         if (value != 0) {
             return collateralTokenSent
