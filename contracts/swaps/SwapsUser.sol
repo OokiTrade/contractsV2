@@ -193,21 +193,18 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
         bytes memory data;
         address swapImplAddress;
         bytes memory swapData;
-
-        if (loanDataBytes.length == 0) {
-            swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(1); //if nothing specified, default to first dex option available. ensure it does not require any input data or else this will break
-        } else {
-            uint256 dexNumber;
+        uint256 dexNumber = 1;
+        if (loanDataBytes.length != 0) {
             (dexNumber, swapData) = abi.decode(
                 loanDataBytes,
                 (uint256, bytes)
             );
-
-            swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(
-                dexNumber
-            );
         }
 
+        swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(
+            dexNumber
+        );
+        
         data = abi.encodeWithSelector(
             ISwapsImpl(swapImplAddress).dexSwap.selector,
             addrs[0], // sourceToken
@@ -247,28 +244,26 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
         if (tradingFee != 0) {
             sourceTokenAmount = sourceTokenAmount.sub(tradingFee);
         }
+        address swapImplAddress;
+        bytes memory dataToSend;
+        uint256 dexNumber = 1;
         if (payload.length == 0) {
-            address swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(
-                1
-            ); //default dex address
-            bytes memory dataToSend = abi.encode(sourceToken, destToken);
-            (expectedReturn, ) = ISwapsImpl(swapImplAddress).dexAmountOut(
-                dataToSend,
-                sourceTokenAmount
-            );
+            dataToSend = abi.encode(sourceToken, destToken);
         } else {
-            (uint256 DexNumber, bytes memory dataToSend) = abi.decode(
+            (dexNumber, dataToSend) = abi.decode(
                 payload,
                 (uint256, bytes)
             );
-            address swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(
-                DexNumber
-            );
-            (expectedReturn, ) = ISwapsImpl(swapImplAddress).dexAmountOut(
-                dataToSend,
-                sourceTokenAmount
-            );
         }
+
+        swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(
+            dexNumber
+        );
+
+        (expectedReturn, ) = ISwapsImpl(swapImplAddress).dexAmountOut(
+            dataToSend,
+            sourceTokenAmount
+        );
     }
 
     function _checkSwapSize(address tokenAddress, uint256 amount)
