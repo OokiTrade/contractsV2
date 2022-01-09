@@ -192,22 +192,13 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
     {
         bytes memory data;
         address swapImplAddress;
+        bytes memory swapData;
 
         if (loanDataBytes.length == 0) {
             swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(1); //if nothing specified, default to first dex option available. ensure it does not require any input data or else this will break
-            data = abi.encodeWithSelector(
-                ISwapsImpl(swapImplAddress).dexSwap.selector,
-                addrs[0], // sourceToken
-                addrs[1], // destToken
-                addrs[2], // receiverAddress
-                addrs[3], // returnToSenderAddress
-                vals[0], // minSourceTokenAmount
-                vals[1], // maxSourceTokenAmount
-                vals[2], // requiredDestTokenAmount
-                ""
-            );
         } else {
-            (uint256 dexNumber, bytes memory swapData) = abi.decode(
+            uint256 dexNumber;
+            (dexNumber, swapData) = abi.decode(
                 loanDataBytes,
                 (uint256, bytes)
             );
@@ -215,19 +206,19 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
             swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(
                 dexNumber
             );
-
-            data = abi.encodeWithSelector(
-                ISwapsImpl(swapImplAddress).dexSwap.selector,
-                addrs[0], // sourceToken
-                addrs[1], // destToken
-                addrs[2], // receiverAddress
-                addrs[3], // returnToSenderAddress
-                vals[0], // minSourceTokenAmount
-                vals[1], // maxSourceTokenAmount
-                vals[2], // requiredDestTokenAmount
-                swapData
-            );
         }
+
+        data = abi.encodeWithSelector(
+            ISwapsImpl(swapImplAddress).dexSwap.selector,
+            addrs[0], // sourceToken
+            addrs[1], // destToken
+            addrs[2], // receiverAddress
+            addrs[3], // returnToSenderAddress
+            vals[0], // minSourceTokenAmount
+            vals[1], // maxSourceTokenAmount
+            vals[2], // requiredDestTokenAmount
+            swapData
+        );
 
         bool success;
         (success, data) = swapImplAddress.delegatecall(data);
