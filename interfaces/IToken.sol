@@ -3,12 +3,12 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity >=0.5.0 <=0.8.7;
+pragma solidity >=0.5.0 <=0.8.9;
 pragma experimental ABIEncoderV2;
 // import "@openzeppelin-3.4.0/token/ERC20/IERC20.sol";
 
 // import "contracts/interfaces/IERC20.sol";
-/// SPDX-License-Identifier: Apache License, Version 2.0.
+// SPDX-License-Identifier: Apache-2.0
 
 interface IToken {
 
