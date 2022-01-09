@@ -207,13 +207,13 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
                 ""
             );
         } else {
-            (uint256 DexNumber, bytes memory SwapData) = abi.decode(
+            (uint256 dexNumber, bytes memory swapData) = abi.decode(
                 loanDataBytes,
                 (uint256, bytes)
             );
 
             swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(
-                DexNumber
+                dexNumber
             );
 
             data = abi.encodeWithSelector(
@@ -225,7 +225,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
                 vals[0], // minSourceTokenAmount
                 vals[1], // maxSourceTokenAmount
                 vals[2], // requiredDestTokenAmount
-                SwapData
+                swapData
             );
         }
 
