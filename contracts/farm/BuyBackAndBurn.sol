@@ -131,4 +131,11 @@ contract BuyBackAndBurn is Upgradeable_0_8 {
     {
         specsForTWAP = specs;
     }
+
+    function rescue(IERC20 _token) public onlyOwner {
+        _token.transfer(
+            msg.sender,
+            _token.balanceOf(address(this))
+        );
+    }
 }
