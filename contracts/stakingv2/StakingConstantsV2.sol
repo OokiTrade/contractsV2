@@ -14,7 +14,6 @@ import "../../interfaces/IBZx.sol";
 import "../../interfaces/IBZRXv2Converter.sol";
 
 contract StakingConstantsV2 {
-
     address internal constant ZERO_ADDRESS = address(0);
 
     address public constant BZRX = 0x56d811088235F11C8920698a204A5010a788f4b3;
@@ -23,21 +22,19 @@ contract StakingConstantsV2 {
     address public constant iOOKI = 0x05d5160cbc6714533ef44CEd6dd32112d56Ad7da;
     address public constant OOKI_ETH_LP = 0xEaaddE1E14C587a7Fb4Ba78eA78109BB32975f1e; // sushiswap
 
+    uint256 internal constant cliffDuration = 15768000; // 86400 * 365 * 0.5
+    uint256 internal constant vestingDuration = 126144000; // 86400 * 365 * 4
+    uint256 internal constant vestingDurationAfterCliff = 110376000; // 86400 * 365 * 3.5
+    uint256 internal constant vestingStartTimestamp = 1594648800; // start_time
+    uint256 internal constant vestingCliffTimestamp = vestingStartTimestamp + cliffDuration;
+    uint256 internal constant vestingEndTimestamp = vestingStartTimestamp + vestingDuration;
 
-
-    uint256 internal constant cliffDuration =                15768000; // 86400 * 365 * 0.5
-    uint256 internal constant vestingDuration =              126144000; // 86400 * 365 * 4
-    uint256 internal constant vestingDurationAfterCliff =  110376000; // 86400 * 365 * 3.5
-    uint256 internal constant vestingStartTimestamp =      1594648800; // start_time
-    uint256 internal constant vestingCliffTimestamp =      vestingStartTimestamp + cliffDuration;
-    uint256 internal constant vestingEndTimestamp =        vestingStartTimestamp + vestingDuration;
-    
     // these are 10x original balances for BZRX because of OOKI split
     uint256 internal constant _startingVBZRXBalance = 8893899330e18;
     uint256 public constant initialCirculatingSupply = 10300000000e18 - _startingVBZRXBalance;
- 
+
     address internal constant SUSHI_MASTERCHEF = 0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd;
-    uint256 internal constant OOKI_ETH_SUSHI_MASTERCHEF_PID =  335;
+    uint256 internal constant OOKI_ETH_SUSHI_MASTERCHEF_PID = 335;
     address public constant SUSHI = 0x6B3595068778DD592e39A122f4f5a5cF09C90fE2;
 
     ICurve3Pool public constant curve3pool = ICurve3Pool(0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7);
@@ -49,46 +46,15 @@ contract StakingConstantsV2 {
 
     IBZRXv2Converter public converter = IBZRXv2Converter(0x6BE9B7406260B6B6db79a1D4997e7f8f5c9D7400);
 
-    // event Logger(string name, uint256 amount);
-    // event Logger1( uint256 amount);
-    
-    event Stake(
-        address indexed user,
-        address indexed token,
-        address indexed delegate,
-        uint256 amount
-    );
+    event Stake(address indexed user, address indexed token, address indexed delegate, uint256 amount);
 
-    event Unstake(
-        address indexed user,
-        address indexed token,
-        address indexed delegate,
-        uint256 amount
-    );
+    event Unstake(address indexed user, address indexed token, address indexed delegate, uint256 amount);
 
-    event Claim(
-        address indexed user,
-        uint256 bzrxAmount,
-        uint256 stableCoinAmount
-    );
+    event Claim(address indexed user, uint256 bzrxAmount, uint256 stableCoinAmount);
 
-    event AddAltRewards(
-        address indexed sender,
-        address indexed token,
-        uint256 amount
-    );
+    event AddAltRewards(address indexed sender, address indexed token, uint256 amount);
 
-    event ClaimAltRewards(
-        address indexed user,
-        address indexed token,
-        uint256 amount
-    );
+    event ClaimAltRewards(address indexed user, address indexed token, uint256 amount);
 
-    event AddRewards(
-        address indexed sender,
-        uint256 bzrxAmount,
-        uint256 stableCoinAmount
-    );
-
-
+    event AddRewards(address indexed sender, uint256 bzrxAmount, uint256 stableCoinAmount);
 }
