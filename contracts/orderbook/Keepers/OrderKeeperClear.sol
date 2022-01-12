@@ -1,4 +1,4 @@
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.0;
 import "./OrderBookInterface.sol";
 import "./IUniswapV2Router.sol";
 import "../WrappedToken.sol";
@@ -17,17 +17,15 @@ contract OrderKeeperClear {
         returns (bool upkeepNeeded, bytes memory performData)
     {
         IOrderBook.OpenOrder[] memory listOfMainOrders = IOrderBook(factory)
-            .getOrders(0, IOrderBook(factory).getTotalActiveOrders());
+            .getOrders();
         for (uint256 x = 0; x < listOfMainOrders.length; x++) {
             if (
                 IOrderBook(factory).clearOrder(
-                    listOfMainOrders[x].trader,
                     listOfMainOrders[x].orderID
-                ) == true
+                )
             ) {
                 upkeepNeeded = true;
                 performData = abi.encode(
-                    listOfMainOrders[x].trader,
                     listOfMainOrders[x].orderID
                 );
                 return (upkeepNeeded, performData);
@@ -37,14 +35,11 @@ contract OrderKeeperClear {
     }
 
     function performUpkeep(bytes calldata performData) public {
-        (address trader, uint256 orderId) = abi.decode(
+        (bytes32 orderId) = abi.decode(
             performData,
-            (address, uint256)
+            (bytes32)
         );
         //emit OrderExecuted(trader,orderId);
-        IOrderBook(factory).cancelOrderProtocol(
-            trader,
-            orderId
-        );
+        IOrderBook(factory).cancelOrderProtocol(orderId);
     }
 }

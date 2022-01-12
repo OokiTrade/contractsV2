@@ -1,4 +1,4 @@
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.0;
 
 interface dexSwaps {
     function dexExpectedRate(
@@ -7,15 +7,15 @@ interface dexSwaps {
         uint256 sourceTokenAmount
     ) external view virtual returns (uint256);
 
-    function dexAmountOut(
-        address sourceTokenAddress,
-        address destTokenAddress,
-        uint256 amountIn
-    ) external view virtual returns (uint256 amountOut, address midToken);
+    function dexAmountOut(bytes memory payload, uint256 amountIn)
+        external
+        view
+        virtual
+        returns (uint256 amountOut, address midToken);
 
-    function dexAmountIn(
-        address sourceTokenAddress,
-        address destTokenAddress,
-        uint256 amountOut
-    ) external view virtual returns (uint256 amountIn, address midToken);
+    function dexAmountIn(bytes memory payload, uint256 amountOut)
+        external
+        view
+        virtual
+        returns (uint256 amountIn, address midToken);
 }

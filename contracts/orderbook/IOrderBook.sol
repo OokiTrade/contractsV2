@@ -1,6 +1,6 @@
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.0;
 
-interface IWalletFactory {
+interface IOrderBook {
     enum OrderType {
         LIMIT_OPEN,
         LIMIT_CLOSE,
@@ -15,17 +15,12 @@ interface IWalletFactory {
         uint256 leverage;
         uint256 loanTokenAmount;
         uint256 collateralTokenAmount;
-        bool isActive;
+        bool isCancelled;
         address base;
         OrderType orderType;
         bool isCollateral;
-        uint256 orderID;
-        bytes loanData;
-    }
-
-    struct OrderQueue {
-        address trader;
-        uint256 orderID;
+        bytes32 orderID;
+        bytes loanDataBytes;
     }
 
     function getRouter() external view returns (address);

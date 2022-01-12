@@ -1,4 +1,4 @@
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.0;
 import "./OrderBookInterface.sol";
 import "./IUniswapV2Router.sol";
 import "../WrappedToken.sol";
@@ -20,17 +20,15 @@ contract OrderKeeper {
         returns (bool upkeepNeeded, bytes memory performData)
     {
         IOrderBook.OpenOrder[] memory listOfMainOrders = IOrderBook(factory)
-            .getOrders(0, IOrderBook(factory).getTotalActiveOrders());
+            .getOrders();
         for (uint256 x = 0; x < listOfMainOrders.length; x++) {
             if (
                 IOrderBook(factory).prelimCheck(
-                    listOfMainOrders[x].trader,
                     listOfMainOrders[x].orderID
-                ) == true
+                )
             ) {
                 upkeepNeeded = true;
                 performData = abi.encode(
-                    listOfMainOrders[x].trader,
                     listOfMainOrders[x].orderID
                 );
                 return (upkeepNeeded, performData);
@@ -40,19 +38,18 @@ contract OrderKeeper {
     }
 
     function performUpkeep(bytes calldata performData) public {
-        (address trader, uint256 orderId) = abi.decode(
+        (bytes32 orderId) = abi.decode(
             performData,
-            (address, uint256)
+            (bytes32)
         );
         //emit OrderExecuted(trader,orderId);
         IOrderBook(factory).executeOrder(
             payable(address(this)),
-            trader,
             orderId
         );
     }
 
-    function handleFees(address[] memory tokenAddress) public {
+    /*function handleFees(address[] memory tokenAddress) public {
         address[] memory path;
         path = new address[](3);
         path[1] = WETH;
@@ -85,5 +82,5 @@ contract OrderKeeper {
 
     function handleETHFees() public {
         WrappedToken(WETH).deposit{value: address(this).balance}();
-    }
+    }*/
 }

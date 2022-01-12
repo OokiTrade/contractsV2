@@ -1,27 +1,27 @@
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.0;
 
 interface IOrderBook {
-    function getOrders(uint256 start, uint256 count)
+    function getOrders()
         external
         view
         returns (OpenOrder[] memory);
 
-    function prelimCheck(address trader, uint256 orderID)
+    function prelimCheck(bytes32 orderID)
         external
         view
         returns (bool);
 
     function executeOrder(
         address payable keeper,
-        address trader,
-        uint256 orderID
+        bytes32 orderID
     ) external;
-	function cancelOrderProtocol(address trader, uint256 orderID) external;
-	function clearOrder(address trader, uint256 orderID)
-		external
-		view
-		returns (bool);
-    function getTotalActiveOrders() external view returns (uint256);
+
+    function cancelOrderProtocol(bytes32 orderID) external;
+
+    function clearOrder(bytes32 orderID)
+        external
+        view
+        returns (bool);
 
     struct OpenOrder {
         address trader;
@@ -36,11 +36,7 @@ interface IOrderBook {
         address base;
         uint256 orderType;
         bool isCollateral;
-        uint256 orderID;
+        bytes32 orderID;
         bytes loanData;
-    }
-    struct OrderQueue {
-        address trader;
-        uint256 orderID;
     }
 }

@@ -1,8 +1,19 @@
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.0;
 import "../Storage/OrderBookEvents.sol";
 import "../Storage/OrderBookStorage.sol";
 
 contract OrderBookMarketOrders is OrderBookEvents, OrderBookStorage {
+	using EnumerableSet for EnumerableSet.Bytes32Set;
+
+	function initialize(
+		address target)
+		public
+		onlyOwner
+	{
+		_setTarget(this.marketOpen.selector, target);
+		_setTarget(this.marketClose.selector, target);
+	}
+
     function marketOpen(
         bytes32 loanID,
         uint256 leverage,
@@ -10,9 +21,9 @@ contract OrderBookMarketOrders is OrderBookEvents, OrderBookStorage {
         uint256 collateralTokenAmount,
         address iToken,
         address base,
-        bytes memory loanData
+        bytes memory loanDataBytes
     ) public {
-        executeMarketOpen(
+        _executeMarketOpen(
             msg.sender,
             loanID,
             leverage,
@@ -20,7 +31,7 @@ contract OrderBookMarketOrders is OrderBookEvents, OrderBookStorage {
             collateralTokenAmount,
             iToken,
             base,
-            loanData
+            loanDataBytes
         );
     }
 
@@ -30,20 +41,20 @@ contract OrderBookMarketOrders is OrderBookEvents, OrderBookStorage {
         bool iscollateral,
         address loanTokenAddress,
         address collateralAddress,
-        bytes memory arbData
+        bytes memory loanDataBytes
     ) public {
-        executeMarketClose(
+        _executeMarketClose(
             msg.sender,
             loanID,
             amount,
             iscollateral,
             loanTokenAddress,
             collateralAddress,
-            arbData
+            loanDataBytes
         );
     }
 
-    function executeMarketOpen(
+    function _executeMarketOpen(
         address trader,
         bytes32 lID,
         uint256 leverage,
@@ -51,11 +62,12 @@ contract OrderBookMarketOrders is OrderBookEvents, OrderBookStorage {
         uint256 collateralTokenAmount,
         address iToken,
         address base,
-        bytes memory loanData
+        bytes memory loanDataBytes
     ) internal {
+        require(IBZx(protocol).isLoanPool(iToken));
         address usedToken = collateralTokenAmount > loanTokenAmount
             ? base
-            : LoanTokenI(iToken).loanTokenAddress();
+            : IToken(iToken).loanTokenAddress();
         uint256 transferAmount = collateralTokenAmount > loanTokenAmount
             ? collateralTokenAmount
             : loanTokenAmount;
@@ -65,8 +77,8 @@ contract OrderBookMarketOrders is OrderBookEvents, OrderBookStorage {
             address(this),
             transferAmount
         );
-        loanData = "";
-        bytes32 loanID = LoanTokenI(iToken)
+        loanDataBytes = "";
+        bytes32 loanID = IToken(iToken)
             .marginTrade(
                 lID,
                 leverage,
@@ -74,28 +86,28 @@ contract OrderBookMarketOrders is OrderBookEvents, OrderBookStorage {
                 collateralTokenAmount,
                 base,
                 address(this),
-                loanData
+                loanDataBytes
             )
-            .LoanId;
-        if (OrderEntry.inVals(ActiveTrades[trader], loanID) == false) {
-            OrderEntry.addTrade(ActiveTrades[trader], loanID);
+            .loanId;
+        if (!_activeTrades[trader].contains(loanID)) {
+            _activeTrades[trader].add(loanID);
         }
     }
 
-    function executeMarketClose(
+    function _executeMarketClose(
         address trader,
         bytes32 loanID,
         uint256 amount,
         bool iscollateral,
         address loanTokenAddress,
         address collateralAddress,
-        bytes memory arbData
+        bytes memory loanDataBytes
     ) internal {
         address usedToken;
-        arbData = "";
+        loanDataBytes = "";
         if (
-            (iscollateral == true && collateralAddress != wrapToken) ||
-            (iscollateral == false && loanTokenAddress != wrapToken)
+            (iscollateral && collateralAddress != WRAPPED_TOKEN) ||
+            (!iscollateral && loanTokenAddress != WRAPPED_TOKEN)
         ) {
             usedToken = iscollateral ? collateralAddress : loanTokenAddress;
             uint256 traderB = IERC20Metadata(usedToken).balanceOf(trader);
@@ -108,15 +120,15 @@ contract OrderBookMarketOrders is OrderBookEvents, OrderBookStorage {
         } else {
             usedToken = address(0);
         }
-        if (IBZX(bZxRouterAddress).getLoan(loanID).collateral == amount) {
-            OrderEntry.removeTrade(ActiveTrades[trader], loanID);
+        if (IBZx(protocol).getLoan(loanID).collateral == amount) {
+            _activeTrades[trader].remove(loanID);
         }
-        IBZX(bZxRouterAddress).closeWithSwap(
+        IBZx(protocol).closeWithSwap(
             loanID,
             address(this),
             amount,
             iscollateral,
-            arbData
+            loanDataBytes
         );
         if (usedToken != address(0)) {
             SafeERC20.safeTransfer(
@@ -125,11 +137,11 @@ contract OrderBookMarketOrders is OrderBookEvents, OrderBookStorage {
                 IERC20Metadata(usedToken).balanceOf(address(this))
             );
         } else {
-            WrappedToken(wrapToken).deposit{value: address(this).balance}();
+            WrappedToken(WRAPPED_TOKEN).deposit{value: address(this).balance}();
             SafeERC20.safeTransfer(
-                IERC20(wrapToken),
+                IERC20(WRAPPED_TOKEN),
                 trader,
-                IERC20Metadata(wrapToken).balanceOf(address(this))
+                IERC20Metadata(WRAPPED_TOKEN).balanceOf(address(this))
             );
         }
     }

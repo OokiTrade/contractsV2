@@ -3,7 +3,7 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.0;
 
 interface uniswapV2Router {
     // 0x38ed1739
