@@ -30,6 +30,7 @@ contract StakeUnstake is Common {
         _setTarget(this.balanceOfByAssets.selector, target);
         _setTarget(this.balanceOfStored.selector, target);
         _setTarget(this.vestedBalanceForAmount.selector, target);
+        _setTarget(this.exit.selector, target);
     }
 
     function _pendingSushiRewards(address _user) internal view returns (uint256) {
@@ -531,4 +532,26 @@ contract StakeUnstake is Common {
             vestedBalance = balance.mul(LPTokenWeightStored).div(1e18).add(vestedBalance);
         }
     }
+
+
+    function exit()
+        public
+        // unstake() does check pausable
+    {
+        address[] memory tokens = new address[](4);
+        uint256[] memory values = new uint256[](4);
+        tokens[0] = iOOKI;
+        tokens[1] = OOKI_ETH_LP;
+        tokens[2] = vBZRX;
+        tokens[3] = OOKI;
+        values[0] = uint256(-1);
+        values[1] = uint256(-1);
+        values[2] = uint256(-1);
+        values[3] = uint256(-1);
+        
+        unstake(tokens, values); // calls updateRewards
+        _claim(false);
+    }
+
+    
 }
