@@ -14,9 +14,11 @@ def BZX(interface):
 
 @pytest.fixture(scope="module")
 def VOTE_DELEGATOR(VoteDelegator, Proxy_0_5, accounts):
-    votedelegatorProxy = Contract.from_abi("proxy", "0x7e9d7A0ff725f88Cc6Ab3ccF714a1feA68aC160b", Proxy_0_5.abi)
+    votedelegatorProxy = Contract.from_abi(
+        "proxy", "0x7e9d7A0ff725f88Cc6Ab3ccF714a1feA68aC160b", Proxy_0_5.abi)
     votedelegatorImpl = VoteDelegator.deploy({'from': accounts[0]})
-    votedelegatorProxy.replaceImplementation(votedelegatorImpl, {'from': votedelegatorProxy.owner()})
+    votedelegatorProxy.replaceImplementation(
+        votedelegatorImpl, {'from': votedelegatorProxy.owner()})
     return Contract.from_abi("VOTE_DELEGATOR", "0x7e9d7A0ff725f88Cc6Ab3ccF714a1feA68aC160b", VoteDelegator.abi)
 
 
@@ -37,7 +39,7 @@ def DAO(GovernorBravoDelegate):
 
 
 @pytest.fixture(scope="module", autouse=True)
-def STAKINGv2(accounts, StakingModularProxy, AdminSettings, StakeUnstake, StakingPausableGuardian, Voting, Rewards, interface, SUSHI_CHEF, OOKI_ETH_LP, BZRX, BZRXv2_CONVERTER, CRV3, POOL3_GAUGE, VOTE_DELEGATOR):
+def STAKINGv2(accounts, StakingModularProxy, AdminSettings, StakeUnstake, StakingPausableGuardian, Voting, Rewards, interface, SUSHI_CHEF, OOKI_ETH_LP, BZRX, BZRXv2_CONVERTER, CRV3, POOL3_GAUGE, VOTE_DELEGATOR, DAO):
     stakingModularProxy = accounts[0].deploy(StakingModularProxy)
 
     adminSettingsImpl = accounts[0].deploy(AdminSettings)
@@ -53,21 +55,27 @@ def STAKINGv2(accounts, StakingModularProxy, AdminSettings, StakeUnstake, Stakin
     stakingModularProxy.replaceContract(votingImpl)
 
     # setting approvals
-    staking = Contract.from_abi("STAKING", stakingModularProxy, interface.IStakingV2.abi)
-    staking.setApprovals(OOKI_ETH_LP, SUSHI_CHEF, 2**256-1, {"from": staking.owner()})
-    staking.setApprovals(BZRX, BZRXv2_CONVERTER, 2**256-1, {"from": staking.owner()})
+    staking = Contract.from_abi(
+        "STAKING", stakingModularProxy, interface.IStakingV2.abi)
+    staking.setApprovals(OOKI_ETH_LP, SUSHI_CHEF, 2 **
+                         256-1, {"from": staking.owner()})
+    staking.setApprovals(BZRX, BZRXv2_CONVERTER, 2**256 -
+                         1, {"from": staking.owner()})
     staking.setApprovals(CRV3, POOL3_GAUGE, 1, {"from": staking.owner()})
 
     # reference vote delegator and staking to each other
     VOTE_DELEGATOR.setStaking(staking, {"from": VOTE_DELEGATOR.owner()})
-    staking.setVoteDelegator(VOTE_DELEGATOR, {"from": accounts[0]})
+    staking.setVoteDelegator(VOTE_DELEGATOR, {"from": staking.owner()})
+    staking.setGovernor(DAO, {"from": staking.owner()})
+
     return staking
 
 
 @pytest.fixture(scope="module")
 def BZRXv2_CONVERTER(BZRXv2Converter, MINT_COORDINATOR):
     # set mint coordinator
-    converter = Contract.from_abi("BZRXv2_CONVERTER", address="0x6BE9B7406260B6B6db79a1D4997e7f8f5c9D7400", abi=BZRXv2Converter.abi)
+    converter = Contract.from_abi(
+        "BZRXv2_CONVERTER", address="0x6BE9B7406260B6B6db79a1D4997e7f8f5c9D7400", abi=BZRXv2Converter.abi)
     # converter.initialize(MINT_COORDINATOR, {"from": converter.owner()})
     MINT_COORDINATOR.addMinter(converter, {"from": MINT_COORDINATOR.owner()})
     return converter
@@ -95,7 +103,8 @@ def vBZRX(BZRXVestingToken):
 
 @pytest.fixture(scope="module")
 def SUSHI_CHEF(interface):
-    chef = Contract.from_abi("CHEF", "0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd", interface.IMasterChefSushi.abi)
+    chef = Contract.from_abi(
+        "CHEF", "0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd", interface.IMasterChefSushi.abi)
     return chef
 
 

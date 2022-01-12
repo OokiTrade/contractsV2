@@ -387,4 +387,7 @@ def testStake_UnStakeMultiUserVoting(requireMainnetFork, STAKINGv2, BZX,  BZRX, 
         # assert False
         # since no rewards zero rewards
         assert STAKINGv2.earned(user) == (0, 0, 0, 0, 0)
-    assert False
+    assert abs(STAKINGv2.votingBalanceOfNow(user2)/1e18 - STAKINGv2.votingBalanceOfNow(user2)/1e18) < 1
+
+
+    assert True
