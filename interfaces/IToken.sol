@@ -3,7 +3,7 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity >=0.5.0 <=0.8.4;
+pragma solidity >=0.5.0 <=0.8.11;
 pragma experimental ABIEncoderV2;
 // import "@openzeppelin-3.4.0/token/ERC20/IERC20.sol";
 
