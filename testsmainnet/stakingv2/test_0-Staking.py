@@ -287,11 +287,13 @@ def testStake_UnStakeMultiUserDisproportionalAmount(requireMainnetFork, STAKINGv
     # sending rewards, approximately each account has to get half = 500
     STAKINGv2.addRewards(1000*10**18, 0, {"from": accounts[0]})
     earned1 = STAKINGv2.earned(user1)
+    earned2 = STAKINGv2.earned(user2)
     chain.mine()
 
-    assert earned1[0] > 500*1e18
+    assert earned1[0] >= 1000*1e18/3*2 # 2/3
+    assert earned2[0] >= 1000*1e18/3 # 1/3
 
-    # # this checks claim(restake)
+    # this checks claim(restake)
     user1BalanceBefore = OOKI.balanceOf(user1)
     STAKINGv2.claim(True, {"from": user1})
     assert user1BalanceBefore == OOKI.balanceOf(user1)
@@ -299,18 +301,32 @@ def testStake_UnStakeMultiUserDisproportionalAmount(requireMainnetFork, STAKINGv
 
     assert balance1[0] >= (earned1[0])
 
+    # this checks claim(restake)
+    user2BalanceBefore = OOKI.balanceOf(user2)
+    STAKINGv2.claim(True, {"from": user2})
+    assert user1BalanceBefore == OOKI.balanceOf(user2)
+    balance2 = STAKINGv2.balanceOfByAssets(user2)
+
+    assert balance2[0] >= (earned2[0])
+
     STAKINGv2.addRewards(1000*1e18, 0, {"from": accounts[0]})
     chain.mine(100)
 
     user1BalanceBefore = OOKI.balanceOf(user1)
+    user2BalanceBefore = OOKI.balanceOf(user2)
 
     STAKINGv2.claim(False, {"from": user1})
+    STAKINGv2.claim(False, {"from": user2})
 
     chain.mine(1000)
     STAKINGv2.claim(False, {"from": user1})
+    STAKINGv2.claim(False, {"from": user2})
     chain.mine(1000)
 
     STAKINGv2.claim(False, {"from": user1})
     STAKINGv2.unstake([vBZRX], [2**256-1], {"from": user1})
+
+    STAKINGv2.claim(False, {"from": user2})
+    STAKINGv2.unstake([vBZRX], [2**256-1], {"from": user2})
 
     assert False

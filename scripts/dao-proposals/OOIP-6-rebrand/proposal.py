@@ -18,7 +18,7 @@ targets = []
 values = []
 calldatas = []
 
-
+# TODO rework
 
 # 1. Disable Sweep Fees
 calldata = BZX.setFeesController.encode_input(ZERO_ADDRESS)
