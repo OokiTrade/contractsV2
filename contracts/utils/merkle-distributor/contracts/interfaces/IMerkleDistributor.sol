@@ -27,4 +27,10 @@ interface IMerkleDistributor {
 
     // This event is triggered whenever a call to #claim succeeds.
     event Claimed(uint256 indexed airdropIndex, address indexed token, address indexed account, uint256 index, uint256 amount);
+
+    // This event is triggered whenever a call to #adminClaim succeeds. For owner only
+    event AdminClaimed(uint256 indexed airdropIndex, address indexed token, address indexed account, uint256 index, uint256 amount);
+
+    // This event is triggered whenever a call to #directClaim succeeds. For owner only
+    event DirectClaimed(uint256 indexed airdropIndex, address indexed token, address indexed account, uint256 amount);
 }

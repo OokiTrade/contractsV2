@@ -245,6 +245,14 @@ interface IBZx {
         view
         returns (uint256);
 
+    /// @dev returns total principal for a loan pool that was last settled
+    /// @param pool address
+    /// @return total stored principal of the loan
+    function getPoolPrincipalStored(address pool)
+        external
+        view
+        returns (uint256);
+
     ////// Loan Openings //////
 
     /// @dev This is THE function that borrows or trades on the protocol
@@ -396,7 +404,7 @@ interface IBZx {
     /// @param receiver collateral token reciever address
     /// @param swapAmount amount of loan token to swap
     /// @param returnTokenIsCollateral boolean whether to return tokens is collateral
-    /// @param loanDataBytes reserved for future use
+    /// @param loanDataBytes custom payload for specifying swap implementation and data to pass
     /// @return loanCloseAmount loan close amount
     /// @return withdrawAmount loan token withdraw amount
     /// @return withdrawToken loan token address
@@ -503,7 +511,7 @@ interface IBZx {
         payable;
 
     /// @dev withdraw collateral from existing loan
-    /// @param loanId existing lona id
+    /// @param loanId existing loan id
     /// @param receiver address of withdrawn tokens
     /// @param withdrawAmount amount to withdraw
     /// @return actualWithdrawAmount actual amount withdrawn
@@ -513,11 +521,15 @@ interface IBZx {
         uint256 withdrawAmount
     ) external returns (uint256 actualWithdrawAmount);
 
-    /// @dev withdraw accrued interest rate for a loan given token address
+    /*/// @dev withdraw accrued interest rate for a loan given token address
     /// @param loanToken loan token address
-    function withdrawAccruedInterest(address loanToken) external;
+    function withdrawAccruedInterest(address loanToken) external;*/
 
-    /// @dev extends loan duration by depositing more collateral
+    /// @dev settles accrued interest for all active loans from a loan pool
+    /// @param loanId existing loan id
+    function settleInterest(bytes32 loanId) external;
+
+    /*/// @dev extends loan duration by depositing more collateral
     /// @param loanId id of the existing loan
     /// @param depositAmount amount to deposit
     /// @param useCollateral boolean whether to extend using collateral or deposit amount
@@ -526,10 +538,10 @@ interface IBZx {
         bytes32 loanId,
         uint256 depositAmount,
         bool useCollateral,
-        bytes calldata // for future use /*loanDataBytes*/
-    ) external payable returns (uint256 secondsExtended);
+        bytes calldata // for future use loanDataBytes
+    ) external payable returns (uint256 secondsExtended);*/
 
-    /// @dev reduces loan duration by withdrawing collateral
+    /*/// @dev reduces loan duration by withdrawing collateral
     /// @param loanId id of the existing loan
     /// @param receiver address to receive tokens
     /// @param withdrawAmount amount to withdraw
@@ -538,7 +550,7 @@ interface IBZx {
         bytes32 loanId,
         address receiver,
         uint256 withdrawAmount
-    ) external returns (uint256 secondsReduced);
+    ) external returns (uint256 secondsReduced);*/
 
     function setDepositAmount(
         bytes32 loanId,
@@ -623,6 +635,15 @@ interface IBZx {
         external
         view
         returns (LoanReturnData memory loanData);
+
+    /// @dev gets loan principal including interest
+    /// @param loanId id of existing loan
+    /// @return principal
+    function getLoanPrincipal(bytes32 loanId)
+        external
+        view
+        returns (uint256 principal);
+
 
     /// @dev get current active loans in the system
     /// @param start of the index
