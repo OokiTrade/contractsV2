@@ -84,6 +84,42 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
         }
     }
 
+    function dexAmountOutFormatted(bytes memory payload, uint256 amountIn)
+        public
+        returns (uint256 amountOut, address midToken)
+    {
+        IUniswapV3SwapRouter.ExactInputParams[] memory exactParams = abi.decode(
+            payload,
+            (IUniswapV3SwapRouter.ExactInputParams[])
+        );
+        uint256 totalAmounts = 0;
+        for (
+            uint256 uniqueInputParam = 0;
+            uniqueInputParam < exactParams.length;
+            uniqueInputParam++
+        ) {
+            exactParams[uniqueInputParam].amountIn = exactParams[
+                uniqueInputParam
+            ].amountIn.mul(amountIn).div(100); //amountIn on data is % of funds to use per route. Total should add to source token amount or else it fails. take into consideration rounding
+            totalAmounts = totalAmounts.add(
+                exactParams[uniqueInputParam].amountIn
+            );
+        }
+        if (totalAmounts < amountIn) {
+            exactParams[0].amountIn = exactParams[0].amountIn.add(
+                amountIn.sub(totalAmounts)
+            ); //adds displacement to first swap set
+        }
+        uint256 tempAmountOut;
+        for (uint256 i = 0; i < exactParams.length; i++) {
+            (tempAmountOut, ) = dexAmountOut(
+                exactParams[i].path,
+                exactParams[i].amountIn
+            );
+            amountOut = amountOut.add(tempAmountOut);
+        }
+    }
+
     function dexAmountIn(bytes memory route, uint256 amountOut)
         public
         returns (uint256 amountIn, address midToken)
@@ -99,14 +135,46 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
         }
     }
 
+    function dexAmountInFormatted(bytes memory payload, uint256 amountOut)
+        public
+        returns (uint256 amountIn, address midToken)
+    {
+        IUniswapV3SwapRouter.ExactOutputParams[] memory exactParams = abi
+            .decode(payload, (IUniswapV3SwapRouter.ExactOutputParams[]));
+        uint256 totalAmounts = 0;
+        for (
+            uint256 uniqueOutputParam = 0;
+            uniqueOutputParam < exactParams.length;
+            uniqueOutputParam++
+        ) {
+            exactParams[uniqueOutputParam].amountOut = exactParams[
+                uniqueOutputParam
+            ].amountOut.mul(amountOut).div(100); //amountOut on data is % of funds to use per route. Total should add to source token amount or else it fails. take into consideration rounding
+            totalAmounts = totalAmounts.add(
+                exactParams[uniqueOutputParam].amountOut
+            );
+        }
+        if (totalAmounts < amountOut) {
+            exactParams[0].amountOut = exactParams[0].amountOut.add(
+                amountOut.sub(totalAmounts)
+            ); //adds displacement to first swap set
+        }
+        uint256 tempAmountIn;
+        for (uint256 i = 0; i < exactParams.length; i++) {
+            (tempAmountIn, ) = dexAmountIn(
+                exactParams[i].path,
+                exactParams[i].amountOut
+            );
+            amountOut.add(tempAmountIn);
+        }
+    }
+
     function _getAmountOut(uint256 amountIn, bytes memory path)
         public
         returns (uint256)
     {
-        uint256 amountOut = IUniswapQuoter(uniswapQuoteContract).quoteExactInput(
-            path,
-            amountIn
-        );
+        uint256 amountOut = IUniswapQuoter(uniswapQuoteContract)
+            .quoteExactInput(path, amountIn);
         if (amountOut == 0) {
             amountOut = uint256(-1);
         }
@@ -117,10 +185,8 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
         public
         returns (uint256)
     {
-        uint256 amountIn = IUniswapQuoter(uniswapQuoteContract).quoteExactOutput(
-            path,
-            amountOut
-        );
+        uint256 amountIn = IUniswapQuoter(uniswapQuoteContract)
+            .quoteExactOutput(path, amountOut);
         if (amountIn == 0) {
             amountIn = uint256(-1);
         }
@@ -152,9 +218,17 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
             bytes[] memory encodedTXs = new bytes[](exactParams.length);
             uint256 totalAmountsOut = 0;
             uint256 totalAmountsInMax = 0;
-            for (uint256 uniqueOutputParam = 0; uniqueOutputParam < exactParams.length; uniqueOutputParam++) {
-                require(receiverAddress == exactParams[uniqueOutputParam].recipient);
-                address tokenIn = exactParams[uniqueOutputParam].path.toAddress(0);
+            for (
+                uint256 uniqueOutputParam = 0;
+                uniqueOutputParam < exactParams.length;
+                uniqueOutputParam++
+            ) {
+                require(
+                    receiverAddress == exactParams[uniqueOutputParam].recipient
+                );
+                address tokenIn = exactParams[uniqueOutputParam].path.toAddress(
+                    0
+                );
                 require(tokenIn == destTokenAddress, "improper destination");
                 require(
                     exactParams[uniqueOutputParam].path.toAddress(
@@ -162,13 +236,17 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                     ) == sourceTokenAddress,
                     "improper source"
                 );
-                exactParams[uniqueOutputParam].amountOut = requiredDestTokenAmount
+                exactParams[uniqueOutputParam]
+                    .amountOut = requiredDestTokenAmount
                     .mul(exactParams[uniqueOutputParam].amountOut)
                     .div(100);
-                exactParams[uniqueOutputParam].amountInMaximum = maxSourceTokenAmount
+                exactParams[uniqueOutputParam]
+                    .amountInMaximum = maxSourceTokenAmount
                     .mul(exactParams[uniqueOutputParam].amountInMaximum)
                     .div(100);
-                totalAmountsOut = totalAmountsOut.add(exactParams[uniqueOutputParam].amountOut);
+                totalAmountsOut = totalAmountsOut.add(
+                    exactParams[uniqueOutputParam].amountOut
+                );
                 totalAmountsInMax = totalAmountsInMax.add(
                     exactParams[uniqueOutputParam].amountInMaximum
                 );
@@ -180,22 +258,26 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                     exactParams[uniqueOutputParam]
                 );
             }
-			if(totalAmountsOut<requiredDestTokenAmount){
-                exactParams[0].amountOut = exactParams[0]
-                    .amountOut
-                    .add(requiredDestTokenAmount.sub(totalAmountsOut)); //adds displacement to first swap set
-			}
-			if(totalAmountsInMax < maxSourceTokenAmount){
+            if (totalAmountsOut < requiredDestTokenAmount) {
+                exactParams[0].amountOut = exactParams[0].amountOut.add(
+                    requiredDestTokenAmount.sub(totalAmountsOut)
+                ); //adds displacement to first swap set
+            }
+            if (totalAmountsInMax < maxSourceTokenAmount) {
                 exactParams[0].amountInMaximum = exactParams[0]
                     .amountInMaximum
-                    .add(maxSourceTokenAmount.sub(totalAmountsInMax)); //adds displacement to first swap set		
-			}
-			totalAmountsOut = totalAmountsOut.add(requiredDestTokenAmount.sub(totalAmountsOut)); //correcting value
-			totalAmountsInMax = totalAmountsInMax.add(maxSourceTokenAmount.sub(totalAmountsInMax)); //correcting value 
-			encodedTXs[0] = abi.encodeWithSelector(
-				IUniswapV3SwapRouter(uniswapSwapRouter).exactOutput.selector,
-				exactParams[0]
-			);
+                    .add(maxSourceTokenAmount.sub(totalAmountsInMax)); //adds displacement to first swap set
+            }
+            totalAmountsOut = totalAmountsOut.add(
+                requiredDestTokenAmount.sub(totalAmountsOut)
+            ); //correcting value
+            totalAmountsInMax = totalAmountsInMax.add(
+                maxSourceTokenAmount.sub(totalAmountsInMax)
+            ); //correcting value
+            encodedTXs[0] = abi.encodeWithSelector(
+                IUniswapV3SwapRouter(uniswapSwapRouter).exactOutput.selector,
+                exactParams[0]
+            );
             require(
                 totalAmountsOut == requiredDestTokenAmount &&
                     totalAmountsInMax == maxSourceTokenAmount
@@ -206,8 +288,15 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
             ).multicall(encodedTXs);
 
             uint256 totaledAmountIn = 0;
-            for (uint256 uniqueAmountIn = 0; uniqueAmountIn < trueAmountsIn.length; uniqueAmountIn++) {
-                uint256 tempAmountIn = abi.decode(trueAmountsIn[uniqueAmountIn], (uint256));
+            for (
+                uint256 uniqueAmountIn = 0;
+                uniqueAmountIn < trueAmountsIn.length;
+                uniqueAmountIn++
+            ) {
+                uint256 tempAmountIn = abi.decode(
+                    trueAmountsIn[uniqueAmountIn],
+                    (uint256)
+                );
                 totaledAmountIn = totaledAmountIn + tempAmountIn;
             }
             sourceTokenAmountUsed = totaledAmountIn;
@@ -217,34 +306,45 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                 .decode(payload, (IUniswapV3SwapRouter.ExactInputParams[]));
             bytes[] memory encodedTXs = new bytes[](exactParams.length);
             uint256 totalAmounts = 0;
-            for (uint256 uniqueInputParam = 0; uniqueInputParam < exactParams.length; uniqueInputParam++) {
-                require(receiverAddress == exactParams[uniqueInputParam].recipient);
-                address tokenIn = exactParams[uniqueInputParam].path.toAddress(0);
+            for (
+                uint256 uniqueInputParam = 0;
+                uniqueInputParam < exactParams.length;
+                uniqueInputParam++
+            ) {
+                require(
+                    receiverAddress == exactParams[uniqueInputParam].recipient
+                );
+                address tokenIn = exactParams[uniqueInputParam].path.toAddress(
+                    0
+                );
                 require(tokenIn == sourceTokenAddress, "improper route");
                 address tokenOut = exactParams[uniqueInputParam].path.toAddress(
                     exactParams[uniqueInputParam].path.length - 20
                 );
                 require(tokenOut == destTokenAddress, "improper destination");
-                exactParams[uniqueInputParam].amountIn = exactParams[uniqueInputParam]
-                    .amountIn
-                    .mul(minSourceTokenAmount)
-                    .div(100); //amountIn on data is % of funds to use per route. Total should add to source token amount or else it fails. take into consideration rounding
-                totalAmounts = totalAmounts.add(exactParams[uniqueInputParam].amountIn);
+                exactParams[uniqueInputParam].amountIn = exactParams[
+                    uniqueInputParam
+                ].amountIn.mul(minSourceTokenAmount).div(100); //amountIn on data is % of funds to use per route. Total should add to source token amount or else it fails. take into consideration rounding
+                totalAmounts = totalAmounts.add(
+                    exactParams[uniqueInputParam].amountIn
+                );
                 encodedTXs[uniqueInputParam] = abi.encodeWithSelector(
                     IUniswapV3SwapRouter(uniswapSwapRouter).exactInput.selector,
                     exactParams[uniqueInputParam]
                 );
             }
-			if(totalAmounts<minSourceTokenAmount){
-                exactParams[0].amountIn = exactParams[0]
-                    .amountIn
-                    .add(minSourceTokenAmount.sub(totalAmounts)); //adds displacement to first swap set
-                totalAmounts = totalAmounts.add(minSourceTokenAmount.sub(totalAmounts));
+            if (totalAmounts < minSourceTokenAmount) {
+                exactParams[0].amountIn = exactParams[0].amountIn.add(
+                    minSourceTokenAmount.sub(totalAmounts)
+                ); //adds displacement to first swap set
+                totalAmounts = totalAmounts.add(
+                    minSourceTokenAmount.sub(totalAmounts)
+                );
                 encodedTXs[0] = abi.encodeWithSelector(
                     IUniswapV3SwapRouter(uniswapSwapRouter).exactInput.selector,
                     exactParams[0]
                 );
-			}
+            }
             sourceTokenAmountUsed = totalAmounts;
             require(
                 totalAmounts == minSourceTokenAmount,
@@ -254,7 +354,11 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                 uniswapSwapRouter
             ).multicall(encodedTXs);
             uint256 totaledAmountOut = 0;
-            for (uint256 uniqueAmountOut = 0; uniqueAmountOut < trueAmountsOut.length; uniqueAmountOut++) {
+            for (
+                uint256 uniqueAmountOut = 0;
+                uniqueAmountOut < trueAmountsOut.length;
+                uniqueAmountOut++
+            ) {
                 uint256 tempAmountOut = abi.decode(
                     trueAmountsOut[uniqueAmountOut],
                     (uint256)

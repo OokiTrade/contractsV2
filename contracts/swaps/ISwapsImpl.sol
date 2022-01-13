@@ -32,10 +32,17 @@ interface ISwapsImpl {
         external
         returns (uint256 amountOut, address midToken);
 
+    function dexAmountOutFormatted(bytes calldata route, uint256 amountOut)
+        external
+        returns (uint256 amountIn, address midToken);
+
     function dexAmountIn(bytes calldata route, uint256 amountOut)
         external
         returns (uint256 amountIn, address midToken);
 
-    function setSwapApprovals(address[] calldata tokens)
-        external;
+    function dexAmountInFormatted(bytes calldata route, uint256 amountOut)
+        external
+        returns (uint256 amountIn, address midToken);
+
+    function setSwapApprovals(address[] calldata tokens) external;
 }
