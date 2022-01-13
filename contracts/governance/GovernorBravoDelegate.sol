@@ -358,8 +358,8 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
       * @param newStaking address of new staking
       */
     function __setStaking(address newStaking) external {
-        require(msg.sender == admin, "GovernorBravo::__setVotingPeriod: admin only");
-        require(newStaking != address(0) , "GovernorBravo::__setVotingPeriod: invalid voting period");
+        require(msg.sender == admin, "GovernorBravo::__setStaking: admin only");
+        require(newStaking != address(0) , "GovernorBravo::__setStaking: invalid address");
         staking = StakingInterface(newStaking);
     }
 
