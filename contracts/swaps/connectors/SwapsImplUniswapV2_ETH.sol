@@ -133,6 +133,15 @@ contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
         }
     }
 
+    function dexAmountOutFormatted(
+        bytes memory payload,
+        uint256 amountIn)
+        public
+        returns (uint256 amountOut, address midToken)
+    {
+	    return dexAmountOut(payload, amountIn);
+	}
+
     function dexAmountIn(
         bytes memory payload,
         uint256 amountOut
@@ -196,6 +205,15 @@ contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
             }
         }
     }
+
+    function dexAmountInFormatted(
+        bytes memory payload,
+        uint256 amountOut)
+        public
+        returns (uint256 amountIn, address midToken)
+    {
+        return dexAmountIn(payload, amountOut);
+	}
 
     function _getAmountOut(uint256 amountIn, address[] memory path)
         public

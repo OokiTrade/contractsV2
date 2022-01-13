@@ -92,7 +92,33 @@ contract SwapsImplCurve_ETH is State, ISwapsImpl {
         }
     }
 
+    function dexAmountOutFormatted(bytes memory route, uint256 amountIn)
+        public
+        returns (uint256 amountOut, address midToken)
+    {
+        if (amountIn == 0) {
+            amountOut = 0;
+        } else if (amountIn != 0) {
+            amountOut = _getAmountOut(amountIn, route);
+        }
+    }
+
     function dexAmountIn(bytes memory route, uint256 amountOut)
+        public
+        returns (uint256 amountIn, address midToken)
+    {
+        if (amountOut != 0) {
+            amountIn = _getAmountIn(amountOut, route);
+
+            if (amountIn == uint256(-1)) {
+                amountIn = 0;
+            }
+        } else {
+            amountIn = 0;
+        }
+    }
+
+    function dexAmountInFormatted(bytes memory route, uint256 amountOut)
         public
         returns (uint256 amountIn, address midToken)
     {
