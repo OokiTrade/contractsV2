@@ -177,7 +177,7 @@ contract StakeUnstake is Common {
             if (token == OOKI && IERC20(OOKI).balanceOf(address(this)) < unstakeAmount) {
                 // settle vested BZRX only if needed
                 IVestingToken(vBZRX).claim();
-                converter.convert(address(this), IERC20(BZRX).balanceOf(address(this)));
+                CONVERTER.convert(address(this), IERC20(BZRX).balanceOf(address(this)));
             }
 
             // Withdraw to sushi masterchef
@@ -255,7 +255,7 @@ contract StakeUnstake is Common {
                 if (IERC20(OOKI).balanceOf(address(this)) < bzrxRewardsEarned) {
                     // settle vested BZRX only if needed
                     IVestingToken(vBZRX).claim();
-                    converter.convert(address(this), IERC20(BZRX).balanceOf(address(this)));
+                    CONVERTER.convert(address(this), IERC20(BZRX).balanceOf(address(this)));
                 }
 
                 IERC20(OOKI).transfer(msg.sender, bzrxRewardsEarned);

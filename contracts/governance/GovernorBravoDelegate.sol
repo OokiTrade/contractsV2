@@ -10,10 +10,10 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
     string public constant name = "bZx Governor Bravo";
 
     /// @notice The minimum setable proposal threshold
-    uint public constant MIN_PROPOSAL_THRESHOLD = 5150000e18; // 5,150,000 = 0.5% of BZRX
+    uint public constant MIN_PROPOSAL_THRESHOLD = 51500000e18; // 5,150,000 = 0.5% of OOKI
 
     /// @notice The maximum setable proposal threshold
-    uint public constant MAX_PROPOSAL_THRESHOLD = 20600000e18; // 20,600,000 = 2% of BZRX
+    uint public constant MAX_PROPOSAL_THRESHOLD = 206000000e18; // 20,600,000 = 2% of OOKI
 
     /// @notice The minimum setable voting period
     uint public constant MIN_VOTING_PERIOD = 5760; // About 24 hours

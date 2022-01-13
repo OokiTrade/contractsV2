@@ -30,11 +30,8 @@
 
 ## Proposal Calls
 
-1. Disable Sweep Fees
-2. Activate new Staking (and new vote delegator)
-3. DAO use new staking for voting
-4. BZRXv2_CONVERTER initialize (multisig)
-5. MINT_COORDINATOR.addMinter (multisig)
+1. Activate new Staking (and new vote delegator)
+
 
 
 
