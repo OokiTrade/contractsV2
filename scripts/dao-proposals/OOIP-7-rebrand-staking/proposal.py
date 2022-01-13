@@ -46,6 +46,7 @@ staking.setApprovals(CRV3, POOL3_GAUGE, 1, {"from": deployer})
 STAKING_VOTE_DELEGATOR = Contract.from_abi("STAKING_VOTE_DELEGATOR", votedelegatorProxy, VoteDelegator.abi)
 STAKING_VOTE_DELEGATOR.setStaking(staking, {"from": STAKING_VOTE_DELEGATOR.owner()}) # T is the owner
 staking.setVoteDelegator(STAKING_VOTE_DELEGATOR, {"from": deployer})
+staking.setGovernor(DAO, {"from": deployer})
 staking.transferOwnership(TIMELOCK, {"from": deployer})
 
 # 3. Rescue timelock. 
