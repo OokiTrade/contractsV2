@@ -50,16 +50,53 @@ staking.transferOwnership(TIMELOCK, {"from": deployer})
 
 # 3. Rescue timelock. 
 # upgrade DAO implementation
-deployer.deploy(GovernorBravoDelegate)
-daoImpl = "0xb7A0B67fF67B548e91953647F8cDd7647660279d" # acct.deploy(GovernorBravoDelegate)
+daoImpl = deployer.deploy(GovernorBravoDelegate)
+# daoImpl = "0xb7A0B67fF67B548e91953647F8cDd7647660279d" # acct.deploy(GovernorBravoDelegate)
 daoProxy = Contract.from_abi("GovernorBravoDelegator", address=DAO, abi=GovernorBravoDelegator.abi) # attire proxy interface
 
-eta = TIMELOCK.delay()+ chain.time()+1
+eta = TIMELOCK.delay()+ chain.time()+100
+
 DAO.__queueSetTimelockPendingAdmin(GUARDIAN_MULTISIG, eta, {"from": GUARDIAN_MULTISIG})
-chain.sleep(TIMELOCK.delay())
+chain.sleep(TIMELOCK.delay() + 100)
 chain.mine()
 DAO.__executeSetTimelockPendingAdmin(GUARDIAN_MULTISIG, eta, {"from": GUARDIAN_MULTISIG})
+print("pending admin set")
 
+TIMELOCK.acceptAdmin({"from": GUARDIAN_MULTISIG})
+
+
+calldata = daoProxy._setImplementation.encode_input(daoImpl)
+eta = TIMELOCK.delay()+ chain.time()+100
+TIMELOCK.queueTransaction(DAO, 0, "", calldata, eta, {"from": GUARDIAN_MULTISIG})
+chain.sleep(TIMELOCK.delay() + 100)
+chain.mine()
+TIMELOCK.executeTransaction(DAO, 0, "", calldata, eta, {"from": GUARDIAN_MULTISIG})
+
+
+calldata = daoImpl.__setStaking.encode_input(staking)
+eta = TIMELOCK.delay()+ chain.time()+100
+TIMELOCK.queueTransaction(DAO, 0, "", calldata, eta, {"from": GUARDIAN_MULTISIG})
+chain.sleep(TIMELOCK.delay() + 100)
+chain.mine()
+TIMELOCK.executeTransaction(DAO, 0, "", calldata, eta, {"from": GUARDIAN_MULTISIG})
+
+
+# restore DAO
+
+eta = TIMELOCK.delay()+ chain.time()+100
+
+calldata = TIMELOCK.setPendingAdmin.encode_input(DAO)
+eta = TIMELOCK.delay()+ chain.time()+100
+TIMELOCK.queueTransaction(TIMELOCK, 0, "", calldata, eta, {"from": GUARDIAN_MULTISIG})
+chain.sleep(TIMELOCK.delay() + 100)
+chain.mine()
+TIMELOCK.executeTransaction(TIMELOCK, 0, "", calldata, eta, {"from": GUARDIAN_MULTISIG})
+
+
+DAO.__acceptAdmin({"from": GUARDIAN_MULTISIG})
+assert DAO.staking() == staking
+assert DAO.admin() == TIMELOCK
+assert TIMELOCK.admin() == DAO
 # values = [0] * len(targets)  # empty array
 # signatures = [""] * len(targets)  # empty signatures array
 
