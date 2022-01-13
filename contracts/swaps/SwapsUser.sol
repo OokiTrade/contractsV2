@@ -260,7 +260,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
             dexNumber
         );
 
-        (expectedReturn, ) = ISwapsImpl(swapImplAddress).dexAmountOut(
+        (expectedReturn, ) = ISwapsImpl(swapImplAddress).dexAmountOutFormatted(
             dataToSend,
             sourceTokenAmount
         );
