@@ -153,7 +153,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
             // there's no minimum destTokenAmount, but all of vals[0] (minSourceTokenAmount) must be spent, and amount spent can't exceed vals[0]
             require(
                 sourceTokenAmountUsed == vals[0],
-                "swap too large to fill test"
+                "swap too large to fill"
             );
 
             if (tradingFee != 0) {
