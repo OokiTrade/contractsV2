@@ -14,8 +14,9 @@ contract DAppHelper {
 
     address public constant bZxProtocol = 0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f; // mainnet
     //address public constant bZxProtocol = 0x5cfba2639a3db0D9Cc264Aa27B2E6d134EeA486a; // kovan
-    //address public constant bZxProtocol = 0xC47812857A74425e2039b57891a3DFcF51602d5d; // bsc
-    //address public constant bZxProtocol = 0xfe4F0eb0A1Ad109185c9AaDE64C48ff8e928e54B; // polygon
+    //address public constant bZxProtocol = 0xD154eE4982b83a87b0649E5a7DDA1514812aFE1f; // bsc
+    //address public constant bZxProtocol = 0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8; // polygon
+    //address public constant bZxProtocol = 0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB; // arbitrum
 
     function assetRates(
         address usdTokenAddress,

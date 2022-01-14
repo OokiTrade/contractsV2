@@ -42,4 +42,8 @@ contract Constants {
     //IWethERC20 public constant wethToken = IWethERC20(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7); // avax (Wrapped AVAX)
     //address public constant bzrxTokenAddress = address(0); // avax
     //address public constant vbzrxTokenAddress = address(0); // avax
+
+    //IWethERC20 public constant wethToken = IWethERC20(0x82aF49447D8a07e3bd95BD0d56f35241523fBab1); // arbitrum
+    //address public constant bzrxTokenAddress = address(0); // arbitrum
+    //address public constant vbzrxTokenAddress = address(0); // arbitrum
 }

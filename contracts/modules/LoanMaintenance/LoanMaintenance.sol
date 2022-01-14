@@ -9,13 +9,14 @@ pragma experimental ABIEncoderV2;
 import "../../core/State.sol";
 import "../../events/LoanMaintenanceEvents.sol";
 import "../../mixins/VaultController.sol";
-import "../../mixins/InterestUser.sol";
 import "../../mixins/LiquidationHelper.sol";
 import "../../swaps/SwapsUser.sol";
 import "../../governance/PausableGuardian.sol";
+import "../../mixins/InterestHandler.sol";
 
+// TODO: support new loan format
 
-contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, InterestUser, SwapsUser, LiquidationHelper, PausableGuardian {
+contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, SwapsUser, LiquidationHelper, PausableGuardian, InterestHandler {
 
     function initialize(
         address target)
@@ -24,14 +25,14 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
     {
         _setTarget(this.depositCollateral.selector, target);
         _setTarget(this.withdrawCollateral.selector, target);
-        _setTarget(this.withdrawAccruedInterest.selector, target);
-        _setTarget(this.extendLoanDuration.selector, target);
-        _setTarget(this.reduceLoanDuration.selector, target);
+        //_setTarget(this.withdrawAccruedInterest.selector, target);  <-- remove target
+        //_setTarget(this.extendLoanDuration.selector, target); <-- remove target
+        //_setTarget(this.reduceLoanDuration.selector, target); <-- remove target
         _setTarget(this.setDepositAmount.selector, target);
         _setTarget(this.claimRewards.selector, target);
         _setTarget(this.rewardsBalanceOf.selector, target);
-        _setTarget(this.getLenderInterestData.selector, target);
-        _setTarget(this.getLoanInterestData.selector, target);
+        //_setTarget(this.getLenderInterestData.selector, target);  <-- remove target
+        //_setTarget(this.getLoanInterestData.selector, target);  <-- remove target
         _setTarget(this.getUserLoans.selector, target);
         _setTarget(this.getUserLoansCount.selector, target);
         _setTarget(this.getLoan.selector, target);
@@ -180,223 +181,6 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         );
     }
 
-    function withdrawAccruedInterest(
-        address loanToken)
-        external
-        pausable
-    {
-        // pay outstanding interest to lender
-        _payInterest(
-            msg.sender, // lender
-            loanToken
-        );
-    }
-
-    function extendLoanDuration(
-        bytes32 loanId,
-        uint256 depositAmount,
-        bool useCollateral,
-        bytes calldata /*loanDataBytes*/) // for future use
-        external
-        payable
-        nonReentrant
-        pausable
-        returns (uint256 secondsExtended)
-    {
-        require(depositAmount != 0, "depositAmount is 0");
-        Loan storage loanLocal = loans[loanId];
-        LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
-
-        require(loanLocal.active, "loan is closed");
-        require(
-            !useCollateral ||
-            msg.sender == loanLocal.borrower ||
-            delegatedManagers[loanLocal.id][msg.sender],
-            "unauthorized"
-        );
-
-        require(msg.value == 0 || (!useCollateral && loanParamsLocal.loanToken == address(wethToken)), "wrong asset sent");
-
-        // pay outstanding interest to lender
-        _payInterest(
-            loanLocal.lender,
-            loanParamsLocal.loanToken
-        );
-
-        LoanInterest storage loanInterestLocal = loanInterest[loanLocal.id];
-
-        _settleFeeRewardForInterestExpense(
-            loanInterestLocal,
-            loanLocal.id,
-            loanParamsLocal.loanToken,
-            loanLocal.borrower,
-            block.timestamp
-        );
-
-        // Handle back interest: calculates interest owned since the loan endtime passed but the loan remained open
-        uint256 backInterestOwed;
-        if (block.timestamp > loanLocal.endTimestamp) {
-            backInterestOwed = block.timestamp
-                .sub(loanLocal.endTimestamp);
-            backInterestOwed = backInterestOwed
-                .mul(loanInterestLocal.owedPerDay);
-            backInterestOwed = backInterestOwed
-                .div(1 days);
-
-            require(depositAmount > backInterestOwed, "deposit cannot cover back interest");
-        }
-
-        // deposit interest
-        uint256 collateralUsed;
-        if (useCollateral) {
-            collateralUsed = _doSwapWithCollateral(
-                loanLocal,
-                loanParamsLocal,
-                depositAmount
-            );
-        } else {
-            if (msg.value == 0) {
-                vaultDeposit(
-                    loanParamsLocal.loanToken,
-                    msg.sender,
-                    depositAmount
-                );
-            } else {
-                require(msg.value == depositAmount, "ether deposit mismatch");
-                vaultEtherDeposit(
-                    msg.sender,
-                    msg.value
-                );
-            }
-        }
-
-        if (backInterestOwed != 0) {
-            depositAmount = depositAmount
-                .sub(backInterestOwed);
-
-            // pay out backInterestOwed
-            _payInterestTransfer(
-                loanLocal.lender,
-                loanParamsLocal.loanToken,
-                backInterestOwed
-            );
-        }
-
-        secondsExtended = depositAmount
-            .mul(1 days)
-            .div(loanInterestLocal.owedPerDay);
-
-        loanLocal.endTimestamp = loanLocal.endTimestamp
-            .add(secondsExtended);
-
-        require(loanLocal.endTimestamp > block.timestamp &&
-               (loanLocal.endTimestamp - block.timestamp) > 1 hours,
-            "loan too short"
-        );
-
-        loanInterestLocal.depositTotal = loanInterestLocal.depositTotal
-            .add(depositAmount);
-
-        lenderInterest[loanLocal.lender][loanParamsLocal.loanToken].owedTotal = lenderInterest[loanLocal.lender][loanParamsLocal.loanToken].owedTotal
-            .add(depositAmount);
-
-        emit ExtendLoanDuration(
-            loanLocal.borrower,
-            loanParamsLocal.loanToken,
-            loanId,
-            depositAmount,
-            collateralUsed,
-            loanLocal.endTimestamp
-        );
-    }
-
-    function reduceLoanDuration(
-        bytes32 loanId,
-        address receiver,
-        uint256 withdrawAmount)
-        external
-        nonReentrant
-        pausable
-        returns (uint256 secondsReduced)
-    {
-        require(withdrawAmount != 0, "withdrawAmount is 0");
-        Loan storage loanLocal = loans[loanId];
-        LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
-
-        require(loanLocal.active, "loan is closed");
-        require(
-            msg.sender == loanLocal.borrower ||
-            delegatedManagers[loanLocal.id][msg.sender],
-            "unauthorized"
-        );
-
-        require(loanLocal.endTimestamp > block.timestamp, "loan term has ended");
-
-        // pay outstanding interest to lender
-        _payInterest(
-            loanLocal.lender,
-            loanParamsLocal.loanToken
-        );
-
-        LoanInterest storage loanInterestLocal = loanInterest[loanLocal.id];
-
-        _settleFeeRewardForInterestExpense(
-            loanInterestLocal,
-            loanLocal.id,
-            loanParamsLocal.loanToken,
-            loanLocal.borrower,
-            block.timestamp
-        );
-
-        uint256 interestDepositRemaining = loanLocal.endTimestamp
-            .sub(block.timestamp)
-            .mul(loanInterestLocal.owedPerDay)
-            .div(1 days);
-        require(withdrawAmount < interestDepositRemaining, "withdraw amount too high");
-
-        // withdraw interest
-        if (loanParamsLocal.loanToken == address(wethToken)) {
-            vaultEtherWithdraw(
-                receiver,
-                withdrawAmount
-            );
-        } else {
-            vaultWithdraw(
-                loanParamsLocal.loanToken,
-                receiver,
-                withdrawAmount
-            );
-        }
-
-        secondsReduced = withdrawAmount
-            .mul(1 days)
-            .div(loanInterestLocal.owedPerDay);
-
-        require (loanLocal.endTimestamp > secondsReduced, "loan too short");
-
-        loanLocal.endTimestamp = loanLocal.endTimestamp
-            .sub(secondsReduced);
-
-        require(loanLocal.endTimestamp > block.timestamp &&
-               (loanLocal.endTimestamp - block.timestamp) > 1 hours,
-            "loan too short"
-        );
-
-        loanInterestLocal.depositTotal = loanInterestLocal.depositTotal
-            .sub(withdrawAmount);
-
-        lenderInterest[loanLocal.lender][loanParamsLocal.loanToken].owedTotal = lenderInterest[loanLocal.lender][loanParamsLocal.loanToken].owedTotal
-            .sub(withdrawAmount);
-
-        emit ReduceLoanDuration(
-            loanLocal.borrower,
-            loanParamsLocal.loanToken,
-            loanId,
-            withdrawAmount,
-            loanLocal.endTimestamp
-        );
-    }
-
     function setDepositAmount(
         bytes32 loanId,
         uint256 depositValueAsLoanToken,
@@ -459,7 +243,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         }
     }
 
-    /// @dev Gets current lender interest data totals for all loans with a specific oracle and interest token
+    /*/// @dev Gets current lender interest data totals for all loans with a specific oracle and interest token
     /// @param lender The lender address
     /// @param loanToken The loan token address
     /// @return interestPaid The total amount of interest that has been paid to a lender so far
@@ -527,7 +311,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
                 .mul(interestOwedPerDay)
                 .div(1 days) :
                 0;
-    }
+    }*/
 
     // Only returns data for loans that are active
     // All(0): all loans
@@ -764,7 +548,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             collateralToken: loanParamsLocal.collateralToken,
             principal: loanLocal.principal,
             collateral: loanLocal.collateral,
-            interestOwedPerDay: loanInterestLocal.owedPerDay,
+            interestOwedPerDay: loanType == LoanType.NonMargin ? loanInterestLocal.owedPerDay : 0,
             interestDepositRemaining: value,
             startRate: loanLocal.startRate,
             startMargin: loanLocal.startMargin,

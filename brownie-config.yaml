@@ -12,9 +12,12 @@ project_structure:
 networks:
     default: development
     development:
-        gas_limit: 8000000
+        gas_limit: max
+        gas_buffer: 1
         gas_price: 0
-        reverting_tx_gas_limit: 8000000
+        max_fee: null
+        priority_fee: null
+        reverting_tx_gas_limit: max
         default_contract_owner: true
         cmd_settings:
             port: 8555
@@ -27,7 +30,10 @@ networks:
             #time: 2020-05-08T14:54:08+0000
     live:
         gas_limit: auto
+        gas_buffer: 1.1
         gas_price: auto
+        max_fee: null
+        priority_fee: null
         reverting_tx_gas_limit: false
         default_contract_owner: false
 
@@ -39,6 +45,7 @@ compiler:
             enabled: true
             runs: 200
         remappings: 
+            - "@openzeppelin-4.3.2=./node_modules/openzeppelin-4.3.2"
             - "@openzeppelin-3.4.0=./node_modules/openzeppelin-3.4.0"
             - "@openzeppelin-2.5.0=./node_modules/openzeppelin-2.5.0"
 

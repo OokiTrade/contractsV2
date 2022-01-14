@@ -15,22 +15,12 @@ contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage {
 
     address public constant bZxContract = 0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f; // mainnet
     //address public constant bZxContract = 0x5cfba2639a3db0D9Cc264Aa27B2E6d134EeA486a; // kovan
-    //address public constant bZxContract = 0xC47812857A74425e2039b57891a3DFcF51602d5d; // bsc
-    //address public constant bZxContract = 0xfe4F0eb0A1Ad109185c9AaDE64C48ff8e928e54B; // polygon
+    //address public constant bZxContract = 0xD154eE4982b83a87b0649E5a7DDA1514812aFE1f; // bsc
+    //address public constant bZxContract = 0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8; // polygon
+    //address public constant bZxContract = 0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB; // arbitrum
 
     bytes32 internal constant iToken_LowerAdminAddress = 0x7ad06df6a0af6bd602d90db766e0d5f253b45187c3717a0f9026ea8b10ff0d4b;    // keccak256("iToken_LowerAdminAddress")
-
-    modifier onlyAdmin() {
-        address _lowerAdmin;
-        assembly {
-            _lowerAdmin := sload(iToken_LowerAdminAddress)
-        }
-
-        require(msg.sender == address(this) ||
-            msg.sender == _lowerAdmin ||
-            msg.sender == owner(), "unauthorized");
-        _;
-    }
+    bytes32 internal constant iToken_LowerAdminContract = 0x34b31cff1dbd8374124bd4505521fc29cab0f9554a5386ba7d784a4e611c7e31;   // keccak256("iToken_LowerAdminContract")
 
     function()
         external
@@ -42,7 +32,6 @@ contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage {
         IBZx.LoanParams[] memory loanParamsList,
         bool areTorqueLoans)
         public
-        onlyAdmin
     {
         bytes32[] memory loanParamsIdList;
         address _loanTokenAddress = loanTokenAddress;
@@ -61,10 +50,9 @@ contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage {
     }
 
     function disableLoanParams(
-        address[] calldata collateralTokens,
-        bool[] calldata isTorqueLoans)
-        external
-        onlyAdmin
+        address[] memory collateralTokens,
+        bool[] memory isTorqueLoans)
+        public
     {
         require(collateralTokens.length == isTorqueLoans.length, "count mismatch");
 
@@ -81,6 +69,11 @@ contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage {
         IBZx(bZxContract).disableLoanParams(loanParamsIdList);
     }
 
+    function disableLoanParamsAll(address[] memory collateralTokens, bool[][] memory isTorqueLoans) public {
+        disableLoanParams(collateralTokens, isTorqueLoans[0]);
+        disableLoanParams(collateralTokens, isTorqueLoans[1]);
+    }
+
     // These params should be percentages represented like so: 5% = 5000000000000000000
     // rateMultiplier + baseRate can't exceed 100%
     function setDemandCurve(
@@ -92,7 +85,6 @@ contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage {
         uint256 _kinkLevel,
         uint256 _maxScaleRate)
         public
-        onlyAdmin
     {
         require(_rateMultiplier.add(_baseRate) <= WEI_PERCENT_PRECISION, "curve params too high");
         require(_lowUtilRateMultiplier.add(_lowUtilBaseRate) <= WEI_PERCENT_PRECISION, "curve params too high");
@@ -107,17 +99,5 @@ contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage {
         targetLevel = _targetLevel; // 80 ether
         kinkLevel = _kinkLevel; // 90 ether
         maxScaleRate = _maxScaleRate; // 100 ether
-    }
-
-    function toggleFunctionPause(
-        string memory funcId,  // example: "mint(uint256,uint256)"
-        bool isPaused)
-        public
-        onlyAdmin
-    {
-        bytes32 slot = keccak256(abi.encodePacked(bytes4(keccak256(abi.encodePacked(funcId))), Pausable_FunctionPause));
-        assembly {
-            sstore(slot, isPaused)
-        }
     }
 }

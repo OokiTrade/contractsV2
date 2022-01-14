@@ -200,7 +200,7 @@ interface IMasterChef {
         external
         payable;
 
-    function pendingAltRewards(address _user)
+    function pendingAltRewards(uint256 _pid, address _user)
         external
         view
         returns (uint256);

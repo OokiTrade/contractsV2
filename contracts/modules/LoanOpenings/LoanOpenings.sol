@@ -9,12 +9,12 @@ pragma experimental ABIEncoderV2;
 import "../../core/State.sol";
 import "../../events/LoanOpeningsEvents.sol";
 import "../../mixins/VaultController.sol";
-import "../../mixins/InterestUser.sol";
+import "../../mixins/InterestHandler.sol";
 import "../../swaps/SwapsUser.sol";
 import "../../governance/PausableGuardian.sol";
 
 
-contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUser, SwapsUser, PausableGuardian {
+contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHandler, SwapsUser, PausableGuardian {
 
     function initialize(
         address target)
@@ -111,35 +111,16 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         address collateralToken,
         uint256 loanTokenSent,
         uint256 collateralTokenSent,
-        uint256 interestRate,
-        uint256 newPrincipal)
+        uint256 /*interestRate*/,
+        uint256 /*newPrincipal*/)
         external
         view
         returns (uint256 value)
     {
-        if (loanTokenSent < newPrincipal) {
-            return 0;
-        }
-
-        uint256 maxLoanTerm = 2419200; // 28 days
-
-        uint256 owedPerDay = newPrincipal
-            .mul(interestRate)
-            .div(DAYS_IN_A_YEAR * WEI_PERCENT_PRECISION);
-
-        uint256 interestAmountRequired = maxLoanTerm
-            .mul(owedPerDay)
-            .div(1 days);
-
-        if (loanTokenSent < interestAmountRequired) {
-            return 0;
-        }
-
         value = _swapsExpectedReturn(
             loanToken,
             collateralToken,
             loanTokenSent
-                .sub(interestAmountRequired)
         );
         if (value != 0) {
             return collateralTokenSent
@@ -289,9 +270,11 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         require (initialMargin >= loanParamsLocal.minInitialMargin, "initialMargin too low");
 
         // maxLoanTerm == 0 indicates a Torqueloan and requres that torqueInterest != 0
-        require(loanParamsLocal.maxLoanTerm != 0 ||
+        /*require(loanParamsLocal.maxLoanTerm != 0 ||
             sentValues[2] != 0, // torqueInterest
-            "invalid interest");
+            "invalid interest");*/
+
+        require(loanId != 0, "invalid loanId");
 
         // initialize loan
         Loan storage loanLocal = _initializeLoan(
@@ -302,24 +285,10 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             sentValues
         );
 
-        if (loanId == 0) {
-            // loanId is defined for new loans
-            loanId = loanLocal.id;
-        }
+        poolTotalPrincipal[loanLocal.lender] = poolTotalPrincipal[loanLocal.lender]
+            .add(sentValues[1]); // newPrincipal*/
 
-        // get required interest
-        uint256 amount = _initializeInterest(
-            loanParamsLocal,
-            loanLocal,
-            sentValues[0], // newRate
-            sentValues[1], // newPrincipal,
-            sentValues[2]  // torqueInterest
-        );
-
-        // substract out interest from usable loanToken sent
-        sentValues[3] = sentValues[3]
-            .sub(amount);
-
+        uint256 amount;
         if (isTorqueLoan) {
             require(sentValues[3] == 0, "surplus loan token");
 
@@ -371,10 +340,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             .add(sentValues[4])
             .sub(amount); // borrowingFee
 
-        if (isTorqueLoan) {
-            // reclaiming varaible -> interestDuration
-            sentValues[2] = loanLocal.endTimestamp.sub(block.timestamp);
-        } else {
+        if (!isTorqueLoan) {
             // reclaiming varaible -> entryLeverage = 100 / initialMargin
             sentValues[2] = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, initialMargin);
         }
@@ -451,8 +417,8 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                 loanParamsLocal.collateralToken,                // collateralToken
                 sentValues[1],                                  // newPrincipal
                 sentValues[4],                                  // newCollateral
-                sentValues[0],                                  // interestRate
-                sentValues[2],                                  // interestDuration
+                0,                                              // interestRate (old value: sentValues[0])
+                0,                                              // interestDuration (old value: sentValues[2])
                 collateralToLoanRate,                           // collateralToLoanRate,
                 margin                                          // currentMargin
             );
@@ -468,8 +434,8 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                 loanParamsLocal.loanToken,                      // loanToken
                 sentValues[4],                                  // positionSize
                 sentValues[1],                                  // borrowedAmount
-                sentValues[0],                                  // interestRate,
-                loanLocal.endTimestamp,                         // settlementDate
+                0,                                              // interestRate (old value: sentValues[0])
+                0,                                              // settlementDate (old value: loanLocal.endTimestamp)
                 sentValues[3],                                  // entryPrice (loanToCollateralSwapRate)
                 sentValues[2],                                  // entryLeverage
                 margin                                          // currentLeverage
@@ -546,17 +512,10 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
         address manager = sentAddresses[3];
         uint256 newPrincipal = sentValues[1];
 
-        if (loanId == 0) {
-            loanId = keccak256(abi.encodePacked(
-                loanParamsLocal.id,
-                lender,
-                borrower,
-                block.timestamp
-            ));
+        sloanLocal = loans[loanId];
 
-            sloanLocal = loans[loanId];
-            require(sloanLocal.id == 0, "loan exists");
-
+        if (sloanLocal.id == 0) {
+            // new loan
             sloanLocal.id = loanId;
             sloanLocal.loanParamsId = loanParamsLocal.id;
             sloanLocal.principal = newPrincipal;
@@ -574,8 +533,10 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
             lenderLoanSets[lender].addBytes32(loanId);
             borrowerLoanSets[borrower].addBytes32(loanId);
         } else {
+            // existing loan
             sloanLocal = loans[loanId];
-            require(sloanLocal.active && block.timestamp < sloanLocal.endTimestamp, "loan has ended");
+            //require(sloanLocal.active && block.timestamp < sloanLocal.endTimestamp, "loan has ended");
+            require(sloanLocal.active, "loan has ended");
             require(sloanLocal.borrower == borrower, "borrower mismatch");
             require(sloanLocal.lender == lender, "lender mismatch");
             require(sloanLocal.loanParamsId == loanParamsLocal.id, "loanParams mismatch");
@@ -592,93 +553,6 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestUse
                 true
             );
         }
-    }
-
-    function _initializeInterest(
-        LoanParams memory loanParamsLocal,
-        Loan storage loanLocal,
-        uint256 newRate,
-        uint256 newPrincipal,
-        uint256 torqueInterest) // ignored for fixed-term loans
-        internal
-        returns (uint256 interestAmountRequired)
-    {
-        // pay outstanding interest to lender
-        _payInterest(
-            loanLocal.lender,
-            loanParamsLocal.loanToken
-        );
-
-        LoanInterest storage loanInterestLocal = loanInterest[loanLocal.id];
-        LenderInterest storage lenderInterestLocal = lenderInterest[loanLocal.lender][loanParamsLocal.loanToken];
-
-        uint256 maxLoanTerm = loanParamsLocal.maxLoanTerm;
-
-        _settleFeeRewardForInterestExpense(
-            loanInterestLocal,
-            loanLocal.id,
-            loanParamsLocal.loanToken,
-            loanLocal.borrower,
-            block.timestamp
-        );
-
-        uint256 previousDepositRemaining;
-        if (maxLoanTerm == 0 && loanLocal.endTimestamp != 0) {
-            previousDepositRemaining = loanLocal.endTimestamp
-                .sub(block.timestamp) // block.timestamp < endTimestamp was confirmed earlier
-                .mul(loanInterestLocal.owedPerDay)
-                .div(1 days);
-        }
-
-        uint256 owedPerDay = newPrincipal
-            .mul(newRate)
-            .div(DAYS_IN_A_YEAR * WEI_PERCENT_PRECISION);
-
-        // update stored owedPerDay
-        loanInterestLocal.owedPerDay = loanInterestLocal.owedPerDay
-            .add(owedPerDay);
-        lenderInterestLocal.owedPerDay = lenderInterestLocal.owedPerDay
-            .add(owedPerDay);
-
-        if (maxLoanTerm == 0) {
-            // indefinite-term (Torque) loan
-
-            // torqueInterest != 0 was confirmed earlier
-            loanLocal.endTimestamp = torqueInterest
-                .add(previousDepositRemaining)
-                .mul(1 days)
-                .div(loanInterestLocal.owedPerDay)
-                .add(block.timestamp);
-
-            maxLoanTerm = loanLocal.endTimestamp
-                .sub(block.timestamp);
-
-            // loan term has to at least be greater than one hour
-            require(maxLoanTerm > 1 hours, "loan too short");
-
-            interestAmountRequired = torqueInterest;
-        } else {
-            // fixed-term loan
-
-            if (loanLocal.endTimestamp == 0) {
-                loanLocal.endTimestamp = block.timestamp
-                    .add(maxLoanTerm);
-            }
-
-            interestAmountRequired = loanLocal.endTimestamp
-                .sub(block.timestamp)
-                .mul(owedPerDay)
-                .div(1 days);
-        }
-
-        loanInterestLocal.depositTotal = loanInterestLocal.depositTotal
-            .add(interestAmountRequired);
-
-        // update remaining lender interest values
-        lenderInterestLocal.principalTotal = lenderInterestLocal.principalTotal
-            .add(newPrincipal);
-        lenderInterestLocal.owedTotal = lenderInterestLocal.owedTotal
-            .add(interestAmountRequired);
     }
 
     function _getRequiredCollateral(
