@@ -44,7 +44,7 @@ contract StakingConstantsV2 {
     ICurve3PoolGauge public constant curve3PoolGauge = ICurve3PoolGauge(0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A);
     address public constant CRV = 0xD533a949740bb3306d119CC777fa900bA034cd52;
 
-    IBZRXv2Converter public CONVERTER = IBZRXv2Converter(0x6BE9B7406260B6B6db79a1D4997e7f8f5c9D7400);
+    IBZRXv2Converter public constant CONVERTER = IBZRXv2Converter(0x6BE9B7406260B6B6db79a1D4997e7f8f5c9D7400);
 
     event Stake(address indexed user, address indexed token, address indexed delegate, uint256 amount);
 

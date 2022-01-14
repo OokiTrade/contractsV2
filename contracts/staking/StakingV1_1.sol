@@ -752,15 +752,15 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 
     // note: anyone can contribute rewards to the contract
     function addRewards(
-        uint256 newBZRX,
+        uint256 newOOKI,
         uint256 newStableCoin)
         external
         pausable
     {
-        if (newBZRX != 0 || newStableCoin != 0) {
-            _addRewards(newBZRX, newStableCoin);
-            if (newBZRX != 0) {
-                IERC20(BZRX).transferFrom(msg.sender, address(this), newBZRX);
+        if (newOOKI != 0 || newStableCoin != 0) {
+            _addRewards(newOOKI, newStableCoin);
+            if (newOOKI != 0) {
+                IERC20(BZRX).transferFrom(msg.sender, address(this), newOOKI);
             }
             if (newStableCoin != 0) {
                 curve3Crv.transferFrom(msg.sender, address(this), newStableCoin);
@@ -770,7 +770,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     }
 
     function _addRewards(
-        uint256 newBZRX,
+        uint256 newOOKI,
         uint256 newStableCoin)
         internal
     {
@@ -779,7 +779,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         uint256 totalTokens = totalSupplyStored();
         require(totalTokens != 0, "nothing staked");
 
-        bzrxPerTokenStored = newBZRX
+        bzrxPerTokenStored = newOOKI
             .mul(1e36)
             .div(totalTokens)
             .add(bzrxPerTokenStored);
@@ -793,7 +793,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 
         emit AddRewards(
             msg.sender,
-            newBZRX,
+            newOOKI,
             newStableCoin
         );
     }
