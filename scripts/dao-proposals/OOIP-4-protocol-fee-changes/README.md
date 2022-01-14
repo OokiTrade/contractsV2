@@ -28,19 +28,12 @@
 
 - To introduce fees on flash loans, flash loan fee rate needs to be added to loan token logic
 - For fees to paid, a function for paying fees needs to be added to Protocol contract
-- `borrowingFeePercent` is going to be set to 0
 - `flashBorrowFeePercent` is going to be introduced and initialized
-- add support for OOKI
-- adjust liquidiation incentives
 
 ## Proposal Calls
 
 1. upgrade LOANTOKEN implementation
 2. upgrade PROTOCOL logic
-3. bzx.setBorrowingFeePercent(0)
-4. bzx.setLoanPool([iOOKI], [OOKI])
-5. bzx.setSupportedTokens([OOKI], [True])
-6. bzx.setLiquidationIncentivePercent(...)
 
 
 
