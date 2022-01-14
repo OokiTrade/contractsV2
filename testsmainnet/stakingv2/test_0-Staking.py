@@ -338,7 +338,7 @@ def testStake_UnStakeMultiUserDisproportionalAmount(requireMainnetFork, STAKINGv
 
 
 
-def testStake_UnStakeMultiUserVoting(requireMainnetFork, STAKINGv2, BZX,  BZRX, vBZRX, iOOKI, OOKI, OOKI_ETH_LP, SUSHI_ROUTER, POOL3_GAUGE, CRV3, BZRXv2_CONVERTER, accounts, STAKING, iBZRX, StakingV1_1):
+def testStake_UnStakeMultiUserVoting(requireMainnetFork, VOTE_DELEGATOR, STAKINGv2, BZX,  BZRX, vBZRX, iOOKI, OOKI, OOKI_ETH_LP, SUSHI_ROUTER, POOL3_GAUGE, CRV3, BZRXv2_CONVERTER, accounts, STAKING, iBZRX, StakingV1_1):
 
     user1 = accounts[1]
     user2 = accounts[2]
@@ -389,5 +389,11 @@ def testStake_UnStakeMultiUserVoting(requireMainnetFork, STAKINGv2, BZX,  BZRX, 
         assert STAKINGv2.earned(user) == (0, 0, 0, 0, 0)
     assert abs(STAKINGv2.votingBalanceOfNow(user2)/1e18 - STAKINGv2.votingBalanceOfNow(user2)/1e18) < 1
 
-
+    VOTE_DELEGATOR.delegate(user1, {"from": user2})
+    chain.mine()
+    assert STAKINGv2.votingBalanceOfNow(user1) > 300e18
+    assert STAKINGv2.votingBalanceOfNow(user2) == 0
+    VOTE_DELEGATOR.delegate(user2, {"from": user2})
+    chain.mine()
+    assert abs(STAKINGv2.votingBalanceOfNow(user2)/1e18 - STAKINGv2.votingBalanceOfNow(user2)/1e18) < 1
     assert True
