@@ -41,12 +41,13 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
 
         LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
-        loanLocal.principal = _settleInterest(loanLocal.lender, loanParamsLocal.loanToken, loanId);
+        uint256 principalPlusInterest = _settleInterest(loanLocal.lender, loanId)
+            .add(loanLocal.principal);
 
         (uint256 currentMargin, uint256 collateralToLoanRate) = _getCurrentMargin(
             loanParamsLocal.loanToken,
             loanParamsLocal.collateralToken,
-            loanLocal.principal,
+            principalPlusInterest,
             loanLocal.collateral,
             false // silentFail
         );
@@ -62,7 +63,7 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         loanCloseAmount = closeAmount;
 
         (uint256 maxLiquidatable, uint256 maxSeizable) = _getLiquidationAmounts(
-            loanLocal.principal,
+            principalPlusInterest,
             loanLocal.collateral,
             currentMargin,
             loanParamsLocal.maintenanceMargin,
@@ -90,9 +91,6 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
             loanLocal.lender,
             loanCloseAmount
         );
-
-        poolTotalPrincipal[loanLocal.lender] = poolTotalPrincipal[loanLocal.lender]
-            .sub(loanCloseAmount);
 
         seizedToken = loanParamsLocal.collateralToken;
 
@@ -151,11 +149,12 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
 
         LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
-        loanLocal.principal = _settleInterest(loanLocal.lender, loanParamsLocal.loanToken, loanId);
+        uint256 principalPlusInterest = _settleInterest(loanLocal.lender, loanId)
+            .add(loanLocal.principal);
 
         // can't close more than the full principal
-        loanCloseAmount = depositAmount > loanLocal.principal ?
-            loanLocal.principal :
+        loanCloseAmount = depositAmount > principalPlusInterest ?
+            principalPlusInterest :
             depositAmount;
 
         if (loanCloseAmount != 0) {
@@ -164,12 +163,9 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
                 loanLocal.lender,
                 loanCloseAmount
             );
-
-            poolTotalPrincipal[loanLocal.lender] = poolTotalPrincipal[loanLocal.lender]
-                .sub(loanCloseAmount);
         }
 
-        if (loanCloseAmount == loanLocal.principal) {
+        if (loanCloseAmount == principalPlusInterest) {
             // collateral is only withdrawn if the loan is closed in full
             withdrawAmount = loanLocal.collateral;
             withdrawToken = loanParamsLocal.collateralToken;
@@ -221,13 +217,14 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
 
         LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
-        loanLocal.principal = _settleInterest(loanLocal.lender, loanParamsLocal.loanToken, loanId);
+        uint256 principalPlusInterest = _settleInterest(loanLocal.lender, loanId)
+            .add(loanLocal.principal);
 
         if (swapAmount > loanLocal.collateral) {
             swapAmount = loanLocal.collateral;
         }
 
-        loanCloseAmount = loanLocal.principal;
+        loanCloseAmount = principalPlusInterest;
         if (swapAmount != loanLocal.collateral) {
             loanCloseAmount = loanCloseAmount
                 .mul(swapAmount)
@@ -253,9 +250,6 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
                 loanLocal.lender,
                 loanCloseAmount
             );
-
-            poolTotalPrincipal[loanLocal.lender] = poolTotalPrincipal[loanLocal.lender]
-                .sub(loanCloseAmount);
         }
 
         if (usedCollateral != 0) {
@@ -552,9 +546,17 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         require(loanCloseAmount != 0, "nothing to close");
 
         principalBefore = loanLocal.principal;
+        uint256 loanInterest = loanInterestTotal[loanLocal.id];
 
-        if (loanCloseAmount == principalBefore) {
+        if (loanCloseAmount == principalBefore.add(loanInterest)) {
+            poolPrincipalTotal[loanLocal.lender] = poolPrincipalTotal[loanLocal.lender]
+                .sub(principalBefore);
             loanLocal.principal = 0;
+
+            poolInterestTotal[loanLocal.lender] = poolInterestTotal[loanLocal.lender]
+                .sub(loanInterest);
+            loanInterestTotal[loanLocal.id] = 0;
+
             loanLocal.active = false;
             loanLocal.endTimestamp = block.timestamp;
             loanLocal.pendingTradesId = 0;
@@ -562,9 +564,24 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
             lenderLoanSets[loanLocal.lender].removeBytes32(loanLocal.id);
             borrowerLoanSets[loanLocal.borrower].removeBytes32(loanLocal.id);
         } else {
-            principalAfter = principalBefore
-                .sub(loanCloseAmount);
-            loanLocal.principal = principalAfter;
+            // interest is paid before principal
+            if (loanCloseAmount >= loanInterest) {
+                principalAfter = principalBefore - (loanCloseAmount - loanInterest);
+
+                loanLocal.principal = principalAfter;
+                poolPrincipalTotal[loanLocal.lender] = poolPrincipalTotal[loanLocal.lender]
+                    .sub(loanCloseAmount - loanInterest);
+
+                loanInterestTotal[loanLocal.id] = 0;
+                poolInterestTotal[loanLocal.lender] = poolInterestTotal[loanLocal.lender]
+                    .sub(loanInterest);
+            } else {
+                principalAfter = principalBefore;
+
+                loanInterestTotal[loanLocal.id] = loanInterest - loanCloseAmount;
+                poolInterestTotal[loanLocal.lender] = poolInterestTotal[loanLocal.lender]
+                    .sub(loanCloseAmount);
+            }
         }
 
         loans[loanLocal.id] = loanLocal;

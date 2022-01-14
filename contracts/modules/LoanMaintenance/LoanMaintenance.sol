@@ -25,20 +25,22 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Swaps
     {
         _setTarget(this.depositCollateral.selector, target);
         _setTarget(this.withdrawCollateral.selector, target);
-        //_setTarget(this.withdrawAccruedInterest.selector, target);  <-- remove target
-        //_setTarget(this.extendLoanDuration.selector, target); <-- remove target
-        //_setTarget(this.reduceLoanDuration.selector, target); <-- remove target
         _setTarget(this.setDepositAmount.selector, target);
         _setTarget(this.claimRewards.selector, target);
         _setTarget(this.rewardsBalanceOf.selector, target);
-        //_setTarget(this.getLenderInterestData.selector, target);  <-- remove target
-        //_setTarget(this.getLoanInterestData.selector, target);  <-- remove target
         _setTarget(this.getUserLoans.selector, target);
         _setTarget(this.getUserLoansCount.selector, target);
         _setTarget(this.getLoan.selector, target);
         _setTarget(this.getActiveLoans.selector, target);
         _setTarget(this.getActiveLoansAdvanced.selector, target);
         _setTarget(this.getActiveLoansCount.selector, target);
+
+        // TEMP: remove after upgrade
+        _setTarget(bytes4(keccak256("withdrawAccruedInterest(address)")), address(0));
+        _setTarget(bytes4(keccak256("extendLoanDuration(bytes32,uint256,bool,bytes)")), address(0));
+        _setTarget(bytes4(keccak256("reduceLoanDuration(bytes32,address,uint256)")), address(0));
+        _setTarget(bytes4(keccak256("getLenderInterestData(address,address)")), address(0));
+        _setTarget(bytes4(keccak256("getLoanInterestData(bytes32)")), address(0));
     }
 
     function depositCollateral(
@@ -502,6 +504,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Swaps
 
         LoanInterest memory loanInterestLocal = loanInterest[loanId];
 
+        loanLocal.principal = _getLoanPrincipal(loanLocal.lender, loanLocal.id);
         (uint256 currentMargin, uint256 value) = IPriceFeeds(priceFeeds).getCurrentMargin( // currentMargin, collateralToLoanRate
             loanParamsLocal.loanToken,
             loanParamsLocal.collateralToken,

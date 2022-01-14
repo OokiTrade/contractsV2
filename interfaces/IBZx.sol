@@ -521,13 +521,13 @@ interface IBZx {
         uint256 withdrawAmount
     ) external returns (uint256 actualWithdrawAmount);
 
-    /*/// @dev withdraw accrued interest rate for a loan given token address
-    /// @param loanToken loan token address
-    function withdrawAccruedInterest(address loanToken) external;*/
-
     /// @dev settles accrued interest for all active loans from a loan pool
     /// @param loanId existing loan id
     function settleInterest(bytes32 loanId) external;
+
+    /*/// @dev withdraw accrued interest rate for a loan given token address
+    /// @param loanToken loan token address
+    function withdrawAccruedInterest(address loanToken) external;*/
 
     /*/// @dev extends loan duration by depositing more collateral
     /// @param loanId id of the existing loan
@@ -569,7 +569,22 @@ interface IBZx {
         view
         returns (uint256 rewardsBalance);
 
-    /// @dev Gets current lender interest data totals for all loans with a specific oracle and interest token
+    function getInterestModelValues(
+        address pool,
+        bytes32 loanId)
+        external
+        view
+        returns (
+            uint256 _poolLastUpdateTime,
+            uint256 _poolPrincipalTotal,
+            uint256 _poolInterestTotal,
+            uint256 _poolRatePerTokenStored,
+            uint256 _loanPrincipalTotal,
+            uint256 _loanInterestTotal,
+            uint256 _loanRatePerTokenPaid
+        );
+
+    /*/// @dev Gets current lender interest data totals for all loans with a specific oracle and interest token
     /// @param lender The lender address
     /// @param loanToken The loan token address
     /// @return interestPaid The total amount of interest that has been paid to a lender so far
@@ -604,7 +619,7 @@ interface IBZx {
             uint256 interestOwedPerDay,
             uint256 interestDepositTotal,
             uint256 interestDepositRemaining
-        );
+        );*/
 
     /// @dev gets list of loans of particular user address
     /// @param user address of the loans

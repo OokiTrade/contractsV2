@@ -175,27 +175,157 @@ def REGISTRY(accounts, TokenRegistry):
                              abi=TokenRegistry.abi, owner=accounts[0])
 
 
-def test_InterestRate_1(requireFork, iUSDTv1, USDT,iUSDT, accounts, BZX):
+def test_InterestRate_1(requireFork, iUSDTv1, USDT, iUSDT, accounts, BZX):
     amount = 100e18
     USDT.transfer(accounts[0], 1000e6, {'from': iUSDT})
-    USDT.approve(iUSDTv1, 2**256-1, {'from': accounts[0]})
-    USDT.approve(BZX, 2**256-1, {'from': accounts[0]})
+    USDT.approve(iUSDTv1, 2**251, {'from': accounts[0]})
+    USDT.approve(BZX, 2**251, {'from': accounts[0]})
     borrowAmount = 10e6
     borrowTime = 7884000
     collateralAmount = 10e18
     collateralAddress = "0x0000000000000000000000000000000000000000"
 
+    print(chain.time(),"start - vals",BZX.getInterestModelValues(iUSDTv1.address, 0))
+    print(chain.time(),"start - borrowInterestRate",iUSDTv1.borrowInterestRate()/1e18)
+    print(chain.time(),"start - totalSupply",iUSDTv1.totalSupply()/1e6)
+    print(chain.time(),"start - totalAssetSupply",iUSDTv1.totalAssetSupply()/1e6)
+    print(chain.time(),"start - totalAssetBorrow",iUSDTv1.totalAssetBorrow()/1e6)
+    print(chain.time(),"start - tokenPrice",iUSDTv1.tokenPrice()/1e18)
+    print(chain.time(),"start - asset balance",USDT.balanceOf(iUSDTv1)/1e6)
+    print(chain.time(),"start - getTotalPrincipal",BZX.getTotalPrincipal(iUSDTv1.address, iUSDTv1.address)/1e6)
 
     iUSDTv1.mint(accounts[0], 100e6, {'from': accounts[0]})
-    #12%
+
+    print(chain.time(),"after mint - vals",BZX.getInterestModelValues(iUSDTv1.address, 0))
+    print(chain.time(),"after mint - borrowInterestRate",iUSDTv1.borrowInterestRate()/1e18)
+    print(chain.time(),"after mint - totalSupply",iUSDTv1.totalSupply()/1e6)
+    print(chain.time(),"after mint - totalAssetSupply",iUSDTv1.totalAssetSupply()/1e6)
+    print(chain.time(),"after mint - totalAssetBorrow",iUSDTv1.totalAssetBorrow()/1e6)
+    print(chain.time(),"after mint - tokenPrice",iUSDTv1.tokenPrice()/1e18)
+    print(chain.time(),"after mint - asset balance",USDT.balanceOf(iUSDTv1)/1e6)
+    print(chain.time(),"after mint - getTotalPrincipal",BZX.getTotalPrincipal(iUSDTv1.address, iUSDTv1.address)/1e6)
+
     txBorrow = iUSDTv1.borrow("", borrowAmount, borrowTime, collateralAmount, collateralAddress, accounts[0], accounts[0], b"", {'from': accounts[0], 'value': Wei(collateralAmount)})
     loanId =  BZX.getUserLoans(accounts[0], 0,10,0, 0,0)[0][0]
+
+    print(chain.time(),"after borrow - vals",BZX.getInterestModelValues(iUSDTv1.address, loanId))
+    print(chain.time(),"after borrow - borrowInterestRate",iUSDTv1.borrowInterestRate()/1e18)
+    print(chain.time(),"after borrow - totalSupply",iUSDTv1.totalSupply()/1e6)
+    print(chain.time(),"after borrow - totalAssetSupply",iUSDTv1.totalAssetSupply()/1e6)
+    print(chain.time(),"after borrow - totalAssetBorrow",iUSDTv1.totalAssetBorrow()/1e6)
+    print(chain.time(),"after borrow - tokenPrice",iUSDTv1.tokenPrice()/1e18)
+    print(chain.time(),"after borrow - asset balance",USDT.balanceOf(iUSDTv1)/1e6)
+    print(chain.time(),"after borrow - getLoanPrincipal",BZX.getLoanPrincipal(loanId)/1e6)
+    print(chain.time(),"after borrow - getTotalPrincipal",BZX.getTotalPrincipal(iUSDTv1.address, iUSDTv1.address)/1e6)
+
     chain.mine(timedelta=60*60*24*365)
-    iUSDTv1.burn(accounts[0], 80e6, {'from': accounts[0]})
-    #120%
+
+    print(chain.time(),"after 1 year - vals",BZX.getInterestModelValues(iUSDTv1.address, loanId))
+    print(chain.time(),"after 1 year - borrowInterestRate",iUSDTv1.borrowInterestRate()/1e18)
+    print(chain.time(),"after 1 year - totalSupply",iUSDTv1.totalSupply()/1e6)
+    print(chain.time(),"after 1 year - totalAssetSupply",iUSDTv1.totalAssetSupply()/1e6)
+    print(chain.time(),"after 1 year - totalAssetBorrow",iUSDTv1.totalAssetBorrow()/1e6)
+    print(chain.time(),"after 1 year - tokenPrice",iUSDTv1.tokenPrice()/1e18)
+    print(chain.time(),"after 1 year - asset balance",USDT.balanceOf(iUSDTv1)/1e6)
+    print(chain.time(),"after 1 year - getLoanPrincipal",BZX.getLoanPrincipal(loanId)/1e6)
+    print(chain.time(),"after 1 year - getTotalPrincipal",BZX.getTotalPrincipal(iUSDTv1.address, iUSDTv1.address)/1e6)
+
+    iUSDTv1.burn(accounts[0], 87e6, {'from': accounts[0]})
+
+    print(chain.time(),"after burn - vals",BZX.getInterestModelValues(iUSDTv1.address, loanId))
+    print(chain.time(),"after burn - borrowInterestRate",iUSDTv1.borrowInterestRate()/1e18)
+    print(chain.time(),"after burn - totalSupply",iUSDTv1.totalSupply()/1e6)
+    print(chain.time(),"after burn - totalAssetSupply",iUSDTv1.totalAssetSupply()/1e6)
+    print(chain.time(),"after burn - totalAssetBorrow",iUSDTv1.totalAssetBorrow()/1e6)
+    print(chain.time(),"after burn - tokenPrice",iUSDTv1.tokenPrice()/1e18)
+    print(chain.time(),"after burn - asset balance",USDT.balanceOf(iUSDTv1)/1e6)
+    print(chain.time(),"after burn - getLoanPrincipal",BZX.getLoanPrincipal(loanId)/1e6)
+    print(chain.time(),"after burn - getTotalPrincipal",BZX.getTotalPrincipal(iUSDTv1.address, iUSDTv1.address)/1e6)
+
     chain.mine(timedelta=60*60*24*365)
+
+    print(chain.time(),"after 2 year - vals",BZX.getInterestModelValues(iUSDTv1.address, loanId))
+    print(chain.time(),"after 2 year - borrowInterestRate",iUSDTv1.borrowInterestRate()/1e18)
+    print(chain.time(),"after 2 year - totalSupply",iUSDTv1.totalSupply()/1e6)
+    print(chain.time(),"after 2 year - totalAssetSupply",iUSDTv1.totalAssetSupply()/1e6)
+    print(chain.time(),"after 2 year - totalAssetBorrow",iUSDTv1.totalAssetBorrow()/1e6)
+    print(chain.time(),"after 2 year - tokenPrice",iUSDTv1.tokenPrice()/1e18)
+    print(chain.time(),"after 2 year - asset balance",USDT.balanceOf(iUSDTv1)/1e6)
+    print(chain.time(),"after 2 year - getLoanPrincipal",BZX.getLoanPrincipal(loanId)/1e6)
+    print(chain.time(),"after 2 year - getTotalPrincipal",BZX.getTotalPrincipal(iUSDTv1.address, iUSDTv1.address)/1e6)
+
     iUSDTv1.mint(accounts[0], 100e6, {'from': accounts[0]})
-    #12%
+
+    print(chain.time(),"after mint - vals",BZX.getInterestModelValues(iUSDTv1.address, loanId))
+    print(chain.time(),"after mint - borrowInterestRate",iUSDTv1.borrowInterestRate()/1e18)
+    print(chain.time(),"after mint - totalSupply",iUSDTv1.totalSupply()/1e6)
+    print(chain.time(),"after mint - totalAssetSupply",iUSDTv1.totalAssetSupply()/1e6)
+    print(chain.time(),"after mint - totalAssetBorrow",iUSDTv1.totalAssetBorrow()/1e6)
+    print(chain.time(),"after mint - tokenPrice",iUSDTv1.tokenPrice()/1e18)
+    print(chain.time(),"after mint - asset balance",USDT.balanceOf(iUSDTv1)/1e6)
+    print(chain.time(),"after mint - getLoanPrincipal",BZX.getLoanPrincipal(loanId)/1e6)
+    print(chain.time(),"after mint - getTotalPrincipal",BZX.getTotalPrincipal(iUSDTv1.address, iUSDTv1.address)/1e6)
+
     chain.mine(timedelta=60*60*24*365)
-    assert int((BZX.getLoanPrincipal(loanId)/10e6)-1) * 100/3 == 48
+
+    print(chain.time(),"after 3 year - vals",BZX.getInterestModelValues(iUSDTv1.address, loanId))
+    print(chain.time(),"after 3 year - borrowInterestRate",iUSDTv1.borrowInterestRate()/1e18)
+    print(chain.time(),"after 3 year - totalSupply",iUSDTv1.totalSupply()/1e6)
+    print(chain.time(),"after 3 year - totalAssetSupply",iUSDTv1.totalAssetSupply()/1e6)
+    print(chain.time(),"after 3 year - totalAssetBorrow",iUSDTv1.totalAssetBorrow()/1e6)
+    print(chain.time(),"after 3 year - tokenPrice",iUSDTv1.tokenPrice()/1e18)
+    print(chain.time(),"after 3 year - asset balance",USDT.balanceOf(iUSDTv1)/1e6)
+    print(chain.time(),"after 3 year - getLoanPrincipal",BZX.getLoanPrincipal(loanId)/1e6)
+    print(chain.time(),"after 3 year - getTotalPrincipal",BZX.getTotalPrincipal(iUSDTv1.address, iUSDTv1.address)/1e6)
+
+    txClose = BZX.closeWithDeposit(loanId, accounts[0], 3e6, {'from': accounts[0]})
+
+    print(chain.time(),"after partial close - vals",BZX.getInterestModelValues(iUSDTv1.address, loanId))
+    print(chain.time(),"after partial close - borrowInterestRate",iUSDTv1.borrowInterestRate()/1e18)
+    print(chain.time(),"after partial close - totalSupply",iUSDTv1.totalSupply()/1e6)
+    print(chain.time(),"after partial close - totalAssetSupply",iUSDTv1.totalAssetSupply()/1e6)
+    print(chain.time(),"after partial close - totalAssetBorrow",iUSDTv1.totalAssetBorrow()/1e6)
+    print(chain.time(),"after partial close - tokenPrice",iUSDTv1.tokenPrice()/1e18)
+    print(chain.time(),"after partial close - asset balance",USDT.balanceOf(iUSDTv1)/1e6)
+    print(chain.time(),"after partial close - getLoanPrincipal",BZX.getLoanPrincipal(loanId)/1e6)
+    print(chain.time(),"after partial close - getTotalPrincipal",BZX.getTotalPrincipal(iUSDTv1.address, iUSDTv1.address)/1e6)
+
+    chain.mine(timedelta=60*60*24*365)
+
+    print(chain.time(),"after 4 year - vals",BZX.getInterestModelValues(iUSDTv1.address, loanId))
+    print(chain.time(),"after 4 year - borrowInterestRate",iUSDTv1.borrowInterestRate()/1e18)
+    print(chain.time(),"after 4 year - totalSupply",iUSDTv1.totalSupply()/1e6)
+    print(chain.time(),"after 4 year - totalAssetSupply",iUSDTv1.totalAssetSupply()/1e6)
+    print(chain.time(),"after 4 year - totalAssetBorrow",iUSDTv1.totalAssetBorrow()/1e6)
+    print(chain.time(),"after 4 year - tokenPrice",iUSDTv1.tokenPrice()/1e18)
+    print(chain.time(),"after 4 year - asset balance",USDT.balanceOf(iUSDTv1)/1e6)
+    print(chain.time(),"after 4 year - getLoanPrincipal",BZX.getLoanPrincipal(loanId)/1e6)
+    print(chain.time(),"after 4 year - getTotalPrincipal",BZX.getTotalPrincipal(iUSDTv1.address, iUSDTv1.address)/1e6)
+
+    txClose = BZX.closeWithDeposit(loanId, accounts[0], 2**256-1, {'from': accounts[0]})
+
+    print(chain.time(),"after full close - vals",BZX.getInterestModelValues(iUSDTv1.address, loanId))
+    print(chain.time(),"after full close - borrowInterestRate",iUSDTv1.borrowInterestRate()/1e18)
+    print(chain.time(),"after full close - totalSupply",iUSDTv1.totalSupply()/1e6)
+    print(chain.time(),"after full close - totalAssetSupply",iUSDTv1.totalAssetSupply()/1e6)
+    print(chain.time(),"after full close - totalAssetBorrow",iUSDTv1.totalAssetBorrow()/1e6)
+    print(chain.time(),"after full close - tokenPrice",iUSDTv1.tokenPrice()/1e18)
+    print(chain.time(),"after full close - asset balance",USDT.balanceOf(iUSDTv1)/1e6)
+    print(chain.time(),"after full close - getLoanPrincipal",BZX.getLoanPrincipal(loanId)/1e6)
+    print(chain.time(),"after full close - getTotalPrincipal",BZX.getTotalPrincipal(iUSDTv1.address, iUSDTv1.address)/1e6)
+
+    iUSDTv1.burn(accounts[0], 2**256-1, {'from': accounts[0]})
+
+    print(chain.time(),"after final burn - vals",BZX.getInterestModelValues(iUSDTv1.address, loanId))
+    print(chain.time(),"after final burn - borrowInterestRate",iUSDTv1.borrowInterestRate()/1e18)
+    print(chain.time(),"after final burn - totalSupply",iUSDTv1.totalSupply()/1e6)
+    print(chain.time(),"after final burn - totalAssetSupply",iUSDTv1.totalAssetSupply()/1e6)
+    print(chain.time(),"after final burn - totalAssetBorrow",iUSDTv1.totalAssetBorrow()/1e6)
+    print(chain.time(),"after final burn - tokenPrice",iUSDTv1.tokenPrice()/1e18)
+    print(chain.time(),"after final burn - asset balance",USDT.balanceOf(iUSDTv1)/1e6)
+    print(chain.time(),"after final burn - getLoanPrincipal",BZX.getLoanPrincipal(loanId)/1e6)
+    print(chain.time(),"after final burn - getTotalPrincipal",BZX.getTotalPrincipal(iUSDTv1.address, iUSDTv1.address)/1e6)
+
+    assert False
+    #assert int((BZX.getLoanPrincipal(loanId)/10e6)-1) * 100/3 == 48
 

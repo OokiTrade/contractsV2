@@ -123,9 +123,8 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents {
         view
         returns (uint256)
     {
-        return _getTotalPrincipal(
-            lender,
-            loanPoolToUnderlying[lender]
+        return _getPoolPrincipal(
+            lender
         );
     }
 
@@ -135,7 +134,8 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents {
         view
         returns (uint256)
     {
-        return poolTotalPrincipal[pool];
+        return poolPrincipalTotal[pool]
+            .add(poolInterestTotal[pool]);
     }
 
     function getLoanPrincipal(
@@ -149,11 +149,8 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents {
             return 0;
         }
 
-        LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
-
         return _getLoanPrincipal(
             loanLocal.lender,
-            loanParamsLocal.loanToken,
             loanId
         );
     }

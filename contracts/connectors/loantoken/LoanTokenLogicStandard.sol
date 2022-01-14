@@ -369,11 +369,12 @@ contract LoanTokenLogicStandard is AdvancedToken {
         view
         returns (uint256)
     {
-        uint256 totalBorrow = totalAssetBorrow();
+        return _underlyingBalance();
+        /*uint256 totalBorrow = totalAssetBorrow();
         uint256 totalSupply = _totalAssetSupply(totalBorrow);
         if (totalSupply > totalBorrow) {
             return totalSupply - totalBorrow;
-        }
+        }*/
     }
 
     function avgBorrowInterestRate()
@@ -381,7 +382,8 @@ contract LoanTokenLogicStandard is AdvancedToken {
         view
         returns (uint256)
     {
-        return _avgBorrowInterestRate(totalAssetBorrow());
+        //return _avgBorrowInterestRate(totalAssetBorrow());
+        return borrowInterestRate();
     }
 
     // the minimum rate the next base protocol borrower will receive for variable-rate loans
@@ -448,7 +450,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
     {
         return IBZx(bZxContract).getTotalPrincipal(
             address(this),
-            loanTokenAddress
+            address(0) // loanTokenAddress (depreciated)
         );
     }
 
@@ -1015,18 +1017,18 @@ contract LoanTokenLogicStandard is AdvancedToken {
                 .div(totalTokenSupply) : initialPrice;
     }
 
-    function _avgBorrowInterestRate(
+    /*function _avgBorrowInterestRate(
         uint256 assetBorrow)
         internal
         view
         returns (uint256)
     {
         if (assetBorrow != 0) {
-            return _getOwedPerDay() // TODO: revise for new interest handling
+            return _getOwedPerDay()
                 .mul(365 * WEI_PERCENT_PRECISION)
                 .div(assetBorrow);
         }
-    }
+    }*/
 
     // next supply interest adjustment
     function _supplyInterestRate(
@@ -1037,7 +1039,8 @@ contract LoanTokenLogicStandard is AdvancedToken {
         returns (uint256)
     {
         if (assetBorrow != 0 && assetSupply >= assetBorrow) {
-            return _avgBorrowInterestRate(assetBorrow)
+            //return _avgBorrowInterestRate(assetBorrow)
+            return _nextBorrowInterestRate(assetBorrow, 0)
                 .mul(_utilizationRate(assetBorrow, assetSupply))
                 .mul(SafeMath.sub(WEI_PERCENT_PRECISION, IBZx(bZxContract).lendingFeePercent()))
                 .div(WEI_PERCENT_PRECISION * WEI_PERCENT_PRECISION);
@@ -1103,16 +1106,16 @@ contract LoanTokenLogicStandard is AdvancedToken {
         }
     }
 
-    function _getOwedPerDay()
+    /*function _getOwedPerDay()
         internal
         view
         returns (uint256 interestOwedPerDay)
-    {   // TODO: revise for new interest handling
+    {
         (,,interestOwedPerDay,,,) = IBZx(bZxContract).getLenderInterestData(
             address(this),
             loanTokenAddress
         );
-    }
+    }*/
 
     function _getPreMarginData(
         address collateralTokenAddress,
