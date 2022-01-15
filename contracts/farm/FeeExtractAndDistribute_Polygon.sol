@@ -3,19 +3,23 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.8.4;
+pragma solidity 0.8.9;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin-4.3.2/token/ERC20/IERC20.sol";
-import "../proxies/0_8/Upgradeable_0_8.sol";
+//import "@openzeppelin-4.3.2/token/ERC20/IERC20.sol";
+//import "../proxies/0_8/Upgradeable_0_8.sol";
 import "./interfaces/IUniswapV2Router.sol";
 import "../../interfaces/IBZx.sol";
+import "@celer/contracts/message/libraries/MessageSenderLib.sol";
 
-contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
+contract FeeExtractAndDistribute_Polygon is Ownable {
+    address public implementation;
+    using MessageSenderLib for address;
     IBZx public constant bZx = IBZx(0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8);
 
     address public constant MATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
     address public constant USDC = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
+    uint256 public constant FEE = 0; //to be set
     IUniswapV2Router public constant swapsRouterV2 =
         IUniswapV2Router(0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506); // Sushiswap
 
@@ -28,6 +32,8 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
     address[] public currentFeeTokens;
 
     address payable public treasuryWallet;
+
+    address public messageBus; //bridging contract
 
     event ExtractAndDistribute(uint256 amountTreasury, uint256 amountStakers);
 
@@ -92,7 +98,7 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
         }
 
         if (usdcOutput != 0) {
-            IERC20(USDC).transfer(treasuryWallet, usdcOutput); //transfer to treasury/multisig
+            _bridgeFeesAndDistribute(); //bridges fees to Ethereum to be distributed to stakers
             emit ExtractAndDistribute(usdcOutput, 0); //for tracking distribution amounts
         }
     }
@@ -134,6 +140,21 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
         returnAmount = amounts[2];
     }
 
+    function _bridgeFeesAndDistribute() internal {
+        MessageSenderLib.sendMessageWithTransfer(
+            treasuryWallet,
+            USDC,
+            IERC20(USDC).balanceOf(address(this)),
+            1,
+            uint64(block.timestamp),
+            5000,
+            "",
+            MessageSenderLib.BridgeType.Liquidity,
+            messageBus,
+            FEE
+        );
+    }
+
     // OnlyOwner functions
 
     function togglePause(bool _isPaused) public onlyOwner {
@@ -153,5 +174,9 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
                 type(uint256).max
             );
         }
+    }
+
+    function setMessageBus(address _wallet) public onlyOwner {
+        messageBus = _wallet;
     }
 }
