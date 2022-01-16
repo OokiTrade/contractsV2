@@ -17,8 +17,12 @@ def LOAN_TOKEN_SETTINGS_LOWER_ADMIN(LoanTokenSettingsLowerAdmin):
 
 
 @pytest.fixture(scope="module")
-def LOAN_TOKEN_SETTINGS(accounts, USDT, LoanTokenSettings):
-    return Contract.from_abi("loanToken", address="0x3ff9BFe18206f81d073e35072b1c4D61f866663f", abi=LoanTokenSettings.abi)
+def LOAN_TOKEN_SETTINGS(accounts, interface, LoanTokenSettings):
+    #return Contract.from_abi("loanToken", address="0x3ff9BFe18206f81d073e35072b1c4D61f866663f", abi=LoanTokenSettings.abi)
+
+    bzx = Contract.from_abi("bzx", address="0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8",
+                            abi=interface.IBZx.abi, owner=accounts[0])
+    return LoanTokenSettings.deploy({'from': bzx.owner()})
 
 
 @pytest.fixture(scope="module")

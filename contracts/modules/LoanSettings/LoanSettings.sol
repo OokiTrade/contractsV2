@@ -134,8 +134,14 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents {
         view
         returns (uint256)
     {
+        uint256 _poolInterestTotal = poolInterestTotal[pool];
+        uint256 lendingFee = _poolInterestTotal
+            .mul(lendingFeePercent)
+            .divCeil(WEI_PERCENT_PRECISION);
+
         return poolPrincipalTotal[pool]
-            .add(poolInterestTotal[pool]);
+            .add(_poolInterestTotal)
+            .sub(lendingFee);
     }
 
     function getLoanPrincipal(

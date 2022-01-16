@@ -9,14 +9,13 @@ pragma experimental ABIEncoderV2;
 import "../../core/State.sol";
 import "../../events/LoanMaintenanceEvents.sol";
 import "../../mixins/VaultController.sol";
+import "../../mixins/InterestHandler.sol";
 import "../../mixins/LiquidationHelper.sol";
 import "../../swaps/SwapsUser.sol";
 import "../../governance/PausableGuardian.sol";
-import "../../mixins/InterestHandler.sol";
 
-// TODO: support new loan format
 
-contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, SwapsUser, LiquidationHelper, PausableGuardian, InterestHandler {
+contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, InterestHandler, SwapsUser, LiquidationHelper, PausableGuardian {
 
     function initialize(
         address target)

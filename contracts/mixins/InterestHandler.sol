@@ -6,12 +6,10 @@
 pragma solidity 0.5.17;
 
 import "../core/State.sol";
-import "./FeesHelper.sol";
 import "../interfaces/ILoanPool.sol";
 
 
-contract InterestHandler is State, FeesHelper {
-    using SafeERC20 for IERC20;
+contract InterestHandler is State {
 
     // returns up to date loan interest or 0 if not applicable
     function _settleInterest(
