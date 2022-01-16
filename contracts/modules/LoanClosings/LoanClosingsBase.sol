@@ -582,8 +582,12 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
             }
         }
 
-        poolInterestTotal[loanLocal.lender] = poolInterestTotal[loanLocal.lender]
-            .sub(loanInterest);
+        if(poolInterestTotal[loanLocal.lender] > loanInterest){
+            poolInterestTotal[loanLocal.lender] = poolInterestTotal[loanLocal.lender] - loanInterest;
+        }
+        else {
+            poolInterestTotal[loanLocal.lender] = 0;
+        }
 
         // pay fee
         _payLendingFee(
