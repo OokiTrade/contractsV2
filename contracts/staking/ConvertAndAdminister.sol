@@ -26,19 +26,11 @@ contract ConvertAndAdminister is Upgradeable_0_8 {
     address public constant Staking = address(0); //set to staking contract
     event Distributed(address indexed sender, uint256 amount);
 
-    function distributeFees() public {
+    function distributeFees() external {
         _convertTo3Crv();
         _addRewards(IERC20(crv3).balanceOf(address(this)));
         emit Distributed(msg.sender, IERC20(crv3).balanceOf(address(this)));
     }
-
-    function executeMessageWithTransfer(
-        address,
-        address,
-        uint256,
-        uint64,
-        bytes calldata
-    ) external payable onlyMessageBus returns (bool) {address(this).call(abi.encode(this.distributeFees.selector));}
 
     //internal functions
 
@@ -56,12 +48,12 @@ contract ConvertAndAdminister is Upgradeable_0_8 {
         address token,
         address spender,
         uint256 amount
-    ) public onlyOwner {
+    ) external onlyOwner {
         IERC20(token).approve(spender, 0);
         IERC20(token).approve(spender, amount);
     }
 
-    function setMessageBus(address _messageBus) public onlyOwner {
+    function setMessageBus(address _messageBus) external onlyOwner {
 	    messageBus = _messageBus;
 	}
 }
