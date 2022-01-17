@@ -184,7 +184,9 @@ interface IToken {
     function changeGuardian(address newGuardian) external;
 
     function getGuardian() external view returns (address guardian);
-
+    
+    function revokeApproval(address _loanTokenAddress) external;
+    
     struct LoanOpenData {
         bytes32 loanId;
         uint256 principal;
