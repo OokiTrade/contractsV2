@@ -37,8 +37,8 @@ contract ConvertAndAdminister is Upgradeable_0_8 {
         address,
         uint256,
         uint64,
-        bytes
-    ) external payable virtual override onlyMessageBus returns (bool) {address(this).call(distributeFees.selector);}
+        bytes calldata
+    ) external payable onlyMessageBus returns (bool) {address(this).call(abi.encode(this.distributeFees.selector));}
 
     //internal functions
 
@@ -51,16 +51,6 @@ contract ConvertAndAdminister is Upgradeable_0_8 {
     }
 
     //Owner functions
-
-    function updateSettings(
-        address _liquidityBridge,
-        address _pegBridge,
-        address _pegVault
-    ) public onlyOwner {
-        liquidityBridge = _liquidityBridge;
-        pegBridge = _pegBridge;
-        pegVault = _pegVault;
-    }
 
     function setApprovals(
         address token,

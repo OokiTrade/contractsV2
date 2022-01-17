@@ -18,8 +18,6 @@ contract TimelockMessageReceiver is Upgradeable_0_8 {
         bool executed;
     }
 
-    event Executed(MsgType msgType, bytes32 id, TxStatus status);
-
     /// @notice An event emitted when a proposal has been queued in the Timelock
     event ProposalQueued(uint256 id, uint256 eta);
 
@@ -28,8 +26,6 @@ contract TimelockMessageReceiver is Upgradeable_0_8 {
 
     /// @notice The official record of all proposals ever proposed
     mapping(uint256 => ProposalSlim) public proposals;
-
-    address public liquidityBridge; // liquidity bridge address
 
     ITimelock public timelock;
     address public timelockEthereum;
@@ -94,42 +90,20 @@ contract TimelockMessageReceiver is Upgradeable_0_8 {
         emit ProposalExecuted(proposalId);
     }
 
-    function computeMessageOnlyId(
-        RouteInfo calldata _route,
-        bytes calldata _message
-    ) private pure returns (bytes32) {
-        return
-            keccak256(
-                abi.encodePacked(
-                    MsgType.MessageOnly,
-                    _route.sender,
-                    _route.receiver,
-                    _route.srcChainId,
-                    _message
-                )
-            );
-    }
-
     function executeMessage(address sender, uint64 chainId, bytes memory _message)
-        private
+        external
         returns (bool)
     {
         if (sender != timelockEthereum) {
             return false;
         }
-		(address receiver, _message) = abi.decode(_message, (address, bytes));
-        (bool ok, bytes memory res) = receiver.call{
-            value: msg.value
-        }(_message);
+		(address receiver, bytes memory _message) = abi.decode(_message, (address, bytes));
+        (bool ok, bytes memory res) = receiver.call(_message);
         if (ok) {
             bool success = abi.decode((res), (bool));
             return success;
         }
         return false;
-    }
-
-    function updateSettings(address _liquidityBridge) public onlyOwner {
-        liquidityBridge = _liquidityBridge;
     }
 
     function setMessageBus(address _messageBus) public onlyOwner {
