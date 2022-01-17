@@ -241,6 +241,9 @@ def REGISTRY(accounts, TokenRegistry):
     return Contract.from_abi("REGISTRY", address="0x4B234781Af34E9fD756C27a47675cbba19DC8765",
                              abi=TokenRegistry.abi, owner=accounts[0])
 
+@pytest.fixture(autouse=True)
+def isolation(fn_isolation):
+    pass
 
 def test_0(requireFork, iUSDTv1, USDT, iUSDT, accounts, BZX):
     amount = 100e18
