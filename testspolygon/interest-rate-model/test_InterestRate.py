@@ -65,7 +65,7 @@ def BZX(accounts, interface, LoanSettings, LoanOpenings, LoanMaintenance_2, Loan
 
 
 def replaceIToken(bzx, iTokenProxy,underlyingToken, acct, LoanTokenLogicStandard, LoanToken,
-            LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGISTRY, LoanTokenSettingsLowerAdmin):
+                  LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGISTRY, LoanTokenSettingsLowerAdmin):
     loanTokenLogicStandard = LoanTokenLogicStandard.deploy(acct, {'from': acct}).address
     iTokenProxy.setTarget(loanTokenLogicStandard, {'from': bzx.owner()})
     iToken = Contract.from_abi("loanTokenLogicStandard", iTokenProxy, LoanTokenLogicStandard.abi, acct)
@@ -164,7 +164,7 @@ def marginSettings(bzx, underlyingToken, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGIST
         existingIToken.updateSettings(
             loanTokenSettingsLowerAdmin.address,
             loanTokenSettingsLowerAdmin.setDemandCurve.encode_input(0, 20*10**18, 0, 0, 60*10**18, 80*10**18, 120*10**18),
-             {"from": acct}
+            {"from": acct}
         )
 @pytest.fixture(scope="module")
 def USDT(accounts, TestToken):
@@ -241,6 +241,9 @@ def REGISTRY(accounts, TokenRegistry):
     return Contract.from_abi("REGISTRY", address="0x4B234781Af34E9fD756C27a47675cbba19DC8765",
                              abi=TokenRegistry.abi, owner=accounts[0])
 
+@pytest.fixture(autouse=True)
+def isolation(fn_isolation):
+    pass
 
 def test_0(requireFork, iUSDTv1, USDT, iUSDT, accounts, BZX):
     amount = 100e18
@@ -476,7 +479,7 @@ def test_liquidate(requireFork, iUSDTv1, USDT,iUSDT, accounts, BZX):
     borrowTime = 7884000
     collateralAmount = 10e18
     collateralAddress = "0x0000000000000000000000000000000000000000"
-
+    iUSDTv1.mint(acct0, 100e6, {'from': acct0})
     txBorrow = iUSDTv1.borrow("", borrowAmount1, borrowTime, collateralAmount, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount)})
     loanId1 =  BZX.getUserLoans(acct1, 0,10,0, 0,0)[0][0]
     chain.mine(timedelta=60*60*24*365*5)
