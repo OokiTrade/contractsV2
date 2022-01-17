@@ -32,8 +32,8 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
     mapping (bytes32 => mapping (address => bool)) public delegatedManagers;                // loanId => delegated => approved
 
     // Interest
-    mapping (address => mapping (address => LenderInterest)) public lenderInterest;         // lender => loanToken => LenderInterest object
-    mapping (bytes32 => LoanInterest) public loanInterest;                                  // loanId => LoanInterest object
+    mapping (address => mapping (address => LenderInterest)) public lenderInterest;         // lender => loanToken => LenderInterest object (depreciated)
+    mapping (bytes32 => LoanInterest) public loanInterest;                                  // loanId => LoanInterest object (depreciated)
 
     // Internals
     EnumerableBytes32Set.Bytes32Set internal logicTargetsSet;                               // implementations set

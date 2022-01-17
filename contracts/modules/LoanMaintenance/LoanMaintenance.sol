@@ -501,8 +501,6 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             return loanData;
         }
 
-        LoanInterest memory loanInterestLocal = loanInterest[loanId];
-
         loanLocal.principal = _getLoanPrincipal(loanLocal.lender, loanLocal.id);
         (uint256 currentMargin, uint256 value) = IPriceFeeds(priceFeeds).getCurrentMargin( // currentMargin, collateralToLoanRate
             loanParamsLocal.loanToken,
@@ -534,24 +532,15 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             depositValueAsCollateralToken := sload(add(slot, 1))
         }
 
-        if (loanLocal.endTimestamp > block.timestamp) {
-            value = loanLocal.endTimestamp
-                .sub(block.timestamp)
-                .mul(loanInterestLocal.owedPerDay)
-                .div(1 days);
-        } else {
-            value = 0;
-        }
-
         return LoanReturnData({
             loanId: loanId,
-            endTimestamp: uint96(loanLocal.endTimestamp),
+            endTimestamp: 0, // depreciated: uint96(loanLocal.endTimestamp),
             loanToken: loanParamsLocal.loanToken,
             collateralToken: loanParamsLocal.collateralToken,
             principal: loanLocal.principal,
             collateral: loanLocal.collateral,
-            interestOwedPerDay: loanType == LoanType.NonMargin ? loanInterestLocal.owedPerDay : 0,
-            interestDepositRemaining: value,
+            interestOwedPerDay: 0, // depreciated
+            interestDepositRemaining: 0, // depreciated
             startRate: loanLocal.startRate,
             startMargin: loanLocal.startMargin,
             maintenanceMargin: loanParamsLocal.maintenanceMargin,

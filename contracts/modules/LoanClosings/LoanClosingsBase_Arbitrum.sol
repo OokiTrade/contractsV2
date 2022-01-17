@@ -10,13 +10,14 @@ import "../../core/State.sol";
 import "../../events/LoanClosingsEvents.sol";
 import "../../mixins/VaultController_Arbitrum.sol";
 import "../../mixins/InterestHandler.sol";
+import "../../mixins/FeesHelper.sol";
 import "../../mixins/LiquidationHelper.sol";
 import "../../swaps/SwapsUser.sol";
 import "../../interfaces/ILoanPool.sol";
 import "../../governance/PausableGuardian.sol";
 
 
-contract LoanClosingsBase_Arbitrum is State, LoanClosingsEvents, VaultController_Arbitrum, InterestHandler, SwapsUser, LiquidationHelper, PausableGuardian {
+contract LoanClosingsBase_Arbitrum is State, LoanClosingsEvents, VaultController_Arbitrum, InterestHandler, FeesHelper, SwapsUser, LiquidationHelper, PausableGuardian {
 
     enum CloseTypes {
         Deposit,
@@ -118,6 +119,7 @@ contract LoanClosingsBase_Arbitrum is State, LoanClosingsEvents, VaultController
 
         _closeLoan(
             loanLocal,
+            loanParamsLocal.loanToken,
             loanCloseAmount
         );
     }
@@ -499,6 +501,7 @@ contract LoanClosingsBase_Arbitrum is State, LoanClosingsEvents, VaultController
     {
         (uint256 principalBefore, uint256 principalAfter)  = _closeLoan(
             loanLocal,
+            loanParamsLocal.loanToken,
             loanCloseAmount
         );
 
@@ -539,6 +542,7 @@ contract LoanClosingsBase_Arbitrum is State, LoanClosingsEvents, VaultController
 
     function _closeLoan(
         Loan memory loanLocal,
+        address loanToken,
         uint256 loanCloseAmount)
         internal
         returns (uint256 principalBefore, uint256 principalAfter)
@@ -553,8 +557,6 @@ contract LoanClosingsBase_Arbitrum is State, LoanClosingsEvents, VaultController
                 .sub(principalBefore);
             loanLocal.principal = 0;
 
-            poolInterestTotal[loanLocal.lender] = poolInterestTotal[loanLocal.lender]
-                .sub(loanInterest);
             loanInterestTotal[loanLocal.id] = 0;
 
             loanLocal.active = false;
@@ -573,16 +575,27 @@ contract LoanClosingsBase_Arbitrum is State, LoanClosingsEvents, VaultController
                     .sub(loanCloseAmount - loanInterest);
 
                 loanInterestTotal[loanLocal.id] = 0;
-                poolInterestTotal[loanLocal.lender] = poolInterestTotal[loanLocal.lender]
-                    .sub(loanInterest);
             } else {
                 principalAfter = principalBefore;
-
                 loanInterestTotal[loanLocal.id] = loanInterest - loanCloseAmount;
-                poolInterestTotal[loanLocal.lender] = poolInterestTotal[loanLocal.lender]
-                    .sub(loanCloseAmount);
+                loanInterest = loanCloseAmount;
             }
         }
+
+        uint256 poolInterest = poolInterestTotal[loanLocal.lender];
+        if (poolInterest > loanInterest) {
+            poolInterestTotal[loanLocal.lender] = poolInterest - loanInterest;
+        }
+        else {
+            poolInterestTotal[loanLocal.lender] = 0;
+        }
+
+        // pay fee
+        _payLendingFee(
+            loanLocal.lender,
+            loanToken,
+            _getLendingFee(loanInterest)
+        );
 
         loans[loanLocal.id] = loanLocal;
     }
