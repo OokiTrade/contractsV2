@@ -31,7 +31,7 @@ contract StakingConstantsV2 {
 
     // these are 10x original balances for BZRX because of OOKI split
     uint256 internal constant _startingVBZRXBalance = 8893899330e18;
-    uint256 public constant initialCirculatingSupply = 10300000000e18 - _startingVBZRXBalance;
+    // uint256 public constant initialCirculatingSupply = 10300000000e18 - _startingVBZRXBalance;
 
     address internal constant SUSHI_MASTERCHEF = 0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd;
     uint256 internal constant OOKI_ETH_SUSHI_MASTERCHEF_PID = 335;

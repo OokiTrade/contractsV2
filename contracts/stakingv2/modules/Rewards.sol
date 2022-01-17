@@ -62,7 +62,7 @@ contract Rewards is Common {
         uint256 lpTokenSupply = _totalSupplyPerToken[OOKI_ETH_LP];
         if (lpTokenSupply != 0) {
             // staked LP tokens are assumed to represent the total unstaked supply (circulated supply - staked BZRX)
-            uint256 normalizedLPTokenSupply = initialCirculatingSupply + totalVested - _totalSupplyPerToken[OOKI];
+            uint256 normalizedLPTokenSupply = IERC20(OOKI).totalSupply() - _totalSupplyPerToken[OOKI];
 
             LPTokenWeight = normalizedLPTokenSupply.mul(1e18).div(lpTokenSupply);
         }
