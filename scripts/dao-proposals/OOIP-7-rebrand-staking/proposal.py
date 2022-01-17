@@ -46,55 +46,30 @@ staking.setApprovals(CRV3, POOL3_GAUGE, 1, {"from": deployer})
 STAKING_VOTE_DELEGATOR = Contract.from_abi("STAKING_VOTE_DELEGATOR", votedelegatorProxy, VoteDelegator.abi)
 STAKING_VOTE_DELEGATOR.setStaking(staking, {"from": STAKING_VOTE_DELEGATOR.owner()}) # T is the owner
 staking.setVoteDelegator(STAKING_VOTE_DELEGATOR, {"from": deployer})
-staking.setGovernor(DAO, {"from": deployer})
-staking.transferOwnership(TIMELOCK, {"from": deployer})
 
-# 3. Rescue timelock. 
+
 # upgrade DAO implementation
 daoImpl = deployer.deploy(GovernorBravoDelegate)
-# daoImpl = "0xb7A0B67fF67B548e91953647F8cDd7647660279d" # acct.deploy(GovernorBravoDelegate)
-daoProxy = Contract.from_abi("GovernorBravoDelegator", address=DAO, abi=GovernorBravoDelegator.abi) # attire proxy interface
+# below has to be guardian so that it will be by default set
+daoProxy = accounts.at(GUARDIAN_MULTISIG, True).deploy(GovernorBravoDelegator, TIMELOCK, staking, TIMELOCK, daoImpl, DAO.votingPeriod(), DAO.votingDelay(), DAO.proposalThreshold() * 10)
+
+
+staking.setGovernor(daoProxy, {"from": deployer})
+staking.transferOwnership(TIMELOCK, {"from": deployer})
 
 eta = TIMELOCK.delay()+ chain.time()+100
 
-DAO.__queueSetTimelockPendingAdmin(GUARDIAN_MULTISIG, eta, {"from": GUARDIAN_MULTISIG})
+DAO.__queueSetTimelockPendingAdmin(daoProxy, eta, {"from": GUARDIAN_MULTISIG})
 chain.sleep(TIMELOCK.delay() + 100)
 chain.mine()
-DAO.__executeSetTimelockPendingAdmin(GUARDIAN_MULTISIG, eta, {"from": GUARDIAN_MULTISIG})
+DAO.__executeSetTimelockPendingAdmin(daoProxy, eta, {"from": GUARDIAN_MULTISIG})
 print("pending admin set")
 
-TIMELOCK.acceptAdmin({"from": GUARDIAN_MULTISIG})
 
 
-calldata = daoProxy._setImplementation.encode_input(daoImpl)
-eta = TIMELOCK.delay()+ chain.time()+100
-TIMELOCK.queueTransaction(DAO, 0, "", calldata, eta, {"from": GUARDIAN_MULTISIG})
-chain.sleep(TIMELOCK.delay() + 100)
-chain.mine()
-TIMELOCK.executeTransaction(DAO, 0, "", calldata, eta, {"from": GUARDIAN_MULTISIG})
-
-
-calldata = daoImpl.__setStaking.encode_input(staking)
-eta = TIMELOCK.delay()+ chain.time()+100
-TIMELOCK.queueTransaction(DAO, 0, "", calldata, eta, {"from": GUARDIAN_MULTISIG})
-chain.sleep(TIMELOCK.delay() + 100)
-chain.mine()
-TIMELOCK.executeTransaction(DAO, 0, "", calldata, eta, {"from": GUARDIAN_MULTISIG})
-
-
-# restore DAO
-
-eta = TIMELOCK.delay()+ chain.time()+100
-
-calldata = TIMELOCK.setPendingAdmin.encode_input(DAO)
-eta = TIMELOCK.delay()+ chain.time()+100
-TIMELOCK.queueTransaction(TIMELOCK, 0, "", calldata, eta, {"from": GUARDIAN_MULTISIG})
-chain.sleep(TIMELOCK.delay() + 100)
-chain.mine()
-TIMELOCK.executeTransaction(TIMELOCK, 0, "", calldata, eta, {"from": GUARDIAN_MULTISIG})
-
-
+DAO = Contract.from_abi("governorBravoDelegator", address=daoProxy, abi=GovernorBravoDelegate.abi)
 DAO.__acceptAdmin({"from": GUARDIAN_MULTISIG})
+
 assert DAO.staking() == staking
 assert DAO.admin() == TIMELOCK
 assert TIMELOCK.admin() == DAO
