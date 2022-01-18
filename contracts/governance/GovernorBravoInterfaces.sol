@@ -92,6 +92,9 @@ contract GovernorBravoDelegateStorageV1 is GovernorBravoDelegatorStorage {
     /// @notice The address of the Ooki staking contract
     StakingInterface public staking;
 
+    /// @notice The quorum as a percentage of total supply
+    uint public quorumPercentage;
+
     /// @notice The official record of all proposals ever proposed
     mapping (uint => Proposal) public proposals;
 
@@ -101,8 +104,6 @@ contract GovernorBravoDelegateStorageV1 is GovernorBravoDelegatorStorage {
     /// @notice proposalId => quorum votes required
     mapping (uint => uint) public quorumVotesForProposal;
 
-    /// @notice The quorum as a percentage of total supply
-    uint public quorumPercentage;
 
 
     struct Proposal {
