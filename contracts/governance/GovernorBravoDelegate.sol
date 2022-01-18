@@ -355,7 +355,7 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
 
     /**
       * @notice Admin function for setting the quorum percentage
-      * @param newVotingPeriod new voting period, in blocks
+      * @param newQuorumPercentage new voting period, in blocks
       */
     function __setQuorumPercentage(uint newQuorumPercentage) external {
         require(msg.sender == admin, "GovernorBravo::__setQuorumPercentage: admin only");
@@ -373,7 +373,10 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
     function __setStaking(address newStaking) external {
         require(msg.sender == admin, "GovernorBravo::__setStaking: admin only");
         require(newStaking != address(0) , "GovernorBravo::__setStaking: invalid address");
+        address oldStaking = address(staking);
         staking = StakingInterface(newStaking);
+
+        emit StakingAddressSet(oldStaking, newStaking);
     }
 
     /**

@@ -32,6 +32,12 @@ contract GovernorBravoEvents {
     /// @notice Emitted when implementation is changed
     event NewImplementation(address oldImplementation, address newImplementation);
 
+    /// @notice Emitted when quorum percentage is set
+    event QuorumPercentageSet(uint oldQuorumPercentage, uint newQuorumPercentage);
+
+    /// @notice Emitted when staking address is set
+    event StakingAddressSet(address oldStaking, address newStaking);
+
     /// @notice Emitted when proposal threshold is set
     event ProposalThresholdSet(uint oldProposalThreshold, uint newProposalThreshold);
 
