@@ -50,11 +50,11 @@ contract StakingConstantsV2 {
 
     event Unstake(address indexed user, address indexed token, address indexed delegate, uint256 amount);
 
-    event Claim(address indexed user, uint256 bzrxAmount, uint256 stableCoinAmount);
+    event Claim(address indexed user, uint256 ookiAmount, uint256 stableCoinAmount);
 
     event AddAltRewards(address indexed sender, address indexed token, uint256 amount);
 
     event ClaimAltRewards(address indexed user, address indexed token, uint256 amount);
 
-    event AddRewards(address indexed sender, uint256 bzrxAmount, uint256 stableCoinAmount);
+    event AddRewards(address indexed sender, uint256 ookiAmount, uint256 stableCoinAmount);
 }

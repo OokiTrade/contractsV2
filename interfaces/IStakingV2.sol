@@ -9,8 +9,8 @@ pragma experimental ABIEncoderV2;
 interface IStakingV2 {
     struct ProposalState {
         uint256 proposalTime;
-        uint256 iBZRXWeight;
-        uint256 lpBZRXBalance;
+        uint256 iOOKIWeight;
+        uint256 lpOOKIBalance;
         uint256 lpTotalSupply;
     }
 
@@ -31,7 +31,7 @@ interface IStakingV2 {
 
     function rewardPercent() external view returns (uint256);
 
-    function addRewards(uint256 newBZRX, uint256 newStableCoin) external;
+    function addRewards(uint256 newOOKI, uint256 newStableCoin) external;
 
     function stake(address[] calldata tokens, uint256[] calldata values) external;
 
@@ -64,7 +64,7 @@ interface IStakingV2 {
         view
         returns (
             uint256 vBZRXWeight,
-            uint256 iBZRXWeight,
+            uint256 iOOKIWeight,
             uint256 LPTokenWeight
         );
 
@@ -75,7 +75,7 @@ interface IStakingV2 {
         view
         returns (
             uint256 bzrxBalance,
-            uint256 iBZRXBalance,
+            uint256 iOOKIBalance,
             uint256 vBZRXBalance,
             uint256 LPTokenBalance
         );

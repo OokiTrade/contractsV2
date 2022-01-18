@@ -23,9 +23,9 @@ contract StakingStateV2 is StakingConstantsV2, Ownable {
     mapping(address => uint256) public _totalSupplyPerToken; // token => value
     mapping(address => mapping(address => uint256)) internal _balancesPerToken; // token => account => value
 
-    uint256 public bzrxPerTokenStored;
-    mapping(address => uint256) public bzrxRewardsPerTokenPaid; // user => value
-    mapping(address => uint256) public bzrxRewards; // user => value
+    uint256 public ookiPerTokenStored;
+    mapping(address => uint256) public ookiRewardsPerTokenPaid; // user => value
+    mapping(address => uint256) public ookiRewards; // user => value
     mapping(address => uint256) public bzrxVesting; // user => value
 
     uint256 public stableCoinPerTokenStored;
@@ -34,7 +34,7 @@ contract StakingStateV2 is StakingConstantsV2, Ownable {
     mapping(address => uint256) public stableCoinVesting; // user => value
 
     uint256 public vBZRXWeightStored;
-    uint256 public iBZRXWeightStored;
+    uint256 public iOOKIWeightStored;
     uint256 public LPTokenWeightStored;
 
     uint256 public lastRewardsAddTime;
@@ -42,8 +42,8 @@ contract StakingStateV2 is StakingConstantsV2, Ownable {
 
     struct ProposalState {
         uint256 proposalTime;
-        uint256 iBZRXWeight;
-        uint256 lpBZRXBalance;
+        uint256 iOOKIWeight;
+        uint256 lpOOKIBalance;
         uint256 lpTotalSupply;
     }
     address public governor;
