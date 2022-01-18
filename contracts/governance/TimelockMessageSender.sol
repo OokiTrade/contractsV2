@@ -1,9 +1,9 @@
 pragma solidity ^0.8.0;
 
-import "@celer/contracts/message/libraries/MessageSenderLib.sol";
+import "@celer/contracts/message/messagebus/MessageBus.sol";
+import "../proxies/0_8/Upgradeable_0_8.sol";
 
-contract TimelockMessagSender is Ownable {
-    address public implementation;
+contract TimelockMessageSender is Upgradeable_0_8 {
     address public messageBus;
     mapping(uint64 => address) public destChainTimeLock;
     uint256 public constant FEE = 0; //to be set
@@ -12,13 +12,7 @@ contract TimelockMessagSender is Ownable {
         public
         onlyOwner
     {
-        MessageSenderLib.sendMessage(
-            destChainTimeLock[chainID],
-            chainID,
-            calldataQueue,
-            messageBus,
-            FEE
-        );
+        MessageBus(messageBus).sendMessage{value: FEE}(destChainTimeLock[chainID], chainID, calldataQueue);
     }
 
     function setMessageBus(address messageBus_) public onlyOwner {
