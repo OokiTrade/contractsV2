@@ -7,13 +7,13 @@ import "./GovernorBravoInterfaces.sol";
 contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoEvents {
 
     /// @notice The name of this contract
-    string public constant name = "bZx Governor Bravo";
+    string public constant name = "Ooki Governor Bravo";
 
     /// @notice The minimum setable proposal threshold
-    uint public constant MIN_PROPOSAL_THRESHOLD = 51500000e18; // 5,150,000 = 0.5% of OOKI
+    uint public constant MIN_PROPOSAL_THRESHOLD = 51500000e18; // 51,500,000 = 0.5% of OOKI
 
     /// @notice The maximum setable proposal threshold
-    uint public constant MAX_PROPOSAL_THRESHOLD = 206000000e18; // 20,600,000 = 2% of OOKI
+    uint public constant MAX_PROPOSAL_THRESHOLD = 206000000e18; // 206,000,000 = 2% of OOKI
 
     /// @notice The minimum setable voting period
     uint public constant MIN_VOTING_PERIOD = 5760; // About 24 hours
@@ -27,6 +27,12 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
     /// @notice The max setable voting delay
     uint public constant MAX_VOTING_DELAY = 40320; // About 1 week
 
+    /// @notice The min setable quorum percentage
+    uint public constant MIN_QUORUM_PERCENTAGE = 1e18; // 1% of total OOKI supply
+
+    /// @notice The max setable quorum percentage
+    uint public constant MAX_QUORUM_PERCENTAGE = 6e18; // 6% of total OOKI supply
+
     /// @notice The maximum number of actions that can be included in a proposal
     uint public constant proposalMaxOperations = 100; // 100 actions
 
@@ -36,7 +42,6 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
     /// @notice The EIP-712 typehash for the ballot struct used by the contract
     bytes32 public constant BALLOT_TYPEHASH = keccak256("Ballot(uint256 proposalId,uint8 support)");
 
-    mapping (uint => uint) public quorumVotesForProposal; // proposalId => quorum votes required
 
     /**
       * @notice Used to initialize the contract during delegator contructor
@@ -46,7 +51,7 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
       * @param votingDelay_ The initial voting delay
       * @param proposalThreshold_ The initial proposal threshold
       */
-    function initialize(address timelock_, address staking_, uint votingPeriod_, uint votingDelay_, uint proposalThreshold_) public {
+    function initialize(address timelock_, address staking_, uint votingPeriod_, uint votingDelay_, uint proposalThreshold_, uint quorumPercentage_) public {
         require(address(timelock) == address(0), "GovernorBravo::initialize: can only initialize once");
         require(msg.sender == admin, "GovernorBravo::initialize: admin only");
         require(timelock_ != address(0), "GovernorBravo::initialize: invalid timelock address");
@@ -54,12 +59,14 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
         require(votingPeriod_ >= MIN_VOTING_PERIOD && votingPeriod_ <= MAX_VOTING_PERIOD, "GovernorBravo::initialize: invalid voting period");
         require(votingDelay_ >= MIN_VOTING_DELAY && votingDelay_ <= MAX_VOTING_DELAY, "GovernorBravo::initialize: invalid voting delay");
         require(proposalThreshold_ >= MIN_PROPOSAL_THRESHOLD && proposalThreshold_ <= MAX_PROPOSAL_THRESHOLD, "GovernorBravo::initialize: invalid proposal threshold");
+        require(quorumPercentage_ >= MIN_QUORUM_PERCENTAGE && quorumPercentage_ <= MAX_QUORUM_PERCENTAGE, "GovernorBravo::initialize: invalid quorum percentage");
 
         timelock = TimelockInterface(timelock_);
         staking = StakingInterface(staking_);
         votingPeriod = votingPeriod_;
         votingDelay = votingDelay_;
         proposalThreshold = proposalThreshold_;
+        quorumPercentage = quorumPercentage_;
 
         guardian = msg.sender;
     }
@@ -173,17 +180,10 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
       * @notice Gets the current voting quroum
       * @return The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
       */
-    // TODO: Update for OOKI. Handle OOKI surplus mint
     function quorumVotes() public view returns (uint256) {
-        uint256 vestingSupply = IERC20(0x56d811088235F11C8920698a204A5010a788f4b3) // BZRX
-            .balanceOf(0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F); // vBZRX
-        uint256 circulatingSupply = 1030000000e18 - vestingSupply; // no overflow
-        uint256 quorum = circulatingSupply * 4 / 100;
-        if (quorum < 15450000e18) {
-            // min quorum is 1.5% of totalSupply
-            quorum = 15450000e18;
-        }
-        return quorum;
+        uint256 totalSupply = IERC20(0x0De05F6447ab4D22c8827449EE4bA2D5C288379B) // OOKI
+            .totalSupply();
+        return totalSupply * quorumPercentage / 1e20;
     }
 
     /**
@@ -309,7 +309,7 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
         Proposal storage proposal = proposals[proposalId];
         Receipt storage receipt = proposal.receipts[voter];
         require(receipt.hasVoted == false, "GovernorBravo::castVoteInternal: voter already voted");
-        // 2**96-1 is greater than total supply of bzrx 1.3b*1e18 thus guaranteeing it won't ever overflow
+        // 2**96-1 is greater than total supply of OOKI thus guaranteeing it won't ever overflow
         uint96 votes = uint96(staking.votingBalanceOf(voter, proposalId));
 
         if (support == 0) {
@@ -337,7 +337,7 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
         uint oldVotingDelay = votingDelay;
         votingDelay = newVotingDelay;
 
-        emit VotingDelaySet(oldVotingDelay,votingDelay);
+        emit VotingDelaySet(oldVotingDelay, votingDelay);
     }
 
     /**
@@ -351,6 +351,19 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
         votingPeriod = newVotingPeriod;
 
         emit VotingPeriodSet(oldVotingPeriod, votingPeriod);
+    }
+
+    /**
+      * @notice Admin function for setting the quorum percentage
+      * @param newVotingPeriod new voting period, in blocks
+      */
+    function __setQuorumPercentage(uint newQuorumPercentage) external {
+        require(msg.sender == admin, "GovernorBravo::__setQuorumPercentage: admin only");
+        require(newQuorumPercentage >= MIN_QUORUM_PERCENTAGE && newQuorumPercentage <= MAX_QUORUM_PERCENTAGE, "GovernorBravo::__setQuorumPercentage: invalid quorum percentage");
+        uint oldQuorumPercentage = quorumPercentage;
+        quorumPercentage = newQuorumPercentage;
+
+        emit QuorumPercentageSet(oldQuorumPercentage, newQuorumPercentage);
     }
 
     /**

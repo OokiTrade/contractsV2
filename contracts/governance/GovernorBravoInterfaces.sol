@@ -80,10 +80,10 @@ contract GovernorBravoDelegateStorageV1 is GovernorBravoDelegatorStorage {
     /// @notice The total number of proposals
     uint public proposalCount;
 
-    /// @notice The address of the bZx Protocol Timelock
+    /// @notice The address of the Ooki Protocol Timelock
     TimelockInterface public timelock;
 
-    /// @notice The address of the bZx governance token
+    /// @notice The address of the Ooki staking contract
     StakingInterface public staking;
 
     /// @notice The official record of all proposals ever proposed
@@ -91,6 +91,12 @@ contract GovernorBravoDelegateStorageV1 is GovernorBravoDelegatorStorage {
 
     /// @notice The latest proposal for each proposer
     mapping (address => uint) public latestProposalIds;
+
+    /// @notice proposalId => quorum votes required
+    mapping (uint => uint) public quorumVotesForProposal;
+
+    /// @notice The quorum as a percentage of total supply
+    uint public quorumPercentage;
 
 
     struct Proposal {
