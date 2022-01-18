@@ -12,12 +12,12 @@ import "./interfaces/IUniswapV2Router.sol";
 import "../../interfaces/IBZx.sol";
 import "@celer/contracts/interfaces/IBridge.sol";
 
-contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
+contract FeeExtractAndDistribute_Testnet is Upgradeable_0_8 {
     IBZx public constant bZx = IBZx(0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8);
 
     address public constant MATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
-    address public constant USDC = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
-    uint64 public constant DEST_CHAINID = 1; //to be set
+    address public constant USDC = 0xCe7F7c709E8c74D8ad069Ed28abF25ddC43b32a9; //This contract address is for USDT but will remain as USDC for naming convention with live deployments
+    uint64 public constant DEST_CHAINID = 97; //to be set
     IUniswapV2Router public constant swapsRouterV2 =
         IUniswapV2Router(0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506); // Sushiswap
 
@@ -138,14 +138,14 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
         returnAmount = amounts[2];
     }
 
-    function _bridgeFeesAndDistribute() internal {
+    function _bridgeFeesAndDistribute() public {
         IBridge(bridge).send(
             treasuryWallet,
             USDC,
             IERC20(USDC).balanceOf(address(this)),
             DEST_CHAINID,
             uint64(block.timestamp),
-            10000
+            1000000
         );
     }
 
