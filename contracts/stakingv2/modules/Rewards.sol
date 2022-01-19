@@ -24,7 +24,6 @@ contract Rewards is Common {
             }
             if (newStableCoin != 0) {
                 curve3Crv.transferFrom(msg.sender, address(this), newStableCoin);
-                _depositTo3Pool(newStableCoin);
             }
         }
     }
@@ -66,11 +65,6 @@ contract Rewards is Common {
 
             LPTokenWeight = normalizedLPTokenSupply.mul(1e18).div(lpTokenSupply);
         }
-    }
-
-    function _depositTo3Pool(uint256 amount) internal {
-        if (amount == 0) curve3PoolGauge.deposit(curve3Crv.balanceOf(address(this)));
-        // claiming rewards is at unstake or other
     }
 
     function totalSupplyStored() public view returns (uint256 supply) {

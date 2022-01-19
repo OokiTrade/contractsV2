@@ -24,7 +24,10 @@ contract Common is StakingStateV2, PausableGuardian {
     }
 
     function _calcIOOKIWeight() internal view returns (uint256) {
-        return IERC20(OOKI).balanceOf(iOOKI).mul(1e50).div(IERC20(iOOKI).totalSupply());
+        uint256 total = IERC20(iOOKI).totalSupply();
+        if(total != 0)
+            return IERC20(OOKI).balanceOf(iOOKI).mul(1e50).div(total);
+        return 0;
     }
  
     function vestedBalanceForAmount(

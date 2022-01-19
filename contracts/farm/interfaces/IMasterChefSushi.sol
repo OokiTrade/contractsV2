@@ -31,4 +31,14 @@ interface IMasterChefSushi {
         view
         returns (uint256);
 
+    function set(uint256 _pid, uint256 _allocPoint, bool _withUpdate)
+        external;
+
+    function updatePool(uint256 _pid)
+        external;
+
+    function owner()
+        external
+        view
+        returns (address);
 }

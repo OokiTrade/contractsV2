@@ -15,7 +15,7 @@ import "./Common.sol";
 
 contract StakeUnstake is Common {
     function initialize(address target) external onlyOwner {
-        _setTarget(this.pendingCrvRewards.selector, target);
+        _setTarget(this.totalSupplyByAsset.selector, target);
         _setTarget(this.stake.selector, target);
         _setTarget(this.unstake.selector, target);
         _setTarget(this.claim.selector, target);
@@ -23,7 +23,6 @@ contract StakeUnstake is Common {
         _setTarget(this.claimBzrx.selector, target);
         _setTarget(this.claim3Crv.selector, target);
         _setTarget(this.claimSushi.selector, target);
-        _setTarget(this.claimCrv.selector, target);
         _setTarget(this.earned.selector, target);
         _setTarget(this.addAltRewards.selector, target);
         _setTarget(this.balanceOfByAsset.selector, target);
@@ -33,6 +32,16 @@ contract StakeUnstake is Common {
         _setTarget(this.exit.selector, target);
     }
 
+
+    function totalSupplyByAsset(
+        address token)
+    external
+    view
+    returns (uint256)
+    {
+        return _totalSupplyPerToken[token];
+    }
+
     function _pendingSushiRewards(address _user) internal view returns (uint256) {
         uint256 pendingSushi = IMasterChefSushi(SUSHI_MASTERCHEF).pendingSushi(OOKI_ETH_SUSHI_MASTERCHEF_PID, address(this));
 
@@ -40,22 +49,6 @@ contract StakeUnstake is Common {
         return _pendingAltRewards(SUSHI, _user, balanceOfByAsset(OOKI_ETH_LP, _user), totalSupply != 0 ? pendingSushi.mul(1e12).div(totalSupply) : 0);
     }
 
-    function pendingCrvRewards(address account) external returns (uint256) {
-        (uint256 ookiRewardsEarned, uint256 stableCoinRewardsEarned, uint256 ookiRewardsVesting, uint256 stableCoinRewardsVesting) = _earned(
-            account,
-            ookiPerTokenStored,
-            stableCoinPerTokenStored
-        );
-
-        (, stableCoinRewardsEarned) = _syncVesting(account, ookiRewardsEarned, stableCoinRewardsEarned, ookiRewardsVesting, stableCoinRewardsVesting);
-        return _pendingCrvRewards(account, stableCoinRewardsEarned);
-    }
-
-    function _pendingCrvRewards(address _user, uint256 stableCoinRewardsEarned) internal returns (uint256) {
-        uint256 totalSupply = curve3PoolGauge.balanceOf(address(this));
-        uint256 pendingCrv = curve3PoolGauge.claimable_tokens(address(this));
-        return _pendingAltRewards(CRV, _user, stableCoinRewardsEarned, (totalSupply != 0) ? pendingCrv.mul(1e12).div(totalSupply) : 0);
-    }
 
     function _pendingAltRewards(
         address token,
@@ -87,32 +80,6 @@ contract StakeUnstake is Common {
             _addAltRewards(SUSHI, sushiRewards);
         }
     }
-
-    function _depositTo3Pool(uint256 amount) internal {
-        if (amount == 0) curve3PoolGauge.deposit(curve3Crv.balanceOf(address(this)));
-
-        // Trigger claim rewards from curve pool
-        uint256 crvBalanceBefore = IERC20(CRV).balanceOf(address(this));
-        curveMinter.mint(address(curve3PoolGauge));
-        uint256 crvBalanceAfter = IERC20(CRV).balanceOf(address(this)) - crvBalanceBefore;
-        if (crvBalanceAfter != 0) {
-            _addAltRewards(CRV, crvBalanceAfter);
-        }
-    }
-
-    function _withdrawFrom3Pool(uint256 amount) internal {
-        if (amount != 0) curve3PoolGauge.withdraw(amount);
-
-        //Trigger claim rewards from curve pool
-        uint256 crvBalanceBefore = IERC20(CRV).balanceOf(address(this));
-        curveMinter.mint(address(curve3PoolGauge));
-        uint256 crvBalanceAfter = IERC20(CRV).balanceOf(address(this)) - crvBalanceBefore;
-        if (crvBalanceAfter != 0) {
-            _addAltRewards(CRV, crvBalanceAfter);
-        }
-    }
-
-    
 
     function stake(address[] memory tokens, uint256[] memory values) public pausable updateRewards(msg.sender) {
         require(tokens.length == values.length, "count mismatch");
@@ -169,7 +136,11 @@ contract StakeUnstake is Common {
                 unstakeAmount = stakedAmount;
             }
 
-            uint256 pendingBefore = (token == OOKI_ETH_LP) ? _pendingSushiRewards(msg.sender) : 0;
+            // Withdraw from sushi masterchef
+            if (token == OOKI_ETH_LP) {
+                _withdrawFromSushiMasterchef(unstakeAmount);
+                userAltRewardsPerShare[msg.sender][SUSHI] = IStakingV2.AltRewardsUserInfo({rewardsPerShare: altRewardsPerShare[SUSHI], pendingRewards: _pendingSushiRewards(msg.sender)});
+            }
 
             _balancesPerToken[token][msg.sender] = stakedAmount - unstakeAmount; // will not overflow
             _totalSupplyPerToken[token] = _totalSupplyPerToken[token] - unstakeAmount; // will not overflow
@@ -180,14 +151,7 @@ contract StakeUnstake is Common {
                 CONVERTER.convert(address(this), IERC20(BZRX).balanceOf(address(this)));
             }
 
-            // Withdraw to sushi masterchef
-            if (token == OOKI_ETH_LP) {
-                _withdrawFromSushiMasterchef(unstakeAmount);
-
-                userAltRewardsPerShare[msg.sender][SUSHI] = IStakingV2.AltRewardsUserInfo({rewardsPerShare: altRewardsPerShare[SUSHI], pendingRewards: pendingBefore});
-            }
             IERC20(token).safeTransfer(msg.sender, unstakeAmount);
-
             emit Unstake(msg.sender, token, currentDelegate, unstakeAmount);
         }
         _voteDelegator.moveDelegatesByVotingBalance(votingBalanceBefore, _votingFromStakedBalanceOf(msg.sender, _proposalState, true), msg.sender);
@@ -199,13 +163,9 @@ contract StakeUnstake is Common {
 
     function claimAltRewards() external pausable returns (uint256 sushiRewardsEarned, uint256 crvRewardsEarned) {
         sushiRewardsEarned = _claimSushi();
-        crvRewardsEarned = _claimCrv();
 
         if (sushiRewardsEarned != 0) {
             emit ClaimAltRewards(msg.sender, SUSHI, sushiRewardsEarned);
-        }
-        if (crvRewardsEarned != 0) {
-            emit ClaimAltRewards(msg.sender, CRV, crvRewardsEarned);
         }
     }
 
@@ -225,13 +185,6 @@ contract StakeUnstake is Common {
         sushiRewardsEarned = _claimSushi();
         if (sushiRewardsEarned != 0) {
             emit ClaimAltRewards(msg.sender, SUSHI, sushiRewardsEarned);
-        }
-    }
-
-    function claimCrv() external pausable returns (uint256 crvRewardsEarned) {
-        crvRewardsEarned = _claimCrv();
-        if (crvRewardsEarned != 0) {
-            emit ClaimAltRewards(msg.sender, CRV, crvRewardsEarned);
         }
     }
 
@@ -267,12 +220,7 @@ contract StakeUnstake is Common {
     function _claim3Crv() internal returns (uint256 stableCoinRewardsEarned) {
         stableCoinRewardsEarned = stableCoinRewards[msg.sender];
         if (stableCoinRewardsEarned != 0) {
-            uint256 pendingCrv = _pendingCrvRewards(msg.sender, stableCoinRewardsEarned);
             uint256 curve3CrvBalance = curve3Crv.balanceOf(address(this));
-            _withdrawFrom3Pool(stableCoinRewardsEarned);
-
-            userAltRewardsPerShare[msg.sender][CRV] = IStakingV2.AltRewardsUserInfo({rewardsPerShare: altRewardsPerShare[CRV], pendingRewards: pendingCrv});
-
             stableCoinRewards[msg.sender] = 0;
             curve3Crv.transfer(msg.sender, stableCoinRewardsEarned);
         }
@@ -293,21 +241,6 @@ contract StakeUnstake is Common {
         }
 
         return pendingSushi;
-    }
-
-    function _claimCrv() internal returns (uint256) {
-        address _user = msg.sender;
-
-        _depositTo3Pool(0);
-        (, uint256 stableCoinRewardsEarned, , ) = _earned(_user, ookiPerTokenStored, stableCoinPerTokenStored);
-        uint256 pendingCrv = _pendingCrvRewards(_user, stableCoinRewardsEarned);
-
-        userAltRewardsPerShare[_user][CRV] = IStakingV2.AltRewardsUserInfo({rewardsPerShare: altRewardsPerShare[CRV], pendingRewards: 0});
-        if (pendingCrv != 0) {
-            IERC20(CRV).safeTransfer(_user, pendingCrv);
-        }
-
-        return pendingCrv;
     }
 
     function _restakeBZRX(address account, uint256 amount) internal {
@@ -488,7 +421,7 @@ contract StakeUnstake is Common {
     function _addAltRewards(address token, uint256 amount) internal {
         address poolAddress = token == SUSHI ? OOKI_ETH_LP : token;
 
-        uint256 totalSupply = (token == CRV) ? curve3PoolGauge.balanceOf(address(this)) : _totalSupplyPerToken[poolAddress];
+        uint256 totalSupply = _totalSupplyPerToken[poolAddress];
         require(totalSupply != 0, "no deposits");
 
         altRewardsPerShare[token] = altRewardsPerShare[token].add(amount.mul(1e12).div(totalSupply));

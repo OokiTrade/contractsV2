@@ -37,6 +37,11 @@ def STAKING(StakingV1_1, accounts, StakingProxy):
 def DAO(GovernorBravoDelegate):
     return Contract.from_abi("DAO", address="0x9da41f7810c2548572f4Fa414D06eD9772cA9e6E", abi=GovernorBravoDelegate.abi)
 
+@pytest.fixture(scope="module")
+def iUSDC(accounts, LoanTokenLogicStandard):
+    iUSDC = loadContractFromAbi(
+        "0x32E4c68B3A4a813b710595AebA7f6B7604Ab9c15", "iUSDC", LoanTokenLogicStandard.abi)
+    return iUSDC
 
 @pytest.fixture(scope="module", autouse=True)
 def STAKINGv2(accounts, StakingModularProxy, AdminSettings, StakeUnstake, StakingPausableGuardian, Voting, Rewards, interface, SUSHI_CHEF, OOKI_ETH_LP, BZRX, BZRXv2_CONVERTER, CRV3, POOL3_GAUGE, VOTE_DELEGATOR, DAO):
@@ -54,6 +59,8 @@ def STAKINGv2(accounts, StakingModularProxy, AdminSettings, StakeUnstake, Stakin
     stakingModularProxy.replaceContract(stakingPausableGuardianImpl)
     stakingModularProxy.replaceContract(votingImpl)
 
+    SUSHI_CHEF.set(335, 1000, False, {'from': SUSHI_CHEF.owner()})
+    SUSHI_CHEF.updatePool(335, {'from': SUSHI_CHEF.owner()})
     # setting approvals
     staking = Contract.from_abi(
         "STAKING", stakingModularProxy, interface.IStakingV2.abi)

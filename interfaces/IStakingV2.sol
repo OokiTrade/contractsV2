@@ -143,4 +143,11 @@ interface IStakingV2 {
     function setVoteDelegator(address stakingGovernance) external;
 
     function updateSettings(address settingsTarget, bytes calldata callData) external;
+
+    function claimSushi() external returns (uint256 sushiRewardsEarned);
+
+    function totalSupplyByAsset(address token)
+        external
+        view
+        returns (uint256);
 }
