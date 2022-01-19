@@ -59,9 +59,12 @@ def testStake_UnStakeMultiuser(requireMainnetFork, STAKINGv2, BZX,  BZRX, vBZRX,
     STAKINGv2.unstake([OOKI, vBZRX, iOOKI, OOKI_ETH_LP], [
                       2**256-1, 2**256-1, 2**256-1, 2**256-1], {"from": user2})
 
-    assert BZRX.balanceOf(STAKINGv2) == 0
+    # assert BZRX.balanceOf(STAKINGv2) == 0
     assert OOKI.balanceOf(STAKINGv2) == 0
-
+    assert STAKINGv2.earned(user1)[0] > 0
+    assert STAKINGv2.earned(user2)[0] > 0
+    assert BZRX.balanceOf(STAKINGv2) *10 <=(STAKINGv2.earned(user1)[0] + STAKINGv2.earned(user2)[0])
+    assert abs(BZRX.balanceOf(STAKINGv2) *10  - (STAKINGv2.earned(user1)[0] + STAKINGv2.earned(user2)[0])) < 30
     assert True
 
 
