@@ -90,8 +90,9 @@ contract TimelockMessageReceiver is Upgradeable_0_8 {
         emit ProposalExecuted(proposalId);
     }
 
-    function executeMessage(address sender, uint64 chainId, bytes memory _message)
+    function executeMessage(address sender, uint64 chainId, bytes calldata _message)
         external
+		onlyMessageBus
         returns (bool)
     {
         if (sender != timelockEthereum) {
