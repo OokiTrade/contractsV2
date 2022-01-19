@@ -44,5 +44,5 @@
     "ts-node": "^10.4.0",
     "typescript": "^4.5.4",
     "celer": "github:celer-network/sgn-v2-contracts"
-	}
+    }
 }

@@ -92,7 +92,7 @@ contract TimelockMessageReceiver is Upgradeable_0_8 {
 
     function executeMessage(address sender, uint64 chainId, bytes calldata _message)
         external
-		onlyMessageBus
+        onlyMessageBus
         returns (bool)
     {
         if (sender != timelockEthereum) {
@@ -109,7 +109,7 @@ contract TimelockMessageReceiver is Upgradeable_0_8 {
 
     function setMessageBus(address _messageBus) public onlyOwner {
 	    messageBus = _messageBus;
-	}
+    }
 
     function setTimelocks(address timelockEthereum_, ITimelock timelock_)
         public
