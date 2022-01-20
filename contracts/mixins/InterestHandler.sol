@@ -7,9 +7,11 @@ pragma solidity 0.5.17;
 
 import "../core/State.sol";
 import "../interfaces/ILoanPool.sol";
+import "../utils/MathUtil.sol";
 
 
 contract InterestHandler is State {
+    using MathUtil for uint256;
 
     // returns up to date loan interest or 0 if not applicable
     function _settleInterest(
@@ -48,7 +50,14 @@ contract InterestHandler is State {
             pool,
             0
         );
-        return _poolPrincipalTotal.add(_poolInterestTotal);
+
+        uint256 lendingFee = _poolInterestTotal
+            .mul(lendingFeePercent)
+            .divCeil(WEI_PERCENT_PRECISION);
+
+        return _poolPrincipalTotal
+            .add(_poolInterestTotal)
+            .sub(lendingFee);
     }
 
     function _getLoanPrincipal(
