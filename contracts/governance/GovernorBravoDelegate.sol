@@ -355,7 +355,7 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
 
     /**
       * @notice Admin function for setting the quorum percentage
-      * @param newQuorumPercentage new voting period, in blocks
+      * @param newQuorumPercentage new quorum percentage
       */
     function __setQuorumPercentage(uint newQuorumPercentage) external {
         require(msg.sender == admin, "GovernorBravo::__setQuorumPercentage: admin only");

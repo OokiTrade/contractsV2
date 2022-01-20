@@ -105,7 +105,6 @@ contract GovernorBravoDelegateStorageV1 is GovernorBravoDelegatorStorage {
     mapping (uint => uint) public quorumVotesForProposal;
 
 
-
     struct Proposal {
         /// @notice Unique id for looking up a proposal
         uint id;
