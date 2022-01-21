@@ -27,7 +27,6 @@ def mint_ooki(OOKI,STAKINGv2, acct, amount, stake):
 PROPOSER = "0xfedc4dd5247b93feb41e899a09c44cfabec29cbc"
 ZERO_ADDRESS="0x0000000000000000000000000000000000000000"
 def testStake_VoteDelegateWF1(requireMainnetFork, STAKINGv2, DAO,  accounts,VOTE_DELEGATOR, OOKI, iUSDC, vBZRX, BZX):
-
     acct1 = accounts[0]
     acct2 = accounts[1]
     acct3 = accounts[3]

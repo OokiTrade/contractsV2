@@ -77,8 +77,8 @@ contract GovernorBravoDelegateStorageV1 is GovernorBravoDelegatorStorage {
     /// @notice The duration of voting on a proposal, in blocks
     uint public votingPeriod;
 
-    /// @notice The number of votes required in order for a voter to become a proposer
-    uint public proposalThreshold;
+    /// @notice The number of votes as a percentage of total supply required in order for a voter to become a proposer
+    uint public proposalThresholdPercentage;
 
     /// @notice Initial proposal id set at become
     uint public initialProposalId;
@@ -94,6 +94,7 @@ contract GovernorBravoDelegateStorageV1 is GovernorBravoDelegatorStorage {
 
     /// @notice The quorum as a percentage of total supply
     uint public quorumPercentage;
+
 
     /// @notice The official record of all proposals ever proposed
     mapping (uint => Proposal) public proposals;

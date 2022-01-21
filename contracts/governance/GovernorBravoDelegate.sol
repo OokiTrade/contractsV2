@@ -10,10 +10,10 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
     string public constant name = "Ooki Governor Bravo";
 
     /// @notice The minimum setable proposal threshold
-    uint public constant MIN_PROPOSAL_THRESHOLD = 51500000e18; // 51,500,000 = 0.5% of OOKI
+    uint public constant MIN_PROPOSAL_THRESHOLD = 5e17; // 0.5% of OOKI
 
     /// @notice The maximum setable proposal threshold
-    uint public constant MAX_PROPOSAL_THRESHOLD = 206000000e18; // 206,000,000 = 2% of OOKI
+    uint public constant MAX_PROPOSAL_THRESHOLD = 2e18; //2% of OOKI
 
     /// @notice The minimum setable voting period
     uint public constant MIN_VOTING_PERIOD = 5760; // About 24 hours
@@ -49,23 +49,23 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
       * @param staking_ The address of the STAKING
       * @param votingPeriod_ The initial voting period
       * @param votingDelay_ The initial voting delay
-      * @param proposalThreshold_ The initial proposal threshold
+      * @param proposalThresholdPercentage_ The initial proposal threshold percentage
       */
-    function initialize(address timelock_, address staking_, uint votingPeriod_, uint votingDelay_, uint proposalThreshold_, uint quorumPercentage_) public {
+    function initialize(address timelock_, address staking_, uint votingPeriod_, uint votingDelay_, uint proposalThresholdPercentage_, uint quorumPercentage_) public {
         require(address(timelock) == address(0), "GovernorBravo::initialize: can only initialize once");
         require(msg.sender == admin, "GovernorBravo::initialize: admin only");
         require(timelock_ != address(0), "GovernorBravo::initialize: invalid timelock address");
         require(staking_ != address(0), "GovernorBravo::initialize: invalid STAKING address");
         require(votingPeriod_ >= MIN_VOTING_PERIOD && votingPeriod_ <= MAX_VOTING_PERIOD, "GovernorBravo::initialize: invalid voting period");
         require(votingDelay_ >= MIN_VOTING_DELAY && votingDelay_ <= MAX_VOTING_DELAY, "GovernorBravo::initialize: invalid voting delay");
-        require(proposalThreshold_ >= MIN_PROPOSAL_THRESHOLD && proposalThreshold_ <= MAX_PROPOSAL_THRESHOLD, "GovernorBravo::initialize: invalid proposal threshold");
+        require(proposalThresholdPercentage_ >= MIN_PROPOSAL_THRESHOLD && proposalThresholdPercentage_ <= MAX_PROPOSAL_THRESHOLD, "GovernorBravo::initialize: invalid proposal threshold");
         require(quorumPercentage_ >= MIN_QUORUM_PERCENTAGE && quorumPercentage_ <= MAX_QUORUM_PERCENTAGE, "GovernorBravo::initialize: invalid quorum percentage");
 
         timelock = TimelockInterface(timelock_);
         staking = StakingInterface(staking_);
         votingPeriod = votingPeriod_;
         votingDelay = votingDelay_;
-        proposalThreshold = proposalThreshold_;
+        proposalThresholdPercentage = proposalThresholdPercentage_;
         quorumPercentage = quorumPercentage_;
 
         guardian = msg.sender;
@@ -93,7 +93,7 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
         }
 
         uint proposalId = proposalCount + 1;
-        require(staking._setProposalVals(msg.sender, proposalId) > proposalThreshold, "GovernorBravo::propose: proposer votes below proposal threshold");
+        require(staking._setProposalVals(msg.sender, proposalId) > proposalThreshold(), "GovernorBravo::propose: proposer votes below proposal threshold");
         proposalCount = proposalId;
 
         uint startBlock = add256(block.number, votingDelay);
@@ -166,7 +166,7 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
         require(state(proposalId) != ProposalState.Executed, "GovernorBravo::cancel: cannot cancel executed proposal");
 
         Proposal storage proposal = proposals[proposalId];
-        require(msg.sender == proposal.proposer || staking.votingBalanceOfNow(proposal.proposer) < proposalThreshold || msg.sender == guardian, "GovernorBravo::cancel: proposer above threshold");
+        require(msg.sender == proposal.proposer || staking.votingBalanceOfNow(proposal.proposer) < proposalThreshold() || msg.sender == guardian, "GovernorBravo::cancel: proposer above threshold");
 
         proposal.canceled = true;
         for (uint i = 0; i < proposal.targets.length; i++) {
@@ -184,6 +184,16 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
         uint256 totalSupply = IERC20(0x0De05F6447ab4D22c8827449EE4bA2D5C288379B) // OOKI
             .totalSupply();
         return totalSupply * quorumPercentage / 1e20;
+    }
+
+    /**
+      * @notice Gets the current proposal threshold
+      * @return The number of votes required to create new proposal
+      */
+    function proposalThreshold() public view returns (uint256) {
+        uint256 totalSupply = IERC20(0x0De05F6447ab4D22c8827449EE4bA2D5C288379B) // OOKI
+        .totalSupply();
+        return totalSupply * proposalThresholdPercentage / 1e20;
     }
 
     /**
@@ -381,16 +391,16 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
 
     /**
       * @notice Admin function for setting the proposal threshold
-      * @dev newProposalThreshold must be greater than the hardcoded min
-      * @param newProposalThreshold new proposal threshold
+      * @dev newProposalThresholdPercentage must be greater than the hardcoded min
+      * @param newProposalThresholdPercentage new proposal threshold
       */
-    function __setProposalThreshold(uint newProposalThreshold) external {
+    function __setProposalThreshold(uint newProposalThresholdPercentage) external {
         require(msg.sender == admin, "GovernorBravo::__setProposalThreshold: admin only");
-        require(newProposalThreshold >= MIN_PROPOSAL_THRESHOLD && newProposalThreshold <= MAX_PROPOSAL_THRESHOLD, "GovernorBravo::__setProposalThreshold: invalid proposal threshold");
-        uint oldProposalThreshold = proposalThreshold;
-        proposalThreshold = newProposalThreshold;
+        require(newProposalThresholdPercentage >= MIN_PROPOSAL_THRESHOLD && newProposalThresholdPercentage <= MAX_PROPOSAL_THRESHOLD, "GovernorBravo::__setProposalThreshold: invalid proposal threshold");
+        uint oldProposalThresholdPercentage = proposalThresholdPercentage;
+        proposalThresholdPercentage = newProposalThresholdPercentage;
 
-        emit ProposalThresholdSet(oldProposalThreshold, proposalThreshold);
+        emit ProposalThresholdSet(oldProposalThresholdPercentage, proposalThresholdPercentage);
     }
 
     /**
