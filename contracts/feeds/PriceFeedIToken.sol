@@ -7,7 +7,7 @@ import "../utils/SignedSafeMath.sol";
 contract PriceFeedIToken {
     using SignedSafeMath for int256;
     address public underlyingToken;
-    PriceFeeds public constant PRICE_FEED = PriceFeeds(address(0)); //set to price feed contract on the chain
+    PriceFeeds public constant PRICE_FEED = PriceFeeds(0x5AbC9e082Bf6e4F930Bbc79742DA3f6259c4aD1d); //Ethereum PriceFeeds contract
     IToken public iTokenAddress;
 
     constructor(address underlying, IToken iToken) public {
