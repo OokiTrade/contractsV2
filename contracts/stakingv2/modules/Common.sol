@@ -67,10 +67,10 @@ contract Common is StakingStateV2, PausableGuardian {
             return 0;
         }
 
-        uint256 _vBZRXBalance = _balancesPerToken[vBZRX][account] * 10; // 10x for OOKI
-        if (_vBZRXBalance != 0) {
+        uint256 _vOOKIBalance = _balancesPerToken[vBZRX][account] * 10; // 10x for OOKI
+        if (_vOOKIBalance != 0) {
             // staked vBZRX is prorated based on total vested
-            totalVotes = _vBZRXBalance
+            totalVotes = _vOOKIBalance
                 .mul(_startingVBZRXBalance -
                     vestedBalanceForAmount( // overflow not possible
                         _startingVBZRXBalance,
@@ -81,7 +81,7 @@ contract Common is StakingStateV2, PausableGuardian {
 
             // user is attributed a staked balance of vested OOKI, from their last update to the present (10x for OOKI)
             totalVotes = vestedBalanceForAmount(
-                _vBZRXBalance,
+                _vOOKIBalance,
                 _vestingLastSync,
                 proposal.proposalTime
             ).add(totalVotes);

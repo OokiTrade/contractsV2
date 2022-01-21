@@ -52,11 +52,16 @@ contract Voting is Common {
         VoteDelegator _voteDelegator = VoteDelegator(voteDelegator);
         address _delegate = _voteDelegator.delegates(account);
 
-        if (_delegate == ZERO_ADDRESS) {
-            // has not delegated yet
-            return _voteDelegator.getPriorVotes(account, blocknumber).add(_votingFromStakedBalanceOf(account, proposal, false));
+        if(_voteDelegator._isPaused(_voteDelegator.delegate.selector) || _voteDelegator._isPaused(_voteDelegator.delegateBySig.selector)){
+            return _votingFromStakedBalanceOf(account, proposal, false);
         }
-
-        return _voteDelegator.getPriorVotes(account, blocknumber);
+        else{
+            totalVotes = _voteDelegator.getPriorVotes(account, blocknumber);
+            if (_delegate == ZERO_ADDRESS) {
+                // has not delegated yet
+                return totalVotes.add(_votingFromStakedBalanceOf(account, proposal, false));
+            }
+            return totalVotes;
+        }
     }
 }

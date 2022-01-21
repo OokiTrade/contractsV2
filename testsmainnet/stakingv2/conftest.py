@@ -19,7 +19,7 @@ def VOTE_DELEGATOR(VoteDelegator, Proxy_0_5, accounts):
     votedelegatorImpl = VoteDelegator.deploy({'from': accounts[0]})
     votedelegatorProxy.replaceImplementation(
         votedelegatorImpl, {'from': votedelegatorProxy.owner()})
-    return Contract.from_abi("VOTE_DELEGATOR", "0x7e9d7A0ff725f88Cc6Ab3ccF714a1feA68aC160b", VoteDelegator.abi)
+    return Contract.from_abi("VOTE_DELEGATOR", votedelegatorProxy, VoteDelegator.abi)
 
 
 @pytest.fixture(scope="module")
@@ -34,17 +34,38 @@ def STAKING(StakingV1_1, accounts, StakingProxy):
 
 
 @pytest.fixture(scope="module")
-def DAO(GovernorBravoDelegate):
-    return Contract.from_abi("DAO", address="0x9da41f7810c2548572f4Fa414D06eD9772cA9e6E", abi=GovernorBravoDelegate.abi)
+def DAO(GovernorBravoDelegate, GovernorBravoDelegator, STAKINGv2,accounts, chain, Timelock):
+    TIMELOCK = Contract.from_abi("TIMELOCK", address="0xfedC4dD5247B93feb41e899A09C44cFaBec29Cbc", abi=Timelock.abi)
+    oldDao = Contract.from_abi("governorBravoDelegator", address="0x9da41f7810c2548572f4Fa414D06eD9772cA9e6E", abi=GovernorBravoDelegate.abi)
+    # upgrade DAO implementation
 
-@pytest.fixture(scope="module")
-def iUSDC(accounts, LoanTokenLogicStandard):
-    iUSDC = loadContractFromAbi(
-        "0x32E4c68B3A4a813b710595AebA7f6B7604Ab9c15", "iUSDC", LoanTokenLogicStandard.abi)
-    return iUSDC
+    # below has to be guardian so that it will be by default set
+    GUARDIAN_MULTISIG = accounts.at("0x2a599cEba64CAb8C88549c2c7314ea02A161fC70", True)
+    daoImpl = GUARDIAN_MULTISIG.deploy(GovernorBravoDelegate)
+    daoProxy = GUARDIAN_MULTISIG.deploy(GovernorBravoDelegator, TIMELOCK, STAKINGv2, TIMELOCK, daoImpl, oldDao.votingPeriod(), oldDao.votingDelay(), oldDao.proposalThreshold() * 10, 3e18)
+
+
+    STAKINGv2.setGovernor(daoProxy, {"from": accounts[0]})
+    STAKINGv2.transferOwnership(TIMELOCK, {"from": accounts[0]})
+
+    eta = TIMELOCK.delay()+ chain.time()+100
+
+    oldDao.__queueSetTimelockPendingAdmin(daoProxy, eta, {"from": GUARDIAN_MULTISIG})
+    chain.sleep(TIMELOCK.delay() + 100)
+    chain.mine()
+    oldDao.__executeSetTimelockPendingAdmin(daoProxy, eta, {"from": GUARDIAN_MULTISIG})
+
+    dao = Contract.from_abi("governorBravoDelegator", address=daoProxy, abi=GovernorBravoDelegate.abi)
+    dao.__acceptAdmin({"from": GUARDIAN_MULTISIG})
+
+    assert dao.staking() == STAKINGv2
+    assert dao.admin() == TIMELOCK
+    assert TIMELOCK.admin() == dao
+    return dao
+
 
 @pytest.fixture(scope="module", autouse=True)
-def STAKINGv2(accounts, StakingModularProxy, AdminSettings, StakeUnstake, StakingPausableGuardian, Voting, Rewards, interface, SUSHI_CHEF, OOKI_ETH_LP, BZRX, BZRXv2_CONVERTER, CRV3, POOL3_GAUGE, VOTE_DELEGATOR, DAO):
+def STAKINGv2(accounts, StakingModularProxy, AdminSettings, StakeUnstake, StakingPausableGuardian, Voting, Rewards, interface, SUSHI_CHEF, OOKI_ETH_LP, BZRX, BZRXv2_CONVERTER, CRV3, POOL3_GAUGE, VOTE_DELEGATOR):
     stakingModularProxy = accounts[0].deploy(StakingModularProxy)
 
     adminSettingsImpl = accounts[0].deploy(AdminSettings)
@@ -66,15 +87,11 @@ def STAKINGv2(accounts, StakingModularProxy, AdminSettings, StakeUnstake, Stakin
         "STAKING", stakingModularProxy, interface.IStakingV2.abi)
     staking.setApprovals(OOKI_ETH_LP, SUSHI_CHEF, 2 **
                          256-1, {"from": staking.owner()})
-    staking.setApprovals(BZRX, BZRXv2_CONVERTER, 2**256 -
-                         1, {"from": staking.owner()})
-    staking.setApprovals(CRV3, POOL3_GAUGE, 1, {"from": staking.owner()})
+    staking.setApprovals(BZRX, BZRXv2_CONVERTER, 2**256 - 1, {"from": staking.owner()})
 
     # reference vote delegator and staking to each other
     VOTE_DELEGATOR.setStaking(staking, {"from": VOTE_DELEGATOR.owner()})
     staking.setVoteDelegator(VOTE_DELEGATOR, {"from": staking.owner()})
-    staking.setGovernor(DAO, {"from": staking.owner()})
-
     return staking
 
 
@@ -153,3 +170,12 @@ def SUSHI_ROUTER(TestToken, interface):
 @pytest.fixture(scope="module")
 def OOKI_ETH_LP(TestToken, interface):
     return Contract.from_abi("OOKI_ETH_LP", "0xEaaddE1E14C587a7Fb4Ba78eA78109BB32975f1e", interface.IPancakePair.abi)
+
+@pytest.fixture(scope="module")
+def iUSDC(accounts, LoanTokenLogicStandard):
+    return Contract.from_abi("iUSDC", "0x32E4c68B3A4a813b710595AebA7f6B7604Ab9c15", LoanTokenLogicStandard.abi)
+
+@pytest.fixture(scope="module")
+def TOKEN_SETTINGS(LoanTokenSettings):
+    return Contract.from_abi(
+        "loanToken", address="0x11ba2b39bc80464c14b7eea54d2ec93d8f60e7b8", abi=LoanTokenSettings.abi)
