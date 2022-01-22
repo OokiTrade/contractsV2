@@ -32,10 +32,12 @@ def STAKING(StakingV1_1, accounts, StakingProxy):
     stakingAddress = "0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4"
     return Contract.from_abi("staking", address=stakingAddress, abi=StakingV1_1.abi)
 
+@pytest.fixture(scope="module")
+def TIMELOCK(Timelock):
+    return Contract.from_abi("TIMELOCK", address="0xfedC4dD5247B93feb41e899A09C44cFaBec29Cbc", abi=Timelock.abi)
 
 @pytest.fixture(scope="module")
-def DAO(GovernorBravoDelegate, GovernorBravoDelegator, STAKINGv2,accounts, chain, Timelock):
-    TIMELOCK = Contract.from_abi("TIMELOCK", address="0xfedC4dD5247B93feb41e899A09C44cFaBec29Cbc", abi=Timelock.abi)
+def DAO(GovernorBravoDelegate, GovernorBravoDelegator, STAKINGv2,accounts, chain, TIMELOCK):
     oldDao = Contract.from_abi("governorBravoDelegator", address="0x9da41f7810c2548572f4Fa414D06eD9772cA9e6E", abi=GovernorBravoDelegate.abi)
     # upgrade DAO implementation
 

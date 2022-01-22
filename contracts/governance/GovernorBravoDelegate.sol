@@ -394,7 +394,7 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
       * @dev newProposalThresholdPercentage must be greater than the hardcoded min
       * @param newProposalThresholdPercentage new proposal threshold
       */
-    function __setProposalThreshold(uint newProposalThresholdPercentage) external {
+    function __setProposalThresholdPercentage(uint newProposalThresholdPercentage) external {
         require(msg.sender == admin, "GovernorBravo::__setProposalThreshold: admin only");
         require(newProposalThresholdPercentage >= MIN_PROPOSAL_THRESHOLD && newProposalThresholdPercentage <= MAX_PROPOSAL_THRESHOLD, "GovernorBravo::__setProposalThreshold: invalid proposal threshold");
         uint oldProposalThresholdPercentage = proposalThresholdPercentage;

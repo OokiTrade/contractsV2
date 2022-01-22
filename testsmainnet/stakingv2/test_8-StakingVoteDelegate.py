@@ -26,11 +26,12 @@ def mint_ooki(OOKI,STAKINGv2, acct, amount, stake):
 
 PROPOSER = "0xfedc4dd5247b93feb41e899a09c44cfabec29cbc"
 ZERO_ADDRESS="0x0000000000000000000000000000000000000000"
-def testStake_VoteDelegateWF1(requireMainnetFork, STAKINGv2, DAO,  accounts,VOTE_DELEGATOR, OOKI, iUSDC, vBZRX, BZX):
+def testStake_VoteDelegateWF1(requireMainnetFork, STAKINGv2, DAO,  TIMELOCK, accounts,VOTE_DELEGATOR, OOKI, iUSDC, vBZRX, BZX):
     acct1 = accounts[0]
     acct2 = accounts[1]
     acct3 = accounts[3]
-
+    DAO.__setProposalThresholdPercentage(1e18, {'from': TIMELOCK})
+    assert int(DAO.proposalThreshold()/1e19) == int(OOKI.totalSupply() * 0.01/1e19)
     mint_ooki(OOKI,STAKINGv2, acct1,  60000000 * 1e18, True)
     mint_ooki(OOKI,STAKINGv2, acct2,  60000000 * 1e18, True)
     mint_ooki(OOKI,STAKINGv2, acct3,  0, False)
@@ -277,7 +278,6 @@ def testStake_VoteDelegateFullWF(requireMainnetFork,  STAKINGv2, DAO,  accounts,
     calldata2 = iUSDC.updateSettings.encode_input(TOKEN_SETTINGS, calldata)
 
     tx = DAO.propose([iUSDC.address],[0],[""],[calldata2],"asdf", {"from": acct1})
-
     proposalId = DAO.proposalCount()
     proposal = DAO.proposals(DAO.proposalCount())
 
@@ -314,4 +314,35 @@ def testStake_VoteDelegateFullWF(requireMainnetFork,  STAKINGv2, DAO,  accounts,
     assert iUSDC.name() == newName
     assert True
 
+    def testStake_VoteDelegateFullWF(requireMainnetFork,  STAKINGv2, DAO,  accounts,VOTE_DELEGATOR, OOKI, iUSDC, vBZRX, BZX, TOKEN_SETTINGS):
+        acct1 = accounts[0]
+    acct2 = accounts[1]
+    acct3 = accounts[3]
+    mint_ooki(OOKI,STAKINGv2, acct1,  60000000 * 1e18, True)
+    mint_ooki(OOKI,STAKINGv2, acct2,  60000000 * 1e18, True)
+    mint_ooki(OOKI,STAKINGv2, acct3,  60000000 * 1e18, True)
+    VOTE_DELEGATOR.delegate(acct3, {'from': acct1})
+    newName = iUSDC.name() + "1"
+    calldata = TOKEN_SETTINGS.initialize.encode_input(iUSDC.loanTokenAddress(), newName, iUSDC.symbol())
+    calldata2 = iUSDC.updateSettings.encode_input(TOKEN_SETTINGS, calldata)
 
+    tx = DAO.propose([iUSDC.address],[0],[""],[calldata2],"asdf", {"from": acct3})
+    proposalId = DAO.proposalCount()
+    proposal = DAO.proposals(DAO.proposalCount())
+
+    id = proposal[0]
+    eta = proposal[2]
+    startBlock = proposal[3]
+    endBlock = proposal[4]
+    assert DAO.state.call(id) == 0
+    chain.mine()
+    chain.mine(startBlock - chain.height)
+
+    # after first vote state is active
+    tx = DAO.castVote(id,1, {"from" : acct2})
+    assert DAO.state.call(id) == 1
+    chain.mine()
+    assert DAO.state.call(id) != 4
+    with reverts("GovernorBravo::queue: proposal can only be queued if it is succeeded"):
+        DAO.queue(id, {"from" : acct3})
+    assert True
