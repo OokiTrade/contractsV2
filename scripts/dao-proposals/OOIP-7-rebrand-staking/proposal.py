@@ -52,7 +52,7 @@ staking.setVoteDelegator(STAKING_VOTE_DELEGATOR, {"from": deployer})
 daoImpl = deployer.deploy(GovernorBravoDelegate)
 # below has to be guardian so that it will be by default set
 GUARDIAN_MULTISIG = accounts.at(GUARDIAN_MULTISIG, True)
-daoProxy = GUARDIAN_MULTISIG.deploy(GovernorBravoDelegator, TIMELOCK, staking, TIMELOCK, daoImpl, DAO.votingPeriod(), DAO.votingDelay(), DAO.proposalThreshold() * 10, 3e18)
+daoProxy = GUARDIAN_MULTISIG.deploy(GovernorBravoDelegator, TIMELOCK, staking, TIMELOCK, daoImpl, DAO.votingPeriod(), DAO.votingDelay(), 1.4e18, 3e18)
 
 
 staking.setGovernor(daoProxy, {"from": deployer})
