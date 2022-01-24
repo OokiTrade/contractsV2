@@ -27,6 +27,7 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents {
         _setTarget(this.getTotalPrincipal.selector, target);
         _setTarget(this.getPoolPrincipalStored.selector, target);
         _setTarget(this.getLoanPrincipal.selector, target);
+        _setTarget(this.getLoanInterestOutstanding.selector, target);
     }
 
     function setupLoanParams(
@@ -156,6 +157,23 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents {
         }
 
         return _getLoanPrincipal(
+            loanLocal.lender,
+            loanId
+        );
+    }
+
+    function getLoanInterestOutstanding(
+        bytes32 loanId)
+        external
+        view
+        returns (uint256 loanInterest)
+    {
+        Loan memory loanLocal = loans[loanId];
+        if (!loanLocal.active) {
+            return 0;
+        }
+
+        (,,,,loanInterest,) = _settleInterest2(
             loanLocal.lender,
             loanId
         );

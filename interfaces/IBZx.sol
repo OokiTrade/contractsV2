@@ -659,6 +659,14 @@ interface IBZx {
         view
         returns (uint256 principal);
 
+    /// @dev gets loan outstanding interest
+    /// @param loanId id of existing loan
+    /// @return interest
+    function getLoanInterestOutstanding(bytes32 loanId)
+        external
+        view
+        returns (uint256 interest);
+
 
     /// @dev get current active loans in the system
     /// @param start of the index
