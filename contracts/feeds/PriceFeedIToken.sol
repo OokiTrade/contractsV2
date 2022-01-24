@@ -1,23 +1,24 @@
 pragma solidity 0.5.17;
 
+import "./IPriceFeedsExt.sol";
 import "../../interfaces/IToken.sol";
-import "./PriceFeeds.sol";
 import "../utils/SignedSafeMath.sol";
+
 
 contract PriceFeedIToken {
     using SignedSafeMath for int256;
-    address public underlyingToken;
-    PriceFeeds public constant PRICE_FEED = PriceFeeds(0x5AbC9e082Bf6e4F930Bbc79742DA3f6259c4aD1d); //Ethereum PriceFeeds contract
+
+    IPriceFeedsExt public priceFeedAddress; // underlying token Chainlink feed address
     IToken public iTokenAddress;
 
-    constructor(address underlying, IToken iToken) public {
-        iTokenAddress = iToken;
-        underlyingToken = underlying;
+    constructor(IPriceFeedsExt _priceFeedAddress, IToken _iTokenAddress) public {
+        priceFeedAddress = _priceFeedAddress;
+        iTokenAddress = _iTokenAddress;
     }
 
     function latestAnswer() public view returns (int256) {
         return
-            IPriceFeedsExt(PRICE_FEED.pricesFeeds(underlyingToken))
+            priceFeedAddress
                 .latestAnswer()
                 .mul(int256(iTokenAddress.tokenPrice()))
                 .div(1e18);
