@@ -10,10 +10,10 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
     string public constant name = "Ooki Governor Bravo";
 
     /// @notice The minimum setable proposal threshold
-    uint public constant MIN_PROPOSAL_THRESHOLD = 5e17; // 0.5% of OOKI
+    uint public constant MIN_PROPOSAL_THRESHOLD = 0.5e18; // 0.5% of OOKI
 
     /// @notice The maximum setable proposal threshold
-    uint public constant MAX_PROPOSAL_THRESHOLD = 2e18; //2% of OOKI
+    uint public constant MAX_PROPOSAL_THRESHOLD = 2e18; // 2% of OOKI
 
     /// @notice The minimum setable voting period
     uint public constant MIN_VOTING_PERIOD = 5760; // About 24 hours
@@ -28,7 +28,7 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
     uint public constant MAX_VOTING_DELAY = 40320; // About 1 week
 
     /// @notice The min setable quorum percentage
-    uint public constant MIN_QUORUM_PERCENTAGE = 1e18; // 1% of total OOKI supply
+    uint public constant MIN_QUORUM_PERCENTAGE = 2e18; // 2% of total OOKI supply
 
     /// @notice The max setable quorum percentage
     uint public constant MAX_QUORUM_PERCENTAGE = 6e18; // 6% of total OOKI supply
@@ -192,7 +192,7 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
       */
     function proposalThreshold() public view returns (uint256) {
         uint256 totalSupply = IERC20(0x0De05F6447ab4D22c8827449EE4bA2D5C288379B) // OOKI
-        .totalSupply();
+            .totalSupply();
         return totalSupply * proposalThresholdPercentage / 1e20;
     }
 
