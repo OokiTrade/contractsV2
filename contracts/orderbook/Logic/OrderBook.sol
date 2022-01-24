@@ -1,38 +1,32 @@
 pragma solidity ^0.8.0;
 import "../Storage/OrderBookEvents.sol";
 import "../Storage/OrderBookStorage.sol";
-import "./dexSwaps.sol";
-import "./UniswapInterfaces.sol";
+import "../../swaps/ISwapsImpl.sol";
 import "../OrderVault/IDeposits.sol";
-import "../../utils/ExponentMath.sol";
 import "../../interfaces/IDexRecords.sol";
 
 contract OrderBook is OrderBookEvents, OrderBookStorage {
-    using ExponentMath for uint256;
-	using EnumerableSet for EnumerableSet.Bytes32Set;
-	
-	function initialize(
-		address target)
-		public
-		onlyOwner  
-	{
-		_setTarget(this.getSwapAddress.selector, target);
-		_setTarget(this.currentSwapRate.selector, target);
-		_setTarget(this.getFeed.selector, target);
-		_setTarget(this.dexSwapRate.selector, target);
-		_setTarget(this.clearOrder.selector, target);
-		_setTarget(this.prelimCheck.selector, target);
-		_setTarget(this.currentDexRate.selector, target);
-		_setTarget(this.priceCheck.selector, target);
-		_setTarget(this.executeOrder.selector, target);
-		_setTarget(this.setVaultAddress.selector, target);
-	}
-	
-	
-    function _executeTradeOpen(address trader, bytes32 orderID) internal {
-        IOrderBook.OpenOrder memory internalOrder = _allOrders[orderID];
-        IDeposits(vault).withdraw(trader, orderID);
-        (bool result, bytes memory data) = _allOrders[orderID].iToken.call(
+    using EnumerableSet for EnumerableSet.Bytes32Set;
+
+    function initialize(address target) public onlyOwner {
+        _setTarget(this.getSwapAddress.selector, target);
+        _setTarget(this.currentSwapRate.selector, target);
+        _setTarget(this.getFeed.selector, target);
+        _setTarget(this.getDexRate.selector, target);
+        _setTarget(this.clearOrder.selector, target);
+        _setTarget(this.prelimCheck.selector, target);
+        _setTarget(this.queryRateReturn.selector, target);
+        _setTarget(this.priceCheck.selector, target);
+        _setTarget(this.executeOrder.selector, target);
+        _setTarget(this.setVaultAddress.selector, target);
+    }
+
+    function _executeTradeOpen(
+        address trader,
+        IOrderBook.Order memory internalOrder
+    ) internal {
+        IDeposits(vault).withdraw(trader, internalOrder.orderID);
+        (bool result, bytes memory data) = internalOrder.iToken.call(
             abi.encodeWithSelector(
                 IToken(internalOrder.iToken).marginTrade.selector,
                 internalOrder.loanID,
@@ -98,94 +92,32 @@ contract OrderBook is OrderBookEvents, OrderBookStorage {
         return IBZx(protocol).loans(ID).active;
     }
 
-    function dexSwapRate(IOrderBook.OpenOrder memory order)
-        public
-        view
-        returns (uint256)
-    {
-        uint256 tradeSize;
-        (uint256 dexID, bytes memory payload) = abi.decode(
-            order.loanDataBytes,
-            (uint256, bytes)
-        );
-        if (order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
-            if (order.loanTokenAmount > 0) {
-                tradeSize = (order.loanTokenAmount * order.leverage) / 1 ether;
-            } else {
-                (tradeSize, ) = dexSwaps(
-                    IDexRecords(getSwapAddress()).retrieveDexAddress(dexID)
-                ).dexAmountOut(
-                        dexID != 1
-                            ? payload
-                            : abi.encode(order.base, order.loanTokenAddress),
-                        order.collateralTokenAmount
-                    );
-                if (tradeSize == 0) {
-                    return 0;
-                }
-                tradeSize = (tradeSize * order.leverage) / 1 ether;
-            }
-        }
-        (uint256 fSwapRate, ) = order.orderType ==
-            IOrderBook.OrderType.LIMIT_OPEN
-            ? dexSwaps(IDexRecords(getSwapAddress()).retrieveDexAddress(dexID))
-                .dexAmountOut(
-                    dexID != 1
-                        ? payload
-                        : abi.encode(order.loanTokenAddress, order.base),
-                    tradeSize
-                )
-            : dexSwaps(IDexRecords(getSwapAddress()).retrieveDexAddress(dexID))
-                .dexAmountOut(
-                    dexID != 1
-                        ? payload
-                        : abi.encode(order.base, order.loanTokenAddress),
-                    order.collateralTokenAmount
-                );
-        if (fSwapRate == 0) {
-            return 0;
-        }
-        return
-            order.orderType == IOrderBook.OrderType.LIMIT_OPEN
-                ? (tradeSize.TenExp(
-                    18 - int8(IERC20Metadata(order.loanTokenAddress).decimals())
-                ) * 1 ether) /
-                    (
-                        fSwapRate.TenExp(
-                            18 - int8(IERC20Metadata(order.base).decimals())
-                        )
-                    )
-                : (1 ether *
-                    (
-                        fSwapRate.TenExp(
-                            18 -
-                                int8(
-                                    IERC20Metadata(order.loanTokenAddress)
-                                        .decimals()
-                                )
-                        )
-                    )) /
-                    (
-                        order.collateralTokenAmount.TenExp(
-                            18 - int8(IERC20Metadata(order.base).decimals())
-                        )
-                    );
-    }
-
     function clearOrder(bytes32 orderID) public view returns (bool) {
         if (_orderExpiration[orderID] < block.timestamp) {
             return true;
         }
-        uint256 swapRate = currentSwapRate(
-            _allOrders[orderID].loanTokenAddress,
-            _allOrders[orderID].base
-        );
+        uint256 amountUsed = _allOrders[orderID].collateralTokenAmount +
+            _allOrders[orderID].loanTokenAmount;
+        uint256 swapRate;
+        if (_allOrders[orderID].orderType == IOrderBook.OrderType.LIMIT_OPEN) {
+            swapRate = queryRateReturn(
+                _allOrders[orderID].loanTokenAddress,
+                _allOrders[orderID].base,
+                amountUsed
+            );
+        } else {
+            swapRate = queryRateReturn(
+                _allOrders[orderID].base,
+                _allOrders[orderID].loanTokenAddress,
+                amountUsed
+            );
+        }
         if (
             (
-                _allOrders[orderID].price > swapRate
-                    ? (_allOrders[orderID].price - swapRate) >
-                        (_allOrders[orderID].price * 25) / 100
-                    : (swapRate - _allOrders[orderID].price) >
+                _allOrders[orderID].amountReceived > swapRate
+                    ? (_allOrders[orderID].amountReceived - swapRate) >
+                        (_allOrders[orderID].amountReceived * 25) / 100
+                    : (swapRate - _allOrders[orderID].amountReceived) >
                         (swapRate * 25) / 100
             )
         ) {
@@ -194,268 +126,238 @@ contract OrderBook is OrderBookEvents, OrderBookStorage {
         return false;
     }
 
-    function prelimCheck(bytes32 orderID) public view returns (bool) {
-		IOrderBook.OpenOrder memory order = _allOrders[orderID];
+    function queryRateReturn(
+        address start,
+        address end,
+        uint256 amount
+    ) public view returns (uint256) {
+        (uint256 executionPrice, uint256 precision) = IPriceFeeds(getFeed())
+            .queryRate(start, end);
+        return (executionPrice * amount) / precision;
+    }
+
+    function _prepDexAndPayload(bytes memory input)
+        internal
+        pure
+        returns (uint256 dexID, bytes memory payload)
+    {
+        if (input.length != 0) {
+            (dexID, payload) = abi.decode(input, (uint256, bytes));
+        } else {
+            dexID = 1;
+        }
+    }
+
+    function prelimCheck(bytes32 orderID) public returns (bool) {
+        IOrderBook.Order memory order = _allOrders[orderID];
         address trader = order.trader;
+        uint256 amountUsed;
+        address srcToken;
+        (uint256 dexID, bytes memory payload) = _prepDexAndPayload(
+            order.loanDataBytes
+        );
+        if (dexID == 1) {
+            if (order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
+                payload = abi.encode(order.loanTokenAddress, order.base);
+            } else {
+                payload = abi.encode(order.base, order.loanTokenAddress);
+            }
+        }
+        ISwapsImpl swapImpl = ISwapsImpl(
+            IDexRecords(getSwapAddress()).retrieveDexAddress(dexID)
+        );
+        if (order.collateralTokenAmount > order.loanTokenAmount) {
+            srcToken = order.base;
+        } else {
+            srcToken = order.loanTokenAddress;
+        }
         if (_orderExpiration[orderID] < block.timestamp) {
             return false;
         }
-        if (
-            order.orderType == IOrderBook.OrderType.LIMIT_OPEN
-        ) {
-            if (
-                !(order.loanID == 0) &&
-                !isActiveLoan(order.loanID)
-            ) {
+        if (order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
+            if (order.loanID != 0 && !isActiveLoan(order.loanID)) {
                 return false;
             }
-            uint256 dSwapValue = dexSwapRate(order);
+            if (srcToken == order.loanTokenAddress) {
+                amountUsed = (order.loanTokenAmount * order.leverage) / 10**18; //adjusts leverage
+            } else {
+                amountUsed = queryRateReturn(
+                    order.base,
+                    order.loanTokenAddress,
+                    order.collateralTokenAmount
+                );
+                amountUsed = (amountUsed * order.leverage) / 10**18;
+            }
+            (uint256 dSwapValue, ) = swapImpl.dexAmountOutFormatted(
+                payload,
+                amountUsed
+            );
 
-            if (order.price >= dSwapValue && dSwapValue > 0) {
+            if (order.amountReceived <= dSwapValue && dSwapValue > 0) {
                 return true;
             }
-        } else if (
-            order.orderType ==
-            IOrderBook.OrderType.LIMIT_CLOSE
-        ) {
+        } else if (order.orderType == IOrderBook.OrderType.LIMIT_CLOSE) {
             if (!isActiveLoan(order.loanID)) {
                 return false;
             }
-            if (
-                order.price <=
-                dexSwapRate(order)
-            ) {
+            uint256 dSwapValue;
+            if (order.isCollateral) {
+                (dSwapValue, ) = swapImpl.dexAmountOutFormatted(
+                    payload,
+                    order.collateralTokenAmount
+                );
+            } else {
+                (dSwapValue, ) = swapImpl.dexAmountInFormatted(
+                    payload,
+                    order.collateralTokenAmount
+                );
+            }
+            if (order.amountReceived <= dSwapValue) {
                 return true;
             }
         } else {
             if (!isActiveLoan(order.loanID)) {
                 return false;
             }
-            if (
-                _useOracle[trader]
-                    ? order.price >=
-                        currentSwapRate(
-                            order.base,
-                            order.loanTokenAddress
-                        )
-                    : order.price >=
-                        currentDexRate(
-                            order.base,
-                            order.loanTokenAddress
-                        )
-            ) {
+            bool operand;
+            if (_useOracle[trader]) {
+                operand =
+                    order.amountReceived >=
+                    queryRateReturn(
+                        order.base,
+                        order.loanTokenAddress,
+                        order.collateralTokenAmount
+                    ); //TODO: Adjust for precision
+            } else {
+                operand =
+                    order.amountReceived >=
+                    getDexRate(
+                        swapImpl,
+                        order.base,
+                        order.loanTokenAddress,
+                        payload,
+                        order.collateralTokenAmount
+                    );
+            }
+            if (operand) {
                 return true;
             }
         }
         return false;
     }
 
-    function currentDexRate(address dest, address src)
-        public
-        view
-        returns (uint256)
-    {
-        uint256 dexRate;
-        if (src == WRAPPED_TOKEN || dest == WRAPPED_TOKEN) {
-            address pairAddress = UniswapFactory(UNI_FACTORY).getPair(
-                src,
-                dest
-            );
-            (uint112 reserve0, uint112 reserve1, ) = UniswapPair(pairAddress)
-                .getReserves();
-            uint256 res0 = uint256(reserve0);
-            uint256 res1 = uint256(reserve1);
-            dexRate = UniswapPair(pairAddress).token0() == src
-                ? (
-                    res0.TenExp(
-                        18 -
-                            int8(
-                                IERC20Metadata(
-                                    UniswapPair(pairAddress).token0()
-                                ).decimals()
-                            ) +
-                            18
-                    )
-                ) /
-                    (
-                        res1.TenExp(
-                            18 -
-                                int8(
-                                    IERC20Metadata(
-                                        UniswapPair(pairAddress).token1()
-                                    ).decimals()
-                                )
-                        )
-                    )
-                : ((
-                    res1.TenExp(
-                        18 -
-                            int8(
-                                IERC20Metadata(
-                                    UniswapPair(pairAddress).token1()
-                                ).decimals()
-                            ) +
-                            18
-                    )
-                ) / res0).TenExp(
-                        18 -
-                            int8(
-                                IERC20Metadata(
-                                    UniswapPair(pairAddress).token0()
-                                ).decimals()
-                            )
-                    );
+    function getDexRate(
+        ISwapsImpl swapImpl,
+        address base,
+        address loanTokenAddress,
+        bytes memory payload,
+        uint256 amountIn
+    ) public returns (uint256 rate) {
+        (rate, ) = swapImpl.dexAmountOutFormatted(
+            payload,
+            10**IERC20Metadata(base).decimals()
+        );
+        rate = (rate * amountIn) / 10**IERC20Metadata(base).decimals();
+    }
+
+    function priceCheck(
+        address loanTokenAddress,
+        address base,
+        ISwapsImpl swapImpl,
+        bytes memory payload
+    ) public returns (bool) {
+        uint256 dexRate = getDexRate(
+            swapImpl,
+            base,
+            loanTokenAddress,
+            payload,
+            10**IERC20Metadata(base).decimals()
+        );
+        uint256 indexRate = queryRateReturn(
+            base,
+            loanTokenAddress,
+            10**IERC20Metadata(base).decimals()
+        );
+        if (dexRate >= indexRate) {
+            if (((dexRate - indexRate) * 1000) / dexRate <= 5) {
+                return true;
+            } else {
+                return false;
+            }
         } else {
-            address pairAddress0 = UniswapFactory(UNI_FACTORY).getPair(
-                src,
-                WRAPPED_TOKEN
-            );
-            (uint112 reserve0, uint112 reserve1, ) = UniswapPair(pairAddress0)
-                .getReserves();
-            uint256 res0 = uint256(reserve0);
-            uint256 res1 = uint256(reserve1);
-            uint256 midSwapRate = UniswapPair(pairAddress0).token0() ==
-                WRAPPED_TOKEN
-                ? (
-                    res1.TenExp(
-                        18 -
-                            int8(
-                                IERC20Metadata(
-                                    UniswapPair(pairAddress0).token1()
-                                ).decimals()
-                            ) +
-                            18
-                    )
-                ) /
-                    (
-                        res0.TenExp(
-                            18 -
-                                int8(
-                                    IERC20Metadata(
-                                        UniswapPair(pairAddress0).token0()
-                                    ).decimals()
-                                )
-                        )
-                    )
-                : (
-                    res0.TenExp(
-                        18 -
-                            int8(
-                                IERC20Metadata(
-                                    UniswapPair(pairAddress0).token0()
-                                ).decimals()
-                            ) +
-                            18
-                    )
-                ) /
-                    (
-                        res1.TenExp(
-                            18 -
-                                int8(
-                                    IERC20Metadata(
-                                        UniswapPair(pairAddress0).token0()
-                                    ).decimals()
-                                )
-                        )
-                    );
-            address pairAddress1 = UniswapFactory(UNI_FACTORY).getPair(
-                dest,
-                WRAPPED_TOKEN
-            );
-            (uint112 reserve2, uint112 reserve3, ) = UniswapPair(pairAddress1)
-                .getReserves();
-            uint256 res2 = uint256(reserve2);
-            uint256 res3 = uint256(reserve3);
-            dexRate = UniswapPair(pairAddress1).token0() == WRAPPED_TOKEN
-                ? ((10**36 /
-                    ((
-                        res3.TenExp(
-                            18 -
-                                int8(
-                                    IERC20Metadata(
-                                        UniswapPair(pairAddress1).token1()
-                                    ).decimals()
-                                ) +
-                                18
-                        )
-                    ) /
-                        (
-                            res2.TenExp(
-                                18 -
-                                    int8(
-                                        IERC20Metadata(
-                                            UniswapPair(pairAddress1).token0()
-                                        ).decimals()
-                                    )
-                            )
-                        ))) * midSwapRate) / 10**18
-                : ((10**36 /
-                    ((
-                        res2.TenExp(
-                            18 -
-                                int8(
-                                    IERC20Metadata(
-                                        UniswapPair(pairAddress1).token0()
-                                    ).decimals()
-                                ) +
-                                18
-                        )
-                    ) /
-                        (
-                            res3.TenExp(
-                                18 -
-                                    int8(
-                                        IERC20Metadata(
-                                            UniswapPair(pairAddress1).token1()
-                                        ).decimals()
-                                    )
-                            )
-                        ))) * midSwapRate) / 10**18;
+            if (((indexRate - dexRate) * 1000) / indexRate <= 5) {
+                return true;
+            } else {
+                return false;
+            }
         }
-        return dexRate;
     }
 
-    function priceCheck(address loanTokenAddress, address base)
-        public
-        view
-        returns (bool)
-    {
-        uint256 dexRate = currentDexRate(base, loanTokenAddress);
-        uint256 indexRate = currentSwapRate(base, loanTokenAddress);
-        return
-            dexRate >= indexRate
-                ? ((dexRate - indexRate) * 1000) / dexRate <= 5 ? true : false
-                : ((indexRate - dexRate) * 1000) / indexRate <= 5
-                ? true
-                : false;
-    }
-
-    function executeOrder(address payable keeper, bytes32 orderID) public {
+    function executeOrder(bytes32 orderID) public {
         require(!_allOrders[orderID].isCancelled, "non active");
-		IOrderBook.OpenOrder memory order = _allOrders[orderID];
-        address trader = _allOrders[orderID].trader;
-        if (
-            _allOrders[orderID].orderType == IOrderBook.OrderType.LIMIT_OPEN
-        ) {
-            require(
-                _allOrders[orderID].price >= dexSwapRate(_allOrders[orderID]),
-                "invalid swap rate"
+        IOrderBook.Order memory order = _allOrders[orderID];
+        address trader = order.trader;
+        address srcToken;
+        uint256 amountUsed;
+        (uint256 dexID, bytes memory payload) = _prepDexAndPayload(
+            order.loanDataBytes
+        );
+        if (dexID == 1) {
+            if (order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
+                payload = abi.encode(order.loanTokenAddress, order.base);
+            } else {
+                payload = abi.encode(order.base, order.loanTokenAddress);
+            }
+        }
+        ISwapsImpl swapImpl = ISwapsImpl(
+            IDexRecords(getSwapAddress()).retrieveDexAddress(dexID)
+        );
+        if (order.collateralTokenAmount > order.loanTokenAmount) {
+            srcToken = order.base;
+        } else {
+            srcToken = order.loanTokenAddress;
+        }
+        if (_allOrders[orderID].orderType == IOrderBook.OrderType.LIMIT_OPEN) {
+            if (srcToken == order.loanTokenAddress) {
+                amountUsed = (order.loanTokenAmount * order.leverage) / 10**18; //adjusts leverage
+            } else {
+                amountUsed = queryRateReturn(
+                    order.base,
+                    order.loanTokenAddress,
+                    order.collateralTokenAmount
+                );
+                amountUsed = (amountUsed * order.leverage) / 10**18;
+            }
+            (uint256 dSwapValue, ) = swapImpl.dexAmountOutFormatted(
+                payload,
+                amountUsed
             );
-            _executeTradeOpen(trader, orderID);
+
+            require(
+                order.amountReceived <= dSwapValue && dSwapValue > 0,
+                "amountOut too low"
+            );
+            _executeTradeOpen(trader, order);
             _allOrders[orderID].isCancelled = true;
             _allOrderIDs.remove(orderID);
             _histOrders[trader].remove(orderID);
             emit OrderExecuted(trader, orderID);
             return;
         }
-        if (
-            order.orderType ==
-            IOrderBook.OrderType.LIMIT_CLOSE
-        ) {
-            require(
-                order.price <= dexSwapRate(_allOrders[orderID]),
-                "invalid swap rate"
-            );
+        if (order.orderType == IOrderBook.OrderType.LIMIT_CLOSE) {
+            uint256 dSwapValue;
+            if (order.isCollateral) {
+                (dSwapValue, ) = swapImpl.dexAmountOutFormatted(
+                    payload,
+                    order.collateralTokenAmount
+                );
+            } else {
+                (dSwapValue, ) = swapImpl.dexAmountInFormatted(
+                    payload,
+                    order.collateralTokenAmount
+                );
+            }
+            require(order.amountReceived <= dSwapValue, "amountOut too low");
             _executeTradeClose(
                 trader,
                 order.loanID,
@@ -470,30 +372,35 @@ contract OrderBook is OrderBookEvents, OrderBookStorage {
             emit OrderExecuted(trader, orderID);
             return;
         }
-        if (
-            order.orderType ==
-            IOrderBook.OrderType.MARKET_STOP
-        ) {
+        if (order.orderType == IOrderBook.OrderType.MARKET_STOP) {
+            bool operand;
+            if (_useOracle[trader]) {
+                operand =
+                    order.amountReceived >=
+                    queryRateReturn(
+                        order.base,
+                        order.loanTokenAddress,
+                        order.collateralTokenAmount
+                    ); //TODO: Adjust for precision
+            } else {
+                operand =
+                    order.amountReceived >=
+                    getDexRate(
+                        swapImpl,
+                        order.base,
+                        order.loanTokenAddress,
+                        payload,
+                        order.collateralTokenAmount
+                    );
+            }
             require(
-                _useOracle[trader]
-                    ? order.price >=
-                        currentDexRate(
-                            order.base,
-                            order.loanTokenAddress
-                        ) &&
-                        priceCheck(
-                            order.loanTokenAddress,
-                            order.base
-                        )
-                    : order.price >=
-                        currentDexRate(
-                            order.base,
-                            order.loanTokenAddress
-                        ) &&
-                        priceCheck(
-                            order.loanTokenAddress,
-                            order.base
-                        ),
+                operand &&
+                    priceCheck(
+                        order.loanTokenAddress,
+                        order.base,
+                        swapImpl,
+                        payload
+                    ),
                 "invalid swap rate"
             );
             _executeTradeClose(

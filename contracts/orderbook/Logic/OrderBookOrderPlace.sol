@@ -4,32 +4,41 @@ import "../Storage/OrderBookStorage.sol";
 import "../OrderVault/IDeposits.sol";
 
 contract OrderBookOrderPlacement is OrderBookEvents, OrderBookStorage {
-	using EnumerableSet for EnumerableSet.Bytes32Set;
+    using EnumerableSet for EnumerableSet.Bytes32Set;
 
-	function initialize(
-		address target)
-		public
-		onlyOwner  
-	{
-		_setTarget(this.placeOrder.selector, target);
-		_setTarget(this.currentSwapRate.selector, target);
-		_setTarget(this.amendOrder.selector, target);
-		_setTarget(this.cancelOrder.selector, target);
-		_setTarget(this.cancelOrderProtocol.selector, target);
-		_setTarget(this.changeStopType.selector, target);
-		_setTarget(this.minimumAmount.selector, target);
-	}
+    function initialize(address target) public onlyOwner {
+        _setTarget(this.placeOrder.selector, target);
+        _setTarget(this.currentSwapRate.selector, target);
+        _setTarget(this.amendOrder.selector, target);
+        _setTarget(this.cancelOrder.selector, target);
+        _setTarget(this.cancelOrderProtocol.selector, target);
+        _setTarget(this.changeStopType.selector, target);
+        _setTarget(this.minimumAmount.selector, target);
+    }
 
     function currentSwapRate(address start, address end)
         public
         view
         returns (uint256 executionPrice)
     {
-        (executionPrice, ) = IPriceFeeds(IBZx(protocol).priceFeeds())
-            .queryRate(end, start);
+        (executionPrice, ) = IPriceFeeds(IBZx(protocol).priceFeeds()).queryRate(
+            end,
+            start
+        );
     }
 
-    function _collateralTokenMatch(IOrderBook.OpenOrder memory checkOrder)
+    function queryRateReturn(
+        address start,
+        address end,
+        uint256 amount
+    ) public view returns (uint256) {
+        (uint256 executionPrice, uint256 precision) = IPriceFeeds(
+            IBZx(protocol).priceFeeds()
+        ).queryRate(start, end);
+        return (executionPrice * amount) / precision;
+    }
+
+    function _collateralTokenMatch(IOrderBook.Order memory checkOrder)
         internal
         view
         returns (bool)
@@ -39,7 +48,7 @@ contract OrderBookOrderPlacement is OrderBookEvents, OrderBookStorage {
             checkOrder.base;
     }
 
-    function _loanTokenMatch(IOrderBook.OpenOrder memory checkOrder)
+    function _loanTokenMatch(IOrderBook.Order memory checkOrder)
         internal
         view
         returns (bool)
@@ -53,7 +62,7 @@ contract OrderBookOrderPlacement is OrderBookEvents, OrderBookStorage {
         return x >= 0 ? x : -x;
     }
 
-    function placeOrder(IOrderBook.OpenOrder memory Order) public {
+    function placeOrder(IOrderBook.Order calldata Order) external {
         require(
             _abs(
                 int256(Order.loanTokenAmount) -
@@ -97,30 +106,26 @@ contract OrderBookOrderPlacement is OrderBookEvents, OrderBookStorage {
         require(Order.trader == msg.sender);
         require(!Order.isCancelled);
         mainOBID++;
-        Order.orderID = keccak256(abi.encode(msg.sender, mainOBID));
-        _orderExpiration[Order.orderID] = block.timestamp + DAYS_14;
-        _allOrders[Order.orderID] = Order;
+        bytes32 ID = keccak256(abi.encode(msg.sender, mainOBID));
+        _orderExpiration[ID] = block.timestamp + DAYS_14;
+        _allOrders[ID] = Order;
+        _allOrders[ID].orderID = ID;
         _histOrders[msg.sender].add(Order.orderID);
-        _allOrderIDs.add(Order.orderID);
+        _allOrderIDs.add(ID);
         if (Order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
-            IDeposits(vault).deposit(
-                Order.orderID,
-                amountUsed,
-                msg.sender,
-                usedToken
-            );
+            IDeposits(vault).deposit(ID, amountUsed, msg.sender, usedToken);
         }
         emit OrderPlaced(
             msg.sender,
             Order.orderType,
-            Order.price,
-            Order.orderID,
+            Order.amountReceived,
+            ID,
             Order.base,
             Order.loanTokenAddress
         );
     }
 
-    function amendOrder(IOrderBook.OpenOrder memory Order) public {
+    function amendOrder(IOrderBook.Order memory Order) public {
         require(
             _abs(
                 int256(Order.loanTokenAmount) -
@@ -201,7 +206,7 @@ contract OrderBookOrderPlacement is OrderBookEvents, OrderBookStorage {
         emit OrderAmended(
             msg.sender,
             Order.orderType,
-            Order.price,
+            Order.amountReceived,
             Order.orderID,
             Order.base,
             Order.loanTokenAddress
@@ -213,9 +218,7 @@ contract OrderBookOrderPlacement is OrderBookEvents, OrderBookStorage {
         _allOrders[orderID].isCancelled = true;
         _histOrders[msg.sender].remove(orderID);
         _allOrderIDs.remove(orderID);
-        if (
-            _allOrders[orderID].orderType == IOrderBook.OrderType.LIMIT_OPEN
-        ) {
+        if (_allOrders[orderID].orderType == IOrderBook.OrderType.LIMIT_OPEN) {
             address usedToken = IDeposits(vault).getTokenUsed(
                 msg.sender,
                 orderID
@@ -228,26 +231,37 @@ contract OrderBookOrderPlacement is OrderBookEvents, OrderBookStorage {
     function cancelOrderProtocol(bytes32 orderID) public {
         address trader = _allOrders[orderID].trader;
         require(!_allOrders[orderID].isCancelled, "inactive order");
-        uint256 swapRate = currentSwapRate(
-            _allOrders[orderID].loanTokenAddress,
-            _allOrders[orderID].base
-        );
+        uint256 amountUsed = _allOrders[orderID].collateralTokenAmount +
+            _allOrders[orderID].loanTokenAmount;
+        uint256 swapRate;
+        if (_allOrders[orderID].orderType == IOrderBook.OrderType.LIMIT_OPEN) {
+            swapRate = queryRateReturn(
+                _allOrders[orderID].loanTokenAddress,
+                _allOrders[orderID].base,
+                amountUsed
+            );
+        } else {
+            swapRate = queryRateReturn(
+                _allOrders[orderID].base,
+                _allOrders[orderID].loanTokenAddress,
+                amountUsed
+            );
+        }
         require(
             (
-                _allOrders[orderID].price > swapRate
-                    ? (_allOrders[orderID].price - swapRate) >
-                        (_allOrders[orderID].price * 25) / 100
-                    : (swapRate - _allOrders[orderID].price) >
+                _allOrders[orderID].amountReceived > swapRate
+                    ? (_allOrders[orderID].amountReceived - swapRate) >
+                        (_allOrders[orderID].amountReceived * 25) / 100
+                    : (swapRate - _allOrders[orderID].amountReceived) >
                         (swapRate * 25) / 100
             ) || _orderExpiration[orderID] < block.timestamp,
             "no conditions met"
         );
+
         _allOrders[orderID].isCancelled = true;
         _histOrders[trader].remove(orderID);
         _allOrderIDs.remove(orderID);
-        if (
-            _allOrders[orderID].orderType == IOrderBook.OrderType.LIMIT_OPEN
-        ) {
+        if (_allOrders[orderID].orderType == IOrderBook.OrderType.LIMIT_OPEN) {
             address usedToken = IDeposits(vault).getTokenUsed(trader, orderID);
             IDeposits(vault).withdrawToTrader(trader, orderID);
         }

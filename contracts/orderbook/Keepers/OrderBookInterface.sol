@@ -1,27 +1,15 @@
 pragma solidity ^0.8.0;
 
 interface IOrderBook {
-    function getOrders()
-        external
-        view
-        returns (OpenOrder[] memory);
+    function getOrders() external view returns (OpenOrder[] memory);
 
-    function prelimCheck(bytes32 orderID)
-        external
-        view
-        returns (bool);
+    function prelimCheck(bytes32 orderID) external view returns (bool);
 
-    function executeOrder(
-        address payable keeper,
-        bytes32 orderID
-    ) external;
+    function executeOrder(address payable keeper, bytes32 orderID) external;
 
     function cancelOrderProtocol(bytes32 orderID) external;
 
-    function clearOrder(bytes32 orderID)
-        external
-        view
-        returns (bool);
+    function clearOrder(bytes32 orderID) external view returns (bool);
 
     struct OpenOrder {
         address trader;

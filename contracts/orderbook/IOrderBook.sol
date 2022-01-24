@@ -6,12 +6,12 @@ interface IOrderBook {
         LIMIT_CLOSE,
         MARKET_STOP
     }
-    struct OpenOrder {
+    struct Order {
         address trader;
         bytes32 loanID;
         address iToken;
         address loanTokenAddress;
-        uint256 price;
+        uint256 amountReceived;
         uint256 leverage;
         uint256 loanTokenAmount;
         uint256 collateralTokenAmount;
@@ -25,9 +25,9 @@ interface IOrderBook {
 
     function getRouter() external view returns (address);
 
-    function placeOrder(OpenOrder calldata Order) external;
+    function placeOrder(Order calldata order) external;
 
-    function amendOrder(OpenOrder calldata Order, uint256 orderID) external;
+    function amendOrder(Order calldata order, uint256 orderID) external;
 
     function cancelOrder(uint256 orderID) external;
 

@@ -5,23 +5,19 @@ import "../Storage/OrderBookStorage.sol";
 contract OrderBookData is OrderBookEvents, OrderBookStorage {
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
-	function initialize(
-		address target)
-		public
-		onlyOwner
-	{
-		_setTarget(this.getProtocolAddress.selector, target);
-		_setTarget(this.adjustAllowance.selector, target);
-		_setTarget(this.getActiveOrders.selector, target);
-		_setTarget(this.getOrderByOrderID.selector, target);
-		_setTarget(this.getActiveOrderIDs.selector, target);
-		_setTarget(this.getTotalOrders.selector, target);
-		_setTarget(this.getTotalActiveOrders.selector, target);
-		_setTarget(this.getOrders.selector, target);
-		_setTarget(this.getActiveTrades.selector, target);
-	}
-	
-	function getProtocolAddress() public view returns (address) {
+    function initialize(address target) public onlyOwner {
+        _setTarget(this.getProtocolAddress.selector, target);
+        _setTarget(this.adjustAllowance.selector, target);
+        _setTarget(this.getActiveOrders.selector, target);
+        _setTarget(this.getOrderByOrderID.selector, target);
+        _setTarget(this.getActiveOrderIDs.selector, target);
+        _setTarget(this.getTotalOrders.selector, target);
+        _setTarget(this.getTotalActiveOrders.selector, target);
+        _setTarget(this.getOrders.selector, target);
+        _setTarget(this.getActiveTrades.selector, target);
+    }
+
+    function getProtocolAddress() public view returns (address) {
         return protocol;
     }
 
@@ -35,12 +31,14 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
         IERC20Metadata(token).approve(spender, type(uint256).max);
     }
 
-    function getActiveOrders(
-        address trader
-    ) public view returns (IOrderBook.OpenOrder[] memory fullList) {
+    function getActiveOrders(address trader)
+        public
+        view
+        returns (IOrderBook.Order[] memory fullList)
+    {
         bytes32[] memory idSet = _histOrders[trader].values();
 
-        fullList = new IOrderBook.OpenOrder[](idSet.length);
+        fullList = new IOrderBook.Order[](idSet.length);
         for (uint256 i = 0; i < idSet.length; i++) {
             fullList[i] = _allOrders[idSet[i]];
         }
@@ -50,14 +48,16 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
     function getOrderByOrderID(bytes32 orderID)
         public
         view
-        returns (IOrderBook.OpenOrder memory)
+        returns (IOrderBook.Order memory)
     {
         return _allOrders[orderID];
     }
 
-    function getActiveOrderIDs(
-        address trader
-    ) public view returns (bytes32[] memory) {
+    function getActiveOrderIDs(address trader)
+        public
+        view
+        returns (bytes32[] memory)
+    {
         return _histOrders[trader].values();
     }
 
@@ -72,11 +72,11 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
     function getOrders()
         public
         view
-        returns (IOrderBook.OpenOrder[] memory fullList)
+        returns (IOrderBook.Order[] memory fullList)
     {
         bytes32[] memory idSet = _allOrderIDs.values();
 
-        fullList = new IOrderBook.OpenOrder[](idSet.length);
+        fullList = new IOrderBook.Order[](idSet.length);
         for (uint256 i = 0; i < idSet.length; i++) {
             fullList[i] = getOrderByOrderID(idSet[i]);
         }
@@ -88,7 +88,6 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
         view
         returns (bytes32[] memory)
     {
-        return
-            _activeTrades[trader].values();
+        return _activeTrades[trader].values();
     }
 }

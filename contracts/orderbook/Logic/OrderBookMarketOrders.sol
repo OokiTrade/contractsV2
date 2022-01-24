@@ -3,16 +3,12 @@ import "../Storage/OrderBookEvents.sol";
 import "../Storage/OrderBookStorage.sol";
 
 contract OrderBookMarketOrders is OrderBookEvents, OrderBookStorage {
-	using EnumerableSet for EnumerableSet.Bytes32Set;
+    using EnumerableSet for EnumerableSet.Bytes32Set;
 
-	function initialize(
-		address target)
-		public
-		onlyOwner
-	{
-		_setTarget(this.marketOpen.selector, target);
-		_setTarget(this.marketClose.selector, target);
-	}
+    function initialize(address target) public onlyOwner {
+        _setTarget(this.marketOpen.selector, target);
+        _setTarget(this.marketClose.selector, target);
+    }
 
     function marketOpen(
         bytes32 loanID,
