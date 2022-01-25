@@ -36,7 +36,9 @@ PRICE_FEED = Contract.from_abi("PRICE_FEED", BZX.priceFeeds(), abi = PriceFeeds.
 STAKING = Contract.from_abi("STAKING", "0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4", StakingV1_1.abi)
 SWEEP_FEES = Contract.from_abi("STAKING", "0x93B02EE3132D10c938dd178C03a66595154f2940", FeeExtractAndDistribute_ETH.abi)
 
-SUSHI_ROUTER = Contract.from_abi("router", "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F", interface.IPancakeRouter02.abi)
+SUSHI_ROUTER = Contract.from_abi("SUSHI_ROUTER", "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F", interface.IPancakeRouter02.abi)
+SUSHI_CHEF = Contract.from_abi("SUSHI_CHEF", "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F", interface.IMasterChefSushi.abi)
+
 SUSHI = Contract.from_abi("SUSHI", "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2", TestToken.abi)
 
 # FEE_EXTRACTOR = Contract.from_abi("FEE_EXTRACTOR", BZX.feesController(), FeeExtractAndDistribute_ETH.abi)
@@ -51,4 +53,7 @@ CRV = Contract.from_abi("CRV", "0xD533a949740bb3306d119CC777fa900bA034cd52", Tes
 CRV_MINER  = Contract.from_abi("ICurveMinter", "0xd061D61a4d941c39E5453435B6345Dc261C2fcE0", interface.ICurveMinter.abi)
 POOL3Gauge = Contract.from_abi("3POOLGauge", "0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A", interface.ICurve3PoolGauge.abi)
 BZRX_TO_OOKI_CONVERTER = Contract.from_abi("BZRX_TO_OOKI_CONVERTER", "0x6BE9B7406260B6B6db79a1D4997e7f8f5c9D7400", FixedSwapTokenConverter.abi)
+POOL3_GAUGE = Contract.from_abi("POOL3_GAUGE", "0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A", interface.ICurve3PoolGauge.abi)
+CRV3 = Contract.from_abi("CRV3", "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490", TestToken.abi)
 
+OOKI_ETH_LP = Contract.from_abi("OOKI_ETH_LP", "0xEaaddE1E14C587a7Fb4Ba78eA78109BB32975f1e", interface.IPancakePair.abi)
