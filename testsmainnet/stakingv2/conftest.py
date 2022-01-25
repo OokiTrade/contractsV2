@@ -13,14 +13,16 @@ def BZX(interface):
 
 
 @pytest.fixture(scope="module")
-def VOTE_DELEGATOR(VoteDelegator, Proxy_0_5, accounts):
-    votedelegatorProxy = Contract.from_abi(
-        "proxy", "0x7e9d7A0ff725f88Cc6Ab3ccF714a1feA68aC160b", Proxy_0_5.abi)
-    votedelegatorImpl = VoteDelegator.deploy({'from': accounts[0]})
-    votedelegatorProxy.replaceImplementation(
-        votedelegatorImpl, {'from': votedelegatorProxy.owner()})
-    return Contract.from_abi("VOTE_DELEGATOR", votedelegatorProxy, VoteDelegator.abi)
+def VOTE_DELEGATOR(VoteDelegator, Proxy_0_5, accounts, TIMELOCK):
+    votedelegatorProxy = Contract.from_abi("proxy", "0xea936212fe4f3a69d0e8ecf9a2a35d6c1f8d2c89", Proxy_0_5.abi)
 
+    # votedelegatorImpl = VoteDelegator.deploy({'from': accounts[0]})
+    # votedelegatorProxy.replaceImplementation(
+    #     votedelegatorImpl, {'from': votedelegatorProxy.owner()})
+
+    votedelegatorProxy.transferOwnership(TIMELOCK, {"from": votedelegatorProxy.owner()})
+
+    return Contract.from_abi("VOTE_DELEGATOR", "0xea936212fe4f3a69d0e8ecf9a2a35d6c1f8d2c89", VoteDelegator.abi)
 
 @pytest.fixture(scope="module")
 def iBZRX(LoanTokenLogicStandard):
@@ -39,28 +41,15 @@ def TIMELOCK(Timelock):
 @pytest.fixture(scope="module")
 def DAO(GovernorBravoDelegate, GovernorBravoDelegator, STAKINGv2,accounts, chain, TIMELOCK):
     oldDao = Contract.from_abi("governorBravoDelegator", address="0x9da41f7810c2548572f4Fa414D06eD9772cA9e6E", abi=GovernorBravoDelegate.abi)
-    # upgrade DAO implementation
-
-    # below has to be guardian so that it will be by default set
-    GUARDIAN_MULTISIG = accounts.at("0x2a599cEba64CAb8C88549c2c7314ea02A161fC70", True)
-    daoImpl = GUARDIAN_MULTISIG.deploy(GovernorBravoDelegate)
-
-    daoProxy = GUARDIAN_MULTISIG.deploy(GovernorBravoDelegator, TIMELOCK, STAKINGv2, TIMELOCK, daoImpl, oldDao.votingPeriod(), oldDao.votingDelay(), 5e17, 3e18)
-
-
-    STAKINGv2.setGovernor(daoProxy, {"from": accounts[0]})
-    STAKINGv2.transferOwnership(TIMELOCK, {"from": accounts[0]})
-
+    GUARDIAN_MULTISIG = accounts.at("0x9B43a385E08EE3e4b402D4312dABD11296d09E93", True)
+    daoProxy = Contract.from_abi("governorBravoDelegator", address="0x3133b4f4dcffc083724435784fefad510fa659c6", abi=GovernorBravoDelegator.abi)
     eta = TIMELOCK.delay()+ chain.time()+100
-
-    oldDao.__queueSetTimelockPendingAdmin(daoProxy, eta, {"from": GUARDIAN_MULTISIG})
+    oldDao.__queueSetTimelockPendingAdmin(daoProxy, eta, {"from": oldDao.guardian()})
     chain.sleep(TIMELOCK.delay() + 100)
     chain.mine()
-    oldDao.__executeSetTimelockPendingAdmin(daoProxy, eta, {"from": GUARDIAN_MULTISIG})
-
+    oldDao.__executeSetTimelockPendingAdmin(daoProxy, eta, {"from": oldDao.guardian()})
     dao = Contract.from_abi("governorBravoDelegator", address=daoProxy, abi=GovernorBravoDelegate.abi)
     dao.__acceptAdmin({"from": GUARDIAN_MULTISIG})
-
     assert dao.staking() == STAKINGv2
     assert dao.admin() == TIMELOCK
     assert TIMELOCK.admin() == dao
@@ -68,35 +57,13 @@ def DAO(GovernorBravoDelegate, GovernorBravoDelegator, STAKINGv2,accounts, chain
 
 
 @pytest.fixture(scope="module", autouse=True)
-def STAKINGv2(accounts, StakingModularProxy, AdminSettings, StakeUnstake, StakingPausableGuardian, Voting, Rewards, interface, SUSHI_CHEF, OOKI_ETH_LP, BZRX, BZRXv2_CONVERTER, CRV3, POOL3_GAUGE, VOTE_DELEGATOR):
-    stakingModularProxy = accounts[0].deploy(StakingModularProxy)
-
-    adminSettingsImpl = accounts[0].deploy(AdminSettings)
-    rewardsImpl = accounts[0].deploy(Rewards)
-    stakeUnstakeImpl = accounts[0].deploy(StakeUnstake)
-    stakingPausableGuardianImpl = accounts[0].deploy(StakingPausableGuardian)
-    votingImpl = accounts[0].deploy(Voting)
-
-    stakingModularProxy.replaceContract(adminSettingsImpl)
-    stakingModularProxy.replaceContract(rewardsImpl)
-    stakingModularProxy.replaceContract(stakeUnstakeImpl)
-    stakingModularProxy.replaceContract(stakingPausableGuardianImpl)
-    stakingModularProxy.replaceContract(votingImpl)
-
+def STAKINGv2(accounts,TIMELOCK, StakingModularProxy, AdminSettings, StakeUnstake, StakingPausableGuardian, Voting, Rewards, interface, SUSHI_CHEF, OOKI_ETH_LP, BZRX, BZRXv2_CONVERTER, CRV3, POOL3_GAUGE, VOTE_DELEGATOR):
     SUSHI_CHEF.set(335, 1000, False, {'from': SUSHI_CHEF.owner()})
     SUSHI_CHEF.updatePool(335, {'from': SUSHI_CHEF.owner()})
-    # setting approvals
-    staking = Contract.from_abi(
-        "STAKING", stakingModularProxy, interface.IStakingV2.abi)
-    staking.setApprovals(OOKI_ETH_LP, SUSHI_CHEF, 2 **
-                         256-1, {"from": staking.owner()})
-    staking.setApprovals(BZRX, BZRXv2_CONVERTER, 2**256 - 1, {"from": staking.owner()})
-
-    # reference vote delegator and staking to each other
-    VOTE_DELEGATOR.setStaking(staking, {"from": VOTE_DELEGATOR.owner()})
-    staking.setVoteDelegator(VOTE_DELEGATOR, {"from": staking.owner()})
+    proxy = Contract.from_abi("STAKINGv2", address="0x16f179f5c344cc29672a58ea327a26f64b941a63", abi=StakingModularProxy.abi)
+    staking = Contract.from_abi("STAKINGv2", address="0x16f179f5c344cc29672a58ea327a26f64b941a63", abi=interface.IStakingV2.abi)
+    proxy.transferOwnership(TIMELOCK, {"from": proxy.owner()})
     return staking
-
 
 @pytest.fixture(scope="module")
 def BZRXv2_CONVERTER(BZRXv2Converter, MINT_COORDINATOR):
