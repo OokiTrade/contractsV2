@@ -75,7 +75,7 @@ daoProxy.__changeGuardian(GUARDIAN_MULTISIG, {"from": deployer, "gas_price": gas
 
 staking.setGovernor(daoProxy, {"from": deployer, "gas_price": gas_price, "nonce": 118}) # tx 0x26c49909855cbf72f997a891369f61e8be1f35ab3f31e1bb3cf7abd4e64ce4cc
 
-# --------------------- TESTING BELO
+# --------------------- TESTING BELOW
 staking.transferOwnership(TIMELOCK, {"from": deployer})
 votedelegatorProxy.transferOwnership(TIMELOCK, {"from": deployer})
 
