@@ -44,7 +44,7 @@ stakeUnstakeImpl = Contract.from_abi("StakeUnstake", "0x302def543f652068129bbad2
 stakingPausableGuardianImpl = Contract.from_abi("StakingPausableGuardian", "0x8262537328b52fb94fa4a53b3daa4180a26d7d06", StakingPausableGuardian.abi)
 votingImpl = Contract.from_abi("Voting", "0x26c1e80bbd9f44f72d7148124dc8c2f31447d139", Voting.abi)
 staking = Contract.from_abi("STAKING", "0x16f179f5c344cc29672a58ea327a26f64b941a63", interface.IStakingV2.abi)
-
+STAKING_VOTE_DELEGATOR = Contract.from_abi("STAKING_VOTE_DELEGATOR", "0xea936212fe4f3a69d0e8ecf9a2a35d6c1f8d2c89", VoteDelegator.abi)
 
 stakingModularProxy.replaceContract(adminSettingsImpl, {"from": deployer, "gas_price": gas_price}) # tx 0x61135fea4298586302e83212bb52f155aa366d12f9853e62c3892997c4ed745b nonce 104
 stakingModularProxy.replaceContract(rewardsImpl, {"from": deployer, "gas_price": gas_price, "nonce": 105}) # tx 0x18e3cf45423d70e9a03771da25eb7711b2991a6566fa683094914647924fb8a6
@@ -56,8 +56,6 @@ staking = Contract.from_abi("STAKING", stakingModularProxy, interface.IStakingV2
 staking.setApprovals(OOKI_ETH_LP, SUSHI_CHEF, 2**256-1, {"from": deployer, "gas_price": gas_price, "nonce": 109}) # tx 0x769b95b4a4f99748b793be8335db380545a20724156572027d2288ad6d432d0b
 staking.setApprovals(BZRX, BZRX_TO_OOKI_CONVERTER, 2**256-1, {"from": deployer, "gas_price": gas_price, "nonce": 110}) # tx 0x8a29792265adcbbe367c9423c9cfab78ce315f1c307ea098905eb672cd76b447 
 
-
-STAKING_VOTE_DELEGATOR = Contract.from_abi("STAKING_VOTE_DELEGATOR", "0xea936212fe4f3a69d0e8ecf9a2a35d6c1f8d2c89", VoteDelegator.abi)
 STAKING_VOTE_DELEGATOR.setStaking(staking, {"from": deployer, "gas_price": gas_price}) # tx 0xe501055a56d72c3a1c1ce3dac6332d1a36256b461f71bd1f4832bb3a144d858b
 STAKING_VOTE_DELEGATOR.changeGuardian(GUARDIAN_MULTISIG, {"from": deployer,"gas_price": Wei("81 gwei"), "nonce": 112}) # tx 0xdd27a8e8f99dbdb60d1af771a15e55a44137b9097c38f6adca24fad1ded548b9
 staking.setVoteDelegator(STAKING_VOTE_DELEGATOR, {"from": deployer, "gas_price": gas_price, "nonce": 113}) # tx 0x660696e90cf796e25861a8d219260e17aa4dd652dd665c7d430b13babc4e3487
