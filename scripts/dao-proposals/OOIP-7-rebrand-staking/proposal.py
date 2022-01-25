@@ -4,7 +4,7 @@ from brownie import *
 
 # def main():
 
-# deployer = accounts.at("0x4c323ea8cd7b3287060cd42def3266a76881a6ac", True)
+# deployer = accounts.at("0x70FC4dFc27f243789d07134Be3CA31306fD2C6B6", True)
 deployer = accounts[2]
 
 description = "REBRAND to OOKI"
@@ -43,8 +43,7 @@ rewardsImpl = Contract.from_abi("Rewards", "0x6ebb8f65956d757650ddd1492f1c0f7ffd
 stakeUnstakeImpl = Contract.from_abi("StakeUnstake", "0x302def543f652068129bbad25615e3231d1ba980", StakeUnstake.abi)
 stakingPausableGuardianImpl = Contract.from_abi("StakingPausableGuardian", "0x8262537328b52fb94fa4a53b3daa4180a26d7d06", StakingPausableGuardian.abi)
 votingImpl = Contract.from_abi("Voting", "0x26c1e80bbd9f44f72d7148124dc8c2f31447d139", Voting.abi)
-staking = Contract.from_abi("STAKING", stakingModularProxy, interface.IStakingV2.abi)
-STAKING_VOTE_DELEGATOR = Contract.from_abi("a", "0xea936212fe4f3a69d0e8ecf9a2a35d6c1f8d2c89", interface.IVoteDelegator.abi)
+staking = Contract.from_abi("STAKING", "0x16f179f5c344cc29672a58ea327a26f64b941a63", interface.IStakingV2.abi)
 
 
 stakingModularProxy.replaceContract(adminSettingsImpl, {"from": deployer, "gas_price": gas_price}) # tx 0x61135fea4298586302e83212bb52f155aa366d12f9853e62c3892997c4ed745b nonce 104
@@ -55,23 +54,28 @@ stakingModularProxy.replaceContract(votingImpl, {"from": deployer, "gas_price": 
 
 staking = Contract.from_abi("STAKING", stakingModularProxy, interface.IStakingV2.abi)
 staking.setApprovals(OOKI_ETH_LP, SUSHI_CHEF, 2**256-1, {"from": deployer, "gas_price": gas_price, "nonce": 109}) # tx 0x769b95b4a4f99748b793be8335db380545a20724156572027d2288ad6d432d0b
-staking.setApprovals(BZRX, BZRX_TO_OOKI_CONVERTER, 2**256-1, {"from": deployer, "gas_price": gas_price, "nonce": 110})
-staking.changeGuardian(GUARDIAN_MULTISIG, {"from": deployer, "gas_price": gas_price, "nonce": 111}) # tx 0x8a29792265adcbbe367c9423c9cfab78ce315f1c307ea098905eb672cd76b447
+staking.setApprovals(BZRX, BZRX_TO_OOKI_CONVERTER, 2**256-1, {"from": deployer, "gas_price": gas_price, "nonce": 110}) # tx 0x8a29792265adcbbe367c9423c9cfab78ce315f1c307ea098905eb672cd76b447 
 
-# STAKING_VOTE_DELEGATOR = Contract.from_abi("STAKING_VOTE_DELEGATOR", votedelegatorProxy, interfaces.IVoteDelegator.abi)
-STAKING_VOTE_DELEGATOR.setStaking(staking, {"from": deployer, "gas_price": gas_price, "nonce": 112}) # tx 
-STAKING_VOTE_DELEGATOR.changeGuardian()
-staking.setVoteDelegator(STAKING_VOTE_DELEGATOR, {"from": deployer, "gas_price": gas_price, "nonce": 113})
 
+STAKING_VOTE_DELEGATOR = Contract.from_abi("STAKING_VOTE_DELEGATOR", "0xea936212fe4f3a69d0e8ecf9a2a35d6c1f8d2c89", VoteDelegator.abi)
+STAKING_VOTE_DELEGATOR.setStaking(staking, {"from": deployer, "gas_price": gas_price}) # tx 0xe501055a56d72c3a1c1ce3dac6332d1a36256b461f71bd1f4832bb3a144d858b
+STAKING_VOTE_DELEGATOR.changeGuardian(GUARDIAN_MULTISIG, {"from": deployer,"gas_price": Wei("81 gwei"), "nonce": 112}) # tx 0xdd27a8e8f99dbdb60d1af771a15e55a44137b9097c38f6adca24fad1ded548b9
+staking.setVoteDelegator(STAKING_VOTE_DELEGATOR, {"from": deployer, "gas_price": gas_price, "nonce": 113}) # tx 0x660696e90cf796e25861a8d219260e17aa4dd652dd665c7d430b13babc4e3487
+
+staking.changeGuardian(GUARDIAN_MULTISIG, {"from": deployer, "gas_price": gas_price, "nonce": 114}) # tx 0x6f0324573970832fd41b2c6fb45135066e3cd978ebbcae68396d0da2d454237c
 
 # upgrade DAO implementation
-daoImpl = deployer.deploy(GovernorBravoDelegate)
+daoImpl = deployer.deploy(GovernorBravoDelegate, gas_price=Wei("60 gwei"), nonce=115) # tx 0xae3207bda895cdbe17e1d2d15455275c00e4939a22fb34a9378a86a6aa8cdf87
 # below has to be guardian so that it will be by default set
-GUARDIAN_MULTISIG = accounts.at(GUARDIAN_MULTISIG, True)
-daoProxy = GUARDIAN_MULTISIG.deploy(GovernorBravoDelegator, TIMELOCK, staking, TIMELOCK, daoImpl, DAO.votingPeriod(), DAO.votingDelay(), 0.9e18, 3e18)
+# GUARDIAN_MULTISIG = accounts.at(GUARDIAN_MULTISIG, True)
+daoProxy = deployer.deploy(GovernorBravoDelegator, TIMELOCK, staking, TIMELOCK, daoImpl, DAO.votingPeriod(), DAO.votingDelay(), 0.9e18, 3e18, gas_price=Wei("80 gwei"), nonce=116) # tx 0x268c593525b5e241e3639d915677279de48d50bc1d97d1ded12128095163d475 addy 0x3133b4f4dcffc083724435784fefad510fa659c6
+daoProxy = Contract.from_abi("daoProxy", "0x3133b4f4dcffc083724435784fefad510fa659c6", GovernorBravoDelegate.abi)
 
+daoProxy.__changeGuardian(GUARDIAN_MULTISIG, {"from": deployer, "gas_price": gas_price, "nonce": 117}) # tx 0xa248ce293660c51f4b1c7c772b34a4789bdebb533b9a8f23ce3869d44555a3b1
 
-staking.setGovernor(daoProxy, {"from": deployer})
+staking.setGovernor(daoProxy, {"from": deployer, "gas_price": gas_price, "nonce": 118}) # tx 0x26c49909855cbf72f997a891369f61e8be1f35ab3f31e1bb3cf7abd4e64ce4cc
+
+# --------------------- TESTING BELO
 staking.transferOwnership(TIMELOCK, {"from": deployer})
 votedelegatorProxy.transferOwnership(TIMELOCK, {"from": deployer})
 
