@@ -150,4 +150,6 @@ interface IStakingV2 {
         external
         view
         returns (uint256);
+
+    function vestingLastSync(address user) external view returns(uint256);
 }
