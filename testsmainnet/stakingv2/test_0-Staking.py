@@ -230,7 +230,7 @@ def testStake_UnStakeSingleUserOnlyVestingWithoutRewards(requireMainnetFork, STA
     STAKINGv2.claim(False, {"from": user1})
     STAKINGv2.unstake([vBZRX], [2**256-1], {"from": user1})
 
-    assert False
+    assert True
 
 
 def testStake_UnStakeMultiUserDisproportionalAmount(requireMainnetFork, STAKINGv2, BZX,  BZRX, vBZRX, iOOKI, OOKI, OOKI_ETH_LP, SUSHI_ROUTER, POOL3_GAUGE, CRV3, BZRXv2_CONVERTER, accounts, STAKING, iBZRX, StakingV1_1):

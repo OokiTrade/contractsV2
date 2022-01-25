@@ -37,6 +37,7 @@ def testStake_VoteDelegateWF1(requireMainnetFork, STAKINGv2, DAO,  TIMELOCK, acc
     mint_ooki(OOKI,STAKINGv2, acct3,  0, False)
     OOKI.approve(STAKINGv2, 2**256-1, {'from': PROPOSER})
     STAKINGv2.stake([OOKI], [OOKI.balanceOf(PROPOSER)], {'from': PROPOSER})
+    chain.mine()
     vb1 = STAKINGv2.votingBalanceOfNow(acct1)
     vb2 = STAKINGv2.votingBalanceOfNow(acct2)
     vb3 = STAKINGv2.votingBalanceOfNow(acct3)
