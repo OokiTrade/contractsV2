@@ -17,7 +17,12 @@ contract LoanTokenLogicStandard is AdvancedToken {
 
     address internal target_;
 
-    uint256 public constant VERSION = 6;
+    uint256 public flashBorrowFeePercent; // set to 0.03%
+
+
+    //// CONSTANTS ////
+
+    uint256 public constant VERSION = 7;
 
     //address internal constant arbitraryCaller = 0x000F400e6818158D541C3EBE45FE3AA0d47372FF; // mainnet
     //address internal constant arbitraryCaller = 0x81e7dddFAD37E6FAb0eccE95f0B508fd40996e6d; // bsc
@@ -38,8 +43,6 @@ contract LoanTokenLogicStandard is AdvancedToken {
     bytes32 internal constant iToken_ProfitSoFar = 0x37aa2b7d583612f016e4a4de4292cb015139b3d7762663d06a53964912ea2fb6;          // keccak256("iToken_ProfitSoFar")
     bytes32 internal constant iToken_LowerAdminAddress = 0x7ad06df6a0af6bd602d90db766e0d5f253b45187c3717a0f9026ea8b10ff0d4b;    // keccak256("iToken_LowerAdminAddress")
     bytes32 internal constant iToken_LowerAdminContract = 0x34b31cff1dbd8374124bd4505521fc29cab0f9554a5386ba7d784a4e611c7e31;   // keccak256("iToken_LowerAdminContract")
-
-    uint256 public flashBorrowFeePercent; // set to 0.03%
 
 
     constructor(
@@ -121,7 +124,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         } else {
             callData = abi.encodePacked(bytes4(keccak256(bytes(signature))), data);
         }
-		
+
         // arbitrary call
         (bool success, bytes memory returnData) = arbitraryCaller.call.value(msg.value)(
             abi.encodeWithSelector(
@@ -139,7 +142,8 @@ contract LoanTokenLogicStandard is AdvancedToken {
         IBZx(bZxContract).payFlashBorrowFees(
             borrower,
             borrowAmount,
-            flashBorrowFeePercent);
+            flashBorrowFeePercent
+        );
 	
         // verifies return of flash loan
         require(

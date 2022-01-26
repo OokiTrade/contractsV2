@@ -843,8 +843,8 @@ interface IBZx {
 	
 	////// Flash Borrow Fees //////
     function payFlashBorrowFees(
-            address user,
-            uint256 borrowAmount,
-            uint256 feeAmountInWEI)
-            external;
+        address user,
+        uint256 borrowAmount,
+        uint256 flashBorrowFeePercent)
+        external;
 }

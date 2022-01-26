@@ -1,42 +1,57 @@
+/**
+ * Copyright 2017-2022, bZxDao. All Rights Reserved.
+ * Licensed under the Apache License, Version 2.0.
+ */
+
 pragma solidity 0.5.17;
 
-import "../../utils/MathUtil.sol";
 import "../../core/State.sol";
-import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
-import "@openzeppelin-2.5.0/token/ERC20/IERC20.sol";
+import "../../mixins/VaultController.sol";
 
-contract FlashBorrowFeesHelper is State {
+
+contract FlashBorrowFeesHelper is State, VaultController {
+
     event PayFlashBorrowFee(
         address indexed payer,
         address indexed token,
         uint256 amount
     );
-    using MathUtil for uint256;
 
     function initialize(address target) external onlyOwner {
-        _setTarget(this._payFlashBorrowFees.selector, target);
+        _setTarget(this.payFlashBorrowFees.selector, target);
     }
 
     function payFlashBorrowFees(
         address user,
         uint256 borrowAmount,
-        uint256 feeAmountInWEI
-    ) public {
+        uint256 flashBorrowFeePercent)
+        external
+    {
+
         address feeToken = loanPoolToUnderlying[msg.sender];
-        require(feeToken != address(0), "Calling Contract must be Loan Pool");
-        uint256 feeTokenAmount = borrowAmount.mul(feeAmountInWEI).div(
-            WEI_PERCENT_PRECISION
-        );
-        SafeERC20.safeTransferFrom(
-            IERC20(feeToken),
+
+        // only callable by loan pools
+        require(feeToken != address(0), "not authorized");
+
+        uint256 feeTokenAmount = borrowAmount
+            .mul(flashBorrowFeePercent)
+            .div(WEI_PERCENT_PRECISION);
+
+        vaultDeposit(
+            feeToken,
             msg.sender,
-            address(this),
             feeTokenAmount
         );
+
         if (feeTokenAmount != 0) {
             borrowingFeeTokensHeld[feeToken] = borrowingFeeTokensHeld[feeToken]
                 .add(feeTokenAmount);
         }
-        emit PayFlashBorrowFee(user, feeToken, feeTokenAmount);
+
+        emit PayFlashBorrowFee(
+            user,
+            feeToken,
+            feeTokenAmount
+        );
     }
 }
