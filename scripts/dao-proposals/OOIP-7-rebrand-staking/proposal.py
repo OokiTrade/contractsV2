@@ -10,7 +10,7 @@ deployer = accounts[2]
 description = "REBRAND to OOKI"
 
 
-GUARDIAN_MULTISIG = "0x2a599cEba64CAb8C88549c2c7314ea02A161fC70"
+GUARDIAN_MULTISIG = "0x9B43a385E08EE3e4b402D4312dABD11296d09E93"
 
 
 
@@ -54,35 +54,43 @@ stakingModularProxy.replaceContract(votingImpl, {"from": deployer, "gas_price": 
 
 staking = Contract.from_abi("STAKING", stakingModularProxy, interface.IStakingV2.abi)
 staking.setApprovals(OOKI_ETH_LP, SUSHI_CHEF, 2**256-1, {"from": deployer, "gas_price": gas_price, "nonce": 109}) # tx 0x769b95b4a4f99748b793be8335db380545a20724156572027d2288ad6d432d0b
+
+staking.setApprovals(OOKI_ETH_LP, "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F", 0, {"from": deployer, "gas_price": gas_price, "nonce": 119}) # tx 0x7138c516cb6df6a69fd87859e9d04bf193b641b7f65b6ea2a7b4f03fe2c7acb8
+
+staking.setApprovals(OOKI_ETH_LP, SUSHI_CHEF, 2**256-1, {"from": deployer, "gas_price": gas_price, "nonce": 120}) # tx 0x7e20c936520839ba1527da4cf083f5f4de8fbe53fb47abf35f9a97a41b46a749
+
 staking.setApprovals(BZRX, BZRX_TO_OOKI_CONVERTER, 2**256-1, {"from": deployer, "gas_price": gas_price, "nonce": 110}) # tx 0x8a29792265adcbbe367c9423c9cfab78ce315f1c307ea098905eb672cd76b447 
 
 STAKING_VOTE_DELEGATOR.setStaking(staking, {"from": deployer, "gas_price": gas_price}) # tx 0xe501055a56d72c3a1c1ce3dac6332d1a36256b461f71bd1f4832bb3a144d858b
-STAKING_VOTE_DELEGATOR.changeGuardian(GUARDIAN_MULTISIG, {"from": deployer,"gas_price": Wei("81 gwei"), "nonce": 112}) # tx 0xdd27a8e8f99dbdb60d1af771a15e55a44137b9097c38f6adca24fad1ded548b9
+STAKING_VOTE_DELEGATOR.changeGuardian(GUARDIAN_MULTISIG, {"from": deployer,"gas_price": Wei("80 gwei"), "nonce": 121}) # tx 0xdd27a8e8f99dbdb60d1af771a15e55a44137b9097c38f6adca24fad1ded548b9 tx2 0x75ab47cfc4b101690b9bb11c85773aa3b1d68a90c990a87896b9d3ec87e229d9 
 staking.setVoteDelegator(STAKING_VOTE_DELEGATOR, {"from": deployer, "gas_price": gas_price, "nonce": 113}) # tx 0x660696e90cf796e25861a8d219260e17aa4dd652dd665c7d430b13babc4e3487
 
-staking.changeGuardian(GUARDIAN_MULTISIG, {"from": deployer, "gas_price": gas_price, "nonce": 114}) # tx 0x6f0324573970832fd41b2c6fb45135066e3cd978ebbcae68396d0da2d454237c
+staking.changeGuardian(GUARDIAN_MULTISIG, {"from": deployer, "gas_price": gas_price, "nonce": 122}) # tx 0x6f0324573970832fd41b2c6fb45135066e3cd978ebbcae68396d0da2d454237c tx2 0xeb917408754123d13cf0a9906dfdab93f1aa19f2010aabbc3d4bad96089b7a0e
 
 # upgrade DAO implementation
 daoImpl = deployer.deploy(GovernorBravoDelegate, gas_price=Wei("60 gwei"), nonce=115) # tx 0xae3207bda895cdbe17e1d2d15455275c00e4939a22fb34a9378a86a6aa8cdf87
+daoImpl = Contract.from_abi("daoImpl", "0xcc4128769826de0489f07869963b757e901f2453", GovernorBravoDelegate.abi)
 # below has to be guardian so that it will be by default set
 # GUARDIAN_MULTISIG = accounts.at(GUARDIAN_MULTISIG, True)
 daoProxy = deployer.deploy(GovernorBravoDelegator, TIMELOCK, staking, TIMELOCK, daoImpl, DAO.votingPeriod(), DAO.votingDelay(), 0.9e18, 3e18, gas_price=Wei("80 gwei"), nonce=116) # tx 0x268c593525b5e241e3639d915677279de48d50bc1d97d1ded12128095163d475 addy 0x3133b4f4dcffc083724435784fefad510fa659c6
-daoProxy = Contract.from_abi("daoProxy", "0x3133b4f4dcffc083724435784fefad510fa659c6", GovernorBravoDelegate.abi)
+daoProxy = Contract.from_abi("daoProxy", "0x3133b4f4dcffc083724435784fefad510fa659c6", GovernorBravoDelegator.abi)
 
 daoProxy.__changeGuardian(GUARDIAN_MULTISIG, {"from": deployer, "gas_price": gas_price, "nonce": 117}) # tx 0xa248ce293660c51f4b1c7c772b34a4789bdebb533b9a8f23ce3869d44555a3b1
 
 staking.setGovernor(daoProxy, {"from": deployer, "gas_price": gas_price, "nonce": 118}) # tx 0x26c49909855cbf72f997a891369f61e8be1f35ab3f31e1bb3cf7abd4e64ce4cc
 
+
+staking.transferOwnership(GUARDIAN_MULTISIG, {"from": deployer, "gas_price": gas_price}) # tx 0xf1aaf818a9f1f6ee9bcafc4f0f33e77771c2808df3617a3cd52e2017ac115d13
+STAKING_VOTE_DELEGATOR.transferOwnership(GUARDIAN_MULTISIG, {"from": deployer, "gas_price": gas_price, "nonce": 124}) # tx 0x8939e0d08c3e70f178d7ed1e6e253e7d01c3a6771cb4ff550ad0c05caa17aa46
+
+eta = TIMELOCK.delay()+ chain.time()+60*60 # 1h delay
+
+DAO_OLD.__queueSetTimelockPendingAdmin(daoProxy, eta, {"from": GUARDIAN_MULTISIG})
 # --------------------- TESTING BELOW
-staking.transferOwnership(TIMELOCK, {"from": deployer})
-votedelegatorProxy.transferOwnership(TIMELOCK, {"from": deployer})
-
-eta = TIMELOCK.delay()+ chain.time()+100
-
-DAO.__queueSetTimelockPendingAdmin(daoProxy, eta, {"from": GUARDIAN_MULTISIG})
 chain.sleep(TIMELOCK.delay() + 100)
 chain.mine()
-DAO.__executeSetTimelockPendingAdmin(daoProxy, eta, {"from": GUARDIAN_MULTISIG})
+
+DAO_OLD.__executeSetTimelockPendingAdmin(daoProxy, eta, {"from": GUARDIAN_MULTISIG})
 print("pending admin set")
 
 
