@@ -28,8 +28,6 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         _setTarget(this.extendLoanDuration.selector, target);
         _setTarget(this.reduceLoanDuration.selector, target);
         _setTarget(this.setDepositAmount.selector, target);
-        _setTarget(this.claimRewards.selector, target);
-        _setTarget(this.rewardsBalanceOf.selector, target);
         _setTarget(this.getLenderInterestData.selector, target);
         _setTarget(this.getLoanInterestData.selector, target);
         _setTarget(this.getUserLoans.selector, target);
@@ -412,51 +410,6 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             depositValueAsCollateralToken,
             false // isSubtraction
         );
-    }
-
-    function claimRewards(
-        address receiver)
-        external
-        pausable
-        returns (uint256 claimAmount)
-    {
-        bytes32 slot = keccak256(abi.encodePacked(msg.sender, UserRewardsID));
-        assembly {
-            claimAmount := sload(slot)
-        }
-
-        if (claimAmount != 0) {
-            assembly {
-                sstore(slot, 0)
-            }
-
-            protocolTokenPaid = protocolTokenPaid
-                .add(claimAmount);
-
-            IERC20(vbzrxTokenAddress).transfer(
-                receiver,
-                claimAmount
-            );
-
-            emit ClaimReward(
-                msg.sender,
-                receiver,
-                vbzrxTokenAddress,
-                claimAmount
-            );
-        }
-    }
-
-    function rewardsBalanceOf(
-        address user)
-        external
-        view
-        returns (uint256 rewardsBalance)
-    {
-        bytes32 slot = keccak256(abi.encodePacked(user, UserRewardsID));
-        assembly {
-            rewardsBalance := sload(slot)
-        }
     }
 
     /// @dev Gets current lender interest data totals for all loans with a specific oracle and interest token

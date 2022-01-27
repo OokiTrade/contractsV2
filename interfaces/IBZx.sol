@@ -117,14 +117,6 @@ interface IBZx {
         external
         returns (address rewardToken, uint256 withdrawAmount);
 
-    /// @dev depozit protocol token (BZRX)
-    /// @param amount address of BZRX tokens to deposit
-    function depositProtocolToken(uint256 amount) external;
-
-    function grantRewards(address[] calldata users, uint256[] calldata amounts)
-        external
-        returns (uint256 totalAmount);
-
     // NOTE: this doesn't sanitize inputs -> inaccurate values may be returned if there are duplicates tokens input
     function queryFees(address[] calldata tokens, FeeClaimType feeType)
         external
@@ -545,10 +537,6 @@ interface IBZx {
         uint256 depositValueAsLoanToken,
         uint256 depositValueAsCollateralToken
     ) external;
-
-    function claimRewards(address receiver)
-        external
-        returns (uint256 claimAmount);
 
     function transferLoan(bytes32 loanId, address newOwner) external;
 

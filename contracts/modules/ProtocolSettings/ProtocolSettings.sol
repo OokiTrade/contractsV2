@@ -36,8 +36,6 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         _setTarget(this.setFeesController.selector, target);
         _setTarget(this.withdrawFees.selector, target);
         _setTarget(this.withdrawProtocolToken.selector, target);
-        _setTarget(this.depositProtocolToken.selector, target);
-        _setTarget(this.grantRewards.selector, target);
         _setTarget(this.queryFees.selector, target);
         _setTarget(this.getLoanPoolsList.selector, target);
         _setTarget(this.isLoanPool.selector, target);
@@ -387,52 +385,6 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
             assembly {
                 sstore(slot, totalEmission)
             }
-        }
-    }
-
-    function depositProtocolToken(
-        uint256 amount)
-        external
-        onlyOwner
-    {
-        protocolTokenHeld = protocolTokenHeld
-            .add(amount);
-
-        IERC20(vbzrxTokenAddress).transferFrom(
-            msg.sender,
-            address(this),
-            amount
-        );
-    }
-
-    function grantRewards(
-        address[] calldata users,
-        uint256[] calldata amounts)
-        external
-        onlyOwner
-        returns (uint256 totalAmount)
-    {
-        require(users.length == amounts.length, "count mismatch");
-
-        uint256 amount;
-        bytes32 slot;
-        for (uint256 i = 0; i < users.length; i++) {
-            amount = amounts[i];
-            totalAmount = totalAmount
-                .add(amount);
-
-            slot = keccak256(abi.encodePacked(users[i], UserRewardsID));
-            assembly {
-                sstore(slot, add(sload(slot), amount))
-            }
-        }
-
-        if (totalAmount != 0) {
-            IERC20(vbzrxTokenAddress).transferFrom(
-                msg.sender,
-                address(this),
-                totalAmount
-            );
         }
     }
 
