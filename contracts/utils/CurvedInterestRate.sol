@@ -11,7 +11,7 @@ contract CurvedInterestRate is ICurvedInterestRate {
         uint256 U,
         uint256 a,
         uint256 b
-    ) public pure returns (uint256 interestRate) {
+    ) public pure override returns (uint256 interestRate) {
         // general ae^(bx)
         return (a * ((b * U) / 1e18).exp()) / 1e18;
     }
@@ -21,7 +21,7 @@ contract CurvedInterestRate is ICurvedInterestRate {
         uint256 IR2,
         uint256 UR1,
         uint256 UR2
-    ) public pure returns (uint256 a, uint256 b) {
+    ) public pure override returns (uint256 a, uint256 b) {
         // some minimal interestRate to avoid zero a or b
         if (IR1 < 0.001e18) {
             IR1 = 0.001e18;
