@@ -48,7 +48,7 @@ compiler:
             - "@openzeppelin-4.3.2=./node_modules/openzeppelin-4.3.2"
             - "@openzeppelin-3.4.0=./node_modules/openzeppelin-3.4.0"
             - "@openzeppelin-2.5.0=./node_modules/openzeppelin-2.5.0"
-	    - "@uniswap=./node_modules/@uniswap"
+	        - "@uniswap=./node_modules/@uniswap"
             - "prb-math=./node_modules/prb-math"
 
 console:
