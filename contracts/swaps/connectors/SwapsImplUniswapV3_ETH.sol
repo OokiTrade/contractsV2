@@ -10,11 +10,10 @@ import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 import "../ISwapsImpl.sol";
 import "../../interfaces/IUniswapV3SwapRouter.sol";
 import "../../interfaces/IUniswapQuoter.sol";
-import "../../mixins/Path.sol";
+import "../../mixins/BytesLib.sol";
 
 contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
     using SafeERC20 for IERC20;
-    using Path for bytes;
     using BytesLib for bytes;
     address public constant uniswapSwapRouter =
         0xE592427A0AEce92De3Edee1F18E0157C05861564; //mainnet
