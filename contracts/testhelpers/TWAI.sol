@@ -12,7 +12,7 @@ contract TWAI {
     event Logger(string name, uint256 value);
     // uint256 public twai;
     // uint256 public lastTimestamp;
-    uint256 public lastIR = 1;
+    uint256 public lastIR;
 
     function writeIR(uint256 _lastIR) public {
         lastIR = _lastIR;

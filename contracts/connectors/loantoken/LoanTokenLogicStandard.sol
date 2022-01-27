@@ -9,7 +9,7 @@ pragma experimental ABIEncoderV2;
 import "./AdvancedToken.sol";
 import "../../../interfaces/IBZx.sol";
 import "../../../interfaces/IPriceFeeds.sol";
-
+import "../../interfaces/ICurvedInterestRate.sol";
 
 contract LoanTokenLogicStandard is AdvancedToken {
     using SafeMath for uint256;
@@ -42,7 +42,8 @@ contract LoanTokenLogicStandard is AdvancedToken {
     bytes32 internal constant iToken_ProfitSoFar = 0x37aa2b7d583612f016e4a4de4292cb015139b3d7762663d06a53964912ea2fb6;          // keccak256("iToken_ProfitSoFar")
     bytes32 internal constant iToken_LowerAdminAddress = 0x7ad06df6a0af6bd602d90db766e0d5f253b45187c3717a0f9026ea8b10ff0d4b;    // keccak256("iToken_LowerAdminAddress")
     bytes32 internal constant iToken_LowerAdminContract = 0x34b31cff1dbd8374124bd4505521fc29cab0f9554a5386ba7d784a4e611c7e31;   // keccak256("iToken_LowerAdminContract")
-
+    ICurvedInterestRate rateHelper;
+    uint256 public lastIR;
 
     constructor(
         address _newOwner)
@@ -1063,51 +1064,55 @@ contract LoanTokenLogicStandard is AdvancedToken {
             _totalAssetSupply(totalBorrow)
         );
 
-        uint256 thisMinRate;
-        uint256 thisMaxRate;
-        uint256 thisBaseRate = baseRate;
-        uint256 thisRateMultiplier = rateMultiplier;
-        uint256 thisTargetLevel = targetLevel;
-        uint256 thisKinkLevel = kinkLevel;
-        uint256 thisMaxScaleRate = maxScaleRate;
+        nextRate = rateHelper.calculateIR(utilRate, lastIR, IR2, UR1, UR2);
 
-        if (utilRate < thisTargetLevel) {
-            // target targetLevel utilization when utilization is under targetLevel
-            utilRate = thisTargetLevel;
-        }
+        lastIR = nextRate;
 
-        if (utilRate > thisKinkLevel) {
-            // scale rate proportionally up to 100%
-            uint256 thisMaxRange = WEI_PERCENT_PRECISION - thisKinkLevel; // will not overflow
+    //     uint256 thisMinRate;
+    //     uint256 thisMaxRate;
+        // uint256 thisBaseRate = baseRate;
+    //     uint256 thisRateMultiplier = rateMultiplier;
+    //     uint256 thisTargetLevel = targetLevel;
+    //     uint256 thisKinkLevel = kinkLevel;
+    //     uint256 thisMaxScaleRate = maxScaleRate;
 
-            utilRate -= thisKinkLevel;
-            if (utilRate > thisMaxRange)
-                utilRate = thisMaxRange;
+    //     if (utilRate < thisTargetLevel) {
+    //         // target targetLevel utilization when utilization is under targetLevel
+    //         utilRate = thisTargetLevel;
+    //     }
 
-            thisMaxRate = thisRateMultiplier
-                .add(thisBaseRate)
-                .mul(thisKinkLevel)
-                .div(WEI_PERCENT_PRECISION);
+    //     if (utilRate > thisKinkLevel) {
+    //         // scale rate proportionally up to 100%
+    //         uint256 thisMaxRange = WEI_PERCENT_PRECISION - thisKinkLevel; // will not overflow
 
-            nextRate = utilRate
-                .mul(SafeMath.sub(thisMaxScaleRate, thisMaxRate))
-                .div(thisMaxRange)
-                .add(thisMaxRate);
-        } else {
-            nextRate = utilRate
-                .mul(thisRateMultiplier)
-                .div(WEI_PERCENT_PRECISION)
-                .add(thisBaseRate);
+    //         utilRate -= thisKinkLevel;
+    //         if (utilRate > thisMaxRange)
+    //             utilRate = thisMaxRange;
 
-            thisMinRate = thisBaseRate;
-            thisMaxRate = thisRateMultiplier
-                .add(thisBaseRate);
+    //         thisMaxRate = thisRateMultiplier
+    //             .add(thisBaseRate)
+    //             .mul(thisKinkLevel)
+    //             .div(WEI_PERCENT_PRECISION);
 
-            if (nextRate < thisMinRate)
-                nextRate = thisMinRate;
-            else if (nextRate > thisMaxRate)
-                nextRate = thisMaxRate;
-        }
+    //         nextRate = utilRate
+    //             .mul(SafeMath.sub(thisMaxScaleRate, thisMaxRate))
+    //             .div(thisMaxRange)
+    //             .add(thisMaxRate);
+    //     } else {
+    //         nextRate = utilRate
+    //             .mul(thisRateMultiplier)
+    //             .div(WEI_PERCENT_PRECISION)
+    //             .add(thisBaseRate);
+
+    //         thisMinRate = thisBaseRate;
+    //         thisMaxRate = thisRateMultiplier
+    //             .add(thisBaseRate);
+
+    //         if (nextRate < thisMinRate)
+    //             nextRate = thisMinRate;
+    //         else if (nextRate > thisMaxRate)
+    //             nextRate = thisMaxRate;
+    //     }
     }
 
     /*function _getOwedPerDay()

@@ -76,28 +76,40 @@ contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage {
 
     // These params should be percentages represented like so: 5% = 5000000000000000000
     // rateMultiplier + baseRate can't exceed 100%
+    // function setDemandCurve(
+    //     uint256 _baseRate,
+    //     uint256 _rateMultiplier,
+    //     uint256 _lowUtilBaseRate,
+    //     uint256 _lowUtilRateMultiplier,
+    //     uint256 _targetLevel,
+    //     uint256 _kinkLevel,
+    //     uint256 _maxScaleRate)
+    //     public
+    // {
+    //     require(_rateMultiplier.add(_baseRate) <= WEI_PERCENT_PRECISION, "curve params too high");
+    //     require(_lowUtilRateMultiplier.add(_lowUtilBaseRate) <= WEI_PERCENT_PRECISION, "curve params too high");
+
+    //     require(_targetLevel <= WEI_PERCENT_PRECISION && _kinkLevel <= WEI_PERCENT_PRECISION, "levels too high");
+
+    //     baseRate = _baseRate;
+    //     rateMultiplier = _rateMultiplier;
+    //     lowUtilBaseRate = _lowUtilBaseRate;
+    //     lowUtilRateMultiplier = _lowUtilRateMultiplier;
+
+    //     targetLevel = _targetLevel; // 80 ether
+    //     kinkLevel = _kinkLevel; // 90 ether
+    //     maxScaleRate = _maxScaleRate; // 100 ether
+    // }
+
     function setDemandCurve(
-        uint256 _baseRate,
-        uint256 _rateMultiplier,
-        uint256 _lowUtilBaseRate,
-        uint256 _lowUtilRateMultiplier,
-        uint256 _targetLevel,
-        uint256 _kinkLevel,
-        uint256 _maxScaleRate)
+        uint256 _IR2,
+        uint256 _UR1,
+        uint256 _UR2)
         public
     {
-        require(_rateMultiplier.add(_baseRate) <= WEI_PERCENT_PRECISION, "curve params too high");
-        require(_lowUtilRateMultiplier.add(_lowUtilBaseRate) <= WEI_PERCENT_PRECISION, "curve params too high");
-
-        require(_targetLevel <= WEI_PERCENT_PRECISION && _kinkLevel <= WEI_PERCENT_PRECISION, "levels too high");
-
-        baseRate = _baseRate;
-        rateMultiplier = _rateMultiplier;
-        lowUtilBaseRate = _lowUtilBaseRate;
-        lowUtilRateMultiplier = _lowUtilRateMultiplier;
-
-        targetLevel = _targetLevel; // 80 ether
-        kinkLevel = _kinkLevel; // 90 ether
-        maxScaleRate = _maxScaleRate; // 100 ether
+        // TODO some safety checks
+        IR2 = _IR2;
+        UR1 = _UR1;
+        UR2 = _UR2;
     }
 }

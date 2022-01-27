@@ -19,4 +19,12 @@ interface ICurvedInterestRate {
         uint256 UR1,
         uint256 UR2
     ) external pure returns (uint256 a, uint256 b);
+
+    function calculateIR(
+        uint256 U,
+        uint256 IR1,
+        uint256 IR2,
+        uint256 UR1,
+        uint256 UR2
+    ) external pure returns (uint256 interestRate);
 }

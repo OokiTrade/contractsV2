@@ -33,4 +33,15 @@ contract CurvedInterestRate is ICurvedInterestRate {
         // a = 0.2/e**(0.8 * b)
         a = (IR1 * 1e18) / ((UR2 * b) / 1e18).exp();
     }
+
+    function calculateIR(
+        uint256 U,
+        uint256 IR1,
+        uint256 IR2,
+        uint256 UR1,
+        uint256 UR2
+    ) public pure override returns (uint256 interestRate) {
+        (uint256 a, uint256 b) = getAB(IR1, IR2, UR1, UR2);
+        return getInterestRate(U, a, b);
+    }
 }
