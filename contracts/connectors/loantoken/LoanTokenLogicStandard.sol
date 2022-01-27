@@ -809,6 +809,11 @@ contract LoanTokenLogicStandard is AdvancedToken {
         bytes32 loanId)
         internal
     {
+        uint256 utilRate = utilizationRate(
+            totalBorrow,
+            _totalAssetSupply(totalBorrow)
+        );
+        lastIR = rateHelper.calculateIR(utilRate, lastIR, IR2, UR1, UR2);
         IBZx(bZxContract).settleInterest(loanId);
     }
 
@@ -1065,8 +1070,6 @@ contract LoanTokenLogicStandard is AdvancedToken {
         );
 
         nextRate = rateHelper.calculateIR(utilRate, lastIR, IR2, UR1, UR2);
-
-        lastIR = nextRate;
 
     //     uint256 thisMinRate;
     //     uint256 thisMaxRate;
