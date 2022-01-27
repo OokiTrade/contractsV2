@@ -12,7 +12,7 @@ import "@openzeppelin-2.5.0/ownership/Ownable.sol";
 import "@openzeppelin-2.5.0/utils/Address.sol";
 import "../../interfaces/IWethERC20.sol";
 import "../../governance/PausableGuardian.sol";
-
+import "../../interfaces/ICurvedInterestRate.sol";
 
 contract LoanTokenBase is ReentrancyGuard, Ownable, PausableGuardian {
 
@@ -35,8 +35,8 @@ contract LoanTokenBase is ReentrancyGuard, Ownable, PausableGuardian {
     uint256 public UR1;
     uint256 public UR2;
 
-    uint256 public NOT_USDE_targetLevel; 
-    uint256 public NOT_USDE_kinkLevel;
+    ICurvedInterestRate rateHelper; // TODO uint256 replaced with address probably storage fucked up now
+    uint256 public lastIR;
     uint256 public NOT_USDE_maxScaleRate;
 
     uint256 internal _flTotalAssetSupply;

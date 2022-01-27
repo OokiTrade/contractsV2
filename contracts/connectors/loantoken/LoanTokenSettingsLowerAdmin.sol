@@ -8,7 +8,7 @@ pragma experimental ABIEncoderV2;
 
 import "./AdvancedTokenStorage.sol";
 import "../../../interfaces/IBZx.sol";
-
+import "../../interfaces/ICurvedInterestRate.sol";
 
 contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage {
     using SafeMath for uint256;
@@ -102,12 +102,14 @@ contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage {
     // }
 
     function setDemandCurve(
+        ICurvedInterestRate _rateHelper,
         uint256 _IR2,
         uint256 _UR1,
         uint256 _UR2)
         public
     {
         // TODO some safety checks
+        rateHelper = _rateHelper;
         IR2 = _IR2;
         UR1 = _UR1;
         UR2 = _UR2;
