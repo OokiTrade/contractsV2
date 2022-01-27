@@ -9,30 +9,48 @@ import "@openzeppelin-2.5.0/math/SafeMath.sol";
 contract TWAI {
     using SafeMath for uint256;
 
+    event Logger(string name, uint256 value);
     // uint256 public twai;
     // uint256 public lastTimestamp;
-    uint256 public lastIR;
-
-    function initTWAI(uint256 interestRate) public {
-        lastIR = interestRate;
-    }
+    uint256 public lastIR = 1;
 
     function writeIR(uint256 _lastIR) public {
         lastIR = _lastIR;
     }
 
-    function getInterestRate(uint256 interestRate) public pure returns(uint256 newInterestRate){
-        (uint256 a, uint256 b) = getAB(interestRate);
-        
-        // uint256 e = 2.7e18;
+    function borrow(uint256 newUtilization) public returns (uint256 interestRate) {
+        // require(newUtilization > 0.001 && newUtilization <=1e18, "utilization between 0 and 1");
+        emit Logger("lastIR", lastIR);
+        (uint256 a, uint256 b) = getAB(lastIR);
+        emit Logger("a", a);
+        emit Logger("b", b);
+        interestRate = getInterestRate(newUtilization, a, b);
+        emit Logger("interestRate", interestRate);
+        lastIR = interestRate;
+    }
 
+    function getInterestRate(
+        uint256 utilization,
+        uint256 a,
+        uint256 b
+    ) public pure returns (uint256 interestRate) {
+        // (uint256 a, uint256 b) = getAB(interestRate);
+        // if (utilization < 1e18) {
+        //     utilization = 1e18;
+        // }
         // return (a*e/1e18)**(b*interestRate/1e36);
-        return a*exp(b*interestRate/1e18)/1e18;
-
+        return (a * exp((b * utilization) / 1e18)) / 1e18;
     }
 
     function getAB(uint256 interestRate) public pure returns (uint256 a, uint256 b) {
-        // here
+        // some minimal interestRate to avoid zero a or b
+        if (interestRate < 0.001e18) {
+            interestRate = 0.001e18;
+        }
+
+        // if (interestRate > 1e18) {
+        //     interestRate = 1e18;
+        // }
         uint256 utilRate1 = 0.8e18;
         uint256 utilRate2 = 1e18;
         uint256 intRate1 = interestRate;
@@ -42,19 +60,15 @@ contract TWAI {
 
         // a = (1 - (1000 * (((intRate1*1e18/intRate2) ** (1/1000)) )/(utilRate2 - utilRate1);
         // b= math.log(1.2/0.2)/(0.9-0.8)
-        b = ln(intRate2 * 1e18/intRate1) * 1e18/ (utilRate2 - utilRate1);
+        b = (ln((intRate2 * 1e18) / intRate1) * 1e18) / (utilRate2 - utilRate1);
         // a = 0.2/e**(0.8 * b)
-        a = intRate1*1e18/ exp(utilRate1 * b/ 1e18);
-
+        a = (intRate1 * 1e18) / exp((utilRate1 * b) / 1e18);
     }
 
-
     uint256 internal constant SCALE = 1e18;
-    uint256 internal constant MAX_UD60x18 =
-        115792089237316195423570985008687907853269984665640564039457_584007913129639935;
+    uint256 internal constant MAX_UD60x18 = 115792089237316195423570985008687907853269984665640564039457_584007913129639935;
     uint256 internal constant HALF_SCALE = 5e17;
     uint256 internal constant LOG2_E = 1_442695040888963407;
- 
 
     function log2(uint256 x) internal pure returns (uint256 result) {
         if (x < SCALE) {
@@ -93,7 +107,7 @@ contract TWAI {
         }
         // }
     }
-    
+
     function mostSignificantBit(uint256 x) internal pure returns (uint256 msb) {
         if (x >= 2**128) {
             x >>= 128;
@@ -129,7 +143,6 @@ contract TWAI {
         }
     }
 
-
     function exp(uint256 x) internal pure returns (uint256 result) {
         // Without this check, the value passed to "exp2" would be greater than 192.
         if (x >= 133_084258667509499441) {
@@ -160,8 +173,7 @@ contract TWAI {
         // }
     }
 
-
-       function exp2PRBMath(uint256 x) internal pure returns (uint256 result) {
+    function exp2PRBMath(uint256 x) internal pure returns (uint256 result) {
         // unchecked {
         // Start from 0.5 in the 192.64-bit fixed-point format.
         result = 0x800000000000000000000000000000000000000000000000;
