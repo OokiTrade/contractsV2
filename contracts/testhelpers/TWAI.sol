@@ -42,7 +42,7 @@ contract TWAI {
 
         // a = (1 - (1000 * (((intRate1*1e18/intRate2) ** (1/1000)) )/(utilRate2 - utilRate1);
         // b= math.log(1.2/0.2)/(0.9-0.8)
-        b = log10(intRate2 * 1e18/intRate1) * 1e18/ (utilRate2 - utilRate1);
+        b = ln(intRate2 * 1e18/intRate1) * 1e18/ (utilRate2 - utilRate1);
         // a = 0.2/e**(0.8 * b)
         a = intRate1*1e18/ exp(utilRate1 * b/ 1e18);
 
@@ -54,107 +54,107 @@ contract TWAI {
         115792089237316195423570985008687907853269984665640564039457_584007913129639935;
     uint256 internal constant HALF_SCALE = 5e17;
     uint256 internal constant LOG2_E = 1_442695040888963407;
-    function log10(uint256 x) internal pure returns (uint256 result) {
-        if (x < SCALE) {
-            // revert PRBMathUD60x18__LogInputTooSmall(x);
-            require(true, "PRBMathUD60x18__LogInputTooSmall");
-        }
+    // function log10(uint256 x) public pure returns (uint256 result) {
+    //     if (x < SCALE) {
+    //         // revert PRBMathUD60x18__LogInputTooSmall(x);
+    //         require(true, "PRBMathUD60x18__LogInputTooSmall");
+    //     }
 
-        // Note that the "mul" in this block is the assembly multiplication operation, not the "mul" function defined
-        // in this contract.
-        // prettier-ignore
-        assembly {
-            switch x
-            case 1 { result := mul(SCALE, sub(0, 18)) }
-            case 10 { result := mul(SCALE, sub(1, 18)) }
-            case 100 { result := mul(SCALE, sub(2, 18)) }
-            case 1000 { result := mul(SCALE, sub(3, 18)) }
-            case 10000 { result := mul(SCALE, sub(4, 18)) }
-            case 100000 { result := mul(SCALE, sub(5, 18)) }
-            case 1000000 { result := mul(SCALE, sub(6, 18)) }
-            case 10000000 { result := mul(SCALE, sub(7, 18)) }
-            case 100000000 { result := mul(SCALE, sub(8, 18)) }
-            case 1000000000 { result := mul(SCALE, sub(9, 18)) }
-            case 10000000000 { result := mul(SCALE, sub(10, 18)) }
-            case 100000000000 { result := mul(SCALE, sub(11, 18)) }
-            case 1000000000000 { result := mul(SCALE, sub(12, 18)) }
-            case 10000000000000 { result := mul(SCALE, sub(13, 18)) }
-            case 100000000000000 { result := mul(SCALE, sub(14, 18)) }
-            case 1000000000000000 { result := mul(SCALE, sub(15, 18)) }
-            case 10000000000000000 { result := mul(SCALE, sub(16, 18)) }
-            case 100000000000000000 { result := mul(SCALE, sub(17, 18)) }
-            case 1000000000000000000 { result := 0 }
-            case 10000000000000000000 { result := SCALE }
-            case 100000000000000000000 { result := mul(SCALE, 2) }
-            case 1000000000000000000000 { result := mul(SCALE, 3) }
-            case 10000000000000000000000 { result := mul(SCALE, 4) }
-            case 100000000000000000000000 { result := mul(SCALE, 5) }
-            case 1000000000000000000000000 { result := mul(SCALE, 6) }
-            case 10000000000000000000000000 { result := mul(SCALE, 7) }
-            case 100000000000000000000000000 { result := mul(SCALE, 8) }
-            case 1000000000000000000000000000 { result := mul(SCALE, 9) }
-            case 10000000000000000000000000000 { result := mul(SCALE, 10) }
-            case 100000000000000000000000000000 { result := mul(SCALE, 11) }
-            case 1000000000000000000000000000000 { result := mul(SCALE, 12) }
-            case 10000000000000000000000000000000 { result := mul(SCALE, 13) }
-            case 100000000000000000000000000000000 { result := mul(SCALE, 14) }
-            case 1000000000000000000000000000000000 { result := mul(SCALE, 15) }
-            case 10000000000000000000000000000000000 { result := mul(SCALE, 16) }
-            case 100000000000000000000000000000000000 { result := mul(SCALE, 17) }
-            case 1000000000000000000000000000000000000 { result := mul(SCALE, 18) }
-            case 10000000000000000000000000000000000000 { result := mul(SCALE, 19) }
-            case 100000000000000000000000000000000000000 { result := mul(SCALE, 20) }
-            case 1000000000000000000000000000000000000000 { result := mul(SCALE, 21) }
-            case 10000000000000000000000000000000000000000 { result := mul(SCALE, 22) }
-            case 100000000000000000000000000000000000000000 { result := mul(SCALE, 23) }
-            case 1000000000000000000000000000000000000000000 { result := mul(SCALE, 24) }
-            case 10000000000000000000000000000000000000000000 { result := mul(SCALE, 25) }
-            case 100000000000000000000000000000000000000000000 { result := mul(SCALE, 26) }
-            case 1000000000000000000000000000000000000000000000 { result := mul(SCALE, 27) }
-            case 10000000000000000000000000000000000000000000000 { result := mul(SCALE, 28) }
-            case 100000000000000000000000000000000000000000000000 { result := mul(SCALE, 29) }
-            case 1000000000000000000000000000000000000000000000000 { result := mul(SCALE, 30) }
-            case 10000000000000000000000000000000000000000000000000 { result := mul(SCALE, 31) }
-            case 100000000000000000000000000000000000000000000000000 { result := mul(SCALE, 32) }
-            case 1000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 33) }
-            case 10000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 34) }
-            case 100000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 35) }
-            case 1000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 36) }
-            case 10000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 37) }
-            case 100000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 38) }
-            case 1000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 39) }
-            case 10000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 40) }
-            case 100000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 41) }
-            case 1000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 42) }
-            case 10000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 43) }
-            case 100000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 44) }
-            case 1000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 45) }
-            case 10000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 46) }
-            case 100000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 47) }
-            case 1000000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 48) }
-            case 10000000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 49) }
-            case 100000000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 50) }
-            case 1000000000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 51) }
-            case 10000000000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 52) }
-            case 100000000000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 53) }
-            case 1000000000000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 54) }
-            case 10000000000000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 55) }
-            case 100000000000000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 56) }
-            case 1000000000000000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 57) }
-            case 10000000000000000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 58) }
-            case 100000000000000000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 59) }
-            default {
-                result := MAX_UD60x18
-            }
-        }
+    //     // Note that the "mul" in this block is the assembly multiplication operation, not the "mul" function defined
+    //     // in this contract.
+    //     // prettier-ignore
+    //     assembly {
+    //         switch x
+    //         case 1 { result := mul(SCALE, sub(0, 18)) }
+    //         case 10 { result := mul(SCALE, sub(1, 18)) }
+    //         case 100 { result := mul(SCALE, sub(2, 18)) }
+    //         case 1000 { result := mul(SCALE, sub(3, 18)) }
+    //         case 10000 { result := mul(SCALE, sub(4, 18)) }
+    //         case 100000 { result := mul(SCALE, sub(5, 18)) }
+    //         case 1000000 { result := mul(SCALE, sub(6, 18)) }
+    //         case 10000000 { result := mul(SCALE, sub(7, 18)) }
+    //         case 100000000 { result := mul(SCALE, sub(8, 18)) }
+    //         case 1000000000 { result := mul(SCALE, sub(9, 18)) }
+    //         case 10000000000 { result := mul(SCALE, sub(10, 18)) }
+    //         case 100000000000 { result := mul(SCALE, sub(11, 18)) }
+    //         case 1000000000000 { result := mul(SCALE, sub(12, 18)) }
+    //         case 10000000000000 { result := mul(SCALE, sub(13, 18)) }
+    //         case 100000000000000 { result := mul(SCALE, sub(14, 18)) }
+    //         case 1000000000000000 { result := mul(SCALE, sub(15, 18)) }
+    //         case 10000000000000000 { result := mul(SCALE, sub(16, 18)) }
+    //         case 100000000000000000 { result := mul(SCALE, sub(17, 18)) }
+    //         case 1000000000000000000 { result := 0 }
+    //         case 10000000000000000000 { result := SCALE }
+    //         case 100000000000000000000 { result := mul(SCALE, 2) }
+    //         case 1000000000000000000000 { result := mul(SCALE, 3) }
+    //         case 10000000000000000000000 { result := mul(SCALE, 4) }
+    //         case 100000000000000000000000 { result := mul(SCALE, 5) }
+    //         case 1000000000000000000000000 { result := mul(SCALE, 6) }
+    //         case 10000000000000000000000000 { result := mul(SCALE, 7) }
+    //         case 100000000000000000000000000 { result := mul(SCALE, 8) }
+    //         case 1000000000000000000000000000 { result := mul(SCALE, 9) }
+    //         case 10000000000000000000000000000 { result := mul(SCALE, 10) }
+    //         case 100000000000000000000000000000 { result := mul(SCALE, 11) }
+    //         case 1000000000000000000000000000000 { result := mul(SCALE, 12) }
+    //         case 10000000000000000000000000000000 { result := mul(SCALE, 13) }
+    //         case 100000000000000000000000000000000 { result := mul(SCALE, 14) }
+    //         case 1000000000000000000000000000000000 { result := mul(SCALE, 15) }
+    //         case 10000000000000000000000000000000000 { result := mul(SCALE, 16) }
+    //         case 100000000000000000000000000000000000 { result := mul(SCALE, 17) }
+    //         case 1000000000000000000000000000000000000 { result := mul(SCALE, 18) }
+    //         case 10000000000000000000000000000000000000 { result := mul(SCALE, 19) }
+    //         case 100000000000000000000000000000000000000 { result := mul(SCALE, 20) }
+    //         case 1000000000000000000000000000000000000000 { result := mul(SCALE, 21) }
+    //         case 10000000000000000000000000000000000000000 { result := mul(SCALE, 22) }
+    //         case 100000000000000000000000000000000000000000 { result := mul(SCALE, 23) }
+    //         case 1000000000000000000000000000000000000000000 { result := mul(SCALE, 24) }
+    //         case 10000000000000000000000000000000000000000000 { result := mul(SCALE, 25) }
+    //         case 100000000000000000000000000000000000000000000 { result := mul(SCALE, 26) }
+    //         case 1000000000000000000000000000000000000000000000 { result := mul(SCALE, 27) }
+    //         case 10000000000000000000000000000000000000000000000 { result := mul(SCALE, 28) }
+    //         case 100000000000000000000000000000000000000000000000 { result := mul(SCALE, 29) }
+    //         case 1000000000000000000000000000000000000000000000000 { result := mul(SCALE, 30) }
+    //         case 10000000000000000000000000000000000000000000000000 { result := mul(SCALE, 31) }
+    //         case 100000000000000000000000000000000000000000000000000 { result := mul(SCALE, 32) }
+    //         case 1000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 33) }
+    //         case 10000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 34) }
+    //         case 100000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 35) }
+    //         case 1000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 36) }
+    //         case 10000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 37) }
+    //         case 100000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 38) }
+    //         case 1000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 39) }
+    //         case 10000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 40) }
+    //         case 100000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 41) }
+    //         case 1000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 42) }
+    //         case 10000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 43) }
+    //         case 100000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 44) }
+    //         case 1000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 45) }
+    //         case 10000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 46) }
+    //         case 100000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 47) }
+    //         case 1000000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 48) }
+    //         case 10000000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 49) }
+    //         case 100000000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 50) }
+    //         case 1000000000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 51) }
+    //         case 10000000000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 52) }
+    //         case 100000000000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 53) }
+    //         case 1000000000000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 54) }
+    //         case 10000000000000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 55) }
+    //         case 100000000000000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 56) }
+    //         case 1000000000000000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 57) }
+    //         case 10000000000000000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 58) }
+    //         case 100000000000000000000000000000000000000000000000000000000000000000000000000000 { result := mul(SCALE, 59) }
+    //         default {
+    //             result := MAX_UD60x18
+    //         }
+    //     }
 
-        if (result == MAX_UD60x18) {
-            // Do the fixed-point division inline to save gas. The denominator is log2(10).
-            // unchecked {
-            result = (log2(x) * SCALE) / 3_321928094887362347;
-            // }
-        }
-    }
+    //     if (result == MAX_UD60x18) {
+    //         // Do the fixed-point division inline to save gas. The denominator is log2(10).
+    //         // unchecked {
+    //         result = (log2(x) * SCALE) / 3_321928094887362347;
+    //         // }
+    //     }
+    // }
 
     function log2(uint256 x) internal pure returns (uint256 result) {
         if (x < SCALE) {
@@ -471,6 +471,14 @@ contract TWAI {
         // This works because 2^(191-ip) = 2^ip / 2^191, where "ip" is the integer part "2^n".
         result *= SCALE;
         result >>= (191 - (x >> 64));
+        // }
+    }
+
+    function ln(uint256 x) public pure returns (uint256 result) {
+        // Do the fixed-point multiplication inline to save gas. This is overflow-safe because the maximum value that log2(x)
+        // can return is 196205294292027477728.
+        // unchecked {
+        result = (log2(x) * SCALE) / LOG2_E;
         // }
     }
 }
