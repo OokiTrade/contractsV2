@@ -29,6 +29,11 @@ contract TWAI {
         lastIR = interestRate;
     }
 
+    function getCurrentInterestRateBasedOnCurrentCurve(uint256 newUtilization) public view returns (uint256 interestRate) {
+        (uint256 a, uint256 b) = getAB(lastIR);
+        return getInterestRate(newUtilization, a, b);
+    }
+
     function getInterestRate(
         uint256 utilization,
         uint256 a,
