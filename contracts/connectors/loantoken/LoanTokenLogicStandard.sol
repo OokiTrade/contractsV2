@@ -1052,7 +1052,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
     function _nextBorrowInterestRate(
         uint256 totalBorrow,
         uint256 newBorrow,
-        uint256 lastInterestRate)
+        uint256 lastIR)
         public
         view
         returns (uint256 nextRate)

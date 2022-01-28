@@ -30,14 +30,14 @@ contract LoanTokenBase is ReentrancyGuard, Ownable, PausableGuardian {
 
     address public loanTokenAddress;
 
-    uint256 public NOT_USDE_baseRate;
     uint256 public IR2;
     uint256 public UR1;
     uint256 public UR2;
-
     ICurvedInterestRate rateHelper; // TODO uint256 replaced with address probably storage fucked up now
-    uint256 public lastIR;
-    uint256 public NOT_USDE_maxScaleRate;
+    uint256 public NOT_USDED;
+    
+    uint256 public NOT_USDED;
+    uint256 public NOT_USDED_maxScaleRate;
 
     uint256 internal _flTotalAssetSupply;
     uint256 public checkpointSupply;
