@@ -6,103 +6,106 @@
 pragma solidity 0.5.17;
 
 import "../core/State.sol";
-import "./FeesHelper.sol";
 import "../interfaces/ILoanPool.sol";
+import "../utils/MathUtil.sol";
 
 
-contract InterestHandler is State, FeesHelper {
-    using SafeERC20 for IERC20;
+contract InterestHandler is State {
+    using MathUtil for uint256;
 
-    // returns up to date loan principal (with interest) or 0 is not applicable
+    // returns up to date loan interest or 0 if not applicable
     function _settleInterest(
         address pool,
-        address loanToken,
         bytes32 loanId)
         internal
-        returns (uint256 _loanPrincipalTotal)
+        returns (uint256 _loanInterestTotal)
     {
         uint256 _loanRatePerTokenPaid;
         (
-            poolTotalPrincipal[pool],
+            , // poolPrincipalTotal
+            poolInterestTotal[pool],
             poolRatePerTokenStored[pool],
-            _loanRatePerTokenPaid,
-            _loanPrincipalTotal) = _settleInterest2(
+            , // loanPrincipalTotal,
+            _loanInterestTotal,
+            _loanRatePerTokenPaid) = _settleInterest2(
             pool,
-            loanToken,
             loanId
         );
 
         if (loanId != 0) {
+            loanInterestTotal[loanId] = _loanInterestTotal;
             loanRatePerTokenPaid[loanId] = _loanRatePerTokenPaid;
-            loans[loanId].principal = _loanPrincipalTotal;
         }
 
         poolLastUpdateTime[pool] = block.timestamp;
     }
 
-    function _getTotalPrincipal(
-        address pool,
-        address loanToken)
+    function _getPoolPrincipal(
+        address pool)
         internal
         view
-        returns (uint256 _poolTotalPrincipal)
+        returns (uint256)
     {
-        (_poolTotalPrincipal,,,) = _settleInterest2(
+        (uint256 _poolPrincipalTotal, uint256 _poolInterestTotal,,,,) = _settleInterest2(
             pool,
-            loanToken,
             0
         );
+
+        uint256 lendingFee = _poolInterestTotal
+            .mul(lendingFeePercent)
+            .divCeil(WEI_PERCENT_PRECISION);
+
+        return _poolPrincipalTotal
+            .add(_poolInterestTotal)
+            .sub(lendingFee);
     }
 
     function _getLoanPrincipal(
         address pool,
-        address loanToken,
         bytes32 loanId)
         internal
         view
-        returns (uint256 _loanPrincipalTotal)
+        returns (uint256)
     {
-        (,,,_loanPrincipalTotal) = _settleInterest2(
+        (,,,uint256 _loanPrincipalTotal,uint256 _loanInterestTotal,) = _settleInterest2(
             pool,
-            loanToken,
             loanId
         );
+        return _loanPrincipalTotal.add(_loanInterestTotal);
     }
 
     function _settleInterest2(
         address pool,
-        address loanToken,
         bytes32 loanId)
         internal
         view
         returns (
-            uint256 _poolTotalPrincipal,
+            uint256 _poolPrincipalTotal,
+            uint256 _poolInterestTotal,
             uint256 _poolRatePerTokenStored,
-            uint256 _loanRatePerTokenPaid,
-            uint256 _loanPrincipalTotal)
+            uint256 _loanPrincipalTotal,
+            uint256 _loanInterestTotal,
+            uint256 _loanRatePerTokenPaid
+        )
     {
-        _poolTotalPrincipal = poolTotalPrincipal[pool];
-        uint256 _poolVariableRatePerTokenNewAmount = _getRatePerTokenNewAmount(_poolTotalPrincipal, pool);
-        if (_poolTotalPrincipal != 0) {
-            _poolTotalPrincipal = _getUpdatedPrincipal(
-                _poolTotalPrincipal,
-                _poolVariableRatePerTokenNewAmount
-            );
+        _poolPrincipalTotal = poolPrincipalTotal[pool];
+        uint256 _poolVariableRatePerTokenNewAmount = _getRatePerTokenNewAmount(_poolPrincipalTotal, pool);
 
-            _poolRatePerTokenStored = poolRatePerTokenStored[pool]
-                .add(_poolVariableRatePerTokenNewAmount);
-        }
+        _poolInterestTotal = _poolPrincipalTotal
+            .mul(_poolVariableRatePerTokenNewAmount)
+            .div(WEI_PERCENT_PRECISION * WEI_PERCENT_PRECISION)
+            .add(poolInterestTotal[pool]);
 
-         if (loanId != 0) {
-            _loanPrincipalTotal = loans[loanId].principal;
-            if (_loanPrincipalTotal != 0) {
-                _loanPrincipalTotal = _getUpdatedPrincipal(
-                    _loanPrincipalTotal,
-                    _poolRatePerTokenStored.sub(loanRatePerTokenPaid[loanId]) // _loanRatePerTokenUnpaid
-                );
+        _poolRatePerTokenStored = poolRatePerTokenStored[pool]
+            .add(_poolVariableRatePerTokenNewAmount);
 
-                _loanRatePerTokenPaid = _poolRatePerTokenStored;
-            }
+         if (loanId != 0 && (_loanPrincipalTotal = loans[loanId].principal) != 0) {
+            _loanInterestTotal = _loanPrincipalTotal
+                .mul(_poolRatePerTokenStored.sub(loanRatePerTokenPaid[loanId])) // _loanRatePerTokenUnpaid
+                .div(WEI_PERCENT_PRECISION * WEI_PERCENT_PRECISION)
+                .add(loanInterestTotal[loanId]);
+
+            _loanRatePerTokenPaid = _poolRatePerTokenStored;
         }
     }
 
@@ -116,19 +119,7 @@ contract InterestHandler is State, FeesHelper {
         return block.timestamp
             .sub(poolLastUpdateTime[pool])
             .mul(ILoanPool(pool)._nextBorrowInterestRate(_poolPrincipalTotal, 0)) // rate per year
+            .mul(WEI_PERCENT_PRECISION)
             .div(31536000); // seconds in a year
-    }
-
-    function _getUpdatedPrincipal(
-        uint256 _principal,
-        uint256 _ratePerTokenNewAmount)
-        internal
-        view
-        returns (uint256)
-    {
-        return _principal
-            .mul(_ratePerTokenNewAmount)
-            .div(WEI_PERCENT_PRECISION)
-            .add(_principal);
     }
 }

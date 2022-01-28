@@ -32,8 +32,8 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
     mapping (bytes32 => mapping (address => bool)) public delegatedManagers;                // loanId => delegated => approved
 
     // Interest
-    mapping (address => mapping (address => LenderInterest)) public lenderInterest;         // lender => loanToken => LenderInterest object
-    mapping (bytes32 => LoanInterest) public loanInterest;                                  // loanId => LoanInterest object
+    mapping (address => mapping (address => LenderInterest)) public lenderInterest;         // lender => loanToken => LenderInterest object (depreciated)
+    mapping (bytes32 => LoanInterest) public loanInterest;                                  // loanId => LoanInterest object (depreciated)
 
     // Internals
     EnumerableBytes32Set.Bytes32Set internal logicTargetsSet;                               // implementations set
@@ -79,8 +79,11 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
 
     /**** new interest model start */
     mapping(address => uint256) public poolLastUpdateTime; // per itoken
-    mapping(address => uint256) public poolTotalPrincipal; // per itoken
+    mapping(address => uint256) public poolPrincipalTotal; // per itoken
+    mapping(address => uint256) public poolInterestTotal; // per itoken
     mapping(address => uint256) public poolRatePerTokenStored; // per itoken
+
+    mapping(bytes32 => uint256) public loanInterestTotal; // per loan
     mapping(bytes32 => uint256) public loanRatePerTokenPaid; // per loan
     /**** new interest model end */
 

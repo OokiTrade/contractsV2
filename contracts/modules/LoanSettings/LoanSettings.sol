@@ -27,6 +27,7 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents {
         _setTarget(this.getTotalPrincipal.selector, target);
         _setTarget(this.getPoolPrincipalStored.selector, target);
         _setTarget(this.getLoanPrincipal.selector, target);
+        _setTarget(this.getLoanInterestOutstanding.selector, target);
     }
 
     function setupLoanParams(
@@ -123,9 +124,8 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents {
         view
         returns (uint256)
     {
-        return _getTotalPrincipal(
-            lender,
-            loanPoolToUnderlying[lender]
+        return _getPoolPrincipal(
+            lender
         );
     }
 
@@ -135,7 +135,14 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents {
         view
         returns (uint256)
     {
-        return poolTotalPrincipal[pool];
+        uint256 _poolInterestTotal = poolInterestTotal[pool];
+        uint256 lendingFee = _poolInterestTotal
+            .mul(lendingFeePercent)
+            .divCeil(WEI_PERCENT_PRECISION);
+
+        return poolPrincipalTotal[pool]
+            .add(_poolInterestTotal)
+            .sub(lendingFee);
     }
 
     function getLoanPrincipal(
@@ -149,11 +156,25 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents {
             return 0;
         }
 
-        LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
-
         return _getLoanPrincipal(
             loanLocal.lender,
-            loanParamsLocal.loanToken,
+            loanId
+        );
+    }
+
+    function getLoanInterestOutstanding(
+        bytes32 loanId)
+        external
+        view
+        returns (uint256 loanInterest)
+    {
+        Loan memory loanLocal = loans[loanId];
+        if (!loanLocal.active) {
+            return 0;
+        }
+
+        (,,,,loanInterest,) = _settleInterest2(
+            loanLocal.lender,
             loanId
         );
     }
