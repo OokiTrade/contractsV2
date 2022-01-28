@@ -7,16 +7,13 @@ pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
 import "./AdvancedToken.sol";
+import "./StorageExtension.sol";
 import "../../../interfaces/IBZx.sol";
 import "../../../interfaces/IPriceFeeds.sol";
 
-contract LoanTokenLogicStandard is AdvancedToken {
+contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
     using SafeMath for uint256;
     using SignedSafeMath for int256;
-
-    address internal target_;
-
-    uint256 public flashBorrowFeePercent; // set to 0.03%
 
 
     //// CONSTANTS ////

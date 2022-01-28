@@ -7,10 +7,11 @@ pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
 import "./AdvancedTokenStorage.sol";
+import "./StorageExtension.sol";
 import "../../../interfaces/IBZx.sol";
 import "../../interfaces/ICurvedInterestRate.sol";
 
-contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage {
+contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage, StorageExtension {
     using SafeMath for uint256;
 
     address public constant bZxContract = 0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f; // mainnet
