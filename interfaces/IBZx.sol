@@ -404,7 +404,7 @@ interface IBZx {
     /// @param receiver collateral token reciever address
     /// @param swapAmount amount of loan token to swap
     /// @param returnTokenIsCollateral boolean whether to return tokens is collateral
-    /// @param loanDataBytes reserved for future use
+    /// @param loanDataBytes custom payload for specifying swap implementation and data to pass
     /// @return loanCloseAmount loan close amount
     /// @return withdrawAmount loan token withdraw amount
     /// @return withdrawToken loan token address
@@ -863,4 +863,11 @@ interface IBZx {
         uint256 depositTotal; // total escrowed interest for loan
         uint256 updatedTimestamp; // last update
     }
+	
+	////// Flash Borrow Fees //////
+    function payFlashBorrowFees(
+        address user,
+        uint256 borrowAmount,
+        uint256 flashBorrowFeePercent)
+        external;
 }

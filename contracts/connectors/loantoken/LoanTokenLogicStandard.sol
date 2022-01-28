@@ -16,7 +16,12 @@ contract LoanTokenLogicStandard is AdvancedToken {
 
     address internal target_;
 
-    uint256 public constant VERSION = 6;
+    uint256 public flashBorrowFeePercent; // set to 0.03%
+
+
+    //// CONSTANTS ////
+
+    uint256 public constant VERSION = 7;
 
     //address internal constant arbitraryCaller = 0x000F400e6818158D541C3EBE45FE3AA0d47372FF; // mainnet
     //address internal constant arbitraryCaller = 0x81e7dddFAD37E6FAb0eccE95f0B508fd40996e6d; // bsc
@@ -134,7 +139,14 @@ contract LoanTokenLogicStandard is AdvancedToken {
 
         // unlock totalAssetSupply
         _flTotalAssetSupply = 0;
-
+		
+		// pay flash borrow fees
+        IBZx(bZxContract).payFlashBorrowFees(
+            borrower,
+            borrowAmount,
+            flashBorrowFeePercent
+        );
+	
         // verifies return of flash loan
         require(
             address(this).balance >= beforeEtherBalance &&
@@ -154,7 +166,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         address collateralTokenAddress, // if address(0), this means ETH and ETH must be sent with the call or loanId must be provided
         address borrower,
         address receiver,
-        bytes memory /*loanDataBytes*/) // arbitrary order data (for future use)
+        bytes memory /*loanDataBytes*/) // arbitrary order data
         public
         payable
         nonReentrant
@@ -666,7 +678,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         address collateralTokenAddress, // if address(0), this means ETH and ETH must be sent with the call or loanId must be provided
         address borrower,
         address receiver,
-        bytes memory /*loanDataBytes*/) // arbitrary order data (for future use)
+        bytes memory /*loanDataBytes*/) // arbitrary order data
         internal
         pausable
         returns (IBZx.LoanOpenData memory)
@@ -1216,6 +1228,10 @@ contract LoanTokenLogicStandard is AdvancedToken {
         assembly {
             return(ptr, size)
         }
+    }
+
+    function updateFlashBorrowFeePercent(uint256 newFeePercent) public onlyOwner() {
+        flashBorrowFeePercent = newFeePercent;
     }
 }
 
