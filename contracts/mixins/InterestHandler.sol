@@ -89,12 +89,14 @@ contract InterestHandler is State {
         )
     {
         _poolPrincipalTotal = poolPrincipalTotal[pool];
-        uint256 _poolVariableRatePerTokenNewAmount = _getRatePerTokenNewAmount(_poolPrincipalTotal, pool);
+        _poolInterestTotal = poolInterestTotal[pool];
+
+        uint256 _poolVariableRatePerTokenNewAmount = _getRatePerTokenNewAmount(_poolPrincipalTotal.add(_poolInterestTotal), pool);
 
         _poolInterestTotal = _poolPrincipalTotal
             .mul(_poolVariableRatePerTokenNewAmount)
             .div(WEI_PERCENT_PRECISION * WEI_PERCENT_PRECISION)
-            .add(poolInterestTotal[pool]);
+            .add(_poolInterestTotal);
 
         _poolRatePerTokenStored = poolRatePerTokenStored[pool]
             .add(_poolVariableRatePerTokenNewAmount);
@@ -110,7 +112,7 @@ contract InterestHandler is State {
     }
 
     function _getRatePerTokenNewAmount(
-        uint256 _poolPrincipalTotal,
+        uint256 poolTotal,
         address pool)
         internal
         view
@@ -118,7 +120,7 @@ contract InterestHandler is State {
     {
         return block.timestamp
             .sub(poolLastUpdateTime[pool])
-            .mul(ILoanPool(pool)._nextBorrowInterestRate(_poolPrincipalTotal, 0)) // rate per year
+            .mul(ILoanPool(pool)._nextBorrowInterestRate(poolTotal, 0)) // rate per year
             .mul(WEI_PERCENT_PRECISION)
             .div(31536000); // seconds in a year
     }

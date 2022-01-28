@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021, bZxDao. All Rights Reserved.
+ * Copyright 2017-2022, OokiDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -17,7 +17,12 @@ contract LoanTokenLogicStandard is AdvancedToken {
 
     address internal target_;
 
-    uint256 public constant VERSION = 6;
+    uint256 public flashBorrowFeePercent; // set to 0.03%
+
+
+    //// CONSTANTS ////
+
+    uint256 public constant VERSION = 7;
 
     //address internal constant arbitraryCaller = 0x000F400e6818158D541C3EBE45FE3AA0d47372FF; // mainnet
     //address internal constant arbitraryCaller = 0x81e7dddFAD37E6FAb0eccE95f0B508fd40996e6d; // bsc
@@ -136,7 +141,14 @@ contract LoanTokenLogicStandard is AdvancedToken {
 
         // unlock totalAssetSupply
         _flTotalAssetSupply = 0;
-
+		
+		// pay flash borrow fees
+        IBZx(bZxContract).payFlashBorrowFees(
+            borrower,
+            borrowAmount,
+            flashBorrowFeePercent
+        );
+	
         // verifies return of flash loan
         require(
             address(this).balance >= beforeEtherBalance &&
@@ -1209,6 +1221,10 @@ contract LoanTokenLogicStandard is AdvancedToken {
         assembly {
             return(ptr, size)
         }
+    }
+
+    function updateFlashBorrowFeePercent(uint256 newFeePercent) public onlyOwner() {
+        flashBorrowFeePercent = newFeePercent;
     }
 }
 

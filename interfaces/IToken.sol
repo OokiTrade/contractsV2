@@ -1,6 +1,6 @@
 /**
- * Copyright 2017-2021, bZeroX, LLC. All Rights Reserved.
- * Licensed under the Apache License, Version 2.0.
+ * Copyright 2017-2022, OokiDao. All Rights Reserved.
+ * Licensed under the Apache-2.0
  */
 
 pragma solidity >=0.5.0 <=0.8.9;
@@ -192,4 +192,7 @@ interface IToken {
         uint256 principal;
         uint256 collateral;
     }
+	
+    //flash borrow fees
+    function updateFlashBorrowFeePercent(uint256 newFeePercent) external;
 }
