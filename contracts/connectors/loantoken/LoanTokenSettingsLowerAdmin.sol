@@ -109,6 +109,7 @@ contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage {
         public
     {
         // TODO some safety checks
+        require(UR1 < UR2, "invalid UR");
         rateHelper = _rateHelper;
         IR2 = _IR2;
         UR1 = _UR1;
