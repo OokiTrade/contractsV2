@@ -253,6 +253,14 @@ interface IBZx {
         view
         returns (uint256);
 
+    /// @dev returns the last interest rate founnd during interest settlement
+    /// @param pool address
+    /// @return the last interset rate
+    function getPoolLastInterestRate(address pool)
+        external
+        view
+        returns (uint256);
+
     ////// Loan Openings //////
 
     /// @dev This is THE function that borrows or trades on the protocol

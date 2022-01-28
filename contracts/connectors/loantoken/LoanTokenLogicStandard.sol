@@ -184,7 +184,6 @@ contract LoanTokenLogicStandard is AdvancedToken {
         );
     }
 
-
     // Called to borrow and immediately get into a position
     function marginTrade(
         bytes32 loanId,                 // 0 if new loan
@@ -209,7 +208,6 @@ contract LoanTokenLogicStandard is AdvancedToken {
             loanDataBytes
         );
     }
-
 
     function transfer(
         address _to,
@@ -384,11 +382,6 @@ contract LoanTokenLogicStandard is AdvancedToken {
         returns (uint256)
     {
         return _underlyingBalance();
-        /*uint256 totalBorrow = totalAssetBorrow();
-        uint256 totalSupply = _totalAssetSupply(totalBorrow);
-        if (totalSupply > totalBorrow) {
-            return totalSupply - totalBorrow;
-        }*/
     }
 
     function avgBorrowInterestRate()
@@ -396,7 +389,6 @@ contract LoanTokenLogicStandard is AdvancedToken {
         view
         returns (uint256)
     {
-        //return _avgBorrowInterestRate(totalAssetBorrow());
         return borrowInterestRate();
     }
 
@@ -408,7 +400,8 @@ contract LoanTokenLogicStandard is AdvancedToken {
     {
         return _nextBorrowInterestRate(
             totalAssetBorrow(),
-            0
+            0,
+            poolLastInterestRate()
         );
     }
 
@@ -420,7 +413,8 @@ contract LoanTokenLogicStandard is AdvancedToken {
     {
         return _nextBorrowInterestRate(
             totalAssetBorrow(),
-            borrowAmount
+            borrowAmount,
+            poolLastInterestRate()
         );
     }
 
@@ -474,6 +468,14 @@ contract LoanTokenLogicStandard is AdvancedToken {
         returns (uint256)
     {
         return IBZx(bZxContract).getPoolPrincipalStored(address(this));
+    }
+
+    function poolLastInterestRate()
+        public
+        view
+        returns (uint256)
+    {
+        return IBZx(bZxContract).getPoolLastInterestRate(address(this));
     }
 
     function totalAssetSupply()
@@ -1038,19 +1040,6 @@ contract LoanTokenLogicStandard is AdvancedToken {
                 .div(totalTokenSupply) : initialPrice;
     }
 
-    /*function _avgBorrowInterestRate(
-        uint256 assetBorrow)
-        internal
-        view
-        returns (uint256)
-    {
-        if (assetBorrow != 0) {
-            return _getOwedPerDay()
-                .mul(365 * WEI_PERCENT_PRECISION)
-                .div(assetBorrow);
-        }
-    }*/
-
     // next supply interest adjustment
     function _supplyInterestRate(
         uint256 assetBorrow,
@@ -1060,8 +1049,7 @@ contract LoanTokenLogicStandard is AdvancedToken {
         returns (uint256)
     {
         if (assetBorrow != 0 && assetSupply >= assetBorrow) {
-            //return _avgBorrowInterestRate(assetBorrow)
-            return _nextBorrowInterestRate(assetBorrow, 0)
+            return _nextBorrowInterestRate(assetBorrow, 0, poolLastInterestRate())
                 .mul(_utilizationRate(assetBorrow, assetSupply))
                 .mul(SafeMath.sub(WEI_PERCENT_PRECISION, IBZx(bZxContract).lendingFeePercent()))
                 .div(WEI_PERCENT_PRECISION * WEI_PERCENT_PRECISION);
@@ -1070,7 +1058,8 @@ contract LoanTokenLogicStandard is AdvancedToken {
 
     function _nextBorrowInterestRate(
         uint256 totalBorrow,
-        uint256 newBorrow)
+        uint256 newBorrow,
+        uint256 lastInterestRate)
         public
         view
         returns (uint256 nextRate)
