@@ -44,7 +44,7 @@ contract TWAI {
         //     utilization = 1e18;
         // }
         // return (a*e/1e18)**(b*interestRate/1e36);
-        return (a * exp((b * utilization) / 1e18)) / 1e18;
+        return (a * exp2((b * utilization) / 1e18)) / 1e18;
     }
 
     function getAB(uint256 interestRate) public pure returns (uint256 a, uint256 b) {
@@ -67,7 +67,7 @@ contract TWAI {
         // b= math.log(1.2/0.2)/(0.9-0.8)
         b = (ln((intRate2 * 1e18) / intRate1) * 1e18) / (utilRate2 - utilRate1);
         // a = 0.2/e**(0.8 * b)
-        a = (intRate1 * 1e18) / exp((utilRate1 * b) / 1e18);
+        a = (intRate1 * 1e18) / exp2((utilRate1 * b) / 1e18);
     }
 
     uint256 internal constant SCALE = 1e18;
