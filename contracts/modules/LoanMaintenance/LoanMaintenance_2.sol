@@ -9,8 +9,10 @@ pragma experimental ABIEncoderV2;
 import "../../core/State.sol";
 import "../../events/LoanMaintenanceEvents.sol";
 import "../../governance/PausableGuardian.sol";
+import "../../mixins/InterestHandler.sol";
 
-contract LoanMaintenance_2 is State, LoanMaintenanceEvents, PausableGuardian {
+
+contract LoanMaintenance_2 is State, LoanMaintenanceEvents, PausableGuardian, InterestHandler {
 
     function initialize(
         address target)
@@ -18,6 +20,7 @@ contract LoanMaintenance_2 is State, LoanMaintenanceEvents, PausableGuardian {
         onlyOwner
     {
         _setTarget(this.transferLoan.selector, target);
+        _setTarget(this.settleInterest.selector, target);        
     }
 
     function transferLoan(
@@ -47,4 +50,16 @@ contract LoanMaintenance_2 is State, LoanMaintenanceEvents, PausableGuardian {
             loanId
         );
     }
+
+    function settleInterest(
+        bytes32 loanId)
+        external
+    {
+        _settleInterest(
+            msg.sender, // pool
+            loanPoolToUnderlying[msg.sender], // loanToken
+            loanId
+        );
+    }
+    
 }

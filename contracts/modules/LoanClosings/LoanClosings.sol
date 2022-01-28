@@ -17,7 +17,6 @@ contract LoanClosings is LoanClosingsBase {
         onlyOwner
     {
         _setTarget(this.liquidate.selector, target);
-        _setTarget(this.rollover.selector, target);
         _setTarget(this.closeWithDeposit.selector, target);
         _setTarget(this.closeWithSwap.selector, target);
     }
@@ -39,29 +38,6 @@ contract LoanClosings is LoanClosingsBase {
             loanId,
             receiver,
             closeAmount
-        );
-    }
-
-    function rollover(
-        bytes32 loanId,
-        bytes calldata /*loanDataBytes*/) // for future use
-        external
-        nonReentrant
-        returns (
-            address rebateToken,
-            uint256 gasRebate
-        )
-    {
-        uint256 startingGas = gasleft() +
-            21576; // estimated used gas ignoring loanDataBytes: 21000 + (4+32) * 16
-
-        // restrict to EOAs to prevent griefing attacks, during interest rate recalculation
-        require(msg.sender == tx.origin, "only EOAs can call");
-
-        return _rollover(
-            loanId,
-            startingGas,
-            "" // loanDataBytes
         );
     }
 
@@ -90,7 +66,7 @@ contract LoanClosings is LoanClosingsBase {
         address receiver,
         uint256 swapAmount, // denominated in collateralToken
         bool returnTokenIsCollateral, // true: withdraws collateralToken, false: withdraws loanToken
-        bytes memory /*loanDataBytes*/) // for future use
+        bytes memory loanDataBytes)
         public
         nonReentrant
         returns (
@@ -104,7 +80,7 @@ contract LoanClosings is LoanClosingsBase {
             receiver,
             swapAmount,
             returnTokenIsCollateral,
-            "" // loanDataBytes
+            loanDataBytes
         );
     }
 }
