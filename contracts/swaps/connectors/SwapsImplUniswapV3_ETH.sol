@@ -10,11 +10,9 @@ import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 import "../ISwapsImpl.sol";
 import "../../interfaces/IUniswapV3SwapRouter.sol";
 import "../../interfaces/IUniswapQuoter.sol";
-import "../../mixins/BytesLib.sol";
 
 contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
     using SafeERC20 for IERC20;
-    using BytesLib for bytes;
     address public constant uniswapSwapRouter =
         0xE592427A0AEce92De3Edee1F18E0157C05861564; //mainnet
     address public constant uniswapQuoteContract =
@@ -225,12 +223,14 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                 require(
                     receiverAddress == exactParams[uniqueOutputParam].recipient
                 );
-                address tokenIn = exactParams[uniqueOutputParam].path.toAddress(
+                address tokenIn = _toAddress(
+                    exactParams[uniqueOutputParam].path,
                     0
                 );
                 require(tokenIn == destTokenAddress, "improper destination");
                 require(
-                    exactParams[uniqueOutputParam].path.toAddress(
+                    _toAddress(
+                        exactParams[uniqueOutputParam].path,
                         exactParams[uniqueOutputParam].path.length - 20
                     ) == sourceTokenAddress,
                     "improper source"
@@ -313,11 +313,13 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                 require(
                     receiverAddress == exactParams[uniqueInputParam].recipient
                 );
-                address tokenIn = exactParams[uniqueInputParam].path.toAddress(
+                address tokenIn = _toAddress(
+                    exactParams[uniqueInputParam].path,
                     0
                 );
                 require(tokenIn == sourceTokenAddress, "improper route");
-                address tokenOut = exactParams[uniqueInputParam].path.toAddress(
+                address tokenOut = _toAddress(
+                    exactParams[uniqueInputParam].path,
                     exactParams[uniqueInputParam].path.length - 20
                 );
                 require(tokenOut == destTokenAddress, "improper destination");
@@ -366,5 +368,24 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
             }
             destTokenAmountReceived = totaledAmountOut;
         }
+    }
+
+    function _toAddress(bytes memory _bytes, uint256 _start)
+        internal
+        pure
+        returns (address)
+    {
+        require(_start + 20 >= _start, "toAddress_overflow");
+        require(_bytes.length >= _start + 20, "toAddress_outOfBounds");
+        address tempAddress;
+
+        assembly {
+            tempAddress := div(
+                mload(add(add(_bytes, 0x20), _start)),
+                0x1000000000000000000000000
+            )
+        }
+
+        return tempAddress;
     }
 }
