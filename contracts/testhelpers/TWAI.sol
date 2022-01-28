@@ -13,26 +13,38 @@ contract TWAI {
     // uint256 public twai;
     // uint256 public lastTimestamp;
     uint256 public lastIR;
+    uint256 public a;
+    uint256 public b;
 
     function writeIR(uint256 _lastIR) public {
         lastIR = _lastIR;
     }
 
     function borrow(uint256 newUtilization) public returns (uint256 interestRate) {
-        // require(newUtilization > 0.001 && newUtilization <=1e18, "utilization between 0 and 1");
-        emit Logger("lastIR", lastIR);
         (uint256 a, uint256 b) = getAB(lastIR);
-        emit Logger("a", a);
-        emit Logger("b", b);
         interestRate = getInterestRate(newUtilization, a, b);
-        emit Logger("interestRate", interestRate);
         lastIR = interestRate;
+    }
+
+    // this is supposed to be more efficient but its not because 2 reads and 2 writes every time. 
+    // while borrow has a read + write + small calc. that small calc doesn't cover 1 read+ write
+    function borrow2(uint256 newUtilization) public returns (uint256 interestRate) {
+              
+        interestRate = getInterestRate(newUtilization, a, b);
+
+        (a , b) = getAB(interestRate);
+
     }
 
     function getCurrentInterestRateBasedOnCurrentCurve(uint256 newUtilization) public view returns (uint256 interestRate) {
         (uint256 a, uint256 b) = getAB(lastIR);
         return getInterestRate(newUtilization, a, b);
     }
+
+    function getCurrentInterestRateBasedOnCurrentCurve2(uint256 newUtilization) public view returns (uint256 interestRate) {
+        return getInterestRate(newUtilization, a, b);
+    }
+
 
     function getInterestRate(
         uint256 utilization,
