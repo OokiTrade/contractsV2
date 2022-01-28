@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021, bZxDao. All Rights Reserved.
+ * Copyright 2017-2022, OokiDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -248,7 +248,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
 
     function _borrowOrTrade(
         LoanParams memory loanParamsLocal,
-        bytes32 loanId, // if 0, start a new loan
+        bytes32 loanId,
         bool isTorqueLoan,
         uint256 collateralAmountRequired,
         uint256 initialMargin,
@@ -286,8 +286,8 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
             sentValues
         );
 
-        poolTotalPrincipal[loanLocal.lender] = poolTotalPrincipal[loanLocal.lender]
-            .add(sentValues[1]); // newPrincipal*/
+        poolPrincipalTotal[sentAddresses[0]] = poolPrincipalTotal[sentAddresses[0]]
+            .add(sentValues[1]); // newPrincipal
 
         uint256 amount;
         if (isTorqueLoan) {
@@ -533,6 +533,9 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
             activeLoansSet.addBytes32(loanId);
             lenderLoanSets[lender].addBytes32(loanId);
             borrowerLoanSets[borrower].addBytes32(loanId);
+
+            // interest settlement for new loan
+            loanRatePerTokenPaid[loanId] = poolRatePerTokenStored[lender];
         } else {
             // existing loan
             sloanLocal = loans[loanId];
