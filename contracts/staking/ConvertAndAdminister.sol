@@ -29,7 +29,7 @@ contract ConvertAndAdminister is Upgradeable_0_8 {
         _convertTo3Crv();
 		uint256 total = IERC20(crv3).balanceOf(address(this));
 		uint256 toTreasury = total*1000/3500;
-		IERC20(crv3).transfer(TREASURY,toTreasury); //20% goes to treasury and the amount sent here is 70%. Formula is 0.7/0.7/0.5 = 0.2
+		IERC20(crv3).transfer(TREASURY,toTreasury); //20% goes to treasury and the amount sent here is 70%. Formula is 0.7/0.7/5 = 0.2
 		uint256 toStakers = IERC20(crv3).balanceOf(address(this));
         _addRewards(toStakers);
         emit Distributed(msg.sender, toTreasury, toStakers);
