@@ -15,8 +15,10 @@ import "@celer/contracts/interfaces/IBridge.sol";
 contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
     IBZx public constant bZx = IBZx(0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8);
 
+    address public constant BUYBACK_ADDRESS = 0x12EBd8263A54751Aaf9d8C2c74740A8e62C0AfBe;
     address public constant MATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
     address public constant USDC = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
+    uint256 public constant WEI_PRECISION_PERCENT = 10**20;
     uint64 public constant DEST_CHAINID = 1; //to be set
     IUniswapV2Router public constant swapsRouterV2 =
         IUniswapV2Router(0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506); // Sushiswap
@@ -32,6 +34,8 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
     address payable public treasuryWallet;
 
     address public bridge; //bridging contract
+
+    uint256 public buybackPercentInWEI; //set to 30e18
 
     event ExtractAndDistribute(uint256 amountTreasury, uint256 amountStakers);
 
@@ -53,7 +57,7 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
         _;
     }
 
-    function sweepFees() public // sweepFeesByAsset() does checkPause
+    function sweepFees() external // sweepFeesByAsset() does checkPause
     {
         sweepFeesByAsset(currentFeeTokens);
     }
@@ -139,6 +143,8 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
     }
 
     function _bridgeFeesAndDistribute() internal {
+	    uint256 total = IERC20(USDC).balanceOf(address(this));
+		IERC20(USDC).transfer(BUYBACK_ADDRESS, total*buybackPercentInWEI/WEI_PRECISION_PERCENT); //allocates funds for buyback
         IBridge(bridge).send(
             treasuryWallet,
             USDC,
@@ -151,15 +157,15 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
 
     // OnlyOwner functions
 
-    function togglePause(bool _isPaused) public onlyOwner {
+    function togglePause(bool _isPaused) external onlyOwner {
         isPaused = _isPaused;
     }
 
-    function setTreasuryWallet(address payable _wallet) public onlyOwner {
+    function setTreasuryWallet(address payable _wallet) external onlyOwner {
         treasuryWallet = _wallet;
     }
 
-    function setFeeTokens(address[] calldata tokens) public onlyOwner {
+    function setFeeTokens(address[] calldata tokens) external onlyOwner {
         currentFeeTokens = tokens;
         for (uint256 i = 0; i < tokens.length; i++) {
             IERC20(tokens[i]).approve(address(swapsRouterV2), 0);
@@ -170,12 +176,16 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
         }
     }
 
-    function setBridgeApproval(address token) public onlyOwner {
+    function setBridgeApproval(address token) external onlyOwner {
         IERC20(token).approve(bridge, 0);
         IERC20(token).approve(bridge, type(uint256).max);
     }
 
-    function setBridge(address _wallet) public onlyOwner {
+    function setBridge(address _wallet) external onlyOwner {
         bridge = _wallet;
     }
+	
+	function setBuyBackPercentage(uint256 _percentage) external onlyOwner {
+	    buybackPercentInWEI = _percentage;
+	}
 }
