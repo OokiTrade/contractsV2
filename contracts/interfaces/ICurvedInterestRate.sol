@@ -9,23 +9,19 @@ pragma solidity >=0.5.0 <0.9.0;
 
 interface ICurvedInterestRate {
     function getInterestRate(
-        uint256 U,
-        uint256 a,
-        uint256 b
+        uint256 _U,
+        uint256 _a,
+        uint256 _b
     ) external pure returns (uint256 interestRate);
+
+    function getAB(uint256 _IR1) external pure returns (uint256 a, uint256 b);
 
     function getAB(
-        uint256 IR1,
-        uint256 IR2,
-        uint256 UR1,
-        uint256 UR2
+        uint256 _IR1,
+        uint256 _IR2,
+        uint256 _UR1,
+        uint256 _UR2
     ) external pure returns (uint256 a, uint256 b);
 
-    function calculateIR(
-        uint256 U,
-        uint256 IR1,
-        uint256 IR2,
-        uint256 UR1,
-        uint256 UR2
-    ) external pure returns (uint256 interestRate);
+    function calculateIR(uint256 _U, uint256 _IR1) external pure returns (uint256 interestRate);
 }
