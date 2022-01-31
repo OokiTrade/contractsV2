@@ -180,7 +180,7 @@ def iUSDTv1(accounts, USDT, iUSDT, LoanTokenLogicStandard,LoanToken, BZX, LOAN_T
     acct = BZX.owner()
 
     itoken = deployIToken(BZX, USDT, acct, LoanTokenLogicStandard, LoanToken, LOAN_TOKEN_SETTINGS, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGISTRY, LoanTokenSettingsLowerAdmin, accounts, CurvedInterestRate)
-
+    USDT.approve(BZX, 2**256-1, {'from': itoken})
     USDT.approve(itoken, 2**256-1, {'from': accounts[0]})
     USDT.approve(itoken, 2**256-1, {'from': accounts[1]})
     USDT.approve(itoken, 2**256-1, {'from': accounts[2]})
