@@ -29,9 +29,9 @@ contract CurvedInterestRate is ICurvedInterestRate {
 
         // b= math.log(1.2/0.2)/(0.9-0.8)
         // b = (ln((intRate2 * 1e18) / intRate1) * 1e18) / (utilRate2 - utilRate1);
-        b = ((IR2 * 1e18) / IR1).ln() / (UR2 - UR1);
+        b = (((IR2 * 1e18) / IR1).ln() * 1e18) / (UR2 - UR1);
         // a = 0.2/e**(0.8 * b)
-        a = (IR1 * 1e18) / ((UR2 * b) / 1e18).exp2();
+        a = (IR1 * 1e18) / ((UR1 * b) / 1e18).exp();
     }
 
     function calculateIR(

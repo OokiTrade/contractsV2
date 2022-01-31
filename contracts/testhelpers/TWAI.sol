@@ -3,11 +3,12 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
-import "@openzeppelin-2.5.0/math/SafeMath.sol";
 
+pragma solidity >=0.8.4;
+
+import "prb-math/contracts/PRBMathUD60x18.sol";
 contract TWAI {
-    using SafeMath for uint256;
+    using PRBMathUD60x18 for uint256;
 
     event Logger(string name, uint256 value);
     // uint256 public twai;
@@ -25,6 +26,17 @@ contract TWAI {
         interestRate = getInterestRate(newUtilization, a, b);
         lastIR = interestRate;
     }
+    
+    function calculateIR(
+        uint256 U,
+        uint256 IR1,
+        uint256 IR2,
+        uint256 UR1,
+        uint256 UR2
+    ) public pure returns (uint256 interestRate) {
+        (uint256 a, uint256 b) = getAB(IR1, IR2, UR1, UR2);
+        return getInterestRate(U, a, b);
+    }
 
     // this is supposed to be more efficient but its not because 2 reads and 2 writes every time. 
     // while borrow has a read + write + small calc. that small calc doesn't cover 1 read+ write
@@ -34,6 +46,57 @@ contract TWAI {
 
         (a , b) = getAB(interestRate);
 
+    }
+
+    function getAB(
+        uint256 IR1,
+        uint256 IR2,
+        uint256 UR1,
+        uint256 UR2
+    ) public pure returns (uint256 a, uint256 b) {
+        // some minimal interestRate to avoid zero a or b
+        if (IR1 < 0.001e18) {
+            IR1 = 0.001e18;
+        }
+
+        // b= math.log(1.2/0.2)/(0.9-0.8)
+        // b = (ln((intRate2 * 1e18) / intRate1) * 1e18) / (utilRate2 - utilRate1);
+        b = ((IR2 * 1e18) / IR1).ln() *1e18/ (UR2 - UR1);
+        // a = 0.2/e**(0.8 * b)
+        // uint256 temp;
+        // emit Logger("(IR1 * 1e18) ", (IR1 * 1e18));
+        // emit Logger("((UR2 * b) / 1e18).exp()", ((UR2 * b) / 1e18).exp());
+        // emit Logger("(UR2 * b) / 1e18", (UR1 * b) / 1e18);
+
+        a = (IR1 * 1e18) / ((UR1 * b) / 1e18).exp();
+    }
+
+
+
+    function getAB(uint256 interestRate) public pure returns (uint256 a, uint256 b) {
+        // some minimal interestRate to avoid zero a or b
+        if (interestRate < 0.001e18) {
+            interestRate = 0.001e18;
+        }
+
+        // if (interestRate > 1e18) {
+        //     interestRate = 1e18;
+        // }
+        uint256 utilRate1 = 0.8e18;
+        uint256 utilRate2 = 1e18;
+        uint256 intRate1 = interestRate;
+        uint256 intRate2 = 1.2e18; // TODO this actually states that at 100% utilization we have 120 interest rate. I believe this should be 200%
+        // y = (1000 * (((0.2/1.2) ** (1/1000)) - 1))/(0.8-0.9)
+        // x = 0.2/e**(0.8 * y)
+
+        // a = (1 - (1000 * (((intRate1*1e18/intRate2) ** (1/1000)) )/(utilRate2 - utilRate1);
+        // b= math.log(1.2/0.2)/(0.9-0.8)
+        b = (ln((intRate2 * 1e18) / intRate1) * 1e18) / (utilRate2 - utilRate1);
+        // a = 0.2/e**(0.8 * b)
+        // emit Logger("(IR1 * 1e18) ", (intRate1 * 1e18));
+        // emit Logger("((UR2 * b) / 1e18).exp()", exp((utilRate1 * b) / 1e18));
+        // emit Logger("(UR2 * b) / 1e18", (utilRate1 * b) / 1e18);
+        a = (intRate1 * 1e18) / exp((utilRate1 * b) / 1e18);
     }
 
     function getCurrentInterestRateBasedOnCurrentCurve(uint256 newUtilization) public view returns (uint256 interestRate) {
@@ -59,28 +122,7 @@ contract TWAI {
         return (a * exp2((b * utilization) / 1e18)) / 1e18;
     }
 
-    function getAB(uint256 interestRate) public pure returns (uint256 a, uint256 b) {
-        // some minimal interestRate to avoid zero a or b
-        if (interestRate < 0.001e18) {
-            interestRate = 0.001e18;
-        }
 
-        // if (interestRate > 1e18) {
-        //     interestRate = 1e18;
-        // }
-        uint256 utilRate1 = 0.8e18;
-        uint256 utilRate2 = 1e18;
-        uint256 intRate1 = interestRate;
-        uint256 intRate2 = 1.2e18; // TODO this actually states that at 100% utilization we have 120 interest rate. I believe this should be 200%
-        // y = (1000 * (((0.2/1.2) ** (1/1000)) - 1))/(0.8-0.9)
-        // x = 0.2/e**(0.8 * y)
-
-        // a = (1 - (1000 * (((intRate1*1e18/intRate2) ** (1/1000)) )/(utilRate2 - utilRate1);
-        // b= math.log(1.2/0.2)/(0.9-0.8)
-        b = (ln((intRate2 * 1e18) / intRate1) * 1e18) / (utilRate2 - utilRate1);
-        // a = 0.2/e**(0.8 * b)
-        a = (intRate1 * 1e18) / exp2((utilRate1 * b) / 1e18);
-    }
 
     uint256 internal constant SCALE = 1e18;
     uint256 internal constant MAX_UD60x18 = 115792089237316195423570985008687907853269984665640564039457_584007913129639935;
