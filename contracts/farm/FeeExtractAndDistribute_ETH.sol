@@ -21,33 +21,32 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    IStaking public constant STAKING = IStaking(0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4);
+    IStaking public constant STAKING =
+        IStaking(0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4);
 
-    address public constant BZRX = 0x56d811088235F11C8920698a204A5010a788f4b3;
-    address public constant vBZRX = 0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F;
-    address public constant iBZRX = 0x18240BD9C07fA6156Ce3F3f61921cC82b2619157;
-    address public constant LPToken = 0xa30911e072A0C88D55B5D0A0984B66b0D04569d0; // sushiswap
-    address public constant LPTokenOld = 0xe26A220a341EAca116bDa64cF9D5638A935ae629; // balancer
-    IERC20 public constant curve3Crv = IERC20(0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490);
+    address public constant OOKI = 0x56d811088235F11C8920698a204A5010a788f4b3;
+    IERC20 public constant curve3Crv =
+        IERC20(0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490);
 
     address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address public constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
     address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     address public constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
-    address public constant SUSHI = 0x6B3595068778DD592e39A122f4f5a5cF09C90fE2;
 
-    IUniswapV2Router public constant uniswapRouter = IUniswapV2Router(0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F); // sushiswap
-    ICurve3Pool public constant curve3pool = ICurve3Pool(0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7);
+    IUniswapV2Router public constant uniswapRouter =
+        IUniswapV2Router(0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F); // sushiswap
+    ICurve3Pool public constant curve3pool =
+        ICurve3Pool(0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7);
     IBZx public constant bZx = IBZx(0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f);
 
     mapping(address => address[]) public swapPaths;
     mapping(address => uint256) public stakingRewards;
 
+    uint256 public buybackPercent;
+
     event ExtractAndDistribute();
 
-    event WithdrawFees(
-        address indexed sender
-    );
+    event WithdrawFees(address indexed sender);
 
     event DistributeFees(
         address indexed sender,
@@ -71,14 +70,15 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
         _;
     }
 
-
-
     // Fee Conversion Logic //
 
     function sweepFees()
         public
-        // sweepFeesByAsset() does checkPause
-        returns (uint256 bzrxRewards, uint256 crv3Rewards)
+        returns (
+            // sweepFeesByAsset() does checkPause
+            uint256 bzrxRewards,
+            uint256 crv3Rewards
+        )
     {
         return sweepFeesByAsset(STAKING.getCurrentFeeTokens());
     }
@@ -98,32 +98,31 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
         internal
         returns (uint256[] memory)
     {
-        uint256[] memory amounts = bZx.withdrawFees(assets, address(this), IBZx.FeeClaimType.All);
+        uint256[] memory amounts = bZx.withdrawFees(
+            assets,
+            address(this),
+            IBZx.FeeClaimType.All
+        );
 
         for (uint256 i = 0; i < assets.length; i++) {
-            stakingRewards[assets[i]] = stakingRewards[assets[i]].add(amounts[i]);
+            stakingRewards[assets[i]] = stakingRewards[assets[i]].add(
+                amounts[i]
+            );
         }
 
-        emit WithdrawFees(
-            msg.sender
-        );
+        emit WithdrawFees(msg.sender);
 
         return amounts;
     }
 
-    function _convertFees(
-        address[] memory assets,
-        uint256[] memory amounts)
+    function _convertFees(address[] memory assets, uint256[] memory amounts)
         internal
         returns (uint256 bzrxOutput, uint256 crv3Output)
     {
         require(assets.length == amounts.length, "count mismatch");
 
         IPriceFeeds priceFeeds = IPriceFeeds(bZx.priceFeeds());
-        (uint256 bzrxRate,) = priceFeeds.queryRate(
-            BZRX,
-            WETH
-        );
+        (uint256 bzrxRate, ) = priceFeeds.queryRate(OOKI, WETH);
         uint256 maxDisagreement = STAKING.maxUniswapDisagreement();
 
         address asset;
@@ -132,7 +131,7 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
         uint256 usdtAmount;
         for (uint256 i = 0; i < assets.length; i++) {
             asset = assets[i];
-            if (asset == BZRX) {
+            if (asset == OOKI) {
                 continue;
             } else if (asset == DAI) {
                 daiAmount = daiAmount.add(amounts[i]);
@@ -146,11 +145,17 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
             }
 
             if (amounts[i] != 0) {
-                bzrxOutput += _convertFeeWithUniswap(asset, amounts[i], priceFeeds, bzrxRate, maxDisagreement);
+                bzrxOutput += _convertFeeWithUniswap(
+                    asset,
+                    amounts[i],
+                    priceFeeds,
+                    bzrxRate,
+                    maxDisagreement
+                );
             }
         }
         if (bzrxOutput != 0) {
-            stakingRewards[BZRX] = stakingRewards[BZRX].add(bzrxOutput);
+            stakingRewards[OOKI] = stakingRewards[OOKI].add(bzrxOutput);
         }
 
         if (daiAmount != 0 || usdcAmount != 0 || usdtAmount != 0) {
@@ -159,72 +164,92 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
                 usdcAmount,
                 usdtAmount
             );
-            stakingRewards[address(curve3Crv)] = stakingRewards[address(curve3Crv)].add(crv3Output);
+            stakingRewards[address(curve3Crv)] = stakingRewards[
+                address(curve3Crv)
+            ].add(crv3Output);
         }
 
-        emit ConvertFees(
-            msg.sender,
-            bzrxOutput,
-            crv3Output
-        );
+        emit ConvertFees(msg.sender, bzrxOutput, crv3Output);
     }
 
     function _distributeFees()
         internal
         returns (uint256 bzrxRewards, uint256 crv3Rewards)
     {
-        bzrxRewards = stakingRewards[BZRX];
+        bzrxRewards = stakingRewards[OOKI];
         crv3Rewards = stakingRewards[address(curve3Crv)];
+        uint256 USDCBridge = 0;
         if (bzrxRewards != 0 || crv3Rewards != 0) {
             address _fundsWallet = STAKING.fundsWallet();
             uint256 rewardAmount;
             uint256 callerReward;
+            uint256 bridgeRewards;
             if (bzrxRewards != 0) {
-                stakingRewards[BZRX] = 0;
-                rewardAmount = bzrxRewards
-                    .mul(STAKING.rewardPercent())
-                    .div(1e20);
-                IERC20(BZRX).transfer(
+                stakingRewards[OOKI] = 0;
+                callerReward = bzrxRewards / STAKING.callerRewardDivisor();
+                IERC20(OOKI).transfer(msg.sender, callerReward);
+                bzrxRewards = bzrxRewards.sub(callerReward);
+                bridgeRewards = bzrxRewards.mul(buybackPercent).div(1e20);
+                USDCBridge = _convertToUSDCUniswap(bridgeRewards);
+                rewardAmount = bzrxRewards.mul(STAKING.rewardPercent()).div(
+                    1e20
+                );
+                IERC20(OOKI).transfer(
                     _fundsWallet,
-                    bzrxRewards - rewardAmount
+                    bzrxRewards - rewardAmount - bridgeRewards
                 );
                 bzrxRewards = rewardAmount;
-
-                callerReward = bzrxRewards / STAKING.callerRewardDivisor();
-                IERC20(BZRX).transfer(
-                    msg.sender,
-                    callerReward
-                );
-                bzrxRewards = bzrxRewards
-                    .sub(callerReward);
             }
             if (crv3Rewards != 0) {
                 stakingRewards[address(curve3Crv)] = 0;
-
-                rewardAmount = crv3Rewards
-                    .mul(STAKING.rewardPercent())
-                    .div(1e20);
+                callerReward = crv3Rewards / STAKING.callerRewardDivisor();
+                curve3Crv.transfer(msg.sender, callerReward);
+                crv3Rewards = crv3Rewards.sub(callerReward);
+                bridgeRewards = crv3Rewards.mul(buybackPercent).div(1e20);
+                USDCBridge = USDCBridge.add(_convertToUSDCCurve(bridgeRewards));
+                rewardAmount = crv3Rewards.mul(STAKING.rewardPercent()).div(
+                    1e20
+                );
                 curve3Crv.transfer(
                     _fundsWallet,
-                    crv3Rewards - rewardAmount
+                    crv3Rewards - rewardAmount - bridgeRewards
                 );
                 crv3Rewards = rewardAmount;
-
-                callerReward = crv3Rewards / STAKING.callerRewardDivisor();
-                curve3Crv.transfer(
-                    msg.sender,
-                    callerReward
-                );
-                crv3Rewards = crv3Rewards
-                    .sub(callerReward);
             }
             STAKING.addRewards(bzrxRewards, crv3Rewards);
+            _bridgeFeesToPolygon(USDCBridge);
         }
 
-        emit DistributeFees(
-            msg.sender,
-            bzrxRewards,
-            crv3Rewards
+        emit DistributeFees(msg.sender, bzrxRewards, crv3Rewards);
+    }
+
+    function _bridgeFeesToPolygon(uint256 bridgeAmount) internal {}
+
+    function _convertToUSDCUniswap(uint256 amount)
+        internal
+        returns (uint256 returnAmount)
+    {
+        address[] memory path = new address[](2);
+        path[0] = OOKI;
+        path[1] = USDC;
+        uint256[] memory amounts = uniswapRouter.swapExactTokensForTokens(
+            amount,
+            1, // amountOutMin
+            path,
+            address(this),
+            block.timestamp
+        );
+
+        returnAmount = amounts[amounts.length - 1];
+        IPriceFeeds priceFeeds = IPriceFeeds(bZx.priceFeeds());
+        (uint256 bzrxRate, ) = priceFeeds.queryRate(OOKI, WETH);
+        _checkUniDisagreement(
+            USDC,
+            amount,
+            returnAmount,
+            priceFeeds,
+            bzrxRate,
+            STAKING.maxUniswapDisagreement()
         );
     }
 
@@ -233,10 +258,8 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
         uint256 amount,
         IPriceFeeds priceFeeds,
         uint256 bzrxRate,
-        uint256 maxDisagreement)
-        internal
-        returns (uint256 returnAmount)
-    {
+        uint256 maxDisagreement
+    ) internal returns (uint256 returnAmount) {
         uint256 stakingReward = stakingRewards[asset];
         if (stakingReward != 0) {
             if (amount > stakingReward) {
@@ -266,13 +289,20 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
         }
     }
 
-    function _convertFeesWithCurve(
-        uint256 daiAmount,
-        uint256 usdcAmount,
-        uint256 usdtAmount)
+    function _convertToUSDCCurve(uint256 amount)
         internal
         returns (uint256 returnAmount)
     {
+        uint256 beforeBalance = IERC20(USDC).balanceOf(address(this));
+        curve3pool.remove_liquidity_one_coin(amount, 1, 1); //does not need to be checked for disagreement as liquidity add handles that
+        returnAmount = IERC20(USDC).balanceOf(address(this)) - beforeBalance; //does not underflow as USDC is not being transferred out
+    }
+
+    function _convertFeesWithCurve(
+        uint256 daiAmount,
+        uint256 usdcAmount,
+        uint256 usdtAmount
+    ) internal returns (uint256 returnAmount) {
         uint256[3] memory curveAmounts;
         uint256 curveTotal;
         uint256 stakingReward;
@@ -330,32 +360,20 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
         uint256 bzrxAmount,
         IPriceFeeds priceFeeds,
         uint256 bzrxRate,
-        uint256 maxDisagreement)
-        internal
-        view
-    {
-        (uint256 rate, uint256 precision) = priceFeeds.queryRate(
-            asset,
-            WETH
-        );
+        uint256 maxDisagreement
+    ) internal view {
+        (uint256 rate, uint256 precision) = priceFeeds.queryRate(asset, WETH);
 
-        rate = rate
-            .mul(1e36)
-            .div(precision)
-            .div(bzrxRate);
+        rate = rate.mul(1e36).div(precision).div(bzrxRate);
 
-        uint256 sourceToDestSwapRate = bzrxAmount
-            .mul(1e18)
-            .div(assetAmount);
+        uint256 sourceToDestSwapRate = bzrxAmount.mul(1e18).div(assetAmount);
 
-        uint256 spreadValue = sourceToDestSwapRate > rate ?
-            sourceToDestSwapRate - rate :
-            rate - sourceToDestSwapRate;
+        uint256 spreadValue = sourceToDestSwapRate > rate
+            ? sourceToDestSwapRate - rate
+            : rate - sourceToDestSwapRate;
 
         if (spreadValue != 0) {
-            spreadValue = spreadValue
-                .mul(1e20)
-                .div(sourceToDestSwapRate);
+            spreadValue = spreadValue.mul(1e20).div(sourceToDestSwapRate);
 
             require(
                 spreadValue <= maxDisagreement,
@@ -367,66 +385,63 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
     function _checkCurveDisagreement(
         uint256 sendAmount, // deposit tokens
         uint256 actualReturn, // returned lp token
-        uint256 maxDisagreement)
-        internal
-        view
-    {
-        uint256 expectedReturn = sendAmount
-            .mul(1e18)
-            .div(curve3pool.get_virtual_price());
+        uint256 maxDisagreement
+    ) internal view {
+        uint256 expectedReturn = sendAmount.mul(1e18).div(
+            curve3pool.get_virtual_price()
+        );
 
-        uint256 spreadValue = actualReturn > expectedReturn ?
-            actualReturn - expectedReturn :
-            expectedReturn - actualReturn;
+        uint256 spreadValue = actualReturn > expectedReturn
+            ? actualReturn - expectedReturn
+            : expectedReturn - actualReturn;
 
         if (spreadValue != 0) {
-            spreadValue = spreadValue
-                .mul(1e20)
-                .div(actualReturn);
+            spreadValue = spreadValue.mul(1e20).div(actualReturn);
 
-            require(
-                spreadValue <= maxDisagreement,
-                "curve price disagreement"
-            );
+            require(spreadValue <= maxDisagreement, "curve price disagreement");
         }
     }
 
-    function setApprovals()
-        external
-        onlyOwner
-    {
+    function setApprovals() external onlyOwner {
         IERC20(DAI).safeApprove(address(curve3pool), uint256(-1));
         IERC20(USDC).safeApprove(address(curve3pool), uint256(-1));
         IERC20(USDT).safeApprove(address(curve3pool), uint256(-1));
 
-        IERC20(BZRX).safeApprove(address(STAKING), uint256(-1));
+        IERC20(OOKI).safeApprove(address(STAKING), uint256(-1));
         curve3Crv.safeApprove(address(STAKING), uint256(-1));
     }
 
-    // path should start with the asset to swap and end with BZRX
+    // path should start with the asset to swap and end with OOKI
     // only one path allowed per asset
-    // ex: asset -> WETH -> BZRX
-    function setPaths(
-        address[][] calldata paths)
-        external
-        onlyOwner
-    {
+    // ex: asset -> WETH -> OOKI
+    function setPaths(address[][] calldata paths) external onlyOwner {
         address[] memory path;
         for (uint256 i = 0; i < paths.length; i++) {
             path = paths[i];
-            require(path.length >= 2 &&
-            path[0] != path[path.length - 1] &&
-            path[path.length - 1] == BZRX,
+            require(
+                path.length >= 2 &&
+                    path[0] != path[path.length - 1] &&
+                    path[path.length - 1] == OOKI,
                 "invalid path"
             );
 
             // check that the path exists
-            uint256[] memory amountsOut = uniswapRouter.getAmountsOut(1e10, path);
-            require(amountsOut[amountsOut.length - 1] != 0, "path does not exist");
+            uint256[] memory amountsOut = uniswapRouter.getAmountsOut(
+                1e10,
+                path
+            );
+            require(
+                amountsOut[amountsOut.length - 1] != 0,
+                "path does not exist"
+            );
 
             swapPaths[path[0]] = path;
             IERC20(path[0]).safeApprove(address(uniswapRouter), 0);
             IERC20(path[0]).safeApprove(address(uniswapRouter), uint256(-1));
         }
+    }
+
+    function setBuybackSettings(uint256 amount) external onlyOwner {
+        buybackPercent = amount;
     }
 }
