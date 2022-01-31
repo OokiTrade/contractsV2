@@ -17,6 +17,17 @@ import "./interfaces/IPriceFeeds.sol";
 import "../../interfaces/IStaking.sol";
 import "./../staking/interfaces/ICurve3Pool.sol";
 
+interface IBridge {
+    function send(
+        address _receiver,
+        address _token,
+        uint256 _amount,
+        uint64 _dstChainId,
+        uint64 _nonce,
+        uint32 _maxSlippage
+    ) external;
+}
+
 contract FeeExtractAndDistribute_ETH is Upgradeable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
@@ -32,6 +43,11 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
     address public constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
     address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     address public constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+
+    address public constant BUYBACK =
+        0x12EBd8263A54751Aaf9d8C2c74740A8e62C0AfBe;
+    address public constant BRIDGE = 0x5427FEFA711Eff984124bFBB1AB6fbf5E3DA1820;
+    uint64 public constant DEST_CHAINID = 137; //polygon
 
     IUniswapV2Router public constant uniswapRouter =
         IUniswapV2Router(0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F); // sushiswap
@@ -223,7 +239,16 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
         emit DistributeFees(msg.sender, bzrxRewards, crv3Rewards);
     }
 
-    function _bridgeFeesToPolygon(uint256 bridgeAmount) internal {}
+    function _bridgeFeesToPolygon(uint256 bridgeAmount) internal {
+        IBridge(BRIDGE).send(
+            BUYBACK,
+            USDC,
+            bridgeAmount,
+            DEST_CHAINID,
+            uint64(block.timestamp),
+            10000
+        );
+    }
 
     function _convertToUSDCUniswap(uint256 amount)
         internal
