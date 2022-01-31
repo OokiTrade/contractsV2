@@ -1059,7 +1059,8 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
             _totalAssetSupply(totalBorrow)
         );
 
-        nextRate = rateHelper.calculateIR(utilRate, lastIR, IR2, UR1, UR2);
+        //utilRate from 0e18 to 100e18
+        nextRate = rateHelper.calculateIR(utilRate/100, lastIR, IR2, UR1, UR2);
 
     //     uint256 thisMinRate;
     //     uint256 thisMaxRate;
