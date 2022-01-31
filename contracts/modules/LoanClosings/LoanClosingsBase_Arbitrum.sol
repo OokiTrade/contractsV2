@@ -458,11 +458,11 @@ contract LoanClosingsBase_Arbitrum is State, LoanClosingsEvents, VaultController
                     assetAmount
                 );
             }*/
-			vaultWithdraw(
-				assetToken,
-				receiver,
-				assetAmount
-			);
+            vaultWithdraw(
+                assetToken,
+                receiver,
+                assetAmount
+            );
         }
     }
 
