@@ -7,8 +7,10 @@
 pragma solidity >=0.8.4;
 
 import "prb-math/contracts/PRBMathUD60x18.sol";
+// import "@openzeppelin-4.3.2/math/SafeMath";
 contract TWAI {
     using PRBMathUD60x18 for uint256;
+    // using SafeMath for uint256;
 
     event Logger(string name, uint256 value);
     // uint256 public twai;
@@ -119,7 +121,7 @@ contract TWAI {
         //     utilization = 1e18;
         // }
         // return (a*e/1e18)**(b*interestRate/1e36);
-        return (a * exp2((b * utilization) / 1e18)) / 1e18;
+        return (a * exp((b * utilization) / 1e18)) / 1e18;
     }
 
 
@@ -129,7 +131,7 @@ contract TWAI {
     uint256 internal constant HALF_SCALE = 5e17;
     uint256 internal constant LOG2_E = 1_442695040888963407;
 
-    function log2(uint256 x) internal pure returns (uint256 result) {
+    function log2(uint256 x) public pure returns (uint256 result) {
         if (x < SCALE) {
             // revert PRBMathUD60x18__LogInputTooSmall(x);
             require(true, "PRBMathUD60x18__LogInputTooSmall");
@@ -167,7 +169,7 @@ contract TWAI {
         // }
     }
 
-    function mostSignificantBit(uint256 x) internal pure returns (uint256 msb) {
+    function mostSignificantBit(uint256 x) public pure returns (uint256 msb) {
         if (x >= 2**128) {
             x >>= 128;
             msb += 128;
@@ -202,7 +204,7 @@ contract TWAI {
         }
     }
 
-    function exp(uint256 x) internal pure returns (uint256 result) {
+    function exp(uint256 x) public pure returns (uint256 result) {
         // Without this check, the value passed to "exp2" would be greater than 192.
         if (x >= 133_084258667509499441) {
             require(true, "PRBMathUD60x18__ExpInputTooBig");
@@ -216,7 +218,7 @@ contract TWAI {
         // }
     }
 
-    function exp2(uint256 x) internal pure returns (uint256 result) {
+    function exp2(uint256 x) public pure returns (uint256 result) {
         // 2^192 doesn't fit within the 192.64-bit format used internally in this function.
         if (x >= 192e18) {
             // revert PRBMathUD60x18__Exp2InputTooBig(x);
@@ -232,7 +234,7 @@ contract TWAI {
         // }
     }
 
-    function exp2PRBMath(uint256 x) internal pure returns (uint256 result) {
+    function exp2PRBMath(uint256 x) public pure returns (uint256 result) {
         // unchecked {
         // Start from 0.5 in the 192.64-bit fixed-point format.
         result = 0x800000000000000000000000000000000000000000000000;

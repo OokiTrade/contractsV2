@@ -13,7 +13,7 @@ contract CurvedInterestRate is ICurvedInterestRate {
         uint256 b
     ) public pure override returns (uint256 interestRate) {
         // general ae^(bx)
-        return (a * ((b * U) / 1e18).exp2()) / 1e18;
+        return (a * ((b * U) / 1e18).exp()) / 1e18;
     }
 
     function getAB(
