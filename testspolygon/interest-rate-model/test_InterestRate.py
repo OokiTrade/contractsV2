@@ -431,6 +431,7 @@ def _base(iToken, token, BZX, acct0,acct1, acct2):
 
 
 def test_InterestRate_1(requireFork, iUSDTv1, USDT,iUSDT, accounts, BZX):
+    iToken = iUSDTv1
     borrowAmount1 = 10e6
     borrowTime = 7884000
     collateralAmount = 10e18
