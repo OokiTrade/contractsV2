@@ -20,6 +20,7 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
     address public constant USDC = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
     uint256 public constant WEI_PRECISION_PERCENT = 10**20;
     uint64 public constant DEST_CHAINID = 1; //to be set
+	uint256 public constant MIN_USDC_AMOUNT = 1000e6;//1000 USDC minimum bridge amount
     IUniswapV2Router public constant swapsRouterV2 =
         IUniswapV2Router(0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506); // Sushiswap
 
@@ -145,6 +146,7 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
     function _bridgeFeesAndDistribute() internal {
 	    uint256 total = IERC20(USDC).balanceOf(address(this));
 		IERC20(USDC).transfer(BUYBACK_ADDRESS, total*buybackPercentInWEI/WEI_PRECISION_PERCENT); //allocates funds for buyback
+		require(IERC20(USDC).balanceOf(address(this)) > MIN_USDC_AMOUNT, "FeeExtractAndDistribute: bridge amount too low");
         IBridge(bridge).send(
             treasuryWallet,
             USDC,

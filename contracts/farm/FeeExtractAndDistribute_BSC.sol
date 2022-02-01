@@ -18,7 +18,7 @@ contract FeeExtractAndDistribute_BSC is Upgradeable_0_8 {
     address public constant BNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
     address public constant USDC = 0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d;
     uint64 public constant DEST_CHAINID = 137; //send to polygon
-
+    uint256 public constant MIN_USDC_AMOUNT = 1e6; //1 USDC minimum amount
     IUniswapV2Router public constant swapsRouterV2 =
         IUniswapV2Router(0x10ED43C718714eb63d5aA57B78B54704E256024E);
 
@@ -140,6 +140,7 @@ contract FeeExtractAndDistribute_BSC is Upgradeable_0_8 {
     }
 
     function _bridgeFeesAndDistribute() internal {
+	    require(IERC20(USDC).balanceOf(address(this)) > MIN_USDC_AMOUNT, "FeeExtractAndDistribute: bridge amount too low");
         IBridge(bridge).send(
             treasuryWallet,
             USDC,
