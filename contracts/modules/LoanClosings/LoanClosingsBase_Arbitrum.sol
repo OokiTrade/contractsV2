@@ -446,7 +446,7 @@ contract LoanClosingsBase_Arbitrum is State, LoanClosingsEvents, VaultController
         internal
     {
         if (assetAmount != 0) {
-            if (assetToken == address(wethToken)) {
+            /*if (assetToken == address(wethToken)) {
                 vaultEtherWithdraw(
                     receiver,
                     assetAmount
@@ -457,7 +457,12 @@ contract LoanClosingsBase_Arbitrum is State, LoanClosingsEvents, VaultController
                     receiver,
                     assetAmount
                 );
-            }
+            }*/
+            vaultWithdraw(
+                assetToken,
+                receiver,
+                assetAmount
+            );
         }
     }
 
