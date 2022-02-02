@@ -7,10 +7,10 @@ import "../interfaces/ICurvedInterestRate.sol";
 contract CurvedInterestRate is ICurvedInterestRate {
     using PRBMathUD60x18 for uint256;
 
-    uint256 public constant IR2 = 130e18;
+    uint256 public constant IR2 = 120e18;
     uint256 public constant UR1 = 80e18;
     uint256 public constant UR2 = 100e18;
-    uint256 public constant IR_MAX = 120e18;
+    uint256 public constant IR_MAX = 110e18;
     uint256 public constant IR_MIN = 0.1e18;
 
     function getInterestRate(
