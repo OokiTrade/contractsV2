@@ -989,28 +989,11 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         return IERC20(loanTokenAddress).balanceOf(address(this));
     }
 
-    /* Internal View functions */
-
-    function _tokenPrice(
-        uint256 assetSupply)
-        internal
-        view
-        returns (uint256)
-    {
-        uint256 totalTokenSupply = totalSupply_;
-
-        return totalTokenSupply != 0 ?
-            assetSupply
-                .mul(WEI_PRECISION)
-                .div(totalTokenSupply) : initialPrice;
-    }
-
-    // next supply interest adjustment
     function _nextSupplyInterestRate(
         uint256 nextBorrowRate,
         uint256 assetBorrow,
         uint256 assetSupply)
-        internal
+        public
         view
         returns (uint256)
     {
@@ -1037,6 +1020,22 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
 
         //utilRate from 0e18 to 100e18
         nextRate = rateHelper.calculateIR(utilRate, lastIR);
+    }
+
+    /* Internal View functions */
+
+    function _tokenPrice(
+        uint256 assetSupply)
+        internal
+        view
+        returns (uint256)
+    {
+        uint256 totalTokenSupply = totalSupply_;
+
+        return totalTokenSupply != 0 ?
+            assetSupply
+                .mul(WEI_PRECISION)
+                .div(totalTokenSupply) : initialPrice;
     }
 
     function _getPreMarginData(

@@ -164,7 +164,7 @@ def marginSettings(bzx, underlyingToken, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGIST
         bzx.setLiquidationIncentivePercent(loanTokensArr, collateralTokensArr, amountsArr, {"from": acct})
         cui = accounts[0].deploy(CurvedInterestRate)
         loanTokenSettingsLowerAdmin = accounts[0].deploy(LoanTokenSettingsLowerAdmin)
-        calldata = loanTokenSettingsLowerAdmin.setDemandCurve.encode_input(cui, 1.2e18, 0.8e18, 1e18)
+        calldata = loanTokenSettingsLowerAdmin.setDemandCurve.encode_input(cui)
 
         existingIToken.updateSettings(loanTokenSettingsLowerAdmin.address, calldata,{"from": existingIToken.owner()})
 @pytest.fixture(scope="module")

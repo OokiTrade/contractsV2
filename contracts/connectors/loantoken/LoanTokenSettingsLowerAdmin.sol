@@ -103,17 +103,10 @@ contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage, StorageExtension {
     // }
 
     function setDemandCurve(
-        ICurvedInterestRate _rateHelper,
-        uint256 _IR2,
-        uint256 _UR1,
-        uint256 _UR2)
+        ICurvedInterestRate _rateHelper)
         public
     {
-        // TODO some safety checks
-        // require(_UR1 < _UR2, "invalid UR");
+        require(address(_rateHelper) != address(0), "no zero address");
         rateHelper = _rateHelper;
-        // IR2 = _IR2;
-        // UR1 = _UR1;
-        // UR2 = _UR2;
     }
 }
