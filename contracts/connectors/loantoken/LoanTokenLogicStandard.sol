@@ -1036,7 +1036,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         );
 
         //utilRate from 0e18 to 100e18
-        nextRate = rateHelper.calculateIR(utilRate/100, lastIR);
+        nextRate = rateHelper.calculateIR(utilRate, lastIR);
     }
 
     function _getPreMarginData(

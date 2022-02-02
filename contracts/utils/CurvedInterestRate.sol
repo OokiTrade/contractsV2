@@ -7,11 +7,11 @@ import "../interfaces/ICurvedInterestRate.sol";
 contract CurvedInterestRate is ICurvedInterestRate {
     using PRBMathUD60x18 for uint256;
 
-    uint256 public constant IR2 = 1.3e18;
-    uint256 public constant UR1 = 0.8e18;
-    uint256 public constant UR2 = 1e18;
-    uint256 public constant IR_MAX = 1.2e18;
-    uint256 public constant IR_MIN = 0.001e18;
+    uint256 public constant IR2 = 130e18;
+    uint256 public constant UR1 = 80e18;
+    uint256 public constant UR2 = 100e18;
+    uint256 public constant IR_MAX = 120e18;
+    uint256 public constant IR_MIN = 0.1e18;
 
     function getInterestRate(
         uint256 _U,
@@ -19,7 +19,7 @@ contract CurvedInterestRate is ICurvedInterestRate {
         uint256 _b
     ) public pure override returns (uint256 interestRate) {
         // general ae^(bx)
-        return (_a * ((_b * _U) / 1e18).exp()) / 1e18;
+        return (_a * ((_b * _U) / 1e18).exp()) * 100/ 1e18;
     }
 
     function getAB(uint256 _IR1) public pure override returns (uint256 a, uint256 b) {
@@ -33,7 +33,7 @@ contract CurvedInterestRate is ICurvedInterestRate {
         uint256 _UR2
     ) public pure override returns (uint256 a, uint256 b) {
         // some minimal interestRate to avoid zero a or b
-        if (_IR1 < 0.001e18) {
+        if (_IR1 < IR_MIN) {
             _IR1 = IR_MIN;
         }
 
