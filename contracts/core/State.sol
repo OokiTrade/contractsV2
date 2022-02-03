@@ -85,6 +85,8 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
 
     mapping(bytes32 => uint256) public loanInterestTotal; // per loan
     mapping(bytes32 => uint256) public loanRatePerTokenPaid; // per loan
+
+    mapping(address => uint256) public poolLastInterestRate; // per itoken
     /**** new interest model end */
 
 

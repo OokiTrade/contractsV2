@@ -281,7 +281,7 @@ contract StakeUnstake is Common {
 
     function earned(address account)
         external
-         
+        view
         returns (
             uint256 ookiRewardsEarned,
             uint256 stableCoinRewardsEarned,
@@ -315,7 +315,7 @@ contract StakeUnstake is Common {
         uint256 _stableCoinPerToken
     )
         internal
-        
+        view
         returns (
             uint256 ookiRewardsEarned,
             uint256 stableCoinRewardsEarned,

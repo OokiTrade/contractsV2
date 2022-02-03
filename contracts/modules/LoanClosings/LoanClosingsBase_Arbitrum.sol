@@ -8,7 +8,7 @@ pragma experimental ABIEncoderV2;
 
 import "../../core/State.sol";
 import "../../events/LoanClosingsEvents.sol";
-import "../../mixins/VaultController_Arbitrum.sol";
+import "../../mixins/VaultController.sol";
 import "../../mixins/InterestHandler.sol";
 import "../../mixins/FeesHelper.sol";
 import "../../mixins/LiquidationHelper.sol";
@@ -17,7 +17,7 @@ import "../../interfaces/ILoanPool.sol";
 import "../../governance/PausableGuardian.sol";
 
 
-contract LoanClosingsBase_Arbitrum is State, LoanClosingsEvents, VaultController_Arbitrum, InterestHandler, FeesHelper, SwapsUser, LiquidationHelper, PausableGuardian {
+contract LoanClosingsBase_Arbitrum is State, LoanClosingsEvents, VaultController, InterestHandler, FeesHelper, SwapsUser, LiquidationHelper, PausableGuardian {
 
     enum CloseTypes {
         Deposit,
@@ -458,6 +458,7 @@ contract LoanClosingsBase_Arbitrum is State, LoanClosingsEvents, VaultController
                     assetAmount
                 );
             }*/
+            // Arbitrum has issues with eth withdraw from weth
             vaultWithdraw(
                 assetToken,
                 receiver,

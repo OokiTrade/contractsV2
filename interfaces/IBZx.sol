@@ -253,6 +253,14 @@ interface IBZx {
         view
         returns (uint256);
 
+    /// @dev returns the last interest rate founnd during interest settlement
+    /// @param pool address
+    /// @return the last interset rate
+    function getPoolLastInterestRate(address pool)
+        external
+        view
+        returns (uint256);
+
     ////// Loan Openings //////
 
     /// @dev This is THE function that borrows or trades on the protocol
@@ -575,13 +583,14 @@ interface IBZx {
         external
         view
         returns (
-            uint256 _poolLastUpdateTime,
-            uint256 _poolPrincipalTotal,
-            uint256 _poolInterestTotal,
-            uint256 _poolRatePerTokenStored,
-            uint256 _loanPrincipalTotal,
-            uint256 _loanInterestTotal,
-            uint256 _loanRatePerTokenPaid
+        uint256 _poolLastUpdateTime,
+        uint256 _poolPrincipalTotal,
+        uint256 _poolInterestTotal,
+        uint256 _poolRatePerTokenStored,
+        uint256 _poolLastInterestRate,
+        uint256 _loanPrincipalTotal,
+        uint256 _loanInterestTotal,
+        uint256 _loanRatePerTokenPaid
         );
 
     /*/// @dev Gets current lender interest data totals for all loans with a specific oracle and interest token

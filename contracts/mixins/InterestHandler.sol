@@ -20,21 +20,18 @@ contract InterestHandler is State {
         internal
         returns (uint256 _loanInterestTotal)
     {
-        uint256 _loanRatePerTokenPaid;
-        (
-            , // poolPrincipalTotal
-            poolInterestTotal[pool],
-            poolRatePerTokenStored[pool],
-            , // loanPrincipalTotal,
-            _loanInterestTotal,
-            _loanRatePerTokenPaid) = _settleInterest2(
+        uint256[7] memory interestVals = _settleInterest2(
             pool,
             loanId
         );
+        poolInterestTotal[pool] = interestVals[1];
+        poolRatePerTokenStored[pool] = interestVals[2];
+        poolLastInterestRate[pool] = interestVals[3];
 
         if (loanId != 0) {
+            _loanInterestTotal = interestVals[5];
             loanInterestTotal[loanId] = _loanInterestTotal;
-            loanRatePerTokenPaid[loanId] = _loanRatePerTokenPaid;
+            loanRatePerTokenPaid[loanId] = interestVals[6];
         }
 
         poolLastUpdateTime[pool] = block.timestamp;
@@ -46,17 +43,17 @@ contract InterestHandler is State {
         view
         returns (uint256)
     {
-        (uint256 _poolPrincipalTotal, uint256 _poolInterestTotal,,,,) = _settleInterest2(
+        uint256[7] memory interestVals = _settleInterest2(
             pool,
             0
         );
 
-        uint256 lendingFee = _poolInterestTotal
+        uint256 lendingFee = interestVals[1] // _poolInterestTotal
             .mul(lendingFeePercent)
             .divCeil(WEI_PERCENT_PRECISION);
 
-        return _poolPrincipalTotal
-            .add(_poolInterestTotal)
+        return interestVals[0]      // _poolPrincipalTotal
+            .add(interestVals[1])   // _poolInterestTotal
             .sub(lendingFee);
     }
 
@@ -67,11 +64,13 @@ contract InterestHandler is State {
         view
         returns (uint256)
     {
-        (,,,uint256 _loanPrincipalTotal,uint256 _loanInterestTotal,) = _settleInterest2(
+        uint256[7] memory interestVals = _settleInterest2(
             pool,
             loanId
         );
-        return _loanPrincipalTotal.add(_loanInterestTotal);
+
+        return interestVals[4]      // _loanPrincipalTotal
+            .add(interestVals[5]);  // _loanInterestTotal
     }
 
     function _settleInterest2(
@@ -79,49 +78,57 @@ contract InterestHandler is State {
         bytes32 loanId)
         internal
         view
-        returns (
-            uint256 _poolPrincipalTotal,
-            uint256 _poolInterestTotal,
-            uint256 _poolRatePerTokenStored,
-            uint256 _loanPrincipalTotal,
-            uint256 _loanInterestTotal,
-            uint256 _loanRatePerTokenPaid
-        )
+        returns (uint256[7] memory interestVals)
     {
-        _poolPrincipalTotal = poolPrincipalTotal[pool];
-        _poolInterestTotal = poolInterestTotal[pool];
+        /*
+            uint256[7] ->
+            0: _poolPrincipalTotal,
+            1: _poolInterestTotal,
+            2: _poolRatePerTokenStored,
+            3: _poolNextInterestRate,
+            4: _loanPrincipalTotal,
+            5: _loanInterestTotal,
+            6: _loanRatePerTokenPaid
+        */
 
-        uint256 _poolVariableRatePerTokenNewAmount = _getRatePerTokenNewAmount(_poolPrincipalTotal.add(_poolInterestTotal), pool);
+        interestVals[0] = poolPrincipalTotal[pool];
+        interestVals[1] = poolInterestTotal[pool];
 
-        _poolInterestTotal = _poolPrincipalTotal
+        uint256 _poolVariableRatePerTokenNewAmount;
+        (_poolVariableRatePerTokenNewAmount, interestVals[3]) = _getRatePerTokenNewAmount(pool, interestVals[0].add(interestVals[1]));
+
+        interestVals[1] = interestVals[0]
             .mul(_poolVariableRatePerTokenNewAmount)
             .div(WEI_PERCENT_PRECISION * WEI_PERCENT_PRECISION)
-            .add(_poolInterestTotal);
+            .add(interestVals[1]);
 
-        _poolRatePerTokenStored = poolRatePerTokenStored[pool]
+        interestVals[2] = poolRatePerTokenStored[pool]
             .add(_poolVariableRatePerTokenNewAmount);
 
-         if (loanId != 0 && (_loanPrincipalTotal = loans[loanId].principal) != 0) {
-            _loanInterestTotal = _loanPrincipalTotal
-                .mul(_poolRatePerTokenStored.sub(loanRatePerTokenPaid[loanId])) // _loanRatePerTokenUnpaid
+         if (loanId != 0 && (interestVals[4] = loans[loanId].principal) != 0) {
+            interestVals[5] = interestVals[4]
+                .mul(interestVals[2].sub(loanRatePerTokenPaid[loanId])) // _loanRatePerTokenUnpaid
                 .div(WEI_PERCENT_PRECISION * WEI_PERCENT_PRECISION)
                 .add(loanInterestTotal[loanId]);
 
-            _loanRatePerTokenPaid = _poolRatePerTokenStored;
+            interestVals[6] = interestVals[2];
         }
     }
 
     function _getRatePerTokenNewAmount(
-        uint256 poolTotal,
-        address pool)
+        address pool,
+        uint256 poolTotal)
         internal
         view
-        returns (uint256)
+        returns (uint256 ratePerTokenNewAmount, uint256 nextInterestRate)
     {
-        return block.timestamp
-            .sub(poolLastUpdateTime[pool])
-            .mul(ILoanPool(pool)._nextBorrowInterestRate(poolTotal, 0)) // rate per year
-            .mul(WEI_PERCENT_PRECISION)
-            .div(31536000); // seconds in a year
+        nextInterestRate = ILoanPool(pool)._nextBorrowInterestRate(poolTotal, 0, poolLastInterestRate[pool]);
+        if (nextInterestRate != 0) {
+            ratePerTokenNewAmount = block.timestamp
+                .sub(poolLastUpdateTime[pool])
+                .mul(nextInterestRate) // rate per year
+                .mul(WEI_PERCENT_PRECISION)
+                .div(31536000); // seconds in a year
+        }
     }
 }
