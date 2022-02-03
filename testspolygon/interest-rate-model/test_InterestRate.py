@@ -524,3 +524,37 @@ def test_borrowmore(requireFork, iUSDTv1, USDT,iUSDT, accounts, BZX):
     txBorrow = iUSDTv1.borrow(loanId1, borrowAmount1, borrowTime, collateralAmount, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount)})
     chain.mine(timedelta=60*60*24*365)
     int(((BZX.getLoanPrincipal(loanId1)/(2*borrowAmount1))-1)*100)/2 == int((interestRate1 * borrowAmount1 +interestRate2 * (borrowAmount1*2))/(borrowAmount1*2)/2/1e18)
+
+
+def test_token_price(requireFork, iUSDTv1, USDT,iUSDT, accounts, BZX):
+    # assert False
+    acct0 = accounts[4]
+    acct1 = accounts[5]
+    iUSDTv1.mint(acct1, 0.001e6, {'from': acct1})
+
+    iUSDTv1.mint(acct0, 100e6, {'from': acct0})
+
+    assert int(iUSDTv1.balanceOf(acct0)/1e6) == 100
+
+    USDT.transfer(iUSDTv1, 50e6, {'from': acct1})
+    
+    assert int(iUSDTv1.tokenPrice()/1e16) == 149
+    balanceBefore = int(iUSDTv1.balanceOf(acct0)/1e6)
+    iUSDTv1.mint(acct0, 100e6, {'from': acct0})
+    
+    assert int(iUSDTv1.balanceOf(acct0)/1e6) ==balanceBefore + int(100/(iUSDTv1.tokenPrice()/1e18))
+
+    USDT.transfer(iUSDTv1, 100e6, {'from': acct1})
+
+    assert int(iUSDTv1.tokenPrice()/1e16) > 200 # 209
+
+    balanceBeforeIUSDT = iUSDTv1.balanceOf(acct0)
+    balanceBeforeUSDT = USDT.balanceOf(acct0)
+
+    # burning here 166 iUSDT at token price 2.09 166* 2.09= 346.94
+    expecetedAmount = balanceBeforeIUSDT * iUSDTv1.tokenPrice() / 1e18
+    iUSDTv1.burn(acct0, balanceBeforeIUSDT, {"from": acct0})
+    actualAmount = USDT.balanceOf(acct0) - balanceBeforeUSDT
+
+    assert  int((expecetedAmount/1e6)) == int(actualAmount/1e6)
+    return True
