@@ -26,7 +26,7 @@ def LOAN_TOKEN_SETTINGS(accounts, interface, LoanTokenSettings):
 
 
 @pytest.fixture(scope="module")
-def BZX(accounts, interface, LoanSettings, LoanOpenings, LoanMaintenance_Arbitrum, LoanMaintenance_2, LoanClosings_Arbitrum, SwapsExternal):
+def BZX(accounts, interface, LoanSettings, LoanOpenings, LoanMaintenance_Arbitrum, LoanMaintenance_2, LoanClosings_Arbitrum, SwapsExternal, SwapsImplUniswapV2_ARBITRUM, DexRecords):
     bzx = Contract.from_abi("bzx", address="0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB",abi=interface.IBZx.abi, owner=accounts[0])
 
 
@@ -66,6 +66,12 @@ def BZX(accounts, interface, LoanSettings, LoanOpenings, LoanMaintenance_Arbitru
     swapsExternal = SwapsExternal.deploy({'from': bzx.owner()})
     print("Calling replaceContract.")
     bzx.replaceContract(swapsExternal.address, {'from': bzx.owner()})
+
+    print("Deploying Dex Selector and Implementations")
+    dex_record = DexRecords.deploy({'from':bzx.owner()})
+    univ2_arbitrum = SwapsImplUniswapV2_ARBITRUM.deploy({'from':bzx.owner()})
+    dex_record.setDexID(univ2_arbitrum.address, {'from':bzx.owner()})
+    bzx.setSwapsImplContract(dex_record.address, {'from':bzx.owner()})
 
     return bzx
 
@@ -449,7 +455,6 @@ def test_InterestRate_1(requireFork, iUSDTv1, USDT,iUSDT, accounts, BZX):
 def test_InterestRate_2(requireFork, iUSDTv1, USDT,iUSDT, accounts, BZX):
     acct0 = accounts[4]
     _base(iUSDTv1, USDT, BZX, acct0,acct0, acct0)
-
 
 def test_trade(requireFork, USDT, iUSDTv1, accounts, BZX, WETH):
     acct0 = accounts[4]
