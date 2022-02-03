@@ -29,7 +29,8 @@ contract SwapsImplUniswapV2_POLYGON is State, ISwapsImpl {
         address returnToSenderAddress,
         uint256 minSourceTokenAmount,
         uint256 maxSourceTokenAmount,
-        uint256 requiredDestTokenAmount)
+        uint256 requiredDestTokenAmount,
+        bytes memory payload)
         public
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
     {
