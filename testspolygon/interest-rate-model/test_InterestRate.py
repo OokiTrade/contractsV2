@@ -441,6 +441,8 @@ def _base(iToken, token, BZX, acct0,acct1, acct2):
     tokenPrice2 =  iToken.tokenPrice()/1e18
 
     assert tokenPrice2 > tokenPrice1
+
+    balance1 = token.balanceOf(acct0)
     burnAmount = iToken.balanceOf(acct0) * 0.999
     iToken.burn(acct0, burnAmount, {'from': acct0})
     balance2 = token.balanceOf(acct0)
