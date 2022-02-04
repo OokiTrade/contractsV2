@@ -577,6 +577,17 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         }
     }
 
+    function getPoolUtilization()
+        external
+        view
+        returns (uint256)
+    {
+        uint256 totalBorrow = totalAssetBorrow();
+        return _utilizationRate(
+            totalBorrow,
+            _totalAssetSupply(totalBorrow)
+        );
+    }
 
     /* Internal functions */
 

@@ -195,4 +195,9 @@ interface IToken {
 	
     //flash borrow fees
     function updateFlashBorrowFeePercent(uint256 newFeePercent) external;
+
+    function getPoolUtilization()
+        external
+        view
+    returns (uint256);
 }
