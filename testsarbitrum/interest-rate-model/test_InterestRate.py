@@ -3,6 +3,9 @@
 import pytest
 from brownie import network, Contract, reverts, chain
 from brownie.convert.datatypes import  Wei
+from eth_abi import encode_abi, is_encodable, encode_single
+from eth_abi.packed import encode_single_packed, encode_abi_packed
+from hexbytes import HexBytes
 import json
 
 @pytest.fixture(scope="module")
@@ -26,7 +29,7 @@ def LOAN_TOKEN_SETTINGS(accounts, interface, LoanTokenSettings):
 
 
 @pytest.fixture(scope="module")
-def BZX(accounts, interface, ProtocolSettings, LoanSettings, LoanOpenings, LoanMaintenance_Arbitrum, LoanMaintenance_2, LoanClosings_Arbitrum, SwapsExternal, SwapsImplUniswapV2_ARBITRUM, DexRecords):
+def BZX(accounts, interface, ProtocolSettings, LoanSettings, LoanOpenings, LoanMaintenance_Arbitrum, LoanMaintenance_2, LoanClosings_Arbitrum, SwapsExternal, SwapsImplUniswapV2_ARBITRUM, DexRecords, SwapsImplUniswapV3_ETH):
     bzx = Contract.from_abi("bzx", address="0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB",abi=interface.IBZx.abi, owner=accounts[0])
 
 
@@ -75,7 +78,9 @@ def BZX(accounts, interface, ProtocolSettings, LoanSettings, LoanOpenings, LoanM
     print("Deploying Dex Selector and Implementations")
     dex_record = DexRecords.deploy({'from':bzx.owner()})
     univ2_arbitrum = SwapsImplUniswapV2_ARBITRUM.deploy({'from':bzx.owner()})
+    univ3 = SwapsImplUniswapV3_ETH.deploy({'from':bzx.owner()})
     dex_record.setDexID(univ2_arbitrum.address, {'from':bzx.owner()})
+    dex_record.setDexID(univ3.address, {'from':bzx.owner()})
     bzx.setSwapsImplContract(dex_record.address, {'from':bzx.owner()})
 
     return bzx
@@ -471,7 +476,7 @@ def test_trade(requireFork, USDT, iUSDTv1, accounts, BZX, WETH):
     borrowTime = 7884000
     collateralAmount = 0.04e18
     collateralAddress = "0x0000000000000000000000000000000000000000"
-    iUSDTv1.mint(acct0, 500e6, {'from': acct0})
+    iUSDTv1.mint(acct0, 1000e6, {'from': acct0})
     chain.mine()
 
 
@@ -483,6 +488,12 @@ def test_trade(requireFork, USDT, iUSDTv1, accounts, BZX, WETH):
     #     iUSDTv1.borrow("", borrowAmount1/10, borrowTime, collateralAmount/10, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount/10)})
 
     iUSDTv1.marginTrade('0x0000000000000000000000000000000000000000000000000000000000000000', 3e18, borrowAmount1, collateralAmount, collateralAddress, acct2, b'',{'from': acct2,  'value': Wei(collateralAmount)})
+    route = encode_abi_packed(['address','uint24','address'],["0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",500,"0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"])
+    swap_payload = encode_abi(['(bytes,address,uint256,uint256,uint256)[]'],[[(route,BZX.address,1651719039,100,100)]])
+    data_provided = encode_abi(['uint256','bytes'],[2,swap_payload])
+    sendOut = encode_abi(['uint128','bytes[]'],[2,[data_provided]]) #flag value of Base-2: 10
+    iUSDTv1.marginTrade('0x0000000000000000000000000000000000000000000000000000000000000000', 3e18, borrowAmount1, collateralAmount, collateralAddress, acct2, sendOut.hex(),{'from': acct2,  'value': Wei(collateralAmount)})
+
     # loan = BZX.getUserLoans(acct2, 0,10,0, 0,0)[-1]
     # loanPrincipal = loan[4]
     # loanId1 =  loan[0]
