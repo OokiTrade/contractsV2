@@ -470,38 +470,42 @@ def test_trade(requireFork, USDT, iUSDTv1, accounts, BZX, WETH):
     acct0 = accounts[4]
     acct1 = accounts[1]
     acct2 = accounts[2]
-
-
     borrowAmount1 = 10e6
     borrowTime = 7884000
-    collateralAmount = 0.04e18
+    collateralAmount = 0.01e18
     collateralAddress = "0x0000000000000000000000000000000000000000"
-    iUSDTv1.mint(acct0, 1000e6, {'from': acct0})
+    iUSDTv1.mint(acct0, 150e6, {'from': acct0})
     chain.mine()
 
+    iUSDTv1.marginTrade('0x0000000000000000000000000000000000000000000000000000000000000000', 3e18, 0, collateralAmount/2, collateralAddress, acct2, b'',{'from': acct2,  'value': Wei(collateralAmount/2)})
+    loan1 = BZX.getUserLoans(acct2, 0,10,0, 0,0)[0]
 
-    # iUSDTv1.borrow("", borrowAmount1*2, borrowTime, collateralAmount*2, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount*2)})
-    # iUSDTv1.borrow("", borrowAmount1*2, borrowTime, collateralAmount*2, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount*2)})
-    # iUSDTv1.borrow("", borrowAmount1*2, borrowTime, collateralAmount*2, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount*2)})
-    # iUSDTv1.borrow("", borrowAmount1*2, borrowTime, collateralAmount*2, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount*2)})
-    # for i in range(0,6):
-    #     iUSDTv1.borrow("", borrowAmount1/10, borrowTime, collateralAmount/10, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount/10)})
+    iUSDTv1.borrow("", borrowAmount1*2, borrowTime, collateralAmount*2, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount*2)})
+    iUSDTv1.borrow("", borrowAmount1*2, borrowTime, collateralAmount*2, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount*2)})
+    iUSDTv1.borrow("", borrowAmount1*2, borrowTime, collateralAmount*2, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount*2)})
+    iUSDTv1.borrow("", borrowAmount1*2, borrowTime, collateralAmount*2, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount*2)})
+    for i in range(0,6):
+        iUSDTv1.borrow("", borrowAmount1/10, borrowTime, collateralAmount/10, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount/10)})
+    chain.mine(timedelta=60*60*24*365*5)
+    assert False
+    ratio = (BZX.getInterestModelValues(iUSDTv1, loan1[0])[4]/1e18)/((BZX.getLoanPrincipal(loan1[0])-loan1[4]*1e6)*100/loan1[4]*1e6)
+    assert ratio > 0.99 and ratio < 1.01
 
-    iUSDTv1.marginTrade('0x0000000000000000000000000000000000000000000000000000000000000000', 3e18, borrowAmount1, collateralAmount, collateralAddress, acct2, b'',{'from': acct2,  'value': Wei(collateralAmount)})
+    balanceBefore = acct2.balance()
+    usdBalanceBefore = USDT.balanceOf(acct2)
+    principal = BZX.getLoanPrincipal(loan1[0])
+    BZX.closeWithDeposit(loan1[0], acct2, principal+1000, {'from': accounts[0]})
+
+    assert balanceBefore + loan1[5] == acct2.balance()
+    assert (usdBalanceBefore - principal) / USDT.balanceOf(acct2) > 0.999
+    assert len(BZX.getUserLoans(acct2, 0,10,0, 0,1)) == 0
+
     route = encode_abi_packed(['address','uint24','address'],["0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",500,"0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"])
     swap_payload = encode_abi(['(bytes,address,uint256,uint256,uint256)[]'],[[(route,BZX.address,1651719039,100,100)]])
     data_provided = encode_abi(['uint256','bytes'],[2,swap_payload])
     sendOut = encode_abi(['uint128','bytes[]'],[2,[data_provided]]) #flag value of Base-2: 10
-    iUSDTv1.marginTrade('0x0000000000000000000000000000000000000000000000000000000000000000', 3e18, borrowAmount1, collateralAmount, collateralAddress, acct2, sendOut.hex(),{'from': acct2,  'value': Wei(collateralAmount)})
-
-    # loan = BZX.getUserLoans(acct2, 0,10,0, 0,0)[-1]
-    # loanPrincipal = loan[4]
-    # loanId1 =  loan[0]
-    # chain.mine(timedelta=60*60*24*365*5)
-    # assert len(BZX.getUserLoans(acct2, 0,10,0, 0,1)) == 1
-    # BZX.liquidate(loanId1, acct0, 2**256-1, {'from': acct0})
-    # assert len(BZX.getUserLoans(acct2, 0,10,0, 0,1)) == 0
-
+    iUSDTv1.marginTrade('0x0000000000000000000000000000000000000000000000000000000000000000', 3e18, 0, collateralAmount/2, collateralAddress, acct2, sendOut.hex(),{'from': acct2,  'value': Wei(collateralAmount/2)})
+    assert False
 
 def test_liquidate(requireFork, iUSDTv1, USDT,iUSDT, accounts, BZX):
     acct0 = accounts[4]
