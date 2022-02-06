@@ -224,9 +224,6 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                 totalAmountsInMax = totalAmountsInMax.add(
                     exactParams[uniqueOutputParam].amountInMaximum
                 );
-                if (uniqueOutputParam == 0) {
-                    continue; //encodes the tx later
-                }
                 encodedTXs[uniqueOutputParam] = abi.encodeWithSelector(
                     uniswapSwapRouter.exactOutput.selector,
                     exactParams[uniqueOutputParam]
@@ -240,6 +237,10 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                 );
                 exactParams[0].amountOut += displace; //adds displacement to first swap set
                 totalAmountsOut += displace;
+                encodedTXs[0] = abi.encodeWithSelector(
+                    uniswapSwapRouter.exactOutput.selector,
+                    exactParams[0]
+                );
             }
             if (totalAmountsOut > requiredDestTokenAmount) {
                 //does not need safe math as it cannot underflow
@@ -251,14 +252,14 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                     displace
                 ); //adds displacement to first swap set
                 totalAmountsOut -= displace;
+                encodedTXs[0] = abi.encodeWithSelector(
+                    uniswapSwapRouter.exactOutput.selector,
+                    exactParams[0]
+                );
             }
             require(
                 totalAmountsInMax <= maxSourceTokenAmount,
                 "Amount In Max too high"
-            );
-            encodedTXs[0] = abi.encodeWithSelector(
-                uniswapSwapRouter.exactOutput.selector,
-                exactParams[0]
             );
             uint256 balanceBefore = IERC20(sourceTokenAddress).balanceOf(
                 address(this)
