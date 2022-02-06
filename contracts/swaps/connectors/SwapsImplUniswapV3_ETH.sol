@@ -246,33 +246,21 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                 exactParams[0].amountOut += displace; //adds displacement to first swap set
                 totalAmountsOut += displace;
             }
-            if (totalAmountsInMax < maxSourceTokenAmount) {
-                //does not need safe math as it cannot overflow
-                uint256 displace = _numberAdjustment(
-                    totalAmountsOut,
-                    maxSourceTokenAmount
-                );
-                exactParams[0].amountInMaximum += displace; //adds displacement to first swap set
-                totalAmountsInMax += displace;
-            }
             if (totalAmountsOut > requiredDestTokenAmount) {
                 //does not need safe math as it cannot underflow
                 uint256 displace = _numberAdjustment(
                     totalAmountsOut,
                     requiredDestTokenAmount
                 );
-                exactParams[0].amountOut -= displace; //adds displacement to first swap set
+                exactParams[0].amountOut = exactParams[0].amountOut.sub(
+                    displace
+                ); //adds displacement to first swap set
                 totalAmountsOut -= displace;
             }
-            if (totalAmountsInMax > maxSourceTokenAmount) {
-                //does not need safe math as it cannot underflow
-                uint256 displace = _numberAdjustment(
-                    totalAmountsOut,
-                    maxSourceTokenAmount
-                );
-                exactParams[0].amountInMaximum -= displace; //adds displacement to first swap set
-                totalAmountsInMax -= displace;
-            }
+            require(
+                totalAmountsInMax <= maxSourceTokenAmount,
+                "Amount In Max too high"
+            );
             encodedTXs[0] = abi.encodeWithSelector(
                 uniswapSwapRouter.exactOutput.selector,
                 exactParams[0]
@@ -322,18 +310,21 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                 );
             }
             if (sourceTokenAmountUsed > minSourceTokenAmount) {
-                //does not need safe math as it cannot underflow
                 uint256 displace = _numberAdjustment(
                     sourceTokenAmountUsed,
                     minSourceTokenAmount
                 );
-                exactParams[0].amountIn -= displace;
-                sourceTokenAmountUsed = sourceTokenAmountUsed - displace;
+                exactParams[0].amountIn = exactParams[0].amountIn.sub(displace);
+                sourceTokenAmountUsed = sourceTokenAmountUsed - displace; //does not need safe math as it cannot underflow
                 encodedTXs[0] = abi.encodeWithSelector(
                     uniswapSwapRouter.exactInput.selector,
                     exactParams[0]
                 );
             }
+            require(
+                sourceTokenAmountUsed == minSourceTokenAmount,
+                "balance used is off"
+            );
             uint256 balanceBefore = IERC20(destTokenAddress).balanceOf(
                 receiverAddress
             );
