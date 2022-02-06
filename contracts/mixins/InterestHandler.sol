@@ -26,7 +26,10 @@ contract InterestHandler is State {
         );
         poolInterestTotal[pool] = interestVals[1];
         poolRatePerTokenStored[pool] = interestVals[2];
-        poolLastInterestRate[pool] = interestVals[3];
+
+        if (interestVals[3] != 0) {
+            poolLastInterestRate[pool] = interestVals[3];
+        }
 
         if (loanId != 0) {
             _loanInterestTotal = interestVals[5];
@@ -122,10 +125,10 @@ contract InterestHandler is State {
         view
         returns (uint256 ratePerTokenNewAmount, uint256 nextInterestRate)
     {
-        nextInterestRate = ILoanPool(pool)._nextBorrowInterestRate(poolTotal, 0, poolLastInterestRate[pool]);
-        if (nextInterestRate != 0) {
-            ratePerTokenNewAmount = block.timestamp
-                .sub(poolLastUpdateTime[pool])
+        uint256 timeSinceUpdate;
+        if ((timeSinceUpdate = block.timestamp.sub(poolLastUpdateTime[pool])) != 0 &&
+            (nextInterestRate = ILoanPool(pool)._nextBorrowInterestRate(poolTotal, 0, poolLastInterestRate[pool])) != 0) {
+            ratePerTokenNewAmount = timeSinceUpdate
                 .mul(nextInterestRate) // rate per year
                 .mul(WEI_PERCENT_PRECISION)
                 .div(31536000); // seconds in a year
