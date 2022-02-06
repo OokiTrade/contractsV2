@@ -120,10 +120,6 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
     {
         if (amountOut != 0) {
             amountIn = _getAmountIn(amountOut, route);
-
-            if (amountIn == uint256(-1)) {
-                amountIn = 0;
-            }
         } else {
             amountIn = 0;
         }
@@ -166,9 +162,6 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
     {
         uint256 amountOut = IUniswapQuoter(uniswapQuoteContract)
             .quoteExactInput(path, amountIn);
-        if (amountOut == 0) {
-            amountOut = uint256(-1);
-        }
         return amountOut;
     }
 
@@ -178,9 +171,6 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
     {
         uint256 amountIn = IUniswapQuoter(uniswapQuoteContract)
             .quoteExactOutput(path, amountOut);
-        if (amountIn == 0) {
-            amountIn = uint256(-1);
-        }
         return amountIn;
     }
 
@@ -218,10 +208,15 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                 uniqueOutputParam++
             ) {
                 exactParams[uniqueOutputParam].recipient = receiverAddress; //sets receiver to this protocol
-                _verifyInputData(
-                    exactParams[uniqueOutputParam].path,
-                    sourceTokenAddress,
-                    destTokenAddress
+                require(
+                    _toAddress(exactParams[uniqueOutputParam].path, 0) ==
+                        destTokenAddress &&
+                        _toAddress(
+                            exactParams[uniqueOutputParam].path,
+                            exactParams[uniqueOutputParam].path.length - 20
+                        ) ==
+                        sourceTokenAddress,
+                    "improper route"
                 );
                 totalAmountsOut = totalAmountsOut.add(
                     exactParams[uniqueOutputParam].amountOut
@@ -266,12 +261,12 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                 exactParams[0]
             );
             uint256 balanceBefore = IERC20(sourceTokenAddress).balanceOf(
-                receiverAddress
+                address(this)
             );
             uniswapSwapRouter.multicall(encodedTXs);
             sourceTokenAmountUsed =
-                IERC20(sourceTokenAddress).balanceOf(receiverAddress) -
-                balanceBefore; //does not need safe math as it cannot underflow
+                balanceBefore -
+                IERC20(sourceTokenAddress).balanceOf(address(this)); //does not need safe math as it cannot underflow
             destTokenAmountReceived = requiredDestTokenAmount;
         } else {
             IUniswapV3SwapRouter.ExactInputParams[] memory exactParams = abi
@@ -283,10 +278,15 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                 uniqueInputParam++
             ) {
                 exactParams[uniqueInputParam].recipient = receiverAddress; //sets receiver to this protocol
-                _verifyInputData(
-                    exactParams[uniqueInputParam].path,
-                    sourceTokenAddress,
-                    destTokenAddress
+                require(
+                    _toAddress(exactParams[uniqueInputParam].path, 0) ==
+                        sourceTokenAddress &&
+                        _toAddress(
+                            exactParams[uniqueInputParam].path,
+                            exactParams[uniqueInputParam].path.length - 20
+                        ) ==
+                        destTokenAddress,
+                    "improper route"
                 );
                 sourceTokenAmountUsed = sourceTokenAmountUsed.add(
                     exactParams[uniqueInputParam].amountIn
@@ -364,16 +364,5 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
             return target - current;
         }
         return 0;
-    }
-
-    function _verifyInputData(
-        bytes memory path,
-        address source,
-        address destToken
-    ) internal {
-        address tokenIn = _toAddress(path, 0);
-        require(tokenIn == source, "improper route");
-        address tokenOut = _toAddress(path, path.length - 20);
-        require(tokenOut == destToken, "improper destination");
     }
 }
