@@ -427,7 +427,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         );
     }
 
-    // the minimum rate new suppliers will receive after the next supply
+    // the minimum rate new and existing suppliers will receive after the next supply
     function nextSupplyInterestRate(
         uint256 supplyAmount)
         external
