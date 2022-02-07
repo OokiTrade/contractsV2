@@ -383,7 +383,7 @@ def test_0(requireFork, iUSDTv1, USDT, iUSDT, accounts, BZX):
     print(chain.time(),"after final burn - getLoanPrincipal",BZX.getLoanPrincipal(loanId)/1e6)
     print(chain.time(),"after final burn - getTotalPrincipal",BZX.getTotalPrincipal(iUSDTv1.address, iUSDTv1.address)/1e6)
 
-    assert False
+    assert True
 
 
 def _base(iToken, token, BZX, acct0,acct1, acct2, CUI):
@@ -486,21 +486,19 @@ def test_trade(requireFork, USDT, iUSDTv1, accounts, BZX, WETH,CUI):
     for i in range(0,6):
         iUSDTv1.borrow("", borrowAmount1/10, borrowTime, collateralAmount/10, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount/10)})
     chain.mine(timedelta=60*60*24*365)
+    BZX.getLoanPrincipal(loan1[0]) == loan1[4]+ BZX.getLoanInterestOutstanding(loan1[0])
 
-    ratio = (BZX.getInterestModelValues(iUSDTv1, loan1[0])[4]/1e18)/((BZX.getLoanPrincipal(loan1[0])-loan1[4])*100/loan1[4])
-    assert ratio > 0.99 and ratio < 1.01
-
-    balanceBefore = acct2.balance()
+    balanceBefore = WETH.balanceOf(acct2)
     usdBalanceBefore = USDT.balanceOf(acct2)
     principal = BZX.getLoanPrincipal(loan1[0])
-    BZX.closeWithDeposit(loan1[0], acct2, principal+1000, {'from': accounts[0]})
+    BZX.closeWithDeposit(loan1[0], acct2, principal+1000, {'from': acct2})
 
-    assert balanceBefore + loan1[5] == acct2.balance()
+    assert balanceBefore + loan1[5] == WETH.balanceOf(acct2)
     assert (usdBalanceBefore - principal) / USDT.balanceOf(acct2) > 0.999
     assert len(BZX.getUserLoans(acct2, 0,20,0, 0,1)) == 0
 
     route = encode_abi_packed(['address','uint24','address'],["0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",500,"0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"])
-    swap_payload = encode_abi(['(bytes,address,uint256,uint256,uint256)[]'],[[(route,BZX.address,1651719039,100,100)]])
+    swap_payload = encode_abi(['(bytes,address,uint256,uint256,uint256)[]'],[[(route,BZX.address,chain.time()+10000,100,100)]])
     data_provided = encode_abi(['uint256','bytes'],[2,swap_payload])
     sendOut = encode_abi(['uint128','bytes[]'],[2,[data_provided]]) #flag value of Base-2: 10
     iUSDTv1.marginTrade('0x0000000000000000000000000000000000000000000000000000000000000000', 3e18, 0, collateralAmount/2, collateralAddress, acct2, sendOut.hex(),{'from': acct2,  'value': Wei(collateralAmount/2)})
