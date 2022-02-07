@@ -22,7 +22,8 @@ contract InterestHandler is State, InterestRateEvents {
     {
         uint256[7] memory interestVals = _settleInterest2(
             pool,
-            loanId
+            loanId,
+            false
         );
         poolInterestTotal[pool] = interestVals[1];
         poolRatePerTokenStored[pool] = interestVals[2];
@@ -30,7 +31,7 @@ contract InterestHandler is State, InterestRateEvents {
         if (interestVals[3] != 0) {
             poolLastInterestRate[pool] = interestVals[3];
             emit PoolInterestRateVals(
-                pool, 
+                pool,
                 interestVals[0],
                 interestVals[1],
                 interestVals[2],
@@ -43,8 +44,8 @@ contract InterestHandler is State, InterestRateEvents {
             loanInterestTotal[loanId] = _loanInterestTotal;
             loanRatePerTokenPaid[loanId] = interestVals[6];
             emit LoanInterestRateVals(
-                loanId, 
-                interestVals[4], 
+                loanId,
+                interestVals[4],
                 interestVals[5],
                 interestVals[6]
             );
@@ -61,16 +62,12 @@ contract InterestHandler is State, InterestRateEvents {
     {
         uint256[7] memory interestVals = _settleInterest2(
             pool,
-            0
+            0,
+            true
         );
 
-        uint256 lendingFee = interestVals[1] // _poolInterestTotal
-            .mul(lendingFeePercent)
-            .divCeil(WEI_PERCENT_PRECISION);
-
         return interestVals[0]      // _poolPrincipalTotal
-            .add(interestVals[1])   // _poolInterestTotal
-            .sub(lendingFee);
+            .add(interestVals[1]);  // _poolInterestTotal
     }
 
     function _getLoanPrincipal(
@@ -82,7 +79,8 @@ contract InterestHandler is State, InterestRateEvents {
     {
         uint256[7] memory interestVals = _settleInterest2(
             pool,
-            loanId
+            loanId,
+            false
         );
 
         return interestVals[4]      // _loanPrincipalTotal
@@ -91,7 +89,8 @@ contract InterestHandler is State, InterestRateEvents {
 
     function _settleInterest2(
         address pool,
-        bytes32 loanId)
+        bytes32 loanId,
+        bool includeLendingFee)
         internal
         view
         returns (uint256[7] memory interestVals)
@@ -110,13 +109,21 @@ contract InterestHandler is State, InterestRateEvents {
         interestVals[0] = poolPrincipalTotal[pool];
         interestVals[1] = poolInterestTotal[pool];
 
+        uint256 lendingFee = interestVals[1]
+            .mul(lendingFeePercent)
+            .divCeil(WEI_PERCENT_PRECISION);
+
         uint256 _poolVariableRatePerTokenNewAmount;
-        (_poolVariableRatePerTokenNewAmount, interestVals[3]) = _getRatePerTokenNewAmount(pool, interestVals[0].add(interestVals[1]));
+        (_poolVariableRatePerTokenNewAmount, interestVals[3]) = _getRatePerTokenNewAmount(pool, interestVals[0].add(interestVals[1] - lendingFee));
 
         interestVals[1] = interestVals[0]
             .mul(_poolVariableRatePerTokenNewAmount)
             .div(WEI_PERCENT_PRECISION * WEI_PERCENT_PRECISION)
             .add(interestVals[1]);
+
+        if (includeLendingFee) {
+            interestVals[1] -= lendingFee;
+        }
 
         interestVals[2] = poolRatePerTokenStored[pool]
             .add(_poolVariableRatePerTokenNewAmount);

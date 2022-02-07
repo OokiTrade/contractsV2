@@ -185,7 +185,8 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents {
 
         loanInterest = (_settleInterest2(
             loanLocal.lender,
-            loanId
+            loanId,
+            false
         ))[5];
     }
 
