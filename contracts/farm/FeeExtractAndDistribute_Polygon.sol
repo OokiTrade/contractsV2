@@ -11,16 +11,18 @@ import "../proxies/0_8/Upgradeable_0_8.sol";
 import "./interfaces/IUniswapV2Router.sol";
 import "../../interfaces/IBZx.sol";
 import "@celer/contracts/interfaces/IBridge.sol";
+import "../../interfaces/IPriceFeeds.sol";
 
 contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
     IBZx public constant bZx = IBZx(0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8);
 
-    address public constant BUYBACK_ADDRESS = 0x12EBd8263A54751Aaf9d8C2c74740A8e62C0AfBe;
+    address public constant BUYBACK_ADDRESS =
+        0x12EBd8263A54751Aaf9d8C2c74740A8e62C0AfBe;
     address public constant MATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
     address public constant USDC = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
     uint256 public constant WEI_PRECISION_PERCENT = 10**20;
     uint64 public constant DEST_CHAINID = 1; //to be set
-	uint256 public constant MIN_USDC_AMOUNT = 1000e6;//1000 USDC minimum bridge amount
+    uint256 public constant MIN_USDC_AMOUNT = 20e6; //1000 USDC minimum bridge amount
     IUniswapV2Router public constant swapsRouterV2 =
         IUniswapV2Router(0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506); // Sushiswap
 
@@ -99,7 +101,6 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
                     : _swapWithPair([asset, MATIC, USDC], amount); //builds route for all tokens to route through MATIC
             }
         }
-
         if (usdcOutput != 0) {
             _bridgeFeesAndDistribute(); //bridges fees to Ethereum to be distributed to stakers
             emit ExtractAndDistribute(usdcOutput, 0); //for tracking distribution amounts
@@ -122,6 +123,7 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
         );
 
         returnAmount = amounts[1];
+        _checkUniDisagreement(path[0], inAmount, returnAmount, 5e18);
     }
 
     function _swapWithPair(address[3] memory route, uint256 inAmount)
@@ -141,12 +143,19 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
         );
 
         returnAmount = amounts[2];
+        _checkUniDisagreement(path[0], inAmount, returnAmount, 5e18);
     }
 
     function _bridgeFeesAndDistribute() internal {
-	    uint256 total = IERC20(USDC).balanceOf(address(this));
-		IERC20(USDC).transfer(BUYBACK_ADDRESS, total*buybackPercentInWEI/WEI_PRECISION_PERCENT); //allocates funds for buyback
-		require(IERC20(USDC).balanceOf(address(this)) > MIN_USDC_AMOUNT, "FeeExtractAndDistribute: bridge amount too low");
+        uint256 total = IERC20(USDC).balanceOf(address(this));
+        IERC20(USDC).transfer(
+            BUYBACK_ADDRESS,
+            (total * buybackPercentInWEI) / WEI_PRECISION_PERCENT
+        ); //allocates funds for buyback
+        require(
+            IERC20(USDC).balanceOf(address(this)) > MIN_USDC_AMOUNT,
+            "FeeExtractAndDistribute: bridge amount too low"
+        );
         IBridge(bridge).send(
             treasuryWallet,
             USDC,
@@ -155,6 +164,31 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
             uint64(block.timestamp),
             10000
         );
+    }
+
+    function _checkUniDisagreement(
+        address asset,
+        uint256 assetAmount,
+        uint256 recvAmount,
+        uint256 maxDisagreement
+    ) internal view {
+        uint256 estAmountOut = IPriceFeeds(bZx.priceFeeds()).queryReturn(
+            asset,
+            USDC,
+            assetAmount
+        );
+
+        uint256 spreadValue = estAmountOut > recvAmount
+            ? estAmountOut - recvAmount
+            : recvAmount - estAmountOut;
+        if (spreadValue != 0) {
+            spreadValue = (spreadValue * 1e20) / estAmountOut;
+
+            require(
+                spreadValue <= maxDisagreement,
+                "uniswap price disagreement"
+            );
+        }
     }
 
     // OnlyOwner functions
@@ -186,8 +220,8 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
     function setBridge(address _wallet) external onlyOwner {
         bridge = _wallet;
     }
-	
-	function setBuyBackPercentage(uint256 _percentage) external onlyOwner {
-	    buybackPercentInWEI = _percentage;
-	}
+
+    function setBuyBackPercentage(uint256 _percentage) external onlyOwner {
+        buybackPercentInWEI = _percentage;
+    }
 }

@@ -14,7 +14,7 @@ import "./interfaces/IUniswapV2Router.sol";
 import "../../interfaces/IBZx.sol";
 import "./interfaces/IMasterChefPartial.sol";
 import "./interfaces/IPriceFeeds.sol";
-import "../../interfaces/IStaking.sol";
+import "../../interfaces/IStakingV2.sol";
 import "./../staking/interfaces/ICurve3Pool.sol";
 
 interface IBridge {
@@ -32,10 +32,10 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    IStaking public constant STAKING =
-        IStaking(0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4);
+    IStakingV2 public constant STAKING =
+        IStakingV2(0x16f179f5C344cc29672A58Ea327A26F64B941a63);
 
-    address public constant OOKI = 0x56d811088235F11C8920698a204A5010a788f4b3;
+    address public constant OOKI = 0x0De05F6447ab4D22c8827449EE4bA2D5C288379B;
     IERC20 public constant curve3Crv =
         IERC20(0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490);
 
@@ -59,6 +59,7 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
     mapping(address => uint256) public stakingRewards;
 
     uint256 public buybackPercent;
+    bool isPaused;
 
     event ExtractAndDistribute();
 
@@ -82,7 +83,7 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
     }
 
     modifier checkPause() {
-        require(!STAKING.isPaused() || msg.sender == owner(), "paused");
+        require(!isPaused || msg.sender == owner(), "paused");
         _;
     }
 
@@ -138,9 +139,8 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
         require(assets.length == amounts.length, "count mismatch");
 
         IPriceFeeds priceFeeds = IPriceFeeds(bZx.priceFeeds());
-        (uint256 bzrxRate, ) = priceFeeds.queryRate(OOKI, WETH);
-        uint256 maxDisagreement = STAKING.maxUniswapDisagreement();
-
+        //(uint256 bzrxRate, ) = priceFeeds.queryRate(OOKI, WETH);
+        uint256 maxDisagreement = 1e18;
         address asset;
         uint256 daiAmount;
         uint256 usdcAmount;
@@ -165,7 +165,7 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
                     asset,
                     amounts[i],
                     priceFeeds,
-                    bzrxRate,
+                    0, /*bzrxRate*/
                     maxDisagreement
                 );
             }
@@ -196,20 +196,18 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
         crv3Rewards = stakingRewards[address(curve3Crv)];
         uint256 USDCBridge = 0;
         if (bzrxRewards != 0 || crv3Rewards != 0) {
-            address _fundsWallet = STAKING.fundsWallet();
+            address _fundsWallet = 0xfedC4dD5247B93feb41e899A09C44cFaBec29Cbc;
             uint256 rewardAmount;
             uint256 callerReward;
             uint256 bridgeRewards;
             if (bzrxRewards != 0) {
                 stakingRewards[OOKI] = 0;
-                callerReward = bzrxRewards / STAKING.callerRewardDivisor();
+                callerReward = bzrxRewards / 100;
                 IERC20(OOKI).transfer(msg.sender, callerReward);
                 bzrxRewards = bzrxRewards.sub(callerReward);
                 bridgeRewards = bzrxRewards.mul(buybackPercent).div(1e20);
                 USDCBridge = _convertToUSDCUniswap(bridgeRewards);
-                rewardAmount = bzrxRewards.mul(STAKING.rewardPercent()).div(
-                    1e20
-                );
+                rewardAmount = bzrxRewards.mul(50e18).div(1e20);
                 IERC20(OOKI).transfer(
                     _fundsWallet,
                     bzrxRewards - rewardAmount - bridgeRewards
@@ -218,14 +216,12 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
             }
             if (crv3Rewards != 0) {
                 stakingRewards[address(curve3Crv)] = 0;
-                callerReward = crv3Rewards / STAKING.callerRewardDivisor();
+                callerReward = crv3Rewards / 100;
                 curve3Crv.transfer(msg.sender, callerReward);
                 crv3Rewards = crv3Rewards.sub(callerReward);
                 bridgeRewards = crv3Rewards.mul(buybackPercent).div(1e20);
                 USDCBridge = USDCBridge.add(_convertToUSDCCurve(bridgeRewards));
-                rewardAmount = crv3Rewards.mul(STAKING.rewardPercent()).div(
-                    1e20
-                );
+                rewardAmount = crv3Rewards.mul(50e18).div(1e20);
                 curve3Crv.transfer(
                     _fundsWallet,
                     crv3Rewards - rewardAmount - bridgeRewards
@@ -254,9 +250,10 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
         internal
         returns (uint256 returnAmount)
     {
-        address[] memory path = new address[](2);
+        address[] memory path = new address[](3);
         path[0] = OOKI;
-        path[1] = USDC;
+        path[1] = WETH;
+        path[2] = USDC;
         uint256[] memory amounts = uniswapRouter.swapExactTokensForTokens(
             amount,
             1, // amountOutMin
@@ -267,15 +264,14 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
 
         returnAmount = amounts[amounts.length - 1];
         IPriceFeeds priceFeeds = IPriceFeeds(bZx.priceFeeds());
-        (uint256 bzrxRate, ) = priceFeeds.queryRate(OOKI, WETH);
-        _checkUniDisagreement(
-            USDC,
+        //(uint256 bzrxRate, ) = priceFeeds.queryRate(OOKI, WETH);
+        /*_checkUniDisagreement(
+            OOKI,
+			USDC,
             amount,
             returnAmount,
-            priceFeeds,
-            bzrxRate,
             STAKING.maxUniswapDisagreement()
-        );
+        );*/
     }
 
     function _convertFeeWithUniswap(
@@ -303,14 +299,13 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
             returnAmount = amounts[amounts.length - 1];
 
             // will revert if disagreement found
-            _checkUniDisagreement(
+            /*_checkUniDisagreement(
                 asset,
+				OOKI,
                 amount,
                 returnAmount,
-                priceFeeds,
-                bzrxRate,
                 maxDisagreement
-            );
+            );*/
         }
     }
 
@@ -367,38 +362,36 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
         }
 
         uint256 beforeBalance = curve3Crv.balanceOf(address(this));
-        curve3pool.add_liquidity(curveAmounts, 0);
+        curve3pool.add_liquidity(
+            curveAmounts,
+            curveTotal
+                .mul(curve3pool.get_virtual_price())
+                .div(1e18)
+                .mul(99e18)
+                .div(1e20)
+        );
 
         returnAmount = curve3Crv.balanceOf(address(this)) - beforeBalance;
-
-        // will revert if disagreement found
-        _checkCurveDisagreement(
-            curveTotal,
-            returnAmount,
-            STAKING.maxCurveDisagreement()
-        );
     }
 
     function _checkUniDisagreement(
         address asset,
+        address recvAsset,
         uint256 assetAmount,
-        uint256 bzrxAmount,
-        IPriceFeeds priceFeeds,
-        uint256 bzrxRate,
+        uint256 recvAmount,
         uint256 maxDisagreement
     ) internal view {
-        (uint256 rate, uint256 precision) = priceFeeds.queryRate(asset, WETH);
+        uint256 estAmountOut = IPriceFeeds(bZx.priceFeeds()).queryReturn(
+            asset,
+            recvAsset,
+            assetAmount
+        );
 
-        rate = rate.mul(1e36).div(precision).div(bzrxRate);
-
-        uint256 sourceToDestSwapRate = bzrxAmount.mul(1e18).div(assetAmount);
-
-        uint256 spreadValue = sourceToDestSwapRate > rate
-            ? sourceToDestSwapRate - rate
-            : rate - sourceToDestSwapRate;
-
+        uint256 spreadValue = estAmountOut > recvAmount
+            ? estAmountOut - recvAmount
+            : recvAmount - estAmountOut;
         if (spreadValue != 0) {
-            spreadValue = spreadValue.mul(1e20).div(sourceToDestSwapRate);
+            spreadValue = (spreadValue * 1e20) / estAmountOut;
 
             require(
                 spreadValue <= maxDisagreement,
@@ -407,32 +400,14 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
         }
     }
 
-    function _checkCurveDisagreement(
-        uint256 sendAmount, // deposit tokens
-        uint256 actualReturn, // returned lp token
-        uint256 maxDisagreement
-    ) internal view {
-        uint256 expectedReturn = sendAmount.mul(1e18).div(
-            curve3pool.get_virtual_price()
-        );
-
-        uint256 spreadValue = actualReturn > expectedReturn
-            ? actualReturn - expectedReturn
-            : expectedReturn - actualReturn;
-
-        if (spreadValue != 0) {
-            spreadValue = spreadValue.mul(1e20).div(actualReturn);
-
-            require(spreadValue <= maxDisagreement, "curve price disagreement");
-        }
-    }
-
     function setApprovals() external onlyOwner {
         IERC20(DAI).safeApprove(address(curve3pool), uint256(-1));
         IERC20(USDC).safeApprove(address(curve3pool), uint256(-1));
+        IERC20(USDC).safeApprove(BRIDGE, uint256(-1));
         IERC20(USDT).safeApprove(address(curve3pool), uint256(-1));
 
         IERC20(OOKI).safeApprove(address(STAKING), uint256(-1));
+        IERC20(OOKI).safeApprove(address(uniswapRouter), uint256(-1));
         curve3Crv.safeApprove(address(STAKING), uint256(-1));
     }
 
@@ -468,5 +443,9 @@ contract FeeExtractAndDistribute_ETH is Upgradeable {
 
     function setBuybackSettings(uint256 amount) external onlyOwner {
         buybackPercent = amount;
+    }
+
+    function togglePause(bool _isPaused) public onlyOwner {
+        isPaused = _isPaused;
     }
 }

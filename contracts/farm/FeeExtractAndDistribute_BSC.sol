@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2022, OokiDao. All Rights Reserved.
+ * Copyright 2017-2021, bZxDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -11,14 +11,16 @@ import "../proxies/0_8/Upgradeable_0_8.sol";
 import "./interfaces/IUniswapV2Router.sol";
 import "../../interfaces/IBZx.sol";
 import "@celer/contracts/interfaces/IBridge.sol";
+import "../../interfaces/IPriceFeeds.sol";
 
 contract FeeExtractAndDistribute_BSC is Upgradeable_0_8 {
     IBZx public constant bZx = IBZx(0xD154eE4982b83a87b0649E5a7DDA1514812aFE1f);
 
     address public constant BNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
     address public constant USDC = 0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d;
+    uint256 public constant MIN_USDC_AMOUNT = 1e6; //1 USDC minimum bridge amount
     uint64 public constant DEST_CHAINID = 137; //send to polygon
-    uint256 public constant MIN_USDC_AMOUNT = 1e6; //1 USDC minimum amount
+
     IUniswapV2Router public constant swapsRouterV2 =
         IUniswapV2Router(0x10ED43C718714eb63d5aA57B78B54704E256024E);
 
@@ -118,6 +120,7 @@ contract FeeExtractAndDistribute_BSC is Upgradeable_0_8 {
         );
 
         returnAmount = amounts[1];
+        _checkUniDisagreement(path[0], inAmount, returnAmount, 5e18);
     }
 
     function _swapWithPair(address[3] memory route, uint256 inAmount)
@@ -137,10 +140,39 @@ contract FeeExtractAndDistribute_BSC is Upgradeable_0_8 {
         );
 
         returnAmount = amounts[2];
+        _checkUniDisagreement(path[0], inAmount, returnAmount, 5e18);
+    }
+
+    function _checkUniDisagreement(
+        address asset,
+        uint256 assetAmount,
+        uint256 recvAmount,
+        uint256 maxDisagreement
+    ) internal view {
+        uint256 estAmountOut = IPriceFeeds(bZx.priceFeeds()).queryReturn(
+            asset,
+            USDC,
+            assetAmount
+        );
+
+        uint256 spreadValue = estAmountOut > recvAmount
+            ? estAmountOut - recvAmount
+            : recvAmount - estAmountOut;
+        if (spreadValue != 0) {
+            spreadValue = (spreadValue * 1e20) / estAmountOut;
+
+            require(
+                spreadValue <= maxDisagreement,
+                "uniswap price disagreement"
+            );
+        }
     }
 
     function _bridgeFeesAndDistribute() internal {
-	    require(IERC20(USDC).balanceOf(address(this)) > MIN_USDC_AMOUNT, "FeeExtractAndDistribute: bridge amount too low");
+        require(
+            IERC20(USDC).balanceOf(address(this)) > MIN_USDC_AMOUNT,
+            "FeeExtractAndDistribute: bridge amount too low"
+        );
         IBridge(bridge).send(
             treasuryWallet,
             USDC,
@@ -164,7 +196,6 @@ contract FeeExtractAndDistribute_BSC is Upgradeable_0_8 {
     function setFeeTokens(address[] calldata tokens) public onlyOwner {
         currentFeeTokens = tokens;
         for (uint256 i = 0; i < tokens.length; i++) {
-            IERC20(tokens[i]).approve(address(swapsRouterV2), 0);
             IERC20(tokens[i]).approve(
                 address(swapsRouterV2),
                 type(uint256).max
