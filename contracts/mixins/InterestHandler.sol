@@ -31,7 +31,7 @@ contract InterestHandler is State, InterestRateEvents {
             poolLastInterestRate[pool] = interestVals[3];
             emit PoolInterestRateVals(
                 pool, 
-                interestVals[0], 
+                interestVals[0],
                 interestVals[1],
                 interestVals[2],
                 interestVals[3]
