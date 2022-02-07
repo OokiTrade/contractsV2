@@ -7,6 +7,8 @@ import "../proxies/0_8/Upgradeable_0_8.sol";
 interface I3Pool {
     function add_liquidity(uint256[3] memory amounts, uint256 min_mint_amount)
         external;
+		
+	function get_virtual_price() external view returns(uint256);
 }
 
 contract ConvertAndAdminister is Upgradeable_0_8 {
@@ -29,7 +31,7 @@ contract ConvertAndAdminister is Upgradeable_0_8 {
         _convertTo3Crv();
 		uint256 total = IERC20(crv3).balanceOf(address(this));
 		uint256 toTreasury = total*1000/3500;
-		IERC20(crv3).transfer(TREASURY,toTreasury); //20% goes to treasury and the amount sent here is 70%. Formula is 0.7/0.7/5 = 0.2
+		IERC20(crv3).transfer(TREASURY,toTreasury); //20% goes to treasury and the amount sent here is 70%. Formula is 0.7/0.7/0.5 = 0.2
 		uint256 toStakers = IERC20(crv3).balanceOf(address(this));
         _addRewards(toStakers);
         emit Distributed(msg.sender, toTreasury, toStakers);
@@ -37,8 +39,10 @@ contract ConvertAndAdminister is Upgradeable_0_8 {
 
     //internal functions
 
-    function _convertTo3Crv() internal {
-        I3Pool(pool3).add_liquidity([0, USDC.balanceOf(address(this)), 0], 0);
+    function _convertTo3Crv() internal returns(uint256 amountUsed) {
+		amountUsed = USDC.balanceOf(address(this));
+		uint256 min_amount = (amountUsed*1e12*1e18/I3Pool(pool3).get_virtual_price())*995/1000; //0.5% slippage on minting
+        I3Pool(pool3).add_liquidity([0, amountUsed, 0], min_amount);
     }
 
     function _addRewards(uint256 amount) internal {
