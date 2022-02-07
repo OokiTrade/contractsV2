@@ -568,7 +568,7 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         } else {
             // interest is paid before principal
             if (loanCloseAmount >= loanInterest) {
-                principalAfter = principalBefore - (loanCloseAmount - loanInterest);
+                principalAfter = principalBefore.sub(loanCloseAmount - loanInterest);
 
                 loanLocal.principal = principalAfter;
                 poolPrincipalTotal[loanLocal.lender] = poolPrincipalTotal[loanLocal.lender]
