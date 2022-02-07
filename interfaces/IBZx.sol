@@ -380,13 +380,6 @@ interface IBZx {
             address seizedToken
         );
 
-    /// @dev rollover loan
-    /// @param loanId id of the loan
-    /// @param loanDataBytes reserved for future use.
-    function rollover(bytes32 loanId, bytes calldata loanDataBytes)
-        external
-        returns (address rebateToken, uint256 gasRebate);
-
     /// @dev close position with loan token deposit
     /// @param loanId id of the loan
     /// @param receiver collateral token reciever address
@@ -453,15 +446,6 @@ interface IBZx {
             uint256 seizedAmount,
             address seizedToken
         );
-
-    /// @dev rollover loan
-    /// @param loanId id of the loan
-    /// @param gasTokenUser user address of the GAS token
-    function rolloverWithGasToken(
-        bytes32 loanId,
-        address gasTokenUser,
-        bytes calldata /*loanDataBytes*/
-    ) external returns (address rebateToken, uint256 gasRebate);
 
     /// @dev close position with loan token deposit
     /// @param loanId id of the loan

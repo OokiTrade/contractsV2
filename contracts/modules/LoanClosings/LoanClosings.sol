@@ -19,6 +19,9 @@ contract LoanClosings is LoanClosingsBase {
         _setTarget(this.liquidate.selector, target);
         _setTarget(this.closeWithDeposit.selector, target);
         _setTarget(this.closeWithSwap.selector, target);
+
+        // TEMP: remove after upgrade
+        _setTarget(bytes4(keccak256("rollover(bytes32,bytes)")), address(0)); 
     }
 
     function liquidate(
