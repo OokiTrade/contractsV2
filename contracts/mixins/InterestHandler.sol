@@ -29,13 +29,25 @@ contract InterestHandler is State, InterestRateEvents {
 
         if (interestVals[3] != 0) {
             poolLastInterestRate[pool] = interestVals[3];
-            emit InterestRateVals(pool, interestVals);
+            emit PoolInterestRateVals(
+                pool, 
+                interestVals[0], 
+                interestVals[1],
+                interestVals[2],
+                interestVals[3]
+            );
         }
 
         if (loanId != 0) {
             _loanInterestTotal = interestVals[5];
             loanInterestTotal[loanId] = _loanInterestTotal;
             loanRatePerTokenPaid[loanId] = interestVals[6];
+            emit LoanInterestRateVals(
+                loanId, 
+                interestVals[4], 
+                interestVals[5],
+                interestVals[6]
+            );
         }
 
         poolLastUpdateTime[pool] = block.timestamp;
