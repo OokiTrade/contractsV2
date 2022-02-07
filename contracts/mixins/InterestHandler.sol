@@ -8,9 +8,9 @@ pragma solidity 0.5.17;
 import "../core/State.sol";
 import "../interfaces/ILoanPool.sol";
 import "../utils/MathUtil.sol";
+import "../events/InterestRateEvents.sol";
 
-
-contract InterestHandler is State {
+contract InterestHandler is State, InterestRateEvents {
     using MathUtil for uint256;
 
     // returns up to date loan interest or 0 if not applicable
@@ -29,12 +29,25 @@ contract InterestHandler is State {
 
         if (interestVals[3] != 0) {
             poolLastInterestRate[pool] = interestVals[3];
+            emit PoolInterestRateVals(
+                pool, 
+                interestVals[0],
+                interestVals[1],
+                interestVals[2],
+                interestVals[3]
+            );
         }
 
         if (loanId != 0) {
             _loanInterestTotal = interestVals[5];
             loanInterestTotal[loanId] = _loanInterestTotal;
             loanRatePerTokenPaid[loanId] = interestVals[6];
+            emit LoanInterestRateVals(
+                loanId, 
+                interestVals[4], 
+                interestVals[5],
+                interestVals[6]
+            );
         }
 
         poolLastUpdateTime[pool] = block.timestamp;
