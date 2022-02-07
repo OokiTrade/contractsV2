@@ -387,16 +387,20 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         view
         returns (uint256)
     {
-        return poolLastInterestRate();
+        return borrowInterestRate();
     }
 
     // the current rate being paid by borrowers in active loans
     function borrowInterestRate()
-        external
+        public
         view
         returns (uint256)
     {
-        return poolLastInterestRate();
+        return _nextBorrowInterestRate(
+            _totalAssetBorrowStored(),
+            0,
+            poolLastInterestRate()
+        );
     }
 
     // the minimum rate that new and existing borrowers will pay after the next borrow
@@ -421,7 +425,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
     {
         uint256 assetBorrow = _totalAssetBorrowStored();
         return _nextSupplyInterestRate(
-            poolLastInterestRate(),
+            _nextBorrowInterestRate(assetBorrow, 0, poolLastInterestRate()),
             assetBorrow,
             _totalAssetSupply(assetBorrow)
         );
@@ -1025,14 +1029,14 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
 
     function _nextBorrowInterestRate(
         uint256 totalBorrow,
-        uint256 newBorrow,
+        uint256 newBorrowNotYetRealized,
         uint256 lastIR)
         public
         view
         returns (uint256 nextRate)
     {
         uint256 utilRate = _utilizationRate(
-            totalBorrow.add(newBorrow),
+            totalBorrow.add(newBorrowNotYetRealized),
             _totalAssetSupply(totalBorrow)
         );
 
