@@ -160,18 +160,16 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
         public
         returns (uint256)
     {
-        uint256 amountOut = IUniswapQuoter(uniswapQuoteContract)
+        return IUniswapQuoter(uniswapQuoteContract)
             .quoteExactInput(path, amountIn);
-        return amountOut;
     }
 
     function _getAmountIn(uint256 amountOut, bytes memory path)
         public
         returns (uint256)
     {
-        uint256 amountIn = IUniswapQuoter(uniswapQuoteContract)
+        return IUniswapQuoter(uniswapQuoteContract)
             .quoteExactOutput(path, amountOut);
-        return amountIn;
     }
 
     function setSwapApprovals(address[] memory tokens) public {
