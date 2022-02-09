@@ -21,7 +21,9 @@ interface IToken {
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
-
+    event Mint(address indexed minter,uint256 tokenAmount,uint256 assetAmount,uint256 price);
+    event Burn(address indexed burner,uint256 tokenAmount,uint256 assetAmount,uint256 price);
+    event FlashBorrow(address borrower,address target,address loanToken,uint256 loanAmount);
 
     function tokenPrice() external view returns (uint256);
 

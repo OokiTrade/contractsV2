@@ -1150,7 +1150,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         }
     }
 
-    function updateFlashBorrowFeePercent(uint256 newFeePercent) public onlyOwner() {
+    function updateFlashBorrowFeePercent(uint256 newFeePercent) public onlyOwner {
         flashBorrowFeePercent = newFeePercent;
     }
 }

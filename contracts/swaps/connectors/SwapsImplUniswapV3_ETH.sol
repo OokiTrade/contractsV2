@@ -15,8 +15,8 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
     using SafeERC20 for IERC20;
     IUniswapV3SwapRouter public constant uniswapSwapRouter =
         IUniswapV3SwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564); //mainnet
-    address public constant uniswapQuoteContract =
-        0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6; //mainnet
+    IUniswapQuoter public constant uniswapQuoteContract =
+        IUniswapQuoter(0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6); //mainnet
 
     function dexSwap(
         address sourceTokenAddress,
@@ -74,9 +74,7 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
         public
         returns (uint256 amountOut, address midToken)
     {
-        if (amountIn == 0) {
-            amountOut = 0;
-        } else if (amountIn != 0) {
+        if (amountIn != 0) {
             amountOut = _getAmountOut(amountIn, route);
         }
     }
@@ -120,8 +118,6 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
     {
         if (amountOut != 0) {
             amountIn = _getAmountIn(amountOut, route);
-        } else {
-            amountIn = 0;
         }
     }
 
@@ -160,7 +156,7 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
         public
         returns (uint256)
     {
-        return IUniswapQuoter(uniswapQuoteContract)
+        return uniswapQuoteContract
             .quoteExactInput(path, amountIn);
     }
 
@@ -168,7 +164,7 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
         public
         returns (uint256)
     {
-        return IUniswapQuoter(uniswapQuoteContract)
+        return uniswapQuoteContract
             .quoteExactOutput(path, amountOut);
     }
 
