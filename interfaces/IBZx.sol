@@ -749,7 +749,8 @@ interface IBZx {
     function getSwapExpectedReturn(
         address sourceToken,
         address destToken,
-        uint256 sourceTokenAmount
+        uint256 sourceTokenAmount,
+        bytes calldata swapData
     ) external view returns (uint256);
 
     function owner() external view returns (address);

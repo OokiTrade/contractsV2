@@ -250,10 +250,13 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
         if (payload.length == 0) {
             dataToSend = abi.encode(sourceToken, destToken);
         } else {
-            (dexNumber, dataToSend) = abi.decode(
+            (uint128 flag, bytes[] memory payloads) = abi.decode(
                 payload,
-                (uint256, bytes)
+                (uint128, bytes[])
             );
+            if(flag & DEX_SELECTOR_FLAG != 0){
+                (dexNumber, dataToSend) = abi.decode(payloads[0], (uint256, bytes));
+            }
         }
 
         swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(
