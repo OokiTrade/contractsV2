@@ -129,7 +129,8 @@ interface IToken {
         uint256 leverageAmount,
         uint256 loanTokenSent,
         uint256 collateralTokenSent,
-        address collateralTokenAddress // address(0) means ETH
+        address collateralTokenAddress,		// address(0) means ETH
+        bytes calldata payload
     )
         external
         view

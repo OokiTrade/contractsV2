@@ -123,10 +123,8 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
             loanTokenSent,
             payload
         );
-        if (value != 0) {
-            return collateralTokenSent
-                .add(value);
-        }
+		return collateralTokenSent
+			.add(value);
     }
 
     function getRequiredCollateral(

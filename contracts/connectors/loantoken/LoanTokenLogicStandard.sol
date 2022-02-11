@@ -509,32 +509,44 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         uint256 leverageAmount,
         uint256 loanTokenSent,
         uint256 collateralTokenSent,
-        address collateralTokenAddress)     // address(0) means ETH
+        address collateralTokenAddress, // address(0) means ETH
+        bytes calldata payload 
+    )
         external
-        view
-        returns (uint256 principal, uint256 collateral, uint256 interestRate, uint256 collateralToLoanRate)
+        returns (
+            uint256 principal,
+            uint256 collateral,
+            uint256 interestRate,
+            uint256 collateralToLoanRate
+        )
     {
         if (collateralTokenAddress == address(0)) {
             collateralTokenAddress = wethToken;
         }
 
-        uint256 collateralToLoanPrecision;
-        (collateralToLoanRate, collateralToLoanPrecision) = IPriceFeeds(IBZx(bZxContract).priceFeeds()).queryRate(
-            collateralTokenAddress,
-            loanTokenAddress
+        (collateralToLoanRate, collateral) = IPriceFeeds(
+            IBZx(bZxContract).priceFeeds()
+        ).queryRate(collateralTokenAddress, loanTokenAddress); //collateral is used to avoid stack too deep
+        require(collateralToLoanRate != 0 && collateral != 0, "20");
+        collateralToLoanRate = collateralToLoanRate.mul(WEI_PRECISION).div(
+            collateral
         );
-        require(collateralToLoanRate != 0 && collateralToLoanPrecision != 0, "20");
-        collateralToLoanRate = collateralToLoanRate
-            .mul(WEI_PRECISION)
-            .div(collateralToLoanPrecision);
-
+        uint256 collateralToLoanToken = collateralToLoanRate
+            .mul(collateralTokenSent)
+            .div(WEI_PRECISION);
+        principal = loanTokenSent
+            .add(collateralToLoanToken)
+            .mul(leverageAmount)
+            .div(WEI_PRECISION);
+        interestRate = nextBorrowInterestRate(principal);
         collateral = IBZx(bZxContract).getEstimatedMarginExposure(
             loanTokenAddress,
             collateralTokenAddress,
             loanTokenSent,
             collateralTokenSent,
             0, // interestRate (depreciated)
-            0 // principal
+            0, // principal
+            payload
         );
     }
 
