@@ -133,7 +133,6 @@ interface IToken {
         bytes calldata payload
     )
         external
-        view
         returns (
             uint256 principal,
             uint256 collateral,
