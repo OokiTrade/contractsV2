@@ -466,6 +466,7 @@ def test_InterestRate_1(requireFork, iUSDTv1, USDT,iUSDT, accounts, BZX, CUI):
 
 
 def test_trade(requireFork, USDT, iUSDTv1, accounts, BZX, WETH,CUI):
+    assert False
     acct0 = accounts[4]
     acct1 = accounts[1]
     acct2 = accounts[2]
