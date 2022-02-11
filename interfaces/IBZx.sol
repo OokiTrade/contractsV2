@@ -308,7 +308,7 @@ interface IBZx {
     /// @param collateralTokenSent amount of collateral token sent
     /// @param interestRate yearly interest rate
     /// @param newPrincipal principal amount of the loan
-	/// @param payload arbitrary data that would be passed for opening or closing a loan
+    /// @param payload arbitrary data that would be passed for opening or closing a loan
     /// @return estimated margin exposure amount
     function getEstimatedMarginExposure(
         address loanToken,
