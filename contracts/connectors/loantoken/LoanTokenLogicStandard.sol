@@ -406,7 +406,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
     // the minimum rate that new and existing borrowers will pay after the next borrow
     function nextBorrowInterestRate(
         uint256 borrowAmount)
-        external
+        public
         view
         returns (uint256)
     {
