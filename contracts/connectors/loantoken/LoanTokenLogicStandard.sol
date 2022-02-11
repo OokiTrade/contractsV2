@@ -542,7 +542,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         collateral = IBZx(bZxContract).getEstimatedMarginExposure(
             loanTokenAddress,
             collateralTokenAddress,
-            loanTokenSent,
+            loanTokenSent.add(principal),
             collateralTokenSent,
             0, // interestRate (depreciated)
             0, // principal
