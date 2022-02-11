@@ -317,7 +317,7 @@ interface IBZx {
         uint256 collateralTokenSent,
         uint256 interestRate,
         uint256 newPrincipal,
-		bytes calldata payload
+	bytes calldata payload
     ) external view returns (uint256);
 
     /// @dev calculates required collateral for simulated position
