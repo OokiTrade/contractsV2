@@ -505,6 +505,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
             .div(WEI_PRECISION);
     }
 
+    // DEPRECATED, UI is handling this
     function getEstimatedMarginDetails(
         uint256 leverageAmount,
         uint256 loanTokenSent,

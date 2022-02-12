@@ -23,7 +23,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
     {
         _setTarget(this.borrowOrTradeFromPool.selector, target);
         _setTarget(this.setDelegatedManager.selector, target);
-        _setTarget(this.getEstimatedMarginExposure.selector, target);
+        _setTarget(this.getEstimatedMarginExposure.selector, target); // DEPRECATED, remove next deploy
         _setTarget(this.getRequiredCollateral.selector, target);
         _setTarget(this.getRequiredCollateralByParams.selector, target);
         _setTarget(this.getBorrowAmount.selector, target);
@@ -106,6 +106,8 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         );
     }
 
+
+    // DEPRECATED, UI going to calculate this
     function getEstimatedMarginExposure(
         address loanToken,
         address collateralToken,
