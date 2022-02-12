@@ -10,6 +10,7 @@ contract CurvedInterestRate is ICurvedInterestRate {
     uint256 public constant IR2 = 120e18;
     uint256 public constant UR1 = 80e18;
     uint256 public constant UR2 = 100e18;
+    uint256 public constant UR_MAX = 100e18;
     uint256 public constant IR_MAX = 110e18;
     uint256 public constant IR_MIN = 0.1e18;
 
@@ -18,6 +19,9 @@ contract CurvedInterestRate is ICurvedInterestRate {
         uint256 _a,
         uint256 _b
     ) public pure override returns (uint256 interestRate) {
+        if (_U > UR_MAX) {
+            _U = UR_MAX;
+        }
         // general ae^(bx)
         return (_a * ((_b * _U) / 1e18).exp()) / 1e18;
     }
