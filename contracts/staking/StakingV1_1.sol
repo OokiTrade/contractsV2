@@ -531,8 +531,10 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         stableCoinRewardsPerTokenPaid[account] = _stableCoinPerTokenStored;
 
         // vesting amounts get updated before sync
-        bzrxVesting[account] = bzrxRewardsVesting;
-        stableCoinVesting[account] = stableCoinRewardsVesting;
+        /*bzrxVesting[account] = bzrxRewardsVesting;
+        stableCoinVesting[account] = stableCoinRewardsVesting;*/
+        bzrxVesting[account] = 0;
+        stableCoinVesting[account] = 0;
 
         (bzrxRewards[account], stableCoinRewards[account]) = _syncVesting(
             account,
@@ -568,7 +570,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         );
 
         // discount vesting amounts for vesting time
-        uint256 multiplier = vestedBalanceForAmount(
+        /*uint256 multiplier = vestedBalanceForAmount(
             1e36,
             0,
             block.timestamp
@@ -583,6 +585,10 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
                 .mul(multiplier)
                 .div(1e36)
             );
+        */
+        bzrxRewardsVesting = 0;
+        stableCoinRewardsVesting = 0;
+
 
         uint256 pendingSushi = IMasterChefSushi(SUSHI_MASTERCHEF)
             .pendingSushi(BZRX_ETH_SUSHI_MASTERCHEF_PID, address(this));
@@ -687,6 +693,14 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         view
         returns (uint256, uint256)
     {
+        if (bzrxRewardsVesting != 0) {
+            bzrxRewardsEarned += bzrxRewardsVesting; // fully vest rewards
+        }
+
+        if (stableCoinRewardsVesting != 0) {
+            stableCoinRewardsEarned += stableCoinRewardsVesting; // fully vest rewards
+        }
+        
         uint256 lastVestingSync = vestingLastSync[account];
 
         if (lastVestingSync != block.timestamp) {
@@ -697,7 +711,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
                 block.timestamp
             );
 
-            if (bzrxRewardsVesting != 0) {
+            /*if (bzrxRewardsVesting != 0) {
                 rewardsVested = bzrxRewardsVesting
                     .mul(multiplier)
                     .div(1e36);
@@ -709,7 +723,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
                     .mul(multiplier)
                     .div(1e36);
                 stableCoinRewardsEarned += rewardsVested;
-            }
+            }*/
 
             uint256 vBZRXBalance = _balancesPerToken[vBZRX][account];
             if (vBZRXBalance != 0) {
