@@ -50,7 +50,7 @@ contract LoanMigration is State, VaultController, InterestHandler, InterestUser 
         EnumerableBytes32Set.Bytes32Set storage set = lenderLoanSets[lender];
         uint256 end = start.add(count).min256(set.length());
         require(start <= end, "start after end");
-        for (uint256 i = --end; i >= start; i--) {
+        for (uint256 i = start; i < end; i++) {
             (uint256 interestRefund, uint256 owedPerDayRefund, uint256 principal) = _migrateLoan(
                 set.get(i),
                 lender
