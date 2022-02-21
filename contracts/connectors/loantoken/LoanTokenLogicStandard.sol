@@ -957,7 +957,13 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         }
 
         if (loanTokenSent != 0) {
-            _safeTransferFrom(_loanTokenAddress, msg.sender, bZxContract, loanTokenSent, "29");
+            if (_loanTokenAddress == _wethToken && msgValue != 0 && msgValue >= loanTokenSent) {
+                IWeth(_wethToken).deposit.value(loanTokenSent)();
+                _safeTransfer(_loanTokenAddress, bZxContract, loanTokenSent, "29");
+                msgValue -= loanTokenSent;
+            } else {
+                _safeTransferFrom(_loanTokenAddress, msg.sender, bZxContract, loanTokenSent, "29");
+            }
         }
     }
 
