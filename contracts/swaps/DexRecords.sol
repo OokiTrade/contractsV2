@@ -12,8 +12,7 @@ contract DexRecords is Ownable {
     }
 
     function setDexID(address dex) public onlyOwner {
-        dexCount++;
-        dexes[dexCount] = dex;
+        dexes[++dexCount] = dex;
     }
 
     function setDexID(uint256 ID, address dex) public onlyOwner {
