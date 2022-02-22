@@ -178,6 +178,12 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
         }
     }
 
+    function revokeApprovals(address[] memory tokens) public {
+        for (uint256 i = 0; i < tokens.length; i++) {
+            IERC20(tokens[i]).safeApprove(address(uniswapSwapRouter), 0);
+        }
+    }
+
     function _swapWithUni(
         address sourceTokenAddress,
         address destTokenAddress,
@@ -260,8 +266,7 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
             );
             uniswapSwapRouter.multicall(encodedTXs);
             sourceTokenAmountUsed =
-                balanceBefore -
-                IERC20(sourceTokenAddress).balanceOf(address(this)); //does not need safe math as it cannot underflow
+                balanceBefore.sub(IERC20(sourceTokenAddress).balanceOf(address(this)));
             destTokenAmountReceived = requiredDestTokenAmount;
         } else {
             IUniswapV3SwapRouter.ExactInputParams[] memory exactParams = abi
@@ -321,8 +326,7 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
             );
             uniswapSwapRouter.multicall(encodedTXs);
             destTokenAmountReceived =
-                IERC20(destTokenAddress).balanceOf(receiverAddress) -
-                balanceBefore; //never underflows
+                IERC20(destTokenAddress).balanceOf(receiverAddress).sub(balanceBefore);
         }
     }
 
