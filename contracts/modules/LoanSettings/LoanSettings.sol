@@ -178,7 +178,7 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents {
         view
         returns (uint256 loanInterest)
     {
-        Loan memory loanLocal = loans[loanId];
+        Loan storage loanLocal = loans[loanId];
         if (!loanLocal.active) {
             return 0;
         }
