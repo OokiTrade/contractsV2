@@ -17,9 +17,23 @@ contract AdvancedToken is AdvancedTokenStorage {
         public
         returns (bool)
     {
-        allowed[msg.sender][_spender] = _value;
-        emit Approval(msg.sender, _spender, _value);
-        return true;
+        return _approve(msg.sender, _spender, _value);
+    }
+
+    function permit(
+        address owner,
+        address spender,
+        uint256 value,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external {
+        require(deadline >= block.timestamp, "iToken: EXPIRED");
+        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline))));
+        address recoveredAddress = ecrecover(digest, v, r, s);
+        require(recoveredAddress != address(0) && recoveredAddress == owner, "iToken: INVALID_SIGNATURE");
+        _approve(owner, spender, value);
     }
 
     function increaseApproval(
@@ -51,6 +65,18 @@ contract AdvancedToken is AdvancedTokenStorage {
         allowed[msg.sender][_spender] = _allowed;
 
         emit Approval(msg.sender, _spender, _allowed);
+        return true;
+    }
+
+    function _approve(
+        address _owner,
+        address _spender,
+        uint256 _value)
+        internal
+        returns (bool)
+    {
+        allowed[_owner][_spender] = _value;
+        emit Approval(_owner, _spender, _value);
         return true;
     }
 
