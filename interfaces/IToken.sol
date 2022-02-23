@@ -1,9 +1,9 @@
 /**
- * Copyright 2017-2021, bZeroX, LLC. All Rights Reserved.
- * Licensed under the Apache License, Version 2.0.
+ * Copyright 2017-2022, OokiDao. All Rights Reserved.
+ * Licensed under the Apache-2.0
  */
 
-pragma solidity >=0.5.0 <=0.8.9;
+pragma solidity >=0.5.0 <0.9.0;
 pragma experimental ABIEncoderV2;
 // import "@openzeppelin-3.4.0/token/ERC20/IERC20.sol";
 
