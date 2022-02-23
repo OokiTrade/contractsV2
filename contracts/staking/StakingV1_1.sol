@@ -416,7 +416,6 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         stableCoinRewardsEarned = stableCoinRewards[msg.sender];
         if (stableCoinRewardsEarned != 0) {
             uint256 pendingCrv = _pendingCrvRewards(msg.sender, stableCoinRewardsEarned);
-            uint256 curve3CrvBalance = curve3Crv.balanceOf(address(this));
             _withdrawFrom3Pool(stableCoinRewardsEarned);
 
             userAltRewardsPerShare[msg.sender][CRV] = IStaking.AltRewardsUserInfo({
