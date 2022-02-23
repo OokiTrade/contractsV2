@@ -351,6 +351,7 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
 
     function _numberAdjustment(uint256 current, uint256 target)
         internal
+        pure
         returns (uint256)
     {
         if (current > target) {
