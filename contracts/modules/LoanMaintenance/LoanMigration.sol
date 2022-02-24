@@ -20,9 +20,18 @@ contract LoanMigration is State, VaultController, InterestHandler, InterestUser 
         onlyOwner
     {
         _setTarget(this.migrateLoans.selector, target);
-
+        _setTarget(this.getLoanCount.selector, target);
         // TEMP: remove after upgrade
         _setTarget(bytes4(keccak256("cleanupLoans(address,bytes32[])")), address(0));
+    }
+
+    function getLoanCount(address lender)
+        external
+        view
+        returns(uint256)
+    {
+        EnumerableBytes32Set.Bytes32Set storage set = lenderLoanSets[lender];
+        return set.length();
     }
 
     function migrateLoans(
@@ -33,6 +42,7 @@ contract LoanMigration is State, VaultController, InterestHandler, InterestUser 
         onlyOwner
     {
         address loanToken = loanPoolToUnderlying[lender];
+
         require(loanToken != address(0), "invalid lender");
 
         // pay outstanding interest to lender
@@ -50,7 +60,7 @@ contract LoanMigration is State, VaultController, InterestHandler, InterestUser 
         EnumerableBytes32Set.Bytes32Set storage set = lenderLoanSets[lender];
         uint256 end = start.add(count).min256(set.length());
         require(start <= end, "start after end");
-        for (uint256 i = start; i < end; i++) {
+        for (uint256 i = start; i < end; ++i) {
             (uint256 interestRefund, uint256 owedPerDayRefund, uint256 principal) = _migrateLoan(
                 set.get(i),
                 lender
@@ -78,10 +88,15 @@ contract LoanMigration is State, VaultController, InterestHandler, InterestUser 
                 interestRefundTotal
             );
         }
+        uint256 principalAndInterestTotal =  principalTotal.add(interestRefundTotal);
+        if(lenderInterestLocal.principalTotal>principalAndInterestTotal){
+            lenderInterestLocal.principalTotal = lenderInterestLocal.principalTotal
+            .sub(principalAndInterestTotal);
+        }
+        else{
+            lenderInterestLocal.principalTotal = 0;
+        }
 
-        lenderInterestLocal.principalTotal = lenderInterestLocal.principalTotal
-            .sub(principalTotal)
-            .sub(interestRefundTotal);
 
         poolPrincipalTotal[lender] = poolPrincipalTotal[lender]
             .add(principalTotal);
