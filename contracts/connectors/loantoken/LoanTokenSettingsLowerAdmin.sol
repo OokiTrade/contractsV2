@@ -28,52 +28,53 @@ contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage, StorageExtension {
     {
         revert("fallback not allowed");
     }
+    // TODO
+    // function setupLoanParams(
+    //     IBZx.LoanParams[] memory loanParamsList,
+    //     bool areTorqueLoans)
+    //     public
+    // {
+    //     bytes32[] memory loanParamsIdList;
+    //     address _loanTokenAddress = loanTokenAddress;
 
-    function setupLoanParams(
-        IBZx.LoanParams[] memory loanParamsList,
-        bool areTorqueLoans)
-        public
-    {
-        bytes32[] memory loanParamsIdList;
-        address _loanTokenAddress = loanTokenAddress;
+    //     for (uint256 i = 0; i < loanParamsList.length; i++) {
+    //         loanParamsList[i].loanToken = _loanTokenAddress;
+    //         loanParamsList[i].maxLoanTerm = areTorqueLoans ? 0 : 28 days;
+    //     }
+    //     loanParamsIdList = IBZx(bZxContract).setupLoanParams(loanParamsList);
+    //     for (uint256 i = 0; i < loanParamsIdList.length; i++) {
+    //         loanParamsIds[uint256(keccak256(abi.encodePacked(
+    //             loanParamsList[i].collateralToken,
+    //             areTorqueLoans // isTorqueLoan
+    //         )))] = loanParamsIdList[i];
+    //     }
+    // }
 
-        for (uint256 i = 0; i < loanParamsList.length; i++) {
-            loanParamsList[i].loanToken = _loanTokenAddress;
-            loanParamsList[i].maxLoanTerm = areTorqueLoans ? 0 : 28 days;
-        }
-        loanParamsIdList = IBZx(bZxContract).setupLoanParams(loanParamsList);
-        for (uint256 i = 0; i < loanParamsIdList.length; i++) {
-            loanParamsIds[uint256(keccak256(abi.encodePacked(
-                loanParamsList[i].collateralToken,
-                areTorqueLoans // isTorqueLoan
-            )))] = loanParamsIdList[i];
-        }
-    }
+    // TODO
+    // function disableLoanParams(
+    //     address[] memory collateralTokens,
+    //     bool[] memory isTorqueLoans)
+    //     public
+    // {
+    //     require(collateralTokens.length == isTorqueLoans.length, "count mismatch");
 
-    function disableLoanParams(
-        address[] memory collateralTokens,
-        bool[] memory isTorqueLoans)
-        public
-    {
-        require(collateralTokens.length == isTorqueLoans.length, "count mismatch");
+    //     bytes32[] memory loanParamsIdList = new bytes32[](collateralTokens.length);
+    //     for (uint256 i = 0; i < collateralTokens.length; i++) {
+    //         uint256 id = uint256(keccak256(abi.encodePacked(
+    //             collateralTokens[i],
+    //             isTorqueLoans[i]
+    //         )));
+    //         loanParamsIdList[i] = loanParamsIds[id];
+    //         delete loanParamsIds[id];
+    //     }
 
-        bytes32[] memory loanParamsIdList = new bytes32[](collateralTokens.length);
-        for (uint256 i = 0; i < collateralTokens.length; i++) {
-            uint256 id = uint256(keccak256(abi.encodePacked(
-                collateralTokens[i],
-                isTorqueLoans[i]
-            )));
-            loanParamsIdList[i] = loanParamsIds[id];
-            delete loanParamsIds[id];
-        }
+    //     IBZx(bZxContract).disableLoanParams(loanParamsIdList);
+    // }
 
-        IBZx(bZxContract).disableLoanParams(loanParamsIdList);
-    }
-
-    function disableLoanParamsAll(address[] memory collateralTokens, bool[][] memory isTorqueLoans) public {
-        disableLoanParams(collateralTokens, isTorqueLoans[0]);
-        disableLoanParams(collateralTokens, isTorqueLoans[1]);
-    }
+    // function disableLoanParamsAll(address[] memory collateralTokens, bool[][] memory isTorqueLoans) public {
+    //     disableLoanParams(collateralTokens, isTorqueLoans[0]);
+    //     disableLoanParams(collateralTokens, isTorqueLoans[1]);
+    // }
 
     // These params should be percentages represented like so: 5% = 5000000000000000000
     // rateMultiplier + baseRate can't exceed 100%

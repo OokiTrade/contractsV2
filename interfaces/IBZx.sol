@@ -264,7 +264,7 @@ interface IBZx {
     ////// Loan Openings //////
 
     /// @dev This is THE function that borrows or trades on the protocol
-    /// @param loanParamsId id of the LoanParam created beforehand by setupLoanParams function
+    /// @param collateralTokenAddress collateral address
     /// @param loanId id of existing loan, if 0, start a new loan
     /// @param isTorqueLoan boolean whether it is toreque or non torque loan
     /// @param initialMargin in WEI_PERCENT_PRECISION
@@ -282,7 +282,7 @@ interface IBZx {
     /// @param loanDataBytes required when sending ether
     /// @return principal of the loan and collateral amount
     function borrowOrTradeFromPool(
-        bytes32 loanParamsId,
+        address collateralTokenAddress,
         bytes32 loanId,
         bool isTorqueLoan,
         uint256 initialMargin,

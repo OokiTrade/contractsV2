@@ -88,7 +88,7 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
 
     mapping(address => uint256) public poolLastInterestRate; // per itoken
     /**** new interest model end */
-
+    mapping (bytes32 => bytes32) public loanParamsIds;
 
     function _setTarget(
         bytes4 sig,
