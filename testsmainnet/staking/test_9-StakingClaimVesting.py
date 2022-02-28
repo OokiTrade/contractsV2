@@ -14,6 +14,8 @@ def stakingV1_1(bzx, StakingProxy, StakingV1_1, POOL3Gauge, accounts, POOL3, sta
     # overrides config
     return 0;
 
+def isNear(val0, val1):
+    return abs(val0 - val1) <= 1
 
 def testClaimUnvested(requireMainnetFork, StakingV1_1, bzx,  BZRX, vBZRX, iBZRX, accounts, TestToken, StakingProxy):
     # tx =
@@ -35,18 +37,19 @@ def testClaimUnvested(requireMainnetFork, StakingV1_1, bzx,  BZRX, vBZRX, iBZRX,
     earnedBalanceAfter = stakingV1_1.earned(acc)
     stakingV1_1.exit({"from": acc})
 
-
+    print(earnedBalanceBefore)
+    print(earnedBalanceAfter)
 
     bzrxBalanceAfter = BZRX.balanceOf(acc)
     crv3BalanceAfter = CRV3.balanceOf(acc)
     assert stakingV1_1.earned(acc) == (0, 0, 0, 0, 0)
 
     # we check that transfer amount match the earn amount displayed
-    assert earnedBalanceAfter[0] == bzrxBalanceAfter - bzrxBalanceBefore
-    assert earnedBalanceAfter[1] == crv3BalanceAfter - crv3BalanceBefore
+    assert isNear(earnedBalanceAfter[0], bzrxBalanceAfter - bzrxBalanceBefore)
+    assert isNear(earnedBalanceAfter[1], crv3BalanceAfter - crv3BalanceBefore)
 
     # we check that new amounts are the result of previous claimable + vesting
-    assert earnedBalanceAfter[0] == earnedBalanceBefore[0] + earnedBalanceBefore[2] # for BZRX
-    assert earnedBalanceAfter[1] == earnedBalanceBefore[1] + earnedBalanceBefore[3] # for CRV3
+    assert isNear(earnedBalanceAfter[0], earnedBalanceBefore[0] + earnedBalanceBefore[2]) # for BZRX
+    assert isNear(earnedBalanceAfter[1], earnedBalanceBefore[1] + earnedBalanceBefore[3]) # for CRV3
     
-    assert False
+    #assert False
