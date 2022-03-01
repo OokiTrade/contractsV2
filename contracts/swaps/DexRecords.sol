@@ -18,4 +18,8 @@ contract DexRecords is Ownable {
     function setDexID(uint256 ID, address dex) public onlyOwner {
         dexes[ID] = dex;
     }
+	
+    function getDexCount() external view returns(uint256) {
+        return dexCount;
+    }
 }

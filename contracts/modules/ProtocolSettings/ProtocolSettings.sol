@@ -11,7 +11,7 @@ import "../../events/ProtocolSettingsEvents.sol";
 import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 import "../../interfaces/IVestingToken.sol";
 import "../../utils/MathUtil.sol";
-
+import "../../interfaces/IDexRecords.sol";
 contract ProtocolSettings is State, ProtocolSettingsEvents {
     using SafeERC20 for IERC20;
     using MathUtil for uint256;
@@ -136,8 +136,12 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
                 0x4a99e3a1, // setSwapApprovals(address[])
                 addrs
             );
-            (bool success,) = swapsImpl.delegatecall(data);
-            require(success, "approval calls failed");
+            IDexRecords records = IDexRecords(swapsImpl);
+            for(uint256 i = 1; i<=records.getDexCount();i++){
+                address swapImpl = records.retrieveDexAddress(i);
+                (bool success,) = swapImpl.delegatecall(data);
+                require(success, "approval calls failed");
+            }
         }
     }
 

@@ -3,6 +3,9 @@
 import pytest
 from brownie import network, Contract, reverts, chain
 from brownie.convert.datatypes import  Wei
+from eth_abi import encode_abi, is_encodable, encode_single
+from eth_abi.packed import encode_single_packed, encode_abi_packed
+from hexbytes import HexBytes
 import json
 
 @pytest.fixture(scope="module")
@@ -12,7 +15,7 @@ def requireFork():
 
 @pytest.fixture(scope="module")
 def LOAN_TOKEN_SETTINGS_LOWER_ADMIN(LoanTokenSettingsLowerAdmin):
-    return  Contract.from_abi("loanTokenSettingsLowerAdmin", address="0x91EB15A8EC9aE2280B7003824b2d1e9Caf802b6C", abi=LoanTokenSettingsLowerAdmin.abi)
+    return  Contract.from_abi("loanTokenSettingsLowerAdmin", address="0x11F58881D46BcfbB4E4c83F65de401eAd80ecF06", abi=LoanTokenSettingsLowerAdmin.abi)
 
 
 
@@ -20,14 +23,19 @@ def LOAN_TOKEN_SETTINGS_LOWER_ADMIN(LoanTokenSettingsLowerAdmin):
 def LOAN_TOKEN_SETTINGS(accounts, interface, LoanTokenSettings):
     #return Contract.from_abi("loanToken", address="0x3ff9BFe18206f81d073e35072b1c4D61f866663f", abi=LoanTokenSettings.abi)
 
-    bzx = Contract.from_abi("bzx", address="0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8",
+    bzx = Contract.from_abi("bzx", address="0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB",
                             abi=interface.IBZx.abi, owner=accounts[0])
     return LoanTokenSettings.deploy({'from': bzx.owner()})
 
 
+
 @pytest.fixture(scope="module")
-def BZX(accounts, interface, LoanSettings, LoanOpenings, LoanMaintenance_2, LoanMaintenance, LoanClosings):
-    bzx = Contract.from_abi("bzx", address="0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8",abi=interface.IBZx.abi, owner=accounts[0])
+def CUI(CurvedInterestRate, accounts):
+    return accounts[0].deploy(CurvedInterestRate)
+
+@pytest.fixture(scope="module")
+def BZX(accounts, interface, ProtocolSettings, LoanSettings, LoanOpenings, LoanMaintenance_Arbitrum, LoanMaintenance_2, LoanClosings_Arbitrum, SwapsExternal, SwapsImplUniswapV2_ARBITRUM, DexRecords, SwapsImplUniswapV3_ETH):
+    bzx = Contract.from_abi("bzx", address="0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB",abi=interface.IBZx.abi, owner=accounts[0])
 
 
     ## LoanSettings
@@ -51,21 +59,40 @@ def BZX(accounts, interface, LoanSettings, LoanOpenings, LoanMaintenance_2, Loan
 
     ## LoanMaintenance
     print("Deploying LoanMaintenance.")
-    loanMaintenance = LoanMaintenance.deploy({'from': bzx.owner()})
+    loanMaintenance = LoanMaintenance_Arbitrum.deploy({'from': bzx.owner()})
     print("Calling replaceContract.")
     bzx.replaceContract(loanMaintenance.address, {'from': bzx.owner()})
 
-
     ## LoanClosings
     print("Deploying LoanClosings.")
-    loanClosings = LoanClosings.deploy({'from': bzx.owner()})
+    loanClosings = LoanClosings_Arbitrum.deploy({'from': bzx.owner()})
     print("Calling replaceContract.")
     bzx.replaceContract(loanClosings.address, {'from': bzx.owner()})
+
+    ## SwapsExternal
+    print("Deploying SwapsExternal.")
+    swapsExternal = SwapsExternal.deploy({'from': bzx.owner()})
+    print("Calling replaceContract.")
+    bzx.replaceContract(swapsExternal.address, {'from': bzx.owner()})
+
+    print("Deploying Protocol Settings")
+    protocolSettings = ProtocolSettings.deploy({'from': bzx.owner()})
+    print("Calling replaceContract.")
+    bzx.replaceContract(protocolSettings.address, {'from': bzx.owner()})
+    
+    print("Deploying Dex Selector and Implementations")
+    dex_record = DexRecords.deploy({'from':bzx.owner()})
+    univ2_arbitrum = SwapsImplUniswapV2_ARBITRUM.deploy({'from':bzx.owner()})
+    univ3 = SwapsImplUniswapV3_ETH.deploy({'from':bzx.owner()})
+    dex_record.setDexID(univ2_arbitrum.address, {'from':bzx.owner()})
+    dex_record.setDexID(univ3.address, {'from':bzx.owner()})
+    bzx.setSwapsImplContract(dex_record.address, {'from':bzx.owner()})
+
     return bzx
 
 
 def replaceIToken(bzx, iTokenProxy,underlyingToken, acct, LoanTokenLogicStandard, LoanToken,
-                  LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGISTRY, LoanTokenSettingsLowerAdmin):
+                  LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGISTRY, LoanTokenSettingsLowerAdmin, CUI):
     loanTokenLogicStandard = LoanTokenLogicStandard.deploy(acct, {'from': acct}).address
     iTokenProxy.setTarget(loanTokenLogicStandard, {'from': bzx.owner()})
     iToken = Contract.from_abi("loanTokenLogicStandard", iTokenProxy, LoanTokenLogicStandard.abi, acct)
@@ -73,7 +100,7 @@ def replaceIToken(bzx, iTokenProxy,underlyingToken, acct, LoanTokenLogicStandard
     return iToken
 
 
-def deployIToken(bzx, underlyingToken, acct, LoanTokenLogicStandard, LoanToken, loanTokenSettings, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGISTRY, LoanTokenSettingsLowerAdmin, accounts, CurvedInterestRate):
+def deployIToken(bzx, underlyingToken, acct, LoanTokenLogicStandard, LoanToken, loanTokenSettings, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGISTRY, LoanTokenSettingsLowerAdmin, accounts, CUI):
     underlyingSymbol = underlyingToken.symbol()
     iTokenSymbol = "i{}v1".format(underlyingSymbol)
     iTokenName = "Fulcrum {} iToken ({})".format(underlyingSymbol, iTokenSymbol)
@@ -87,19 +114,18 @@ def deployIToken(bzx, underlyingToken, acct, LoanTokenLogicStandard, LoanToken, 
     iToken.updateSettings(loanTokenSettings, calldata, {"from": acct})
 
     calldata = loanTokenSettings.setLowerAdminValues.encode_input(
-        "0x01F569df8A270eCA78597aFe97D30c65D8a8ca80", # polygon guardian multisig
-        "0x91EB15A8EC9aE2280B7003824b2d1e9Caf802b6C"  # LoanTokenSettingsLowerAdmin contract
+        "0x111F9F3e59e44e257b24C5d1De57E05c380C07D2", # polygon guardian multisig
+        "0x11F58881D46BcfbB4E4c83F65de401eAd80ecF06"  # LoanTokenSettingsLowerAdmin contract
     )
     iToken.updateSettings(loanTokenSettings, calldata, {"from": acct})
     bzx.setLoanPool([iToken], [loanTokenAddress], {"from": acct})
     bzx.setSupportedTokens([loanTokenAddress], [True], True, {"from": acct})
 
-    marginSettings(bzx, underlyingToken, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGISTRY, acct, LoanTokenLogicStandard, LoanTokenSettingsLowerAdmin, accounts, CurvedInterestRate)
+    marginSettings(bzx, underlyingToken, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGISTRY, acct, LoanTokenLogicStandard, LoanTokenSettingsLowerAdmin, accounts, CUI)
     return iToken
 
 
-
-def marginSettings(bzx, underlyingToken, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGISTRY, acct, LoanTokenLogicStandard, LoanTokenSettingsLowerAdmin, accounts,CurvedInterestRate):
+def marginSettings(bzx, underlyingToken, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGISTRY, acct, LoanTokenLogicStandard, LoanTokenSettingsLowerAdmin, accounts,CUI):
     base_data = [
         b"0x0",  # id
         False,  # active
@@ -118,7 +144,7 @@ def marginSettings(bzx, underlyingToken, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGIST
     collateralTokensArr = []
     amountsArr = []
     loanTokenSettingsLowerAdmin = Contract.from_abi(
-        "loanToken", address="0x91EB15A8EC9aE2280B7003824b2d1e9Caf802b6C", abi=LoanTokenSettingsLowerAdmin.abi, owner=acct)
+        "loanToken", address="0x11F58881D46BcfbB4E4c83F65de401eAd80ecF06", abi=LoanTokenSettingsLowerAdmin.abi, owner=acct)
     for tokenAssetPairA in supportedTokenAssetsPairs:
         params.clear()
         loanTokensArr.clear()
@@ -162,42 +188,36 @@ def marginSettings(bzx, underlyingToken, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGIST
 
 
         bzx.setLiquidationIncentivePercent(loanTokensArr, collateralTokensArr, amountsArr, {"from": acct})
-        cui = accounts[0].deploy(CurvedInterestRate)
+
         loanTokenSettingsLowerAdmin = accounts[0].deploy(LoanTokenSettingsLowerAdmin)
-        calldata = loanTokenSettingsLowerAdmin.setDemandCurve.encode_input(cui)
+        calldata = loanTokenSettingsLowerAdmin.setDemandCurve.encode_input(CUI)
 
         existingIToken.updateSettings(loanTokenSettingsLowerAdmin.address, calldata,{"from": existingIToken.owner()})
 @pytest.fixture(scope="module")
 def USDT(accounts, TestToken):
-    return Contract.from_abi("USDT", address="0xc2132D05D31c914a87C6611C10748AEb04B58e8F", abi=TestToken.abi)
+    return Contract.from_abi("USDT", address="0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9", abi=TestToken.abi)
+
+@pytest.fixture(scope="module")
+def WETH(accounts, TestToken):
+    return Contract.from_abi("USDT", address="0x82af49447d8a07e3bd95bd0d56f35241523fbab1", abi=TestToken.abi)
 
 @pytest.fixture(scope="module")
 def iUSDT(accounts, LoanTokenLogicStandard):
-    return Contract.from_abi("iUSDT", address="0x5BFAC8a40782398fb662A69bac8a89e6EDc574b1", abi=LoanTokenLogicStandard.abi)
+    return Contract.from_abi("iUSDT", address="0xd103a2D544fC02481795b0B33eb21DE430f3eD23", abi=LoanTokenLogicStandard.abi)
 
 @pytest.fixture(scope="module")
-def iUSDTv1(accounts, USDT, iUSDT, LoanTokenLogicStandard,LoanToken, BZX, LOAN_TOKEN_SETTINGS, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGISTRY, LoanTokenSettingsLowerAdmin, CurvedInterestRate):
+def iUSDTv1(accounts, USDT, iUSDT, LoanTokenLogicStandard,LoanToken, BZX, LOAN_TOKEN_SETTINGS, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGISTRY, LoanTokenSettingsLowerAdmin, CUI, WETH):
     acct = BZX.owner()
 
-    itoken = deployIToken(BZX, USDT, acct, LoanTokenLogicStandard, LoanToken, LOAN_TOKEN_SETTINGS, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGISTRY, LoanTokenSettingsLowerAdmin, accounts, CurvedInterestRate)
+    itoken = deployIToken(BZX, USDT, acct, LoanTokenLogicStandard, LoanToken, LOAN_TOKEN_SETTINGS, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGISTRY, LoanTokenSettingsLowerAdmin, accounts, CUI)
     USDT.approve(BZX, 2**256-1, {'from': itoken})
-    USDT.approve(itoken, 2**256-1, {'from': accounts[0]})
-    USDT.approve(itoken, 2**256-1, {'from': accounts[1]})
-    USDT.approve(itoken, 2**256-1, {'from': accounts[2]})
-    USDT.approve(itoken, 2**256-1, {'from': accounts[4]})
-    USDT.approve(itoken, 2**256-1, {'from': accounts[9]})
-
-    USDT.transfer(accounts[0], 1000e6, {'from': iUSDT})
-    USDT.transfer(accounts[1], 1000e6, {'from': iUSDT})
-    USDT.transfer(accounts[2], 1000e6, {'from': iUSDT})
-    USDT.transfer(accounts[4], 1000e6, {'from': iUSDT})
-    USDT.transfer(accounts[9], 1000e6, {'from': iUSDT})
-    USDT.approve(BZX, 2**256-1, {'from': accounts[0]})
-    USDT.approve(BZX, 2**256-1, {'from': accounts[1]})
-    USDT.approve(BZX, 2**256-1, {'from': accounts[2]})
-    USDT.approve(BZX, 2**256-1, {'from': accounts[4]})
-    USDT.approve(BZX, 2**256-1, {'from': accounts[9]})
-    #itoken.mint(accounts[9], 100e6, {'from':  accounts[9]})
+    for i in range(0,9):
+        USDT.approve(itoken, 2**256-1, {'from': accounts[i]})
+        USDT.transfer(accounts[i], 1000e6, {'from': "0xc5ed2333f8a2c351fca35e5ebadb2a82f5d254c3"})
+        USDT.approve(BZX, 2**256-1, {'from': accounts[i]})
+        WETH.approve(itoken, 2**256-1, {'from': accounts[i]})
+        WETH.transfer(accounts[i], 100e18, {'from': "0x74c764d41b77dbbb4fe771dab1939b00b146894a"})
+        WETH.approve(BZX, 2**256-1, {'from': accounts[i]})
     return itoken
 
 
@@ -205,41 +225,7 @@ def iUSDTv1(accounts, USDT, iUSDT, LoanTokenLogicStandard,LoanToken, BZX, LOAN_T
 
 @pytest.fixture(scope="module")
 def REGISTRY(accounts, TokenRegistry):
-    return Contract.from_abi("REGISTRY", address="0x4B234781Af34E9fD756C27a47675cbba19DC8765",
-                             abi=TokenRegistry.abi, owner=accounts[0])
-
-
-
-@pytest.fixture(scope="module")
-def USDC(accounts, TestToken, BZX):
-    usdc = Contract.from_abi("USDC", address="0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", abi=TestToken.abi)
-    return usdc
-
-@pytest.fixture(scope="module")
-def iUSDC(accounts, USDC, LoanTokenLogicStandard,LoanToken, BZX, LOAN_TOKEN_SETTINGS, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGISTRY, LoanTokenSettingsLowerAdmin):
-    acct = BZX.owner()
-    iTokenProxy = Contract.from_abi("iUSDC", address="0xC3f6816C860e7d7893508C8F8568d5AF190f6d7d", abi=LoanToken.abi)
-    itoken = replaceIToken(BZX, iTokenProxy, USDC, acct, LoanTokenLogicStandard, LoanToken, LOAN_TOKEN_SETTINGS_LOWER_ADMIN, REGISTRY, LoanTokenSettingsLowerAdmin)
-    USDC.approve(itoken, 2**256-1, {'from': accounts[0]})
-    USDC.approve(itoken, 2**256-1, {'from': accounts[1]})
-    USDC.approve(itoken, 2**256-1, {'from': accounts[2]})
-    USDC.approve(itoken, 2**256-1, {'from': accounts[9]})
-    USDC.transfer(accounts[0], 1000e6, {'from': iTokenProxy})
-    USDC.transfer(accounts[1], 1000e6, {'from': iTokenProxy})
-    USDC.transfer(accounts[2], 1000e6, {'from': iTokenProxy})
-    USDC.transfer(accounts[9], 1000e6, {'from': iTokenProxy})
-    USDC.approve(BZX, 2**256-1, {'from': accounts[0]})
-    USDC.approve(BZX, 2**256-1, {'from': accounts[1]})
-    USDC.approve(BZX, 2**256-1, {'from': accounts[2]})
-    USDC.approve(BZX, 2**256-1, {'from': accounts[9]})
-    #itoken.mint(accounts[9], 100e6, {'from':  accounts[9]})
-
-    return Contract.from_abi("iUSDC", address=iTokenProxy, abi=LoanTokenLogicStandard.abi)
-
-
-@pytest.fixture(scope="module")
-def REGISTRY(accounts, TokenRegistry):
-    return Contract.from_abi("REGISTRY", address="0x4B234781Af34E9fD756C27a47675cbba19DC8765",
+    return Contract.from_abi("REGISTRY", address="0x86003099131d83944d826F8016E09CC678789A30",
                              abi=TokenRegistry.abi, owner=accounts[0])
 
 @pytest.fixture(autouse=True)
@@ -247,9 +233,8 @@ def isolation(fn_isolation):
     pass
 
 def test_0(requireFork, iUSDTv1, USDT, iUSDT, accounts, BZX):
-    
+
     amount = 100e18
-    USDT.transfer(accounts[0], 1000e6, {'from': iUSDT})
     USDT.approve(iUSDTv1, 2**251, {'from': accounts[0]})
     USDT.approve(BZX, 2**251, {'from': accounts[0]})
     borrowAmount = 10e6
@@ -278,7 +263,7 @@ def test_0(requireFork, iUSDTv1, USDT, iUSDT, accounts, BZX):
     print(chain.time(),"after mint - getTotalPrincipal",BZX.getTotalPrincipal(iUSDTv1.address, iUSDTv1.address)/1e6)
 
     txBorrow = iUSDTv1.borrow("", borrowAmount, borrowTime, collateralAmount, collateralAddress, accounts[0], accounts[0], b"", {'from': accounts[0], 'value': Wei(collateralAmount)})
-    loanId =  BZX.getUserLoans(accounts[0], 0,10,0, 0,0)[0][0]
+    loanId =  BZX.getUserLoans(accounts[0], 0,20,0, 0,0)[0][0]
 
     print(chain.time(),"after borrow - vals",BZX.getInterestModelValues(iUSDTv1.address, loanId))
     print(chain.time(),"after borrow - borrowInterestRate",iUSDTv1.borrowInterestRate()/1e18)
@@ -398,126 +383,218 @@ def test_0(requireFork, iUSDTv1, USDT, iUSDT, accounts, BZX):
     print(chain.time(),"after final burn - getLoanPrincipal",BZX.getLoanPrincipal(loanId)/1e6)
     print(chain.time(),"after final burn - getTotalPrincipal",BZX.getTotalPrincipal(iUSDTv1.address, iUSDTv1.address)/1e6)
 
-    assert False
+    assert True
 
 
-def _base(iToken, token, BZX, acct0,acct1, acct2):
+def _base(iToken, token, BZX, acct0,acct1, acct2, CUI):
     borrowAmount1 = 10e6
     borrowTime = 7884000
     collateralAmount = 10e18
     collateralAddress = "0x0000000000000000000000000000000000000000"
+    balance1 = token.balanceOf(acct0)
     iToken.mint(acct0, 100e6, {'from': acct0})
     chain.mine()
     #12%
     txBorrow = iToken.borrow("", borrowAmount1, borrowTime, collateralAmount, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount)})
-    loanId1 =  BZX.getUserLoans(acct1, 0,10,0, 0,0)[0][0]
-    chain.mine(timedelta=60*60*24*365)
-    assert int((BZX.getLoanPrincipal(loanId1)/borrowAmount1-1)*100) == 12
+    loanId1 =  BZX.getUserLoans(acct1, 0,20,0, 0,0)[0][0]
 
-    collateralAmount = 90e18
-    borrowAmount2 = 90e6
-
-    txBorrow = iToken.borrow("", borrowAmount2, borrowTime, collateralAmount, collateralAddress, acct2, acct2, b"", {'from': acct2, 'value': Wei(collateralAmount)})
-    loanId2 =  BZX.getUserLoans(acct2, 0,10,0, 0,0)[0][0]
-    assert borrowAmount2<=BZX.getLoanPrincipal(loanId2)
-    chain.mine(timedelta=60*60*24*365)
-    assert borrowAmount2<BZX.getLoanPrincipal(loanId2)
-    assert 120 / int((BZX.getLoanPrincipal(loanId2)/borrowAmount2-1)*100) > 0.99
-    assert ((12+120)/2) / (int((BZX.getLoanPrincipal(loanId1)/borrowAmount1-1)*100)/2) > 0.99
-
-
-    usdtBalance2BeforeClose = token.balanceOf(acct2)
-    loanId2Principal = BZX.getLoanPrincipal(loanId2)
-
-
-def test_InterestRate_1(requireFork, iUSDTv1, USDT,iUSDT, accounts, BZX):
-    acct0 = accounts[4]
-    acct1 = accounts[5]
-    iToken = iUSDTv1
-    borrowAmount1 = 10e6
-    borrowTime = 7884000
-    collateralAmount = 10e18
-    collateralAddress = "0x0000000000000000000000000000000000000000"
-    iToken.mint(acct0, 100e6, {'from': acct0})
-    chain.mine()
-    borrowAmount1 = 10e6
-    borrowTime = 7884000
-    collateralAmount = 10e18
-    collateralAddress = "0x0000000000000000000000000000000000000000"
-    iToken.borrow("", borrowAmount1, borrowTime, collateralAmount, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount)})
+    tokenPrice1 = iToken.tokenPrice()/1e18
     iToken.borrow("", borrowAmount1*2, borrowTime, collateralAmount*2, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount*2)})
     iToken.borrow("", borrowAmount1*2, borrowTime, collateralAmount*2, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount*2)})
     iToken.borrow("", borrowAmount1*2, borrowTime, collateralAmount*2, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount*2)})
     iToken.borrow("", borrowAmount1*2, borrowTime, collateralAmount*2, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount*2)})
     for i in range(0,9):
         iToken.borrow("", 1e6, borrowTime, 1e18, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(1e18)})
-    assert False
 
-def test_InterestRate_2(requireFork, iUSDTv1, USDT,iUSDT, accounts, BZX):
+    percent1 = BZX.getInterestModelValues(iToken, loanId1)[4]/1e18
+
+    chain.mine(timedelta=60*60*24*365)
+    ratio = (BZX.getInterestModelValues(iToken, loanId1)[4]/1e18)/((BZX.getLoanPrincipal(loanId1)-10e6)*100/10e6)
+    assert ratio > 0.99 and ratio < 1.01
+
+    collateralAmount = 1e18
+    borrowAmount2 = 1e6
+    txBorrow = iToken.borrow("", borrowAmount2, borrowTime, collateralAmount, collateralAddress, acct2, acct2, b"", {'from': acct2, 'value': Wei(collateralAmount)})
+    loanId2 = BZX.getUserLoans(acct2, 0,20,0, 0,0)[0][0]
+    for i in range(0,9):
+        iToken.mint(acct0, 10e6, {'from': acct0})
+
+    assert borrowAmount2<=BZX.getLoanPrincipal(loanId2)
+    chain.mine(timedelta=60*60*24*365)
+    percent2 = ((BZX.getLoanPrincipal(loanId2)-1e6)*100/1e6)
+
+    ratio = 10*(((percent1+percent2)/100)+1)/((BZX.getLoanPrincipal(loanId1))/1e6)
+    assert ratio > 0.99 and ratio < 1.01
+
+
+    txBorrow = iToken.borrow("", borrowAmount2, borrowTime, collateralAmount, collateralAddress, acct2, acct2, b"", {'from': acct2, 'value': Wei(collateralAmount)})
+    loanId3 = BZX.getUserLoans(acct2, 0,20,0, 0,0)[0][0]
+    for i in range(0,9):
+        iToken.mint(acct0, 10e6, {'from': acct0})
+
+    assert borrowAmount2<=BZX.getLoanPrincipal(loanId3)
+    chain.mine(timedelta=60*60*24*365)
+    percent3 = ((BZX.getLoanPrincipal(loanId3)-1e6)*100/1e6)
+
+    ratio = 10*(((percent1+percent2+percent3)/100)+1)/((BZX.getLoanPrincipal(loanId1))/1e6)
+    assert ratio > 0.99 and ratio < 1.01
+
+    for loan in BZX.getUserLoans(acct2, 0,30,0, 0,0):
+        BZX.closeWithDeposit(loan[0], acct2, BZX.getLoanPrincipal(loan[0])+100000, {'from': acct2})
+    for loan in BZX.getUserLoans(acct1, 0,30,0, 0,0):
+        BZX.closeWithDeposit(loan[0], acct1, BZX.getLoanPrincipal(loan[0])+100000, {'from': acct1})
+
+    tokenPrice2 =  iToken.tokenPrice()/1e18
+
+    assert tokenPrice2 > tokenPrice1
+
+    balance1 = token.balanceOf(acct0)
+    burnAmount = iToken.balanceOf(acct0) * 0.999
+    balance1 = token.balanceOf(acct0)
+    iToken.burn(acct0, burnAmount, {'from': acct0})
+    balance2 = token.balanceOf(acct0)
+    assert int((balance2-balance1)/1e6) == int(burnAmount/1e6 * iToken.tokenPrice()/1e18)
+    assert int(tokenPrice2) == int(iToken.tokenPrice()/1e18)
+    assert True
+
+
+def test_InterestRate_1(requireFork, iUSDTv1, USDT,iUSDT, accounts, BZX, CUI):
     acct0 = accounts[4]
-    _base(iUSDTv1, USDT, BZX, acct0,acct0, acct0)
+    acct1 = accounts[5]
+    acct2 = accounts[4]
+    _base(iUSDTv1, USDT, BZX, acct0,acct1, acct2, CUI)
 
 
-def test_trade(requireFork, USDT, iUSDTv1, accounts, BZX):
+def test_trade(requireFork, USDT, iUSDTv1, accounts, BZX, WETH,CUI):
     acct0 = accounts[4]
     acct1 = accounts[1]
     acct2 = accounts[2]
-
-    borrowAmount1 = 90e6
+    borrowAmount1 = 10e6
     borrowTime = 7884000
-    collateralAmount = 10e18
+    collateralAmount = 0.01e18
     collateralAddress = "0x0000000000000000000000000000000000000000"
-    iUSDTv1.mint(acct0, 100e6, {'from': acct0})
+    iUSDTv1.mint(acct0, 150e6, {'from': acct0})
     chain.mine()
-    iUSDTv1.marginTrade('0x0000000000000000000000000000000000000000000000000000000000000000', 3e18, 0, collateralAmount, '0x0000000000000000000000000000000000000000', acct2, b'',{'from': acct2,  "value": collateralAmount})
-    loan = BZX.getUserLoans(acct2, 0,10,0, 0,0)[-1]
-    loanPrincipal = loan[4]
-    loanId1 =  loan[0]
-    chain.mine(timedelta=60*60*24*365*5)
-    assert len(BZX.getUserLoans(acct2, 0,10,0, 0,1)) == 1
-    BZX.liquidate(loanId1, acct0, 2**256-1, {'from': acct0})
-    assert len(BZX.getUserLoans(acct2, 0,10,0, 0,1)) == 0
+    iUSDTv1.borrow("", borrowAmount1*4, borrowTime, collateralAmount*4, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount*4)})
 
+    iUSDTv1.marginTrade('0x0000000000000000000000000000000000000000000000000000000000000000', 3e18, 0, collateralAmount/2, collateralAddress, acct2, b'',{'from': acct2,  'value': Wei(collateralAmount/2)})
+    loan1 = BZX.getUserLoans(acct2, 0,20,0, 0,0)[0]
 
-def test_liquidate(requireFork, iUSDTv1, USDT,iUSDT, accounts, BZX):
+    #iUSDTv1.borrow("", borrowAmount1*4, borrowTime, collateralAmount*4, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount*4)})
+    iUSDTv1.borrow("", borrowAmount1*2, borrowTime, collateralAmount*2, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount*2)})
+    iUSDTv1.borrow("", borrowAmount1*2, borrowTime, collateralAmount*2, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount*2)})
+    for i in range(0,6):
+        iUSDTv1.borrow("", borrowAmount1/10, borrowTime, collateralAmount/10, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount/10)})
+    chain.mine(timedelta=60*60*24*365)
+    BZX.getLoanPrincipal(loan1[0]) == loan1[4]+ BZX.getLoanInterestOutstanding(loan1[0])
+
+    balanceBefore = WETH.balanceOf(acct2)
+    usdBalanceBefore = USDT.balanceOf(acct2)
+    principal = BZX.getLoanPrincipal(loan1[0])
+    BZX.closeWithDeposit(loan1[0], acct2, principal+1000, {'from': acct2})
+
+    assert balanceBefore + loan1[5] == WETH.balanceOf(acct2)
+    assert (usdBalanceBefore - principal) / USDT.balanceOf(acct2) > 0.999
+    assert len(BZX.getUserLoans(acct2, 0,20,0, 0,1)) == 0
+
+    route = encode_abi_packed(['address','uint24','address'],["0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",500,"0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"])
+    swap_payload = encode_abi(['(bytes,address,uint256,uint256,uint256)[]'],[[(route,BZX.address,chain.time()+10000,100,100)]])
+    data_provided = encode_abi(['uint256','bytes'],[2,swap_payload])
+    sendOut = encode_abi(['uint128','bytes[]'],[2,[data_provided]]) #flag value of Base-2: 10
+    iUSDTv1.marginTrade('0x0000000000000000000000000000000000000000000000000000000000000000', 3e18, 0, collateralAmount/2, collateralAddress, acct2, sendOut.hex(),{'from': acct2,  'value': Wei(collateralAmount/2)})
+    assert True
+
+def test_liquidate(requireFork, iUSDTv1, USDT,iUSDT, accounts, BZX, WETH):
     acct0 = accounts[4]
     acct1 = accounts[1]
     acct2 = accounts[2]
-    borrowAmount1 =  15e6
+    borrowAmount1 = 10e6
     borrowTime = 7884000
-    collateralAmount = 10e18
+    collateralAmount = 0.01e18
     collateralAddress = "0x0000000000000000000000000000000000000000"
-    iUSDTv1.mint(acct0, 100e6, {'from': acct0})
-    txBorrow = iUSDTv1.borrow("", borrowAmount1, borrowTime, collateralAmount, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount)})
-    loanId1 =  BZX.getUserLoans(acct1, 0,10,0, 0,0)[0][0]
+    iUSDTv1.mint(acct0, 150e6, {'from': acct0})
+    chain.mine()
+    iUSDTv1.borrow("", borrowAmount1*4, borrowTime, collateralAmount*4, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount*4)})
+    loan1 = BZX.getUserLoans(acct1, 0,20,0, 0,0)[0]
+    iUSDTv1.marginTrade('0x0000000000000000000000000000000000000000000000000000000000000000', 3e18, 0, collateralAmount/2, collateralAddress, acct2, b'',{'from': acct2,  'value': Wei(collateralAmount/2)})
+    loan2 = BZX.getUserLoans(acct2, 0,20,0, 0,0)[0]
+
+    #iUSDTv1.borrow("", borrowAmount1*4, borrowTime, collateralAmount*4, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount*4)})
+    iUSDTv1.borrow("", borrowAmount1*2, borrowTime, collateralAmount*2, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount*2)})
+    iUSDTv1.borrow("", borrowAmount1*2, borrowTime, collateralAmount*2, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount*2)})
+    for i in range(0,6):
+        iUSDTv1.borrow("", borrowAmount1/10, borrowTime, collateralAmount/10, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount/10)})
     chain.mine(timedelta=60*60*24*365*5)
-    assert len(BZX.getUserLoans(acct1, 0,10,0, 0,1)) == 1
-    loan =  BZX.getUserLoans(acct1, 0,10,0, 0,1)[0]
-    BZX.liquidate(loanId1, acct2, loan[-4]+1000, {'from': acct2})
-    assert len(BZX.getUserLoans(acct1, 0,10,0, 0,1)) == 0
-    iUSDTv1.burn(acct0, iUSDTv1.balanceOf(acct0), {'from': acct0})
+    l1 = len(BZX.getUserLoans(acct1, 0,20,0, 0,1))
+    l2 = len(BZX.getUserLoans(acct2, 0,20,0, 0,1))
+    balanceBefore = WETH.balanceOf(acct0)
+    BZX.liquidate(loan1[0], acct0, BZX.getLoanPrincipal(loan1[0])+1000, {'from': acct0})
+    BZX.liquidate(loan2[0], acct0, BZX.getLoanPrincipal(loan2[0])+1000, {'from': acct0})
+    assert len(BZX.getUserLoans(acct1, 0,20,0, 0,1)) == l1 - 1
+    assert len(BZX.getUserLoans(acct2, 0,20,0, 0,1)) == l2 - 1
+    assert WETH.balanceOf(acct0) == balanceBefore + loan1[5] + loan2[5]
+    assert True
 
 
 def test_borrowmore(requireFork, iUSDTv1, USDT,iUSDT, accounts, BZX):
-    acct0 = accounts[7]
-    acct1 = accounts[5]
-    acct2 = accounts[6]
-    borrowAmount1 =  15e6
+    acct0 = accounts[4]
+    acct1 = accounts[1]
+    acct2 = accounts[2]
+    borrowAmount1 = 10e6
     borrowTime = 7884000
-    collateralAmount = 10e18
+    collateralAmount = 0.01e18
     collateralAddress = "0x0000000000000000000000000000000000000000"
-    USDT.transfer(acct0, 1000e6, {'from': iUSDT})
-    USDT.approve(iUSDTv1, 2**256-1, {'from': acct0})
+    iUSDTv1.mint(acct0, 150e6, {'from': acct0})
+    chain.mine()
+    iUSDTv1.borrow("", borrowAmount1*4, borrowTime, collateralAmount*4, collateralAddress, acct2, acct2, b"", {'from': acct2, 'value': Wei(collateralAmount*4)})
+    iUSDTv1.borrow("", borrowAmount1*4, borrowTime, collateralAmount*4, collateralAddress, acct2, acct2, b"", {'from': acct2, 'value': Wei(collateralAmount*4)})
+
+    loan1 = BZX.getUserLoans(acct2, 0,20,0, 0,0)[0]
+    iUSDTv1.borrow("", borrowAmount1*2, borrowTime, collateralAmount*2, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount*2)})
+    iUSDTv1.borrow("", borrowAmount1*2, borrowTime, collateralAmount*2, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount*2)})
+    for i in range(0,4):
+        iUSDTv1.borrow("", borrowAmount1/10, borrowTime, collateralAmount/10, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount/10)})
+
+    loan1 = BZX.getUserLoans(acct2, 0,20,0, 0,0)[0]
+    chain.mine(timedelta=60*60*24*365)
+    interestRate1 = ((BZX.getLoanPrincipal(loan1[0])-loan1[4])*100/loan1[4])
+    iUSDTv1.borrow("", borrowAmount1, borrowTime, collateralAmount, collateralAddress, acct2, acct2, b"", {'from': acct2, 'value': Wei(collateralAmount)})
+    loan2 = BZX.getUserLoans(acct2, 0,20,0, 0,0)[0]
+    chain.mine(timedelta=60*60*24*365)
+    interestRate2 = ((BZX.getLoanPrincipal(loan2[0])-loan2[4])*100/loan2[4])
+    assert int(((BZX.getLoanPrincipal(loan1[0])/loan1[4])-1) * 1000) == int((interestRate1 + interestRate2)/100 * 1000)
+    assert True
+
+
+def test_token_price(requireFork, iUSDTv1, USDT,iUSDT, accounts, BZX):
+    # assert False
+    acct0 = accounts[4]
+    acct1 = accounts[5]
+    iUSDTv1.mint(acct1, 0.001e6, {'from': acct1})
+
     iUSDTv1.mint(acct0, 100e6, {'from': acct0})
-    interestRate1 =  iUSDTv1.nextBorrowInterestRate(borrowAmount1)
-    txBorrow = iUSDTv1.borrow("", borrowAmount1, borrowTime, collateralAmount, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount)})
-    loanId1 =  BZX.getUserLoans(acct1, 0,10,0, 0,0)[0][0]
-    chain.mine(timedelta=60*60*24*365)
-    int((BZX.getLoanPrincipal(loanId1)/borrowAmount1-1)*100) == interestRate1/1e18
 
-    txBorrow = iUSDTv1.borrow("", borrowAmount1*4, borrowTime, acct2.balance(), collateralAddress, acct2, acct2, b"", {'from': acct2, 'value': Wei(acct2.balance())})
+    assert int(iUSDTv1.balanceOf(acct0)/1e6) == 100
 
-    interestRate2 =  iUSDTv1.nextBorrowInterestRate(borrowAmount1)
-    txBorrow = iUSDTv1.borrow(loanId1, borrowAmount1, borrowTime, collateralAmount, collateralAddress, acct1, acct1, b"", {'from': acct1, 'value': Wei(collateralAmount)})
-    chain.mine(timedelta=60*60*24*365)
-    int(((BZX.getLoanPrincipal(loanId1)/(2*borrowAmount1))-1)*100)/2 == int((interestRate1 * borrowAmount1 +interestRate2 * (borrowAmount1*2))/(borrowAmount1*2)/2/1e18)
+    USDT.transfer(iUSDTv1, 50e6, {'from': acct1})
+
+    assert int(iUSDTv1.tokenPrice()/1e16) == 149
+    balanceBefore = int(iUSDTv1.balanceOf(acct0)/1e6)
+    iUSDTv1.mint(acct0, 100e6, {'from': acct0})
+
+    assert int(iUSDTv1.balanceOf(acct0)/1e6) ==balanceBefore + int(100/(iUSDTv1.tokenPrice()/1e18))
+
+    USDT.transfer(iUSDTv1, 100e6, {'from': acct1})
+
+    assert int(iUSDTv1.tokenPrice()/1e16) > 200 # 209
+
+    balanceBeforeIUSDT = iUSDTv1.balanceOf(acct0)
+    balanceBeforeUSDT = USDT.balanceOf(acct0)
+
+    # burning here 166 iUSDT at token price 2.09 166* 2.09= 346.94
+    expecetedAmount = balanceBeforeIUSDT * iUSDTv1.tokenPrice() / 1e18
+    iUSDTv1.burn(acct0, balanceBeforeIUSDT, {"from": acct0})
+    actualAmount = USDT.balanceOf(acct0) - balanceBeforeUSDT
+
+    assert  int((expecetedAmount/1e6)) == int(actualAmount/1e6)
+    return True

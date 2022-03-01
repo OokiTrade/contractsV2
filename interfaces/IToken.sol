@@ -3,7 +3,7 @@
  * Licensed under the Apache-2.0
  */
 
-pragma solidity >=0.5.0 <=0.8.9;
+pragma solidity >=0.5.0 <0.9.0;
 pragma experimental ABIEncoderV2;
 // import "@openzeppelin-3.4.0/token/ERC20/IERC20.sol";
 
@@ -21,7 +21,9 @@ interface IToken {
     function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
-
+    event Mint(address indexed minter,uint256 tokenAmount,uint256 assetAmount,uint256 price);
+    event Burn(address indexed burner,uint256 tokenAmount,uint256 assetAmount,uint256 price);
+    event FlashBorrow(address borrower,address target,address loanToken,uint256 loanAmount);
 
     function tokenPrice() external view returns (uint256);
 
@@ -195,4 +197,9 @@ interface IToken {
 	
     //flash borrow fees
     function updateFlashBorrowFeePercent(uint256 newFeePercent) external;
+
+    function getPoolUtilization()
+        external
+        view
+    returns (uint256);
 }

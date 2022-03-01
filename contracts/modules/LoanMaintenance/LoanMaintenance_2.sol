@@ -34,6 +34,7 @@ contract LoanMaintenance_2 is State, LoanMaintenanceEvents, PausableGuardian, In
             uint256 _poolPrincipalTotal,
             uint256 _poolInterestTotal,
             uint256 _poolRatePerTokenStored,
+            uint256 _poolLastInterestRate,
             uint256 _loanPrincipalTotal,
             uint256 _loanInterestTotal,
             uint256 _loanRatePerTokenPaid)
@@ -42,6 +43,7 @@ contract LoanMaintenance_2 is State, LoanMaintenanceEvents, PausableGuardian, In
         _poolPrincipalTotal = poolPrincipalTotal[pool];
         _poolInterestTotal = poolInterestTotal[pool];
         _poolRatePerTokenStored = poolRatePerTokenStored[pool];
+        _poolLastInterestRate = poolLastInterestRate[pool];
 
         _loanPrincipalTotal = loans[loanId].principal;
         _loanInterestTotal = loanInterestTotal[loanId];

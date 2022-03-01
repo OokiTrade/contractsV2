@@ -3,7 +3,7 @@
  * Licensed under the Apache-2.0
  */
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity >=0.5.0 <=0.8.9;
+pragma solidity >=0.5.0 <0.9.0;
 pragma experimental ABIEncoderV2;
 
 /// @title A proxy interface for The Protocol
@@ -253,6 +253,14 @@ interface IBZx {
         view
         returns (uint256);
 
+    /// @dev returns the last interest rate founnd during interest settlement
+    /// @param pool address
+    /// @return the last interset rate
+    function getPoolLastInterestRate(address pool)
+        external
+        view
+        returns (uint256);
+
     ////// Loan Openings //////
 
     /// @dev This is THE function that borrows or trades on the protocol
@@ -372,13 +380,6 @@ interface IBZx {
             address seizedToken
         );
 
-    /// @dev rollover loan
-    /// @param loanId id of the loan
-    /// @param loanDataBytes reserved for future use.
-    function rollover(bytes32 loanId, bytes calldata loanDataBytes)
-        external
-        returns (address rebateToken, uint256 gasRebate);
-
     /// @dev close position with loan token deposit
     /// @param loanId id of the loan
     /// @param receiver collateral token reciever address
@@ -445,15 +446,6 @@ interface IBZx {
             uint256 seizedAmount,
             address seizedToken
         );
-
-    /// @dev rollover loan
-    /// @param loanId id of the loan
-    /// @param gasTokenUser user address of the GAS token
-    function rolloverWithGasToken(
-        bytes32 loanId,
-        address gasTokenUser,
-        bytes calldata /*loanDataBytes*/
-    ) external returns (address rebateToken, uint256 gasRebate);
 
     /// @dev close position with loan token deposit
     /// @param loanId id of the loan
@@ -575,13 +567,14 @@ interface IBZx {
         external
         view
         returns (
-            uint256 _poolLastUpdateTime,
-            uint256 _poolPrincipalTotal,
-            uint256 _poolInterestTotal,
-            uint256 _poolRatePerTokenStored,
-            uint256 _loanPrincipalTotal,
-            uint256 _loanInterestTotal,
-            uint256 _loanRatePerTokenPaid
+        uint256 _poolLastUpdateTime,
+        uint256 _poolPrincipalTotal,
+        uint256 _poolInterestTotal,
+        uint256 _poolRatePerTokenStored,
+        uint256 _poolLastInterestRate,
+        uint256 _loanPrincipalTotal,
+        uint256 _loanInterestTotal,
+        uint256 _loanRatePerTokenPaid
         );
 
     /*/// @dev Gets current lender interest data totals for all loans with a specific oracle and interest token
@@ -756,7 +749,8 @@ interface IBZx {
     function getSwapExpectedReturn(
         address sourceToken,
         address destToken,
-        uint256 sourceTokenAmount
+        uint256 sourceTokenAmount,
+        bytes calldata swapData
     ) external view returns (uint256);
 
     function owner() external view returns (address);

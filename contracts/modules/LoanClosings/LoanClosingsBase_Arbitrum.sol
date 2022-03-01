@@ -8,7 +8,7 @@ pragma experimental ABIEncoderV2;
 
 import "../../core/State.sol";
 import "../../events/LoanClosingsEvents.sol";
-import "../../mixins/VaultController_Arbitrum.sol";
+import "../../mixins/VaultController.sol";
 import "../../mixins/InterestHandler.sol";
 import "../../mixins/FeesHelper.sol";
 import "../../mixins/LiquidationHelper.sol";
@@ -17,7 +17,7 @@ import "../../interfaces/ILoanPool.sol";
 import "../../governance/PausableGuardian.sol";
 
 
-contract LoanClosingsBase_Arbitrum is State, LoanClosingsEvents, VaultController_Arbitrum, InterestHandler, FeesHelper, SwapsUser, LiquidationHelper, PausableGuardian {
+contract LoanClosingsBase_Arbitrum is State, LoanClosingsEvents, VaultController, InterestHandler, FeesHelper, SwapsUser, LiquidationHelper, PausableGuardian {
 
     enum CloseTypes {
         Deposit,
@@ -446,7 +446,7 @@ contract LoanClosingsBase_Arbitrum is State, LoanClosingsEvents, VaultController
         internal
     {
         if (assetAmount != 0) {
-            if (assetToken == address(wethToken)) {
+            /*if (assetToken == address(wethToken)) {
                 vaultEtherWithdraw(
                     receiver,
                     assetAmount
@@ -457,7 +457,13 @@ contract LoanClosingsBase_Arbitrum is State, LoanClosingsEvents, VaultController
                     receiver,
                     assetAmount
                 );
-            }
+            }*/
+            // Arbitrum has issues with eth withdraw from weth
+            vaultWithdraw(
+                assetToken,
+                receiver,
+                assetAmount
+            );
         }
     }
 
@@ -568,7 +574,7 @@ contract LoanClosingsBase_Arbitrum is State, LoanClosingsEvents, VaultController
         } else {
             // interest is paid before principal
             if (loanCloseAmount >= loanInterest) {
-                principalAfter = principalBefore - (loanCloseAmount - loanInterest);
+                principalAfter = principalBefore.sub(loanCloseAmount - loanInterest);
 
                 loanLocal.principal = principalAfter;
                 poolPrincipalTotal[loanLocal.lender] = poolPrincipalTotal[loanLocal.lender]
