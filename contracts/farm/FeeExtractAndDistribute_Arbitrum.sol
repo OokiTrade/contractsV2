@@ -11,18 +11,21 @@ import "../proxies/0_8/Upgradeable_0_8.sol";
 import "./interfaces/IUniswapV2Router.sol";
 import "../../interfaces/IBZx.sol";
 import "@celer/contracts/interfaces/IBridge.sol";
+import "../../interfaces/IPriceFeeds.sol";
 
 contract FeeExtractAndDistribute_Arbitrum is Upgradeable_0_8 {
-    IBZx public constant bZx = IBZx(0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB);
+    IBZx public constant BZX = IBZx(0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB);
 
     address public constant ETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
     address public constant USDC = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
     uint64 public constant DEST_CHAINID = 137; //send to polygon
-
-    IUniswapV2Router public constant swapsRouterV2 =
+    uint256 public constant MIN_USDC_AMOUNT = 1e6;
+    IUniswapV2Router public constant SWAPS_ROUTER_V2 =
         IUniswapV2Router(0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506);
 
     address internal constant ZERO_ADDRESS = address(0);
+
+    uint256 public constant MAX_DISAGREEMENT = 5e18;
 
     bool public isPaused;
 
@@ -68,7 +71,7 @@ contract FeeExtractAndDistribute_Arbitrum is Upgradeable_0_8 {
     }
 
     function _extractAndDistribute(address[] memory assets) internal {
-        uint256[] memory amounts = bZx.withdrawFees(
+        uint256[] memory amounts = BZX.withdrawFees(
             assets,
             address(this),
             IBZx.FeeClaimType.All
@@ -109,7 +112,7 @@ contract FeeExtractAndDistribute_Arbitrum is Upgradeable_0_8 {
         address[] memory path = new address[](2);
         path[0] = route[0];
         path[1] = route[1];
-        uint256[] memory amounts = swapsRouterV2.swapExactTokensForTokens(
+        uint256[] memory amounts = SWAPS_ROUTER_V2.swapExactTokensForTokens(
             inAmount,
             1, // amountOutMin
             path,
@@ -118,6 +121,12 @@ contract FeeExtractAndDistribute_Arbitrum is Upgradeable_0_8 {
         );
 
         returnAmount = amounts[1];
+        _checkUniDisagreement(
+            path[0],
+            inAmount,
+            returnAmount,
+            MAX_DISAGREEMENT
+        );
     }
 
     function _swapWithPair(address[3] memory route, uint256 inAmount)
@@ -128,7 +137,7 @@ contract FeeExtractAndDistribute_Arbitrum is Upgradeable_0_8 {
         path[0] = route[0];
         path[1] = route[1];
         path[2] = route[2];
-        uint256[] memory amounts = swapsRouterV2.swapExactTokensForTokens(
+        uint256[] memory amounts = SWAPS_ROUTER_V2.swapExactTokensForTokens(
             inAmount,
             1, // amountOutMin
             path,
@@ -137,9 +146,19 @@ contract FeeExtractAndDistribute_Arbitrum is Upgradeable_0_8 {
         );
 
         returnAmount = amounts[2];
+        _checkUniDisagreement(
+            path[0],
+            inAmount,
+            returnAmount,
+            MAX_DISAGREEMENT
+        );
     }
 
     function _bridgeFeesAndDistribute() internal {
+        require(
+            IERC20(USDC).balanceOf(address(this)) >= MIN_USDC_AMOUNT,
+            "FeeExtractAndDistribute_Arbitrum: Fees Bridged Too Little"
+        );
         IBridge(bridge).send(
             treasuryWallet,
             USDC,
@@ -163,9 +182,9 @@ contract FeeExtractAndDistribute_Arbitrum is Upgradeable_0_8 {
     function setFeeTokens(address[] calldata tokens) public onlyOwner {
         currentFeeTokens = tokens;
         for (uint256 i = 0; i < tokens.length; i++) {
-            IERC20(tokens[i]).approve(address(swapsRouterV2), 0);
+            IERC20(tokens[i]).approve(address(SWAPS_ROUTER_V2), 0);
             IERC20(tokens[i]).approve(
-                address(swapsRouterV2),
+                address(SWAPS_ROUTER_V2),
                 type(uint256).max
             );
         }
@@ -178,5 +197,30 @@ contract FeeExtractAndDistribute_Arbitrum is Upgradeable_0_8 {
 
     function setBridge(address _wallet) public onlyOwner {
         bridge = _wallet;
+    }
+
+    function _checkUniDisagreement(
+        address asset,
+        uint256 assetAmount,
+        uint256 recvAmount,
+        uint256 maxDisagreement
+    ) internal view {
+        uint256 estAmountOut = IPriceFeeds(BZX.priceFeeds()).queryReturn(
+            asset,
+            USDC,
+            assetAmount
+        );
+
+        uint256 spreadValue = estAmountOut > recvAmount
+            ? estAmountOut - recvAmount
+            : recvAmount - estAmountOut;
+        if (spreadValue != 0) {
+            spreadValue = (spreadValue * 1e20) / estAmountOut;
+
+            require(
+                spreadValue <= maxDisagreement,
+                "uniswap price disagreement"
+            );
+        }
     }
 }

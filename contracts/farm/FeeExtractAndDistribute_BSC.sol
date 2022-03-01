@@ -14,17 +14,19 @@ import "@celer/contracts/interfaces/IBridge.sol";
 import "../../interfaces/IPriceFeeds.sol";
 
 contract FeeExtractAndDistribute_BSC is Upgradeable_0_8 {
-    IBZx public constant bZx = IBZx(0xD154eE4982b83a87b0649E5a7DDA1514812aFE1f);
+    IBZx public constant BZX = IBZx(0xD154eE4982b83a87b0649E5a7DDA1514812aFE1f);
 
     address public constant BNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
     address public constant USDC = 0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d;
     uint256 public constant MIN_USDC_AMOUNT = 1e6; //1 USDC minimum bridge amount
     uint64 public constant DEST_CHAINID = 137; //send to polygon
 
-    IUniswapV2Router public constant swapsRouterV2 =
+    IUniswapV2Router public constant SWAPS_ROUTER_V2 =
         IUniswapV2Router(0x10ED43C718714eb63d5aA57B78B54704E256024E);
 
     address internal constant ZERO_ADDRESS = address(0);
+
+    uint256 public constant MAX_DISAGREEMENT = 5e18;
 
     bool public isPaused;
 
@@ -70,7 +72,7 @@ contract FeeExtractAndDistribute_BSC is Upgradeable_0_8 {
     }
 
     function _extractAndDistribute(address[] memory assets) internal {
-        uint256[] memory amounts = bZx.withdrawFees(
+        uint256[] memory amounts = BZX.withdrawFees(
             assets,
             address(this),
             IBZx.FeeClaimType.All
@@ -94,7 +96,7 @@ contract FeeExtractAndDistribute_BSC is Upgradeable_0_8 {
             if (amount != 0) {
                 usdcOutput += asset == BNB
                     ? _swapWithPair([asset, USDC], amount)
-                    : _swapWithPair([asset, BNB, USDC], amount); //builds route for all tokens to route through BNB
+                    : _swapWithPair([asset, BNB, USDC], amount); //builds route for all tokens to route through ETH
             }
         }
 
@@ -111,7 +113,7 @@ contract FeeExtractAndDistribute_BSC is Upgradeable_0_8 {
         address[] memory path = new address[](2);
         path[0] = route[0];
         path[1] = route[1];
-        uint256[] memory amounts = swapsRouterV2.swapExactTokensForTokens(
+        uint256[] memory amounts = SWAPS_ROUTER_V2.swapExactTokensForTokens(
             inAmount,
             1, // amountOutMin
             path,
@@ -120,7 +122,12 @@ contract FeeExtractAndDistribute_BSC is Upgradeable_0_8 {
         );
 
         returnAmount = amounts[1];
-        _checkUniDisagreement(path[0], inAmount, returnAmount, 5e18);
+        _checkUniDisagreement(
+            path[0],
+            inAmount,
+            returnAmount,
+            MAX_DISAGREEMENT
+        );
     }
 
     function _swapWithPair(address[3] memory route, uint256 inAmount)
@@ -131,7 +138,7 @@ contract FeeExtractAndDistribute_BSC is Upgradeable_0_8 {
         path[0] = route[0];
         path[1] = route[1];
         path[2] = route[2];
-        uint256[] memory amounts = swapsRouterV2.swapExactTokensForTokens(
+        uint256[] memory amounts = SWAPS_ROUTER_V2.swapExactTokensForTokens(
             inAmount,
             1, // amountOutMin
             path,
@@ -140,7 +147,12 @@ contract FeeExtractAndDistribute_BSC is Upgradeable_0_8 {
         );
 
         returnAmount = amounts[2];
-        _checkUniDisagreement(path[0], inAmount, returnAmount, 5e18);
+        _checkUniDisagreement(
+            path[0],
+            inAmount,
+            returnAmount,
+            MAX_DISAGREEMENT
+        );
     }
 
     function _checkUniDisagreement(
@@ -149,7 +161,7 @@ contract FeeExtractAndDistribute_BSC is Upgradeable_0_8 {
         uint256 recvAmount,
         uint256 maxDisagreement
     ) internal view {
-        uint256 estAmountOut = IPriceFeeds(bZx.priceFeeds()).queryReturn(
+        uint256 estAmountOut = IPriceFeeds(BZX.priceFeeds()).queryReturn(
             asset,
             USDC,
             assetAmount
@@ -170,7 +182,7 @@ contract FeeExtractAndDistribute_BSC is Upgradeable_0_8 {
 
     function _bridgeFeesAndDistribute() internal {
         require(
-            IERC20(USDC).balanceOf(address(this)) > MIN_USDC_AMOUNT,
+            IERC20(USDC).balanceOf(address(this)) >= MIN_USDC_AMOUNT,
             "FeeExtractAndDistribute: bridge amount too low"
         );
         IBridge(bridge).send(
@@ -197,7 +209,7 @@ contract FeeExtractAndDistribute_BSC is Upgradeable_0_8 {
         currentFeeTokens = tokens;
         for (uint256 i = 0; i < tokens.length; i++) {
             IERC20(tokens[i]).approve(
-                address(swapsRouterV2),
+                address(SWAPS_ROUTER_V2),
                 type(uint256).max
             );
         }

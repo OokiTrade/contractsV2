@@ -14,7 +14,7 @@ import "@celer/contracts/interfaces/IBridge.sol";
 import "../../interfaces/IPriceFeeds.sol";
 
 contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
-    IBZx public constant bZx = IBZx(0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8);
+    IBZx public constant BZX = IBZx(0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8);
 
     address public constant BUYBACK_ADDRESS =
         0x12EBd8263A54751Aaf9d8C2c74740A8e62C0AfBe;
@@ -23,7 +23,7 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
     uint256 public constant WEI_PRECISION_PERCENT = 10**20;
     uint64 public constant DEST_CHAINID = 1; //to be set
     uint256 public constant MIN_USDC_AMOUNT = 20e6; //1000 USDC minimum bridge amount
-    IUniswapV2Router public constant swapsRouterV2 =
+    IUniswapV2Router public constant SWAPS_ROUTER_V2 =
         IUniswapV2Router(0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506); // Sushiswap
 
     address internal constant ZERO_ADDRESS = address(0);
@@ -74,7 +74,7 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
     }
 
     function _extractAndDistribute(address[] memory assets) internal {
-        uint256[] memory amounts = bZx.withdrawFees(
+        uint256[] memory amounts = BZX.withdrawFees(
             assets,
             address(this),
             IBZx.FeeClaimType.All
@@ -114,7 +114,7 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
         address[] memory path = new address[](2);
         path[0] = route[0];
         path[1] = route[1];
-        uint256[] memory amounts = swapsRouterV2.swapExactTokensForTokens(
+        uint256[] memory amounts = SWAPS_ROUTER_V2.swapExactTokensForTokens(
             inAmount,
             1, // amountOutMin
             path,
@@ -134,7 +134,7 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
         path[0] = route[0];
         path[1] = route[1];
         path[2] = route[2];
-        uint256[] memory amounts = swapsRouterV2.swapExactTokensForTokens(
+        uint256[] memory amounts = SWAPS_ROUTER_V2.swapExactTokensForTokens(
             inAmount,
             1, // amountOutMin
             path,
@@ -172,7 +172,7 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
         uint256 recvAmount,
         uint256 maxDisagreement
     ) internal view {
-        uint256 estAmountOut = IPriceFeeds(bZx.priceFeeds()).queryReturn(
+        uint256 estAmountOut = IPriceFeeds(BZX.priceFeeds()).queryReturn(
             asset,
             USDC,
             assetAmount
@@ -204,9 +204,9 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
     function setFeeTokens(address[] calldata tokens) external onlyOwner {
         currentFeeTokens = tokens;
         for (uint256 i = 0; i < tokens.length; i++) {
-            IERC20(tokens[i]).approve(address(swapsRouterV2), 0);
+            IERC20(tokens[i]).approve(address(SWAPS_ROUTER_V2), 0);
             IERC20(tokens[i]).approve(
-                address(swapsRouterV2),
+                address(SWAPS_ROUTER_V2),
                 type(uint256).max
             );
         }
