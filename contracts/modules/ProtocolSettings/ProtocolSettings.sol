@@ -144,6 +144,19 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
             }
         }
     }
+    
+    function revokeApprovals(address[] calldata addrs) external onlyOwner {
+            bytes memory data = abi.encodeWithSelector(
+                0x7265766f, // revokeApprovals(address[])
+                addrs
+            );
+            IDexRecords records = IDexRecords(swapsImpl);
+            for(uint256 i = 1; i<=records.getDexCount();i++){
+                address swapImpl = records.retrieveDexAddress(i);
+                (bool success,) = swapImpl.delegatecall(data);
+                require(success, "approval calls failed");
+            }
+    }
 
     function setLendingFeePercent(
         uint256 newValue)
