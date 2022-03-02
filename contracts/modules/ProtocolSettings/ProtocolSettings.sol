@@ -12,7 +12,10 @@ import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 import "../../interfaces/IVestingToken.sol";
 import "../../utils/MathUtil.sol";
 import "../../interfaces/IDexRecords.sol";
-contract ProtocolSettings is State, ProtocolSettingsEvents {
+import "../../governance/PausableGuardian.sol";
+
+
+contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian {
     using SafeERC20 for IERC20;
     using MathUtil for uint256;
 
@@ -41,6 +44,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         _setTarget(this.queryFees.selector, target);
         _setTarget(this.getLoanPoolsList.selector, target);
         _setTarget(this.isLoanPool.selector, target);
+        _setTarget(this.revokeApprovals.selector, target);
     }
 
     function setPriceFeedContract(
@@ -142,6 +146,19 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
                 (bool success,) = swapImpl.delegatecall(data);
                 require(success, "approval calls failed");
             }
+        }
+    }
+    
+    function revokeApprovals(address[] calldata addrs) external onlyGuardian {
+        bytes memory data = abi.encodeWithSelector(
+            0x7265766f, // revokeApprovals(address[])
+            addrs
+        );
+        IDexRecords records = IDexRecords(swapsImpl);
+        for(uint256 i = 1; i<=records.getDexCount();i++){
+            address swapImpl = records.retrieveDexAddress(i);
+            (bool success,) = swapImpl.delegatecall(data);
+            require(success, "approval calls failed");
         }
     }
 
