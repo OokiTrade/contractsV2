@@ -28,6 +28,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         _setTarget(this.getRequiredCollateralByParams.selector, target);
         _setTarget(this.getBorrowAmount.selector, target);
         _setTarget(this.getBorrowAmountByParams.selector, target);
+        _setTarget(this.getDefaultLoanParams.selector, target);
     }
 
     // Note: Only callable by loan pools (iTokens)
