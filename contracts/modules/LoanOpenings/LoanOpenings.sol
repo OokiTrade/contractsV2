@@ -143,11 +143,11 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         returns (bytes32) 
     {
         return keccak256(abi.encode(
-            loanParamsLocal.loanToken,
-            loanParamsLocal.collateralToken,
-            loanParamsLocal.minInitialMargin,
-            loanParamsLocal.maintenanceMargin,
-            loanParamsLocal.maxLoanTerm
+            loanParam.loanToken,
+            loanParam.collateralToken,
+            loanParam.minInitialMargin,
+            loanParam.maintenanceMargin,
+            loanParam.maxLoanTerm
         ));
     }
 
@@ -166,15 +166,15 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
     // }
 
     function upgradeLoanParams(
-        bytes loanParamsId,
+        bytes32 loanParamsId,
         bool isTorqueLoan)
         internal
         returns (bytes32)
     {
         LoanParams memory loanParamsLocal = loanParams[loanParamsId];
         require(loanParamsLocal.id != 0, "loanParams doesnt exist");
-        bytes32 loanParamsId = getPoolLoanParamId(loanParamsLocal.loanToken, loanParamsLocal.collateralToken, isTorqueLoan);
-        loanParamsIds[loanParamsId] = loanParamsLocal.id;
+        bytes32 newLoanParamsId = getPoolLoanParamId(loanParamsLocal.loanToken, loanParamsLocal.collateralToken, isTorqueLoan);
+        loanParamsIds[newLoanParamsId] = loanParamsLocal.id;
     }
     
     function setDelegatedManager(
