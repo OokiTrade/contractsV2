@@ -217,7 +217,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 
 
     function claimAltRewards()
-        external
+        public
         pausable
         returns (uint256 sushiRewardsEarned, uint256 crvRewardsEarned)
     {
@@ -421,6 +421,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         
         unstake(tokens, values); // calls updateRewards
         _claim(false);
+        claimAltRewards();
     }
 
     modifier updateRewards(address account) {
