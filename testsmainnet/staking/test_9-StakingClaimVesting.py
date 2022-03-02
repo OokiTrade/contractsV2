@@ -52,4 +52,4 @@ def testClaimUnvested(requireMainnetFork, StakingV1_1, bzx,  BZRX, vBZRX, iBZRX,
     assert isNear(earnedBalanceAfter[0], earnedBalanceBefore[0] + earnedBalanceBefore[2]) # for BZRX
     assert isNear(earnedBalanceAfter[1], earnedBalanceBefore[1] + earnedBalanceBefore[3]) # for CRV3
     
-    #assert False
+    assert False
