@@ -36,7 +36,7 @@ AUDIT_OOKI_AMOUNT = 40000 / OOKI_PRICE
 TIDAL_OOKI_AMOUNT = 10000 / OOKI_PRICE
 
 
-# 6. Allocate funds for Olimpus Pro 2m$ for SLP(ETH/OOKI) 1.5m$ for USD treasury diversificatino
+# 6. Allocate funds for Olimpus Pro 1.5m$ for SLP(ETH/OOKI) diversification
 OLIMPUS_PRO = 1500000 / OOKI_PRICE
 
 
