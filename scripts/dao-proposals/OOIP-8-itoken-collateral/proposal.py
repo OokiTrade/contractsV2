@@ -30,25 +30,22 @@ AUDIT_OOKI_AMOUNT = 40000 / OOKI_PRICE
 
 # 3. make Drypto and Suz bonus bigger
 # 4. Employ Frank 14k USD/year, 100k OOKI/year
-# 5. Allocate funds for option strategy (5m$ total) ribbon
-RIBBON_OOKI_AMOUNT = 5000000 / OOKI_PRICE
 
 
-# 6. TIDAL allocation 10k
+# 5. TIDAL allocation 10k
 TIDAL_OOKI_AMOUNT = 10000 / OOKI_PRICE
 
 
-# 7. Allocate funds for Olimpus Pro 2m$ for SLP(ETH/OOKI) 1m$ for USD treasury diversificatino
-OLIMPUS_PRO = 3000000 / OOKI_PRICE
+# 6. Allocate funds for Olimpus Pro 2m$ for SLP(ETH/OOKI) 1m$ for USD treasury diversificatino
+OLIMPUS_PRO = 1500000 / OOKI_PRICE
 
 
-# 8. Allocate funds for Kyber liquidity mining (15k$ for 3 months)
+# 7. Allocate funds for Kyber liquidity mining (15k$ for 3 months)
 KYBER_POLYGON_LIQUIDITY = 45000 / OOKI_PRICE
 
 
-# 2 5 7 8
-calldata = OOKI.transfer.encode_input(INFRASTRUCTURE_MULTISIG, (AUDIT_OOKI_AMOUNT+RIBBON_OOKI_AMOUNT +
-                                      TIDAL_OOKI_AMOUNT + OLIMPUS_PRO + KYBER_POLYGON_LIQUIDITY) * 10**18)
+# 5 6 7
+calldata = OOKI.transfer.encode_input(INFRASTRUCTURE_MULTISIG, (AUDIT_OOKI_AMOUNT + TIDAL_OOKI_AMOUNT + OLIMPUS_PRO + KYBER_POLYGON_LIQUIDITY) * 10**18)
 
 targets.append(OOKI)
 calldatas.append(calldata)
@@ -60,4 +57,4 @@ signatures = [""] * len(targets)  # empty signatures array
 
 # Make proposal
 DAO.propose(targets, values, signatures, calldatas, description, {
-            'from': TEAM_VOTING_MULTISIG, "required_confs": 1, "gas_price": gas_price})
+            'from': TEAM_VOTING_MULTISIG, "required_confs": 1})

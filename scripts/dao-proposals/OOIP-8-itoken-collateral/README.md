@@ -34,10 +34,9 @@
 2. allocate funds for code4rena audit 40k$
 3. make Drypto and Suz bonus bigger
 4. Employ Frank 14k USD/year, 100k OOKI/year
-5. Allocate funds for option strategy (5m$ total) ribbon
-6. TIDAL allocation 10k
-7. Allocate funds for Olimpus Pro 2m$ for SLP(ETH/OOKI) 1m$ for USD treasury diversificatino
-8. Allocate funds for Kyber liquidity mining (15k$ for 3 months)
+5. TIDAL allocation 10k
+6. Allocate funds for Olimpus Pro 2m$ for SLP(ETH/OOKI) 1m$ for USD treasury diversificatino
+7. Allocate funds for Kyber liquidity mining (15k$ for 3 months)
 
 
 <!-- 12. Deploy and Enable Sweep Fees/ require price feed
