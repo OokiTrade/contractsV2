@@ -286,6 +286,12 @@ contract SwapsImplUniswapV2_POLYGON is State, ISwapsImpl {
         }
     }
 
+    function revokeApprovals(address[] memory tokens) public {
+        for (uint256 i = 0; i < tokens.length; i++) {
+            IERC20(tokens[i]).safeApprove(uniswapRouter, 0);
+        }
+    }
+
     function _swapWithUni(
         address sourceTokenAddress,
         address destTokenAddress,

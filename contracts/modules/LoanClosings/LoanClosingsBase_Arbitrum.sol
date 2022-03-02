@@ -474,6 +474,7 @@ contract LoanClosingsBase_Arbitrum is State, LoanClosingsEvents, VaultController
         uint256 collateral,
         bool silentFail)
         internal
+        view
         returns (uint256 currentMargin, uint256 collateralToLoanRate)
     {
         address _priceFeeds = priceFeeds;

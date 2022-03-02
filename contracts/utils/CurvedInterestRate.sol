@@ -39,9 +39,7 @@ contract CurvedInterestRate is ICurvedInterestRate {
         // some minimal interestRate to avoid zero a or b
         if (_IR1 < IR_MIN) {
             _IR1 = IR_MIN;
-        }
-
-        if (_IR1 > IR_MAX) {
+        } else if (_IR1 > IR_MAX) {
             _IR1 = IR_MAX;
         }
 

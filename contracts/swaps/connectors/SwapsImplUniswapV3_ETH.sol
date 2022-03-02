@@ -178,6 +178,12 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
         }
     }
 
+    function revokeApprovals(address[] memory tokens) public {
+        for (uint256 i = 0; i < tokens.length; i++) {
+            IERC20(tokens[i]).safeApprove(address(uniswapSwapRouter), 0);
+        }
+    }
+
     function _swapWithUni(
         address sourceTokenAddress,
         address destTokenAddress,
@@ -223,6 +229,10 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                     exactParams[uniqueOutputParam]
                 );
             }
+            require(
+                totalAmountsInMax <= maxSourceTokenAmount,
+                "Amount In Max too high"
+            );
             if (totalAmountsOut < requiredDestTokenAmount) {
                 //does not need safe math as it cannot overflow
                 uint256 displace = _numberAdjustment(
@@ -230,7 +240,7 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                     requiredDestTokenAmount
                 );
                 exactParams[0].amountOut += displace; //adds displacement to first swap set
-                totalAmountsOut += displace;
+                totalAmountsOut = requiredDestTokenAmount;
                 encodedTXs[0] = abi.encodeWithSelector(
                     uniswapSwapRouter.exactOutput.selector,
                     exactParams[0]
@@ -245,23 +255,18 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                 exactParams[0].amountOut = exactParams[0].amountOut.sub(
                     displace
                 ); //adds displacement to first swap set
-                totalAmountsOut -= displace;
+                totalAmountsOut = requiredDestTokenAmount;
                 encodedTXs[0] = abi.encodeWithSelector(
                     uniswapSwapRouter.exactOutput.selector,
                     exactParams[0]
                 );
             }
-            require(
-                totalAmountsInMax <= maxSourceTokenAmount,
-                "Amount In Max too high"
-            );
             uint256 balanceBefore = IERC20(sourceTokenAddress).balanceOf(
                 address(this)
             );
             uniswapSwapRouter.multicall(encodedTXs);
             sourceTokenAmountUsed =
-                balanceBefore -
-                IERC20(sourceTokenAddress).balanceOf(address(this)); //does not need safe math as it cannot underflow
+                balanceBefore.sub(IERC20(sourceTokenAddress).balanceOf(address(this)));
             destTokenAmountReceived = requiredDestTokenAmount;
         } else {
             IUniswapV3SwapRouter.ExactInputParams[] memory exactParams = abi
@@ -298,7 +303,7 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                     minSourceTokenAmount
                 );
                 exactParams[0].amountIn += displace;
-                sourceTokenAmountUsed += displace;
+                sourceTokenAmountUsed = minSourceTokenAmount;
                 encodedTXs[0] = abi.encodeWithSelector(
                     uniswapSwapRouter.exactInput.selector,
                     exactParams[0]
@@ -310,23 +315,18 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                     minSourceTokenAmount
                 );
                 exactParams[0].amountIn = exactParams[0].amountIn.sub(displace);
-                sourceTokenAmountUsed = sourceTokenAmountUsed - displace; //does not need safe math as it cannot underflow
+                sourceTokenAmountUsed = minSourceTokenAmount; //does not need safe math as it cannot underflow
                 encodedTXs[0] = abi.encodeWithSelector(
                     uniswapSwapRouter.exactInput.selector,
                     exactParams[0]
                 );
             }
-            require(
-                sourceTokenAmountUsed == minSourceTokenAmount,
-                "balance used is off"
-            );
             uint256 balanceBefore = IERC20(destTokenAddress).balanceOf(
                 receiverAddress
             );
             uniswapSwapRouter.multicall(encodedTXs);
             destTokenAmountReceived =
-                IERC20(destTokenAddress).balanceOf(receiverAddress) -
-                balanceBefore; //never underflows
+                IERC20(destTokenAddress).balanceOf(receiverAddress).sub(balanceBefore);
         }
     }
 
@@ -351,13 +351,13 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
 
     function _numberAdjustment(uint256 current, uint256 target)
         internal
+        pure
         returns (uint256)
     {
         if (current > target) {
             return (current - target); //cannot overflow or underflow
-        } else if (current < target) {
+        } else {
             return target - current;
         }
-        return 0;
     }
 }

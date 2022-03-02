@@ -7,15 +7,16 @@ contract DexRecords is Ownable {
     uint256 public dexCount = 0;
 
     function retrieveDexAddress(uint256 number) public view returns (address) {
+        require(dexes[number] != address(0), "DexRecords: No implementation set");
         return dexes[number];
     }
 
     function setDexID(address dex) public onlyOwner {
-        dexCount++;
-        dexes[dexCount] = dex;
+        dexes[++dexCount] = dex;
     }
 
     function setDexID(uint256 ID, address dex) public onlyOwner {
+        require(dexes[ID] != address(0), "DexRecords: Invalid ID inputted");
         dexes[ID] = dex;
     }
 	
