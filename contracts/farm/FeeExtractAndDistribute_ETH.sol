@@ -6,13 +6,13 @@
 pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
-import "../proxies/0_8/Upgradeable_0_8.sol";
 import "./interfaces/IUniswapV2Router.sol";
 import "../../interfaces/IBZx.sol";
 import "../../interfaces/IPriceFeeds.sol";
 import "../../interfaces/IStakingV2.sol";
 import "./../staking/interfaces/ICurve3Pool.sol";
 import "@openzeppelin-4.3.2/token/ERC20/IERC20.sol";
+import "../governance/PausableGuardian_0_8.sol";
 
 interface IBridge {
     function send(
@@ -25,7 +25,8 @@ interface IBridge {
     ) external;
 }
 
-contract FeeExtractAndDistribute_ETH is Upgradeable_0_8 {
+contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
+    address public implementation;
     IStakingV2 public constant STAKING =
         IStakingV2(0x16f179f5C344cc29672A58Ea327A26F64B941a63);
 
@@ -53,7 +54,6 @@ contract FeeExtractAndDistribute_ETH is Upgradeable_0_8 {
     mapping(address => uint256) public stakingRewards;
 
     uint256 public buybackPercent;
-    bool isPaused;
 
     event ExtractAndDistribute();
 
@@ -71,33 +71,22 @@ contract FeeExtractAndDistribute_ETH is Upgradeable_0_8 {
         uint256 stableCoinOutput
     );
 
-    modifier onlyEOA() {
-        require(msg.sender == tx.origin, "unauthorized");
-        _;
-    }
-
-    modifier checkPause() {
-        require(!isPaused || msg.sender == owner(), "paused");
-        _;
-    }
-
     // Fee Conversion Logic //
 
     function sweepFees()
         public
-        returns (
-            // sweepFeesByAsset() does checkPause
-            uint256 bzrxRewards,
-            uint256 crv3Rewards
-        )
+        pausable
+        returns (uint256 bzrxRewards, uint256 crv3Rewards)
     {
-        return sweepFeesByAsset(STAKING.getCurrentFeeTokens());
+        address[] memory assets = STAKING.getCurrentFeeTokens();
+        uint256[] memory amounts = _withdrawFees(assets);
+        _convertFees(assets, amounts);
+        (bzrxRewards, crv3Rewards) = _distributeFees();
     }
 
-    function sweepFeesByAsset(address[] memory assets)
+    function sweepFees(address[] memory assets)
         public
-        checkPause
-        onlyEOA
+        pausable
         returns (uint256 bzrxRewards, uint256 crv3Rewards)
     {
         uint256[] memory amounts = _withdrawFees(assets);
@@ -431,9 +420,5 @@ contract FeeExtractAndDistribute_ETH is Upgradeable_0_8 {
 
     function setBuybackSettings(uint256 amount) external onlyOwner {
         buybackPercent = amount;
-    }
-
-    function togglePause(bool _isPaused) public onlyOwner {
-        isPaused = _isPaused;
     }
 }

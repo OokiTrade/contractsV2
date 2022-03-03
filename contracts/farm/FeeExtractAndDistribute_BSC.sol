@@ -7,13 +7,14 @@ pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin-4.3.2/token/ERC20/IERC20.sol";
-import "../proxies/0_8/Upgradeable_0_8.sol";
 import "./interfaces/IUniswapV2Router.sol";
 import "../../interfaces/IBZx.sol";
 import "@celer/contracts/interfaces/IBridge.sol";
 import "../../interfaces/IPriceFeeds.sol";
+import "../governance/PausableGuardian_0_8.sol";
 
-contract FeeExtractAndDistribute_BSC is Upgradeable_0_8 {
+contract FeeExtractAndDistribute_BSC is PausableGuardian_0_8 {
+    address public implementation;
     IBZx public constant BZX = IBZx(0xD154eE4982b83a87b0649E5a7DDA1514812aFE1f);
 
     address public constant BNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
@@ -27,8 +28,6 @@ contract FeeExtractAndDistribute_BSC is Upgradeable_0_8 {
     address internal constant ZERO_ADDRESS = address(0);
 
     uint256 public constant MAX_DISAGREEMENT = 5e18;
-
-    bool public isPaused;
 
     mapping(address => uint256) public exportedFees;
 
@@ -48,26 +47,11 @@ contract FeeExtractAndDistribute_BSC is Upgradeable_0_8 {
         uint256 dstAmount
     );
 
-    modifier onlyEOA() {
-        require(msg.sender == tx.origin, "unauthorized");
-        _;
+    function sweepFees() public pausable {
+        _extractAndDistribute(currentFeeTokens);
     }
 
-    modifier checkPause() {
-        require(!isPaused || msg.sender == owner(), "paused");
-        _;
-    }
-
-    function sweepFees() public // sweepFeesByAsset() does checkPause
-    {
-        sweepFeesByAsset(currentFeeTokens);
-    }
-
-    function sweepFeesByAsset(address[] memory assets)
-        public
-        checkPause
-        onlyEOA
-    {
+    function sweepFees(address[] memory assets) public pausable {
         _extractAndDistribute(assets);
     }
 
@@ -196,10 +180,6 @@ contract FeeExtractAndDistribute_BSC is Upgradeable_0_8 {
     }
 
     // OnlyOwner functions
-
-    function togglePause(bool _isPaused) public onlyOwner {
-        isPaused = _isPaused;
-    }
 
     function setTreasuryWallet(address payable _wallet) public onlyOwner {
         treasuryWallet = _wallet;

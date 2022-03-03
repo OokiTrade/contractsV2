@@ -7,13 +7,14 @@ pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin-4.3.2/token/ERC20/IERC20.sol";
-import "../proxies/0_8/Upgradeable_0_8.sol";
 import "./interfaces/IUniswapV2Router.sol";
 import "../../interfaces/IBZx.sol";
 import "@celer/contracts/interfaces/IBridge.sol";
 import "../../interfaces/IPriceFeeds.sol";
+import "../governance/PausableGuardian_0_8.sol";
 
-contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
+contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
+    address public implementation;
     IBZx public constant BZX = IBZx(0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8);
 
     address public constant BUYBACK_ADDRESS =
@@ -27,8 +28,6 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
         IUniswapV2Router(0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506); // Sushiswap
 
     address internal constant ZERO_ADDRESS = address(0);
-
-    bool public isPaused;
 
     mapping(address => uint256) public exportedFees;
 
@@ -50,26 +49,11 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
         uint256 dstAmount
     );
 
-    modifier onlyEOA() {
-        require(msg.sender == tx.origin, "unauthorized");
-        _;
+    function sweepFees() public pausable {
+        _extractAndDistribute(currentFeeTokens);
     }
 
-    modifier checkPause() {
-        require(!isPaused || msg.sender == owner(), "paused");
-        _;
-    }
-
-    function sweepFees() external // sweepFeesByAsset() does checkPause
-    {
-        sweepFeesByAsset(currentFeeTokens);
-    }
-
-    function sweepFeesByAsset(address[] memory assets)
-        public
-        checkPause
-        onlyEOA
-    {
+    function sweepFees(address[] memory assets) public pausable {
         _extractAndDistribute(assets);
     }
 
@@ -192,10 +176,6 @@ contract FeeExtractAndDistribute_Polygon is Upgradeable_0_8 {
     }
 
     // OnlyOwner functions
-
-    function togglePause(bool _isPaused) external onlyOwner {
-        isPaused = _isPaused;
-    }
 
     function setTreasuryWallet(address payable _wallet) external onlyOwner {
         treasuryWallet = _wallet;
