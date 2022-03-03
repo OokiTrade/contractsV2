@@ -5,7 +5,7 @@ exec(open("./scripts/env/set-eth.py").read())
 # def main():
 
 # deployer = accounts.at("0x70FC4dFc27f243789d07134Be3CA31306fD2C6B6", True)
-deployer = accounts[2]
+# deployer = accounts[2]
 
 description = "OOIP-8 allocate funds"
 OOKI_PRICE = 0.014  # approximate price. lefties will be returned to treasury
@@ -17,9 +17,8 @@ calldatas = []
 
 
 # 1. redeploy old staking to exit() vesting
-stakingImpl = deployer.deploy(StakingV1_1)
 stakingProxy = Contract.from_abi("proxy", STAKING_OLD, StakingProxy.abi)
-calldata = stakingProxy.replaceImplementation.encode_input(stakingImpl)
+calldata = stakingProxy.replaceImplementation.encode_input("0x144eBb90B7A3099e5403a98E03586a5BAc39b9C2")
 targets.append(STAKING_OLD)
 calldatas.append(calldata)
 
@@ -52,13 +51,13 @@ calldatas.append(calldata)
 
 
 # 8. Allow guardian to cleanup empty loans
-protocolPausableGuardian = accounts[0].deploy(ProtocolPausableGuardian)
-calldata = BZX.replaceContract.encode_input(protocolPausableGuardian)
+# protocolPausableGuardian = accounts[0].deploy(ProtocolPausableGuardian)
+calldata = BZX.replaceContract.encode_input("0xB731075B2837f37BC0d88f707fE0F94e96362495")
 targets.append(BZX)
 calldatas.append(calldata)
 
-loanCleanup = accounts[0].deploy(LoanCleanup)
-calldata = BZX.replaceContract.encode_input(loanCleanup)
+# loanCleanup = accounts[0].deploy(LoanCleanup)
+calldata = BZX.replaceContract.encode_input("0x695926763fd97E3ef975f21E453e925b4F300A9A")
 targets.append(BZX)
 calldatas.append(calldata)
 
@@ -74,5 +73,6 @@ signatures = [""] * len(targets)  # empty signatures array
 
 
 # Make proposal
-DAO.propose(targets, values, signatures, calldatas, description, {
-            'from': TEAM_VOTING_MULTISIG, "required_confs": 1})
+call = DAO.propose.encode_input(targets, values, signatures, calldatas, description)
+# , {'from': TEAM_VOTING_MULTISIG, "required_confs": 1})
+print("call", call)
