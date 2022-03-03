@@ -7,7 +7,7 @@ exec(open("./scripts/env/set-eth.py").read())
 # deployer = accounts.at("0x70FC4dFc27f243789d07134Be3CA31306fD2C6B6", True)
 deployer = accounts[2]
 
-description = "OOIP-8"
+description = "OOIP-8 allocate funds"
 OOKI_PRICE = 0.014  # approximate price. lefties will be returned to treasury
 
 
@@ -49,6 +49,24 @@ calldata = OOKI.transfer.encode_input(INFRASTRUCTURE_MULTISIG, (AUDIT_OOKI_AMOUN
 
 targets.append(OOKI)
 calldatas.append(calldata)
+
+
+# 8. Allow guardian to cleanup empty loans
+protocolPausableGuardian = accounts[0].deploy(ProtocolPausableGuardian)
+calldata = BZX.replaceContract.encode_input(protocolPausableGuardian)
+targets.append(BZX)
+calldatas.append(calldata)
+
+loanCleanup = accounts[0].deploy(LoanCleanup)
+calldata = BZX.replaceContract.encode_input(loanCleanup)
+targets.append(BZX)
+calldatas.append(calldata)
+
+# 9. Withdraw protocol token
+calldata = BZX.withdrawProtocolToken.encode_input(INFRASTRUCTURE_MULTISIG, 2**256-1)
+targets.append(BZX)
+calldatas.append(calldata)
+
 
 
 values = [0] * len(targets)  # empty array

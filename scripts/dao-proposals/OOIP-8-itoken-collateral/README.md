@@ -37,6 +37,8 @@
 5. TIDAL allocation 10k
 6. Allocate funds for Olimpus Pro 1.5m$ for SLP(ETH/OOKI) diversification
 7. Allocate funds for Kyber liquidity mining (15k$ for 3 months)
+8. Allow guardian to cleanup empty loans
+9. Withdraw protocol token
 
 
 <!-- 12. Deploy and Enable Sweep Fees/ require price feed

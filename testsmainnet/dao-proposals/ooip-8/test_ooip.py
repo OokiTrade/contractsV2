@@ -22,8 +22,17 @@ def TIMELOCK(Timelock, accounts):
 
 
 @pytest.fixture(scope="module")
+def BZX(Timelock, accounts):
+    return Contract.from_abi("BZX", "0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f", interface.IBZx.abi)
+
+
+@pytest.fixture(scope="module")
 def iLINK(accounts, LoanTokenLogicStandard):
     return Contract.from_abi("iLINK", address="0x463538705E7d22aA7f03Ebf8ab09B067e1001B54", abi=LoanTokenLogicStandard.abi)
+
+@pytest.fixture(scope="module")
+def DAI(accounts, TestToken):
+    return Contract.from_abi("DAI", address="0x6B175474E89094C44Da98b954EedeAC495271d0F", abi=TestToken.abi)
 
 
 @pytest.fixture(scope="module")
@@ -35,7 +44,7 @@ def LINK(accounts, TestToken):
     return Contract.from_abi("iUSDC", address="0x514910771AF9Ca656af840dff83E8264EcF986CA", abi=TestToken.abi)
 
 
-def testGovernanceProposal(requireMainnetFork, accounts, DAO, TIMELOCK, iLINK, iUSDC, LINK):
+def testGovernanceProposal(requireMainnetFork, accounts, DAO, TIMELOCK, iLINK, iUSDC, LINK, BZX, DAI):
     proposerAddress = "0x02c6819c2cb8519ab72fd1204a8a0992b5050c6e"
     voter1 = "0x3fDA2D22e7853f548C3a74df3663a9427FfbB362"
     voter2 = "0x9030B78A312147DbA34359d1A8819336fD054230"
@@ -76,5 +85,18 @@ def testGovernanceProposal(requireMainnetFork, accounts, DAO, TIMELOCK, iLINK, i
     chain.mine()
 
     DAO.execute(id, {"from": proposerAddress})
+
+    GUARDIAN_MULTISIG = "0x9B43a385E08EE3e4b402D4312dABD11296d09E93"
+    DAI.transferFrom("0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7", GUARDIAN_MULTISIG, 100e18, {"from": "0xbebc44782c7db0a1a60cb6fe97d0b483032ff1c7"})
+    DAI.approve(BZX, 2**256-1, {"from": GUARDIAN_MULTISIG})
+    
+    loan = BZX.getLoan("0xe7910c565431160a3d6cdac821dc78ae069c9901907004fb3d4deec30f4fcbad")
+    assert loan[4] > 0
+
+    BZX.cleanupLoans("0x6B175474E89094C44Da98b954EedeAC495271d0F", ["0xe7910c565431160a3d6cdac821dc78ae069c9901907004fb3d4deec30f4fcbad"], {"from": GUARDIAN_MULTISIG})
+
+    loan = BZX.getLoan("0xe7910c565431160a3d6cdac821dc78ae069c9901907004fb3d4deec30f4fcbad")
+    assert loan[4] == 0
+    assert loan[5] == 0
 
     assert False
