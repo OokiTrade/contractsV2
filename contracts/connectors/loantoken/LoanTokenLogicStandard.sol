@@ -64,6 +64,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         uint256 depositAmount)
         external
         nonReentrant
+        pausable
         returns (uint256) // mintAmount
     {
         return _mintToken(
@@ -77,6 +78,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         uint256 burnAmount)
         external
         nonReentrant
+        pausable
         returns (uint256 loanAmountPaid)
     {
         loanAmountPaid = _burnToken(
@@ -167,6 +169,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         public
         payable
         nonReentrant
+        pausable
         returns (IBZx.LoanOpenData memory)
     {
         return _borrow(
@@ -193,6 +196,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         public
         payable
         nonReentrant
+        pausable
         returns (IBZx.LoanOpenData memory)
     {
         return _marginTrade(

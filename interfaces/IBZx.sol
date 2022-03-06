@@ -766,6 +766,10 @@ interface IBZx {
 
     function toggleFunctionUnPause(bytes4 sig) external;
 
+    function pause(bytes4 [] calldata sig) external;
+
+    function unpause(bytes4 [] calldata sig) external;
+
     function changeGuardian(address newGuardian) external;
 
     function getGuardian() external view returns (address guardian);

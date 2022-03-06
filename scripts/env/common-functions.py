@@ -14,3 +14,23 @@ def createGnosisTx(safe:ApeSafe, target, calldata, index=0):
   # index = index + 1
   # safe.preview(safeTx)
   # assert False
+
+def addToCalldataSet(calldata_set, target, calldata):
+  calldata_set.append(
+    {
+      'target': target,
+      'calldata': calldata
+    }
+  )
+  print(calldata_set[-1])
+
+
+def generateGnosisTransactions(safe, calldata_set,gnosisTransactions):
+  for txdata in calldata_set:
+    gnosisTx = createGnosisTx(safe, txdata['target'], txdata['calldata'])
+    gnosisTransactions.append(gnosisTx)
+
+def previewGnosisTransactions(safe, gnosisTransactions):
+  for gnosisTx in gnosisTransactions:
+    print(gnosisTx)
+    safe.preview(gnosisTx)
