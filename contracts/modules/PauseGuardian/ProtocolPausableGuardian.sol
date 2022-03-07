@@ -25,23 +25,4 @@ contract ProtocolPausableGuardian is State, PausableGuardian {
         _setTarget(this.changeGuardian.selector, target);
         _setTarget(this.getGuardian.selector, target);
     }
-
-    function pause(bytes4 [] calldata sig)
-        external
-        onlyGuardian
-
-    {
-        for(uint256 i = 0; i < sig.length; ++i){
-            toggleFunctionPause(sig[i]);
-        }
-    }
-
-    function unpause(bytes4 [] calldata sig)
-        external
-        onlyGuardian
-    {
-        for(uint256 i = 0; i < sig.length; ++i){
-            toggleFunctionUnPause(sig[i]);
-        }
-    }
 }
