@@ -9,9 +9,9 @@ pragma experimental ABIEncoderV2;
 import "../../core/State.sol";
 import "../../mixins/VaultController.sol";
 import "../../mixins/InterestUser.sol";
+import "../../governance/PausableGuardian.sol";
 
-
-contract LoanCleanup is State, VaultController, InterestUser {
+contract LoanCleanup is State, VaultController, InterestUser, PausableGuardian {
 
     function initialize(
         address target)
@@ -26,7 +26,7 @@ contract LoanCleanup is State, VaultController, InterestUser {
         bytes32[] calldata loanIds)
         external
         payable
-        onlyOwner
+        onlyGuardian
         returns (uint256 totalPrincipalIn)
     {
         for (uint256 i = 0; i < loanIds.length; i++) {
