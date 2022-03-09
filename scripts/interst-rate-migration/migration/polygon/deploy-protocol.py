@@ -5,6 +5,13 @@ from ape_safe import ApeSafe
 exec(open("./scripts/env/set-matic.py").read())
 exec(open("./scripts/env/common-functions.py").read())
 
+
+itokenPrices = {}
+supportedTokenAssetsPairs = TOKEN_REGISTRY.getTokens(0, 100)
+for tokenAssetPairA in supportedTokenAssetsPairs:
+    existingIToken = Contract.from_abi("existingIToken", address=tokenAssetPairA[0], abi=LoanTokenLogicStandard.abi)
+    itokenPrices[existingIToken.address] = existingIToken.tokenPrice()
+
 #deployer = accounts[0]
 deployer = accounts.load("0xF6c5B9c0B57590A5be6f16380D68eAC6fd9d0Fac")
 multisig = "0x01F569df8A270eCA78597aFe97D30c65D8a8ca80"
