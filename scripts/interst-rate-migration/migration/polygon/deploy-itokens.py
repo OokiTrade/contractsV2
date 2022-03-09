@@ -22,6 +22,7 @@ def replaceIToken(calldata_set,settings, itoken, token, loanTokenLogicStandard):
 
     calldata = settings.initialize.encode_input(token, iToken.name(), iToken.symbol())
     print("initialize::calldata", calldata)
+    print("initialize", iToken.name())
     iToken.updateSettings(settings, calldata, {"from": multisig})
     addToCalldataSet(calldata_set,iToken.address, iToken.updateSettings.encode_input(settings.address, calldata))
     return iToken
