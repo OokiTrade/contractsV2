@@ -7,12 +7,12 @@ pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
 import "../../core/State.sol";
-import "../../mixins/VaultController.sol";
 import "../../mixins/InterestHandler.sol";
 import "../../mixins/InterestUser.sol";
+import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 
 
-contract LoanMigration is State, VaultController, InterestHandler, InterestUser {
+contract LoanMigration is State, InterestHandler, InterestUser {
 
     function initialize(
         address target)
@@ -63,7 +63,8 @@ contract LoanMigration is State, VaultController, InterestHandler, InterestUser 
         for (uint256 i = start; i < end; i++) {
             (uint256 interestRefund, uint256 owedPerDayRefund, uint256 principal) = _migrateLoan(
                 set.get(i),
-                lender
+                lender,
+                loanToken
             );
 
             interestRefundTotal = interestRefundTotal.add(interestRefund);
@@ -80,22 +81,10 @@ contract LoanMigration is State, VaultController, InterestHandler, InterestUser 
 	            interestRefundTotal = owedTotal;
 
             lenderInterestLocal.owedTotal -= interestRefundTotal;
-
-            // refund overage
-            vaultWithdraw(
-                loanToken,
-                lender,
-                interestRefundTotal
-            );
         }
 
-        uint256 principalAndInterestTotal =  principalTotal.add(interestRefundTotal);
-        if (lenderInterestLocal.principalTotal > principalAndInterestTotal) {
-            lenderInterestLocal.principalTotal -= principalAndInterestTotal;
-        }
-        else{
-            lenderInterestLocal.principalTotal = 0;
-        }
+        lenderInterestLocal.principalTotal = lenderInterestLocal.principalTotal
+            .sub(principalTotal);
 
         poolPrincipalTotal[lender] = poolPrincipalTotal[lender]
             .add(principalTotal);
@@ -103,7 +92,8 @@ contract LoanMigration is State, VaultController, InterestHandler, InterestUser 
             
     function _migrateLoan(
         bytes32 loanId,
-        address lender)
+        address lender,
+        address loanToken)
         internal
         returns (uint256 interestRefund, uint256 owedPerDayRefund, uint256 principal)
     {
@@ -122,10 +112,17 @@ contract LoanMigration is State, VaultController, InterestHandler, InterestUser 
                 .mul(owedPerDayRefund);
             interestRefund = interestRefund
                 .div(24 hours);
+
+            // refund overage to borrower
+            SafeERC20.safeTransfer(
+                IERC20(loanToken),
+                loanLocal.borrower,
+                interestRefund
+            );
         }
         loanInterestLocal.owedPerDay = 0;
         loanInterestLocal.depositTotal = 0;
-        
+
         principal = loanLocal.principal;
 
         // interest settlement for new loan

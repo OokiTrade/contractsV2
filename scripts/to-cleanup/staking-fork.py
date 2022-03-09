@@ -193,3 +193,8 @@ print("pre approve staking")
 
 
 # ganache-cli --accounts 10 --hardfork istanbul --fork https://eth-mainnet.alchemyapi.io/v2/Cim1KnSYjNWTExhMWHMpewQUyatTbmfE --gasLimit 12000000 --mnemonic brownie --port 5458 --chainId 1 -h 0.0.0.0     -u 0xB7F72028D9b502Dc871C444363a7aC5A52546608    -u 0xb72b31907c1c95f3650b64b2469e08edacee5e8f    -u 0x56d811088235F11C8920698a204A5010a788f4b3    -u 0x18240BD9C07fA6156Ce3F3f61921cC82b2619157    -u 0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7    -u 0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490    -u 0xe26A220a341EAca116bDa64cF9D5638A935ae629    -u 0xBE0eB53F46cd790Cd13851d5EFf43D12404d33E8    -u 0x95beec2457838108089fcd0e059659a4e60b091a    -u 0x9B5dFE7965C4A30eAB764ff7abf81b3fa96847Fe    -u 0xfe36046f6193d691f99e2c90153003f8938cfc41    -u 0xF69D58D756f2c9b2D37fB50a62736E92253F1c7f    -u 0x42a3FDad947807f9FA84B8c869680A3B7A46bEe7    -u 0xddAd23Dd65ac23f3e6b4E2706575A90D50349Eb3  --callGasLimit 8000000
+
+
+brownie networks add Polygon polygon-main-alchemy chainid=137 host=https://polygon-mainnet.g.alchemy.com/v2/DxxsrF17yV3YAfzRJpWd_t7qYA8-FlzS
+brownie networks add Development polygon-main-alchemy-fork fork=polygon-main-alchemy host=http://127.0.0.1 port=8080 cmd=ganache-cli
+
