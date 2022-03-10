@@ -25,6 +25,10 @@ interface IBridge {
     ) external;
 }
 
+interface IERC {
+    function approve(address spender, uint amount) external;
+}
+
 contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
     address public implementation;
     IStakingV2 public constant STAKING =
@@ -343,10 +347,8 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
         uint256 beforeBalance = CURVE_3CRV.balanceOf(address(this));
         CURVE_3POOL.add_liquidity(
             curveAmounts,
-            (((curveTotal * CURVE_3POOL.get_virtual_price()) / 1e18) * 99e18) /
-                1e20
+            (curveTotal * 1e18 / CURVE_3POOL.get_virtual_price())*995/1000
         );
-
         returnAmount = CURVE_3CRV.balanceOf(address(this)) - beforeBalance;
     }
 
@@ -380,8 +382,9 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
         IERC20(DAI).approve(address(CURVE_3POOL), type(uint256).max);
         IERC20(USDC).approve(address(CURVE_3POOL), type(uint256).max);
         IERC20(USDC).approve(BRIDGE, type(uint256).max);
-        IERC20(USDT).approve(address(CURVE_3POOL), 0);
-        IERC20(USDT).approve(address(CURVE_3POOL), type(uint256).max);
+        IERC(USDT).approve(address(CURVE_3POOL), 0);
+        IERC(USDT).approve(address(CURVE_3POOL), type(uint256).max);
+        
 
         IERC20(OOKI).approve(address(STAKING), type(uint256).max);
         IERC20(OOKI).approve(address(UNISWAP_ROUTER), type(uint256).max);

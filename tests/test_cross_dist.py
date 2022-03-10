@@ -3,7 +3,8 @@ from brownie import *
 def test_main():
     #poly_distribute()
     #arbi_distribute()
-    bsc_distribute()
+    #bsc_distribute()
+    eth_distribute()
 
 def eth_receive_distribute():
     deployingAddress = '0x55FE002aefF02F77364de339a1292923A15844B8' #large ETH Balance source
@@ -19,6 +20,22 @@ def eth_receive_distribute():
     Distribution.distributeFees({'from':deployingAddress})
     newBalance = interface.IStaking(Distribution.Staking.call()).earned.call('0x9030B78A312147DbA34359d1A8819336fD054230')[1]
     assert(newBalance>=initBalance) #checks if new stablecoin balance > old stablecoin balance
+
+def eth_distribute():
+    BZX = Contract.from_abi("BZX", "0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f", interface.IBZx.abi)
+    assets = ['0x6B175474E89094C44Da98b954EedeAC495271d0F','0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48','0xdAC17F958D2ee523a2206206994597C13D831ec7',
+            '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2']
+    logic = FeeExtractAndDistribute_ETH.deploy({'from':BZX.owner()})
+    proxy = Proxy_0_8.deploy(logic.address, {'from':BZX.owner()})
+    BZX.setFeesController(proxy.address, {'from':BZX.owner()})
+    FeeControl = Contract.from_abi('fees', proxy.address, FeeExtractAndDistribute_ETH.abi)
+    FeeControl.setPaths([['0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2','0x0De05F6447ab4D22c8827449EE4bA2D5C288379B']],{'from':BZX.owner()})
+    FeeControl.setBuybackSettings(30e18, {'from':BZX.owner()})
+    FeeControl.setApprovals({'from':BZX.owner()})
+    initBalance = interface.IERC20('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48').balanceOf('0x88DCDC47D2f83a99CF0000FDF667A468bB958a78')
+    FeeControl.sweepFees(assets, {'from':BZX.owner()})
+    newBalance = interface.IERC20('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48').balanceOf('0x88DCDC47D2f83a99CF0000FDF667A468bB958a78')
+    assert(initBalance >= newBalance)
 
 def poly_distribute():
     BZX = Contract.from_abi("BZX", "0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8", interface.IBZx.abi)
