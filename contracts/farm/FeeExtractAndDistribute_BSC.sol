@@ -19,7 +19,7 @@ contract FeeExtractAndDistribute_BSC is PausableGuardian_0_8 {
 
     address public constant BNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
     address public constant USDC = 0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d;
-    uint256 public constant MIN_USDC_AMOUNT = 1e6; //1 USDC minimum bridge amount
+    uint256 public constant MIN_USDC_AMOUNT = 1e18; //1 USDC minimum bridge amount
     uint64 public constant DEST_CHAINID = 137; //send to polygon
 
     IUniswapV2Router public constant SWAPS_ROUTER_V2 =

@@ -2,7 +2,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin-4.3.2/token/ERC20/IERC20.sol";
 import "../../interfaces/IStaking.sol";
-import "../proxies/0_8/Upgradeable_0_8.sol";
+import "../governance/PausableGuardian_0_8.sol";
 
 interface I3Pool {
     function add_liquidity(uint256[3] memory amounts, uint256 min_mint_amount)
@@ -11,7 +11,8 @@ interface I3Pool {
 	function get_virtual_price() external view returns(uint256);
 }
 
-contract ConvertAndAdminister is Upgradeable_0_8 {
+contract ConvertAndAdminister is PausableGuardian_0_8 {
+    address public implementation;
     address public constant crv3 = 0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490;
     address public constant pool3 = 0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7;
     IERC20 public constant USDC =
@@ -20,14 +21,7 @@ contract ConvertAndAdminister is Upgradeable_0_8 {
 	address public constant TREASURY = 0xfedC4dD5247B93feb41e899A09C44cFaBec29Cbc;
     event Distributed(address indexed sender, uint256 treasury, uint256 stakers);
 
-    bool public isPaused;
-
-    modifier checkPause() {
-        require(!isPaused || msg.sender == owner(), "paused");
-        _;
-    }
-
-    function distributeFees() external checkPause {
+    function distributeFees() external pausable {
         _convertTo3Crv();
 		uint256 total = IERC20(crv3).balanceOf(address(this));
 		uint256 toTreasury = total*1000/3500;
@@ -58,9 +52,5 @@ contract ConvertAndAdminister is Upgradeable_0_8 {
     ) external onlyOwner {
         IERC20(token).approve(spender, 0);
         IERC20(token).approve(spender, amount);
-    }
-
-    function togglePause(bool _isPaused) external onlyOwner {
-        isPaused = _isPaused;
     }
 }
