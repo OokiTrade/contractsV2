@@ -2,9 +2,10 @@ from brownie import *
 
 def test_main():
     #poly_distribute()
-    #arbi_distribute()
+    arbi_distribute()
     #bsc_distribute()
-    eth_distribute()
+    #eth_distribute()
+    #eth_receive_distribute()
 
 def eth_receive_distribute():
     deployingAddress = '0x55FE002aefF02F77364de339a1292923A15844B8' #large ETH Balance source
@@ -16,10 +17,10 @@ def eth_receive_distribute():
     interface.IERC20(USDC).transfer(Distribution.address,100000e6,{'from':USDCsource}) #100k USDC
     Distribution.setApprovals(USDC,Distribution.pool3.call(),100000000e6,{'from':deployingAddress})
     Distribution.setApprovals(Distribution.crv3.call(),'0x16f179f5C344cc29672A58Ea327A26F64B941a63',10000000000e18,{'from':deployingAddress})
-    initBalance = interface.IStaking(Distribution.Staking.call()).earned.call('0x9030B78A312147DbA34359d1A8819336fD054230')[1]
+    initBalance = interface.IStaking(Distribution.STAKING.call()).earned.call('0x9030B78A312147DbA34359d1A8819336fD054230')[1]
     Distribution.distributeFees({'from':deployingAddress})
-    newBalance = interface.IStaking(Distribution.Staking.call()).earned.call('0x9030B78A312147DbA34359d1A8819336fD054230')[1]
-    assert(newBalance>=initBalance) #checks if new stablecoin balance > old stablecoin balance
+    newBalance = interface.IStaking(Distribution.STAKING.call()).earned.call('0x9030B78A312147DbA34359d1A8819336fD054230')[1]
+    assert(newBalance>initBalance) #checks if new stablecoin balance > old stablecoin balance
 
 def eth_distribute():
     BZX = Contract.from_abi("BZX", "0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f", interface.IBZx.abi)
@@ -32,10 +33,10 @@ def eth_distribute():
     FeeControl.setPaths([['0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2','0x0De05F6447ab4D22c8827449EE4bA2D5C288379B']],{'from':BZX.owner()})
     FeeControl.setBuybackSettings(30e18, {'from':BZX.owner()})
     FeeControl.setApprovals({'from':BZX.owner()})
-    initBalance = interface.IERC20('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48').balanceOf('0x88DCDC47D2f83a99CF0000FDF667A468bB958a78')
+    initBalance = interface.IERC20('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48').balanceOf('0x5427FEFA711Eff984124bFBB1AB6fbf5E3DA1820')
     FeeControl.sweepFees(assets, {'from':BZX.owner()})
-    newBalance = interface.IERC20('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48').balanceOf('0x88DCDC47D2f83a99CF0000FDF667A468bB958a78')
-    assert(initBalance >= newBalance)
+    newBalance = interface.IERC20('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48').balanceOf('0x5427FEFA711Eff984124bFBB1AB6fbf5E3DA1820')
+    assert(newBalance > initBalance)
 
 def poly_distribute():
     BZX = Contract.from_abi("BZX", "0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8", interface.IBZx.abi)
@@ -53,7 +54,7 @@ def poly_distribute():
     initBalance = interface.IERC20('0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174').balanceOf('0x88DCDC47D2f83a99CF0000FDF667A468bB958a78')
     FeeControl.sweepFees({'from':BZX.owner()})
     newBalance = interface.IERC20('0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174').balanceOf('0x88DCDC47D2f83a99CF0000FDF667A468bB958a78')
-    assert(initBalance >= newBalance)
+    assert(newBalance > initBalance)
 
 def bsc_distribute():
     BZX = Contract.from_abi("BZX", "0xD154eE4982b83a87b0649E5a7DDA1514812aFE1f", interface.IBZx.abi)
@@ -72,7 +73,7 @@ def bsc_distribute():
     initBalance = interface.IERC20('0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d').balanceOf('0xdd90E5E87A2081Dcf0391920868eBc2FFB81a1aF')
     FeeControl.sweepFees({'from':BZX.owner()})
     newBalance = interface.IERC20('0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d').balanceOf('0xdd90E5E87A2081Dcf0391920868eBc2FFB81a1aF')
-    assert(initBalance >= newBalance)
+    assert(newBalance > initBalance)
 
 def arbi_distribute():
     BZX = Contract.from_abi("BZX", "0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB", interface.IBZx.abi)
@@ -89,4 +90,4 @@ def arbi_distribute():
     initBalance = interface.IERC20('0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8').balanceOf('0x1619DE6B6B20eD217a58d00f37B9d47C7663feca')
     FeeControl.sweepFees({'from':BZX.owner()})
     newBalance = interface.IERC20('0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8').balanceOf('0x1619DE6B6B20eD217a58d00f37B9d47C7663feca')
-    assert(initBalance >= newBalance)
+    assert(newBalance > initBalance)
