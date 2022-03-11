@@ -1,5 +1,4 @@
-/**
- * Copyright 2017-2021, bZeroX, LLC <https://bzx.network/>. All Rights Reserved.
+ * Copyright 2017-2022, OokiDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -104,6 +103,12 @@ contract SwapsImplKyber is State, ISwapsImpl {
         for (uint256 i = 0; i < tokens.length; i++) {
             IERC20(tokens[i]).safeApprove(kyberContract, 0);
             IERC20(tokens[i]).safeApprove(kyberContract, uint256(-1));
+        }
+    }
+
+    function revokeApprovals(address[] memory tokens) public {
+        for (uint256 i = 0; i < tokens.length; i++) {
+            IERC20(tokens[i]).safeApprove(kyberContract, 0);
         }
     }
 

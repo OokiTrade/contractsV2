@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021, bZxDao. All Rights Reserved.
+ * Copyright 2017-2022, OokiDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -17,9 +17,11 @@ contract LoanClosings_Arbitrum is LoanClosingsBase_Arbitrum {
         onlyOwner
     {
         _setTarget(this.liquidate.selector, target);
-        _setTarget(this.rollover.selector, target);
         _setTarget(this.closeWithDeposit.selector, target);
         _setTarget(this.closeWithSwap.selector, target);
+
+        // TEMP: remove after upgrade
+        _setTarget(bytes4(keccak256("rollover(bytes32,bytes)")), address(0));
     }
 
     function liquidate(
@@ -39,29 +41,6 @@ contract LoanClosings_Arbitrum is LoanClosingsBase_Arbitrum {
             loanId,
             receiver,
             closeAmount
-        );
-    }
-
-    function rollover(
-        bytes32 loanId,
-        bytes calldata /*loanDataBytes*/) // for future use
-        external
-        nonReentrant
-        returns (
-            address rebateToken,
-            uint256 gasRebate
-        )
-    {
-        uint256 startingGas = gasleft() +
-            21576; // estimated used gas ignoring loanDataBytes: 21000 + (4+32) * 16
-
-        // restrict to EOAs to prevent griefing attacks, during interest rate recalculation
-        require(msg.sender == tx.origin, "only EOAs can call");
-
-        return _rollover(
-            loanId,
-            startingGas,
-            "" // loanDataBytes
         );
     }
 
@@ -90,7 +69,7 @@ contract LoanClosings_Arbitrum is LoanClosingsBase_Arbitrum {
         address receiver,
         uint256 swapAmount, // denominated in collateralToken
         bool returnTokenIsCollateral, // true: withdraws collateralToken, false: withdraws loanToken
-        bytes memory /*loanDataBytes*/) // for future use
+        bytes memory loanDataBytes)
         public
         nonReentrant
         returns (
@@ -104,7 +83,7 @@ contract LoanClosings_Arbitrum is LoanClosingsBase_Arbitrum {
             receiver,
             swapAmount,
             returnTokenIsCollateral,
-            "" // loanDataBytes
+            loanDataBytes
         );
     }
 }

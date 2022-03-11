@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021, bZxDao. All Rights Reserved.
+ * Copyright 2017-2022, OokiDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -383,7 +383,7 @@ contract PriceFeeds_BSC is Constants, Ownable {
 
     function _getFastGasPrice()
         internal
-        view
+        pure
         returns (uint256 gasPrice)
     {
         return 10e9;

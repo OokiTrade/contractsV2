@@ -48,6 +48,8 @@ compiler:
             - "@openzeppelin-4.3.2=./node_modules/openzeppelin-4.3.2"
             - "@openzeppelin-3.4.0=./node_modules/openzeppelin-3.4.0"
             - "@openzeppelin-2.5.0=./node_modules/openzeppelin-2.5.0"
+            - "@uniswap=./node_modules/@uniswap"
+            - "prb-math=./node_modules/prb-math"
 
 console:
     show_colors: true
@@ -58,16 +60,9 @@ console:
 reports:
     exclude_paths:
         - contracts/testhelpers/**/*.*
-        - contracts/openzeppelin/**/*.*
         - contracts/feeds/testnet/**/*.*
     exclude_contracts:
-        - Address
-        - Context
-        - Ownable
-        - ReentrancyGuard
-        - SafeERC20
-        - SafeMath
-        - EnumerableBytes32Set
+
 
 hypothesis:
     deadline: null
@@ -76,5 +71,9 @@ hypothesis:
     stateful_step_count: 10
 
 autofetch_sources: false
-dependencies: null
+dependencies:
+    - OpenZeppelin/openzeppelin-contracts@4.3.2
+    - OpenZeppelin/openzeppelin-contracts@3.4.0
+    - OpenZeppelin/openzeppelin-contracts@2.5.0
+    - paulrberg/prb-math@2.4.1
 dev_deployment_artifacts: false

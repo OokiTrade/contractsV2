@@ -32,6 +32,12 @@ contract GovernorBravoEvents {
     /// @notice Emitted when implementation is changed
     event NewImplementation(address oldImplementation, address newImplementation);
 
+    /// @notice Emitted when quorum percentage is set
+    event QuorumPercentageSet(uint oldQuorumPercentage, uint newQuorumPercentage);
+
+    /// @notice Emitted when staking address is set
+    event StakingAddressSet(address oldStaking, address newStaking);
+
     /// @notice Emitted when proposal threshold is set
     event ProposalThresholdSet(uint oldProposalThreshold, uint newProposalThreshold);
 
@@ -71,8 +77,8 @@ contract GovernorBravoDelegateStorageV1 is GovernorBravoDelegatorStorage {
     /// @notice The duration of voting on a proposal, in blocks
     uint public votingPeriod;
 
-    /// @notice The number of votes required in order for a voter to become a proposer
-    uint public proposalThreshold;
+    /// @notice The number of votes as a percentage of total supply required in order for a voter to become a proposer
+    uint public proposalThresholdPercentage;
 
     /// @notice Initial proposal id set at become
     uint public initialProposalId;
@@ -80,17 +86,24 @@ contract GovernorBravoDelegateStorageV1 is GovernorBravoDelegatorStorage {
     /// @notice The total number of proposals
     uint public proposalCount;
 
-    /// @notice The address of the bZx Protocol Timelock
+    /// @notice The address of the Ooki Protocol Timelock
     TimelockInterface public timelock;
 
-    /// @notice The address of the bZx governance token
+    /// @notice The address of the Ooki staking contract
     StakingInterface public staking;
+
+    /// @notice The quorum as a percentage of total supply
+    uint public quorumPercentage;
+
 
     /// @notice The official record of all proposals ever proposed
     mapping (uint => Proposal) public proposals;
 
     /// @notice The latest proposal for each proposer
     mapping (address => uint) public latestProposalIds;
+
+    /// @notice proposalId => quorum votes required
+    mapping (uint => uint) public quorumVotesForProposal;
 
 
     struct Proposal {

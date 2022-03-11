@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021, bZxDao. All Rights Reserved.
+ * Copyright 2017-2022, OokiDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -153,7 +153,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
             // there's no minimum destTokenAmount, but all of vals[0] (minSourceTokenAmount) must be spent, and amount spent can't exceed vals[0]
             require(
                 sourceTokenAmountUsed == vals[0],
-                "swap too large to fill test"
+                "swap too large to fill"
             );
 
             if (tradingFee != 0) {
@@ -250,10 +250,13 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
         if (payload.length == 0) {
             dataToSend = abi.encode(sourceToken, destToken);
         } else {
-            (dexNumber, dataToSend) = abi.decode(
+            (uint128 flag, bytes[] memory payloads) = abi.decode(
                 payload,
-                (uint256, bytes)
+                (uint128, bytes[])
             );
+            if(flag & DEX_SELECTOR_FLAG != 0){
+                (dexNumber, dataToSend) = abi.decode(payloads[0], (uint256, bytes));
+            }
         }
 
         swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(

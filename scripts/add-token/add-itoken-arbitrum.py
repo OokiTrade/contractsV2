@@ -43,11 +43,12 @@ def main():
     '''updateOwner()'''
 
 def deployment():
-    underlyingSymbol = "FRAX"
+    underlyingSymbol = "ETH"
     iTokenSymbol = "i{}".format(underlyingSymbol)
     iTokenName = "Ooki {} iToken ({})".format(underlyingSymbol, iTokenSymbol)  
 
-    loanTokenAddress = "0x17fc002b466eec40dae837fc4be5c67993ddbd6f"
+    loanTokenAddress = "0x82af49447d8a07e3bd95bd0d56f35241523fbab1"
+    proxyAddress = "0xE602d108BCFbB7f8281Fd0835c3CF96e5c9B5486"
     '''
             "0x82af49447d8a07e3bd95bd0d56f35241523fbab1", # ETH
             "0x2f2a2543b76a4166549f7aab2e75bef0aefc5b0f", # BTC
@@ -68,25 +69,23 @@ iMIM: 0x7Dcc818B91062213CB57b525108d97236068076b
 iFRAX: 0xC3f6816C860e7d7893508C8F8568d5AF190f6d7d
     '''
 
-    #LoanTokenLogicStandard deployed at: 0x82a8DF73Ea5A336949a86C7F6fD9390638fd11C5
-    #LoanTokenLogicWeth_Arbitrum deployed at: 0x7492A141253c4b8d69df13C3C52c65a280d7D358
-    #loanTokenLogicStandard = Contract.from_abi(
-    #    "LoanTokenLogicStandard", address="0x82a8DF73Ea5A336949a86C7F6fD9390638fd11C5", abi=LoanTokenLogicStandard.abi, owner=acct)
-    #loanTokenLogicStandard = acct.deploy(LoanTokenLogicWeth_Arbitrum, acct).address
-
     
     # Deployment
 
     #iTokenProxy = LoanToken.deploy(acct, loanTokenLogicStandard, {"from": acct})
     iTokenProxy = Contract.from_abi("loanTokenProxy",
-                            "0xC3f6816C860e7d7893508C8F8568d5AF190f6d7d", LoanToken.abi, acct)
+                            proxyAddress, LoanToken.abi, acct)
+
+    #iTokenProxy.setTarget("0x6E1e6f1B49b46DFEB61E52441Cc942Ed717E77da")
 
     #loanTokenSettings = acct.deploy(LoanTokenSettings)
-    #LoanTokenSettingsLowerAdmin deployed at: 0x11F58881D46BcfbB4E4c83F65de401eAd80ecF06
-    #LoanTokenSettings deployed at: 0xEAeB5DBCAe2fa5191e53D5F8b826F25e2E3d6E5D
+    #LoanTokenSettingsLowerAdmin deployed at: 0x56f0741f0FF5C3a5f47319F4Ca31E68C482DA38c
+    #LoanTokenSettings deployed at: 0xeaC17AFaEFC6325927D334Daf304b43d7aa91D5c
+    #CurvedInterestRate deployed at: 0x171124e47fE7902E6A63f2d361Ee4F9772c87d07
+    #LoanTokenLogicStandard deployed at: 0x6E1e6f1B49b46DFEB61E52441Cc942Ed717E77da
 
     loanTokenSettings = Contract.from_abi(
-        "loanToken", address="0xEAeB5DBCAe2fa5191e53D5F8b826F25e2E3d6E5D", abi=LoanTokenSettings.abi, owner=acct)
+        "loanToken", address="0xeaC17AFaEFC6325927D334Daf304b43d7aa91D5c", abi=LoanTokenSettings.abi, owner=acct)
 
     iToken = Contract.from_abi("loanTokenLogicStandard",
                             iTokenProxy, LoanTokenLogicStandard.abi, acct)
@@ -97,10 +96,11 @@ iFRAX: 0xC3f6816C860e7d7893508C8F8568d5AF190f6d7d
 
     calldata = loanTokenSettings.setLowerAdminValues.encode_input(
         "0x111F9F3e59e44e257b24C5d1De57E05c380C07D2", # arbitrum guardian multisig
-        "0x11F58881D46BcfbB4E4c83F65de401eAd80ecF06"  # LoanTokenSettingsLowerAdmin contract
+        "0x56f0741f0FF5C3a5f47319F4Ca31E68C482DA38c"  # LoanTokenSettingsLowerAdmin contract
     )
     iToken.updateSettings(loanTokenSettings, calldata, {"from": acct})
 
+    iToken.updateFlashBorrowFeePercent(0.03e18, {"from": acct})
 
     # Setting price Feed
     #priceFeed = Contract.from_abi(
@@ -108,7 +108,7 @@ iFRAX: 0xC3f6816C860e7d7893508C8F8568d5AF190f6d7d
     #priceFeed.setPriceFeed([loanTokenAddress], [chainlinkFeedAddress], {'from': acct})
 
 
-    bzx.setLoanPool([iToken], [loanTokenAddress], {"from": acct})
+    #bzx.setLoanPool([iToken], [loanTokenAddress], {"from": acct}) <-- uncomment
     #bzx.setSupportedTokens([loanTokenAddress], [True])
 
 
@@ -117,7 +117,7 @@ def marginSettings():
     # Setting margin settings
 
     loanTokenSettingsLowerAdmin = Contract.from_abi(
-        "loanToken", address="0x11F58881D46BcfbB4E4c83F65de401eAd80ecF06", abi=LoanTokenSettingsLowerAdmin.abi, owner=acct)
+        "loanToken", address="0x56f0741f0FF5C3a5f47319F4Ca31E68C482DA38c", abi=LoanTokenSettingsLowerAdmin.abi, owner=acct)
     base_data = [
         b"0x0",  # id
         False,  # active
@@ -237,36 +237,16 @@ def demandCurve():
     supportedTokenAssetsPairs = bzxRegistry.getTokens(0, 100) # TODO move this into a loop for permissionless to support more than 100
 
     loanTokenSettingsLowerAdmin = Contract.from_abi(
-        "loanToken", address="0x11F58881D46BcfbB4E4c83F65de401eAd80ecF06", abi=LoanTokenSettingsLowerAdmin.abi, owner=acct)
+        "loanToken", address="0x56f0741f0FF5C3a5f47319F4Ca31E68C482DA38c", abi=LoanTokenSettingsLowerAdmin.abi, owner=acct)
 
     for tokenAssetPairA in supportedTokenAssetsPairs:
-        
-        ## no BZRX params
-        #if (tokenAssetPairA[0] == "0x97dfbEF4eD5a7f63781472Dbc69Ab8e5d7357cB9"):
-        #    continue
-
-        ## only BZRX params
-        #if (tokenAssetPairA[0] != "0x97dfbEF4eD5a7f63781472Dbc69Ab8e5d7357cB9"):
-        #    continue
-
-        '''if (tokenAssetPairA[0] != "0xda4f261f26c82766408dcf6ba1b510fa8e64efe9" and tokenAssetPairA[0] != "0xC5b6cC0A9D61600BE42e83d8fA1331dB9E29e48C"):
-            continue'''
-
-        #existingITokenLoanTokenAddress = tokenAssetPairA[1]
-        #collateralTokenAddress = tokenAssetPairA[1]
-
-        ## only CAKE, AUTO, or DOGE params
-        '''if (
-            (existingITokenLoanTokenAddress != "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82" and collateralTokenAddress != "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82") and
-            (existingITokenLoanTokenAddress != "0xa184088a740c695E156F91f5cC086a06bb78b827" and collateralTokenAddress != "0xa184088a740c695E156F91f5cC086a06bb78b827") and
-            (existingITokenLoanTokenAddress != "0xbA2aE424d960c26247Dd6c32edC70B295c744C43" and collateralTokenAddress != "0xbA2aE424d960c26247Dd6c32edC70B295c744C43")):
-            continue'''
 
         existingIToken = Contract.from_abi("existingIToken", address=tokenAssetPairA[0], abi=LoanTokenLogicStandard.abi, owner=acct)
         print("itoken", existingIToken.name(), tokenAssetPairA[0])
         
-        calldata = loanTokenSettingsLowerAdmin.setDemandCurve.encode_input(0, 20*10**18, 0, 0, 60*10**18, 80*10**18, 120*10**18)
+        calldata = loanTokenSettingsLowerAdmin.setDemandCurve.encode_input("0x171124e47fE7902E6A63f2d361Ee4F9772c87d07") ## CurvedInterestRate
         existingIToken.updateSettings(loanTokenSettingsLowerAdmin.address, calldata, {"from": acct})
+
 
 '''
 def updateOwner():

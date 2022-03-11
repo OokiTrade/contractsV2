@@ -7,4 +7,8 @@ interface IDexRecords {
         returns (address);
 
     function setDexID(address dexAddress) external;
+
+    function setDexID(uint256 dexID, address dexAddress) external;
+	
+    function getDexCount() external view returns(uint256);
 }

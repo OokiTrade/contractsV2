@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021, bZxDao. All Rights Reserved.
+ * Copyright 2017-2022, OokiDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -20,7 +20,34 @@ contract LoanMaintenance_2 is State, LoanMaintenanceEvents, PausableGuardian, In
         onlyOwner
     {
         _setTarget(this.transferLoan.selector, target);
-        _setTarget(this.settleInterest.selector, target);        
+        _setTarget(this.settleInterest.selector, target);
+        _setTarget(this.getInterestModelValues.selector, target);
+    }
+
+    function getInterestModelValues(
+        address pool,
+        bytes32 loanId)
+        external
+        view
+        returns (
+            uint256 _poolLastUpdateTime,
+            uint256 _poolPrincipalTotal,
+            uint256 _poolInterestTotal,
+            uint256 _poolRatePerTokenStored,
+            uint256 _poolLastInterestRate,
+            uint256 _loanPrincipalTotal,
+            uint256 _loanInterestTotal,
+            uint256 _loanRatePerTokenPaid)
+    {
+        _poolLastUpdateTime = poolLastUpdateTime[pool];
+        _poolPrincipalTotal = poolPrincipalTotal[pool];
+        _poolInterestTotal = poolInterestTotal[pool];
+        _poolRatePerTokenStored = poolRatePerTokenStored[pool];
+        _poolLastInterestRate = poolLastInterestRate[pool];
+
+        _loanPrincipalTotal = loans[loanId].principal;
+        _loanInterestTotal = loanInterestTotal[loanId];
+        _loanRatePerTokenPaid = loanRatePerTokenPaid[loanId];
     }
 
     function transferLoan(
@@ -55,9 +82,11 @@ contract LoanMaintenance_2 is State, LoanMaintenanceEvents, PausableGuardian, In
         bytes32 loanId)
         external
     {
+        // only callable by loan pools
+        require(loanPoolToUnderlying[msg.sender] != address(0), "not authorized");
+
         _settleInterest(
-            msg.sender, // pool
-            loanPoolToUnderlying[msg.sender], // loanToken
+            msg.sender, // loan pool
             loanId
         );
     }
