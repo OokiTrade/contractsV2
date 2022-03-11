@@ -18,7 +18,6 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
     IUniswapQuoter public constant uniswapQuoteContract =
         IUniswapQuoter(0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6); //mainnet
 
-
     function dexSwap(
         address sourceTokenAddress,
         address destTokenAddress,
