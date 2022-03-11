@@ -39,7 +39,7 @@ maintenace2Impl = Contract.from_abi("maintenace2Impl", address="0x9f46635839F9b5
 
 ## LoanMigration
 #migrationImpl = LoanMigration.deploy({'from': deployer})
-migrationImpl = Contract.from_abi("maintenaceImpl", address="0x33C334E820E371F1a2A8337FFAae1d289A96f464", abi=LoanMigration.abi)
+migrationImpl = Contract.from_abi("maintenaceImpl", address="0x650980C7CB878629Bda2C33828A8F729B9B8635c", abi=LoanMigration.abi)
 
 ## LoanMaintenance
 #maintenaceImpl = LoanMaintenance.deploy({'from': deployer})
