@@ -41,38 +41,6 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         );
     }
 
-
-    function pendingCrvRewards(address account) external returns(uint256){
-        (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned, uint256 bzrxRewardsVesting, uint256 stableCoinRewardsVesting) = _earned(
-            account,
-            bzrxPerTokenStored,
-            stableCoinPerTokenStored
-        );
-
-        (,stableCoinRewardsEarned) = _syncVesting(
-            account,
-            bzrxRewardsEarned,
-            stableCoinRewardsEarned,
-            bzrxRewardsVesting,
-            stableCoinRewardsVesting
-        );
-        return _pendingCrvRewards(account, stableCoinRewardsEarned);
-    }
-
-    function _pendingCrvRewards(address _user, uint256 stableCoinRewardsEarned)
-        internal
-        returns (uint256)
-    {
-        uint256 totalSupply = curve3PoolGauge.balanceOf(address(this));
-        uint256 pendingCrv = curve3PoolGauge.claimable_tokens(address(this));
-        return _pendingAltRewards(
-            CRV,
-            _user,
-            stableCoinRewardsEarned,
-            (totalSupply != 0) ? pendingCrv.mul(1e12).div(totalSupply) : 0
-        );
-    }
-
     function _pendingAltRewards(address token, address _user, uint256 userSupply, uint256 extraRewardsPerShare)
         internal
         view
@@ -116,22 +84,10 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         }
     }
 
-
-    function _depositTo3Pool(
-        uint256 amount)
-        internal
+    function withdrawFrom3Pool(uint256 amount)
+        public onlyOwner
     {
-
-        if(amount == 0)
-            curve3PoolGauge.deposit(curve3Crv.balanceOf(address(this)));
-
-        // Trigger claim rewards from curve pool
-        uint256 crvBalanceBefore = IERC20(CRV).balanceOf(address(this));
-        curveMinter.mint(address(curve3PoolGauge));
-        uint256 crvBalanceAfter = IERC20(CRV).balanceOf(address(this)) - crvBalanceBefore;
-        if(crvBalanceAfter != 0){
-            _addAltRewards(CRV, crvBalanceAfter);
-        }
+        _withdrawFrom3Pool(amount);
     }
 
     function _withdrawFrom3Pool(uint256 amount)
@@ -141,12 +97,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             curve3PoolGauge.withdraw(amount);
 
         //Trigger claim rewards from curve pool
-        uint256 crvBalanceBefore = IERC20(CRV).balanceOf(address(this));
         curveMinter.mint(address(curve3PoolGauge));
-        uint256 crvBalanceAfter = IERC20(CRV).balanceOf(address(this)) - crvBalanceBefore;
-        if(crvBalanceAfter != 0){
-            _addAltRewards(CRV, crvBalanceAfter);
-        }
     }
 
 
@@ -219,16 +170,12 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     function claimAltRewards()
         public
         pausable
-        returns (uint256 sushiRewardsEarned, uint256 crvRewardsEarned)
+        returns (uint256 sushiRewardsEarned)
     {
         sushiRewardsEarned = _claimSushi();
-        crvRewardsEarned = _claimCrv();
 
         if(sushiRewardsEarned != 0){
             emit ClaimAltRewards(msg.sender, SUSHI, sushiRewardsEarned);
-        }
-        if(crvRewardsEarned != 0){
-            emit ClaimAltRewards(msg.sender, CRV, crvRewardsEarned);
         }
     }
 
@@ -270,17 +217,6 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
         sushiRewardsEarned = _claimSushi();
         if(sushiRewardsEarned != 0){
             emit ClaimAltRewards(msg.sender, SUSHI, sushiRewardsEarned);
-        }
-    }
-
-    function claimCrv()
-        external
-        pausable
-        returns (uint256 crvRewardsEarned)
-    {
-        crvRewardsEarned = _claimCrv();
-        if(crvRewardsEarned != 0){
-            emit ClaimAltRewards(msg.sender, CRV, crvRewardsEarned);
         }
     }
 
@@ -332,16 +268,6 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     {
         stableCoinRewardsEarned = stableCoinRewards[msg.sender];
         if (stableCoinRewardsEarned != 0) {
-            uint256 pendingCrv = _pendingCrvRewards(msg.sender, stableCoinRewardsEarned);
-            uint256 curve3CrvBalance = curve3Crv.balanceOf(address(this));
-            _withdrawFrom3Pool(stableCoinRewardsEarned);
-
-            userAltRewardsPerShare[msg.sender][CRV] = IStaking.AltRewardsUserInfo({
-                    rewardsPerShare: altRewardsPerShare[CRV],
-                    pendingRewards: pendingCrv
-                }
-            );
-
             stableCoinRewards[msg.sender] = 0;
 
             uint256 vestingAmount = stableCoinVesting[msg.sender];
@@ -380,28 +306,6 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 
 
         return pendingSushi;
-    }
-
-    function _claimCrv()
-        internal
-        returns (uint256)
-    {
-        address _user = msg.sender;
-
-        _depositTo3Pool(0);
-        (,uint256 stableCoinRewardsEarned,,) = _earned(_user, bzrxPerTokenStored, stableCoinPerTokenStored);
-        uint256 pendingCrv = _pendingCrvRewards(_user, stableCoinRewardsEarned);
-
-        userAltRewardsPerShare[_user][CRV] = IStaking.AltRewardsUserInfo({
-                rewardsPerShare: altRewardsPerShare[CRV],
-                pendingRewards: 0
-            }
-        );
-        if (pendingCrv != 0) {
-            IERC20(CRV).safeTransfer(_user, pendingCrv);
-        }
-
-        return pendingCrv;
     }
 
     function exit()
@@ -653,7 +557,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
 
         address poolAddress = token == SUSHI ? LPToken : token;
 
-        uint256 totalSupply = (token == CRV) ? curve3PoolGauge.balanceOf(address(this)) :_totalSupplyPerToken[poolAddress];
+        uint256 totalSupply = _totalSupplyPerToken[poolAddress];
         require(totalSupply != 0, "no deposits");
 
         altRewardsPerShare[token] = altRewardsPerShare[token]
@@ -819,5 +723,10 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
             if eq(result, 0) { revert(ptr, size) }
             return(ptr, size)
         }
+    }
+
+
+    function rescue(IERC20 _token, uint256 amount, address receiver) public onlyOwner {
+        SafeERC20.safeTransfer(_token, receiver, amount);
     }
 }
