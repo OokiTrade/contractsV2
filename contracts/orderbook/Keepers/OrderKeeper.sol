@@ -9,7 +9,7 @@ contract OrderKeeper {
         factory = factoryAddress;
     }
 
-    function checkUpkeep(bytes calldata checkData)
+    function checkUpKeep(bytes calldata checkData)
         external
         returns (bool upkeepNeeded, bytes memory performData)
     {
@@ -25,17 +25,21 @@ contract OrderKeeper {
         IOrderBook.Order[] memory listOfMainOrders = factory
             .getOrdersLimited(start, end);
         for (uint256 x = 0; x < listOfMainOrders.length;) {
-            if (factory.prelimCheck(listOfMainOrders[x].orderID)) {
-                upkeepNeeded = true;
-                performData = abi.encode(listOfMainOrders[x].orderID);
-                return (upkeepNeeded, performData);
+            try factory.prelimCheck(listOfMainOrders[x].orderID) returns (bool isExecutable) {
+                if(isExecutable) {
+                    upkeepNeeded = true;
+                    performData = abi.encode(listOfMainOrders[x].orderID);
+                    return (upkeepNeeded, performData);
+                }
+            } catch Error (string memory) {
+
             }
             unchecked { ++x; }
         }
         return (upkeepNeeded, performData);
     }
 
-    function performUpkeep(bytes calldata performData) public {
+    function performUpKeep(bytes calldata performData) public {
         bytes32 orderId = abi.decode(performData, (bytes32));
         //emit OrderExecuted(trader,orderId);
         factory.executeOrder(orderId);

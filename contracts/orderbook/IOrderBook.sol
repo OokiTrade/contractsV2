@@ -24,11 +24,9 @@ interface IOrderBook {
         bytes loanDataBytes;
     }
 
-    function getRouter() external view returns (address);
-
     function placeOrder(Order calldata order) external;
 
-    function amendOrder(Order calldata order, uint256 orderID) external;
+    function amendOrder(Order calldata order) external;
 
     function cancelOrder(bytes32 orderID) external;
 
@@ -38,9 +36,9 @@ interface IOrderBook {
 
     function getOrdersLimited(uint256 start, uint256 end) external view returns(Order[] memory);
 
-    function getOrders(uint256 start, uint256 end) external view returns(Order[] memory);
+    function getOrders() external view returns(Order[] memory);
 
-    function getActiveOrders(address trader, uint256 start, uint256 end) external view returns(Order[] memory);
+    function getActiveOrders(address trader) external view returns(Order[] memory);
 
     function getActiveOrdersLimited(address trader, uint256 start, uint256 end) external view returns(Order[] memory);
 
@@ -53,4 +51,6 @@ interface IOrderBook {
     function prelimCheck(bytes32 orderID) external returns (bool);
 
     function getTotalActiveOrders() external view returns (uint256);
+
+    function getActiveTrades(address trader) external view returns(bytes32[] memory);
 }

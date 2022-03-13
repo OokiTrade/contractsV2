@@ -151,6 +151,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
             } else {
                 payload = abi.encode(order.base, order.loanTokenAddress);
             }
+            dexID = 1;
         }
         ISwapsImpl swapImpl = ISwapsImpl(
             IDexRecords(getSwapAddress()).retrieveDexAddress(dexID)
@@ -297,12 +298,13 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
             } else {
                 payload = abi.encode(order.base, order.loanTokenAddress);
             }
+            dexID = 1;
         }
         ISwapsImpl swapImpl = ISwapsImpl(
             IDexRecords(getSwapAddress()).retrieveDexAddress(dexID)
         );
         srcToken = order.collateralTokenAmount > order.loanTokenAmount ? order.base : order.loanTokenAddress;
-        require(order.timeTillExpiration < block.timestamp, "OrderBook: Order Expired");
+        require(order.timeTillExpiration > block.timestamp, "OrderBook: Order Expired");
         if (_allOrders[orderID].orderType == IOrderBook.OrderType.LIMIT_OPEN) {
             uint256 dSwapValue;
             if (srcToken == order.loanTokenAddress) {

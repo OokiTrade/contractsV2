@@ -3,7 +3,7 @@ import "../Storage/OrderBookEvents.sol";
 import "../Storage/OrderBookStorage.sol";
 import "../OrderVault/IDeposits.sol";
 
-contract OrderBookOrderPlacement is OrderBookEvents, OrderBookStorage {
+contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
     function initialize(address target) public onlyOwner {
@@ -50,6 +50,7 @@ contract OrderBookOrderPlacement is OrderBookEvents, OrderBookStorage {
     }
 
     function placeOrder(IOrderBook.Order calldata Order) external {
+        require(Order.loanDataBytes.length < 3500, "OrderBook: loanDataBytes too complex");
         require(
             _abs(
                 int256(Order.loanTokenAmount) -
@@ -85,7 +86,7 @@ contract OrderBookOrderPlacement is OrderBookEvents, OrderBookStorage {
             ? (Order.loanTokenAmount, Order.loanTokenAddress)
             : (Order.collateralTokenAmount, Order.base);
         require(
-            queryRateReturn(usedToken, USDC, amountUsed) >
+            queryRateReturn(usedToken, USDC, amountUsed) >=
                 MIN_AMOUNT_IN_USDC,
             "OrderBook: Order too small"
         );
@@ -111,7 +112,8 @@ contract OrderBookOrderPlacement is OrderBookEvents, OrderBookStorage {
         );
     }
 
-    function amendOrder(IOrderBook.Order memory Order) public {
+    function amendOrder(IOrderBook.Order calldata Order) external {
+        require(Order.loanDataBytes.length < 3500, "OrderBook: loanDataBytes too complex");
         require(
             _abs(
                 int256(Order.loanTokenAmount) -
@@ -134,7 +136,8 @@ contract OrderBookOrderPlacement is OrderBookEvents, OrderBookStorage {
         require(
             Order.orderType == IOrderBook.OrderType.LIMIT_OPEN
                 ? protocol.isLoanPool(Order.iToken)
-                : true
+                : true,
+            "OrderBook: invalid iToken specified"
         );
         require(
             !_allOrders[Order.orderID].isCancelled,
