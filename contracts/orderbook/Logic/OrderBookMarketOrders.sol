@@ -35,8 +35,6 @@ contract OrderBookMarketOrders is OrderBookEvents, OrderBookStorage {
         bytes32 loanID,
         uint256 amount,
         bool iscollateral,
-        address loanTokenAddress,
-        address collateralAddress,
         bytes memory loanDataBytes
     ) public {
         _executeMarketClose(
@@ -44,8 +42,6 @@ contract OrderBookMarketOrders is OrderBookEvents, OrderBookStorage {
             loanID,
             amount,
             iscollateral,
-            loanTokenAddress,
-            collateralAddress,
             loanDataBytes
         );
     }
@@ -60,20 +56,16 @@ contract OrderBookMarketOrders is OrderBookEvents, OrderBookStorage {
         address base,
         bytes memory loanDataBytes
     ) internal {
-        require(IBZx(protocol).isLoanPool(iToken));
-        address usedToken = collateralTokenAmount > loanTokenAmount
-            ? base
-            : IToken(iToken).loanTokenAddress();
-        uint256 transferAmount = collateralTokenAmount > loanTokenAmount
-            ? collateralTokenAmount
-            : loanTokenAmount;
+        require(protocol.isLoanPool(iToken), "OrderBook: Not an iToken Contract");
+        (address usedToken, uint256 transferAmount) = collateralTokenAmount > loanTokenAmount
+            ? (base, collateralTokenAmount)
+            : (IToken(iToken).loanTokenAddress(), loanTokenAmount);
         SafeERC20.safeTransferFrom(
             IERC20(usedToken),
             trader,
             address(this),
             transferAmount
         );
-        loanDataBytes = "";
         bytes32 loanID = IToken(iToken)
             .marginTrade(
                 lID,
@@ -90,55 +82,26 @@ contract OrderBookMarketOrders is OrderBookEvents, OrderBookStorage {
         }
     }
 
+    function _isActiveLoan(bytes32 ID) internal view returns (bool) {
+        return protocol.loans(ID).active;
+    }
+
     function _executeMarketClose(
         address trader,
         bytes32 loanID,
         uint256 amount,
         bool iscollateral,
-        address loanTokenAddress,
-        address collateralAddress,
         bytes memory loanDataBytes
     ) internal {
-        address usedToken;
-        loanDataBytes = "";
-        if (
-            (iscollateral && collateralAddress != WRAPPED_TOKEN) ||
-            (!iscollateral && loanTokenAddress != WRAPPED_TOKEN)
-        ) {
-            usedToken = iscollateral ? collateralAddress : loanTokenAddress;
-            uint256 traderB = IERC20Metadata(usedToken).balanceOf(trader);
-            SafeERC20.safeTransferFrom(
-                IERC20(usedToken),
-                trader,
-                address(this),
-                traderB
-            );
-        } else {
-            usedToken = address(0);
-        }
-        if (IBZx(protocol).getLoan(loanID).collateral == amount) {
-            _activeTrades[trader].remove(loanID);
-        }
-        IBZx(protocol).closeWithSwap(
+        protocol.closeWithSwap(
             loanID,
-            address(this),
+            trader,
             amount,
             iscollateral,
             loanDataBytes
         );
-        if (usedToken != address(0)) {
-            SafeERC20.safeTransfer(
-                IERC20(usedToken),
-                trader,
-                IERC20Metadata(usedToken).balanceOf(address(this))
-            );
-        } else {
-            WrappedToken(WRAPPED_TOKEN).deposit{value: address(this).balance}();
-            SafeERC20.safeTransfer(
-                IERC20(WRAPPED_TOKEN),
-                trader,
-                IERC20Metadata(WRAPPED_TOKEN).balanceOf(address(this))
-            );
+        if (!_isActiveLoan(loanID)) {
+            _activeTrades[trader].remove(loanID);
         }
     }
 }

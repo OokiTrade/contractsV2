@@ -3,7 +3,7 @@ import "./Storage/OrderBookStorage.sol";
 import "./Storage/OrderBookEvents.sol";
 
 contract OrderBookProxy is OrderBookEvents, OrderBookStorage {
-    constructor(address _contract) {
+    constructor(IBZx _contract) {
         protocol = _contract;
     }
 

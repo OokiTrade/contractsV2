@@ -8,23 +8,10 @@ contract OrderBookOrderPlacement is OrderBookEvents, OrderBookStorage {
 
     function initialize(address target) public onlyOwner {
         _setTarget(this.placeOrder.selector, target);
-        _setTarget(this.currentSwapRate.selector, target);
         _setTarget(this.amendOrder.selector, target);
         _setTarget(this.cancelOrder.selector, target);
         _setTarget(this.cancelOrderProtocol.selector, target);
         _setTarget(this.changeStopType.selector, target);
-        _setTarget(this.minimumAmount.selector, target);
-    }
-
-    function currentSwapRate(address start, address end)
-        public
-        view
-        returns (uint256 executionPrice)
-    {
-        (executionPrice, ) = IPriceFeeds(IBZx(protocol).priceFeeds()).queryRate(
-            end,
-            start
-        );
     }
 
     function queryRateReturn(
@@ -33,7 +20,7 @@ contract OrderBookOrderPlacement is OrderBookEvents, OrderBookStorage {
         uint256 amount
     ) public view returns (uint256) {
         (uint256 executionPrice, uint256 precision) = IPriceFeeds(
-            IBZx(protocol).priceFeeds()
+            protocol.priceFeeds()
         ).queryRate(start, end);
         return (executionPrice * amount) / precision;
     }
@@ -44,7 +31,7 @@ contract OrderBookOrderPlacement is OrderBookEvents, OrderBookStorage {
         returns (bool)
     {
         return
-            IBZx(protocol).getLoan(checkOrder.loanID).collateralToken ==
+            protocol.getLoan(checkOrder.loanID).collateralToken ==
             checkOrder.base;
     }
 
@@ -54,7 +41,7 @@ contract OrderBookOrderPlacement is OrderBookEvents, OrderBookStorage {
         returns (bool)
     {
         return
-            IBZx(protocol).getLoan(checkOrder.loanID).loanToken ==
+            protocol.getLoan(checkOrder.loanID).loanToken ==
             checkOrder.loanTokenAddress;
     }
 
@@ -68,49 +55,48 @@ contract OrderBookOrderPlacement is OrderBookEvents, OrderBookStorage {
                 int256(Order.loanTokenAmount) -
                     int256(Order.collateralTokenAmount)
             ) == int256(Order.loanTokenAmount + Order.collateralTokenAmount),
-            "only one token can be used"
+            "OrderBook: only one token can be used"
         );
         require(
-            IBZx(protocol).supportedTokens(Order.loanTokenAddress) &&
-                IBZx(protocol).supportedTokens(Order.base),
-            "invalid pair"
+            protocol.supportedTokens(Order.loanTokenAddress) &&
+                protocol.supportedTokens(Order.base),
+            "OrderBook: invalid pair"
         );
         require(
             Order.loanID != 0
                 ? _collateralTokenMatch(Order) && _loanTokenMatch(Order)
                 : true,
-            "incorrect collateral and/or loan token specified"
+            "OrderBook: incorrect collateral and/or loan token specified"
         );
         require(
             Order.orderType == IOrderBook.OrderType.LIMIT_OPEN
-                ? IBZx(protocol).isLoanPool(Order.iToken)
-                : true
+                ? protocol.isLoanPool(Order.iToken)
+                : true,
+            "OrderBook: invalid iToken specified"
         );
         require(
             Order.orderType == IOrderBook.OrderType.LIMIT_OPEN
                 ? Order.loanID == 0 ||
                     _activeTrades[msg.sender].contains(Order.loanID)
                 : _activeTrades[msg.sender].contains(Order.loanID),
-            "inactive loan"
+            "OrderBook: inactive loan"
         );
-        uint256 amountUsed = Order.loanTokenAmount +
-            Order.collateralTokenAmount; //one is always 0 so correct amount and no overflow issues
-        address usedToken = Order.loanTokenAmount > Order.collateralTokenAmount
-            ? Order.loanTokenAddress
-            : Order.base;
+        (uint256 amountUsed, address usedToken) = Order.loanTokenAmount > Order.collateralTokenAmount
+            ? (Order.loanTokenAmount, Order.loanTokenAddress)
+            : (Order.collateralTokenAmount, Order.base);
         require(
-            (currentSwapRate(usedToken, USDC) * amountUsed) /
-                10**(IERC20Metadata(usedToken).decimals()) >
-                MIN_AMOUNT_IN_USDC
+            queryRateReturn(usedToken, USDC, amountUsed) >
+                MIN_AMOUNT_IN_USDC,
+            "OrderBook: Order too small"
         );
-        require(Order.trader == msg.sender);
-        require(!Order.isCancelled);
+        require(Order.trader == msg.sender, "OrderBook: invalid trader");
+        require(!Order.isCancelled, "OrderBook: invalid order state");
         mainOBID++;
         bytes32 ID = keccak256(abi.encode(msg.sender, mainOBID));
-        _orderExpiration[ID] = block.timestamp + DAYS_14;
+        require(IDeposits(vault).getTokenUsed(ID) == address(0), "Orderbook: collision"); //in the very unlikely chance of collision on ID error is thrown
         _allOrders[ID] = Order;
         _allOrders[ID].orderID = ID;
-        _histOrders[msg.sender].add(Order.orderID);
+        _histOrders[msg.sender].add(ID);
         _allOrderIDs.add(ID);
         if (Order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
             IDeposits(vault).deposit(ID, amountUsed, msg.sender, usedToken);
@@ -131,14 +117,13 @@ contract OrderBookOrderPlacement is OrderBookEvents, OrderBookStorage {
                 int256(Order.loanTokenAmount) -
                     int256(Order.collateralTokenAmount)
             ) == int256(Order.loanTokenAmount + Order.collateralTokenAmount),
-            "only one token can be used"
+            "OrderBook: only one token can be used"
         );
-        //uint256 swapRate = currentSwapRate(Order.loanTokenAddress, Order.base);
         require(
             Order.base == _allOrders[Order.orderID].base &&
                 Order.loanTokenAddress ==
                 _allOrders[Order.orderID].loanTokenAddress,
-            "invalid tokens"
+            "OrderBook: invalid tokens"
         );
         /*require(
             Order.price > swapRate
@@ -148,41 +133,32 @@ contract OrderBookOrderPlacement is OrderBookEvents, OrderBookStorage {
         );*/
         require(
             Order.orderType == IOrderBook.OrderType.LIMIT_OPEN
-                ? IBZx(protocol).isLoanPool(Order.iToken)
+                ? protocol.isLoanPool(Order.iToken)
                 : true
         );
         require(
-            Order.orderID == _allOrders[Order.orderID].orderID,
-            "improper ID"
-        );
-        require(
             !_allOrders[Order.orderID].isCancelled,
-            "inactive order specified"
+            "OrderBook: inactive order specified"
         );
         require(
             Order.orderType == IOrderBook.OrderType.LIMIT_OPEN
                 ? Order.loanID == 0 ||
                     _activeTrades[msg.sender].contains(Order.loanID)
                 : _activeTrades[msg.sender].contains(Order.loanID),
-            "inactive loan"
+            "OrderBook: inactive loan"
         );
-        require(Order.trader == msg.sender);
-        require(!_allOrders[Order.orderID].isCancelled);
-        _orderExpiration[Order.orderID] = block.timestamp + DAYS_14;
+        require(Order.trader == msg.sender, "OrderBook: invalid trader");
         if (Order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
-            uint256 amountUsed = Order.loanTokenAmount +
-                Order.collateralTokenAmount; //one is always 0 so correct amount and no overflow issues
-            address usedToken = Order.loanTokenAmount >
-                Order.collateralTokenAmount
-                ? Order.loanTokenAddress
-                : Order.base;
+            (uint256 amountUsed, address usedToken) = Order.loanTokenAmount > Order.collateralTokenAmount
+                ? (Order.loanTokenAmount, Order.loanTokenAddress)
+                : (Order.collateralTokenAmount, Order.base);
             uint256 storedAmount = IDeposits(vault).getDeposit(
-                msg.sender,
                 Order.orderID
             );
             require(
                 usedToken ==
-                    IDeposits(vault).getTokenUsed(msg.sender, Order.orderID)
+                    IDeposits(vault).getTokenUsed(Order.orderID),
+                "OrderBook: invalid used token"
             );
             uint256 amountUsedOld = _allOrders[Order.orderID].loanTokenAmount +
                 _allOrders[Order.orderID].collateralTokenAmount;
@@ -202,7 +178,6 @@ contract OrderBookOrderPlacement is OrderBookEvents, OrderBookStorage {
             }
         }
         _allOrders[Order.orderID] = Order;
-
         emit OrderAmended(
             msg.sender,
             Order.orderType,
@@ -214,13 +189,12 @@ contract OrderBookOrderPlacement is OrderBookEvents, OrderBookStorage {
     }
 
     function cancelOrder(bytes32 orderID) public {
-        require(!_allOrders[orderID].isCancelled, "inactive order");
+        require(!_allOrders[orderID].isCancelled, "OrderBook: inactive order");
         _allOrders[orderID].isCancelled = true;
-        _histOrders[msg.sender].remove(orderID);
+        require(_histOrders[msg.sender].remove(orderID), "OrderBook: not owner of order");
         _allOrderIDs.remove(orderID);
         if (_allOrders[orderID].orderType == IOrderBook.OrderType.LIMIT_OPEN) {
             address usedToken = IDeposits(vault).getTokenUsed(
-                msg.sender,
                 orderID
             );
             IDeposits(vault).withdrawToTrader(msg.sender, orderID);
@@ -229,40 +203,41 @@ contract OrderBookOrderPlacement is OrderBookEvents, OrderBookStorage {
     }
 
     function cancelOrderProtocol(bytes32 orderID) public {
-        address trader = _allOrders[orderID].trader;
-        require(!_allOrders[orderID].isCancelled, "inactive order");
-        uint256 amountUsed = _allOrders[orderID].collateralTokenAmount +
-            _allOrders[orderID].loanTokenAmount;
+        IOrderBook.Order memory order = _allOrders[orderID];
+        address trader = order.trader;
+        require(!order.isCancelled, "OrderBook: inactive order");
+        uint256 amountUsed = order.collateralTokenAmount +
+            order.loanTokenAmount;
         uint256 swapRate;
-        if (_allOrders[orderID].orderType == IOrderBook.OrderType.LIMIT_OPEN) {
+        if (order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
             swapRate = queryRateReturn(
-                _allOrders[orderID].loanTokenAddress,
-                _allOrders[orderID].base,
+                order.loanTokenAddress,
+                order.base,
                 amountUsed
             );
         } else {
             swapRate = queryRateReturn(
-                _allOrders[orderID].base,
-                _allOrders[orderID].loanTokenAddress,
+                order.base,
+                order.loanTokenAddress,
                 amountUsed
             );
         }
         require(
             (
-                _allOrders[orderID].amountReceived > swapRate
-                    ? (_allOrders[orderID].amountReceived - swapRate) >
-                        (_allOrders[orderID].amountReceived * 25) / 100
-                    : (swapRate - _allOrders[orderID].amountReceived) >
+                order.amountReceived > swapRate
+                    ? (order.amountReceived - swapRate) >
+                        (order.amountReceived * 25) / 100
+                    : (swapRate - order.amountReceived) >
                         (swapRate * 25) / 100
-            ) || _orderExpiration[orderID] < block.timestamp,
-            "no conditions met"
+            ) || order.timeTillExpiration < block.timestamp,
+            "OrderBook: no conditions met"
         );
 
-        _allOrders[orderID].isCancelled = true;
+        order.isCancelled = true;
         _histOrders[trader].remove(orderID);
         _allOrderIDs.remove(orderID);
-        if (_allOrders[orderID].orderType == IOrderBook.OrderType.LIMIT_OPEN) {
-            address usedToken = IDeposits(vault).getTokenUsed(trader, orderID);
+        if (order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
+            address usedToken = IDeposits(vault).getTokenUsed(orderID);
             IDeposits(vault).withdrawToTrader(trader, orderID);
         }
         emit OrderCancelled(trader, orderID);
@@ -270,9 +245,5 @@ contract OrderBookOrderPlacement is OrderBookEvents, OrderBookStorage {
 
     function changeStopType(bool stop) public {
         _useOracle[msg.sender] = stop;
-    }
-
-    function minimumAmount() public view returns (uint256) {
-        return MIN_AMOUNT_IN_USDC;
     }
 }

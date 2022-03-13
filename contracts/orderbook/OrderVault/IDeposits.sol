@@ -8,7 +8,7 @@ interface IDeposits {
         address token
     ) external;
 
-    function withdraw(address trader, bytes32 orderID) external;
+    function withdraw(bytes32 orderID) external;
 
     function withdrawToTrader(address trader, bytes32 orderID) external;
 
@@ -18,12 +18,12 @@ interface IDeposits {
         uint256 amount
     ) external;
 
-    function getDeposit(address trader, bytes32 orderID)
+    function getDeposit(bytes32 orderID)
         external
         view
         returns (uint256);
 
-    function getTokenUsed(address trader, bytes32 orderID)
+    function getTokenUsed(bytes32 orderID)
         external
         view
         returns (address);

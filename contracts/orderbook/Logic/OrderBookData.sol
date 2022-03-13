@@ -2,33 +2,36 @@ pragma solidity ^0.8.0;
 import "../Storage/OrderBookEvents.sol";
 import "../Storage/OrderBookStorage.sol";
 
+interface IERC {
+    function approve(address spender, uint amount) external; //for USDT
+}
+
 contract OrderBookData is OrderBookEvents, OrderBookStorage {
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
     function initialize(address target) public onlyOwner {
-        _setTarget(this.getProtocolAddress.selector, target);
         _setTarget(this.adjustAllowance.selector, target);
         _setTarget(this.getActiveOrders.selector, target);
+        _setTarget(this.getActiveOrdersLimited.selector, target);
         _setTarget(this.getOrderByOrderID.selector, target);
         _setTarget(this.getActiveOrderIDs.selector, target);
         _setTarget(this.getTotalOrders.selector, target);
+        _setTarget(this.getActiveOrders.selector, target);
         _setTarget(this.getTotalActiveOrders.selector, target);
         _setTarget(this.getOrders.selector, target);
+        _setTarget(this.getOrdersLimited.selector, target);
         _setTarget(this.getActiveTrades.selector, target);
-    }
-
-    function getProtocolAddress() public view returns (address) {
-        return protocol;
     }
 
     function adjustAllowance(address spender, address token) public {
         require(
-            IBZx(protocol).isLoanPool(spender) ||
-                protocol == spender ||
+            protocol.isLoanPool(spender) ||
+                address(protocol) == spender ||
                 vault == spender,
-            "invalid spender"
+            "OrderBook: invalid spender"
         );
-        IERC20Metadata(token).approve(spender, type(uint256).max);
+        IERC(token).approve(spender, 0); //needs to be zeroed out because of different iterations of ERC-20 standard
+        IERC(token).approve(spender, type(uint256).max);
     }
 
     function getActiveOrders(address trader)
@@ -39,8 +42,23 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
         bytes32[] memory idSet = _histOrders[trader].values();
 
         fullList = new IOrderBook.Order[](idSet.length);
-        for (uint256 i = 0; i < idSet.length; i++) {
+        for (uint256 i = 0; i < idSet.length;) {
             fullList[i] = _allOrders[idSet[i]];
+            unchecked { ++i; }
+        }
+        return fullList;
+    }
+
+    function getActiveOrdersLimited(address trader, uint start, uint end)
+        public
+        view
+        returns (IOrderBook.Order[] memory fullList)
+    {
+        require(end<=_histOrders[trader].length(), "OrderBook: end is past max orders");
+        fullList = new IOrderBook.Order[](end-start);
+        for (uint256 i = start; i < end;) {
+            fullList[i] = _allOrders[_histOrders[trader].at(i)];
+            unchecked { ++i; }
         }
         return fullList;
     }
@@ -77,8 +95,23 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
         bytes32[] memory idSet = _allOrderIDs.values();
 
         fullList = new IOrderBook.Order[](idSet.length);
-        for (uint256 i = 0; i < idSet.length; i++) {
+        for (uint256 i = 0; i < idSet.length;) {
             fullList[i] = getOrderByOrderID(idSet[i]);
+            unchecked { ++i; }
+        }
+        return fullList;
+    }
+
+    function getOrdersLimited(uint start, uint end)
+        public
+        view
+        returns (IOrderBook.Order[] memory fullList)
+    {
+        require(end<=_allOrderIDs.length(), "OrderBook: end is past max orders");
+        fullList = new IOrderBook.Order[](end-start);
+        for (uint256 i = start; i < end;) {
+            fullList[i] = _allOrders[_allOrderIDs.at(i)];
+            unchecked { ++i; }
         }
         return fullList;
     }

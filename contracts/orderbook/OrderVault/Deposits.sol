@@ -9,15 +9,15 @@ contract Deposits is Ownable {
         uint256 depositAmount;
     }
     mapping(bytes32 => DepositInfo) internal _depositInfo;
-    address public OrderBook = address(0);
+    address public orderBook = address(0);
 
     function deposit(
         bytes32 orderID,
         uint256 tokenAmount,
         address trader,
         address token
-    ) public {
-        require(msg.sender == OrderBook, "unauthorized");
+    ) external {
+        require(msg.sender == orderBook, "unauthorized");
         _depositInfo[orderID].depositToken = token;
         _depositInfo[orderID].depositAmount = tokenAmount;
         SafeERC20.safeTransferFrom(
@@ -28,12 +28,12 @@ contract Deposits is Ownable {
         );
     }
 
-    function SetOrderBook(address n) public onlyOwner {
-        OrderBook = n;
+    function setOrderBook(address n) external onlyOwner {
+        orderBook = n;
     }
 
-    function withdraw(address trader, bytes32 orderID) public {
-        require(msg.sender == OrderBook, "unauthorized");
+    function withdraw(bytes32 orderID) external {
+        require(msg.sender == orderBook, "unauthorized");
         SafeERC20.safeTransfer(
             IERC20(_depositInfo[orderID].depositToken),
             msg.sender,
@@ -42,11 +42,11 @@ contract Deposits is Ownable {
         _depositInfo[orderID].depositAmount = 0;
     }
 
-    function withdrawToTrader(address trader, bytes32 orderID) public {
-        require(msg.sender == OrderBook, "unauthorized");
+    function withdrawToTrader(address trader, bytes32 orderID) external {
+        require(msg.sender == orderBook, "unauthorized");
         SafeERC20.safeTransfer(
             IERC20(_depositInfo[orderID].depositToken),
-            msg.sender,
+            trader,
             _depositInfo[orderID].depositAmount
         );
         _depositInfo[orderID].depositAmount = 0;
@@ -56,8 +56,8 @@ contract Deposits is Ownable {
         address trader,
         bytes32 orderID,
         uint256 amount
-    ) public {
-        require(msg.sender == OrderBook, "unauthorized");
+    ) external {
+        require(msg.sender == orderBook, "unauthorized");
         SafeERC20.safeTransfer(
             IERC20(_depositInfo[orderID].depositToken),
             trader,
@@ -66,16 +66,16 @@ contract Deposits is Ownable {
         _depositInfo[orderID].depositAmount -= amount;
     }
 
-    function getDeposit(address trader, bytes32 orderID)
-        public
+    function getDeposit(bytes32 orderID)
+        external
         view
         returns (uint256)
     {
         return _depositInfo[orderID].depositAmount;
     }
 
-    function getTokenUsed(address trader, bytes32 orderID)
-        public
+    function getTokenUsed(bytes32 orderID)
+        external
         view
         returns (address)
     {
