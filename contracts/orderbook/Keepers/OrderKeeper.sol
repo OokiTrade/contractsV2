@@ -39,7 +39,7 @@ contract OrderKeeper {
         return (upkeepNeeded, performData);
     }
 
-    function performUpKeep(bytes calldata performData) public {
+    function performUpKeep(bytes calldata performData) external {
         bytes32 orderId = abi.decode(performData, (bytes32));
         //emit OrderExecuted(trader,orderId);
         factory.executeOrder(orderId);

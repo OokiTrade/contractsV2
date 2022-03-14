@@ -10,7 +10,7 @@ contract OrderKeeperClear {
     }
 
     function checkUpKeep(bytes calldata checkData)
-        public
+        external
         view
         returns (bool upkeepNeeded, bytes memory performData)
     {
@@ -36,7 +36,7 @@ contract OrderKeeperClear {
         return (upkeepNeeded, performData);
     }
 
-    function performUpKeep(bytes calldata performData) public {
+    function performUpKeep(bytes calldata performData) external {
         bytes32 orderId = abi.decode(performData, (bytes32));
         //emit OrderExecuted(trader,orderId);
         factory.cancelOrderProtocol(orderId);

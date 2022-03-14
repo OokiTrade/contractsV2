@@ -12,6 +12,8 @@ interface IDeposits {
 
     function withdrawToTrader(address trader, bytes32 orderID) external;
 
+    function refund(bytes32 orderID, uint256 amount) external;
+
     function partialWithdraw(
         address trader,
         bytes32 orderID,

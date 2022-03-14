@@ -42,6 +42,8 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
                 (bytes32)
             );
             _activeTrades[internalOrder.trader].add(loanID);
+        } else if (!result) {
+            IDeposits(vault).refund(internalOrder.orderID, (internalOrder.loanTokenAmount + internalOrder.collateralTokenAmount)); //unlikely to be needed
         }
     }
 
@@ -140,7 +142,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         }
     }
 
-    function prelimCheck(bytes32 orderID) public returns (bool) {
+    function prelimCheck(bytes32 orderID) external returns (bool) {
         IOrderBook.Order memory order = _allOrders[orderID];
         uint256 amountUsed;
         address srcToken;
@@ -286,7 +288,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         }
     }
 
-    function executeOrder(bytes32 orderID) public {
+    function executeOrder(bytes32 orderID) external {
         require(!_allOrders[orderID].isCancelled, "OrderBook: non active");
         IOrderBook.Order memory order = _allOrders[orderID];
         address srcToken;
@@ -414,7 +416,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         }
     }
 
-    function setVaultAddress(address nVault) public onlyOwner {
+    function setVaultAddress(address nVault) external onlyOwner {
         vault = nVault;
     }
 }

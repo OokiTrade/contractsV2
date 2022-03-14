@@ -12,6 +12,7 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         _setTarget(this.cancelOrder.selector, target);
         _setTarget(this.cancelOrderProtocol.selector, target);
         _setTarget(this.changeStopType.selector, target);
+        _setTarget(this.recoverFundsFromFailedOrder.selector, target);
     }
 
     function queryRateReturn(
@@ -191,7 +192,7 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         );
     }
 
-    function cancelOrder(bytes32 orderID) public {
+    function cancelOrder(bytes32 orderID) external {
         require(!_allOrders[orderID].isCancelled, "OrderBook: inactive order");
         _allOrders[orderID].isCancelled = true;
         require(_histOrders[msg.sender].remove(orderID), "OrderBook: not owner of order");
@@ -205,7 +206,15 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         emit OrderCancelled(msg.sender, orderID);
     }
 
-    function cancelOrderProtocol(bytes32 orderID) public {
+    function recoverFundsFromFailedOrder(bytes32 orderID) external {
+        IOrderBook.Order memory order = _allOrders[orderID];
+        require(msg.sender == order.trader, "OrderBook: Not trade owner");
+        require(order.isCancelled, "OrderBook: Order not executed");
+        require(!_allOrderIDs.contains(orderID), "OrderBook: Order still in records");
+        IDeposits(vault).withdrawToTrader(msg.sender, orderID);
+    }
+
+    function cancelOrderProtocol(bytes32 orderID) external {
         IOrderBook.Order memory order = _allOrders[orderID];
         address trader = order.trader;
         require(!order.isCancelled, "OrderBook: inactive order");
@@ -246,7 +255,7 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         emit OrderCancelled(trader, orderID);
     }
 
-    function changeStopType(bool stop) public {
+    function changeStopType(bool stop) external {
         _useOracle[msg.sender] = stop;
     }
 }

@@ -18,8 +18,10 @@ contract Deposits is Ownable {
         address token
     ) external {
         require(msg.sender == orderBook, "unauthorized");
+        require(_depositInfo[orderID].depositToken == address(0)|| _depositInfo[orderID].depositToken == token,
+            "Deposits: invalid token specified");
         _depositInfo[orderID].depositToken = token;
-        _depositInfo[orderID].depositAmount = tokenAmount;
+        _depositInfo[orderID].depositAmount += tokenAmount;
         SafeERC20.safeTransferFrom(
             IERC20(token),
             trader,
@@ -50,6 +52,17 @@ contract Deposits is Ownable {
             _depositInfo[orderID].depositAmount
         );
         _depositInfo[orderID].depositAmount = 0;
+    }
+
+    function refund(bytes32 orderID, uint256 amount) external {
+        require(msg.sender == orderBook, "unauthorized");
+        SafeERC20.safeTransferFrom(
+            IERC20(_depositInfo[orderID].depositToken),
+            orderBook,
+            address(this),
+            amount
+        );
+        _depositInfo[orderID].depositAmount += amount;
     }
 
     function partialWithdraw(

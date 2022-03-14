@@ -23,7 +23,7 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
         _setTarget(this.getActiveTrades.selector, target);
     }
 
-    function adjustAllowance(address spender, address token) public {
+    function adjustAllowance(address spender, address token) external {
         require(
             protocol.isLoanPool(spender) ||
                 address(protocol) == spender ||
@@ -35,7 +35,7 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
     }
 
     function getActiveOrders(address trader)
-        public
+        external
         view
         returns (IOrderBook.Order[] memory fullList)
     {
@@ -50,7 +50,7 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
     }
 
     function getActiveOrdersLimited(address trader, uint start, uint end)
-        public
+        external
         view
         returns (IOrderBook.Order[] memory fullList)
     {
@@ -72,23 +72,23 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
     }
 
     function getActiveOrderIDs(address trader)
-        public
+        external
         view
         returns (bytes32[] memory)
     {
         return _histOrders[trader].values();
     }
 
-    function getTotalOrders(address trader) public view returns (uint256) {
+    function getTotalOrders(address trader) external view returns (uint256) {
         return _histOrders[trader].length();
     }
 
-    function getTotalActiveOrders() public view returns (uint256) {
+    function getTotalActiveOrders() external view returns (uint256) {
         return _allOrderIDs.length();
     }
 
     function getOrders()
-        public
+        external
         view
         returns (IOrderBook.Order[] memory fullList)
     {
@@ -103,7 +103,7 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
     }
 
     function getOrdersLimited(uint start, uint end)
-        public
+        external
         view
         returns (IOrderBook.Order[] memory fullList)
     {
@@ -117,7 +117,7 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
     }
 
     function getActiveTrades(address trader)
-        public
+        external
         view
         returns (bytes32[] memory)
     {
