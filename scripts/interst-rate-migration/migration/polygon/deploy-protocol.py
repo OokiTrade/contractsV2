@@ -31,7 +31,7 @@ settingsImpl = Contract.from_abi("settingsImpl", address="0xBf2c07A86b73c6E33876
 
 ## LoanOpenings
 #openingsImpl = LoanOpenings.deploy({'from': deployer})
-openingsImpl = Contract.from_abi("openingsImpl", address="0x2767078d232f50A943d0BA2dF0B56690afDBB287", abi=LoanOpenings.abi)
+openingsImpl = Contract.from_abi("openingsImpl", address="0xF082901C5d59846fbFC699FBB87c6D0f538f099d", abi=LoanOpenings.abi)
 
 ## LoanMaintenance
 #maintenace2Impl = LoanMaintenance_2.deploy({'from': deployer})
