@@ -85,7 +85,7 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     }
 
     function withdrawFrom3Pool(uint256 amount)
-        public onlyOwner
+        public onlyGuardian
     {
         _withdrawFrom3Pool(amount);
     }
