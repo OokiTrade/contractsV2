@@ -59,4 +59,22 @@ contract PausableGuardian is Ownable {
             guardian := sload(Pausable_GuardianAddress)
         }
     }
+
+    function pause(bytes4 [] calldata sig)
+        external
+        onlyGuardian
+    {
+        for(uint256 i = 0; i < sig.length; ++i){
+            toggleFunctionPause(sig[i]);
+        }
+    }
+
+    function unpause(bytes4 [] calldata sig)
+        external
+        onlyGuardian
+    {
+        for(uint256 i = 0; i < sig.length; ++i){
+            toggleFunctionUnPause(sig[i]);
+        }
+    }
 }
