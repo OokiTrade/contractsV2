@@ -18,7 +18,7 @@ contract OrderBookMarketOrders is OrderBookEvents, OrderBookStorage {
         address iToken,
         address base,
         bytes memory loanDataBytes
-    ) external {
+    ) external pausable {
         _executeMarketOpen(
             msg.sender,
             loanID,
@@ -36,7 +36,7 @@ contract OrderBookMarketOrders is OrderBookEvents, OrderBookStorage {
         uint256 amount,
         bool iscollateral,
         bytes memory loanDataBytes
-    ) external {
+    ) external pausable {
         _executeMarketClose(
             msg.sender,
             loanID,

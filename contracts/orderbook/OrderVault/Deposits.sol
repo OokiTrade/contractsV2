@@ -1,9 +1,9 @@
 pragma solidity ^0.8.0;
-import "@openzeppelin-4.3.2/access/Ownable.sol";
+import "../../governance/PausableGuardian_0_8.sol";
 import "@openzeppelin-4.3.2/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin-4.3.2/token/ERC20/extensions/IERC20Metadata.sol";
 
-contract Deposits is Ownable {
+contract Deposits is PausableGuardian_0_8 {
     struct DepositInfo {
         address depositToken;
         uint256 depositAmount;
@@ -16,7 +16,7 @@ contract Deposits is Ownable {
         uint256 tokenAmount,
         address trader,
         address token
-    ) external {
+    ) external pausable {
         require(msg.sender == orderBook, "unauthorized");
         require(_depositInfo[orderID].depositToken == address(0)|| _depositInfo[orderID].depositToken == token,
             "Deposits: invalid token specified");
@@ -34,7 +34,7 @@ contract Deposits is Ownable {
         orderBook = n;
     }
 
-    function withdraw(bytes32 orderID) external {
+    function withdraw(bytes32 orderID) external pausable {
         require(msg.sender == orderBook, "unauthorized");
         SafeERC20.safeTransfer(
             IERC20(_depositInfo[orderID].depositToken),
@@ -44,7 +44,7 @@ contract Deposits is Ownable {
         _depositInfo[orderID].depositAmount = 0;
     }
 
-    function withdrawToTrader(address trader, bytes32 orderID) external {
+    function withdrawToTrader(address trader, bytes32 orderID) external pausable {
         require(msg.sender == orderBook, "unauthorized");
         SafeERC20.safeTransfer(
             IERC20(_depositInfo[orderID].depositToken),
@@ -54,7 +54,7 @@ contract Deposits is Ownable {
         _depositInfo[orderID].depositAmount = 0;
     }
 
-    function refund(bytes32 orderID, uint256 amount) external {
+    function refund(bytes32 orderID, uint256 amount) external pausable {
         require(msg.sender == orderBook, "unauthorized");
         SafeERC20.safeTransferFrom(
             IERC20(_depositInfo[orderID].depositToken),
@@ -69,7 +69,7 @@ contract Deposits is Ownable {
         address trader,
         bytes32 orderID,
         uint256 amount
-    ) external {
+    ) external pausable {
         require(msg.sender == orderBook, "unauthorized");
         SafeERC20.safeTransfer(
             IERC20(_depositInfo[orderID].depositToken),

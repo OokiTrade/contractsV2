@@ -82,7 +82,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         return protocol.loans(ID).active;
     }
 
-    function clearOrder(bytes32 orderID) public view returns (bool) {
+    function clearOrder(bytes32 orderID) public view pausable returns (bool) {
         if (_allOrders[orderID].timeTillExpiration < block.timestamp) {
             return true;
         }
@@ -288,7 +288,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         }
     }
 
-    function executeOrder(bytes32 orderID) external {
+    function executeOrder(bytes32 orderID) external pausable {
         require(!_allOrders[orderID].isCancelled, "OrderBook: non active");
         IOrderBook.Order memory order = _allOrders[orderID];
         address srcToken;

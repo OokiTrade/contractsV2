@@ -50,7 +50,7 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         return x >= 0 ? x : -x;
     }
 
-    function placeOrder(IOrderBook.Order calldata Order) external {
+    function placeOrder(IOrderBook.Order calldata Order) external pausable {
         require(Order.loanDataBytes.length < 3500, "OrderBook: loanDataBytes too complex");
         require(
             _abs(
@@ -113,7 +113,7 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         );
     }
 
-    function amendOrder(IOrderBook.Order calldata Order) external {
+    function amendOrder(IOrderBook.Order calldata Order) external pausable {
         require(Order.loanDataBytes.length < 3500, "OrderBook: loanDataBytes too complex");
         require(
             _abs(
@@ -192,7 +192,7 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         );
     }
 
-    function cancelOrder(bytes32 orderID) external {
+    function cancelOrder(bytes32 orderID) external pausable {
         require(!_allOrders[orderID].isCancelled, "OrderBook: inactive order");
         _allOrders[orderID].isCancelled = true;
         require(_histOrders[msg.sender].remove(orderID), "OrderBook: not owner of order");
@@ -206,7 +206,7 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         emit OrderCancelled(msg.sender, orderID);
     }
 
-    function recoverFundsFromFailedOrder(bytes32 orderID) external {
+    function recoverFundsFromFailedOrder(bytes32 orderID) external pausable {
         IOrderBook.Order memory order = _allOrders[orderID];
         require(msg.sender == order.trader, "OrderBook: Not trade owner");
         require(order.isCancelled, "OrderBook: Order not executed");
@@ -214,7 +214,7 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         IDeposits(vault).withdrawToTrader(msg.sender, orderID);
     }
 
-    function cancelOrderProtocol(bytes32 orderID) external {
+    function cancelOrderProtocol(bytes32 orderID) external pausable {
         IOrderBook.Order memory order = _allOrders[orderID];
         address trader = order.trader;
         require(!order.isCancelled, "OrderBook: inactive order");
@@ -255,7 +255,7 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         emit OrderCancelled(trader, orderID);
     }
 
-    function changeStopType(bool stop) external {
+    function changeStopType(bool stop) external pausable {
         _useOracle[msg.sender] = stop;
     }
 }

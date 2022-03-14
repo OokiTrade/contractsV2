@@ -23,7 +23,7 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
         _setTarget(this.getActiveTrades.selector, target);
     }
 
-    function adjustAllowance(address spender, address token) external {
+    function adjustAllowance(address spender, address token) external pausable {
         require(
             protocol.isLoanPool(spender) ||
                 address(protocol) == spender ||

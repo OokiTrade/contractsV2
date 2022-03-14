@@ -1,8 +1,9 @@
 pragma solidity ^0.8.0;
 import "../IOrderBook.sol";
 import "@openzeppelin-4.3.2/token/ERC20/extensions/IERC20Metadata.sol";
+import "../../governance/PausableGuardian_0_8.sol";
 
-contract OrderKeeperClear {
+contract OrderKeeperClear is PausableGuardian_0_8 {
     IOrderBook public factory;
 
     constructor(IOrderBook factoryAddress) {
@@ -36,7 +37,7 @@ contract OrderKeeperClear {
         return (upkeepNeeded, performData);
     }
 
-    function performUpKeep(bytes calldata performData) external {
+    function performUpKeep(bytes calldata performData) external pausable {
         bytes32 orderId = abi.decode(performData, (bytes32));
         //emit OrderExecuted(trader,orderId);
         factory.cancelOrderProtocol(orderId);
