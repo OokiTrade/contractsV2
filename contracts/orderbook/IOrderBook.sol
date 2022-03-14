@@ -51,6 +51,4 @@ interface IOrderBook {
     function prelimCheck(bytes32 orderID) external returns (bool);
 
     function getTotalActiveOrders() external view returns (uint256);
-
-    function getActiveTrades(address trader) external view returns(bytes32[] memory);
 }

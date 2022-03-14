@@ -8,7 +8,6 @@ contract OrderBookEvents is PausableGuardian_0_8 {
     mapping(bytes32 => IOrderBook.Order) internal _allOrders;
     mapping(bytes32 => uint256) internal _orderExpiration;
     mapping(address => EnumerableSet.Bytes32Set) internal _histOrders;
-    mapping(address => EnumerableSet.Bytes32Set) internal _activeTrades;
     mapping(address => bool) internal _useOracle;
     EnumerableSet.Bytes32Set internal _allOrderIDs;
 

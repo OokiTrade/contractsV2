@@ -32,17 +32,11 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
                 internalOrder.loanTokenAmount,
                 internalOrder.collateralTokenAmount,
                 internalOrder.base,
-                address(this),
+                internalOrder.trader,
                 internalOrder.loanDataBytes
             )
         );
-        if (result && internalOrder.loanID==0) {
-            (bytes32 loanID) = abi.decode(
-                data,
-                (bytes32)
-            );
-            _activeTrades[internalOrder.trader].add(loanID);
-        } else if (!result) {
+        if (!result) {
             IDeposits(vault).refund(internalOrder.orderID, (internalOrder.loanTokenAmount + internalOrder.collateralTokenAmount)); //unlikely to be needed
         }
     }
@@ -55,9 +49,6 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         address collateralAddress,
         bytes memory loanDataBytes
     ) internal {
-        if (protocol.getLoan(loanID).collateral == amount) {
-            _activeTrades[trader].remove(loanID);
-        }
         address(protocol).call(
             abi.encodeWithSelector(
                 protocol.closeWithSwap.selector,

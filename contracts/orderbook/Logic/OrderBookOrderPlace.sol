@@ -26,24 +26,21 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         return (executionPrice * amount) / precision;
     }
 
-    function _collateralTokenMatch(IOrderBook.Order memory checkOrder)
+    function _caseChecks(bytes32 ID, address collateral, address loanToken)
         internal
         view
         returns (bool)
     {
-        return
-            protocol.getLoan(checkOrder.loanID).collateralToken ==
-            checkOrder.base;
+        return 
+            protocol.getLoan(ID).loanToken ==
+            loanToken &&
+            protocol.getLoan(ID).collateralToken ==
+            collateral &&
+            protocol.delegatedManagers(ID, address(this));
     }
 
-    function _loanTokenMatch(IOrderBook.Order memory checkOrder)
-        internal
-        view
-        returns (bool)
-    {
-        return
-            protocol.getLoan(checkOrder.loanID).loanToken ==
-            checkOrder.loanTokenAddress;
+    function _isActiveLoan(bytes32 ID) internal view returns (bool) {
+        return protocol.loans(ID).active;
     }
 
     function _abs(int256 x) private pure returns (int256) {
@@ -66,9 +63,9 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         );
         require(
             Order.loanID != 0
-                ? _collateralTokenMatch(Order) && _loanTokenMatch(Order)
+                ? _caseChecks(Order.loanID, Order.base, Order.loanTokenAddress)
                 : true,
-            "OrderBook: incorrect collateral and/or loan token specified"
+            "OrderBook: cases not passed"
         );
         require(
             Order.orderType == IOrderBook.OrderType.LIMIT_OPEN
@@ -79,8 +76,8 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         require(
             Order.orderType == IOrderBook.OrderType.LIMIT_OPEN
                 ? Order.loanID == 0 ||
-                    _activeTrades[msg.sender].contains(Order.loanID)
-                : _activeTrades[msg.sender].contains(Order.loanID),
+                    _isActiveLoan(Order.loanID)
+                : _isActiveLoan(Order.loanID),
             "OrderBook: inactive loan"
         );
         (uint256 amountUsed, address usedToken) = Order.loanTokenAmount > Order.collateralTokenAmount
@@ -147,8 +144,8 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         require(
             Order.orderType == IOrderBook.OrderType.LIMIT_OPEN
                 ? Order.loanID == 0 ||
-                    _activeTrades[msg.sender].contains(Order.loanID)
-                : _activeTrades[msg.sender].contains(Order.loanID),
+                    _isActiveLoan(Order.loanID)
+                : _isActiveLoan(Order.loanID),
             "OrderBook: inactive loan"
         );
         require(Order.trader == msg.sender, "OrderBook: invalid trader");

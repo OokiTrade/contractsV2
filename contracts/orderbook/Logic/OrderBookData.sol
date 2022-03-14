@@ -20,7 +20,6 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
         _setTarget(this.getTotalActiveOrders.selector, target);
         _setTarget(this.getOrders.selector, target);
         _setTarget(this.getOrdersLimited.selector, target);
-        _setTarget(this.getActiveTrades.selector, target);
     }
 
     function adjustAllowance(address spender, address token) external pausable {
@@ -114,13 +113,5 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
             unchecked { ++i; }
         }
         return fullList;
-    }
-
-    function getActiveTrades(address trader)
-        external
-        view
-        returns (bytes32[] memory)
-    {
-        return _activeTrades[trader].values();
     }
 }
