@@ -726,7 +726,8 @@ contract StakingV1_1 is StakingState, StakingConstants, PausableGuardian {
     }
 
 
-    function rescue(IERC20 _token, uint256 amount, address receiver) public onlyOwner {
+    function rescue(IERC20 _token, uint256 amount, address receiver) public onlyGuardian {
+        require(address(_token) == CRV || _token == curve3Crv, "Invalid token");
         SafeERC20.safeTransfer(_token, receiver, amount);
     }
 }
