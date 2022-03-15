@@ -26,10 +26,13 @@ contract OrderKeeperClear is PausableGuardian_0_8 {
         }
         IOrderBook.Order[] memory listOfMainOrders = factory
             .getOrdersLimited(start, end);
+        bytes32[] memory clearable = new bytes32[](7);
+        uint iter = 0;
         for (uint256 x = 0; x < listOfMainOrders.length;) {
             if (factory.clearOrder(listOfMainOrders[x].orderID)) {
                 upkeepNeeded = true;
-                performData = abi.encode(listOfMainOrders[x].orderID);
+                clearable[iter] = listOfMainOrders[x].orderID;
+                ++iter;
                 return (upkeepNeeded, performData);
             }
             unchecked { ++x; }
@@ -38,8 +41,11 @@ contract OrderKeeperClear is PausableGuardian_0_8 {
     }
 
     function performUpKeep(bytes calldata performData) external pausable {
-        bytes32 orderId = abi.decode(performData, (bytes32));
+        bytes32[] memory orderId = abi.decode(performData, (bytes32[]));
         //emit OrderExecuted(trader,orderId);
-        factory.cancelOrderProtocol(orderId);
+        for (uint i;i<orderId.length;) {
+            factory.cancelOrderProtocol(orderId[i]);
+            unchecked { ++i; }
+        }
     }
 }

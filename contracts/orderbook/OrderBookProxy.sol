@@ -3,9 +3,6 @@ import "./Storage/OrderBookStorage.sol";
 import "./Storage/OrderBookEvents.sol";
 
 contract OrderBookProxy is OrderBookEvents, OrderBookStorage {
-    constructor(IBZx _contract) {
-        protocol = _contract;
-    }
 
     fallback() external payable {
         if (gasleft() <= 2300) {

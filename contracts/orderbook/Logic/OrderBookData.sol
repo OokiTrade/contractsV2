@@ -86,6 +86,16 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
         return _allOrderIDs.length();
     }
 
+    function getOrderIDsLimited(uint start, uint end) external view returns (bytes32[] memory fullList) {
+        require(end<=_allOrderIDs.length(), "OrderBook: end is past max orders");
+        fullList = new bytes32[](end-start);
+        for (uint256 i = start; i < end;) {
+            fullList[i] = _allOrderIDs.at(i);
+            unchecked { ++i; }
+        }
+        return fullList;
+    }
+
     function getOrders()
         external
         view

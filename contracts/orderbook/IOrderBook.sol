@@ -6,6 +6,13 @@ interface IOrderBook {
         LIMIT_CLOSE,
         MARKET_STOP
     }
+
+    enum OrderStatus {
+        ACTIVE,
+        CANCELLED,
+        EXECUTED
+    }
+
     struct Order {
         bytes32 loanID;
         bytes32 orderID;
@@ -13,13 +20,13 @@ interface IOrderBook {
         uint256 leverage;
         uint256 loanTokenAmount;
         uint256 collateralTokenAmount;
-        uint64 timeTillExpiration;
         address trader;
         address iToken;
         address loanTokenAddress;
         address base;
         OrderType orderType;
-        bool isCancelled;
+        OrderStatus status;
+        uint64 timeTillExpiration;
         bool isCollateral;
         bytes loanDataBytes;
     }
@@ -51,4 +58,6 @@ interface IOrderBook {
     function prelimCheck(bytes32 orderID) external returns (bool);
 
     function getTotalActiveOrders() external view returns (uint256);
+
+    function getOrderIDsLimited(uint256 start, uint256 end) external view returns(bytes32[] memory);
 }

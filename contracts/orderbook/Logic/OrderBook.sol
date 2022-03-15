@@ -17,27 +17,26 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         _setTarget(this.queryRateReturn.selector, target);
         _setTarget(this.priceCheck.selector, target);
         _setTarget(this.executeOrder.selector, target);
-        _setTarget(this.setVaultAddress.selector, target);
     }
 
     function _executeTradeOpen(
-        IOrderBook.Order memory internalOrder
+        IOrderBook.Order memory order
     ) internal {
-        IDeposits(vault).withdraw(internalOrder.orderID);
-        (bool result, bytes memory data) = internalOrder.iToken.call(
+        IDeposits(vault).withdraw(order.orderID);
+        (bool result, bytes memory data) = order.iToken.call(
             abi.encodeWithSelector(
-                IToken(internalOrder.iToken).marginTrade.selector,
-                internalOrder.loanID,
-                internalOrder.leverage,
-                internalOrder.loanTokenAmount,
-                internalOrder.collateralTokenAmount,
-                internalOrder.base,
-                internalOrder.trader,
-                internalOrder.loanDataBytes
+                IToken(order.iToken).marginTrade.selector,
+                order.loanID,
+                order.leverage,
+                order.loanTokenAmount,
+                order.collateralTokenAmount,
+                order.base,
+                order.trader,
+                order.loanDataBytes
             )
         );
         if (!result) {
-            IDeposits(vault).refund(internalOrder.orderID, (internalOrder.loanTokenAmount + internalOrder.collateralTokenAmount)); //unlikely to be needed
+            IDeposits(vault).refund(order.orderID, (order.loanTokenAmount + order.collateralTokenAmount)); //unlikely to be needed
         }
     }
 
@@ -74,31 +73,32 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
     }
 
     function clearOrder(bytes32 orderID) public view pausable returns (bool) {
-        if (_allOrders[orderID].timeTillExpiration < block.timestamp) {
+        IOrderBook.Order memory order = _allOrders[orderID];
+        if (order.timeTillExpiration < block.timestamp) {
             return true;
         }
-        uint256 amountUsed = _allOrders[orderID].collateralTokenAmount +
-            _allOrders[orderID].loanTokenAmount;
+        uint256 amountUsed = order.collateralTokenAmount +
+            order.loanTokenAmount;
         uint256 swapRate;
-        if (_allOrders[orderID].orderType == IOrderBook.OrderType.LIMIT_OPEN) {
+        if (order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
             swapRate = queryRateReturn(
-                _allOrders[orderID].loanTokenAddress,
-                _allOrders[orderID].base,
+                order.loanTokenAddress,
+                order.base,
                 amountUsed
             );
         } else {
             swapRate = queryRateReturn(
-                _allOrders[orderID].base,
-                _allOrders[orderID].loanTokenAddress,
+                order.base,
+                order.loanTokenAddress,
                 amountUsed
             );
         }
         if (
             (
-                _allOrders[orderID].amountReceived > swapRate
-                    ? (_allOrders[orderID].amountReceived - swapRate) >
-                        (_allOrders[orderID].amountReceived * 25) / 100
-                    : (swapRate - _allOrders[orderID].amountReceived) >
+                order.amountReceived > swapRate
+                    ? (order.amountReceived - swapRate) >
+                        (order.amountReceived * 25) / 100
+                    : (swapRate - order.amountReceived) >
                         (swapRate * 25) / 100
             )
         ) {
@@ -280,8 +280,8 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
     }
 
     function executeOrder(bytes32 orderID) external pausable {
-        require(!_allOrders[orderID].isCancelled, "OrderBook: non active");
         IOrderBook.Order memory order = _allOrders[orderID];
+        require(order.status==IOrderBook.OrderStatus.ACTIVE, "OrderBook: non active");
         address srcToken;
         uint256 amountUsed;
         (uint256 dexID, bytes memory payload) = _prepDexAndPayload(order.loanDataBytes);
@@ -298,7 +298,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         );
         srcToken = order.collateralTokenAmount > order.loanTokenAmount ? order.base : order.loanTokenAddress;
         require(order.timeTillExpiration > block.timestamp, "OrderBook: Order Expired");
-        if (_allOrders[orderID].orderType == IOrderBook.OrderType.LIMIT_OPEN) {
+        if (order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
             uint256 dSwapValue;
             if (srcToken == order.loanTokenAddress) {
                 amountUsed = order.loanTokenAmount + (order.loanTokenAmount * order.leverage) / 10**18; //adjusts leverage
@@ -325,7 +325,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
                 "OrderBook: amountOut too low"
             );
             _executeTradeOpen(order);
-            _allOrders[orderID].isCancelled = true;
+            _allOrders[orderID].status = IOrderBook.OrderStatus.EXECUTED;
             _allOrderIDs.remove(orderID);
             _histOrders[order.trader].remove(orderID);
             emit OrderExecuted(order.trader, orderID);
@@ -354,7 +354,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
                 order.base,
                 order.loanDataBytes
             );
-            _allOrders[orderID].isCancelled = true;
+            _allOrders[orderID].status = IOrderBook.OrderStatus.EXECUTED;
             _allOrderIDs.remove(orderID);
             _histOrders[order.trader].remove(orderID);
             emit OrderExecuted(order.trader, orderID);
@@ -399,15 +399,11 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
                 order.base,
                 order.loanDataBytes
             );
-            _allOrders[orderID].isCancelled = true;
+            _allOrders[orderID].status = IOrderBook.OrderStatus.EXECUTED;
             _allOrderIDs.remove(orderID);
             _histOrders[order.trader].remove(orderID);
             emit OrderExecuted(order.trader, orderID);
             return;
         }
-    }
-
-    function setVaultAddress(address nVault) external onlyOwner {
-        vault = nVault;
     }
 }

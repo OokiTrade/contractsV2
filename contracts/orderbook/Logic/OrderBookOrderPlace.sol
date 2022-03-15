@@ -31,11 +31,10 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         view
         returns (bool)
     {
+        IBZx.LoanReturnData memory data = protocol.getLoan(ID);
         return 
-            protocol.getLoan(ID).loanToken ==
-            loanToken &&
-            protocol.getLoan(ID).collateralToken ==
-            collateral &&
+            data.loanToken == loanToken &&
+            data.collateralToken == collateral &&
             protocol.delegatedManagers(ID, address(this));
     }
 
@@ -43,17 +42,10 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         return protocol.loans(ID).active;
     }
 
-    function _abs(int256 x) private pure returns (int256) {
-        return x >= 0 ? x : -x;
-    }
-
     function placeOrder(IOrderBook.Order calldata Order) external pausable {
         require(Order.loanDataBytes.length < 3500, "OrderBook: loanDataBytes too complex");
         require(
-            _abs(
-                int256(Order.loanTokenAmount) -
-                    int256(Order.collateralTokenAmount)
-            ) == int256(Order.loanTokenAmount + Order.collateralTokenAmount),
+            !(Order.collateralTokenAmount>0) || !(Order.loanTokenAmount >0),
             "OrderBook: only one token can be used"
         );
         require(
@@ -65,7 +57,7 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
             Order.loanID != 0
                 ? _caseChecks(Order.loanID, Order.base, Order.loanTokenAddress)
                 : true,
-            "OrderBook: cases not passed"
+            "OrderBook: incorrect collateral and/or loan token specified"
         );
         require(
             Order.orderType == IOrderBook.OrderType.LIMIT_OPEN
@@ -89,7 +81,7 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
             "OrderBook: Order too small"
         );
         require(Order.trader == msg.sender, "OrderBook: invalid trader");
-        require(!Order.isCancelled, "OrderBook: invalid order state");
+        require(Order.status==IOrderBook.OrderStatus.ACTIVE, "OrderBook: invalid order state");
         mainOBID++;
         bytes32 ID = keccak256(abi.encode(msg.sender, mainOBID));
         require(IDeposits(vault).getTokenUsed(ID) == address(0), "Orderbook: collision"); //in the very unlikely chance of collision on ID error is thrown
@@ -113,10 +105,7 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
     function amendOrder(IOrderBook.Order calldata Order) external pausable {
         require(Order.loanDataBytes.length < 3500, "OrderBook: loanDataBytes too complex");
         require(
-            _abs(
-                int256(Order.loanTokenAmount) -
-                    int256(Order.collateralTokenAmount)
-            ) == int256(Order.loanTokenAmount + Order.collateralTokenAmount),
+            !(Order.collateralTokenAmount>0) || !(Order.loanTokenAmount >0),
             "OrderBook: only one token can be used"
         );
         require(
@@ -138,7 +127,7 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
             "OrderBook: invalid iToken specified"
         );
         require(
-            !_allOrders[Order.orderID].isCancelled,
+            Order.status==IOrderBook.OrderStatus.ACTIVE,
             "OrderBook: inactive order specified"
         );
         require(
@@ -190,8 +179,8 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
     }
 
     function cancelOrder(bytes32 orderID) external pausable {
-        require(!_allOrders[orderID].isCancelled, "OrderBook: inactive order");
-        _allOrders[orderID].isCancelled = true;
+        require(_allOrders[orderID].status==IOrderBook.OrderStatus.ACTIVE, "OrderBook: inactive order");
+        _allOrders[orderID].status = IOrderBook.OrderStatus.CANCELLED;
         require(_histOrders[msg.sender].remove(orderID), "OrderBook: not owner of order");
         _allOrderIDs.remove(orderID);
         if (_allOrders[orderID].orderType == IOrderBook.OrderType.LIMIT_OPEN) {
@@ -206,7 +195,7 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
     function recoverFundsFromFailedOrder(bytes32 orderID) external pausable {
         IOrderBook.Order memory order = _allOrders[orderID];
         require(msg.sender == order.trader, "OrderBook: Not trade owner");
-        require(order.isCancelled, "OrderBook: Order not executed");
+        require(order.status==IOrderBook.OrderStatus.CANCELLED, "OrderBook: Order not executed");
         require(!_allOrderIDs.contains(orderID), "OrderBook: Order still in records");
         IDeposits(vault).withdrawToTrader(msg.sender, orderID);
     }
@@ -214,7 +203,7 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
     function cancelOrderProtocol(bytes32 orderID) external pausable {
         IOrderBook.Order memory order = _allOrders[orderID];
         address trader = order.trader;
-        require(!order.isCancelled, "OrderBook: inactive order");
+        require(order.status==IOrderBook.OrderStatus.ACTIVE, "OrderBook: inactive order");
         uint256 amountUsed = order.collateralTokenAmount +
             order.loanTokenAmount;
         uint256 swapRate;
@@ -242,7 +231,7 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
             "OrderBook: no conditions met"
         );
 
-        order.isCancelled = true;
+        _allOrders[orderID].status = IOrderBook.OrderStatus.CANCELLED;
         _histOrders[trader].remove(orderID);
         _allOrderIDs.remove(orderID);
         if (order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
