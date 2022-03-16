@@ -38,16 +38,21 @@ calldata_set = []
 gnosisTransactions = []
 
 # Deploy CurvedInterestRate
-CUI = CurvedInterestRate.deploy({'from':deployer})
+
+#CUI = CurvedInterestRate.deploy({'from':deployer})
+CUI = Contract.from_abi("CurvedInterestRate", address="0xDbf57A4Cf3d460D8e379dd9fAfbc7A62Af5e653e", abi=CurvedInterestRate.abi)
 
 # Deploy LoanTokenSettings
-settngs = deployer.deploy(LoanTokenSettings)
+#settngs = deployer.deploy(LoanTokenSettings)
+settngs = Contract.from_abi("settngs", address="0x2D2c97Fdad02FAd635aEfCD311d123Da9607A6f2", abi=LoanTokenSettings.abi)
 settngs.transferOwnership(multisig, {'from': deployer})
 # Deploy LoanTokenSettingsLowerAdmin
-settngsLowerAdmin = deployer.deploy(LoanTokenSettingsLowerAdmin)
-settngsLowerAdmin.transferOwnership(multisig, {'from': deployer})
+#settngsLowerAdmin = deployer.deploy(LoanTokenSettingsLowerAdmin)
+settngsLowerAdmin = Contract.from_abi("settngsLowerAdmin", address="0x4eFb3D5f996F1896948504217a52B2ED15E86926", abi=LoanTokenSettingsLowerAdmin.abi)
+#settngsLowerAdmin.transferOwnership(multisig, {'from': deployer})
 
-loanTokenLogicStandard = LoanTokenLogicStandard.deploy(multisig, {'from': deployer}).address
+#loanTokenLogicStandard = LoanTokenLogicStandard.deploy(multisig, {'from': deployer}).address
+loanTokenLogicStandard = Contract.from_abi("loanTokenLogicStandard", address="0xe98dE80395972Ff6e32885F6a472b38436bE1716", abi=LoanTokenLogicStandard.abi)
 
 print("Redeploying iToken")
 print("settngs", settngs)

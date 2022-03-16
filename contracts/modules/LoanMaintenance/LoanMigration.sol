@@ -10,9 +10,10 @@ import "../../core/State.sol";
 import "../../mixins/InterestHandler.sol";
 import "../../mixins/InterestUser.sol";
 import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
+import "../../governance/PausableGuardian.sol";
 
 
-contract LoanMigration is State, InterestHandler, InterestUser {
+contract LoanMigration is State, InterestHandler, InterestUser, PausableGuardian{
 
     function initialize(
         address target)
@@ -39,7 +40,7 @@ contract LoanMigration is State, InterestHandler, InterestUser {
         uint256 start,
         uint256 count)
         external
-        onlyOwner
+        onlyGuardian
     {
         address loanToken = loanPoolToUnderlying[lender];
 
