@@ -15,17 +15,6 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         _setTarget(this.recoverFundsFromFailedOrder.selector, target);
     }
 
-    function queryRateReturn(
-        address start,
-        address end,
-        uint256 amount
-    ) public view returns (uint256) {
-        (uint256 executionPrice, uint256 precision) = IPriceFeeds(
-            protocol.priceFeeds()
-        ).queryRate(start, end);
-        return (executionPrice * amount) / precision;
-    }
-
     function _caseChecks(bytes32 ID, address collateral, address loanToken)
         internal
         view
@@ -42,139 +31,107 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         return protocol.loans(ID).active;
     }
 
-    function placeOrder(IOrderBook.Order calldata Order) external pausable {
-        require(Order.loanDataBytes.length < 3500, "OrderBook: loanDataBytes too complex");
+    function _commonChecks(IOrderBook.Order calldata order) internal {
+        require(!(order.collateralTokenAmount>0) || !(order.loanTokenAmount >0), "OrderBook: collateral and loan token cannot be non-zero");
+        require(protocol.supportedTokens(order.loanTokenAddress), "OrderBook: Unsupported loan token");
+        require(protocol.supportedTokens(order.base), "OrderBook: Unsupported collateral");
+        require(order.loanID != 0
+                    ? _caseChecks(order.loanID, order.base, order.loanTokenAddress)
+                    : true,
+                "OrderBook: case checks failed");
+        require(order.orderType == IOrderBook.OrderType.LIMIT_OPEN
+                    ? protocol.isLoanPool(order.iToken)
+                    : true,
+                "OrderBook: Not a loan pool");
+        require(order.orderType == IOrderBook.OrderType.LIMIT_OPEN
+                    ? order.loanID == 0 ||
+                        _isActiveLoan(order.loanID)
+                    : _isActiveLoan(order.loanID),
+                "OrderBook: non-active loan specified");
+        require(order.loanDataBytes.length < 3500, "OrderBook: loanDataBytes too complex");
+        require(order.trader == msg.sender, "OrderBook: invalid trader");
+    }
+
+    function placeOrder(IOrderBook.Order calldata order) external pausable {
+        _commonChecks(order);
+        (uint256 amountUsed, address usedToken) = order.loanTokenAmount > order.collateralTokenAmount
+            ? (order.loanTokenAmount, order.loanTokenAddress)
+            : (order.collateralTokenAmount, order.base);
         require(
-            !(Order.collateralTokenAmount>0) || !(Order.loanTokenAmount >0),
-            "OrderBook: only one token can be used"
-        );
-        require(
-            protocol.supportedTokens(Order.loanTokenAddress) &&
-                protocol.supportedTokens(Order.base),
-            "OrderBook: invalid pair"
-        );
-        require(
-            Order.loanID != 0
-                ? _caseChecks(Order.loanID, Order.base, Order.loanTokenAddress)
-                : true,
-            "OrderBook: incorrect collateral and/or loan token specified"
-        );
-        require(
-            Order.orderType == IOrderBook.OrderType.LIMIT_OPEN
-                ? protocol.isLoanPool(Order.iToken)
-                : true,
-            "OrderBook: invalid iToken specified"
-        );
-        require(
-            Order.orderType == IOrderBook.OrderType.LIMIT_OPEN
-                ? Order.loanID == 0 ||
-                    _isActiveLoan(Order.loanID)
-                : _isActiveLoan(Order.loanID),
-            "OrderBook: inactive loan"
-        );
-        (uint256 amountUsed, address usedToken) = Order.loanTokenAmount > Order.collateralTokenAmount
-            ? (Order.loanTokenAmount, Order.loanTokenAddress)
-            : (Order.collateralTokenAmount, Order.base);
-        require(
-            queryRateReturn(usedToken, USDC, amountUsed) >=
+            IPriceFeeds(protocol.priceFeeds()).queryReturn(usedToken, USDC, amountUsed) >=
                 MIN_AMOUNT_IN_USDC,
             "OrderBook: Order too small"
         );
-        require(Order.trader == msg.sender, "OrderBook: invalid trader");
-        require(Order.status==IOrderBook.OrderStatus.ACTIVE, "OrderBook: invalid order state");
+        require(order.status==IOrderBook.OrderStatus.ACTIVE, "OrderBook: invalid order state");
         mainOBID++;
         bytes32 ID = keccak256(abi.encode(msg.sender, mainOBID));
         require(IDeposits(vault).getTokenUsed(ID) == address(0), "Orderbook: collision"); //in the very unlikely chance of collision on ID error is thrown
-        _allOrders[ID] = Order;
+        _allOrders[ID] = order;
         _allOrders[ID].orderID = ID;
         _histOrders[msg.sender].add(ID);
         _allOrderIDs.add(ID);
-        if (Order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
+        if (order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
             IDeposits(vault).deposit(ID, amountUsed, msg.sender, usedToken);
         }
         emit OrderPlaced(
             msg.sender,
-            Order.orderType,
-            Order.amountReceived,
+            order.orderType,
+            order.amountReceived,
             ID,
-            Order.base,
-            Order.loanTokenAddress
+            order.base,
+            order.loanTokenAddress
         );
     }
 
-    function amendOrder(IOrderBook.Order calldata Order) external pausable {
-        require(Order.loanDataBytes.length < 3500, "OrderBook: loanDataBytes too complex");
+    function amendOrder(IOrderBook.Order calldata order) external pausable {
+        _commonChecks(order);
         require(
-            !(Order.collateralTokenAmount>0) || !(Order.loanTokenAmount >0),
-            "OrderBook: only one token can be used"
-        );
-        require(
-            Order.base == _allOrders[Order.orderID].base &&
-                Order.loanTokenAddress ==
-                _allOrders[Order.orderID].loanTokenAddress,
+            order.base == _allOrders[order.orderID].base &&
+                order.loanTokenAddress ==
+                _allOrders[order.orderID].loanTokenAddress,
             "OrderBook: invalid tokens"
         );
-        /*require(
-            Order.price > swapRate
-                ? (Order.price - swapRate) < (Order.price * 25) / 100
-                : (swapRate - Order.price) < (swapRate * 25) / 100,
-            "price too far away"
-        );*/
         require(
-            Order.orderType == IOrderBook.OrderType.LIMIT_OPEN
-                ? protocol.isLoanPool(Order.iToken)
-                : true,
-            "OrderBook: invalid iToken specified"
-        );
-        require(
-            Order.status==IOrderBook.OrderStatus.ACTIVE,
+            _allOrders[order.orderID].status==IOrderBook.OrderStatus.ACTIVE,
             "OrderBook: inactive order specified"
         );
-        require(
-            Order.orderType == IOrderBook.OrderType.LIMIT_OPEN
-                ? Order.loanID == 0 ||
-                    _isActiveLoan(Order.loanID)
-                : _isActiveLoan(Order.loanID),
-            "OrderBook: inactive loan"
-        );
-        require(Order.trader == msg.sender, "OrderBook: invalid trader");
-        if (Order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
-            (uint256 amountUsed, address usedToken) = Order.loanTokenAmount > Order.collateralTokenAmount
-                ? (Order.loanTokenAmount, Order.loanTokenAddress)
-                : (Order.collateralTokenAmount, Order.base);
+        if (order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
+            (uint256 amountUsed, address usedToken) = order.loanTokenAmount > order.collateralTokenAmount
+                ? (order.loanTokenAmount, order.loanTokenAddress)
+                : (order.collateralTokenAmount, order.base);
             uint256 storedAmount = IDeposits(vault).getDeposit(
-                Order.orderID
+                order.orderID
             );
             require(
                 usedToken ==
-                    IDeposits(vault).getTokenUsed(Order.orderID),
+                    IDeposits(vault).getTokenUsed(order.orderID),
                 "OrderBook: invalid used token"
             );
-            uint256 amountUsedOld = _allOrders[Order.orderID].loanTokenAmount +
-                _allOrders[Order.orderID].collateralTokenAmount;
+            uint256 amountUsedOld = _allOrders[order.orderID].loanTokenAmount +
+                _allOrders[order.orderID].collateralTokenAmount;
             if (amountUsedOld > amountUsed) {
                 IDeposits(vault).partialWithdraw(
                     msg.sender,
-                    Order.orderID,
+                    order.orderID,
                     amountUsedOld - amountUsed
                 );
             } else {
                 IDeposits(vault).deposit(
-                    Order.orderID,
+                    order.orderID,
                     amountUsed - amountUsedOld,
                     msg.sender,
                     usedToken
                 );
             }
         }
-        _allOrders[Order.orderID] = Order;
+        _allOrders[order.orderID] = order;
         emit OrderAmended(
             msg.sender,
-            Order.orderType,
-            Order.amountReceived,
-            Order.orderID,
-            Order.base,
-            Order.loanTokenAddress
+            order.orderType,
+            order.amountReceived,
+            order.orderID,
+            order.base,
+            order.loanTokenAddress
         );
     }
 
@@ -208,13 +165,13 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
             order.loanTokenAmount;
         uint256 swapRate;
         if (order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
-            swapRate = queryRateReturn(
+            swapRate = IPriceFeeds(protocol.priceFeeds()).queryReturn(
                 order.loanTokenAddress,
                 order.base,
                 amountUsed
             );
         } else {
-            swapRate = queryRateReturn(
+            swapRate = IPriceFeeds(protocol.priceFeeds()).queryReturn(
                 order.base,
                 order.loanTokenAddress,
                 amountUsed

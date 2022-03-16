@@ -17,8 +17,10 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
         _setTarget(this.getActiveOrderIDs.selector, target);
         _setTarget(this.getTotalOrders.selector, target);
         _setTarget(this.getActiveOrders.selector, target);
-        _setTarget(this.getTotalActiveOrders.selector, target);
+        _setTarget(this.getTotalOrderIDs.selector, target);
+        _setTarget(this.getOrderIDs.selector, target);
         _setTarget(this.getOrders.selector, target);
+        _setTarget(this.getOrderIDsLimited.selector, target);
         _setTarget(this.getOrdersLimited.selector, target);
     }
 
@@ -82,7 +84,11 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
         return _histOrders[trader].length();
     }
 
-    function getTotalActiveOrders() external view returns (uint256) {
+    function getOrderIDs() external view returns (bytes32[] memory) {
+        return _allOrderIDs.values();
+    }
+
+    function getTotalOrderIDs() external view returns (uint256) {
         return _allOrderIDs.length();
     }
 

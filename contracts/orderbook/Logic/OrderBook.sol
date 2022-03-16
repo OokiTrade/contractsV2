@@ -239,11 +239,12 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         bytes memory payload,
         uint256 amountIn
     ) public returns (uint256 rate) {
+        uint tradeSize = 10**IERC20Metadata(base).decimals();
         (rate, ) = swapImpl.dexAmountOutFormatted(
             payload,
-            10**IERC20Metadata(base).decimals()
+            tradeSize
         );
-        rate = (rate * amountIn) / 10**IERC20Metadata(base).decimals();
+        rate = (rate * amountIn) / tradeSize;
     }
 
     function priceCheck(
@@ -252,17 +253,18 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         ISwapsImpl swapImpl,
         bytes memory payload
     ) public returns (bool) {
+        uint tradeSize = 10**IERC20Metadata(base).decimals();
         uint256 dexRate = getDexRate(
             swapImpl,
             base,
             loanTokenAddress,
             payload,
-            10**IERC20Metadata(base).decimals()
+            tradeSize
         );
         uint256 indexRate = queryRateReturn(
             base,
             loanTokenAddress,
-            10**IERC20Metadata(base).decimals()
+            tradeSize
         );
         if (dexRate >= indexRate) {
             if (((dexRate - indexRate) * 1000) / dexRate <= 5) {

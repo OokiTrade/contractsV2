@@ -57,7 +57,9 @@ interface IOrderBook {
 
     function prelimCheck(bytes32 orderID) external returns (bool);
 
-    function getTotalActiveOrders() external view returns (uint256);
+    function getOrderIDs() external view returns (bytes32[] memory);
+
+    function getTotalOrderIDs() external view returns (uint256);
 
     function getOrderIDsLimited(uint256 start, uint256 end) external view returns(bytes32[] memory);
 }
