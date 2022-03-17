@@ -11,12 +11,11 @@ safe = ApeSafe(multisig)
 
 calldata_set = []
 gnosisTransactions = []
-
 def migrate(iToken, migrator):
     calldata_set = []
     gnosisTransactions = []
     end = migrator.getLoanCount(iToken)
-    count = 5
+    count = 10
     n = int(end/count)
     if(end % count > 0):
         n = n + 1
@@ -25,7 +24,7 @@ def migrate(iToken, migrator):
     print("n", n)
     for x in range(0, n):
         print(iToken.symbol(),count * x, count)
-        migrator.migrateLoans(iToken,count * x, count, {'from': multisig})
+     #   migrator.migrateLoans(iToken,count * x, count, {'from': multisig})
         addToCalldataSet(calldata_set,migrator.address,migrator.migrateLoans.encode_input(iToken, count * x, count))
 
     generateGnosisTransactions(safe,calldata_set, gnosisTransactions)

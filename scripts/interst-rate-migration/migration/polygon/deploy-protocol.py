@@ -69,16 +69,17 @@ dex_record = Contract.from_abi("dex_record", address="0x22a2208EeEDeb1E2156370Fd
 
 
 #
-# addToCalldataSet(calldata_set,BZX.address, BZX.replaceContract.encode_input(settingsImpl.address))
-# addToCalldataSet(calldata_set,BZX.address, BZX.replaceContract.encode_input(guardianImpl.address))
-# addToCalldataSet(calldata_set,BZX.address, BZX.replaceContract.encode_input(openingsImpl.address))
-# addToCalldataSet(calldata_set,BZX.address, BZX.replaceContract.encode_input(maintenace2Impl.address))
-# addToCalldataSet(calldata_set,BZX.address, BZX.replaceContract.encode_input(migrationImpl.address))
-# addToCalldataSet(calldata_set,BZX.address, BZX.replaceContract.encode_input(maintenaceImpl.address))
-# addToCalldataSet(calldata_set,BZX.address, BZX.replaceContract.encode_input(closingImpl.address))
-# addToCalldataSet(calldata_set,BZX.address, BZX.replaceContract.encode_input(swapsImpl.address))
-# addToCalldataSet(calldata_set,BZX.address, BZX.replaceContract.encode_input(protocolsettingsImpl.address))
-# addToCalldataSet(calldata_set,BZX.address, BZX.setSwapsImplContract.encode_input(dex_record.address))
+addToCalldataSet(calldata_set,BZX.address, BZX.replaceContract.encode_input(settingsImpl.address))
+addToCalldataSet(calldata_set,BZX.address, BZX.replaceContract.encode_input(guardianImpl.address))
+addToCalldataSet(calldata_set,BZX.address, BZX.replaceContract.encode_input(openingsImpl.address))
+addToCalldataSet(calldata_set,BZX.address, BZX.replaceContract.encode_input(maintenace2Impl.address))
+addToCalldataSet(calldata_set,BZX.address, BZX.replaceContract.encode_input(migrationImpl.address))
+addToCalldataSet(calldata_set,BZX.address, BZX.replaceContract.encode_input(maintenaceImpl.address))
+addToCalldataSet(calldata_set,BZX.address, BZX.replaceContract.encode_input(closingImpl.address))
+addToCalldataSet(calldata_set,BZX.address, BZX.replaceContract.encode_input(swapsImpl.address))
+addToCalldataSet(calldata_set,BZX.address, BZX.replaceContract.encode_input(protocolsettingsImpl.address))
+addToCalldataSet(calldata_set,BZX.address, BZX.setSwapsImplContract.encode_input(dex_record.address))
+
 
 BZX.replaceContract(settingsImpl.address, {'from': multisig})
 BZX.replaceContract(guardianImpl.address, {'from': multisig})
@@ -91,5 +92,6 @@ BZX.replaceContract(swapsImpl.address, {'from': multisig})
 BZX.replaceContract(protocolsettingsImpl.address, {'from': multisig})
 BZX.setSwapsImplContract(dex_record.address, {'from':multisig})
 
-# generateGnosisTransactions(safe,calldata_set, gnosisTransactions)
+
+#generateGnosisTransactions(safe,calldata_set, gnosisTransactions, 53)
 # previewGnosisTransactions(safe,gnosisTransactions)

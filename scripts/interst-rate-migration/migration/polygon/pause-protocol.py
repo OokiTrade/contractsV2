@@ -22,9 +22,9 @@ protocolPauseSignatures=[
 calldata_set = []
 gnosisTransactions = []
 addToCalldataSet(calldata_set,BZX.address, BZX.pause.encode_input(protocolPauseSignatures))
-BZX.pause(protocolPauseSignatures, {'from': multisig})
+#BZX.pause(protocolPauseSignatures, {'from': multisig})
 
 print("pauseProtocol:: Submitting transaction to gnosis")
 print("generated ", len(calldata_set), " transactions")
-generateGnosisTransactions(safe,calldata_set, gnosisTransactions)
+generateGnosisTransactions(safe,calldata_set, gnosisTransactions, 81)
 #previewGnosisTransactions(safe,gnosisTransactions)
