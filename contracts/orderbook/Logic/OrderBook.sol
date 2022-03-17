@@ -45,14 +45,13 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         bytes32 loanID,
         uint256 amount,
         bool iscollateral,
-        address collateralAddress,
         bytes memory loanDataBytes
     ) internal {
         address(protocol).call(
             abi.encodeWithSelector(
                 protocol.closeWithSwap.selector,
                 loanID,
-                address(this),
+                trader,
                 amount,
                 iscollateral,
                 loanDataBytes
@@ -353,7 +352,6 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
                 order.loanID,
                 order.collateralTokenAmount,
                 order.isCollateral,
-                order.base,
                 order.loanDataBytes
             );
             _allOrders[orderID].status = IOrderBook.OrderStatus.EXECUTED;
@@ -398,7 +396,6 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
                 order.loanID,
                 order.collateralTokenAmount,
                 order.isCollateral,
-                order.base,
                 order.loanDataBytes
             );
             _allOrders[orderID].status = IOrderBook.OrderStatus.EXECUTED;
