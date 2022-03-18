@@ -542,56 +542,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
             0 // principal
         );
     }
-    // TODO
-    // function getDepositAmountForBorrow(
-    //     uint256 borrowAmount,
-    //     uint256 initialLoanDuration,        // duration in seconds
-    //     address collateralTokenAddress)     // address(0) means ETH
-    //     external
-    //     view
-    //     returns (uint256) // depositAmount
-    // {
-    //     if (borrowAmount != 0) {
-    //         if (borrowAmount <= _underlyingBalance()) {
-    //             if (collateralTokenAddress == address(0)) {
-    //                 collateralTokenAddress = wethToken;
-    //             }
-    //             return IBZx(bZxContract).getRequiredCollateralByParams(
-    //                 loanParamsIds[uint256(keccak256(abi.encodePacked(
-    //                     collateralTokenAddress,
-    //                     true
-    //                 )))],
-    //                 borrowAmount
-    //             ).add(10); // some dust to compensate for rounding errors
-    //         }
-    //     }
-    // }
-    // TODO
-    // function getBorrowAmountForDeposit(
-    //     uint256 depositAmount,
-    //     uint256 initialLoanDuration,        // duration in seconds
-    //     address collateralTokenAddress)     // address(0) means ETH
-    //     external
-    //     view
-    //     returns (uint256 borrowAmount)
-    // {
-    //     if (depositAmount != 0) {
-    //         if (collateralTokenAddress == address(0)) {
-    //             collateralTokenAddress = wethToken;
-    //         }
-    //         borrowAmount = IBZx(bZxContract).getBorrowAmountByParams(
-    //             loanParamsIds[uint256(keccak256(abi.encodePacked(
-    //                 collateralTokenAddress,
-    //                 true
-    //             )))],
-    //             depositAmount
-    //         );
-
-    //         if (borrowAmount > _underlyingBalance()) {
-    //             borrowAmount = 0;
-    //         }
-    //     }
-    // }
 
     function getPoolUtilization()
         external

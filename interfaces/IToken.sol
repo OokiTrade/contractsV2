@@ -140,18 +140,6 @@ interface IToken {
             uint256 collateralToLoanRate
         );
 
-    function getDepositAmountForBorrow(
-        uint256 borrowAmount,
-        uint256 initialLoanDuration, // duration in seconds
-        address collateralTokenAddress // address(0) means ETH
-    ) external view returns (uint256); // depositAmount
-
-    function getBorrowAmountForDeposit(
-        uint256 depositAmount,
-        uint256 initialLoanDuration, // duration in seconds
-        address collateralTokenAddress // address(0) means ETH
-    ) external view returns (uint256 borrowAmount);
-
     function loanTokenAddress() external view returns (address);
 
     function baseRate() external view returns (uint256);
