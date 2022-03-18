@@ -65,13 +65,9 @@ print("Deploying Dex Selector and Implementations")
 #0x3D87106A93F56ceE890769A808Af62Abc67ECBD3
 #univ2 = SwapsImplUniswapV2_BSC.deploy({'from':deployer})
 
-#0x13f2d2053E20Ff8d20fb63bf2647515ec330d731
-#univ3 = SwapsImplUniswapV3_ETH.deploy({'from':deployer})
-
 #dex_record.setDexID(univ2.address, {'from':deployer})
-#dex_record.setDexID(univ3.address, {'from':deployer})
 #dex_record.transferOwnership(multisig, {'from': deployer})
-dex_record = Contract.from_abi("dex_record", address="0x22a2208EeEDeb1E2156370Fd1c1c081355c68f2B", abi=DexRecords.abi)
+dex_record = Contract.from_abi("dex_record", address="0x46530E77a3ad47f432D1ad206fB8c44435932B91", abi=DexRecords.abi)
 
 
 #
