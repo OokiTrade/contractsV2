@@ -127,4 +127,8 @@ contract LoanTokenSettings is AdvancedTokenStorage, StorageExtension {
             IERC20(_loanTokenAddress).approve(bZxContract, 0);
         }
     }
+
+    function updateFlashBorrowFeePercent(uint256 newFeePercent) public {
+        flashBorrowFeePercent = newFeePercent;
+    }
 }
