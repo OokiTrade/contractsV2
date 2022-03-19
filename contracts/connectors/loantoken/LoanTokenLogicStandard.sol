@@ -842,11 +842,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
             true :
             false;
 
-        // bytes32 loanParamsId = loanParamsIds[uint256(keccak256(abi.encodePacked(
-        //     collateralTokenAddress,
-        //     isTorqueLoan
-        // )))];
-
         // converting to initialMargin
         if (leverageAmount != 0) {
             leverageAmount = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, leverageAmount);
