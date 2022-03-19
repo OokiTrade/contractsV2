@@ -1104,5 +1104,9 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         require(address(_rateHelper) != address(0), "no zero address");
         rateHelper = _rateHelper;
     }
+
+    function updateFlashBorrowFeePercent(uint256 newFeePercent) public onlyOwner {
+        flashBorrowFeePercent = newFeePercent;
+    }
 }
 
