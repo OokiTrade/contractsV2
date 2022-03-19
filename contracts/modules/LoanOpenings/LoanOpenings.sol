@@ -115,7 +115,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
                 // loanParamsLocal.maxLoanTerm = 0; zero by default
                 loanParamsLocal.id = getLoanParamId(loanParamsLocal);
             } else {
-                // when we can use iToken as collateral for marginTrade
+                // when we can't use iToken as collateral for marginTrade
             }
         } else {
             return loanParamsLocal;

@@ -11,9 +11,9 @@ import "@openzeppelin-2.5.0/token/ERC20/IERC20.sol";
 import "../interfaces/IERC20Detailed.sol";
 import "../core/Constants.sol";
 import "./IPriceFeedsExt.sol";
+import "../governance/PausableGuardian.sol";
 
-
-contract PriceFeeds_BSC is Constants, Ownable {
+contract PriceFeeds_BSC is Constants, Ownable, PausableGuardian {
     using SafeMath for uint256;
 
     event GlobalPricingPaused(
@@ -286,7 +286,7 @@ contract PriceFeeds_BSC is Constants, Ownable {
         address[] calldata tokens,
         IPriceFeedsExt[] calldata feeds)
         external
-        onlyOwner
+        onlyGuardian
     {
         require(tokens.length == feeds.length, "count mismatch");
 
@@ -298,7 +298,7 @@ contract PriceFeeds_BSC is Constants, Ownable {
     function setDecimals(
         IERC20Detailed[] calldata tokens)
         external
-        onlyOwner
+        onlyGuardian
     {
         for (uint256 i = 0; i < tokens.length; i++) {
             decimals[address(tokens[i])] = tokens[i].decimals();

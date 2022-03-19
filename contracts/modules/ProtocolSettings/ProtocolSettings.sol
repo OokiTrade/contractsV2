@@ -81,7 +81,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian {
         address[] calldata pools,
         address[] calldata assets)
         external
-        onlyOwner
+        onlyGuardian
     {
         require(pools.length == assets.length, "count mismatch");
 
@@ -121,7 +121,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian {
         bool[] calldata toggles,
         bool withApprovals)
         external
-        onlyOwner
+        onlyGuardian
     {
         require(addrs.length == toggles.length, "count mismatch");
 
@@ -231,7 +231,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian {
         address[] calldata collateralTokens,
         uint256[] calldata amounts)
         external
-        onlyOwner
+        onlyGuardian
     {
         require(loanTokens.length == collateralTokens.length && loanTokens.length == amounts.length, "count mismatch");
 
