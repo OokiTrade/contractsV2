@@ -26,9 +26,12 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         _setTarget(this.getEstimatedMarginExposure.selector, target); // DEPRECATED, remove next deploy
         _setTarget(this.getRequiredCollateral.selector, target);
         _setTarget(this.getRequiredCollateralByParams.selector, target);
-        _setTarget(this.getBorrowAmount.selector, target);
-        _setTarget(this.getBorrowAmountByParams.selector, target);
+        // _setTarget(this.getBorrowAmount.selector, target);
+        // _setTarget(this.getBorrowAmountByParams.selector, target);
         _setTarget(this.getDefaultLoanParams.selector, target);
+        _setTarget(this.getPoolLoanParamId.selector, target);
+        _setTarget(this.getLoanParamId.selector, target);
+        
     }
 
     // Note: Only callable by loan pools (iTokens)
@@ -61,7 +64,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         address loanToken = loanPoolToUnderlying[msg.sender];
         require(loanToken != address(0), "not authorized");
 
-        LoanParams memory loanParamsLocal = getDefaultLoanParams(collateralToken, loanToken, isTorqueLoan);
+        LoanParams memory loanParamsLocal = getDefaultLoanParams(loanToken, collateralToken, isTorqueLoan);
         require(loanParamsLocal.id != 0, "loanParams not exists");
 
         if (initialMargin == 0) {
@@ -92,8 +95,8 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
     }
 
     function getDefaultLoanParams(
-        address collateralToken,
         address loanToken,
+        address collateralToken,
         bool isTorqueLoan)
         public
         view
@@ -126,7 +129,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         address loanToken,
         address collateralToken,
         bool isTorqueLoan)
-        internal
+        public
         view
         returns (bytes32) 
     {
@@ -139,7 +142,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
 
     function getLoanParamId(
         LoanParams memory loanParam)
-        internal
+        public
         pure
         returns (bytes32) 
     {
@@ -151,20 +154,6 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
             loanParam.maxLoanTerm
         ));
     }
-
-
-
-    // function setupLoanParams(
-    //     LoanParams[] calldata loanParamsList,
-    //     bool isTorqueLoan)
-    //     external
-    //     returns (bytes32[] memory loanParamsIdList)
-    // {
-    //     loanParamsIdList = new bytes32[](loanParamsList.length);
-    //     for (uint256 i = 0; i < loanParamsList.length; i++) {
-    //         loanParamsIdList[i] = _setupLoanParams(loanParamsList[i], isTorqueLoan);
-    //     }
-    // }
 
     function upgradeLoanParams(
         bytes32 loanParamsId,
@@ -271,71 +260,71 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         );
     }
 
-    function getBorrowAmount(
-        address loanToken,
-        address collateralToken,
-        uint256 collateralTokenAmount,
-        uint256 marginAmount,
-        bool isTorqueLoan)
-        public
-        view
-        returns (uint256 borrowAmount)
-    {
-        if (marginAmount != 0) {
-            if (isTorqueLoan) {
-                marginAmount = marginAmount
-                    .add(WEI_PERCENT_PRECISION); // adjust for over-collateralized loan
-            }
+    // function getBorrowAmount(
+    //     address loanToken,
+    //     address collateralToken,
+    //     uint256 collateralTokenAmount,
+    //     uint256 marginAmount,
+    //     bool isTorqueLoan)
+    //     public
+    //     view
+    //     returns (uint256 borrowAmount)
+    // {
+    //     if (marginAmount != 0) {
+    //         if (isTorqueLoan) {
+    //             marginAmount = marginAmount
+    //                 .add(WEI_PERCENT_PRECISION); // adjust for over-collateralized loan
+    //         }
 
-            if (loanToken == collateralToken) {
-                borrowAmount = collateralTokenAmount
-                    .mul(WEI_PERCENT_PRECISION)
-                    .div(marginAmount);
-            } else {
-                (uint256 sourceToDestRate, uint256 sourceToDestPrecision) = IPriceFeeds(priceFeeds).queryRate(
-                    collateralToken,
-                    loanToken
-                );
-                if (sourceToDestPrecision != 0) {
-                    borrowAmount = collateralTokenAmount
-                        .mul(WEI_PERCENT_PRECISION)
-                        .mul(sourceToDestRate)
-                        .div(marginAmount)
-                        .div(sourceToDestPrecision);
-                }
-            }
+    //         if (loanToken == collateralToken) {
+    //             borrowAmount = collateralTokenAmount
+    //                 .mul(WEI_PERCENT_PRECISION)
+    //                 .div(marginAmount);
+    //         } else {
+    //             (uint256 sourceToDestRate, uint256 sourceToDestPrecision) = IPriceFeeds(priceFeeds).queryRate(
+    //                 collateralToken,
+    //                 loanToken
+    //             );
+    //             if (sourceToDestPrecision != 0) {
+    //                 borrowAmount = collateralTokenAmount
+    //                     .mul(WEI_PERCENT_PRECISION)
+    //                     .mul(sourceToDestRate)
+    //                     .div(marginAmount)
+    //                     .div(sourceToDestPrecision);
+    //             }
+    //         }
 
-            uint256 feePercent = isTorqueLoan ?
-                borrowingFeePercent :
-                tradingFeePercent;
-            if (borrowAmount != 0 && feePercent != 0) {
-                borrowAmount = borrowAmount
-                    .mul(
-                        WEI_PERCENT_PRECISION - feePercent // never will overflow
-                    )
-                    .div(WEI_PERCENT_PRECISION);
-            }
-        }
-    }
+    //         uint256 feePercent = isTorqueLoan ?
+    //             borrowingFeePercent :
+    //             tradingFeePercent;
+    //         if (borrowAmount != 0 && feePercent != 0) {
+    //             borrowAmount = borrowAmount
+    //                 .mul(
+    //                     WEI_PERCENT_PRECISION - feePercent // never will overflow
+    //                 )
+    //                 .div(WEI_PERCENT_PRECISION);
+    //         }
+    //     }
+    // }
 
-    function getBorrowAmountByParams(
-        bytes32 loanParamsId,
-        uint256 collateralTokenAmount)
-        public
-        view
-        returns (uint256 borrowAmount)
-    {
-        LoanParams memory loanParamsLocal = loanParams[loanParamsId];
-        return getBorrowAmount(
-            loanParamsLocal.loanToken,
-            loanParamsLocal.collateralToken,
-            collateralTokenAmount,
-            loanParamsLocal.minInitialMargin, // marginAmount
-            loanParamsLocal.maxLoanTerm == 0 ? // isTorqueLoan
-                true :
-                false
-        );
-    }
+    // function getBorrowAmountByParams(
+    //     bytes32 loanParamsId,
+    //     uint256 collateralTokenAmount)
+    //     public
+    //     view
+    //     returns (uint256 borrowAmount)
+    // {
+    //     LoanParams memory loanParamsLocal = loanParams[loanParamsId];
+    //     return getBorrowAmount(
+    //         loanParamsLocal.loanToken,
+    //         loanParamsLocal.collateralToken,
+    //         collateralTokenAmount,
+    //         loanParamsLocal.minInitialMargin, // marginAmount
+    //         loanParamsLocal.maxLoanTerm == 0 ? // isTorqueLoan
+    //             true :
+    //             false
+    //     );
+    // }
 
     function _borrowOrTrade(
         LoanParams memory loanParamsLocal,

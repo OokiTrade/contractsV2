@@ -10,9 +10,9 @@ import "../../core/State.sol";
 import "../../events/LoanSettingsEvents.sol";
 import "../../utils/MathUtil.sol";
 import "../../mixins/InterestHandler.sol";
+import "../../governance/PausableGuardian.sol";
 
-
-contract LoanSettings is State, InterestHandler, LoanSettingsEvents {
+contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGuardian {
     using MathUtil for uint256;
     
     function initialize(
