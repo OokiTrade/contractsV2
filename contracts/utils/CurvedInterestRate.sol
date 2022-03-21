@@ -14,6 +14,9 @@ contract CurvedInterestRate is ICurvedInterestRate {
     uint256 public constant IR_MAX = 110e18;
     uint256 public constant IR_MIN = 0.1e18;
 
+    uint256 public constant TARGET_UR_MIN = 75e18;
+    uint256 public constant TARGET_UR_MAX = 80e18;
+
     function getInterestRate(
         uint256 _U,
         uint256 _a,
@@ -41,6 +44,8 @@ contract CurvedInterestRate is ICurvedInterestRate {
             _IR1 = IR_MIN;
         } else if (_IR1 > IR_MAX) {
             _IR1 = IR_MAX;
+        } else if () {
+
         }
 
         // b= math.log(1.2/0.2)/(0.9-0.8)

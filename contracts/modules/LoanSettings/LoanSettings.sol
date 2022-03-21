@@ -11,6 +11,7 @@ import "../../events/LoanSettingsEvents.sol";
 import "../../utils/MathUtil.sol";
 import "../../mixins/InterestHandler.sol";
 import "../../governance/PausableGuardian.sol";
+import "../../../interfaces/IPriceFeeds.sol";
 
 contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGuardian {
     using MathUtil for uint256;
@@ -29,6 +30,7 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
         _setTarget(this.getPoolLastInterestRate.selector, target);
         _setTarget(this.getLoanPrincipal.selector, target);
         _setTarget(this.getLoanInterestOutstanding.selector, target);
+        _setTarget(this.migrateLoanParamsList.selector, target);
     }
 
     function setupLoanParams(
@@ -91,6 +93,99 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
                 mstore(loanParamsList, itemCount)
             }
         }
+    }
+
+    function migrateLoanParamsList(
+        address owner,
+        uint256 start,
+        uint256 count)
+        external
+        onlyGuardian
+    {
+        EnumerableBytes32Set.Bytes32Set storage set = userLoanParamSets[owner];
+        uint256 end = start.add(count).min256(set.length());
+        if (start >= end) {
+            return;
+        }
+        count = end-start;
+
+        bytes32 loanParamId;
+        LoanParams memory loanParamsLocal;
+
+        for (uint256 i = start; i < end; ++i) {
+            loanParamsLocal = loanParams[set.get(i)];
+            loanParamId = getLoanParam(
+                loanParamsLocal.loanToken,
+                loanParamsLocal.collateralToken,
+                loanParamsLocal.maxLoanTerm == 0 // isTorqueLoan
+                    ? true
+                    : false
+            );
+            loanParamsIds[loanParamId] = loanParamsLocal.id;
+        }
+    }
+
+    function getLoanParam(
+        address loanToken,
+        address collateralToken,
+        bool isTorqueLoan)
+        pure
+        internal
+        returns(bytes32)
+    {
+        return keccak256(abi.encodePacked(
+                    loanParamsLocal.loanToken,
+                    loanParamsLocal.collateralToken,
+                    isTorqueLoan
+                ));
+    }
+
+    // This function intends to be PUBLIC so that anyone can create params if loanToken and collateralToken are approved by the protocol
+    function createDefaultParams(
+        address loanToken,
+        address collateralToken,
+        bool isTorqueLoan)
+        external
+    {
+        // requires loanToken approved
+        require(supportedTokens[loanToken] != address(0), "invalid");
+        // requires collateralToken approved
+        require(supportedTokens[collateralToken] != address(0), "invalid");
+        // requires there is a pricefeed
+        require(IPriceFeeds(_priceFeeds).pricesFeeds(collateralToken) != address(0), "invalid");
+        // requires param does not exist
+        bytes32 loanParamId = getLoanParam(loanToken, collateralToken, isTorqueLoan);
+        require(loanParamsIds[loanParamId] == 0, "invalid");
+
+        LoanParams memory loanParamsLocal;
+        loanParamsLocal.active = true;
+        loanParamsLocal.loanToken = loanToken;
+        loanParamsLocal.collateralToken = collateralToken;
+        loanParamsLocal.minInitialMargin = 20 ether;
+        loanParamsLocal.maintenanceMargin = 15 ether;
+        loanParamsLocal.maxLoanTerm = 0;
+        loanParamsLocal.id = getLoanParamId(loanParamsLocal);
+        
+        require(loanParams[loanParamsLocal.id] == 0, "invalid");
+
+        loanParams[loanParamsLocal.id] = loanParamsLocal;
+        loanParamsIds[loanParamId] = loanParamsLocal.id;
+    }
+
+
+    function getLoanParamId(
+        LoanParams memory loanParam)
+        public
+        pure
+        returns (bytes32) 
+    {
+        return keccak256(abi.encode(
+            loanParam.loanToken,
+            loanParam.collateralToken,
+            loanParam.minInitialMargin,
+            loanParam.maintenanceMargin,
+            loanParam.maxLoanTerm
+        ));
     }
 
     function getLoanParamsList(

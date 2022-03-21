@@ -115,7 +115,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
                 loanParamsLocal.collateralToken = collateralToken;
                 loanParamsLocal.minInitialMargin = 20 ether;
                 loanParamsLocal.maintenanceMargin = 15 ether;
-                // loanParamsLocal.maxLoanTerm = 0; zero by default
+                loanParamsLocal.maxLoanTerm = 0;
                 loanParamsLocal.id = getLoanParamId(loanParamsLocal);
             } else {
                 // when we can't use iToken as collateral for marginTrade

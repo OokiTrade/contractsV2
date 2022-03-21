@@ -260,6 +260,12 @@ interface IBZx {
         external
         view
         returns (uint256);
+    
+    function migrateLoanParamsList(
+        address owner,
+        uint256 start,
+        uint256 count)
+        external;
 
     ////// Loan Openings //////
 

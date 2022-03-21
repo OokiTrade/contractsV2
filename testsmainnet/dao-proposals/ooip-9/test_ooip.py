@@ -66,6 +66,11 @@ def WBTC(TestToken):
 def WETH(TestToken):
     return Contract.from_abi("WETH", address="0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", abi=TestToken.abi)
 
+@pytest.fixture(scope="module")
+def GUARDIAN_MULTISIG():
+    return "0x9B43a385E08EE3e4b402D4312dABD11296d09E93"
+    
+
 
 def testGovernanceProposal(requireMainnetFork, accounts, DAO, TIMELOCK, iLINK, iUSDC, LINK):
     proposerAddress = "0x02c6819c2cb8519ab72fd1204a8a0992b5050c6e"
@@ -73,7 +78,6 @@ def testGovernanceProposal(requireMainnetFork, accounts, DAO, TIMELOCK, iLINK, i
     voter2 = "0x9030B78A312147DbA34359d1A8819336fD054230"
 
 
-    
     
     # exec(open("./scripts/dao-proposals/OOIP-8-itoken-collateral/proposal.py").read())
 
@@ -123,7 +127,9 @@ def testGovernanceProposal(requireMainnetFork, accounts, DAO, TIMELOCK, iLINK, i
 
 
 
-def testITotokenCollateral(requireMainnetFork, accounts, DAO, TIMELOCK, iLINK, iUSDT, iUSDC, iWBTC, iWETH, LINK, USDT, USDC, WBTC, WETH, BZX, LoanOpenings):
+def testITotokenCollateral(requireMainnetFork, accounts, DAO, TIMELOCK, iLINK, iUSDT, iUSDC, iWBTC, iWETH, LINK, USDT, USDC, WBTC, WETH, BZX, LoanSettings, LoanOpenings, GUARDIAN_MULTISIG):
     lo = accounts[0].deploy(LoanOpenings)
+    ls = accounts[0].deploy(LoanSettings)
     BZX.replaceContract(lo, {"from": BZX.owner()})
+    BZX.replaceContract(ls, {"from": BZX.owner()})
     assert False
