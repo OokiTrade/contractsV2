@@ -10,6 +10,7 @@ import "./Constants.sol";
 import "./Objects.sol";
 import "../mixins/EnumerableBytes32Set.sol";
 import "../utils/ReentrancyGuard.sol";
+import "../utils/InterestOracle.sol";
 import "@openzeppelin-2.5.0/ownership/Ownable.sol";
 import "@openzeppelin-2.5.0/math/SafeMath.sol";
 
@@ -17,7 +18,6 @@ import "@openzeppelin-2.5.0/math/SafeMath.sol";
 contract State is Constants, Objects, ReentrancyGuard, Ownable {
     using SafeMath for uint256;
     using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
-
     address public priceFeeds;                                                              // handles asset reference price lookups
     address public swapsImpl;                                                               // handles asset swaps using dex liquidity
 
@@ -87,6 +87,8 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
     mapping(bytes32 => uint256) public loanRatePerTokenPaid; // per loan
 
     mapping(address => uint256) public poolLastInterestRate; // per itoken
+    mapping(address => InterestOracle.Observation[256]) public poolInterestRateObservations; //per itoken
+    mapping(address => uint8) public poolLastIdx; //per itoken
     /**** new interest model end */
 
 
