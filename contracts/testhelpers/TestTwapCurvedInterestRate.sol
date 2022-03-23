@@ -27,7 +27,8 @@ contract TestTwapCurvedInterestRate {
 
 
     function initOracle() public {
-        poolInterestRateObservations.initialize(uint32(block.timestamp));
+        poolInterestRateObservations.initialize(uint32(block.timestamp - 3600));
+        // poolLastIdx = 1;
     }
 
 
