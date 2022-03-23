@@ -103,6 +103,20 @@ library InterestOracle {
         return aAdjusted <= bAdjusted;
     }
 
+    function grow(
+        Observation[256] storage self,
+        uint8 current,
+        uint8 next
+    ) internal returns (uint16) {
+        require(current > 0, 'I');
+        // no-op if the passed next value isn't greater than the current next value
+        if (next <= current) return current;
+        // store in each slot to prevent fresh SSTOREs in swaps
+        // this data will not be used because the initialized boolean is still false
+        for (uint8 i = current; i < next; ++i) self[i].blockTimestamp = 1;
+        return next;
+    }
+
     /// @notice Fetches the observations beforeOrAt and atOrAfter a target, i.e. where [beforeOrAt, atOrAfter] is satisfied.
     /// The result may be the same observation, or adjacent observations.
     /// @dev The answer must be contained in the array, used when the target is located within the stored observation
@@ -286,6 +300,6 @@ library InterestOracle {
             index,
             cardinality
         );
-        return int24((irPoints[1]-irPoints[0]) / secondsAgos[1]);
+        return int24((irPoints[1]-irPoints[0]) / secondsAgos[0]);
     }
 }
