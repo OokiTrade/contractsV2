@@ -9,10 +9,12 @@ import "../core/State.sol";
 import "../interfaces/ILoanPool.sol";
 import "../utils/MathUtil.sol";
 import "../events/InterestRateEvents.sol";
+import "../utils/InterestOracle.sol";
+import "../utils/TickMath.sol";
 
 contract InterestHandler is State, InterestRateEvents {
     using MathUtil for uint256;
-
+    using InterestOracle for InterestOracle.Observation[256];
     // returns up to date loan interest or 0 if not applicable
     function _settleInterest(
         address pool,
@@ -20,6 +22,13 @@ contract InterestHandler is State, InterestRateEvents {
         internal
         returns (uint256 _loanInterestTotal)
     {
+        (poolLastIdx[pool], ) = poolInterestRateObservations[pool].write(
+                                                                    poolLastIdx[pool],
+                                                                    uint32(block.timestamp),
+                                                                    TickMath.getTickAtSqrtRatio(uint160(poolLastInterestRate[pool])),
+                                                                    uint8(-1),
+                                                                    uint8(-1)
+                                                                );
         uint256[7] memory interestVals = _settleInterest2(
             pool,
             loanId,
@@ -147,8 +156,18 @@ contract InterestHandler is State, InterestRateEvents {
         returns (uint256 ratePerTokenNewAmount, uint256 nextInterestRate)
     {
         uint256 timeSinceUpdate;
+        uint32[] memory secondsAgo = new uint32[](2);
+        secondsAgo[0] = 0;
+        secondsAgo[1] = 3600;
+        uint256 benchmarkRate = TickMath.getSqrtRatioAtTick(poolInterestRateObservations[pool].arithmeticMean(
+                                                                        uint32(block.timestamp),
+                                                                        secondsAgo,
+                                                                        TickMath.getTickAtSqrtRatio(uint160(poolLastInterestRate[pool])),
+                                                                        poolLastIdx[pool],
+                                                                        uint8(-1)
+                                                                    ));
         if ((timeSinceUpdate = block.timestamp.sub(poolLastUpdateTime[pool])) != 0 &&
-            (nextInterestRate = ILoanPool(pool)._nextBorrowInterestRate(poolTotal, 0, poolLastInterestRate[pool])) != 0) {
+            (nextInterestRate = ILoanPool(pool)._nextBorrowInterestRate(poolTotal, 0, benchmarkRate)) != 0) {
             ratePerTokenNewAmount = timeSinceUpdate
                 .mul(nextInterestRate) // rate per year
                 .mul(WEI_PERCENT_PRECISION)

@@ -21,11 +21,11 @@ contract LoanClosings is LoanClosingsBase {
         _setTarget(this.closeWithSwap.selector, target);
 
         // TEMP: remove after upgrade
-        _setTarget(bytes4(keccak256("rollover(bytes32,bytes)")), address(0));
+        /*_setTarget(bytes4(keccak256("rollover(bytes32,bytes)")), address(0));
         _setTarget(bytes4(keccak256("liquidateWithGasToken(bytes32,address,address,uint256)")), address(0));
         _setTarget(bytes4(keccak256("closeWithDepositWithGasToken(bytes32,address,address,uint256)")), address(0));
         _setTarget(bytes4(keccak256("closeWithSwapWithGasToken(bytes32,address,address,uint256,bool,bytes)")), address(0));
-        _setTarget(bytes4(keccak256("swapExternalWithGasToken(address,address,address,address,address,uint256,uint256,bytes)")), address(0));
+        _setTarget(bytes4(keccak256("swapExternalWithGasToken(address,address,address,address,address,uint256,uint256,bytes)")), address(0));*/
     }
 
     function liquidate(

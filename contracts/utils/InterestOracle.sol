@@ -61,12 +61,12 @@ library InterestOracle {
     /// @return cardinalityUpdated The new cardinality of the oracle array
     function write(
         Observation[256] storage self,
-        uint16 index,
+        uint8 index,
         uint32 blockTimestamp,
         int24 tick,
-        uint16 cardinality,
-        uint16 cardinalityNext
-    ) internal returns (uint16 indexUpdated, uint16 cardinalityUpdated) {
+        uint8 cardinality,
+        uint8 cardinalityNext
+    ) internal returns (uint8 indexUpdated, uint8 cardinalityUpdated) {
         Observation memory last = self[index];
 
         // early return if we've already written an observation in last 30 seconds
@@ -81,25 +81,6 @@ library InterestOracle {
 
         indexUpdated = (index + 1) % cardinalityUpdated;
         self[indexUpdated] = transform(last, blockTimestamp, tick);
-    }
-
-    /// @notice Prepares the oracle array to store up to `next` observations
-    /// @param self The stored oracle array
-    /// @param current The current next cardinality of the oracle array
-    /// @param next The proposed next cardinality which will be populated in the oracle array
-    /// @return next The next cardinality which will be populated in the oracle array
-    function grow(
-        Observation[256] storage self,
-        uint16 current,
-        uint16 next
-    ) internal returns (uint16) {
-        require(current > 0, 'I');
-        // no-op if the passed next value isn't greater than the current next value
-        if (next <= current) return current;
-        // store in each slot to prevent fresh SSTOREs in swaps
-        // this data will not be used because the initialized boolean is still false
-        for (uint16 i = current; i < next; i++) self[i].blockTimestamp = 1;
-        return next;
     }
 
     /// @notice comparator for 32-bit timestamps
@@ -137,8 +118,8 @@ library InterestOracle {
         Observation[256] storage self,
         uint32 time,
         uint32 target,
-        uint16 index,
-        uint16 cardinality
+        uint8 index,
+        uint8 cardinality
     ) private view returns (Observation memory beforeOrAt, Observation memory atOrAfter) {
         uint256 l = (index + 1) % cardinality; // oldest observation
         uint256 r = l + cardinality - 1; // newest observation
@@ -182,8 +163,8 @@ library InterestOracle {
         uint32 time,
         uint32 target,
         int24 tick,
-        uint16 index,
-        uint16 cardinality
+        uint8 index,
+        uint8 cardinality
     ) private view returns (Observation memory beforeOrAt, Observation memory atOrAfter) {
         // optimistically set before to the newest observation
         beforeOrAt = self[index];
@@ -226,8 +207,8 @@ library InterestOracle {
         uint32 time,
         uint32 secondsAgo,
         int24 tick,
-        uint16 index,
-        uint16 cardinality
+        uint8 index,
+        uint8 cardinality
     ) internal view returns (int56 irCumulative) {
         if (secondsAgo == 0) {
             Observation memory last = self[index];
@@ -271,8 +252,8 @@ library InterestOracle {
         uint32 time,
         uint32[] memory secondsAgos,
         int24 tick,
-        uint16 index,
-        uint16 cardinality
+        uint8 index,
+        uint8 cardinality
     ) internal view returns (int56[] memory irCumulatives) {
         require(cardinality > 0, 'I');
 
@@ -287,5 +268,24 @@ library InterestOracle {
                 cardinality
             );
         }
+    }
+
+    function arithmeticMean(
+        Observation[256] storage self,
+        uint32 time,
+        uint32[] memory secondsAgos,
+        int24 tick,
+        uint8 index,
+        uint8 cardinality
+    ) internal view returns (int24 irCumulatives) {
+        int56[] memory irPoints = observe(
+            self,
+            time,
+            secondsAgos,
+            tick,
+            index,
+            cardinality
+        );
+        return int24((irPoints[1]-irPoints[0]) / secondsAgos[1]);
     }
 }
