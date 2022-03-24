@@ -9,11 +9,13 @@ pragma experimental ABIEncoderV2;
 import "../../core/State.sol";
 import "../../events/LoanSettingsEvents.sol";
 import "../../utils/MathUtil.sol";
+import "../../utils/InterestOracle.sol";
 import "../../mixins/InterestHandler.sol";
 
 
 contract LoanSettings is State, InterestHandler, LoanSettingsEvents {
     using MathUtil for uint256;
+    using InterestOracle for InterestOracle.Observation[256];
     
     function initialize(
         address target)
@@ -21,6 +23,7 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents {
         onlyOwner
     {
         _setTarget(this.setupLoanParams.selector, target);
+        _setTarget(this.setupLoanPoolTWAI.selector, target);
         _setTarget(this.disableLoanParams.selector, target);
         _setTarget(this.getLoanParams.selector, target);
         _setTarget(this.getLoanParamsList.selector, target);
@@ -40,6 +43,11 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents {
         for (uint256 i = 0; i < loanParamsList.length; i++) {
             loanParamsIdList[i] = _setupLoanParams(loanParamsList[i]);
         }
+    }
+
+    function setupLoanPoolTWAI(address pool) external {
+        poolInterestRateObservations[pool].initialize(uint32(block.timestamp - 3600));
+        poolInterestRateObservations[pool].grow(uint8(1), uint8(256));
     }
 
     // Deactivates LoanParams for future loans. Active loans using it are unaffected.
