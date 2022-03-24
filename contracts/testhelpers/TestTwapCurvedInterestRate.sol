@@ -31,7 +31,6 @@ contract TestTwapCurvedInterestRate {
         poolInterestRateObservations.grow(uint8(1), uint8(256));
     }
 
-
     function setRateHelper(ICurvedInterestRate _rateHelper) public {
         rateHelper = _rateHelper;
     }
@@ -58,7 +57,7 @@ contract TestTwapCurvedInterestRate {
         uint256 benchmarkRate = TickMath.getSqrtRatioAtTick(poolInterestRateObservations.arithmeticMean(
                                                                 uint32(block.timestamp),
                                                                 secondsAgo,
-                                                                TickMath.getTickAtSqrtRatio(uint160(lastIR)),
+                                                                poolInterestRateObservations[poolLastIdx].tick,
                                                                 poolLastIdx,
                                                                 uint8(-1)
                                                             ));

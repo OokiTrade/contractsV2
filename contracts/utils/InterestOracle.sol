@@ -8,6 +8,7 @@ library InterestOracle {
         int56 irCumulative;
         // whether or not the observation is initialized
         bool initialized;
+        int24 tick;
     }
 
     /// @notice Transforms a previous observation into a new observation, given the passage of time and the current tick and liquidity values
@@ -26,7 +27,8 @@ library InterestOracle {
             Observation({
                 blockTimestamp: blockTimestamp,
                 irCumulative: last.irCumulative + int56(tick) * delta,
-                initialized: true
+                initialized: true,
+                tick: tick
             });
     }
 
@@ -42,7 +44,8 @@ library InterestOracle {
         self[0] = Observation({
             blockTimestamp: time,
             irCumulative: 0,
-            initialized: true
+            initialized: true,
+            tick: 0
         });
         return (1, 1);
     }
