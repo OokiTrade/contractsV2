@@ -175,7 +175,7 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
 
     function getLoanParamId(
         LoanParams memory loanParam)
-        public
+        internal
         pure
         returns (bytes32) 
     {
