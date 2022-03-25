@@ -11,9 +11,9 @@ import "../../events/LoanSettingsEvents.sol";
 import "../../utils/MathUtil.sol";
 import "../../utils/InterestOracle.sol";
 import "../../mixins/InterestHandler.sol";
+import "../../governance/PausableGuardian.sol";
 
-
-contract LoanSettings is State, InterestHandler, LoanSettingsEvents {
+contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGuardian {
     using MathUtil for uint256;
     using InterestOracle for InterestOracle.Observation[256];
     
@@ -45,7 +45,7 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents {
         }
     }
 
-    function setupLoanPoolTWAI(address pool) external {
+    function setupLoanPoolTWAI(address pool) external onlyGuardian {
         poolInterestRateObservations[pool].initialize(uint32(block.timestamp - 3600));
         poolInterestRateObservations[pool].grow(uint8(1), uint8(256));
     }
