@@ -132,4 +132,42 @@ def testITotokenCollateral(requireMainnetFork, accounts, DAO, TIMELOCK, iLINK, i
     ls = accounts[0].deploy(LoanSettings)
     BZX.replaceContract(lo, {"from": BZX.owner()})
     BZX.replaceContract(ls, {"from": BZX.owner()})
-    assert False
+
+    loanParams = BZX.getDefaultLoanParams(USDC ,USDT, True)
+    loanParamsIToken = BZX.getDefaultLoanParams(USDC ,iUSDT, True)
+    assert loanParams[1] == loanParamsIToken[1]
+    assert loanParams[2] == loanParamsIToken[2]
+    assert loanParams[3] == loanParamsIToken[3]
+    assert loanParams[4] == USDT
+    assert loanParamsIToken[4] == iUSDT
+    assert loanParams[5] == loanParamsIToken[5]
+    assert loanParams[6] == loanParamsIToken[6]
+    assert loanParams[7] == loanParamsIToken[7]
+
+    
+    
+
+    BZX.migrateLoanParamsList(iUSDT, 0, 100, {"from": BZX.owner()})
+    BZX.migrateLoanParamsList(iUSDC, 0, 100, {"from": BZX.owner()})
+
+    loanParams = BZX.getDefaultLoanParams(USDC ,USDT, False)
+    loanParamsIToken = BZX.getDefaultLoanParams(USDC ,iUSDT, False)
+
+    assert loanParamsIToken[0] == "0x0000000000000000000000000000000000000000000000000000000000000000"
+    assert loanParamsIToken[1] == False
+    assert loanParamsIToken[2] == "0x0000000000000000000000000000000000000000"
+    assert loanParamsIToken[3] == "0x0000000000000000000000000000000000000000"
+    assert loanParamsIToken[4] == "0x0000000000000000000000000000000000000000"
+    assert loanParamsIToken[5] == 0
+    assert loanParamsIToken[6] == 0
+    assert loanParamsIToken[7] == 0
+
+    assert loanParams[0] != "0x0000000000000000000000000000000000000000000000000000000000000000"
+    assert loanParams[1] == True
+    assert loanParams[2] == iUSDC
+    assert loanParams[3] == USDC
+    assert loanParams[4] == USDT
+    assert loanParams[5] != 0
+    assert loanParams[6] != 0
+    assert loanParams[7] != 0
+    assert True

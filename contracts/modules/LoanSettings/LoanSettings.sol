@@ -134,8 +134,8 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
         returns(bytes32)
     {
         return keccak256(abi.encodePacked(
-                    loanParamsLocal.loanToken,
-                    loanParamsLocal.collateralToken,
+                    loanToken,
+                    collateralToken,
                     isTorqueLoan
                 ));
     }
@@ -148,11 +148,11 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
         external
     {
         // requires loanToken approved
-        require(supportedTokens[loanToken] != address(0), "invalid");
+        require(supportedTokens[loanToken], "invalid");
         // requires collateralToken approved
-        require(supportedTokens[collateralToken] != address(0), "invalid");
+        require(supportedTokens[collateralToken], "invalid");
         // requires there is a pricefeed
-        require(IPriceFeeds(_priceFeeds).pricesFeeds(collateralToken) != address(0), "invalid");
+        require(IPriceFeeds(priceFeeds).pricesFeeds(collateralToken) != address(0), "invalid");
         // requires param does not exist
         bytes32 loanParamId = getLoanParam(loanToken, collateralToken, isTorqueLoan);
         require(loanParamsIds[loanParamId] == 0, "invalid");
@@ -166,7 +166,7 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
         loanParamsLocal.maxLoanTerm = 0;
         loanParamsLocal.id = getLoanParamId(loanParamsLocal);
         
-        require(loanParams[loanParamsLocal.id] == 0, "invalid");
+        require(loanParams[loanParamsLocal.id].id == 0, "invalid");
 
         loanParams[loanParamsLocal.id] = loanParamsLocal;
         loanParamsIds[loanParamId] = loanParamsLocal.id;
