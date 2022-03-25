@@ -73,7 +73,7 @@ library InterestOracle {
         Observation memory last = self[index];
 
         // early return if we've already written an observation in last 30 seconds
-        if (last.blockTimestamp + 30 >= blockTimestamp) return (index, cardinality);
+        if (last.blockTimestamp + 60 >= blockTimestamp) return (index, cardinality);
 
         // if the conditions are right, we can bump the cardinality
         if (cardinalityNext > cardinality && index == (cardinality - 1)) {

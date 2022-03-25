@@ -29,7 +29,7 @@ contract TestTwapCurvedInterestRate {
     function initOracle() public {
         // poolInterestRateObservations.initialize(uint32(block.timestamp - 3600));
         // poolInterestRateObservations.grow(uint8(1), uint8(256));
-        poolInterestRateObservations.initialize(uint32(block.timestamp - 3600));
+        poolInterestRateObservations.initialize(uint32(block.timestamp - 10800));
         poolInterestRateObservations.grow(uint8(1), uint8(256));
     }
 

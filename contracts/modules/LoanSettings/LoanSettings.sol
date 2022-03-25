@@ -46,7 +46,7 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
     }
 
     function setupLoanPoolTWAI(address pool) external onlyGuardian {
-        poolInterestRateObservations[pool].initialize(uint32(block.timestamp - 3600));
+        poolInterestRateObservations[pool].initialize(uint32(block.timestamp - 10800));
         poolInterestRateObservations[pool].grow(uint8(1), uint8(256));
     }
 

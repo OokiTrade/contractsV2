@@ -157,7 +157,7 @@ contract InterestHandler is State, InterestRateEvents {
     {
         
         uint32[] memory secondsAgo = new uint32[](2);
-        secondsAgo[0] = 3600;
+        secondsAgo[0] = 10800;
         secondsAgo[1] = 0;
         uint256 benchmarkRate = TickMath.getSqrtRatioAtTick(poolInterestRateObservations[pool].arithmeticMean(
                                                                         uint32(block.timestamp),
