@@ -27,6 +27,8 @@ contract TestTwapCurvedInterestRate {
 
 
     function initOracle() public {
+        // poolInterestRateObservations.initialize(uint32(block.timestamp - 3600));
+        // poolInterestRateObservations.grow(uint8(1), uint8(256));
         poolInterestRateObservations.initialize(uint32(block.timestamp - 3600));
         poolInterestRateObservations.grow(uint8(1), uint8(256));
     }
@@ -51,7 +53,7 @@ contract TestTwapCurvedInterestRate {
 
         
         uint32[] memory secondsAgo = new uint32[](2);
-        secondsAgo[0] = 3600;
+        secondsAgo[0] = 10800;
         secondsAgo[1] = 0;
 
         uint256 benchmarkRate = TickMath.getSqrtRatioAtTick(poolInterestRateObservations.arithmeticMean(
