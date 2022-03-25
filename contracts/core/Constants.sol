@@ -19,9 +19,9 @@ contract Constants {
     string internal constant UserRewardsID = "UserRewards";
     string internal constant LoanDepositValueID = "LoanDepositValue";
 
-    //IWethERC20 public constant wethToken = IWethERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // mainnet
-    //address public constant bzrxTokenAddress = 0x56d811088235F11C8920698a204A5010a788f4b3; // mainnet
-    //address public constant vbzrxTokenAddress = 0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F; // mainnet
+    IWethERC20 public constant wethToken = IWethERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // mainnet
+    address public constant bzrxTokenAddress = 0x56d811088235F11C8920698a204A5010a788f4b3; // mainnet
+    address public constant vbzrxTokenAddress = 0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F; // mainnet
 
     //IWethERC20 public constant wethToken = IWethERC20(0xd0A1E359811322d97991E03f863a0C30C2cF029C); // kovan
     //address public constant bzrxTokenAddress = 0xB54Fc2F2ea17d798Ad5C7Aba2491055BCeb7C6b2; // kovan
@@ -35,9 +35,9 @@ contract Constants {
     //address public constant bzrxTokenAddress = address(0); // bsc
     //address public constant vbzrxTokenAddress = address(0); // bsc
 
-    IWethERC20 public constant wethToken = IWethERC20(0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270); // polygon (Wrapped MATIC)
-    address public constant bzrxTokenAddress = address(0); // polygon
-    address public constant vbzrxTokenAddress = address(0); // polygon
+    //IWethERC20 public constant wethToken = IWethERC20(0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270); // polygon (Wrapped MATIC)
+    //address public constant bzrxTokenAddress = address(0); // polygon
+    //address public constant vbzrxTokenAddress = address(0); // polygon
 
     //IWethERC20 public constant wethToken = IWethERC20(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7); // avax (Wrapped AVAX)
     //address public constant bzrxTokenAddress = address(0); // avax
