@@ -28,11 +28,11 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         _setTarget(this.getLoanParamId.selector, target);
 
         // TODO remove next deploy ? shall I even remove them if they are read only?
-        setTarget(bytes4(keccak256("getEstimatedMarginExposure(address,address,uint256,uint256,uint256,uint256,bytes)")), address(0));
-        setTarget(bytes4(keccak256("getRequiredCollateral(address,address,uint256,uint256,bool)")), address(0));
-        setTarget(bytes4(keccak256("getRequiredCollateralByParams(bytes32,uint256)")), address(0));
-        setTarget(bytes4(keccak256("getBorrowAmount(address,address,uint256,uint256,bool)")), address(0));
-        setTarget(bytes4(keccak256("getBorrowAmountByParams(bytes32,uint256)")), address(0));
+        _setTarget(bytes4(keccak256("getEstimatedMarginExposure(address,address,uint256,uint256,uint256,uint256,bytes)")), address(0));
+        _setTarget(bytes4(keccak256("getRequiredCollateral(address,address,uint256,uint256,bool)")), address(0));
+        _setTarget(bytes4(keccak256("getRequiredCollateralByParams(bytes32,uint256)")), address(0));
+        _setTarget(bytes4(keccak256("getBorrowAmount(address,address,uint256,uint256,bool)")), address(0));
+        _setTarget(bytes4(keccak256("getBorrowAmountByParams(bytes32,uint256)")), address(0));
     }
 
     // Note: Only callable by loan pools (iTokens)
@@ -65,7 +65,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         address loanToken = loanPoolToUnderlying[msg.sender];
         require(loanToken != address(0), "not authorized");
 
-        LoanParams memory loanParamsLocal = getDefaultLoanParams(loanToken, collateralToken, isTorqueLoan);
+        LoanParams memory loanParamsLocal = getLoanParams(loanToken, collateralToken, isTorqueLoan);
         require(loanParamsLocal.id != 0, "loanParams not exists");
 
         if (initialMargin == 0) {
@@ -95,7 +95,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         );
     }
 
-    function getDefaultLoanParams(
+    function getLoanParams(
         address loanToken,
         address collateralToken,
         bool isTorqueLoan)
@@ -154,18 +154,6 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
             loanParam.maintenanceMargin,
             loanParam.maxLoanTerm
         ));
-    }
-
-    function upgradeLoanParams(
-        bytes32 loanParamsId,
-        bool isTorqueLoan)
-        internal
-        returns (bytes32)
-    {
-        LoanParams memory loanParamsLocal = loanParams[loanParamsId];
-        require(loanParamsLocal.id != 0, "loanParams doesnt exist");
-        bytes32 newLoanParamsId = getPoolLoanParamId(loanParamsLocal.loanToken, loanParamsLocal.collateralToken, isTorqueLoan);
-        loanParamsIds[newLoanParamsId] = loanParamsLocal.id;
     }
     
     function setDelegatedManager(
