@@ -23,7 +23,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
     {
         _setTarget(this.borrowOrTradeFromPool.selector, target);
         _setTarget(this.setDelegatedManager.selector, target);
-        _setTarget(this.getDefaultLoanParams.selector, target);
+        _setTarget(this.getLoanParams.selector, target);
         _setTarget(this.getPoolLoanParamId.selector, target);
         _setTarget(this.getLoanParamId.selector, target);
 

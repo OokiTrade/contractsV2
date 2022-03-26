@@ -133,8 +133,8 @@ def testITotokenCollateral(requireMainnetFork, accounts, DAO, TIMELOCK, iLINK, i
     BZX.replaceContract(lo, {"from": BZX.owner()})
     BZX.replaceContract(ls, {"from": BZX.owner()})
 
-    loanParams = BZX.getDefaultLoanParams(USDC ,USDT, True)
-    loanParamsIToken = BZX.getDefaultLoanParams(USDC ,iUSDT, True)
+    loanParams = BZX.getLoanParams(USDC ,USDT, True)
+    loanParamsIToken = BZX.getLoanParams(USDC ,iUSDT, True)
     assert loanParams[1] == loanParamsIToken[1]
     assert loanParams[2] == loanParamsIToken[2]
     assert loanParams[3] == loanParamsIToken[3]
@@ -150,8 +150,8 @@ def testITotokenCollateral(requireMainnetFork, accounts, DAO, TIMELOCK, iLINK, i
     BZX.migrateLoanParamsList(iUSDT, 0, 100, {"from": BZX.owner()})
     BZX.migrateLoanParamsList(iUSDC, 0, 100, {"from": BZX.owner()})
 
-    loanParams = BZX.getDefaultLoanParams(USDC ,USDT, False)
-    loanParamsIToken = BZX.getDefaultLoanParams(USDC ,iUSDT, False)
+    loanParams = BZX.getLoanParams(USDC ,USDT, False)
+    loanParamsIToken = BZX.getLoanParams(USDC ,iUSDT, False)
 
     assert loanParamsIToken[0] == "0x0000000000000000000000000000000000000000000000000000000000000000"
     assert loanParamsIToken[1] == False
