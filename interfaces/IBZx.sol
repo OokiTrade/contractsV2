@@ -307,62 +307,6 @@ interface IBZx {
         bool toggle
     ) external;
 
-    /// @dev estimates margin exposure for simulated position
-    /// @param loanToken address of the loan token
-    /// @param collateralToken address of collateral token
-    /// @param loanTokenSent amout of loan token sent
-    /// @param collateralTokenSent amount of collateral token sent
-    /// @param interestRate yearly interest rate
-    /// @param newPrincipal principal amount of the loan
-    /// @return estimated margin exposure amount
-    function getEstimatedMarginExposure(
-        address loanToken,
-        address collateralToken,
-        uint256 loanTokenSent,
-        uint256 collateralTokenSent,
-        uint256 interestRate,
-        uint256 newPrincipal
-    ) external view returns (uint256);
-
-    /// @dev calculates required collateral for simulated position
-    /// @param loanToken address of loan token
-    /// @param collateralToken address of collateral token
-    /// @param newPrincipal principal amount of the loan
-    /// @param marginAmount margin amount of the loan
-    /// @param isTorqueLoan boolean torque or non torque loan
-    /// @return collateralAmountRequired amount required
-    function getRequiredCollateral(
-        address loanToken,
-        address collateralToken,
-        uint256 newPrincipal,
-        uint256 marginAmount,
-        bool isTorqueLoan
-    ) external view returns (uint256 collateralAmountRequired);
-
-    function getRequiredCollateralByParams(
-        bytes32 loanParamsId,
-        uint256 newPrincipal
-    ) external view returns (uint256 collateralAmountRequired);
-
-    // /// @dev calculates borrow amount for simulated position
-    // /// @param loanToken address of loan token
-    // /// @param collateralToken address of collateral token
-    // /// @param collateralTokenAmount amount of collateral token sent
-    // /// @param marginAmount margin amount
-    // /// @param isTorqueLoan boolean torque or non torque loan
-    // /// @return borrowAmount possible borrow amount
-    // function getBorrowAmount(
-    //     address loanToken,
-    //     address collateralToken,
-    //     uint256 collateralTokenAmount,
-    //     uint256 marginAmount,
-    //     bool isTorqueLoan
-    // ) external view returns (uint256 borrowAmount);
-
-    // function getBorrowAmountByParams(
-    //     bytes32 loanParamsId,
-    //     uint256 collateralTokenAmount
-    // ) external view returns (uint256 borrowAmount);
     
     function getDefaultLoanParams(
         address collateralToken,

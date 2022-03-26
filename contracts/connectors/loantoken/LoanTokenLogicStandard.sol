@@ -509,40 +509,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
             .div(WEI_PRECISION);
     }
 
-    // DEPRECATED, UI is handling this
-    function getEstimatedMarginDetails(
-        uint256 leverageAmount,
-        uint256 loanTokenSent,
-        uint256 collateralTokenSent,
-        address collateralTokenAddress)     // address(0) means ETH
-        external
-        view
-        returns (uint256 principal, uint256 collateral, uint256 interestRate, uint256 collateralToLoanRate)
-    {
-        if (collateralTokenAddress == address(0)) {
-            collateralTokenAddress = wethToken;
-        }
-
-        uint256 collateralToLoanPrecision;
-        (collateralToLoanRate, collateralToLoanPrecision) = IPriceFeeds(IBZx(bZxContract).priceFeeds()).queryRate(
-            collateralTokenAddress,
-            loanTokenAddress
-        );
-        require(collateralToLoanRate != 0 && collateralToLoanPrecision != 0, "20");
-        collateralToLoanRate = collateralToLoanRate
-            .mul(WEI_PRECISION)
-            .div(collateralToLoanPrecision);
-
-        collateral = IBZx(bZxContract).getEstimatedMarginExposure(
-            loanTokenAddress,
-            collateralTokenAddress,
-            loanTokenSent,
-            collateralTokenSent,
-            0, // interestRate (depreciated)
-            0 // principal
-        );
-    }
-
     function getPoolUtilization()
         external
         view
