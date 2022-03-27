@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021, bZxDao. All Rights Reserved.
+ * Copyright 2017-2022, OokiDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -11,13 +11,10 @@ import "@openzeppelin-2.5.0/token/ERC20/IERC20.sol";
 import "../interfaces/IERC20Detailed.sol";
 import "../core/Constants.sol";
 import "./IPriceFeedsExt.sol";
+import "../governance/PausableGuardian.sol";
 
-
-contract PriceFeeds is Constants, Ownable {
+contract PriceFeeds is Constants, Ownable, PausableGuardian {
     using SafeMath for uint256;
-
-    // address(1) is used as a stand-in for the non-existent token representing the fast-gas price on Chainlink
-    address internal constant FASTGAS_PRICEFEED_ADDRESS = address(1);
 
     event GlobalPricingPaused(
         address indexed sender,
@@ -258,29 +255,6 @@ contract PriceFeeds is Constants, Ownable {
         return currentMargin <= maintenanceMargin;
     }
 
-    // returns per unit gas cost denominated in payToken * 1e36
-    function getFastGasPrice(
-        address payToken)
-        external
-        view
-        returns (uint256)
-    {
-        uint256 gasPrice = _getFastGasPrice()
-            .mul(WEI_PRECISION * WEI_PRECISION);
-        if (payToken != address(wethToken) && payToken != address(0)) {
-            require(!globalPricingPaused, "pricing is paused");
-            (uint256 rate, uint256 precision) = _queryRate(
-                address(wethToken),
-                payToken
-            );
-            gasPrice = gasPrice
-                .mul(rate)
-                .div(precision);
-        }
-        return gasPrice;
-    }
-
-
     /*
     * Owner functions
     */
@@ -289,7 +263,7 @@ contract PriceFeeds is Constants, Ownable {
         address[] calldata tokens,
         IPriceFeedsExt[] calldata feeds)
         external
-        onlyOwner
+        onlyGuardian
     {
         require(tokens.length == feeds.length, "count mismatch");
 
@@ -301,7 +275,7 @@ contract PriceFeeds is Constants, Ownable {
     function setDecimals(
         IERC20Detailed[] calldata tokens)
         external
-        onlyOwner
+        onlyGuardian
     {
         for (uint256 i = 0; i < tokens.length; i++) {
             decimals[address(tokens[i])] = tokens[i].decimals();
@@ -386,14 +360,5 @@ contract PriceFeeds is Constants, Ownable {
             else
                 return 10**(SafeMath.add(18, sourceTokenDecimals-destTokenDecimals));
         }
-    }
-
-    function _getFastGasPrice()
-        internal
-        view
-        returns (uint256 gasPrice)
-    {
-        gasPrice = uint256(pricesFeeds[FASTGAS_PRICEFEED_ADDRESS].latestAnswer());
-        require(gasPrice != 0 && (gasPrice >> 128) == 0, "gas price error");
     }
 }

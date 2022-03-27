@@ -1,4 +1,4 @@
-pragma solidity >=0.5.17;
+pragma solidity >=0.5.0 <0.9.0;
 pragma experimental ABIEncoderV2;
 
 interface IUniswapV3SwapRouter {
@@ -15,6 +15,7 @@ interface IUniswapV3SwapRouter {
     struct ExactInputParams {
         bytes path;
         address recipient;
+        uint256 deadline;
         uint256 amountIn;
         uint256 amountOutMinimum;
     }

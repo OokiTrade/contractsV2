@@ -1,12 +1,18 @@
 /**
- * Copyright 2017-2021, bZeroX, LLC. All Rights Reserved.
+ * Copyright 2017-2022, OokiDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity >=0.5.0 <=0.8.4;
+pragma solidity >=0.5.0 <0.9.0;
 
 
 interface IPriceFeeds {
+
+    function pricesFeeds(address token)
+        external
+        view
+        returns(address pricefeed);
+
     function queryRate(
         address sourceToken,
         address destToken)
@@ -83,10 +89,4 @@ interface IPriceFeeds {
         external
         view
         returns (bool);
-
-    function getFastGasPrice(
-        address payToken)
-        external
-        view
-        returns (uint256);
 }

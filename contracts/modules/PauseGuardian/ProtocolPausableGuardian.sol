@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021, bZxDao. All Rights Reserved.
+ * Copyright 2017-2022, OokiDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -20,6 +20,8 @@ contract ProtocolPausableGuardian is State, PausableGuardian {
         _setTarget(this._isPaused.selector, target);
         _setTarget(this.toggleFunctionPause.selector, target);
         _setTarget(this.toggleFunctionUnPause.selector, target);
+        _setTarget(this.pause.selector, target);
+        _setTarget(this.unpause.selector, target);
         _setTarget(this.changeGuardian.selector, target);
         _setTarget(this.getGuardian.selector, target);
     }

@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021, bZxDao. All Rights Reserved.
+ * Copyright 2017-2022, OokiDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -11,8 +11,11 @@ import "../../events/ProtocolSettingsEvents.sol";
 import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 import "../../interfaces/IVestingToken.sol";
 import "../../utils/MathUtil.sol";
+import "../../interfaces/IDexRecords.sol";
+import "../../governance/PausableGuardian.sol";
 
-contract ProtocolSettings is State, ProtocolSettingsEvents {
+
+contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian {
     using SafeERC20 for IERC20;
     using MathUtil for uint256;
 
@@ -41,6 +44,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         _setTarget(this.queryFees.selector, target);
         _setTarget(this.getLoanPoolsList.selector, target);
         _setTarget(this.isLoanPool.selector, target);
+        _setTarget(this.revokeApprovals.selector, target);
     }
 
     function setPriceFeedContract(
@@ -77,7 +81,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         address[] calldata pools,
         address[] calldata assets)
         external
-        onlyOwner
+        onlyGuardian
     {
         require(pools.length == assets.length, "count mismatch");
 
@@ -117,7 +121,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         bool[] calldata toggles,
         bool withApprovals)
         external
-        onlyOwner
+        onlyGuardian
     {
         require(addrs.length == toggles.length, "count mismatch");
 
@@ -136,7 +140,24 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
                 0x4a99e3a1, // setSwapApprovals(address[])
                 addrs
             );
-            (bool success,) = swapsImpl.delegatecall(data);
+            IDexRecords records = IDexRecords(swapsImpl);
+            for(uint256 i = 1; i<=records.getDexCount();i++){
+                address swapImpl = records.retrieveDexAddress(i);
+                (bool success,) = swapImpl.delegatecall(data);
+                require(success, "approval calls failed");
+            }
+        }
+    }
+    
+    function revokeApprovals(address[] calldata addrs) external onlyGuardian {
+        bytes memory data = abi.encodeWithSelector(
+            0x7265766f, // revokeApprovals(address[])
+            addrs
+        );
+        IDexRecords records = IDexRecords(swapsImpl);
+        for(uint256 i = 1; i<=records.getDexCount();i++){
+            address swapImpl = records.retrieveDexAddress(i);
+            (bool success,) = swapImpl.delegatecall(data);
             require(success, "approval calls failed");
         }
     }
@@ -210,7 +231,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         address[] calldata collateralTokens,
         uint256[] calldata amounts)
         external
-        onlyOwner
+        onlyGuardian
     {
         require(loanTokens.length == collateralTokens.length && loanTokens.length == amounts.length, "count mismatch");
 

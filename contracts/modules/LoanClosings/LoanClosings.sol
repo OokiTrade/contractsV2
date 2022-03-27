@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021, bZxDao. All Rights Reserved.
+ * Copyright 2017-2022, OokiDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -17,9 +17,15 @@ contract LoanClosings is LoanClosingsBase {
         onlyOwner
     {
         _setTarget(this.liquidate.selector, target);
-        _setTarget(this.rollover.selector, target);
         _setTarget(this.closeWithDeposit.selector, target);
         _setTarget(this.closeWithSwap.selector, target);
+
+        // TEMP: remove after upgrade
+        _setTarget(bytes4(keccak256("rollover(bytes32,bytes)")), address(0));
+        _setTarget(bytes4(keccak256("liquidateWithGasToken(bytes32,address,address,uint256)")), address(0));
+        _setTarget(bytes4(keccak256("closeWithDepositWithGasToken(bytes32,address,address,uint256)")), address(0));
+        _setTarget(bytes4(keccak256("closeWithSwapWithGasToken(bytes32,address,address,uint256,bool,bytes)")), address(0));
+        _setTarget(bytes4(keccak256("swapExternalWithGasToken(address,address,address,address,address,uint256,uint256,bytes)")), address(0));
     }
 
     function liquidate(
@@ -39,29 +45,6 @@ contract LoanClosings is LoanClosingsBase {
             loanId,
             receiver,
             closeAmount
-        );
-    }
-
-    function rollover(
-        bytes32 loanId,
-        bytes calldata /*loanDataBytes*/) // for future use
-        external
-        nonReentrant
-        returns (
-            address rebateToken,
-            uint256 gasRebate
-        )
-    {
-        uint256 startingGas = gasleft() +
-            21576; // estimated used gas ignoring loanDataBytes: 21000 + (4+32) * 16
-
-        // restrict to EOAs to prevent griefing attacks, during interest rate recalculation
-        require(msg.sender == tx.origin, "only EOAs can call");
-
-        return _rollover(
-            loanId,
-            startingGas,
-            "" // loanDataBytes
         );
     }
 
@@ -90,7 +73,7 @@ contract LoanClosings is LoanClosingsBase {
         address receiver,
         uint256 swapAmount, // denominated in collateralToken
         bool returnTokenIsCollateral, // true: withdraws collateralToken, false: withdraws loanToken
-        bytes memory /*loanDataBytes*/) // for future use
+        bytes memory loanDataBytes)
         public
         nonReentrant
         returns (
@@ -104,7 +87,7 @@ contract LoanClosings is LoanClosingsBase {
             receiver,
             swapAmount,
             returnTokenIsCollateral,
-            "" // loanDataBytes
+            loanDataBytes
         );
     }
 }

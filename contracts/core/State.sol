@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2021, bZxDao. All Rights Reserved.
+ * Copyright 2017-2022, OokiDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -32,8 +32,8 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
     mapping (bytes32 => mapping (address => bool)) public delegatedManagers;                // loanId => delegated => approved
 
     // Interest
-    mapping (address => mapping (address => LenderInterest)) public lenderInterest;         // lender => loanToken => LenderInterest object
-    mapping (bytes32 => LoanInterest) public loanInterest;                                  // loanId => LoanInterest object
+    mapping (address => mapping (address => LenderInterest)) public lenderInterest;         // lender => loanToken => LenderInterest object (depreciated)
+    mapping (bytes32 => LoanInterest) public loanInterest;                                  // loanId => LoanInterest object (depreciated)
 
     // Internals
     EnumerableBytes32Set.Bytes32Set internal logicTargetsSet;                               // implementations set
@@ -76,6 +76,20 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
 
     uint256 public maxSwapSize = 1500 ether;                                                // maximum supported swap size in ETH
 
+
+    /**** new interest model start */
+    mapping(address => uint256) public poolLastUpdateTime; // per itoken
+    mapping(address => uint256) public poolPrincipalTotal; // per itoken
+    mapping(address => uint256) public poolInterestTotal; // per itoken
+    mapping(address => uint256) public poolRatePerTokenStored; // per itoken
+
+    mapping(bytes32 => uint256) public loanInterestTotal; // per loan
+    mapping(bytes32 => uint256) public loanRatePerTokenPaid; // per loan
+
+    mapping(address => uint256) public poolLastInterestRate; // per itoken
+    /**** new interest model end */
+    
+    mapping (bytes32 => bytes32) public loanParamsIds; // kessak(loanToken,collaterlaToken,isTorque) -> loanParams
 
     function _setTarget(
         bytes4 sig,
