@@ -22,31 +22,16 @@
   
 </div>
 
-# OOIP-4 DAO proposal to compensate bzrx victim of the hack
+# OOIP-9 DAO proposal to enable iToken to be used as collateral
 
 ## Introduction
 
-- This is the rebrand proposal
+- This proposal will enable iTokens to be used as a collateral when borrowing
 
 ## Proposal Calls
 
 1. TODO redeploy old staking to exit() vesting
-2. allocate funds for audit 40k$
-3. make Drypto and Suz bonus bigger
-4. Allocate funds for option strategy (5m$ total)
-5. TIDAL allocation 10k
-6. Allocate funds for Audit (40k$)
-7. 
-8. 
-9. 
-10. Deploy and Enable Sweep Fees/ require price feed
-11. deploy iToken price feeds
-12. iToken as collateral
-
-13. 
-
-
-# TODO 3,4, 5,6,7,8
+2. Upgrade iTokens 
 
 
 

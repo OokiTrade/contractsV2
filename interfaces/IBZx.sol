@@ -308,7 +308,7 @@ interface IBZx {
     ) external;
 
     
-    function getDefaultLoanParams(
+    function getLoanParams(
         address collateralToken,
         address loanToken,
         bool isTorqueLoan)
