@@ -22,11 +22,10 @@ contract InterestHandler is State, InterestRateEvents {
         internal
         returns (uint256 _loanInterestTotal)
     {
-        (poolLastIdx[pool], ) = poolInterestRateObservations[pool].write(
+        poolLastIdx[pool] = poolInterestRateObservations[pool].write(
                                                                     poolLastIdx[pool],
                                                                     uint32(block.timestamp),
                                                                     TickMath.getTickAtSqrtRatio(uint160(poolLastInterestRate[pool])),
-                                                                    uint8(-1),
                                                                     uint8(-1)
                                                                 );
         uint256[7] memory interestVals = _settleInterest2(
@@ -156,12 +155,9 @@ contract InterestHandler is State, InterestRateEvents {
         returns (uint256 ratePerTokenNewAmount, uint256 nextInterestRate)
     {
         
-        uint32[] memory secondsAgo = new uint32[](2);
-        secondsAgo[0] = 10800;
-        secondsAgo[1] = 0;
         uint256 benchmarkRate = TickMath.getSqrtRatioAtTick(poolInterestRateObservations[pool].arithmeticMean(
                                                                         uint32(block.timestamp),
-                                                                        secondsAgo,
+                                                                        [uint32(3*3600), 0],
                                                                         poolInterestRateObservations[pool][poolLastIdx[pool]].tick,
                                                                         poolLastIdx[pool],
                                                                         uint8(-1)

@@ -27,10 +27,7 @@ contract TestTwapCurvedInterestRate {
 
 
     function initOracle() public {
-        // poolInterestRateObservations.initialize(uint32(block.timestamp - 3600));
-        // poolInterestRateObservations.grow(uint8(1), uint8(256));
-        poolInterestRateObservations.initialize(uint32(block.timestamp - 10800));
-        poolInterestRateObservations.grow(uint8(1), uint8(256));
+        poolInterestRateObservations[0].blockTimestamp = uint32(block.timestamp - 10800);
     }
 
     function setRateHelper(ICurvedInterestRate _rateHelper) public {
@@ -43,22 +40,16 @@ contract TestTwapCurvedInterestRate {
 
     function borrow(uint256 newUtilization) public returns (uint256 interestRate) {
 
-        (poolLastIdx, ) = poolInterestRateObservations.write(
+        poolLastIdx = poolInterestRateObservations.write(
                                                             poolLastIdx,
                                                             uint32(block.timestamp),
                                                             TickMath.getTickAtSqrtRatio(uint160(lastIR)),
-                                                            uint8(-1),
                                                             uint8(-1)
                                                         );
 
-        
-        uint32[] memory secondsAgo = new uint32[](2);
-        secondsAgo[0] = 10800;
-        secondsAgo[1] = 0;
-
         uint256 benchmarkRate = TickMath.getSqrtRatioAtTick(poolInterestRateObservations.arithmeticMean(
                                                                 uint32(block.timestamp),
-                                                                secondsAgo,
+                                                                [uint32(3*3600), 0],
                                                                 poolInterestRateObservations[poolLastIdx].tick,
                                                                 poolLastIdx,
                                                                 uint8(-1)
@@ -68,6 +59,10 @@ contract TestTwapCurvedInterestRate {
             interestRate = 1e10;
         }
         lastIR = interestRate;
+    }
+
+    function lastRecordedIR() public view returns (uint256) {
+        return TickMath.getSqrtRatioAtTick(poolInterestRateObservations[poolLastIdx].tick);
     }
 
 }
