@@ -65,14 +65,15 @@ library InterestOracle {
             beforeOrAt = self[i % cardinality];
 
             if (beforeOrAt.blockTimestamp == 0) {
-                l = i + 1;
+                l = 0;
+                r = index;
                 continue;
             }
 
             atOrAfter = self[(i + 1) % cardinality];
 
             bool targetAtOrAfter = beforeOrAt.blockTimestamp <= target;
-            bool targetBeforeOrAt = target <= atOrAfter.blockTimestamp;
+            bool targetBeforeOrAt = atOrAfter.blockTimestamp >= target;
             if (!targetAtOrAfter) {
                 r = i - 1;
                 continue;
