@@ -106,7 +106,8 @@ contract InterestHandler is State, InterestRateEvents {
             6: _loanRatePerTokenPaid
         */
 
-        interestVals[0] = poolPrincipalTotal[pool];
+        interestVals[0] = poolPrincipalTotal[pool]
+            .add(lenderInterest[pool][loanPoolToUnderlying[pool]].principalTotal); // backwards compatibility
         interestVals[1] = poolInterestTotal[pool];
 
         uint256 lendingFee = interestVals[1]
