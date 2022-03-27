@@ -41,13 +41,19 @@ interface IOrderBook {
 
     function getFeed() external view returns (address);
 
-    function getOrdersLimited(uint256 start, uint256 end) external view returns(Order[] memory);
+    function getOrdersLimited(uint256 start, uint256 end) external view returns (Order[] memory);
 
-    function getOrders() external view returns(Order[] memory);
+    function getOrders() external view returns (Order[] memory);
 
-    function getActiveOrders(address trader) external view returns(Order[] memory);
+    function getOrderByOrderID(bytes32 orderID) external view returns (Order[] memory);
 
-    function getActiveOrdersLimited(address trader, uint256 start, uint256 end) external view returns(Order[] memory);
+    function getActiveOrders(address trader) external view returns (Order[] memory);
+
+    function getActiveOrderIDs(address trader) external view returns (bytes32[] memory);
+
+    function getActiveOrdersLimited(address trader, uint256 start, uint256 end) external view returns (Order[] memory);
+
+    function getTotalOrders(address trader) external view returns (uint256);
 
     function executeOrder(bytes32 orderID) external;
 
@@ -59,7 +65,11 @@ interface IOrderBook {
 
     function getOrderIDs() external view returns (bytes32[] memory);
 
+    function getOrders() external view returns (Order[] memory);
+
+    function getOrdersLimited(uint start, uint end) external view returns (Order[] memory);
+
     function getTotalOrderIDs() external view returns (uint256);
 
-    function getOrderIDsLimited(uint256 start, uint256 end) external view returns(bytes32[] memory);
+    function getOrderIDsLimited(uint256 start, uint256 end) external view returns (bytes32[] memory);
 }

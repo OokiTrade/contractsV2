@@ -355,9 +355,11 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
             sentValues,
             isTorqueLoan
         );
-        if(abi.decode(loanDataBytes, (uint128)) & DELEGATE_FLAG != 0) {
-            (, bytes[] memory payloads) = abi.decode(loanDataBytes, (uint128, bytes[]));
-            _setDelegatedManager(loanId, sentAddresses[1], abi.decode(payloads[1], (address)), true);
+        if(loanDataBytes.length != 0) {
+            if(abi.decode(loanDataBytes, (uint128)) & DELEGATE_FLAG != 0) {
+                (, bytes[] memory payloads) = abi.decode(loanDataBytes, (uint128, bytes[]));
+                _setDelegatedManager(loanId, sentAddresses[1], abi.decode(payloads[1], (address)), true);
+            }
         }
         return LoanOpenData({
             loanId: loanId,

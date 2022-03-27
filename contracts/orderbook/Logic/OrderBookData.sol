@@ -24,15 +24,26 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
         _setTarget(this.getOrdersLimited.selector, target);
     }
 
-    function adjustAllowance(address spender, address token) external pausable {
-        require(
-            protocol.isLoanPool(spender) ||
-                address(protocol) == spender ||
-                vault == spender,
-            "OrderBook: invalid spender"
-        );
-        IERC(token).approve(spender, 0); //needs to be zeroed out because of different iterations of ERC-20 standard
-        IERC(token).approve(spender, type(uint256).max);
+    function adjustAllowance(address[] memory spenders, address[] memory tokens) external pausable {
+        address spender;
+        address token;
+        for (uint i; i < spenders.length;) {
+            spender = spenders[i];
+            for (uint y; y < tokens.length;) {
+                token = tokens[i];
+                require(
+                    protocol.isLoanPool(spender) ||
+                        address(protocol) == spender ||
+                        vault == spender,
+                    "OrderBook: invalid spender"
+                );
+                IERC(token).approve(spender, 0);
+                IERC(token).approve(spender, type(uint256).max);
+                unchecked { ++y; }
+            }
+            unchecked { ++i; }
+        }
+
     }
 
     function getActiveOrders(address trader)
