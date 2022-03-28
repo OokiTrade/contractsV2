@@ -87,8 +87,8 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
     mapping(bytes32 => uint256) public loanRatePerTokenPaid; // per loan
 
     mapping(address => uint256) public poolLastInterestRate; // per itoken
-    mapping(address => InterestOracle.Observation[256]) public poolInterestRateObservations; //per itoken
-    mapping(address => uint8) public poolLastIdx; //per itoken
+    mapping(address => InterestOracle.Observation[256]) public poolInterestRateObservations; // per itoken
+    mapping(address => uint8) public poolLastIdx; // per itoken
     /**** new interest model end */
 
 
