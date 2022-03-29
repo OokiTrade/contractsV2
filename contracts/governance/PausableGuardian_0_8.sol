@@ -7,17 +7,15 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin-4.3.2/access/Ownable.sol";
 
-
 contract PausableGuardian_0_8 is Ownable {
-
     // keccak256("Pausable_FunctionPause")
     bytes32 internal constant Pausable_FunctionPause = 0xa7143c84d793a15503da6f19bf9119a2dac94448ca45d77c8bf08f57b2e91047;
 
     // keccak256("Pausable_GuardianAddress")
     bytes32 internal constant Pausable_GuardianAddress = 0x80e6706973d0c59541550537fd6a33b971efad732635e6c3b99fb01006803cdf;
 
-    modifier pausable {
-        require(!_isPaused(msg.sig), "paused");
+    modifier pausable() {
+        require(!_isPaused(msg.sig) || msg.sender == getGuardian(), "paused");
         _;
     }
 
