@@ -11,7 +11,7 @@ import "../../interfaces/IBZx.sol";
 import "../../interfaces/IPriceFeeds.sol";
 import "../../interfaces/IStakingV2.sol";
 import "./../staking/interfaces/ICurve3Pool.sol";
-import "@openzeppelin-4.3.2/token/ERC20/IERC20.sol";
+import "@openzeppelin-4.3.2/token/ERC20/utils/SafeERC20.sol";
 import "../governance/PausableGuardian_0_8.sol";
 
 interface IBridge {
@@ -25,11 +25,8 @@ interface IBridge {
     ) external;
 }
 
-interface IERC {
-    function approve(address spender, uint amount) external;
-}
-
 contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
+    using SafeERC20 for IERC20;
     address public implementation;
     IStakingV2 public constant STAKING =
         IStakingV2(0x16f179f5C344cc29672A58Ea327A26F64B941a63);
@@ -379,16 +376,16 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
     }
 
     function setApprovals() external onlyOwner {
-        IERC20(DAI).approve(address(CURVE_3POOL), type(uint256).max);
-        IERC20(USDC).approve(address(CURVE_3POOL), type(uint256).max);
-        IERC20(USDC).approve(BRIDGE, type(uint256).max);
-        IERC(USDT).approve(address(CURVE_3POOL), 0);
-        IERC(USDT).approve(address(CURVE_3POOL), type(uint256).max);
+        IERC20(DAI).safeApprove(address(CURVE_3POOL), type(uint256).max);
+        IERC20(USDC).safeApprove(address(CURVE_3POOL), type(uint256).max);
+        IERC20(USDC).safeApprove(BRIDGE, type(uint256).max);
+        IERC20(USDT).safeApprove(address(CURVE_3POOL), 0);
+        IERC20(USDT).safeApprove(address(CURVE_3POOL), type(uint256).max);
         
 
-        IERC20(OOKI).approve(address(STAKING), type(uint256).max);
-        IERC20(OOKI).approve(address(UNISWAP_ROUTER), type(uint256).max);
-        CURVE_3CRV.approve(address(STAKING), type(uint256).max);
+        IERC20(OOKI).safeApprove(address(STAKING), type(uint256).max);
+        IERC20(OOKI).safeApprove(address(UNISWAP_ROUTER), type(uint256).max);
+        CURVE_3CRV.safeApprove(address(STAKING), type(uint256).max);
     }
 
     // path should start with the asset to swap and end with OOKI
@@ -416,8 +413,8 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
             );
 
             swapPaths[path[0]] = path;
-            IERC20(path[0]).approve(address(UNISWAP_ROUTER), 0);
-            IERC20(path[0]).approve(address(UNISWAP_ROUTER), type(uint256).max);
+            IERC20(path[0]).safeApprove(address(UNISWAP_ROUTER), 0);
+            IERC20(path[0]).safeApprove(address(UNISWAP_ROUTER), type(uint256).max);
         }
     }
 
