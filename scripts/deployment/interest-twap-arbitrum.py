@@ -28,7 +28,7 @@ loanSettings = LoanSettings.deploy({"from": deployer, "gas_price": Wei("0.5 gwei
 
 
 calldata1 = LOAN_TOKEN_SETTINGS_LOWER_ADMIN.setDemandCurve.encode_input(cui)
-calldata2 = iUSDC.updateSettings(LOAN_TOKEN_SETTINGS_LOWER_ADMIN, calldata1, {"from": GUARDIAN_MULTISIG})
+calldata2 = iUSDC.updateSettings.encode_input(LOAN_TOKEN_SETTINGS_LOWER_ADMIN, calldata1)
 # for l in list:
 #     iTokenTemp = Contract.from_abi("iTokenTemp", l[0], LoanTokenLogicStandard.abi)
 #     iTokenTemp.updateSettings(LOAN_TOKEN_SETTINGS_LOWER_ADMIN, calldata, {"from": GUARDIAN_MULTISIG})
