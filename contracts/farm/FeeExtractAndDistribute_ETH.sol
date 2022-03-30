@@ -53,7 +53,7 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
 
     mapping(address => address[]) public swapPaths;
     mapping(address => uint256) public stakingRewards;
-
+    address[] public feeTokens;
     uint256 public buybackPercent;
 
     event ExtractAndDistribute();
@@ -79,9 +79,8 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
         pausable
         returns (uint256 bzrxRewards, uint256 crv3Rewards)
     {
-        address[] memory assets = STAKING.getCurrentFeeTokens();
-        uint256[] memory amounts = _withdrawFees(assets);
-        _convertFees(assets, amounts);
+        uint256[] memory amounts = _withdrawFees(feeTokens);
+        _convertFees(feeTokens, amounts);
         (bzrxRewards, crv3Rewards) = _distributeFees();
     }
 
@@ -420,5 +419,9 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
 
     function setBuybackSettings(uint256 amount) external onlyOwner {
         buybackPercent = amount;
+    }
+
+    function setFeeTokens(address[] calldata tokens) external onlyOwner {
+        feeTokens = tokens;
     }
 }
