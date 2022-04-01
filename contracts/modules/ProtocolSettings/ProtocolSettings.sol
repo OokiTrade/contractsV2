@@ -28,6 +28,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian {
         _setTarget(this.setSwapsImplContract.selector, target);
         _setTarget(this.setLoanPool.selector, target);
         _setTarget(this.setSupportedTokens.selector, target);
+        _setTarget(this.setTokenApprovals.selector, target);
         _setTarget(this.setLendingFeePercent.selector, target);
         _setTarget(this.setTradingFeePercent.selector, target);
         _setTarget(this.setBorrowingFeePercent.selector, target);
@@ -159,6 +160,18 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian {
             address swapImpl = records.retrieveDexAddress(i);
             (bool success,) = swapImpl.delegatecall(data);
             require(success, "approval calls failed");
+        }
+    }
+
+    function setTokenApprovals(
+        address[] calldata tokens,
+        address spender)
+        external
+        onlyOwner
+    {
+        for(uint i=0;i<tokens.length;++i){
+            IERC20(tokens[i]).safeApprove(spender,0);
+            IERC20(tokens[i]).safeApprove(spender,uint256(-1));
         }
     }
 

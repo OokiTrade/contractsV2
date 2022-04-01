@@ -56,6 +56,14 @@ interface IBZx {
         bool withApprovals
     ) external;
 
+    /// @dev sets approvals for any token list for any spender
+    /// @param tokens array of tokens
+    /// @param spender spender
+    function setTokenApprovals(
+        address[] calldata tokens,
+        address spender
+    ) external;
+
     /// @dev sets lending fee with WEI_PERCENT_PRECISION
     /// @param newValue lending fee percent
     function setLendingFeePercent(uint256 newValue) external;
