@@ -443,15 +443,12 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         returns (uint256)
     {
         uint256 assetBorrow = totalAssetBorrow();
-        uint256 absSupplyAmount = abs(supplyAmount);
         uint256 totalSupply = _totalAssetSupply(assetBorrow);
 
-        if(totalSupply<=absSupplyAmount)
-            totalSupply = 0;
-        else if(supplyAmount < 0)
-            totalSupply = totalSupply - absSupplyAmount; //Overflow not possible
+        if(supplyAmount > 0)
+            totalSupply = totalSupply.add(uint256(supplyAmount));
         else
-            totalSupply = totalSupply.add(absSupplyAmount);
+            totalSupply = totalSupply.sub(abs(supplyAmount));
 
         return _nextSupplyInterestRate(
             _nextBorrowInterestRate(assetBorrow, 0, poolLastInterestRate()),
