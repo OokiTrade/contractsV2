@@ -104,7 +104,7 @@ interface IToken {
 
     function supplyInterestRate() external view returns (uint256);
 
-    function nextSupplyInterestRate(uint256 supplyAmount)
+    function nextSupplyInterestRate(int256 supplyAmount)
         external
         view
         returns (uint256);
