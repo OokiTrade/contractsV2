@@ -445,10 +445,10 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         uint256 assetBorrow = totalAssetBorrow();
         uint256 totalSupply = _totalAssetSupply(assetBorrow);
 
-        if(supplyAmount > 0)
+        if(supplyAmount >= 0)
             totalSupply = totalSupply.add(uint256(supplyAmount));
         else
-            totalSupply = totalSupply.sub(abs(supplyAmount));
+            totalSupply = totalSupply.sub(uint256(-supplyAmount));
 
         return _nextSupplyInterestRate(
             _nextBorrowInterestRate(assetBorrow, 0, poolLastInterestRate()),
@@ -1165,10 +1165,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
 
     function updateFlashBorrowFeePercent(uint256 newFeePercent) public onlyOwner {
         flashBorrowFeePercent = newFeePercent;
-    }
-
-    function abs(int x) private pure returns (uint256) {
-        return x >= 0 ? uint256(x) : uint256(-x);
     }
 }
 
