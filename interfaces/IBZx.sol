@@ -213,6 +213,8 @@ interface IBZx {
         external
         returns (bytes32[] memory loanParamsIdList);
 
+    function setupLoanPoolTWAI(address pool) external;
+
     /// @dev Deactivates LoanParams for future loans. Active loans using it are unaffected.
     /// @param loanParamsIdList array of loan ids
     function disableLoanParams(bytes32[] calldata loanParamsIdList) external;
