@@ -43,7 +43,6 @@ loanSettings = LoanSettings.deploy({"from": deployer, "gas_price": Wei("0.5 gwei
 # safeTx = safe.build_multisig_tx(MULTICALL3.address, 0, data1, 1)
 
 BZX.replaceContract(loanMaintenance_Arbitrum, {"from": GUARDIAN_MULTISIG})
-BZX.replaceContract(loanMaintenance, {"from": GUARDIAN_MULTISIG})
 BZX.replaceContract(loanMaintenance_2, {"from": GUARDIAN_MULTISIG})
 BZX.replaceContract(loanOpenings, {"from": GUARDIAN_MULTISIG})
 BZX.replaceContract(loanClosings_Arbitrum, {"from": GUARDIAN_MULTISIG})
