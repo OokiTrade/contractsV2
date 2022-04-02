@@ -14,7 +14,7 @@ deployer = accounts[2]
 # <CurvedInterestRate Contract '0x1De60479e3310f2d92CD87ef111c7A795e7C0A82'>
 # cui = CurvedInterestRate.deploy({"from": deployer, "gas_price": Wei("0.5 gwei")})  
 # # <TickMath Contract '0x37A3fC76105c51D54a9c1c3167e30601EdeE8782'>
-tickMath = TickMath.deploy({"from": deployer, "gas_price": Wei("0.5 gwei")})
+# tickMath = TickMath.deploy({"from": deployer, "gas_price": Wei("0.5 gwei")})
 # t = TickMath.at("0x37A3fC76105c51D54a9c1c3167e30601EdeE8782")
 
 # INVALID <LoanMaintenance_Arbitrum Contract '0x2F3A1964E1e5959B4f006bE062479B24fC806BB0'>
