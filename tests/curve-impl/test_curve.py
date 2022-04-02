@@ -16,4 +16,16 @@ def test_t():
     data = encode_abi(['uint256','bytes'],[3,data])
     data = encode_abi(['uint128','bytes[]'],[2,[data]])
     iUSDC.marginTrade(0,2e18,1000e6,0,'0xc2132D05D31c914a87C6611C10748AEb04B58e8F','0xAb43e4Ac216056611A92f6b7eaBFeaCe0ebD06E5',data,{'from':'0xAb43e4Ac216056611A92f6b7eaBFeaCe0ebD06E5'})
-    print(BZX.getUserLoans.call('0xAb43e4Ac216056611A92f6b7eaBFeaCe0ebD06E5',0,10,0,False,False))
+    loan = BZX.getUserLoans.call('0xAb43e4Ac216056611A92f6b7eaBFeaCe0ebD06E5',0,10,0,False,False)[0]
+    print(loan)
+    data = encode_abi(['address','address','address','uint256'], ['0x445FE580eF8d70FF569aB36e80c647af338db351','0xc2132D05D31c914a87C6611C10748AEb04B58e8F','0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',1])
+    data = encode_abi(['uint256','bytes'],[3,data])
+    data = encode_abi(['uint128','bytes[]'],[2,[data]])
+    BZX.closeWithSwap(loan[0],'0xAb43e4Ac216056611A92f6b7eaBFeaCe0ebD06E5',int(loan[5]/2.5),False,data,{'from':'0xAb43e4Ac216056611A92f6b7eaBFeaCe0ebD06E5'})
+    data = encode_abi(['address','address','address','uint256'], ['0x445FE580eF8d70FF569aB36e80c647af338db351','0xc2132D05D31c914a87C6611C10748AEb04B58e8F','0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174',int(loan[5]/2.3)])
+    data = encode_abi(['uint256','bytes'],[3,data])
+    data = encode_abi(['uint128','bytes[]'],[2,[data]])
+    BZX.closeWithSwap(loan[0],'0xAb43e4Ac216056611A92f6b7eaBFeaCe0ebD06E5',int(loan[5]/2.5),True,data,{'from':'0xAb43e4Ac216056611A92f6b7eaBFeaCe0ebD06E5'})
+    loan = BZX.getUserLoans.call('0xAb43e4Ac216056611A92f6b7eaBFeaCe0ebD06E5',0,10,0,False,False)[0]
+    print(loan)
+    assert(False)

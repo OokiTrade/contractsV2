@@ -139,18 +139,13 @@ contract SwapsImplCurve_ETH is State, ISwapsImpl {
     {
         (address pool, , , uint256 minAmount) = abi.decode(payload,(address,address,address, uint256));
         if (requiredDestTokenAmount != 0) {
-            (sourceTokenAmountUsed, ) = dexAmountIn(
-                payload,
-                requiredDestTokenAmount
-            );
+            sourceTokenAmountUsed = maxSourceTokenAmount;
             if (sourceTokenAmountUsed == 0) {
                 return (0, 0);
             }
-            require(
-                sourceTokenAmountUsed <= maxSourceTokenAmount
-                && sourceTokenAmountUsed <= minAmount,
-                "source amount too high"
-            );
+            if(sourceTokenAmountUsed > minAmount) {
+                sourceTokenAmountUsed = minAmount;
+            }
             destTokenAmountReceived = ICurveSwaps(curveAddressProvider.get_address(2)).exchange(
                 pool,
                 sourceTokenAddress,
@@ -159,6 +154,17 @@ contract SwapsImplCurve_ETH is State, ISwapsImpl {
                 requiredDestTokenAmount,
                 receiverAddress
             );
+            if(destTokenAmountReceived > requiredDestTokenAmount){
+                sourceTokenAmountUsed -= ICurveSwaps(curveAddressProvider.get_address(2)).exchange(
+                    pool,
+                    destTokenAddress,
+                    sourceTokenAddress,
+                    destTokenAmountReceived-requiredDestTokenAmount,
+                    1,
+                    receiverAddress
+                );
+                destTokenAmountReceived = requiredDestTokenAmount;
+            }
         } else {
             sourceTokenAmountUsed = minSourceTokenAmount;
             destTokenAmountReceived = ICurveSwaps(curveAddressProvider.get_address(2)).exchange(
