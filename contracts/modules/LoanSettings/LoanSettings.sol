@@ -47,6 +47,9 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
 
     function setupLoanPoolTWAI(address pool) external onlyGuardian {
         poolInterestRateObservations[pool][0].blockTimestamp = uint32(block.timestamp - 10800);
+        if (poolLastInterestRate[pool] < 1e11) {
+            poolLastInterestRate[pool] = 1e11;
+        }
     }
 
     // Deactivates LoanParams for future loans. Active loans using it are unaffected.
