@@ -14,17 +14,18 @@ deployer = accounts[2]
 # <CurvedInterestRate Contract '0x1De60479e3310f2d92CD87ef111c7A795e7C0A82'>
 # cui = CurvedInterestRate.deploy({"from": deployer, "gas_price": Wei("0.5 gwei")})  
 # # <TickMath Contract '0x37A3fC76105c51D54a9c1c3167e30601EdeE8782'>
-# tickMath = TickMath.deploy({"from": deployer, "gas_price": Wei("0.5 gwei")})
-t = TickMath.at("0x37A3fC76105c51D54a9c1c3167e30601EdeE8782")
+tickMath = TickMath.deploy({"from": deployer, "gas_price": Wei("0.5 gwei")})
+# t = TickMath.at("0x37A3fC76105c51D54a9c1c3167e30601EdeE8782")
 
 # INVALID <LoanMaintenance_Arbitrum Contract '0x2F3A1964E1e5959B4f006bE062479B24fC806BB0'>
 loanMaintenance_Arbitrum = LoanMaintenance_Arbitrum.deploy({"from": deployer, "gas_price": Wei("0.5 gwei")})
-# INVALID <LoanMaintenance Contract '0xAaD3b6e314b3b31BE6d42A5D8eFfAe4cDB6d2d4F'>
-loanMaintenance = LoanMaintenance.deploy({"from": deployer, "gas_price": Wei("0.5 gwei")})
+
 # INVALID <LoanMaintenance_2 Contract '0x7fC67DAA325BEC82e829685290aeec990f412AB2'>
 loanMaintenance_2 = LoanMaintenance_2.deploy({"from": deployer, "gas_price": Wei("0.5 gwei")})
 # INVALID <LoanOpenings Contract '0xD36913f0225E64C4689b5D6144CeF952d1ad23dA'>
 loanOpenings = LoanOpenings.deploy({"from": deployer, "gas_price": Wei("0.5 gwei")})
+loanClosings_Arbitrum = LoanClosings_Arbitrum.deploy({"from": deployer, "gas_price": Wei("0.5 gwei")})
+
 # INVALID <LoanSettings Contract '0x49743dA77Ff019424E2e153A0712eD87fFDB74Eb'>
 loanSettings = LoanSettings.deploy({"from": deployer, "gas_price": Wei("0.5 gwei")})
 
@@ -45,6 +46,7 @@ BZX.replaceContract(loanMaintenance_Arbitrum, {"from": GUARDIAN_MULTISIG})
 BZX.replaceContract(loanMaintenance, {"from": GUARDIAN_MULTISIG})
 BZX.replaceContract(loanMaintenance_2, {"from": GUARDIAN_MULTISIG})
 BZX.replaceContract(loanOpenings, {"from": GUARDIAN_MULTISIG})
+BZX.replaceContract(loanClosings_Arbitrum, {"from": GUARDIAN_MULTISIG})
 BZX.replaceContract(loanSettings, {"from": GUARDIAN_MULTISIG})
 
 for l in list:
