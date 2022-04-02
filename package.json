@@ -20,6 +20,7 @@
     "openzeppelin-2.5.0": "npm:@openzeppelin/contracts@^2.5.0",
     "openzeppelin-3.4.0": "npm:@openzeppelin/contracts@^3.4.0",
     "openzeppelin-4.3.2": "npm:@openzeppelin/contracts@^4.3.2",
+    "prb-math": "^2.4.1",
     "prettier": "^2.5.1",
     "prettier-plugin-solidity": "^1.0.0-beta.19",
     "solhint": "^3.0.0",
@@ -42,6 +43,7 @@
     "ethereumjs-util": "^7.1.3",
     "ethers": "^5.5.2",
     "ts-node": "^10.4.0",
-    "typescript": "^4.5.4"
-  }
+    "typescript": "^4.5.4",
+    "celer": "github:celer-network/sgn-v2-contracts"
+    }
 }

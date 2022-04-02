@@ -13,17 +13,16 @@ import "@celer/contracts/interfaces/IBridge.sol";
 import "../../interfaces/IPriceFeeds.sol";
 import "../governance/PausableGuardian_0_8.sol";
 
-contract FeeExtractAndDistribute_BSC is PausableGuardian_0_8 {
+contract FeeExtractAndDistribute_Arbitrum is PausableGuardian_0_8 {
     address public implementation;
-    IBZx public constant BZX = IBZx(0xD154eE4982b83a87b0649E5a7DDA1514812aFE1f);
+    IBZx public constant BZX = IBZx(0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB);
 
-    address public constant BNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
-    address public constant USDC = 0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d;
-    uint256 public constant MIN_USDC_AMOUNT = 1e18; //1 USDC minimum bridge amount
+    address public constant ETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
+    address public constant USDC = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
     uint64 public constant DEST_CHAINID = 137; //send to polygon
-
+    uint256 public constant MIN_USDC_AMOUNT = 1e6;
     IUniswapV2Router public constant SWAPS_ROUTER_V2 =
-        IUniswapV2Router(0x10ED43C718714eb63d5aA57B78B54704E256024E);
+        IUniswapV2Router(0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506);
 
     address internal constant ZERO_ADDRESS = address(0);
 
@@ -78,9 +77,9 @@ contract FeeExtractAndDistribute_BSC is PausableGuardian_0_8 {
             exportedFees[asset] = 0;
 
             if (amount != 0) {
-                usdcOutput += asset == BNB
+                usdcOutput += asset == ETH
                     ? _swapWithPair([asset, USDC], amount)
-                    : _swapWithPair([asset, BNB, USDC], amount); //builds route for all tokens to route through ETH
+                    : _swapWithPair([asset, ETH, USDC], amount); //builds route for all tokens to route through ETH
             }
         }
 
@@ -139,6 +138,47 @@ contract FeeExtractAndDistribute_BSC is PausableGuardian_0_8 {
         );
     }
 
+    function _bridgeFeesAndDistribute() internal {
+        require(
+            IERC20(USDC).balanceOf(address(this)) >= MIN_USDC_AMOUNT,
+            "FeeExtractAndDistribute_Arbitrum: Fees Bridged Too Little"
+        );
+        IBridge(bridge).send(
+            treasuryWallet,
+            USDC,
+            IERC20(USDC).balanceOf(address(this)),
+            DEST_CHAINID,
+            uint64(block.timestamp),
+            10000
+        );
+    }
+
+    // OnlyOwner functions
+
+    function setTreasuryWallet(address payable _wallet) public onlyOwner {
+        treasuryWallet = _wallet;
+    }
+
+    function setFeeTokens(address[] calldata tokens) public onlyOwner {
+        currentFeeTokens = tokens;
+        for (uint256 i = 0; i < tokens.length; i++) {
+            IERC20(tokens[i]).approve(address(SWAPS_ROUTER_V2), 0);
+            IERC20(tokens[i]).approve(
+                address(SWAPS_ROUTER_V2),
+                type(uint256).max
+            );
+        }
+    }
+
+    function setBridgeApproval(address token) public onlyOwner {
+        IERC20(token).approve(bridge, 0);
+        IERC20(token).approve(bridge, type(uint256).max);
+    }
+
+    function setBridge(address _wallet) public onlyOwner {
+        bridge = _wallet;
+    }
+
     function _checkUniDisagreement(
         address asset,
         uint256 assetAmount,
@@ -162,45 +202,5 @@ contract FeeExtractAndDistribute_BSC is PausableGuardian_0_8 {
                 "uniswap price disagreement"
             );
         }
-    }
-
-    function _bridgeFeesAndDistribute() internal {
-        require(
-            IERC20(USDC).balanceOf(address(this)) >= MIN_USDC_AMOUNT,
-            "FeeExtractAndDistribute: bridge amount too low"
-        );
-        IBridge(bridge).send(
-            treasuryWallet,
-            USDC,
-            IERC20(USDC).balanceOf(address(this)),
-            DEST_CHAINID,
-            uint64(block.timestamp),
-            10000
-        );
-    }
-
-    // OnlyOwner functions
-
-    function setTreasuryWallet(address payable _wallet) public onlyOwner {
-        treasuryWallet = _wallet;
-    }
-
-    function setFeeTokens(address[] calldata tokens) public onlyOwner {
-        currentFeeTokens = tokens;
-        for (uint256 i = 0; i < tokens.length; i++) {
-            IERC20(tokens[i]).approve(
-                address(SWAPS_ROUTER_V2),
-                type(uint256).max
-            );
-        }
-    }
-
-    function setBridgeApproval(address token) public onlyOwner {
-        IERC20(token).approve(bridge, 0);
-        IERC20(token).approve(bridge, type(uint256).max);
-    }
-
-    function setBridge(address _wallet) public onlyOwner {
-        bridge = _wallet;
     }
 }
