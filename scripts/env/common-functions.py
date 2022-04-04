@@ -50,12 +50,12 @@ def compareByteCode(localBytecode: str, chainBytecode: str):
     if (len(result) == 3):
         print("we have constructor!! check args")
         constructorArgs = result[1]
-        contractBody = result[2][:-(23+65)]
+        contractBody = result[2][:-(115)]
     elif(len(result) == 2):
         print("no consturctor")
-        contractBody = result[1][:-(23+65)]
+        contractBody = result[1][:-(115)]
     else:
         print("warn unhandled case please investigate")
 
-    assert chainBytecode[:-(23+65)] == constructorSplit+contractBody
+    assert chainBytecode[:-(115)] == constructorSplit+contractBody
     print("contract valid")
