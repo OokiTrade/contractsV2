@@ -403,7 +403,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         return _nextBorrowInterestRate(
             _totalAssetBorrowStored(),
             0,
-            poolLastInterestRate()
+            poolTWAI()
         );
     }
 
@@ -417,7 +417,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         return _nextBorrowInterestRate(
             totalAssetBorrow(),
             borrowAmount,
-            poolLastInterestRate()
+            poolTWAI()
         );
     }
 
@@ -429,7 +429,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
     {
         uint256 assetBorrow = _totalAssetBorrowStored();
         return _nextSupplyInterestRate(
-            _nextBorrowInterestRate(assetBorrow, 0, poolLastInterestRate()),
+            _nextBorrowInterestRate(assetBorrow, 0, poolTWAI()),
             assetBorrow,
             _totalAssetSupply(assetBorrow)
         );
@@ -444,7 +444,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
     {
         uint256 assetBorrow = totalAssetBorrow();
         return _nextSupplyInterestRate(
-            _nextBorrowInterestRate(assetBorrow, 0, poolLastInterestRate()),
+            _nextBorrowInterestRate(assetBorrow, 0, poolTWAI()),
             assetBorrow,
             _totalAssetSupply(assetBorrow).add(supplyAmount)
         );
@@ -478,6 +478,14 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
     }
 
     function poolLastInterestRate()
+        public
+        view
+        returns (uint256)
+    {
+        return IBZx(bZxContract).getPoolLastInterestRate(address(this));
+    }
+
+    function poolTWAI()
         public
         view
         returns (uint256)
