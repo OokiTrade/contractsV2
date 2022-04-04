@@ -578,6 +578,13 @@ interface IBZx {
         uint256 _loanInterestTotal,
         uint256 _loanRatePerTokenPaid
         );
+    
+    function getTWAI(
+        address pool)
+        external
+        view returns (
+            uint256 benchmarkRate
+        );
 
     /*/// @dev Gets current lender interest data totals for all loans with a specific oracle and interest token
     /// @param lender The lender address

@@ -482,7 +482,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         view
         returns (uint256)
     {
-        return IBZx(bZxContract).getPoolLastInterestRate(address(this));
+        return IBZx(bZxContract).getTWAI(address(this));
     }
 
     function getMaxEscrowAmount(
