@@ -400,11 +400,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         view
         returns (uint256)
     {
-        return _nextBorrowInterestRate(
-            _totalAssetBorrowStored(),
-            0,
-            poolTWAI()
-        );
+        return poolLastInterestRate();
     }
 
     // the minimum rate that new and existing borrowers will pay after the next borrow
@@ -429,7 +425,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
     {
         uint256 assetBorrow = _totalAssetBorrowStored();
         return _nextSupplyInterestRate(
-            _nextBorrowInterestRate(assetBorrow, 0, poolTWAI()),
+            poolLastInterestRate()),
             assetBorrow,
             _totalAssetSupply(assetBorrow)
         );
