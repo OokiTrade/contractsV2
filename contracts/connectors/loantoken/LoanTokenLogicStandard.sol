@@ -425,7 +425,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
     {
         uint256 assetBorrow = _totalAssetBorrowStored();
         return _nextSupplyInterestRate(
-            poolLastInterestRate()),
+            poolLastInterestRate(),
             assetBorrow,
             _totalAssetSupply(assetBorrow)
         );
