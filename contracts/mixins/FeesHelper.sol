@@ -28,6 +28,24 @@ contract FeesHelper is State, VaultController, FeesEvents {
             .divCeil(WEI_PERCENT_PRECISION);
     }
 
+    // calculate trading fee
+    function _getTradingFeeWithOOKI(
+        address sourceToken,
+        uint256 feeTokenAmount)
+        internal
+        view
+        returns (uint256)
+    {
+        return IPriceFeeds(priceFeeds)
+            .queryReturn(
+                sourceToken,
+                OOKI,
+                feeTokenAmount
+                    .mul(tradingFeePercent)
+                    .divCeil(WEI_PERCENT_PRECISION)
+            );
+    }
+
     // calculate loan origination fee
     function _getBorrowingFee(
         uint256 feeTokenAmount)
@@ -38,6 +56,24 @@ contract FeesHelper is State, VaultController, FeesEvents {
         return feeTokenAmount
             .mul(borrowingFeePercent)
             .divCeil(WEI_PERCENT_PRECISION);
+    }
+
+    // calculate loan origination fee
+    function _getBorrowingFeeWithOOKI(
+        address sourceToken,
+        uint256 feeTokenAmount)
+        internal
+        view
+        returns (uint256)
+    {
+        return IPriceFeeds(priceFeeds)
+            .queryReturn(
+                sourceToken,
+                OOKI,
+                feeTokenAmount
+                    .mul(borrowingFeePercent)
+                    .divCeil(WEI_PERCENT_PRECISION)
+            );
     }
 
     // calculate lender (interest) fee

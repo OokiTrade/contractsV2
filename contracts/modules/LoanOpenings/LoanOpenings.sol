@@ -296,15 +296,30 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
             require(sentValues[3] == 0, "surplus loan token");
 
             // fee based off required collateral (amount variable repurposed)
-            amount = _getBorrowingFee(collateralAmountRequired);
-            if (amount != 0) {
-                _payBorrowingFee(
-                    sentAddresses[1], // borrower
-                    loanId,
-                    loanParamsLocal.collateralToken,
-                    amount
-                );
+            if (loanDataBytes.length != 0 && abi.decode(loanDataBytes, (uint128)) & PAY_WITH_OOKI_FLAG != 0) {
+                amount = _getBorrowingFeeWithOOKI(loanParamsLocal.collateralToken, collateralAmountRequired);
+                if(amount != 0){
+                    IERC20(OOKI).safeTransferFrom(sentAddresses[1], address(this), amount);
+                    _payTradingFee(
+                        sentAddresses[1], // borrower
+                        loanId,
+                        OOKI,
+                        amount
+                    );
+                }
+                amount = 0;
+            } else {
+                amount = _getBorrowingFee(collateralAmountRequired);
+                if (amount != 0) {
+                    _payBorrowingFee(
+                        sentAddresses[1], // borrower
+                        loanId,
+                        loanParamsLocal.collateralToken,
+                        amount
+                    );
+                }
             }
+
         } else {
             amount = 0; // repurposed
 
