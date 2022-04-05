@@ -110,6 +110,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
                             tradingFee
                         );
                     }
+                    tradingFee = 0;
                 } else {
                     tradingFee = _getTradingFee(vals[0]);
                     if (tradingFee != 0) {

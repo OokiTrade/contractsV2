@@ -32,15 +32,15 @@ contract Constants {
     //address public constant bzrxTokenAddress = 0x3194cBDC3dbcd3E11a07892e7bA5c3394048Cc87; // local testnet only
     //address public constant vbzrxTokenAddress = 0xa3B53dDCd2E3fC28e8E130288F2aBD8d5EE37472; // local testnet only
 
-    IWethERC20 public constant wethToken = IWethERC20(0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c); // bsc (Wrapped BNB)
-    address public constant bzrxTokenAddress = address(0); // bsc
-    address public constant vbzrxTokenAddress = address(0); // bsc
-    address public constant OOKI = address(0); // bsc
+    //WethERC20 public constant wethToken = IWethERC20(0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c); // bsc (Wrapped BNB)
+    //address public constant bzrxTokenAddress = address(0); // bsc
+    //address public constant vbzrxTokenAddress = address(0); // bsc
+    //address public constant OOKI = address(0); // bsc
 
-    //IWethERC20 public constant wethToken = IWethERC20(0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270); // polygon (Wrapped MATIC)
-    //address public constant bzrxTokenAddress = address(0); // polygon
-    //address public constant vbzrxTokenAddress = address(0); // polygon
-    //address public constant OOKI = address(0); // polygon
+    IWethERC20 public constant wethToken = IWethERC20(0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270); // polygon (Wrapped MATIC)
+    address public constant bzrxTokenAddress = address(0); // polygon
+    address public constant vbzrxTokenAddress = address(0); // polygon
+    address public constant OOKI = 0xCd150B1F528F326f5194c012f32Eb30135C7C2c9; // polygon
 
     //IWethERC20 public constant wethToken = IWethERC20(0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7); // avax (Wrapped AVAX)
     //address public constant bzrxTokenAddress = address(0); // avax
