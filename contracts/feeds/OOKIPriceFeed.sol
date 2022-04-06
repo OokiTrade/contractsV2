@@ -9,7 +9,7 @@ import "./IPriceFeedsExt.sol";
 import "../governance/PausableGuardian.sol";
 
 contract OOKIPriceFeed is PausableGuardian, IPriceFeedsExt {
-    int256 public storedPrice = 2e16; // $0.02
+    int256 public storedPrice = 2e6; // $0.02
 
     function updateStoredPrice(
         int256 price)
