@@ -154,16 +154,15 @@ contract InterestHandler is State, InterestRateEvents {
         view
         returns (uint256 ratePerTokenNewAmount, uint256 nextInterestRate)
     {
-        
+        uint256 timeSinceUpdate = block.timestamp.sub(poolLastUpdateTime[pool]);
         uint256 benchmarkRate = TickMath.getSqrtRatioAtTick(poolInterestRateObservations[pool].arithmeticMean(
             uint32(block.timestamp),
-            [uint32(3*3600), 0],
+            [uint32(timeSinceUpdate+3*3600), uint32(timeSinceUpdate)],
             poolInterestRateObservations[pool][poolLastIdx[pool]].tick,
             poolLastIdx[pool],
             uint8(-1)
         ));
-        uint256 timeSinceUpdate;
-        if ((timeSinceUpdate = block.timestamp.sub(poolLastUpdateTime[pool])) != 0 &&
+        if (timeSinceUpdate != 0 &&
             (nextInterestRate = ILoanPool(pool)._nextBorrowInterestRate(poolTotal, 0, benchmarkRate)) != 0) {
             ratePerTokenNewAmount = timeSinceUpdate
                 .mul(nextInterestRate) // rate per year
