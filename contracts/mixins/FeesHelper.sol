@@ -7,6 +7,7 @@ pragma solidity 0.5.17;
 
 import "../core/State.sol";
 import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
+import "@openzeppelin-2.5.0/token/ERC20/ERC20Detailed.sol";
 import "../../interfaces/IPriceFeeds.sol";
 import "./VaultController.sol";
 import "../events/FeesEvents.sol";
@@ -15,6 +16,24 @@ import "../utils/MathUtil.sol";
 contract FeesHelper is State, VaultController, FeesEvents {
     using SafeERC20 for IERC20;
     using MathUtil for uint256;
+
+    function _adjustForHeldBalance(
+        uint256 feeAmount,
+        address user)
+        internal view
+        returns (uint256)
+    {
+        uint256 balance = ERC20Detailed(OOKI).balanceOf(user);
+        if (balance > 1e25) {
+            return feeAmount.mul(4).divCeil(5);
+        } else if (balance > 1e24) {
+            return feeAmount.mul(85).divCeil(100);
+        } else if (balance > 1e23) {
+            return feeAmount.mul(9).divCeil(10);
+        } else {
+            return feeAmount;
+        }
+    }
 
     // calculate trading fee
     function _getTradingFee(

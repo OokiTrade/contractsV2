@@ -102,6 +102,9 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
                 if (loanDataBytes.length != 0 && abi.decode(loanDataBytes, (uint128)) & PAY_WITH_OOKI_FLAG != 0) {
                     tradingFee = _getTradingFeeWithOOKI(addrs[0], vals[0]);
                     if(tradingFee != 0){
+                        if(abi.decode(loanDataBytes, (uint128)) & HOLD_OOKI_FLAG != 0){
+                            tradingFee = _adjustForHeldBalance(tradingFee, addrs[4]);
+                        }
                         IERC20(OOKI).safeTransferFrom(addrs[4], address(this), tradingFee);
                         _payTradingFee(
                             addrs[4], // user
@@ -114,6 +117,9 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
                 } else {
                     tradingFee = _getTradingFee(vals[0]);
                     if (tradingFee != 0) {
+                        if(loanDataBytes.length != 0 && abi.decode(loanDataBytes, (uint128)) & HOLD_OOKI_FLAG != 0){
+                            tradingFee = _adjustForHeldBalance(tradingFee, addrs[4]);
+                        }
                         _payTradingFee(
                             addrs[4], // user
                             loanId,
