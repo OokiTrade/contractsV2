@@ -12,7 +12,7 @@ calldatas = []
 
 # 1. redeploy old staking
 stakingProxy = Contract.from_abi("proxy", STAKING_OLD, StakingProxy.abi)
-stakingLogic = StakinV1_1.deploy({'from':accounts[0]}) #not deployed yet
+stakingLogic = StakingV1_1.deploy({'from':accounts[0]}) #not deployed yet
 calldata = stakingProxy.replaceImplementation.encode_input(stakingLogic.address)
 targets.append(STAKING_OLD)
 calldatas.append(calldata)
