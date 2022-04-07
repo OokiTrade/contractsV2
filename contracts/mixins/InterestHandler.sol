@@ -9,10 +9,12 @@ import "../core/State.sol";
 import "../interfaces/ILoanPool.sol";
 import "../utils/MathUtil.sol";
 import "../events/InterestRateEvents.sol";
+import "../utils/InterestOracle.sol";
+import "../utils/TickMath.sol";
 
 contract InterestHandler is State, InterestRateEvents {
     using MathUtil for uint256;
-
+    using InterestOracle for InterestOracle.Observation[256];
     // returns up to date loan interest or 0 if not applicable
     function _settleInterest(
         address pool,
@@ -20,6 +22,12 @@ contract InterestHandler is State, InterestRateEvents {
         internal
         returns (uint256 _loanInterestTotal)
     {
+        poolLastIdx[pool] = poolInterestRateObservations[pool].write(
+            poolLastIdx[pool],
+            uint32(block.timestamp),
+            TickMath.getTickAtSqrtRatio(uint160(poolLastInterestRate[pool])),
+            uint8(-1)
+        );
         uint256[7] memory interestVals = _settleInterest2(
             pool,
             loanId,
@@ -146,9 +154,16 @@ contract InterestHandler is State, InterestRateEvents {
         view
         returns (uint256 ratePerTokenNewAmount, uint256 nextInterestRate)
     {
-        uint256 timeSinceUpdate;
-        if ((timeSinceUpdate = block.timestamp.sub(poolLastUpdateTime[pool])) != 0 &&
-            (nextInterestRate = ILoanPool(pool)._nextBorrowInterestRate(poolTotal, 0, poolLastInterestRate[pool])) != 0) {
+        uint256 timeSinceUpdate = block.timestamp.sub(poolLastUpdateTime[pool]);
+        uint256 benchmarkRate = TickMath.getSqrtRatioAtTick(poolInterestRateObservations[pool].arithmeticMean(
+            uint32(block.timestamp),
+            [uint32(timeSinceUpdate+3*3600), uint32(timeSinceUpdate)],
+            poolInterestRateObservations[pool][poolLastIdx[pool]].tick,
+            poolLastIdx[pool],
+            uint8(-1)
+        ));
+        if (timeSinceUpdate != 0 &&
+            (nextInterestRate = ILoanPool(pool)._nextBorrowInterestRate(poolTotal, 0, benchmarkRate)) != 0) {
             ratePerTokenNewAmount = timeSinceUpdate
                 .mul(nextInterestRate) // rate per year
                 .mul(WEI_PERCENT_PRECISION)

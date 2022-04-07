@@ -50,5 +50,4 @@ contract Constants {
     //address public constant bzrxTokenAddress = address(0); // arbitrum
     //address public constant vbzrxTokenAddress = address(0); // arbitrum
     //address public constant OOKI = address(0); // arbitrum
-
 }

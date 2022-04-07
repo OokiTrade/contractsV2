@@ -13,6 +13,7 @@ contract CurvedInterestRate is ICurvedInterestRate {
     uint256 public constant UR_MAX = 100e18;
     uint256 public constant IR_MAX = 110e18;
     uint256 public constant IR_MIN = 0.1e18;
+    uint256 public constant IR_ABSOLUTE_MIN = 1e11;
 
     function getInterestRate(
         uint256 _U,
@@ -23,7 +24,11 @@ contract CurvedInterestRate is ICurvedInterestRate {
             _U = UR_MAX;
         }
         // general ae^(bx)
-        return (_a * ((_b * _U) / 1e18).exp()) / 1e18;
+        interestRate = (_a * ((_b * _U) / 1e18).exp()) / 1e18;
+        if (interestRate < IR_ABSOLUTE_MIN) {
+            interestRate = IR_ABSOLUTE_MIN;
+        }
+        return interestRate;
     }
 
     function getAB(uint256 _IR1) public pure override returns (uint256 a, uint256 b) {

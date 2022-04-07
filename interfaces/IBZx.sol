@@ -213,6 +213,8 @@ interface IBZx {
         external
         returns (bytes32[] memory loanParamsIdList);
 
+    function setupLoanPoolTWAI(address pool) external;
+
     /// @dev Deactivates LoanParams for future loans. Active loans using it are unaffected.
     /// @param loanParamsIdList array of loan ids
     function disableLoanParams(bytes32[] calldata loanParamsIdList) external;
@@ -575,6 +577,13 @@ interface IBZx {
         uint256 _loanPrincipalTotal,
         uint256 _loanInterestTotal,
         uint256 _loanRatePerTokenPaid
+        );
+    
+    function getTWAI(
+        address pool)
+        external
+        view returns (
+            uint256 benchmarkRate
         );
 
     /*/// @dev Gets current lender interest data totals for all loans with a specific oracle and interest token
