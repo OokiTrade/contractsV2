@@ -113,18 +113,20 @@ contract SwapsExternal is State, VaultController, SwapsUser, PausableGuardian {
     }
 
     function getSwapExpectedReturn(
+        address trader,
         address sourceToken,
         address destToken,
         uint256 sourceTokenAmount,
-	bytes calldata payload)
+	    bytes calldata payload)
         external
         returns (uint256)
     {
         return _swapsExpectedReturn(
+            trader,
             sourceToken,
             destToken,
             sourceTokenAmount,
-	    payload
+	        payload
         );
     }
 }

@@ -109,6 +109,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
 
     // DEPRECATED, UI going to calculate this
     function getEstimatedMarginExposure(
+        address trader,
         address loanToken,
         address collateralToken,
         uint256 loanTokenSent,
@@ -120,6 +121,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         returns (uint256 value)
     {
         value = _swapsExpectedReturn(
+            trader,
             loanToken,
             collateralToken,
             loanTokenSent,

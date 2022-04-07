@@ -263,15 +263,15 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
     }
 
     function _swapsExpectedReturn(
+        address trader,
         address sourceToken,
         address destToken,
         uint256 sourceTokenAmount,
         bytes memory payload
     ) internal returns (uint256 expectedReturn) {
+        
         uint256 tradingFee = _getTradingFee(sourceTokenAmount);
-        if (tradingFee != 0) {
-            sourceTokenAmount = sourceTokenAmount.sub(tradingFee);
-        }
+
         address swapImplAddress;
         bytes memory dataToSend;
         uint256 dexNumber = 1;
@@ -282,11 +282,22 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
                 payload,
                 (uint128, bytes[])
             );
+            if (flag & HOLD_OOKI_FLAG != 0) {
+                tradingFee = _adjustForHeldBalance(tradingFee, trader);
+            }
+            if (flag & PAY_WITH_OOKI_FLAG != 0) {
+                tradingFee = 0;
+            }
             if(flag & DEX_SELECTOR_FLAG != 0){
                 (dexNumber, dataToSend) = abi.decode(payloads[0], (uint256, bytes));
+            } else {
+                dataToSend = abi.encode(sourceToken, destToken);
             }
         }
-
+        if (tradingFee != 0) {
+            sourceTokenAmount = sourceTokenAmount.sub(tradingFee);
+        }
+        
         swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(
             dexNumber
         );
