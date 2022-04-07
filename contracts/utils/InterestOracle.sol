@@ -172,6 +172,6 @@ library InterestOracle {
     ) internal view returns (int24) {
         int56 firstPoint = observeSingle(self, time, secondsAgos[1], tick, index, cardinality);
         int56 secondPoint = observeSingle(self, time, secondsAgos[0], tick, index, cardinality);
-        return int24((firstPoint-secondPoint) / secondsAgos[0]);
+        return int24((firstPoint-secondPoint) / (secondsAgos[0]-secondsAgos[1]));
     }
 }
