@@ -22,8 +22,13 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
 
     //address internal constant arbitraryCaller = 0x000F400e6818158D541C3EBE45FE3AA0d47372FF; // mainnet
     //address internal constant arbitraryCaller = 0x81e7dddFAD37E6FAb0eccE95f0B508fd40996e6d; // bsc
-    address internal constant arbitraryCaller = 0x81e7dddFAD37E6FAb0eccE95f0B508fd40996e6d; // polygon
+
+    //address internal constant arbitraryCaller = 0x81e7dddFAD37E6FAb0eccE95f0B508fd40996e6d; // polygon
     //address internal constant arbitraryCaller = 0x01207468F48822f8535BC96D1Cf18EddDE4A2392; // arbitrum
+
+    //address internal constant arbitraryCaller = 0x81e7dddFAD37E6FAb0eccE95f0B508fd40996e6d; // polygon
+    address internal constant arbitraryCaller = 0x01207468F48822f8535BC96D1Cf18EddDE4A2392; // arbitrum
+
 
     //address public constant bZxContract = 0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f; // mainnet
     //address public constant wethToken = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // mainnet
@@ -37,8 +42,8 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
     address public constant bZxContract = 0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8; // polygon
     address public constant wethToken = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270; // polygon
 
-    //address public constant bZxContract = 0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB; // arbitrum
-    //address public constant wethToken = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1; // arbitrum
+    address public constant bZxContract = 0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB; // arbitrum
+    address public constant wethToken = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1; // arbitrum
 
     bytes32 internal constant iToken_ProfitSoFar = 0x37aa2b7d583612f016e4a4de4292cb015139b3d7762663d06a53964912ea2fb6;          // keccak256("iToken_ProfitSoFar")
     bytes32 internal constant iToken_LowerAdminAddress = 0x7ad06df6a0af6bd602d90db766e0d5f253b45187c3717a0f9026ea8b10ff0d4b;    // keccak256("iToken_LowerAdminAddress")
@@ -403,7 +408,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         return _nextBorrowInterestRate(
             _totalAssetBorrowStored(),
             0,
-            poolLastInterestRate()
+            poolTWAI()
         );
     }
 
@@ -417,7 +422,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         return _nextBorrowInterestRate(
             totalAssetBorrow(),
             borrowAmount,
-            poolLastInterestRate()
+            poolTWAI()
         );
     }
 
@@ -429,7 +434,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
     {
         uint256 assetBorrow = _totalAssetBorrowStored();
         return _nextSupplyInterestRate(
-            _nextBorrowInterestRate(assetBorrow, 0, poolLastInterestRate()),
+            _nextBorrowInterestRate(assetBorrow, 0, poolTWAI()),
             assetBorrow,
             _totalAssetSupply(assetBorrow)
         );
@@ -451,7 +456,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
             totalSupply = totalSupply.sub(uint256(-supplyAmount));
 
         return _nextSupplyInterestRate(
-            _nextBorrowInterestRate(assetBorrow, 0, poolLastInterestRate()),
+            _nextBorrowInterestRate(assetBorrow, 0, poolTWAI()),
             assetBorrow,
             totalSupply
         );
@@ -491,6 +496,14 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         returns (uint256)
     {
         return IBZx(bZxContract).getPoolLastInterestRate(address(this));
+    }
+
+    function poolTWAI()
+        public
+        view
+        returns (uint256)
+    {
+        return IBZx(bZxContract).getTWAI(address(this));
     }
 
     function getMaxEscrowAmount(
