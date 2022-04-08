@@ -30,7 +30,7 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
         for (uint i; i < spenders.length;) {
             spender = spenders[i];
             for (uint y; y < tokens.length;) {
-                token = tokens[i];
+                token = tokens[y];
                 require(
                     protocol.isLoanPool(spender) ||
                         address(protocol) == spender ||

@@ -12,7 +12,8 @@ contract OrderBookStorage {
     uint256 public constant MIN_AMOUNT_IN_USDC = 1e6;
     address public constant USDC = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
     address public constant vault = 0xFA6485ec4Aa9AF504adb4ed47b567E1875E21e85;
-    IBZx public constant protocol = IBZx(0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8);
+    IBZx public constant protocol =
+        IBZx(0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8);
 
     mapping(bytes4 => address) public logicTargets;
 

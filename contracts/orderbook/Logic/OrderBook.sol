@@ -3,8 +3,8 @@ import "../Storage/OrderBookEvents.sol";
 import "../Storage/OrderBookStorage.sol";
 import "../../swaps/ISwapsImpl.sol";
 import "../OrderVault/IDeposits.sol";
-import "../../interfaces/IDexRecords.sol";
 import "../../mixins/Flags.sol";
+
 contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
@@ -19,9 +19,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         _setTarget(this.executeOrder.selector, target);
     }
 
-    function _executeTradeOpen(
-        IOrderBook.Order memory order
-    ) internal {
+    function _executeTradeOpen(IOrderBook.Order memory order) internal {
         IDeposits(vault).withdraw(order.orderID);
         (bool result, bytes memory data) = order.iToken.call(
             abi.encodeWithSelector(
@@ -36,7 +34,10 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
             )
         );
         if (!result) {
-            IDeposits(vault).refund(order.orderID, (order.loanTokenAmount + order.collateralTokenAmount)); //unlikely to be needed
+            IDeposits(vault).refund(
+                order.orderID,
+                (order.loanTokenAmount + order.collateralTokenAmount)
+            ); //unlikely to be needed
         }
     }
 
@@ -44,7 +45,6 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         address trader,
         bytes32 loanID,
         uint256 amount,
-        bool iscollateral,
         bytes memory loanDataBytes
     ) internal {
         address(protocol).call(
@@ -53,7 +53,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
                 loanID,
                 trader,
                 amount,
-                iscollateral,
+                false,
                 loanDataBytes
             )
         );
@@ -97,8 +97,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
                 order.amountReceived > swapRate
                     ? (order.amountReceived - swapRate) >
                         (order.amountReceived * 25) / 100
-                    : (swapRate - order.amountReceived) >
-                        (swapRate * 25) / 100
+                    : (swapRate - order.amountReceived) > (swapRate * 25) / 100
             )
         ) {
             return true;
@@ -116,39 +115,13 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         return (executionPrice * amount) / precision;
     }
 
-    function _prepDexAndPayload(bytes memory input)
-        internal
-        pure
-        returns (uint256 dexID, bytes memory payload)
-    {
-        if (input.length != 0) {
-            (uint128 flag, bytes[] memory payloads) = abi.decode(
-                input,
-                (uint128, bytes[])
-            );
-            if(flag & DEX_SELECTOR_FLAG != 0){
-                (dexID, payload) = abi.decode(payloads[0], (uint256, bytes));
-            }
-        }
-    }
-
     function prelimCheck(bytes32 orderID) external returns (bool) {
         IOrderBook.Order memory order = _allOrders[orderID];
         uint256 amountUsed;
         address srcToken;
-        (uint256 dexID, bytes memory payload) = _prepDexAndPayload(order.loanDataBytes);
-        if (payload.length == 0) {
-            if (order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
-                payload = abi.encode(order.loanTokenAddress, order.base);
-            } else {
-                payload = abi.encode(order.base, order.loanTokenAddress);
-            }
-            dexID = 1;
-        }
-        ISwapsImpl swapImpl = ISwapsImpl(
-            IDexRecords(getSwapAddress()).retrieveDexAddress(dexID)
-        );
-        srcToken = order.collateralTokenAmount > order.loanTokenAmount ? order.base : order.loanTokenAddress;
+        srcToken = order.collateralTokenAmount > order.loanTokenAmount
+            ? order.base
+            : order.loanTokenAddress;
         if (order.timeTillExpiration < block.timestamp) {
             return false;
         }
@@ -158,11 +131,10 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
             }
             uint256 dSwapValue;
             if (srcToken == order.loanTokenAddress) {
-                amountUsed = order.loanTokenAmount + (order.loanTokenAmount * order.leverage) / 10**18; //adjusts leverage
-                (dSwapValue, ) = swapImpl.dexAmountOutFormatted(
-                    payload,
-                    amountUsed
-                );
+                amountUsed =
+                    order.loanTokenAmount +
+                    (order.loanTokenAmount * order.leverage) /
+                    10**18; //adjusts leverage
             } else {
                 amountUsed = queryRateReturn(
                     order.base,
@@ -170,13 +142,15 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
                     order.collateralTokenAmount
                 );
                 amountUsed = (amountUsed * order.leverage) / 10**18;
-                (dSwapValue, ) = swapImpl.dexAmountOutFormatted(
-                    payload,
-                    amountUsed
-                );
-                dSwapValue += order.collateralTokenAmount;
             }
-
+            dSwapValue =
+                order.collateralTokenAmount +
+                protocol.getSwapExpectedReturn(
+                    order.loanTokenAddress,
+                    order.base,
+                    amountUsed,
+                    order.loanDataBytes
+                );
 
             if (order.amountReceived <= dSwapValue) {
                 return true;
@@ -186,17 +160,12 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
                 return false;
             }
             uint256 dSwapValue;
-            if (order.isCollateral) {
-                (dSwapValue, ) = swapImpl.dexAmountInFormatted(
-                    payload,
-                    order.collateralTokenAmount
-                );
-            } else {
-                (dSwapValue, ) = swapImpl.dexAmountOutFormatted(
-                    payload,
-                    order.collateralTokenAmount
-                );
-            }
+            dSwapValue = protocol.getSwapExpectedReturn(
+                order.base,
+                order.loanTokenAddress,
+                order.collateralTokenAmount,
+                order.loanDataBytes
+            );
             if (order.amountReceived <= dSwapValue) {
                 return true;
             }
@@ -217,10 +186,9 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
                 operand =
                     order.amountReceived >=
                     getDexRate(
-                        swapImpl,
                         order.base,
                         order.loanTokenAddress,
-                        payload,
+                        order.loanDataBytes,
                         order.collateralTokenAmount
                     );
             }
@@ -232,16 +200,17 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
     }
 
     function getDexRate(
-        ISwapsImpl swapImpl,
         address base,
         address loanTokenAddress,
         bytes memory payload,
         uint256 amountIn
     ) public returns (uint256 rate) {
-        uint tradeSize = 10**IERC20Metadata(base).decimals();
-        (rate, ) = swapImpl.dexAmountOutFormatted(
-            payload,
-            tradeSize
+        uint256 tradeSize = 10**IERC20Metadata(base).decimals();
+        rate = protocol.getSwapExpectedReturn(
+            base,
+            loanTokenAddress,
+            amountIn,
+            payload
         );
         rate = (rate * amountIn) / tradeSize;
     }
@@ -249,22 +218,16 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
     function priceCheck(
         address loanTokenAddress,
         address base,
-        ISwapsImpl swapImpl,
         bytes memory payload
     ) public returns (bool) {
-        uint tradeSize = 10**IERC20Metadata(base).decimals();
+        uint256 tradeSize = 10**IERC20Metadata(base).decimals();
         uint256 dexRate = getDexRate(
-            swapImpl,
             base,
             loanTokenAddress,
             payload,
             tradeSize
         );
-        uint256 indexRate = queryRateReturn(
-            base,
-            loanTokenAddress,
-            tradeSize
-        );
+        uint256 indexRate = queryRateReturn(base, loanTokenAddress, tradeSize);
         if (dexRate >= indexRate) {
             if (((dexRate - indexRate) * 1000) / dexRate <= 5) {
                 return true;
@@ -282,31 +245,26 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
 
     function executeOrder(bytes32 orderID) external pausable {
         IOrderBook.Order memory order = _allOrders[orderID];
-        require(order.status==IOrderBook.OrderStatus.ACTIVE, "OrderBook: non active");
+        require(
+            order.status == IOrderBook.OrderStatus.ACTIVE,
+            "OrderBook: non active"
+        );
         address srcToken;
         uint256 amountUsed;
-        (uint256 dexID, bytes memory payload) = _prepDexAndPayload(order.loanDataBytes);
-        if (payload.length == 0) {
-            if (order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
-                payload = abi.encode(order.loanTokenAddress, order.base);
-            } else {
-                payload = abi.encode(order.base, order.loanTokenAddress);
-            }
-            dexID = 1;
-        }
-        ISwapsImpl swapImpl = ISwapsImpl(
-            IDexRecords(getSwapAddress()).retrieveDexAddress(dexID)
+        srcToken = order.collateralTokenAmount > order.loanTokenAmount
+            ? order.base
+            : order.loanTokenAddress;
+        require(
+            order.timeTillExpiration > block.timestamp,
+            "OrderBook: Order Expired"
         );
-        srcToken = order.collateralTokenAmount > order.loanTokenAmount ? order.base : order.loanTokenAddress;
-        require(order.timeTillExpiration > block.timestamp, "OrderBook: Order Expired");
         if (order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
             uint256 dSwapValue;
             if (srcToken == order.loanTokenAddress) {
-                amountUsed = order.loanTokenAmount + (order.loanTokenAmount * order.leverage) / 10**18; //adjusts leverage
-                (dSwapValue, ) = swapImpl.dexAmountOutFormatted(
-                    payload,
-                    amountUsed
-                );
+                amountUsed =
+                    order.loanTokenAmount +
+                    (order.loanTokenAmount * order.leverage) /
+                    10**18; //adjusts leverage
             } else {
                 amountUsed = queryRateReturn(
                     order.base,
@@ -314,12 +272,15 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
                     order.collateralTokenAmount
                 );
                 amountUsed = (amountUsed * order.leverage) / 10**18;
-                (dSwapValue, ) = swapImpl.dexAmountOutFormatted(
-                    payload,
-                    amountUsed
-                );
-                dSwapValue += order.collateralTokenAmount;
             }
+            dSwapValue =
+                order.collateralTokenAmount +
+                protocol.getSwapExpectedReturn(
+                    order.loanTokenAddress,
+                    order.base,
+                    amountUsed,
+                    order.loanDataBytes
+                );
 
             require(
                 order.amountReceived <= dSwapValue,
@@ -334,24 +295,20 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         }
         if (order.orderType == IOrderBook.OrderType.LIMIT_CLOSE) {
             uint256 dSwapValue;
-            if (order.isCollateral) {
-                (dSwapValue, ) = swapImpl.dexAmountInFormatted(
-                    payload,
-                    order.collateralTokenAmount
-                );
-                require(order.amountReceived <= dSwapValue, "OrderBook: amountIn too low");
-            } else {
-                (dSwapValue, ) = swapImpl.dexAmountOutFormatted(
-                    payload,
-                    order.collateralTokenAmount
-                );
-                require(order.amountReceived <= dSwapValue, "OrderBook: amountOut too low");
-            }
+            dSwapValue = protocol.getSwapExpectedReturn(
+                order.base,
+                order.loanTokenAddress,
+                order.collateralTokenAmount,
+                order.loanDataBytes
+            );
+            require(
+                order.amountReceived <= dSwapValue,
+                "OrderBook: amountOut too low"
+            );
             _executeTradeClose(
                 order.trader,
                 order.loanID,
                 order.collateralTokenAmount,
-                order.isCollateral,
                 order.loanDataBytes
             );
             _allOrders[orderID].status = IOrderBook.OrderStatus.EXECUTED;
@@ -374,10 +331,9 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
                 operand =
                     order.amountReceived >=
                     getDexRate(
-                        swapImpl,
                         order.base,
                         order.loanTokenAddress,
-                        payload,
+                        order.loanDataBytes,
                         order.collateralTokenAmount
                     );
             }
@@ -386,8 +342,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
                     priceCheck(
                         order.loanTokenAddress,
                         order.base,
-                        swapImpl,
-                        payload
+                        order.loanDataBytes
                     ),
                 "OrderBook: invalid swap rate"
             );
@@ -395,7 +350,6 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
                 order.trader,
                 order.loanID,
                 order.collateralTokenAmount,
-                order.isCollateral,
                 order.loanDataBytes
             );
             _allOrders[orderID].status = IOrderBook.OrderStatus.EXECUTED;

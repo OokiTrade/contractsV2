@@ -27,9 +27,14 @@ interface IOrderBook {
         OrderType orderType;
         OrderStatus status;
         uint64 timeTillExpiration;
-        bool isCollateral;
         bytes loanDataBytes;
     }
+
+    function vault() external view returns(address);
+
+    function protocol() external view returns(address);
+
+    function MIN_AMOUNT_IN_USDC() external view returns(uint256);
 
     function placeOrder(Order calldata order) external;
 
@@ -64,10 +69,6 @@ interface IOrderBook {
     function prelimCheck(bytes32 orderID) external returns (bool);
 
     function getOrderIDs() external view returns (bytes32[] memory);
-
-    function getOrders() external view returns (Order[] memory);
-
-    function getOrdersLimited(uint start, uint end) external view returns (Order[] memory);
 
     function getTotalOrderIDs() external view returns (uint256);
 
