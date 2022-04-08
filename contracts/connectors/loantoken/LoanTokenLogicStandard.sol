@@ -437,18 +437,26 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
 
     // the minimum rate new and existing suppliers will receive after the next supply
     function nextSupplyInterestRate(
-        uint256 supplyAmount)
+        int256 supplyAmount)
         external
         view
         returns (uint256)
     {
         uint256 assetBorrow = totalAssetBorrow();
+        uint256 totalSupply = _totalAssetSupply(assetBorrow);
+
+        if(supplyAmount >= 0)
+            totalSupply = totalSupply.add(uint256(supplyAmount));
+        else
+            totalSupply = totalSupply.sub(uint256(-supplyAmount));
+
         return _nextSupplyInterestRate(
             _nextBorrowInterestRate(assetBorrow, 0, poolTWAI()),
             assetBorrow,
-            _totalAssetSupply(assetBorrow).add(supplyAmount)
+            totalSupply
         );
     }
+
 
     function totalAssetBorrow()
         public
