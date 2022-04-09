@@ -43,6 +43,8 @@ contract OrderKeeper is PausableGuardian_0_8 {
     function performUpKeep(bytes calldata performData) external pausable {
         bytes32 orderId = abi.decode(performData, (bytes32));
         //emit OrderExecuted(trader,orderId);
-        factory.executeOrder(orderId);
+        try factory.executeOrder(orderId) {
+
+        } catch(bytes memory){} catch Error (string memory) {}
     }
 }

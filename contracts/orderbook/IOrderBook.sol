@@ -42,35 +42,45 @@ interface IOrderBook {
 
     function cancelOrder(bytes32 orderID) external;
 
-    function getSwapAddress() external view returns (address);
+    function cancelOrderProtocol(bytes32 orderID) external;
+
+    function changeStopType(bool stopType) external;
+
+    function recoverFundsFromFailedOrder(bytes32 orderID) external;
 
     function getFeed() external view returns (address);
 
-    function getOrdersLimited(uint256 start, uint256 end) external view returns (Order[] memory);
-
-    function getOrders() external view returns (Order[] memory);
-
-    function getOrderByOrderID(bytes32 orderID) external view returns (Order[] memory);
-
-    function getActiveOrders(address trader) external view returns (Order[] memory);
-
-    function getActiveOrderIDs(address trader) external view returns (bytes32[] memory);
-
-    function getActiveOrdersLimited(address trader, uint256 start, uint256 end) external view returns (Order[] memory);
-
-    function getTotalOrders(address trader) external view returns (uint256);
-
-    function executeOrder(bytes32 orderID) external;
-
-    function cancelOrderProtocol(bytes32 orderID) external;
+    function getDexRate(address srcToken, address destToken, bytes calldata payload, uint256 amountIn) external returns(uint256);
 
     function clearOrder(bytes32 orderID) external view returns (bool);
 
     function prelimCheck(bytes32 orderID) external returns (bool);
 
-    function getOrderIDs() external view returns (bytes32[] memory);
+    function queryRateReturn(address srcToken, address destToken, uint256 amount) external view returns(uint256);
+
+    function priceCheck(address srcToken, address destToken, bytes calldata payload) external returns(bool);
+
+    function executeOrder(bytes32 orderID) external;
+
+    function adjustAllowance(address[] calldata spenders, address[] calldata tokens) external;
+
+    function getActiveOrders(address trader) external view returns (Order[] memory);
+
+    function getActiveOrdersLimited(address trader, uint256 start, uint256 end) external view returns (Order[] memory);
+
+    function getOrderByOrderID(bytes32 orderID) external view returns (Order[] memory);
+
+    function getActiveOrderIDs(address trader) external view returns (bytes32[] memory);
+
+    function getTotalOrders(address trader) external view returns (uint256);
 
     function getTotalOrderIDs() external view returns (uint256);
 
+    function getOrderIDs() external view returns (bytes32[] memory);
+
+    function getOrders() external view returns (Order[] memory);
+
     function getOrderIDsLimited(uint256 start, uint256 end) external view returns (bytes32[] memory);
+
+    function getOrdersLimited(uint256 start, uint256 end) external view returns (Order[] memory);
 }

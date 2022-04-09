@@ -16,7 +16,6 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
         _setTarget(this.getOrderByOrderID.selector, target);
         _setTarget(this.getActiveOrderIDs.selector, target);
         _setTarget(this.getTotalOrders.selector, target);
-        _setTarget(this.getActiveOrders.selector, target);
         _setTarget(this.getTotalOrderIDs.selector, target);
         _setTarget(this.getOrderIDs.selector, target);
         _setTarget(this.getOrders.selector, target);

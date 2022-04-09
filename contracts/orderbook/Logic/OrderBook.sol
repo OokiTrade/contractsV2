@@ -9,7 +9,6 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
     function initialize(address target) public onlyOwner {
-        _setTarget(this.getSwapAddress.selector, target);
         _setTarget(this.getFeed.selector, target);
         _setTarget(this.getDexRate.selector, target);
         _setTarget(this.clearOrder.selector, target);
@@ -59,10 +58,6 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         );
     }
 
-    function getSwapAddress() public view returns (address) {
-        return protocol.swapsImpl();
-    }
-
     function getFeed() public view returns (address) {
         return protocol.priceFeeds();
     }
@@ -110,9 +105,8 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         address end,
         uint256 amount
     ) public view returns (uint256) {
-        (uint256 executionPrice, uint256 precision) = IPriceFeeds(getFeed())
-            .queryRate(start, end);
-        return (executionPrice * amount) / precision;
+        return IPriceFeeds(getFeed())
+            .queryReturn(start, end, amount);
     }
 
     function prelimCheck(bytes32 orderID) external returns (bool) {
@@ -200,15 +194,15 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
     }
 
     function getDexRate(
-        address base,
-        address loanTokenAddress,
+        address srcToken,
+        address destToken,
         bytes memory payload,
         uint256 amountIn
     ) public returns (uint256 rate) {
-        uint256 tradeSize = 10**IERC20Metadata(base).decimals();
+        uint256 tradeSize = 10**IERC20Metadata(srcToken).decimals();
         rate = protocol.getSwapExpectedReturn(
-            base,
-            loanTokenAddress,
+            srcToken,
+            destToken,
             amountIn,
             payload
         );
@@ -216,26 +210,26 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
     }
 
     function priceCheck(
-        address loanTokenAddress,
-        address base,
+        address srcToken,
+        address destToken,
         bytes memory payload
     ) public returns (bool) {
-        uint256 tradeSize = 10**IERC20Metadata(base).decimals();
+        uint256 tradeSize = 10**IERC20Metadata(srcToken).decimals();
         uint256 dexRate = getDexRate(
-            base,
-            loanTokenAddress,
+            srcToken,
+            destToken,
             payload,
             tradeSize
         );
-        uint256 indexRate = queryRateReturn(base, loanTokenAddress, tradeSize);
+        uint256 indexRate = queryRateReturn(srcToken, destToken, tradeSize);
         if (dexRate >= indexRate) {
-            if (((dexRate - indexRate) * 1000) / dexRate <= 5) {
+            if (((dexRate - indexRate) * 1000) / dexRate <= 9) {
                 return true;
             } else {
                 return false;
             }
         } else {
-            if (((indexRate - dexRate) * 1000) / indexRate <= 5) {
+            if (((indexRate - dexRate) * 1000) / indexRate <= 9) {
                 return true;
             } else {
                 return false;
@@ -293,7 +287,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
             emit OrderExecuted(order.trader, orderID);
             return;
         }
-        if (order.orderType == IOrderBook.OrderType.LIMIT_CLOSE) {
+        else if (order.orderType == IOrderBook.OrderType.LIMIT_CLOSE) {
             uint256 dSwapValue;
             dSwapValue = protocol.getSwapExpectedReturn(
                 order.base,
@@ -317,7 +311,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
             emit OrderExecuted(order.trader, orderID);
             return;
         }
-        if (order.orderType == IOrderBook.OrderType.MARKET_STOP) {
+        else if (order.orderType == IOrderBook.OrderType.MARKET_STOP) {
             bool operand;
             if (_useOracle[order.trader]) {
                 operand =
@@ -340,8 +334,8 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
             require(
                 operand &&
                     priceCheck(
-                        order.loanTokenAddress,
                         order.base,
+                        order.loanTokenAddress,
                         order.loanDataBytes
                     ),
                 "OrderBook: invalid swap rate"
