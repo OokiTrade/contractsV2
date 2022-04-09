@@ -1,6 +1,6 @@
 BZX = Contract.from_abi("BZX", "0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8", interface.IBZx.abi)
 TOKEN_REGISTRY = Contract.from_abi("TOKEN_REGISTRY", "0x4B234781Af34E9fD756C27a47675cbba19DC8765", TokenRegistry.abi)
-ORDERBOOK = Contract.from_abi("ORDERBOOK", "0xF2749292ed252890D6979cd4Ed1676b671235a67", interface.IOrderBook.abi)
+ORDERBOOK = Contract.from_abi("ORDERBOOK", "0x9A3B9d4379Ec31aA527cB226890412Ef40A3C1c8", interface.IOrderBook.abi)
 list = TOKEN_REGISTRY.getTokens(0, 100)
 for l in list:
     iTokenTemp = Contract.from_abi("iTokenTemp", l[0], LoanTokenLogicStandard.abi)

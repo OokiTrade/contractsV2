@@ -66,7 +66,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         return protocol.loans(ID).active;
     }
 
-    function clearOrder(bytes32 orderID) public view pausable returns (bool) {
+    function clearOrder(bytes32 orderID) public view returns (bool) {
         IOrderBook.Order memory order = _allOrders[orderID];
         if (order.timeTillExpiration < block.timestamp) {
             return true;

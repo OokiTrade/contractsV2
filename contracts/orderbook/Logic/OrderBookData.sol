@@ -1,13 +1,12 @@
 pragma solidity ^0.8.0;
+
 import "../Storage/OrderBookEvents.sol";
 import "../Storage/OrderBookStorage.sol";
-
-interface IERC {
-    function approve(address spender, uint amount) external; //for USDT
-}
+import "@openzeppelin-4.3.2/token/ERC20/utils/SafeERC20.sol";
 
 contract OrderBookData is OrderBookEvents, OrderBookStorage {
     using EnumerableSet for EnumerableSet.Bytes32Set;
+    using SafeERC20 for IERC20;
 
     function initialize(address target) public onlyOwner {
         _setTarget(this.adjustAllowance.selector, target);
@@ -23,7 +22,7 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
         _setTarget(this.getOrdersLimited.selector, target);
     }
 
-    function adjustAllowance(address[] memory spenders, address[] memory tokens) external pausable {
+    function adjustAllowance(address[] memory spenders, address[] memory tokens) external onlyOwner {
         address spender;
         address token;
         for (uint i; i < spenders.length;) {
@@ -36,8 +35,7 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
                         vault == spender,
                     "OrderBook: invalid spender"
                 );
-                IERC(token).approve(spender, 0);
-                IERC(token).approve(spender, type(uint256).max);
+                IERC20(token).safeApprove(spender, type(uint256).max);
                 unchecked { ++y; }
             }
             unchecked { ++i; }
