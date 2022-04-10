@@ -10,6 +10,7 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
 
     function initialize(address target) public onlyOwner {
         _setTarget(this.adjustAllowance.selector, target);
+        _setTarget(this.revokeAllowance.selector, target);
         _setTarget(this.getActiveOrders.selector, target);
         _setTarget(this.getActiveOrdersLimited.selector, target);
         _setTarget(this.getOrderByOrderID.selector, target);
@@ -43,6 +44,26 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
 
     }
 
+    function revokeAllowance(address[] memory spenders, address[] memory tokens) external onlyOwner {
+        address spender;
+        address token;
+        for (uint i; i < spenders.length;) {
+            spender = spenders[i];
+            for (uint y; y < tokens.length;) {
+                token = tokens[y];
+                require(
+                    protocol.isLoanPool(spender) ||
+                        address(protocol) == spender ||
+                        vault == spender,
+                    "OrderBook: invalid spender"
+                );
+                IERC20(token).safeApprove(spender, 0);
+                unchecked { ++y; }
+            }
+            unchecked { ++i; }
+        }
+
+    }
     function getActiveOrders(address trader)
         external
         view
