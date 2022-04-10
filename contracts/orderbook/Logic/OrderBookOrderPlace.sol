@@ -40,7 +40,7 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
                     : true,
                 "OrderBook: case checks failed");
         require(order.orderType == IOrderBook.OrderType.LIMIT_OPEN
-                    ? protocol.isLoanPool(order.iToken)
+                    ? protocol.loanPoolToUnderlying(order.iToken) == order.loanTokenAddress
                     : true,
                 "OrderBook: Not a loan pool");
         require(order.orderType == IOrderBook.OrderType.LIMIT_OPEN
