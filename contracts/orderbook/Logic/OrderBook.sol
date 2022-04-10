@@ -13,6 +13,8 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         _setTarget(this.getDexRate.selector, target);
         _setTarget(this.clearOrder.selector, target);
         _setTarget(this.prelimCheck.selector, target);
+        _setTarget(this.getClearOrderList.selector, target);
+        _setTarget(this.getExecuteOrder.selector, target);
         _setTarget(this.queryRateReturn.selector, target);
         _setTarget(this.priceCheck.selector, target);
         _setTarget(this.executeOrder.selector, target);
@@ -100,6 +102,35 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         return false;
     }
 
+    function getClearOrderList(uint start, uint end) external view returns (bool hasOrders, bytes memory payload) {
+        require(end<=_allOrderIDs.length(), "OrderBook: end is past max orders");
+        bytes32[] memory fullList = new bytes32[](7);
+        uint iter = 0;
+        bytes32 ID;
+        for (uint256 i = start; (i < end && iter < 7);) {
+            ID = _allOrderIDs.at(i);
+            if (clearOrder(ID)) {
+                hasOrders = true;
+                fullList[iter] = ID;
+                ++iter;
+            }
+            unchecked { ++i; }
+        }
+        payload = abi.encode(fullList);
+    }
+
+    function getExecuteOrder(uint start, uint end) external returns (bytes32 ID) {
+        require(end<=_allOrderIDs.length(), "OrderBook: end is past max orders");
+        bytes32 tempID;
+        for (uint256 i = start; i < end;) {
+            tempID = _allOrderIDs.at(i);
+            if (prelimCheck(tempID)) {
+                return tempID;
+            }
+            unchecked { ++i; } 
+        }
+    }
+
     function queryRateReturn(
         address start,
         address end,
@@ -109,7 +140,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
             .queryReturn(start, end, amount);
     }
 
-    function prelimCheck(bytes32 orderID) external returns (bool) {
+    function prelimCheck(bytes32 orderID) public returns (bool) {
         IOrderBook.Order memory order = _allOrders[orderID];
         uint256 amountUsed;
         address srcToken;
