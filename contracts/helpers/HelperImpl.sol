@@ -103,16 +103,16 @@ contract HelperImpl is Ownable {
             profits[i] = tokens[i].profitOf(wallet);
         }
     }
-
-    function marketLiquidity(IToken[] calldata tokens)
-        public view
-        returns (uint256[] memory liquidity)
-    {
-        liquidity = new uint256[](tokens.length);
-        for (uint256 i = 0; i < tokens.length; i++) {
-            liquidity[i] = tokens[i].marketLiquidity();
-        }
-    }
+    // DEPRECATED
+    // function marketLiquidity(IToken[] calldata tokens)
+    //     public view
+    //     returns (uint256[] memory liquidity)
+    // {
+    //     liquidity = new uint256[](tokens.length);
+    //     for (uint256 i = 0; i < tokens.length; i++) {
+    //         liquidity[i] = tokens[i].marketLiquidity();
+    //     }
+    // }
 
 
     struct ReserveDetail{
@@ -137,7 +137,7 @@ contract HelperImpl is Ownable {
             reserveDetails[i].totalAssetSupply = tokens[i].totalAssetSupply();
             reserveDetails[i].totalAssetBorrow = tokens[i].totalAssetBorrow();
             reserveDetails[i].supplyInterestRate = tokens[i].supplyInterestRate();
-            reserveDetails[i].borrowInterestRate = tokens[i].avgBorrowInterestRate();
+            reserveDetails[i].borrowInterestRate = tokens[i].borrowInterestRate();
             reserveDetails[i].torqueBorrowInterestRate = tokens[i].nextBorrowInterestRate(0);
             reserveDetails[i].vaultBalance = IERC20(tokens[i].loanTokenAddress()).balanceOf(bZxProtocol);
         }
