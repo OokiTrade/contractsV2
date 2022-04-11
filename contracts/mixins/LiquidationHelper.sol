@@ -5,10 +5,11 @@
 
 pragma solidity 0.5.17;
 
-import "../core/State.sol";
+import "../core/Constants.sol";
+import "@openzeppelin-2.5.0/math/SafeMath.sol";
 
-
-contract LiquidationHelper is State {
+contract LiquidationHelper is Constants {
+    using SafeMath for uint256;
 
     function _getLiquidationAmounts(
         uint256 principal,
@@ -27,8 +28,7 @@ contract LiquidationHelper is State {
             return (principal, collateral);
         }
 
-        uint256 desiredMargin = maintenanceMargin
-            .add(5 ether); // 5 percentage points above maintenance
+        uint256 desiredMargin = maintenanceMargin.add(5 ether); // 5 percentage points above maintenance
 
         // maxLiquidatable = ((1 + desiredMargin)*principal - collateralToLoanRate*collateral) / (desiredMargin - incentivePercent)
         maxLiquidatable = desiredMargin
