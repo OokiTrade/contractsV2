@@ -3,7 +3,7 @@ TOKEN_REGISTRY = Contract.from_abi("TOKEN_REGISTRY", "0x86003099131d83944d826F80
 
 list = TOKEN_REGISTRY.getTokens(0, 100)
 for l in list:
-    iTokenTemp = Contract.from_abi("iTokenTemp", l[0], LoanTokenLogicStandard.abi)
+    iTokenTemp = Contract.from_abi("iTokenTemp", l[0], interface.IToken.abi)
     globals()[iTokenTemp.symbol()] = iTokenTemp
 
     underlyingTemp = Contract.from_abi("underlyingTemp", l[1], TestToken.abi)
@@ -16,3 +16,5 @@ GUARDIAN_MULTISIG = "0x111F9F3e59e44e257b24C5d1De57E05c380C07D2"
 LOAN_TOKEN_SETTINGS_LOWER_ADMIN = Contract.from_abi("LOAN_TOKEN_SETTINGS_LOWER_ADMIN", "0x56f0741f0FF5C3a5f47319F4Ca31E68C482DA38c", LoanTokenSettingsLowerAdmin.abi)
 
 MULTICALL3 = Contract.from_abi("MULTICALL3", "0xcA11bde05977b3631167028862bE2a173976CA11", interface.IMulticall3.abi)
+
+OOKI = Contract.from_abi("OOKI", "0x400F3ff129Bc9C9d239a567EaF5158f1850c65a4", OokiToken.abi)

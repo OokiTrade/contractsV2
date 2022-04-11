@@ -5,7 +5,7 @@ TOKEN_REGISTRY = Contract.from_abi("TOKEN_REGISTRY", "0xf0E474592B455579Fe580D61
 
 list = TOKEN_REGISTRY.getTokens(0, 50)
 for l in list:
-    iTokenTemp = Contract.from_abi("iTokenTemp", l[0], LoanTokenLogicStandard.abi)
+    iTokenTemp = Contract.from_abi("iTokenTemp", l[0], interface.IToken.abi)
     globals()[iTokenTemp.symbol()] = iTokenTemp
 
 
