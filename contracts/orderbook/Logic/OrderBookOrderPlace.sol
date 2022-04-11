@@ -57,8 +57,25 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         (uint256 amountUsed, address usedToken) = order.loanTokenAmount > order.collateralTokenAmount
             ? (order.loanTokenAmount, order.loanTokenAddress)
             : (order.collateralTokenAmount, order.base);
+        address srcToken;
+        if (order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
+            if (usedToken == order.base) {
+                amountUsed = IPriceFeeds(protocol.priceFeeds()).queryReturn(
+                    order.base,
+                    order.loanTokenAddress,
+                    amountUsed
+                );
+                amountUsed = (amountUsed * order.leverage) / 10**18;
+                srcToken = order.loanTokenAddress;
+            } else {
+                amountUsed +=
+                    (amountUsed * order.leverage) /
+                    10**18; //adjusts leverage
+                srcToken = order.base;
+            }
+        }
         require(
-            IPriceFeeds(protocol.priceFeeds()).queryReturn(usedToken, USDC, amountUsed) >=
+            IPriceFeeds(protocol.priceFeeds()).queryReturn(srcToken, USDC, amountUsed) >=
                 MIN_AMOUNT_IN_USDC,
             "OrderBook: Order too small"
         );
