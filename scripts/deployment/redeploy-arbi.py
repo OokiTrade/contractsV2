@@ -1,6 +1,6 @@
 exec(open("./scripts/env/set-arbitrum.py").read())
 deployer = accounts[2]
-tickMath = TickMath.deploy({"from": deployer, "gas_price": Wei("0.5 gwei")})
+tickMath = TickMathV1.deploy({"from": deployer, "gas_price": Wei("0.5 gwei")})
 
 
 loanMaintenance_Arbitrum = LoanMaintenance_Arbitrum.deploy({"from": deployer, "gas_price": Wei("0.6 gwei")})
