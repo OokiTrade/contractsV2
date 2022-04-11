@@ -71,8 +71,10 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
                 amountUsed +=
                     (amountUsed * order.leverage) /
                     10**18; //adjusts leverage
-                srcToken = order.base;
+                srcToken = order.loanTokenAddress;
             }
+        } else {
+            srcToken = order.base;
         }
         require(
             IPriceFeeds(protocol.priceFeeds()).queryReturn(srcToken, USDC, amountUsed) >=
