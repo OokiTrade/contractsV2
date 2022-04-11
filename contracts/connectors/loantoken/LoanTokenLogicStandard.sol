@@ -376,23 +376,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         return checkpointPrices_[_user];
     }
 
-    function marketLiquidity()
-        public
-        view
-        returns (uint256)
-    {
-        return _underlyingBalance();
-    }
-
-    // legacy function
-    function avgBorrowInterestRate()
-        external
-        view
-        returns (uint256)
-    {
-        return borrowInterestRate();
-    }
-
     // the current rate being paid by borrowers in active loans
     function borrowInterestRate()
         public
@@ -500,18 +483,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         return IBZx(bZxContract).getTWAI(address(this));
     }
 
-    function getMaxEscrowAmount(
-        uint256 leverageAmount)
-        external
-        view
-        returns (uint256)
-    {
-        uint256 initialMargin = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, leverageAmount);
-        return marketLiquidity()
-            .mul(initialMargin)
-            .div(WEI_PERCENT_PRECISION);
-    }
-
     // returns the user's balance of underlying token
     function assetBalanceOf(
         address _owner)
@@ -522,90 +493,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         return balanceOf(_owner)
             .mul(tokenPrice())
             .div(WEI_PRECISION);
-    }
-
-    // DEPRECATED, UI is handling this
-    function getEstimatedMarginDetails(
-        uint256 leverageAmount,
-        uint256 loanTokenSent,
-        uint256 collateralTokenSent,
-        address collateralTokenAddress)     // address(0) means ETH
-        external
-        view
-        returns (uint256 principal, uint256 collateral, uint256 interestRate, uint256 collateralToLoanRate)
-    {
-        if (collateralTokenAddress == address(0)) {
-            collateralTokenAddress = wethToken;
-        }
-
-        uint256 collateralToLoanPrecision;
-        (collateralToLoanRate, collateralToLoanPrecision) = IPriceFeeds(IBZx(bZxContract).priceFeeds()).queryRate(
-            collateralTokenAddress,
-            loanTokenAddress
-        );
-        require(collateralToLoanRate != 0 && collateralToLoanPrecision != 0, "20");
-        collateralToLoanRate = collateralToLoanRate
-            .mul(WEI_PRECISION)
-            .div(collateralToLoanPrecision);
-
-        collateral = IBZx(bZxContract).getEstimatedMarginExposure(
-            loanTokenAddress,
-            collateralTokenAddress,
-            loanTokenSent,
-            collateralTokenSent,
-            0, // interestRate (depreciated)
-            0 // principal
-        );
-    }
-
-    function getDepositAmountForBorrow(
-        uint256 borrowAmount,
-        uint256 initialLoanDuration,        // duration in seconds
-        address collateralTokenAddress)     // address(0) means ETH
-        external
-        view
-        returns (uint256) // depositAmount
-    {
-        if (borrowAmount != 0) {
-            if (borrowAmount <= _underlyingBalance()) {
-                if (collateralTokenAddress == address(0)) {
-                    collateralTokenAddress = wethToken;
-                }
-                return IBZx(bZxContract).getRequiredCollateralByParams(
-                    loanParamsIds[uint256(keccak256(abi.encodePacked(
-                        collateralTokenAddress,
-                        true
-                    )))],
-                    borrowAmount
-                ).add(10); // some dust to compensate for rounding errors
-            }
-        }
-    }
-
-    function getBorrowAmountForDeposit(
-        uint256 depositAmount,
-        uint256 initialLoanDuration,        // duration in seconds
-        address collateralTokenAddress)     // address(0) means ETH
-        external
-        view
-        returns (uint256 borrowAmount)
-    {
-        if (depositAmount != 0) {
-            if (collateralTokenAddress == address(0)) {
-                collateralTokenAddress = wethToken;
-            }
-            borrowAmount = IBZx(bZxContract).getBorrowAmountByParams(
-                loanParamsIds[uint256(keccak256(abi.encodePacked(
-                    collateralTokenAddress,
-                    true
-                )))],
-                depositAmount
-            );
-
-            if (borrowAmount > _underlyingBalance()) {
-                borrowAmount = 0;
-            }
-        }
     }
 
     function getPoolUtilization()
