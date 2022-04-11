@@ -10,7 +10,7 @@ import "../interfaces/ILoanPool.sol";
 import "../utils/MathUtil.sol";
 import "../events/InterestRateEvents.sol";
 import "../utils/InterestOracle.sol";
-import "../utils/TickMath.sol";
+import "../utils/TickMathV1.sol";
 
 contract InterestHandler is State, InterestRateEvents {
     using MathUtil for uint256;
@@ -25,7 +25,7 @@ contract InterestHandler is State, InterestRateEvents {
         poolLastIdx[pool] = poolInterestRateObservations[pool].write(
             poolLastIdx[pool],
             uint32(block.timestamp),
-            TickMath.getTickAtSqrtRatio(uint160(poolLastInterestRate[pool])),
+            TickMathV1.getTickAtSqrtRatio(uint160(poolLastInterestRate[pool])),
             uint8(-1)
         );
         uint256[7] memory interestVals = _settleInterest2(
@@ -155,7 +155,7 @@ contract InterestHandler is State, InterestRateEvents {
         returns (uint256 ratePerTokenNewAmount, uint256 nextInterestRate)
     {
         uint256 timeSinceUpdate = block.timestamp.sub(poolLastUpdateTime[pool]);
-        uint256 benchmarkRate = TickMath.getSqrtRatioAtTick(poolInterestRateObservations[pool].arithmeticMean(
+        uint256 benchmarkRate = TickMathV1.getSqrtRatioAtTick(poolInterestRateObservations[pool].arithmeticMean(
             uint32(block.timestamp),
             [uint32(timeSinceUpdate+3*3600), uint32(timeSinceUpdate)],
             poolInterestRateObservations[pool][poolLastIdx[pool]].tick,
