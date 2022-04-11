@@ -27,6 +27,10 @@ contract OrderKeeperClear is PausableGuardian_0_8 {
         bytes32[] memory orderId = abi.decode(performData, (bytes32[]));
         //emit OrderExecuted(trader,orderId);
         for (uint i;i<orderId.length;) {
+            if(orderId[i]==0) {
+                unchecked { ++i; }
+                continue;
+            }
             orderBook.cancelOrderProtocol(orderId[i]);
             unchecked { ++i; }
         }
