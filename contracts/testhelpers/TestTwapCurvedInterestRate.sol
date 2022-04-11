@@ -10,7 +10,6 @@ pragma solidity ^0.5.0;
 // import "@openzeppelin-4.3.2/math/SafeMath";
 import "../utils/InterestOracle.sol";
 import "../utils/TickMathV1.sol";
-import "../utils/TickMathV1.sol";
 import "../interfaces/ICurvedInterestRate.sol";
 
 contract TestTwapCurvedInterestRate {
@@ -43,7 +42,7 @@ contract TestTwapCurvedInterestRate {
         poolLastIdx = poolInterestRateObservations.write(
                                                             poolLastIdx,
                                                             uint32(block.timestamp),
-                                                                TickMathV1.getTickAtSqrtRatio(uint160(lastIR)),
+                                                            TickMathV1.getTickAtSqrtRatio(uint160(lastIR)),
                                                             uint8(-1)
                                                         );
 
