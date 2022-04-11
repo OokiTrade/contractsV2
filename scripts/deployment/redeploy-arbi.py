@@ -20,12 +20,12 @@ BZX.replaceContract(swapsImpl, {"from": GUARDIAN_MULTISIG})
 
 # remember deploy WETH
 loanTokenLogicStandard = LoanTokenLogicStandard.deploy({"from": deployer, "gas_price": Wei("0.6 gwei")})
-LoanTokenLogicWeth = LoanTokenLogicWeth.deploy({"from": deployer, "gas_price": Wei("0.6 gwei")})
+loanTokenLogicWeth = LoanTokenLogicWeth.deploy({"from": deployer, "gas_price": Wei("0.6 gwei")})
 
 for l in list:
     iTokenTemp = Contract.from_abi("iTokenTemp", l[0], LoanToken.abi)
     if l[0] == WETH:
-        iTokenTemp.setTarget(LoanTokenLogicWeth, {"from": GUARDIAN_MULTISIG})
+        iTokenTemp.setTarget(loanTokenLogicWeth, {"from": GUARDIAN_MULTISIG})
     else:
         iTokenTemp.setTarget(loanTokenLogicStandard, {"from": GUARDIAN_MULTISIG})
 
