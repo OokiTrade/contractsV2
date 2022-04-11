@@ -9,8 +9,8 @@ pragma solidity ^0.5.0;
 // import "prb-math/contracts/PRBMathUD60x18.sol";
 // import "@openzeppelin-4.3.2/math/SafeMath";
 import "../utils/InterestOracle.sol";
-import "../utils/TickMath.sol";
-import "../utils/TickMath.sol";
+import "../utils/TickMathV1.sol";
+import "../utils/TickMathV1.sol";
 import "../interfaces/ICurvedInterestRate.sol";
 
 contract TestTwapCurvedInterestRate {
@@ -43,11 +43,11 @@ contract TestTwapCurvedInterestRate {
         poolLastIdx = poolInterestRateObservations.write(
                                                             poolLastIdx,
                                                             uint32(block.timestamp),
-                                                            TickMath.getTickAtSqrtRatio(uint160(lastIR)),
+                                                                TickMathV1.getTickAtSqrtRatio(uint160(lastIR)),
                                                             uint8(-1)
                                                         );
 
-        uint256 benchmarkRate = TickMath.getSqrtRatioAtTick(poolInterestRateObservations.arithmeticMean(
+        uint256 benchmarkRate = TickMathV1.getSqrtRatioAtTick(poolInterestRateObservations.arithmeticMean(
                                                                 uint32(block.timestamp),
                                                                 [uint32(3*3600), 0],
                                                                 poolInterestRateObservations[poolLastIdx].tick,
@@ -62,7 +62,7 @@ contract TestTwapCurvedInterestRate {
     }
 
     function lastRecordedIR() public view returns (uint256) {
-        return TickMath.getSqrtRatioAtTick(poolInterestRateObservations[poolLastIdx].tick);
+        return TickMathV1.getSqrtRatioAtTick(poolInterestRateObservations[poolLastIdx].tick);
     }
 
 }
