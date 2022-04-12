@@ -216,6 +216,8 @@ interface IBZx {
         external
         returns (bytes32[] memory loanParamsIdList);
 
+    function setupLoanPoolTWAI(address pool) external;
+
     /// @dev Deactivates LoanParams for future loans. Active loans using it are unaffected.
     /// @param loanParamsIdList array of loan ids
     function disableLoanParams(bytes32[] calldata loanParamsIdList) external;
@@ -244,6 +246,22 @@ interface IBZx {
     /// @param loanToken address
     /// @return total principal of the loan
     function getTotalPrincipal(address lender, address loanToken)
+        external
+        view
+        returns (uint256);
+
+    /// @dev returns total principal for a loan pool that was last settled
+    /// @param pool address
+    /// @return total stored principal of the loan
+    function getPoolPrincipalStored(address pool)
+        external
+        view
+        returns (uint256);
+
+    /// @dev returns the last interest rate founnd during interest settlement
+    /// @param pool address
+    /// @return the last interset rate
+    function getPoolLastInterestRate(address pool)
         external
         view
         returns (uint256);
@@ -367,13 +385,6 @@ interface IBZx {
             address seizedToken
         );
 
-    /// @dev rollover loan
-    /// @param loanId id of the loan
-    /// @param loanDataBytes reserved for future use.
-    function rollover(bytes32 loanId, bytes calldata loanDataBytes)
-        external
-        returns (address rebateToken, uint256 gasRebate);
-
     /// @dev close position with loan token deposit
     /// @param loanId id of the loan
     /// @param receiver collateral token reciever address
@@ -399,7 +410,7 @@ interface IBZx {
     /// @param receiver collateral token reciever address
     /// @param swapAmount amount of loan token to swap
     /// @param returnTokenIsCollateral boolean whether to return tokens is collateral
-    /// @param loanDataBytes reserved for future use
+    /// @param loanDataBytes custom payload for specifying swap implementation and data to pass
     /// @return loanCloseAmount loan close amount
     /// @return withdrawAmount loan token withdraw amount
     /// @return withdrawToken loan token address
@@ -440,15 +451,6 @@ interface IBZx {
             uint256 seizedAmount,
             address seizedToken
         );
-
-    /// @dev rollover loan
-    /// @param loanId id of the loan
-    /// @param gasTokenUser user address of the GAS token
-    function rolloverWithGasToken(
-        bytes32 loanId,
-        address gasTokenUser,
-        bytes calldata /*loanDataBytes*/
-    ) external returns (address rebateToken, uint256 gasRebate);
 
     /// @dev close position with loan token deposit
     /// @param loanId id of the loan
@@ -506,7 +508,7 @@ interface IBZx {
         payable;
 
     /// @dev withdraw collateral from existing loan
-    /// @param loanId existing lona id
+    /// @param loanId existing loan id
     /// @param receiver address of withdrawn tokens
     /// @param withdrawAmount amount to withdraw
     /// @return actualWithdrawAmount actual amount withdrawn
@@ -516,11 +518,15 @@ interface IBZx {
         uint256 withdrawAmount
     ) external returns (uint256 actualWithdrawAmount);
 
-    /// @dev withdraw accrued interest rate for a loan given token address
-    /// @param loanToken loan token address
-    function withdrawAccruedInterest(address loanToken) external;
+    /// @dev settles accrued interest for all active loans from a loan pool
+    /// @param loanId existing loan id
+    function settleInterest(bytes32 loanId) external;
 
-    /// @dev extends loan duration by depositing more collateral
+    /*/// @dev withdraw accrued interest rate for a loan given token address
+    /// @param loanToken loan token address
+    function withdrawAccruedInterest(address loanToken) external;*/
+
+    /*/// @dev extends loan duration by depositing more collateral
     /// @param loanId id of the existing loan
     /// @param depositAmount amount to deposit
     /// @param useCollateral boolean whether to extend using collateral or deposit amount
@@ -529,10 +535,10 @@ interface IBZx {
         bytes32 loanId,
         uint256 depositAmount,
         bool useCollateral,
-        bytes calldata // for future use /*loanDataBytes*/
-    ) external payable returns (uint256 secondsExtended);
+        bytes calldata // for future use loanDataBytes
+    ) external payable returns (uint256 secondsExtended);*/
 
-    /// @dev reduces loan duration by withdrawing collateral
+    /*/// @dev reduces loan duration by withdrawing collateral
     /// @param loanId id of the existing loan
     /// @param receiver address to receive tokens
     /// @param withdrawAmount amount to withdraw
@@ -541,7 +547,7 @@ interface IBZx {
         bytes32 loanId,
         address receiver,
         uint256 withdrawAmount
-    ) external returns (uint256 secondsReduced);
+    ) external returns (uint256 secondsReduced);*/
 
     function setDepositAmount(
         bytes32 loanId,
@@ -562,7 +568,30 @@ interface IBZx {
         view
         returns (uint256 rewardsBalance);
 
-    /// @dev Gets current lender interest data totals for all loans with a specific oracle and interest token
+    function getInterestModelValues(
+        address pool,
+        bytes32 loanId)
+        external
+        view
+        returns (
+        uint256 _poolLastUpdateTime,
+        uint256 _poolPrincipalTotal,
+        uint256 _poolInterestTotal,
+        uint256 _poolRatePerTokenStored,
+        uint256 _poolLastInterestRate,
+        uint256 _loanPrincipalTotal,
+        uint256 _loanInterestTotal,
+        uint256 _loanRatePerTokenPaid
+        );
+    
+    function getTWAI(
+        address pool)
+        external
+        view returns (
+            uint256 benchmarkRate
+        );
+
+    /*/// @dev Gets current lender interest data totals for all loans with a specific oracle and interest token
     /// @param lender The lender address
     /// @param loanToken The loan token address
     /// @return interestPaid The total amount of interest that has been paid to a lender so far
@@ -597,7 +626,7 @@ interface IBZx {
             uint256 interestOwedPerDay,
             uint256 interestDepositTotal,
             uint256 interestDepositRemaining
-        );
+        );*/
 
     /// @dev gets list of loans of particular user address
     /// @param user address of the loans
@@ -628,6 +657,23 @@ interface IBZx {
         external
         view
         returns (LoanReturnData memory loanData);
+
+    /// @dev gets loan principal including interest
+    /// @param loanId id of existing loan
+    /// @return principal
+    function getLoanPrincipal(bytes32 loanId)
+        external
+        view
+        returns (uint256 principal);
+
+    /// @dev gets loan outstanding interest
+    /// @param loanId id of existing loan
+    /// @return interest
+    function getLoanInterestOutstanding(bytes32 loanId)
+        external
+        view
+        returns (uint256 interest);
+
 
     /// @dev get current active loans in the system
     /// @param start of the index
@@ -717,7 +763,8 @@ interface IBZx {
     function getSwapExpectedReturn(
         address sourceToken,
         address destToken,
-        uint256 sourceTokenAmount
+        uint256 sourceTokenAmount,
+        bytes calldata swapData
     ) external view returns (uint256);
 
     function owner() external view returns (address);
@@ -732,6 +779,10 @@ interface IBZx {
     function toggleFunctionPause(bytes4 sig) external;
 
     function toggleFunctionUnPause(bytes4 sig) external;
+
+    function pause(bytes4 [] calldata sig) external;
+
+    function unpause(bytes4 [] calldata sig) external;
 
     function changeGuardian(address newGuardian) external;
 
@@ -824,4 +875,11 @@ interface IBZx {
         uint256 depositTotal; // total escrowed interest for loan
         uint256 updatedTimestamp; // last update
     }
+	
+	////// Flash Borrow Fees //////
+    function payFlashBorrowFees(
+        address user,
+        uint256 borrowAmount,
+        uint256 flashBorrowFeePercent)
+        external;
 }

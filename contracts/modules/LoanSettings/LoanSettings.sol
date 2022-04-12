@@ -9,9 +9,13 @@ pragma experimental ABIEncoderV2;
 import "../../core/State.sol";
 import "../../events/LoanSettingsEvents.sol";
 import "../../utils/MathUtil.sol";
+import "../../utils/InterestOracle.sol";
+import "../../mixins/InterestHandler.sol";
+import "../../governance/PausableGuardian.sol";
 
-contract LoanSettings is State, LoanSettingsEvents {
+contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGuardian {
     using MathUtil for uint256;
+    using InterestOracle for InterestOracle.Observation[256];
     
     function initialize(
         address target)
@@ -19,10 +23,15 @@ contract LoanSettings is State, LoanSettingsEvents {
         onlyOwner
     {
         _setTarget(this.setupLoanParams.selector, target);
+        _setTarget(this.setupLoanPoolTWAI.selector, target);
         _setTarget(this.disableLoanParams.selector, target);
         _setTarget(this.getLoanParams.selector, target);
         _setTarget(this.getLoanParamsList.selector, target);
         _setTarget(this.getTotalPrincipal.selector, target);
+        _setTarget(this.getPoolPrincipalStored.selector, target);
+        _setTarget(this.getPoolLastInterestRate.selector, target);
+        _setTarget(this.getLoanPrincipal.selector, target);
+        _setTarget(this.getLoanInterestOutstanding.selector, target);
     }
 
     function setupLoanParams(
@@ -33,6 +42,17 @@ contract LoanSettings is State, LoanSettingsEvents {
         loanParamsIdList = new bytes32[](loanParamsList.length);
         for (uint256 i = 0; i < loanParamsList.length; i++) {
             loanParamsIdList[i] = _setupLoanParams(loanParamsList[i]);
+        }
+    }
+
+    function setupLoanPoolTWAI(address pool) external onlyGuardian {
+        poolInterestRateObservations[pool][0].blockTimestamp = 
+            uint32(
+                (poolLastUpdateTime[pool]>0
+                ?poolLastUpdateTime[pool]
+                : block.timestamp) - 11000);
+        if (poolLastInterestRate[pool] < 1e11) {
+            poolLastInterestRate[pool] = 1e11;
         }
     }
 
@@ -114,12 +134,74 @@ contract LoanSettings is State, LoanSettingsEvents {
 
     function getTotalPrincipal(
         address lender,
-        address loanToken)
+        address /*loanToken*/)
         external
         view
         returns (uint256)
     {
-        return lenderInterest[lender][loanToken].principalTotal;
+        return _getPoolPrincipal(
+            lender
+        );
+    }
+
+    function getPoolPrincipalStored(
+        address pool)
+        external
+        view
+        returns (uint256)
+    {
+        uint256 _poolInterestTotal = poolInterestTotal[pool];
+        uint256 lendingFee = _poolInterestTotal
+            .mul(lendingFeePercent)
+            .divCeil(WEI_PERCENT_PRECISION);
+
+        return poolPrincipalTotal[pool]
+            .add(_poolInterestTotal)
+            .sub(lendingFee);
+    }
+
+    function getPoolLastInterestRate(
+        address pool)
+        external
+        view
+        returns (uint256)
+    {
+        return poolLastInterestRate[pool];
+    }
+
+    function getLoanPrincipal(
+        bytes32 loanId)
+        external
+        view
+        returns (uint256)
+    {
+        Loan memory loanLocal = loans[loanId];
+        if (!loanLocal.active) {
+            return 0;
+        }
+
+        return _getLoanPrincipal(
+            loanLocal.lender,
+            loanId
+        );
+    }
+
+    function getLoanInterestOutstanding(
+        bytes32 loanId)
+        external
+        view
+        returns (uint256 loanInterest)
+    {
+        Loan storage loanLocal = loans[loanId];
+        if (!loanLocal.active) {
+            return 0;
+        }
+
+        loanInterest = (_settleInterest2(
+            loanLocal.lender,
+            loanId,
+            false
+        ))[5];
     }
 
     function _setupLoanParams(

@@ -3,47 +3,39 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.6.12;
+pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
-import "./interfaces/Upgradeable.sol";
-import "./interfaces/IWethERC20.sol";
+import "@openzeppelin-4.3.2/token/ERC20/IERC20.sol";
 import "./interfaces/IUniswapV2Router.sol";
 import "../../interfaces/IBZx.sol";
-import "./interfaces/IMasterChefPartial.sol";
-import "./interfaces/IPriceFeeds.sol";
+import "@celer/contracts/interfaces/IBridge.sol";
+import "../../interfaces/IPriceFeeds.sol";
+import "../governance/PausableGuardian_0_8.sol";
 
-contract FeeExtractAndDistribute_BSC is Upgradeable {
-    using SafeMath for uint256;
-    using SafeERC20 for IERC20;
+contract FeeExtractAndDistribute_BSC is PausableGuardian_0_8 {
+    address public implementation;
+    IBZx public constant BZX = IBZx(0xD154eE4982b83a87b0649E5a7DDA1514812aFE1f);
 
-    IBZx public constant bZx = IBZx(0xC47812857A74425e2039b57891a3DFcF51602d5d);
-    IMasterChefPartial public constant chef =
-        IMasterChefPartial(0x1FDCA2422668B961E162A8849dc0C2feaDb58915);
-
-    address public constant BGOV = 0xf8E026dC4C0860771f691EcFFBbdfe2fa51c77CF;
     address public constant BNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
-    address public constant BZRX = 0x4b87642AEDF10b642BE4663Db842Ecc5A88bf5ba;
-    address public constant iBZRX = 0xA726F2a7B200b03beB41d1713e6158e0bdA8731F;
+    address public constant USDC = 0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d;
+    uint256 public constant MIN_USDC_AMOUNT = 1e18; //1 USDC minimum bridge amount
+    uint64 public constant DEST_CHAINID = 137; //send to polygon
 
-    IUniswapV2Router public constant pancakeRouterV2 =
+    IUniswapV2Router public constant SWAPS_ROUTER_V2 =
         IUniswapV2Router(0x10ED43C718714eb63d5aA57B78B54704E256024E);
 
     address internal constant ZERO_ADDRESS = address(0);
 
-    //below is unused
-    bool public isPaused; 
-
-    address payable public fundsWallet;
+    uint256 public constant MAX_DISAGREEMENT = 5e18;
 
     mapping(address => uint256) public exportedFees;
 
     address[] public currentFeeTokens;
 
-    mapping(IERC20 => uint256) public tokenHeld;
-
     address payable public treasuryWallet;
+
+    address public bridge; //bridging contract
 
     event ExtractAndDistribute(uint256 amountTreasury, uint256 amountStakers);
 
@@ -55,95 +47,57 @@ contract FeeExtractAndDistribute_BSC is Upgradeable {
         uint256 dstAmount
     );
 
-    event AssetBurn(
-        address indexed sender,
-        address indexed asset,
-        uint256 amount
-    );
-
-    modifier onlyEOA() {
-        require(msg.sender == tx.origin, "unauthorized");
-        _;
+    function sweepFees() public pausable {
+        _extractAndDistribute(currentFeeTokens);
     }
 
-    modifier checkPause() {
-        require(!isPaused || msg.sender == owner(), "paused");
-        _;
-    }
-
-    function sweepFees() public // sweepFeesByAsset() does checkPause
-    {
-        sweepFeesByAsset(currentFeeTokens);
-    }
-
-    function sweepFeesByAsset(address[] memory assets)
-        public
-        checkPause
-        onlyEOA
-    {
+    function sweepFees(address[] memory assets) public pausable {
         _extractAndDistribute(assets);
     }
 
     function _extractAndDistribute(address[] memory assets) internal {
-        uint256[] memory amounts = bZx.withdrawFees(
+        uint256[] memory amounts = BZX.withdrawFees(
             assets,
             address(this),
             IBZx.FeeClaimType.All
         );
 
         for (uint256 i = 0; i < assets.length; i++) {
-            require(assets[i] != BGOV, "asset not supported");
-            exportedFees[assets[i]] = exportedFees[assets[i]].add(amounts[i]);
+            exportedFees[assets[i]] += amounts[i];
         }
 
-        uint256 bnbOutput = exportedFees[BNB];
-        exportedFees[BNB] = 0;
+        uint256 usdcOutput = exportedFees[USDC];
+        exportedFees[USDC] = 0;
 
         address asset;
         uint256 amount;
         for (uint256 i = 0; i < assets.length; i++) {
             asset = assets[i];
-            if (asset == BGOV || asset == BZRX || asset == BNB) {
-                continue;
-            }
+            if (asset == USDC) continue; //USDC already accounted for
             amount = exportedFees[asset];
             exportedFees[asset] = 0;
 
             if (amount != 0) {
-                bnbOutput += _swapWithPair(asset, BNB, amount);
+                usdcOutput += asset == BNB
+                    ? _swapWithPair([asset, USDC], amount)
+                    : _swapWithPair([asset, BNB, USDC], amount); //builds route for all tokens to route through ETH
             }
         }
 
-        if (bnbOutput != 0) {
-            // add any BZRX extracted from fees
-            uint256 bzrxAmount = exportedFees[BZRX];
-            exportedFees[BZRX] = 0;
-
-            if (bzrxAmount != 0) {
-                IERC20(BZRX).safeTransfer(iBZRX, bzrxAmount);
-                emit AssetSwap(msg.sender, address(0), BZRX, 0, bzrxAmount);
-            }
-
-            IWethERC20(BNB).withdraw(bnbOutput);
-            bnbOutput = bnbOutput / 2;
-            chef.addAltReward.value(bnbOutput)();
-
-            Address.sendValue(treasuryWallet, bnbOutput);
-
-            emit ExtractAndDistribute(bnbOutput, bnbOutput);
+        if (usdcOutput != 0) {
+            _bridgeFeesAndDistribute(); //bridges fees to Ethereum to be distributed to stakers
+            emit ExtractAndDistribute(usdcOutput, 0); //for tracking distribution amounts
         }
     }
 
-    function _swapWithPair(
-        address inAsset,
-        address outAsset,
-        uint256 inAmount
-    ) internal returns (uint256 returnAmount) {
+    function _swapWithPair(address[2] memory route, uint256 inAmount)
+        internal
+        returns (uint256 returnAmount)
+    {
         address[] memory path = new address[](2);
-        path[0] = inAsset;
-        path[1] = outAsset;
-
-        uint256[] memory amounts = pancakeRouterV2.swapExactTokensForTokens(
+        path[0] = route[0];
+        path[1] = route[1];
+        uint256[] memory amounts = SWAPS_ROUTER_V2.swapExactTokensForTokens(
             inAmount,
             1, // amountOutMin
             path,
@@ -152,49 +106,101 @@ contract FeeExtractAndDistribute_BSC is Upgradeable {
         );
 
         returnAmount = amounts[1];
+        _checkUniDisagreement(
+            path[0],
+            inAmount,
+            returnAmount,
+            MAX_DISAGREEMENT
+        );
+    }
+
+    function _swapWithPair(address[3] memory route, uint256 inAmount)
+        internal
+        returns (uint256 returnAmount)
+    {
+        address[] memory path = new address[](3);
+        path[0] = route[0];
+        path[1] = route[1];
+        path[2] = route[2];
+        uint256[] memory amounts = SWAPS_ROUTER_V2.swapExactTokensForTokens(
+            inAmount,
+            1, // amountOutMin
+            path,
+            address(this),
+            block.timestamp
+        );
+
+        returnAmount = amounts[2];
+        _checkUniDisagreement(
+            path[0],
+            inAmount,
+            returnAmount,
+            MAX_DISAGREEMENT
+        );
+    }
+
+    function _checkUniDisagreement(
+        address asset,
+        uint256 assetAmount,
+        uint256 recvAmount,
+        uint256 maxDisagreement
+    ) internal view {
+        uint256 estAmountOut = IPriceFeeds(BZX.priceFeeds()).queryReturn(
+            asset,
+            USDC,
+            assetAmount
+        );
+
+        uint256 spreadValue = estAmountOut > recvAmount
+            ? estAmountOut - recvAmount
+            : recvAmount - estAmountOut;
+        if (spreadValue != 0) {
+            spreadValue = (spreadValue * 1e20) / estAmountOut;
+
+            require(
+                spreadValue <= maxDisagreement,
+                "uniswap price disagreement"
+            );
+        }
+    }
+
+    function _bridgeFeesAndDistribute() internal {
+        require(
+            IERC20(USDC).balanceOf(address(this)) >= MIN_USDC_AMOUNT,
+            "FeeExtractAndDistribute: bridge amount too low"
+        );
+        IBridge(bridge).send(
+            treasuryWallet,
+            USDC,
+            IERC20(USDC).balanceOf(address(this)),
+            DEST_CHAINID,
+            uint64(block.timestamp),
+            10000
+        );
     }
 
     // OnlyOwner functions
 
-    function togglePause(bool _isPaused) external onlyOwner {
-        isPaused = _isPaused;
-    }
-
-    function setFundsWallet(address payable _wallet) external onlyOwner {
-        fundsWallet = _wallet;
-    }
-
-    function setTreasuryWallet(address payable _wallet) external onlyOwner {
+    function setTreasuryWallet(address payable _wallet) public onlyOwner {
         treasuryWallet = _wallet;
     }
 
-    function setFeeTokens(address[] calldata tokens) external onlyOwner {
+    function setFeeTokens(address[] calldata tokens) public onlyOwner {
         currentFeeTokens = tokens;
         for (uint256 i = 0; i < tokens.length; i++) {
-            IERC20(tokens[i]).safeApprove(address(pancakeRouterV2), 0);
-            IERC20(tokens[i]).safeApprove(
-                address(pancakeRouterV2),
-                uint256(-1)
+            IERC20(tokens[i]).approve(
+                address(SWAPS_ROUTER_V2),
+                type(uint256).max
             );
         }
-        //IERC20(BGOV).safeApprove(address(chef), 0);
-        //IERC20(BGOV).safeApprove(address(chef), uint256(-1));
     }
 
-    function depositToken(IERC20 token, uint256 amount) external onlyOwner {
-        token.safeTransferFrom(msg.sender, address(this), amount);
-
-        tokenHeld[token] = tokenHeld[token].add(amount);
+    function setBridgeApproval(address token) public onlyOwner {
+        IERC20(token).approve(bridge, 0);
+        IERC20(token).approve(bridge, type(uint256).max);
     }
 
-    function withdrawToken(IERC20 token, uint256 amount) external onlyOwner {
-        uint256 balance = tokenHeld[token];
-        if (amount > balance) {
-            amount = balance;
-        }
-
-        tokenHeld[token] = tokenHeld[token].sub(amount);
-
-        token.safeTransfer(msg.sender, amount);
+    function setBridge(address _wallet) public onlyOwner {
+        bridge = _wallet;
     }
 }

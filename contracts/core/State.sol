@@ -10,6 +10,7 @@ import "./Constants.sol";
 import "./Objects.sol";
 import "../mixins/EnumerableBytes32Set.sol";
 import "../utils/ReentrancyGuard.sol";
+import "../utils/InterestOracle.sol";
 import "@openzeppelin-2.5.0/ownership/Ownable.sol";
 import "@openzeppelin-2.5.0/math/SafeMath.sol";
 
@@ -17,7 +18,6 @@ import "@openzeppelin-2.5.0/math/SafeMath.sol";
 contract State is Constants, Objects, ReentrancyGuard, Ownable {
     using SafeMath for uint256;
     using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
-
     address public priceFeeds;                                                              // handles asset reference price lookups
     address public swapsImpl;                                                               // handles asset swaps using dex liquidity
 
@@ -32,8 +32,8 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
     mapping (bytes32 => mapping (address => bool)) public delegatedManagers;                // loanId => delegated => approved
 
     // Interest
-    mapping (address => mapping (address => LenderInterest)) public lenderInterest;         // lender => loanToken => LenderInterest object
-    mapping (bytes32 => LoanInterest) public loanInterest;                                  // loanId => LoanInterest object
+    mapping (address => mapping (address => LenderInterest)) public lenderInterest;         // lender => loanToken => LenderInterest object (depreciated)
+    mapping (bytes32 => LoanInterest) public loanInterest;                                  // loanId => LoanInterest object (depreciated)
 
     // Internals
     EnumerableBytes32Set.Bytes32Set internal logicTargetsSet;                               // implementations set
@@ -75,6 +75,21 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
     uint256 public sourceBufferPercent = 5 ether;                                           // used to estimate kyber swap source amount
 
     uint256 public maxSwapSize = 1500 ether;                                                // maximum supported swap size in ETH
+
+
+    /**** new interest model start */
+    mapping(address => uint256) public poolLastUpdateTime; // per itoken
+    mapping(address => uint256) public poolPrincipalTotal; // per itoken
+    mapping(address => uint256) public poolInterestTotal; // per itoken
+    mapping(address => uint256) public poolRatePerTokenStored; // per itoken
+
+    mapping(bytes32 => uint256) public loanInterestTotal; // per loan
+    mapping(bytes32 => uint256) public loanRatePerTokenPaid; // per loan
+
+    mapping(address => uint256) internal poolLastInterestRate; // per itoken
+    mapping(address => InterestOracle.Observation[256]) internal poolInterestRateObservations; // per itoken
+    mapping(address => uint8) internal poolLastIdx; // per itoken
+    /**** new interest model end */
 
 
     function _setTarget(

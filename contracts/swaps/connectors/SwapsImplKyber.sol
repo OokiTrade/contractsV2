@@ -107,6 +107,12 @@ contract SwapsImplKyber is State, ISwapsImpl {
         }
     }
 
+    function revokeApprovals(address[] memory tokens) public {
+        for (uint256 i = 0; i < tokens.length; i++) {
+            IERC20(tokens[i]).safeApprove(kyberContract, 0);
+        }
+    }
+
     function _getSwapTxnData(
         address sourceTokenAddress,
         address destTokenAddress,
