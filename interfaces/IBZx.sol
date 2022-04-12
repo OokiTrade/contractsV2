@@ -591,43 +591,6 @@ interface IBZx {
             uint256 benchmarkRate
         );
 
-    /*/// @dev Gets current lender interest data totals for all loans with a specific oracle and interest token
-    /// @param lender The lender address
-    /// @param loanToken The loan token address
-    /// @return interestPaid The total amount of interest that has been paid to a lender so far
-    /// @return interestPaidDate The date of the last interest pay out, or 0 if no interest has been withdrawn yet
-    /// @return interestOwedPerDay The amount of interest the lender is earning per day
-    /// @return interestUnPaid The total amount of interest the lender is owned and not yet withdrawn
-    /// @return interestFeePercent The fee retained by the protocol before interest is paid to the lender
-    /// @return principalTotal The total amount of outstading principal the lender has loaned
-    function getLenderInterestData(address lender, address loanToken)
-        external
-        view
-        returns (
-            uint256 interestPaid,
-            uint256 interestPaidDate,
-            uint256 interestOwedPerDay,
-            uint256 interestUnPaid,
-            uint256 interestFeePercent,
-            uint256 principalTotal
-        );
-
-    /// @dev Gets current interest data for a loan
-    /// @param loanId A unique id representing the loan
-    /// @return loanToken The loan token that interest is paid in
-    /// @return interestOwedPerDay The amount of interest the borrower is paying per day
-    /// @return interestDepositTotal The total amount of interest the borrower has deposited
-    /// @return interestDepositRemaining The amount of deposited interest that is not yet owed to a lender
-    function getLoanInterestData(bytes32 loanId)
-        external
-        view
-        returns (
-            address loanToken,
-            uint256 interestOwedPerDay,
-            uint256 interestDepositTotal,
-            uint256 interestDepositRemaining
-        );*/
-
     /// @dev gets list of loans of particular user address
     /// @param user address of the loans
     /// @param start of the index

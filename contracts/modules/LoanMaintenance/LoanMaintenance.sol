@@ -25,8 +25,6 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         _setTarget(this.depositCollateral.selector, target);
         _setTarget(this.withdrawCollateral.selector, target);
         _setTarget(this.setDepositAmount.selector, target);
-        _setTarget(this.getLenderInterestData.selector, target);
-        _setTarget(this.getLoanInterestData.selector, target);
         _setTarget(this.getUserLoans.selector, target);
         _setTarget(this.getUserLoansCount.selector, target);
         _setTarget(this.getLoan.selector, target);
@@ -203,76 +201,6 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             depositValueAsCollateralToken,
             false // isSubtraction
         );
-    }
-
-    /// @dev Gets current lender interest data totals for all loans with a specific oracle and interest token
-    /// @param lender The lender address
-    /// @param loanToken The loan token address
-    /// @return interestPaid The total amount of interest that has been paid to a lender so far
-    /// @return interestPaidDate The date of the last interest pay out, or 0 if no interest has been withdrawn yet
-    /// @return interestOwedPerDay The amount of interest the lender is earning per day
-    /// @return interestUnPaid The total amount of interest the lender is owned and not yet withdrawn
-    /// @return interestFeePercent The fee retained by the protocol before interest is paid to the lender
-    /// @return principalTotal The total amount of outstading principal the lender has loaned
-    function getLenderInterestData(
-        address lender,
-        address loanToken)
-        external
-        view
-        returns (
-            uint256 interestPaid,
-            uint256 interestPaidDate,
-            uint256 interestOwedPerDay,
-            uint256 interestUnPaid,
-            uint256 interestFeePercent,
-            uint256 principalTotal)
-    {
-        LenderInterest memory lenderInterestLocal = lenderInterest[lender][loanToken];
-
-        interestUnPaid = block.timestamp.sub(lenderInterestLocal.updatedTimestamp).mul(lenderInterestLocal.owedPerDay).div(1 days);
-        if (interestUnPaid > lenderInterestLocal.owedTotal)
-            interestUnPaid = lenderInterestLocal.owedTotal;
-
-        return (
-            lenderInterestLocal.paidTotal,
-            lenderInterestLocal.paidTotal != 0 ? lenderInterestLocal.updatedTimestamp : 0,
-            lenderInterestLocal.owedPerDay,
-            lenderInterestLocal.updatedTimestamp != 0 ? interestUnPaid : 0,
-            lendingFeePercent,
-            lenderInterestLocal.principalTotal
-        );
-    }
-
-    /// @dev Gets current interest data for a loan
-    /// @param loanId A unique id representing the loan
-    /// @return loanToken The loan token that interest is paid in
-    /// @return interestOwedPerDay The amount of interest the borrower is paying per day
-    /// @return interestDepositTotal The total amount of interest the borrower has deposited
-    /// @return interestDepositRemaining The amount of deposited interest that is not yet owed to a lender
-    function getLoanInterestData(
-        bytes32 loanId)
-        external
-        view
-        returns (
-            address loanToken,
-            uint256 interestOwedPerDay,
-            uint256 interestDepositTotal,
-            uint256 interestDepositRemaining)
-    {
-        loanToken = loanParams[loans[loanId].loanParamsId].loanToken;
-        interestOwedPerDay = loanInterest[loanId].owedPerDay;
-        interestDepositTotal = loanInterest[loanId].depositTotal;
-
-        uint256 endTimestamp = loans[loanId].endTimestamp;
-        uint256 interestTime = block.timestamp > endTimestamp ?
-            endTimestamp :
-            block.timestamp;
-        interestDepositRemaining = endTimestamp > interestTime ?
-            endTimestamp
-                .sub(interestTime)
-                .mul(interestOwedPerDay)
-                .div(1 days) :
-                0;
     }
 
     // Only returns data for loans that are active
