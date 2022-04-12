@@ -25,8 +25,6 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         _setTarget(this.depositCollateral.selector, target);
         _setTarget(this.withdrawCollateral.selector, target);
         _setTarget(this.setDepositAmount.selector, target);
-        _setTarget(this.claimRewards.selector, target);
-        _setTarget(this.rewardsBalanceOf.selector, target);
         _setTarget(this.getUserLoans.selector, target);
         _setTarget(this.getUserLoansCount.selector, target);
         _setTarget(this.getLoan.selector, target);
@@ -34,12 +32,18 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         _setTarget(this.getActiveLoansAdvanced.selector, target);
         _setTarget(this.getActiveLoansCount.selector, target);
 
-        // TEMP: remove after upgrade
+        /*
+            Targets still exist, but functions are decommissioned:
+            _setTarget(this.claimRewards.selector, target);
+            _setTarget(this.rewardsBalanceOf.selector, target);
+        
+        // TEMP: remove after upgrade ETH
         _setTarget(bytes4(keccak256("withdrawAccruedInterest(address)")), address(0));
         _setTarget(bytes4(keccak256("extendLoanDuration(bytes32,uint256,bool,bytes)")), address(0));
         _setTarget(bytes4(keccak256("reduceLoanDuration(bytes32,address,uint256)")), address(0));
         _setTarget(bytes4(keccak256("getLenderInterestData(address,address)")), address(0));
         _setTarget(bytes4(keccak256("getLoanInterestData(bytes32)")), address(0));
+        */
     }
 
     function depositCollateral(
@@ -197,51 +201,6 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             depositValueAsCollateralToken,
             false // isSubtraction
         );
-    }
-
-    function claimRewards(
-        address receiver)
-        external
-        pausable
-        returns (uint256 claimAmount)
-    {
-        bytes32 slot = keccak256(abi.encodePacked(msg.sender, UserRewardsID));
-        assembly {
-            claimAmount := sload(slot)
-        }
-
-        if (claimAmount != 0) {
-            assembly {
-                sstore(slot, 0)
-            }
-
-            protocolTokenPaid = protocolTokenPaid
-                .add(claimAmount);
-
-            IERC20(vbzrxTokenAddress).transfer(
-                receiver,
-                claimAmount
-            );
-
-            emit ClaimReward(
-                msg.sender,
-                receiver,
-                vbzrxTokenAddress,
-                claimAmount
-            );
-        }
-    }
-
-    function rewardsBalanceOf(
-        address user)
-        external
-        view
-        returns (uint256 rewardsBalance)
-    {
-        bytes32 slot = keccak256(abi.encodePacked(user, UserRewardsID));
-        assembly {
-            rewardsBalance := sload(slot)
-        }
     }
 
     // Only returns data for loans that are active
@@ -579,4 +538,52 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             depositValueAsCollateralToken
         );
     }
+
+    /*
+    function claimRewards(
+        address receiver)
+        external
+        pausable
+        returns (uint256 claimAmount)
+    {
+        bytes32 slot = keccak256(abi.encodePacked(msg.sender, UserRewardsID));
+        assembly {
+            claimAmount := sload(slot)
+        }
+
+        if (claimAmount != 0) {
+            assembly {
+                sstore(slot, 0)
+            }
+
+            protocolTokenPaid = protocolTokenPaid
+                .add(claimAmount);
+
+            IERC20(vbzrxTokenAddress).transfer(
+                receiver,
+                claimAmount
+            );
+
+            emit ClaimReward(
+                msg.sender,
+                receiver,
+                vbzrxTokenAddress,
+                claimAmount
+            );
+        }
+    }
+
+    function rewardsBalanceOf(
+        address user)
+        external
+        view
+        returns (uint256 rewardsBalance)
+    {
+        bytes32 slot = keccak256(abi.encodePacked(user, UserRewardsID));
+        assembly {
+            rewardsBalance := sload(slot)
+        }
+    }
+    */
+
 }
