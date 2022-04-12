@@ -23,7 +23,7 @@ DAO_FUNDING = Contract.from_abi("DAO_FUNDING", "0x37cBA8d1308019594621438bd1527E
 
 
 STAKING = Contract.from_abi("STAKING", "0x16f179f5c344cc29672a58ea327a26f64b941a63", interface.IStakingV2.abi)
-STAKING_VOTEfg_DELEGATOR = Contract.from_abi("STAKING_VOTE_DELEGATOR", "0xea936212fe4f3a69d0e8ecf9a2a35d6c1f8d2c89", VoteDelegator.abi)
+STAKING_VOTE_DELEGATOR = Contract.from_abi("STAKING_VOTE_DELEGATOR", "0xea936212fe4f3a69d0e8ecf9a2a35d6c1f8d2c89", VoteDelegator.abi)
 
 vBZRX = Contract.from_abi("vBZRX", "0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F", BZRXVestingToken.abi)
 POOL3 = Contract.from_abi("CURVE3CRV", "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490", TestToken.abi)
