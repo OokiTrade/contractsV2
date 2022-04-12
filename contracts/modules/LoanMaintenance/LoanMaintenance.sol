@@ -36,12 +36,6 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         _setTarget(this.getActiveLoans.selector, target);
         _setTarget(this.getActiveLoansAdvanced.selector, target);
         _setTarget(this.getActiveLoansCount.selector, target);
-
-        /*
-            Targets still exist, but functions are decommissioned:
-            _setTarget(this.claimRewards.selector, target);
-            _setTarget(this.rewardsBalanceOf.selector, target);
-        */
     }
 
     function depositCollateral(
@@ -833,52 +827,4 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             depositValueAsCollateralToken
         );
     }
-
-    /*
-    function claimRewards(
-        address receiver)
-        external
-        pausable
-        returns (uint256 claimAmount)
-    {
-        bytes32 slot = keccak256(abi.encodePacked(msg.sender, UserRewardsID));
-        assembly {
-            claimAmount := sload(slot)
-        }
-
-        if (claimAmount != 0) {
-            assembly {
-                sstore(slot, 0)
-            }
-
-            protocolTokenPaid = protocolTokenPaid
-                .add(claimAmount);
-
-            IERC20(vbzrxTokenAddress).transfer(
-                receiver,
-                claimAmount
-            );
-
-            emit ClaimReward(
-                msg.sender,
-                receiver,
-                vbzrxTokenAddress,
-                claimAmount
-            );
-        }
-    }
-
-    function rewardsBalanceOf(
-        address user)
-        external
-        view
-        returns (uint256 rewardsBalance)
-    {
-        bytes32 slot = keccak256(abi.encodePacked(user, UserRewardsID));
-        assembly {
-            rewardsBalance := sload(slot)
-        }
-    }
-    */
-
 }

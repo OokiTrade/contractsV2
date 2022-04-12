@@ -3,7 +3,7 @@
  * Licensed under the Apache-2.0
  */
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity >=0.5.0 <0.9.0;
+pragma solidity >=0.5.0 <=0.8.4;
 pragma experimental ABIEncoderV2;
 
 /// @title A proxy interface for The Protocol
@@ -108,9 +108,6 @@ interface IBZx {
         FeeClaimType feeType
     ) external returns (uint256[] memory amounts);
 
-    /*
-    Targets still exist, but functions are decommissioned:
-
     /// @dev withdraw protocol token (BZRX) from vesting contract vBZRX
     /// @param receiver address of BZRX tokens claimed
     /// @param amount of BZRX token to be claimed. max is claimed if amount is greater than balance.
@@ -120,15 +117,7 @@ interface IBZx {
         external
         returns (address rewardToken, uint256 withdrawAmount);
 
-    /// @dev depozit protocol token (BZRX)
-    /// @param amount address of BZRX tokens to deposit
-    function depositProtocolToken(uint256 amount) external;
-
-    function grantRewards(address[] calldata users, uint256[] calldata amounts)
-        external
-        returns (uint256 totalAmount);*/
-
-    // NOTE: this doesn't sanitize inputs -> inaccurate values may be returned if there are duplicate token inputs
+    // NOTE: this doesn't sanitize inputs -> inaccurate values may be returned if there are duplicates tokens input
     function queryFees(address[] calldata tokens, FeeClaimType feeType)
         external
         view
@@ -551,12 +540,6 @@ interface IBZx {
 
     function transferLoan(bytes32 loanId, address newOwner) external;
 
-    // Decommissioned function, but leave interface to allow remaining claims
-    function claimRewards(address receiver)
-        external
-        returns (uint256 claimAmount);
-
-    // Decommissioned function, but leave interface to allow remaining claims
     function rewardsBalanceOf(address user)
         external
         view
