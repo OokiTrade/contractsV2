@@ -103,16 +103,16 @@ contract HelperImpl is Ownable {
             profits[i] = tokens[i].profitOf(wallet);
         }
     }
-    // DEPRECATED
-    // function marketLiquidity(IToken[] calldata tokens)
-    //     public view
-    //     returns (uint256[] memory liquidity)
-    // {
-    //     liquidity = new uint256[](tokens.length);
-    //     for (uint256 i = 0; i < tokens.length; i++) {
-    //         liquidity[i] = tokens[i].marketLiquidity();
-    //     }
-    // }
+
+    function marketLiquidity(IToken[] calldata tokens)
+        public view
+        returns (uint256[] memory liquidity)
+    {
+        liquidity = new uint256[](tokens.length);
+        for (uint256 i = 0; i < tokens.length; i++) {
+            liquidity[i] = IERC20(tokens[i].loanTokenAddress()).balanceOf(address(tokens[i]));
+        }
+    }
 
 
     struct ReserveDetail{

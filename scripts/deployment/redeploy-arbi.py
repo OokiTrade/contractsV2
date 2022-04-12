@@ -38,5 +38,11 @@ pricefeeds.setPriceFeed([OOKI],[ookiPriceFeed], {"from": GUARDIAN_MULTISIG})
 for l in list:
     calldata = BZX.setupLoanPoolTWAI(l[0], {"from": GUARDIAN_MULTISIG})
 
+
+helperImpl = HelperImpl.deploy({"from": deployer, "gas_price": Wei("0.6 gwei")})
+
+HELPER = Contract.from_abi("HELPER", "0xB8329B5458B1E493EFd8D9DA8C3B5E6D68e67C21", HelperProxy.abi)
+HELPER.replaceImplementation(helperImpl, {"from": GUARDIAN_MULTISIG})
+HELPER = Contract.from_abi("HELPER", "0xB8329B5458B1E493EFd8D9DA8C3B5E6D68e67C21", HelperImpl.abi)
 # Testing
 iUSDC.mint("X", 1e6, {"from": "X"})
