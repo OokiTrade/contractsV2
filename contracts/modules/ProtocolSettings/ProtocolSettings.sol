@@ -35,10 +35,16 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         _setTarget(this.setMaxSwapSize.selector, target);
         _setTarget(this.setFeesController.selector, target);
         _setTarget(this.withdrawFees.selector, target);
-        _setTarget(this.withdrawProtocolToken.selector, target);
         _setTarget(this.queryFees.selector, target);
         _setTarget(this.getLoanPoolsList.selector, target);
         _setTarget(this.isLoanPool.selector, target);
+
+        /*
+            Targets still exist, but functions are decommissioned:
+            _setTarget(this.withdrawProtocolToken.selector, target);
+            _setTarget(this.depositProtocolToken.selector, target);
+            _setTarget(this.grantRewards.selector, target);
+        */
     }
 
     function setPriceFeedContract(
@@ -344,50 +350,6 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         }
     }
 
-    function withdrawProtocolToken(
-        address receiver,
-        uint256 amount)
-        external
-        onlyOwner
-        returns (address rewardToken, uint256 withdrawAmount)
-    {
-        rewardToken = vbzrxTokenAddress;
-        withdrawAmount = amount;
-
-        uint256 tokenBalance = protocolTokenHeld;
-        if (withdrawAmount > tokenBalance) {
-            withdrawAmount = tokenBalance;
-        }
-        if (withdrawAmount != 0) {
-            protocolTokenHeld = tokenBalance
-                .sub(withdrawAmount);
-
-            IERC20(vbzrxTokenAddress).transfer(
-                receiver,
-                withdrawAmount
-            );
-        }
-
-        uint256 totalEmission = IVestingToken(vbzrxTokenAddress).claimedBalanceOf(address(this));
-
-        uint256 totalWithdrawn;
-        // keccak256("BZRX_TotalWithdrawn")
-        bytes32 slot = 0xf0cbcfb4979ecfbbd8f7e7430357fc20e06376d29a69ad87c4f21360f6846545;
-        assembly {
-            totalWithdrawn := sload(slot)
-        }
-
-        if (totalEmission > totalWithdrawn) {
-            IERC20(bzrxTokenAddress).transfer(
-                receiver,
-                totalEmission - totalWithdrawn
-            );
-            assembly {
-                sstore(slot, totalEmission)
-            }
-        }
-    }
-
     // NOTE: this doesn't sanitize inputs -> inaccurate values may be returned if there are duplicates tokens input
     function queryFees(
         address[] calldata tokens,
@@ -450,4 +412,97 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
     {
         return loanPoolToUnderlying[loanPool] != address(0);
     }
+
+    /*
+    function withdrawProtocolToken(
+        address receiver,
+        uint256 amount)
+        external
+        onlyOwner
+        returns (address rewardToken, uint256 withdrawAmount)
+    {
+        rewardToken = vbzrxTokenAddress;
+        withdrawAmount = amount;
+
+        uint256 tokenBalance = protocolTokenHeld;
+        if (withdrawAmount > tokenBalance) {
+            withdrawAmount = tokenBalance;
+        }
+        if (withdrawAmount != 0) {
+            protocolTokenHeld = tokenBalance
+                .sub(withdrawAmount);
+
+            IERC20(vbzrxTokenAddress).transfer(
+                receiver,
+                withdrawAmount
+            );
+        }
+
+        uint256 totalEmission = IVestingToken(vbzrxTokenAddress).claimedBalanceOf(address(this));
+
+        uint256 totalWithdrawn;
+        // keccak256("BZRX_TotalWithdrawn")
+        bytes32 slot = 0xf0cbcfb4979ecfbbd8f7e7430357fc20e06376d29a69ad87c4f21360f6846545;
+        assembly {
+            totalWithdrawn := sload(slot)
+        }
+
+        if (totalEmission > totalWithdrawn) {
+            IERC20(bzrxTokenAddress).transfer(
+                receiver,
+                totalEmission - totalWithdrawn
+            );
+            assembly {
+                sstore(slot, totalEmission)
+            }
+        }
+    }
+
+    function depositProtocolToken(
+        uint256 amount)
+        external
+        onlyOwner
+    {
+        protocolTokenHeld = protocolTokenHeld
+            .add(amount);
+
+        IERC20(vbzrxTokenAddress).transferFrom(
+            msg.sender,
+            address(this),
+            amount
+        );
+    }
+
+    function grantRewards(
+        address[] calldata users,
+        uint256[] calldata amounts)
+        external
+        onlyOwner
+        returns (uint256 totalAmount)
+    {
+        require(users.length == amounts.length, "count mismatch");
+
+        uint256 amount;
+        bytes32 slot;
+        for (uint256 i = 0; i < users.length; i++) {
+            amount = amounts[i];
+            totalAmount = totalAmount
+                .add(amount);
+
+            slot = keccak256(abi.encodePacked(users[i], UserRewardsID));
+            assembly {
+                sstore(slot, add(sload(slot), amount))
+            }
+        }
+
+        if (totalAmount != 0) {
+            IERC20(vbzrxTokenAddress).transferFrom(
+                msg.sender,
+                address(this),
+                totalAmount
+            );
+        }
+    }
+    */
+
 }

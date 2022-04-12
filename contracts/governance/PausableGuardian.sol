@@ -21,6 +21,11 @@ contract PausableGuardian is Ownable {
         _;
     }
 
+    modifier onlyGuardian {
+        require(msg.sender == getGuardian() || msg.sender == owner(), "unauthorized");
+        _;
+    }
+
     function _isPaused(bytes4 sig) public view returns (bool isPaused) {
         bytes32 slot = keccak256(abi.encodePacked(sig, Pausable_FunctionPause));
         assembly {
@@ -28,25 +33,22 @@ contract PausableGuardian is Ownable {
         }
     }
 
-    function toggleFunctionPause(bytes4 sig) public {
-        require(msg.sender == getGuardian() || msg.sender == owner(), "unauthorized");
+    function toggleFunctionPause(bytes4 sig) public onlyGuardian {
         bytes32 slot = keccak256(abi.encodePacked(sig, Pausable_FunctionPause));
         assembly {
             sstore(slot, 1)
         }
     }
 
-    function toggleFunctionUnPause(bytes4 sig) public {
+    function toggleFunctionUnPause(bytes4 sig) public onlyGuardian {
         // only DAO can unpause, and adding guardian temporarily
-        require(msg.sender == getGuardian() || msg.sender == owner(), "unauthorized");
         bytes32 slot = keccak256(abi.encodePacked(sig, Pausable_FunctionPause));
         assembly {
             sstore(slot, 0)
         }
     }
 
-    function changeGuardian(address newGuardian) public {
-        require(msg.sender == getGuardian() || msg.sender == owner(), "unauthorized");
+    function changeGuardian(address newGuardian) public onlyGuardian {
         assembly {
             sstore(Pausable_GuardianAddress, newGuardian)
         }
