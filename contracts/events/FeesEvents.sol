@@ -42,6 +42,7 @@ contract FeesEvents {
         uint256 amount
     );
 
+    // DEPRECATED
     event EarnReward(
         address indexed receiver,
         bytes32 indexed loanId,

@@ -46,6 +46,20 @@ contract LoanClosingsEvents {
         uint256 collateralToLoanRate,
         uint256 currentMargin
     );
+    
+    // DEPRECATED
+    event Rollover(
+        address indexed user,
+        address indexed caller,
+        bytes32 indexed loanId,
+        address lender,
+        address loanToken,
+        address collateralToken,
+        uint256 collateralAmountUsed,
+        uint256 interestAmountAdded,
+        uint256 loanEndTimestamp,
+        uint256 gasRebate
+    );
 
     event LoanDeposit(
         bytes32 indexed loanId,
