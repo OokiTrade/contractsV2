@@ -54,7 +54,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         external
         payable
     {
-        //revert("fallback not allowed");
+        require(msg.sender == wethToken, "fallback not allowed");
     }
 
     /* Public functions */
