@@ -168,21 +168,19 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
         } else {
             require(vals[0] <= vals[1], "min greater than max");
         }
+        bytes memory loanDataBytes;
         if (loanDataBytes.length != 0 && abi.decode(loanDataBytes, (uint128)) & DEX_SELECTOR_FLAG != 0) {
             (, bytes[] memory payload) = abi.decode(
                 loanDataBytes,
                 (uint128, bytes[])
             );
-            (
-                destTokenAmountReceived,
-                sourceTokenAmountUsed
-            ) = _swapsCall_internal(addrs, vals, payload[0]);
-        } else {
-            (
-                destTokenAmountReceived,
-                sourceTokenAmountUsed
-            ) = _swapsCall_internal(addrs, vals, "");
+            loanDataBytes = payload[0];
         }
+        (
+            destTokenAmountReceived,
+            sourceTokenAmountUsed
+        ) = _swapsCall_internal(addrs, vals, loanDataBytes);
+
         if (vals[2] == 0) {
             // there's no minimum destTokenAmount, but all of vals[0] (minSourceTokenAmount) must be spent, and amount spent can't exceed vals[0]
             require(
