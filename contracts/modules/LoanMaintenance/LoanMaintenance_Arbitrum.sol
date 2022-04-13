@@ -448,55 +448,6 @@ contract LoanMaintenance_Arbitrum is State, LoanMaintenanceEvents, VaultControll
         });
     }
 
-    function _doSwapWithCollateral(
-        Loan storage loanLocal,
-        LoanParams memory loanParamsLocal,
-        uint256 depositAmount)
-        internal
-        returns (uint256)
-    {
-        // reverts in _loanSwap if amountNeeded can't be bought
-        (,uint256 sourceTokenAmountUsed,) = _loanSwap(
-            loanLocal.id,
-            loanParamsLocal.collateralToken,
-            loanParamsLocal.loanToken,
-            loanLocal.borrower,
-            loanLocal.collateral, // minSourceTokenAmount
-            0, // maxSourceTokenAmount (0 means minSourceTokenAmount)
-            depositAmount, // requiredDestTokenAmount (partial spend of loanLocal.collateral to fill this amount)
-            true, // bypassFee
-            "" // loanDataBytes
-        );
-        loanLocal.collateral = loanLocal.collateral
-            .sub(sourceTokenAmountUsed);
-
-        // ensure the loan is still healthy
-        (uint256 currentMargin, uint256 collateralToLoanRate) = IPriceFeeds(priceFeeds).getCurrentMargin(
-            loanParamsLocal.loanToken,
-            loanParamsLocal.collateralToken,
-            loanLocal.principal,
-            loanLocal.collateral
-        );
-        require(
-            currentMargin > loanParamsLocal.maintenanceMargin,
-            "unhealthy position"
-        );
-
-        // update deposit amount
-        if (sourceTokenAmountUsed != 0 && collateralToLoanRate != 0) {
-            _setDepositAmount(
-                loanLocal.id,
-                sourceTokenAmountUsed
-                    .mul(collateralToLoanRate)
-                    .div(WEI_PRECISION),
-                sourceTokenAmountUsed,
-                true // isSubtraction
-            );
-        }
-
-        return sourceTokenAmountUsed;
-    }
-
     function _setDepositAmount(
         bytes32 loanId,
         uint256 depositValueAsLoanToken,

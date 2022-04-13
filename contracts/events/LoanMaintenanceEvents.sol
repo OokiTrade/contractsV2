@@ -22,34 +22,10 @@ contract LoanMaintenanceEvents {
         uint256 withdrawAmount
     );
 
-    event ExtendLoanDuration(
-        address indexed user,
-        address indexed depositToken,
-        bytes32 indexed loanId,
-        uint256 depositAmount,
-        uint256 collateralUsedAmount,
-        uint256 newEndTimestamp
-    );
-
-    event ReduceLoanDuration(
-        address indexed user,
-        address indexed withdrawToken,
-        bytes32 indexed loanId,
-        uint256 withdrawAmount,
-        uint256 newEndTimestamp
-    );
-
     event LoanDeposit(
         bytes32 indexed loanId,
         uint256 depositValueAsLoanToken,
         uint256 depositValueAsCollateralToken
-    );
-
-    event ClaimReward(
-        address indexed user,
-        address indexed receiver,
-        address indexed token,
-        uint256 amount
     );
 
     event TransferLoan(

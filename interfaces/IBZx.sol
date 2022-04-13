@@ -522,33 +522,6 @@ interface IBZx {
     /// @param loanId existing loan id
     function settleInterest(bytes32 loanId) external;
 
-    /*/// @dev withdraw accrued interest rate for a loan given token address
-    /// @param loanToken loan token address
-    function withdrawAccruedInterest(address loanToken) external;*/
-
-    /*/// @dev extends loan duration by depositing more collateral
-    /// @param loanId id of the existing loan
-    /// @param depositAmount amount to deposit
-    /// @param useCollateral boolean whether to extend using collateral or deposit amount
-    /// @return secondsExtended by that number of seconds loan duration was extended
-    function extendLoanDuration(
-        bytes32 loanId,
-        uint256 depositAmount,
-        bool useCollateral,
-        bytes calldata // for future use loanDataBytes
-    ) external payable returns (uint256 secondsExtended);*/
-
-    /*/// @dev reduces loan duration by withdrawing collateral
-    /// @param loanId id of the existing loan
-    /// @param receiver address to receive tokens
-    /// @param withdrawAmount amount to withdraw
-    /// @return secondsReduced by that number of seconds loan duration was extended
-    function reduceLoanDuration(
-        bytes32 loanId,
-        address receiver,
-        uint256 withdrawAmount
-    ) external returns (uint256 secondsReduced);*/
-
     function setDepositAmount(
         bytes32 loanId,
         uint256 depositValueAsLoanToken,
