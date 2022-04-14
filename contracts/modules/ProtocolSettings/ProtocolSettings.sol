@@ -56,7 +56,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian {
     function setTimeDeltaForTWAI(
         uint32 delta)
         external
-        onlyOwner
+        onlyGuardian
     {
         timeDelta = delta;
     }
