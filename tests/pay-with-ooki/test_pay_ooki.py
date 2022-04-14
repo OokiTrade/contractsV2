@@ -21,7 +21,7 @@ def deploy_protocol():
     loanClosings = LoanClosings.deploy({"from": accounts[0], "gas_price": Wei("0.5 gwei")})
     loanSettings = LoanSettings.deploy({"from": accounts[0], "gas_price": Wei("0.5 gwei")})
     protocolSettings = ProtocolSettings.deploy({"from": accounts[0], "gas_price": Wei("0.5 gwei")})
-    swapsExternal = swapsExternal.deploy({"from": accounts[0], "gas_price": Wei("0.5 gwei")})
+    swapsExternal = SwapsExternal.deploy({"from": accounts[0], "gas_price": Wei("0.5 gwei")})
     BZX.replaceContract(loanMaintenance, {"from": BZX.owner()})
     BZX.replaceContract(loanMaintenance_2, {"from": BZX.owner()})
     BZX.replaceContract(loanOpenings, {"from": BZX.owner()})
