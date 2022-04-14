@@ -90,6 +90,7 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
     mapping(address => InterestOracle.Observation[256]) internal poolInterestRateObservations; // per itoken
     mapping(address => uint8) internal poolLastIdx; // per itoken
     uint32 public timeDelta;
+    uint32 public twaiLength;
     /**** new interest model end */
 
 

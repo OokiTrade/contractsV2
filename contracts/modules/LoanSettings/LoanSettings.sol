@@ -24,6 +24,7 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
     {
         _setTarget(this.setupLoanParams.selector, target);
         _setTarget(this.setupLoanPoolTWAI.selector, target);
+        _setTarget(this.setTWAISettings.selector, target);
         _setTarget(this.disableLoanParams.selector, target);
         _setTarget(this.getLoanParams.selector, target);
         _setTarget(this.getLoanParamsList.selector, target);
@@ -45,12 +46,24 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
         }
     }
 
+    function setTWAISettings(
+        uint32 delta,
+        uint32 secondsAgo)
+        external
+        onlyGuardian
+    {
+        timeDelta = delta;
+        twaiLength = secondsAgo;
+    }
+
+
     function setupLoanPoolTWAI(address pool) external onlyGuardian {
+        require(poolInterestRateObservations[pool][0].blockTimestamp==0, "already initialized");
         poolInterestRateObservations[pool][0].blockTimestamp = 
             uint32(
                 (poolLastUpdateTime[pool]>0
                 ?poolLastUpdateTime[pool]
-                : block.timestamp) - 11000);
+                : block.timestamp).sub(twaiLength+timeDelta));
         if (poolLastInterestRate[pool] < 1e11) {
             poolLastInterestRate[pool] = 1e11;
         }

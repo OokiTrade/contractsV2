@@ -1,9 +1,9 @@
 from brownie import *
 from eth_abi import encode_abi
-BZX = interface.IBZx('0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8')
-OOKI = '0xCd150B1F528F326f5194c012f32Eb30135C7C2c9'
 
 def test_runs():
+    globals()["BZX"] = interface.IBZx('0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8')
+    globals()["OOKI"] = '0xCd150B1F528F326f5194c012f32Eb30135C7C2c9'
     set_pricefeed()
     deploy_protocol()
     supplyAccount()
@@ -29,8 +29,8 @@ def deploy_protocol():
     BZX.replaceContract(loanSettings, {"from": BZX.owner()})
     BZX.replaceContract(protocolSettings, {"from": BZX.owner()})
     BZX.replaceContract(swapsExternal, {"from": BZX.owner()})
+    BZX.setTWAISettings(60,10800, {'from':BZX.owner()})
     BZX.setupLoanPoolTWAI('0xC3f6816C860e7d7893508C8F8568d5AF190f6d7d',{'from':BZX.owner()})
-    BZX.setTimeDeltaForTWAI(60, {'from':BZX.owner()})
 
 def supplyAccount():
     interface.IERC20(OOKI).approve(BZX, 20000000e18, {'from':accounts[0]})
@@ -44,30 +44,30 @@ def trade_open():
     USDC.transfer(accounts[0], 1000e6, {'from':'0xba12222222228d8ba445958a75a0704d566bf2c8'})
     USDC.approve(iUSDC, 1000e6, {'from':accounts[0]})
     data = encode_abi(['uint128'],[8])
-    chain.mine(timedelta=1)
+    chain.mine(timedelta=5)
     iUSDC.marginTrade(0,2e18,1000e6,0,"0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",accounts[0],data,{'from':accounts[0]})
     trades = BZX.getUserLoans(accounts[0], 0,1, 0,0,0)
     assert(bb>interface.IERC20(OOKI).balanceOf.call(accounts[0]))
     bb = interface.IERC20(OOKI).balanceOf.call(accounts[0])
     print(bb)
-    chain.mine(timedelta=1)
+    chain.mine(timedelta=5)
     BZX.closeWithSwap(trades[0][0],accounts[0],1e15,True,data,{'from':accounts[0]})
     assert(bb>interface.IERC20(OOKI).balanceOf.call(accounts[0]))
     delta = bb-interface.IERC20(OOKI).balanceOf.call(accounts[0])
     bb = interface.IERC20(OOKI).balanceOf.call(accounts[0])
     data = encode_abi(['uint128'],[9])
-    chain.mine(timedelta=1)
+    chain.mine(timedelta=5)
     BZX.closeWithSwap(trades[0][0],accounts[0],1e15,True,data,{'from':accounts[0]})
     assert(bb-interface.IERC20(OOKI).balanceOf.call(accounts[0])<delta)
     bb = interface.IERC20(OOKI).balanceOf.call(accounts[0])
     print(bb)
     data = encode_abi(['uint128'],[8])
-    chain.mine(timedelta=1)
+    chain.mine(timedelta=5)
     BZX.closeWithSwap(trades[0][0],accounts[0],1e15,False,data,{'from':accounts[0]})
     assert(bb>interface.IERC20(OOKI).balanceOf.call(accounts[0]))
     delta = bb-interface.IERC20(OOKI).balanceOf.call(accounts[0])
     bb = interface.IERC20(OOKI).balanceOf.call(accounts[0])
     data = encode_abi(['uint128'],[9])
-    chain.mine(timedelta=1)
+    chain.mine(timedelta=5)
     BZX.closeWithSwap(trades[0][0],accounts[0],1e15,False,data,{'from':accounts[0]})
     assert(bb-interface.IERC20(OOKI).balanceOf.call(accounts[0])<delta)

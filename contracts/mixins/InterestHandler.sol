@@ -158,7 +158,7 @@ contract InterestHandler is State, InterestRateEvents {
         uint256 timeSinceUpdate = block.timestamp.sub(poolLastUpdateTime[pool]);
         uint256 benchmarkRate = TickMathV1.getSqrtRatioAtTick(poolInterestRateObservations[pool].arithmeticMean(
             uint32(block.timestamp),
-            [uint32(timeSinceUpdate+3*3600), uint32(timeSinceUpdate)],
+            [uint32(timeSinceUpdate+twaiLength), uint32(timeSinceUpdate)],
             poolInterestRateObservations[pool][poolLastIdx[pool]].tick,
             poolLastIdx[pool],
             uint8(-1)

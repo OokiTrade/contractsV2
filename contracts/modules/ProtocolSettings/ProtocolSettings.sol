@@ -24,7 +24,6 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian {
         external
         onlyOwner
     {
-        _setTarget(this.setTimeDeltaForTWAI.selector, target);
         _setTarget(this.setPriceFeedContract.selector, target);
         _setTarget(this.setSwapsImplContract.selector, target);
         _setTarget(this.setLoanPool.selector, target);
@@ -51,14 +50,6 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian {
             _setTarget(this.grantRewards.selector, target);
         */
 
-    }
-
-    function setTimeDeltaForTWAI(
-        uint32 delta)
-        external
-        onlyGuardian
-    {
-        timeDelta = delta;
     }
 
     function setPriceFeedContract(

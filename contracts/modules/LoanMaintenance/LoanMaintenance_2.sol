@@ -103,7 +103,7 @@ contract LoanMaintenance_2 is State, LoanMaintenanceEvents, PausableGuardian, In
         uint32 timeSinceUpdate = uint32(block.timestamp.sub(poolLastUpdateTime[pool]));
         return TickMathV1.getSqrtRatioAtTick(poolInterestRateObservations[pool].arithmeticMean(
             uint32(block.timestamp),
-            [timeSinceUpdate+3*3600, timeSinceUpdate],
+            [timeSinceUpdate+twaiLength, timeSinceUpdate],
             timeSinceUpdate >= 60 ?
                 TickMathV1.getTickAtSqrtRatio(uint160(poolLastInterestRate[pool])) :
                 poolInterestRateObservations[pool][poolLastIdx[pool]].tick,
