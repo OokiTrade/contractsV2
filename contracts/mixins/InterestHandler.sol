@@ -26,7 +26,8 @@ contract InterestHandler is State, InterestRateEvents {
             poolLastIdx[pool],
             uint32(block.timestamp),
             TickMathV1.getTickAtSqrtRatio(uint160(poolLastInterestRate[pool])),
-            uint8(-1)
+            uint8(-1),
+            timeDelta
         );
         uint256[7] memory interestVals = _settleInterest2(
             pool,

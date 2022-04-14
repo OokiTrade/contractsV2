@@ -29,18 +29,20 @@ library InterestOracle {
     /// @param blockTimestamp timestamp of observation
     /// @param tick active tick
     /// @param cardinality populated elements
+    /// @param minDelta minimum time delta between observations
     /// @return indexUpdated The new index
     function write(
         Observation[256] storage self,
         uint8 index,
         uint32 blockTimestamp,
         int24 tick,
-        uint8 cardinality
+        uint8 cardinality,
+        uint32 minDelta
     ) internal returns (uint8 indexUpdated) {
         Observation memory last = self[index];
 
-        // early return if we've already written an observation in last 60 seconds
-        if (last.blockTimestamp + 60 >= blockTimestamp) return index;
+        // early return if we've already written an observation in last minDelta seconds
+        if (last.blockTimestamp + minDelta >= blockTimestamp) return index;
 
         indexUpdated = (index + 1) % cardinality;
         self[indexUpdated] = convert(last, blockTimestamp, tick);

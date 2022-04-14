@@ -43,7 +43,8 @@ contract TestTwapCurvedInterestRate {
                                                             poolLastIdx,
                                                             uint32(block.timestamp),
                                                             TickMathV1.getTickAtSqrtRatio(uint160(lastIR)),
-                                                            uint8(-1)
+                                                            uint8(-1),
+                                                            60
                                                         );
 
         uint256 benchmarkRate = TickMathV1.getSqrtRatioAtTick(poolInterestRateObservations.arithmeticMean(
