@@ -47,7 +47,7 @@ def test_IAPE(requireMainnetFork, accounts):
     chain.mine()
 
     DAO.execute(id, {"from": proposerAddress})
-
+    exec(open("./scripts/env/set-eth.py").read())
     APE.transfer(accounts[0], 1000e18, {'from': '0xa56cf001966d179751ba1c7fb5d137b4c5f344cc'})
     APE.approve(iAPE, 2**256-1, {'from': accounts[0]})
     iAPE.mint(accounts[0], 100e18, {'from': accounts[0]})
