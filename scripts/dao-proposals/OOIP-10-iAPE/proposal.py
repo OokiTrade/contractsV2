@@ -70,23 +70,6 @@ def marginSettings(supportedTokenAssetsPairs):
         targets.append(BZX.address)
         calldatas.append(BZX.setLiquidationIncentivePercent.encode_input(loanTokensArr, collateralTokensArr, amountsArr))
 
-
-def demandCurve(supportedTokenAssetsPairs):
-    for tokenAssetPairA in supportedTokenAssetsPairs:
-        ## only ASP
-        existingIToken = Contract.from_abi("existingIToken", address=tokenAssetPairA[0], abi=LoanTokenLogicStandard.abi)
-        existingITokenLoanTokenAddress = existingIToken.loanTokenAddress()
-
-        if (existingITokenLoanTokenAddress != loanToken.address):
-            print("demandCurve::itoken", existingIToken.name(), existingIToken, 'skip')
-            continue
-
-        print("demandCurve::itoken", existingIToken.name(), existingIToken)
-
-        calldata = LOAN_TOKEN_SETTINGS_ADMIN.setDemandCurve.encode_input(0, 20*10**18, 0, 0, 60*10**18, 80*10**18, 120*10**18)
-        targets.append(existingIToken.address)
-        calldatas.append(existingIToken.updateSettings.encode_input(LOAN_TOKEN_SETTINGS_ADMIN.address, calldata))
-
 targets = []
 values = []
 calldatas = []
@@ -137,7 +120,6 @@ for x in supportedTokenAssetsPairs:
 pairs.append((iToken.address, iToken.address))
 
 marginSettings(pairs)
-demandCurve(pairs)
 
 
 values = [0] * len(targets)  # empty array
