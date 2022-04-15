@@ -37,7 +37,7 @@ ookiPriceFeed = OOKIPriceFeed.deploy({"from": deployer, "gas_price": Wei("0.5 gw
 pricefeeds = Contract.from_abi('priceFeeds',BZX.priceFeeds(),PriceFeeds.abi)
 pricefeeds.setPriceFeed([OOKI],[ookiPriceFeed], {"from": GUARDIAN_MULTISIG})
 
-
+BZX.setTWAISettings(60, 10800, {"from": GUARDIAN_MULTISIG})
 for l in list:
     calldata = BZX.setupLoanPoolTWAI(l[0], {"from": GUARDIAN_MULTISIG})
 

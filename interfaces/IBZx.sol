@@ -218,7 +218,7 @@ interface IBZx {
 
     function setupLoanPoolTWAI(address pool) external;
 
-    function setTimeDeltaForTWAI(uint32 delta) external;
+    function setTWAISettings(uint32 delta, uint32 secondsAgo) external;
 
     /// @dev Deactivates LoanParams for future loans. Active loans using it are unaffected.
     /// @param loanParamsIdList array of loan ids
