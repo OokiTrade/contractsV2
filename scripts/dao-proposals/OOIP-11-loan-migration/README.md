@@ -22,7 +22,7 @@
   
 </div>
 
-# OOIP-9 DAO proposal to migrate loans to new interest model
+# OOIP-11 DAO proposal to migrate loans to new interest model
 
 ## Introduction
 

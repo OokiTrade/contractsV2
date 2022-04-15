@@ -8,7 +8,7 @@ from brownie import *
 # deployer = accounts.at("0x70FC4dFc27f243789d07134Be3CA31306fD2C6B6", True)
 deployer = accounts[2]
 
-description = "OOIP-9 DAO proposal to migrate loans to new interest model"
+description = "OOIP-11 DAO proposal to migrate loans to new interest model"
 
 
 GUARDIAN_TIMELOCK = "0x9B43a385E08EE3e4b402D4312dABD11296d09E93"
