@@ -4,7 +4,7 @@ exec(open("./scripts/env/set-eth.py").read())
 deployer = accounts[2]
 
 loanTokenLogicStandard = "0xfb772316a54dcd439964b561Fc2c173697AeEb5b"
-iTokenProxy = Contract.from_abi("LoanTokenLogicStandard", address="0x5c5d12feD25160942623132325A839eDE3F4f4D9", abi=LoanToken.abi)
+iTokenProxy = Contract.from_abi("LoanToken", address="0x5c5d12feD25160942623132325A839eDE3F4f4D9", abi=LoanToken.abi)
 # "0x5c5d12feD25160942623132325A839eDE3F4f4D9" #LoanToken.deploy(deployer, loanTokenLogicStandard, {'from': deployer})
 
 print("Deploying iToken")
@@ -22,7 +22,7 @@ print("initialize", iToken.name())
 iToken.updateSettings(LOAN_TOKEN_SETTINGS, calldata, {'from': deployer})
 
 calldata = LOAN_TOKEN_SETTINGS.setLowerAdminValues.encode_input(
-    TIMELOCK, # guardian multisig
+    GUARDIAN_MULTISIG, # guardian multisig
     LOAN_TOKEN_SETTINGS_ADMIN  # LOAN_TOKEN_SETTINGS_ADMIN contract
 )
 iToken.updateSettings(LOAN_TOKEN_SETTINGS, calldata, {'from': deployer})
