@@ -40,13 +40,13 @@ def marginSettings(supportedTokenAssetsPairs, iToken):
 
     calldata = LOAN_TOKEN_SETTINGS_ADMIN.setupLoanParams.encode_input(params, True)
     targets.append(iToken.address)
-    calldatas.append(iToken.updateSettings.encode_input(LOAN_TOKEN_SETTINGS_ADMIN.address, calldata))
+    iToken.updateSettings(LOAN_TOKEN_SETTINGS_ADMIN.address, calldata, {'from': TIMELOCK})
 
     targets.append(iToken.address)
     calldata = LOAN_TOKEN_SETTINGS_ADMIN.setupLoanParams.encode_input(params, False)
-    calldatas.append(iToken.updateSettings.encode_input(LOAN_TOKEN_SETTINGS_ADMIN.address, calldata))
+    iToken.updateSettings(LOAN_TOKEN_SETTINGS_ADMIN.address, calldata, {'from': TIMELOCK})
     params.clear()
-    
+
     for tokenAssetPair in supportedTokenAssetsPairs:
         # below is to allow new iToken.loanTokenAddress in other existing iTokens
         existingIToken = Contract.from_abi("existingIToken", address=tokenAssetPair[0], abi=LoanTokenLogicStandard.abi)
@@ -63,11 +63,11 @@ def marginSettings(supportedTokenAssetsPairs, iToken):
 
         calldata = LOAN_TOKEN_SETTINGS_ADMIN.setupLoanParams.encode_input(params, True)
         targets.append(existingIToken.address)
-        calldatas.append(existingIToken.updateSettings.encode_input(LOAN_TOKEN_SETTINGS_ADMIN.address, calldata))
+        existingIToken.updateSettings(LOAN_TOKEN_SETTINGS_ADMIN.address, calldata,  {'from': TIMELOCK})
 
         calldata = LOAN_TOKEN_SETTINGS_ADMIN.setupLoanParams.encode_input(params, False)
         targets.append(existingIToken.address)
-        calldatas.append(existingIToken.updateSettings.encode_input(LOAN_TOKEN_SETTINGS_ADMIN.address, calldata))
+        existingIToken.updateSettings(LOAN_TOKEN_SETTINGS_ADMIN.address, calldata, {'from': TIMELOCK})
 
         loanTokensArr.append(loanTokenAddress)
         collateralTokensArr.append(existingITokenLoanTokenAddress)
@@ -92,33 +92,16 @@ iToken.transferOwnership(TIMELOCK, {'from': iTokenProxy.owner()})
 
 # 2. Add pricefeed to protocol
 targets.append(PRICE_FEED.address)
-calldatas.append(PRICE_FEED.setPriceFeed.encode_input([APE_TOKEN], ['0xc7de7f4d4C9c991fF62a07D18b3E31e349833A18']))
+PRICE_FEED.setPriceFeed([APE_TOKEN], ['0xc7de7f4d4C9c991fF62a07D18b3E31e349833A18'], {'from': TIMELOCK})
 
 targets.append(BZX.address)
-calldatas.append(BZX.setLoanPool.encode_input([iToken], [iToken.loanTokenAddress()]))
+BZX.setLoanPool([iToken], [iToken.loanTokenAddress()], {'from': TIMELOCK})
 
 targets.append(BZX.address)
-calldatas.append(BZX.setSupportedTokens.encode_input([iToken.loanTokenAddress()], [True], True))
+BZX.setSupportedTokens([iToken.loanTokenAddress()], [True], True, {'from': TIMELOCK})
 
 supportedTokenAssetsPairs = TOKEN_REGISTRY.getTokens(0, 100)
 
+
 marginSettings(supportedTokenAssetsPairs, iToken)
 
-values = [0] * len(targets)  # empty array
-signatures = [""] * len(targets)  # empty signatures array
-
-GUARDIAN_MULTISIG = "0x9B43a385E08EE3e4b402D4312dABD11296d09E93"
-TEAM_VOTING_MULTISIG = "0x02c6819c2cb8519ab72fd1204a8a0992b5050c6e"
-
-# Make proposal
-OOKI.approve(STAKING, 2**256-1, {'from': '0xF977814e90dA44bFA03b6295A0616a897441aceC'})
-STAKING.stake([OOKI], [100e25], {'from': '0xF977814e90dA44bFA03b6295A0616a897441aceC'})
-call = DAO.propose(targets, values, signatures, calldatas, description, {"from": '0xF977814e90dA44bFA03b6295A0616a897441aceC'})
-print("call", call)
-
-
-print("targets: ", targets)
-print("values: ", values)
-print("signatures: ", signatures)
-print("calldatas: ", calldatas)
-print("description: ", description)
