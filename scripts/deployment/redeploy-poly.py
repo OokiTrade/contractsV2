@@ -64,8 +64,8 @@ HELPER = Contract.from_abi("HELPER", HELPER, HelperImpl.abi)
 
 # Testing
 
-iUSDC.burn("0xE487A866b0f6b1B663b4566Ff7e998Af6116fbA9", 10e6, {"from": "0xE487A866b0f6b1B663b4566Ff7e998Af6116fbA9"})
-iUSDC.mint("0xE487A866b0f6b1B663b4566Ff7e998Af6116fbA9", 1e6, {"from": "0xE487A866b0f6b1B663b4566Ff7e998Af6116fbA9"})
+iUSDC.burn("X", 10e6, {"from": "X"})
+iUSDC.mint("X", 1e6, {"from": "X"})
 
 
 
