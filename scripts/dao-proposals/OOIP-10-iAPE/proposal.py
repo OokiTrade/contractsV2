@@ -4,7 +4,8 @@ exec(open("./scripts/env/set-eth.py").read())
 deployer = accounts[2]
 description = "OOIP-10 iAPE"
 APE_TOKEN = '0x4d224452801aced8b2f0aebe155379bb5d594381'
-def marginSettings(supportedTokenAssetsPairs):
+def marginSettings(supportedTokenAssetsPairs, iToken):
+    loanTokenAddress = iToken.loanTokenAddress()
     base_data = [
         b"0x0",  # id
         False,  # active
@@ -21,54 +22,58 @@ def marginSettings(supportedTokenAssetsPairs):
     loanTokensArr = []
     collateralTokensArr = []
     amountsArr = []
-    for tokenAssetPairA in supportedTokenAssetsPairs:
-        params.clear()
-        loanTokensArr.clear()
-        collateralTokensArr.clear()
-        amountsArr.clear()
+
+    for tokenAssetPair in supportedTokenAssetsPairs:
+        if tokenAssetPair[0] == iToken.address  or tokenAssetPair[0] == OOKI.address:
+            continue
+        # below is to allow different collateral for new iToken
+        base_data_copy = base_data.copy()
+        base_data_copy[3] = loanTokenAddress
+        base_data_copy[4] = tokenAssetPair[1] # pair is iToken, Underlying
+        print(iToken.name(),base_data_copy)
+        params.append(base_data_copy)
+
+        loanTokensArr.append(loanTokenAddress)
+        collateralTokensArr.append(tokenAssetPair[1])
+        amountsArr.append(7*10**18)
+
+
+    calldata = LOAN_TOKEN_SETTINGS_ADMIN.setupLoanParams.encode_input(params, True)
+    targets.append(iToken.address)
+    calldatas.append(iToken.updateSettings.encode_input(LOAN_TOKEN_SETTINGS_ADMIN.address, calldata))
+
+    targets.append(iToken.address)
+    calldata = LOAN_TOKEN_SETTINGS_ADMIN.setupLoanParams.encode_input(params, False)
+    calldatas.append(iToken.updateSettings.encode_input(LOAN_TOKEN_SETTINGS_ADMIN.address, calldata))
+    params.clear()
+    
+    for tokenAssetPair in supportedTokenAssetsPairs:
         # below is to allow new iToken.loanTokenAddress in other existing iTokens
-        existingIToken = Contract.from_abi("existingIToken", address=tokenAssetPairA[0], abi=LoanTokenLogicStandard.abi)
+        existingIToken = Contract.from_abi("existingIToken", address=tokenAssetPair[0], abi=LoanTokenLogicStandard.abi)
         existingITokenLoanTokenAddress = existingIToken.loanTokenAddress()
 
-
-        #only ASP
-        if existingITokenLoanTokenAddress != loanToken.address:
-            print("marginSettings::itoken", existingIToken.name(), existingITokenLoanTokenAddress, 'skip')
+        if existingITokenLoanTokenAddress == loanTokenAddress or existingITokenLoanTokenAddress == OOKI.address:
             continue
 
-        print("marginSettings::itoken", existingIToken.name(), existingITokenLoanTokenAddress)
-        for tokenAssetPairB in supportedTokenAssetsPairs:
-            collateralTokenAddress = tokenAssetPairB[1]
-            if collateralTokenAddress == existingITokenLoanTokenAddress:
-                continue
+        base_data_copy = base_data.copy()
+        base_data_copy[3] = existingITokenLoanTokenAddress
+        base_data_copy[4] = loanTokenAddress # pair is iToken, Underlying
+        print(existingIToken.name(), base_data_copy)
+        params.append(base_data_copy)
 
-            base_data_copy = base_data.copy()
-            base_data_copy[3] = existingITokenLoanTokenAddress
-            base_data_copy[4] = collateralTokenAddress # pair is iToken, Underlying
+        calldata = LOAN_TOKEN_SETTINGS_ADMIN.setupLoanParams.encode_input(params, True)
+        targets.append(existingIToken.address)
+        calldatas.append(existingIToken.updateSettings.encode_input(LOAN_TOKEN_SETTINGS_ADMIN.address, calldata))
 
-            base_data_copy[5] = Wei("20 ether")  # minInitialMargin
-            base_data_copy[6] = Wei("15 ether")  # maintenanceMargin
+        calldata = LOAN_TOKEN_SETTINGS_ADMIN.setupLoanParams.encode_input(params, False)
+        targets.append(existingIToken.address)
+        calldatas.append(existingIToken.updateSettings.encode_input(LOAN_TOKEN_SETTINGS_ADMIN.address, calldata))
 
-            params.append(base_data_copy)
+        loanTokensArr.append(loanTokenAddress)
+        collateralTokensArr.append(existingITokenLoanTokenAddress)
+        amountsArr.append(7*10**18)
+        params.clear()
 
-            loanTokensArr.append(existingITokenLoanTokenAddress)
-            collateralTokensArr.append(collateralTokenAddress)
-            amountsArr.append(7*10**18)
-
-        print(params)
-        if (len(params) != 0):
-            ## Torque loans
-            calldata = LOAN_TOKEN_SETTINGS_ADMIN.setupLoanParams.encode_input(params, True)
-            targets.append(existingIToken.address)
-            calldatas.append(existingIToken.updateSettings.encode_input(LOAN_TOKEN_SETTINGS_ADMIN.address, calldata))
-
-            ## Margin trades
-            calldata = LOAN_TOKEN_SETTINGS_ADMIN.setupLoanParams.encode_input(params, False)
-            targets.append(existingIToken.address)
-            calldatas.append(existingIToken.updateSettings.encode_input(LOAN_TOKEN_SETTINGS_ADMIN.address, calldata))
-
-        targets.append(BZX.address)
-        calldatas.append(BZX.setLiquidationIncentivePercent.encode_input(loanTokensArr, collateralTokensArr, amountsArr))
 
 targets = []
 values = []
@@ -101,7 +106,7 @@ for x in supportedTokenAssetsPairs:
     pairs.append(x)
 pairs.append((iToken.address, iToken.address))
 
-marginSettings(pairs)
+marginSettings(pairs, iToken)
 
 values = [0] * len(targets)  # empty array
 signatures = [""] * len(targets)  # empty signatures array

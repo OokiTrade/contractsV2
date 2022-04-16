@@ -67,7 +67,7 @@ APE.approve(iLINK, 2**256-1, {'from':accounts[0]})
 iLINK.borrow("", 1e18, 7884000, 10e18, APE, accounts[0], accounts[0], b"", {'from': accounts[0]})
 
 trades = BZX.getUserLoans(accounts[0], 0,10, 0,0,0)
-APE.approve(BZX, 2**256-1, {'from': accounts[0]})
+LINK.approve(BZX, 2**256-1, {'from': accounts[0]})
 BZX.closeWithDeposit(trades[0][0],accounts[0],trades[0][4],{'from':accounts[0]})
 
 print("Trade APE/ETH")
@@ -78,6 +78,5 @@ print("Trade APE/LINK")
 iAPE.marginTrade(0, 2e18, 0, 100e18, LINK, accounts[0], b'',{'from': accounts[0]})
 print("Trade APE/USDT")
 iAPE.marginTrade(0, 2e18, 0, 100e6, USDT, accounts[0], b'',{'from': accounts[0]})
-
 print("Trade USDT/APE")
 iUSDT.marginTrade(0, 20e6, 0, 100e18, APE, accounts[0], b'',{'from': accounts[0]})
