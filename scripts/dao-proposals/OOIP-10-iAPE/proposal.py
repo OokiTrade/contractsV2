@@ -83,7 +83,7 @@ print("Deploying iToken")
 iToken = Contract.from_abi("existingIToken", address=iTokenProxy, abi=LoanTokenLogicStandard.abi)
 loanToken = Contract.from_abi("token", address=APE_TOKEN, abi=TestToken.abi)
 
-#iToken.transferOwnership(TIMELOCK, {'from': iTokenProxy.owner()})
+iToken.transferOwnership(TIMELOCK, {'from': iTokenProxy.owner()})
 
 # 2. Add pricefeed to protocol
 targets.append(PRICE_FEED.address)
@@ -102,8 +102,6 @@ for x in supportedTokenAssetsPairs:
 pairs.append((iToken.address, iToken.address))
 
 marginSettings(pairs)
-
-## !!!! ToDo need to add approvals APE.allowance(BZX, SUSHI_ROUTER)
 
 values = [0] * len(targets)  # empty array
 signatures = [""] * len(targets)  # empty signatures array
