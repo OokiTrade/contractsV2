@@ -101,12 +101,8 @@ targets.append(BZX.address)
 calldatas.append(BZX.setSupportedTokens.encode_input([iToken.loanTokenAddress()], [True], True))
 
 supportedTokenAssetsPairs = TOKEN_REGISTRY.getTokens(0, 100)
-pairs = []
-for x in supportedTokenAssetsPairs:
-    pairs.append(x)
-pairs.append((iToken.address, iToken.address))
 
-marginSettings(pairs, iToken)
+marginSettings(supportedTokenAssetsPairs, iToken)
 
 values = [0] * len(targets)  # empty array
 signatures = [""] * len(targets)  # empty signatures array
