@@ -59,6 +59,11 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
 
     function setupLoanPoolTWAI(address pool) external onlyGuardian {
         require(poolInterestRateObservations[pool][0].blockTimestamp==0, "already initialized");
+
+        if (poolLastUpdateTime[pool] == 0) {
+            poolLastUpdateTime[pool] = block.timestamp;
+        }
+        
         poolInterestRateObservations[pool][0].blockTimestamp = 
             uint32(
                 (poolLastUpdateTime[pool]>0
@@ -67,9 +72,7 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
         if (poolLastInterestRate[pool] < 1e11) {
             poolLastInterestRate[pool] = 1e11;
         }
-        if (poolLastUpdateTime[pool] == 0) {
-            poolLastUpdateTime[pool] = block.timestamp;
-        }
+
     }
 
     // Deactivates LoanParams for future loans. Active loans using it are unaffected.
