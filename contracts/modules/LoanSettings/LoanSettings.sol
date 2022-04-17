@@ -67,7 +67,9 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
         if (poolLastInterestRate[pool] < 1e11) {
             poolLastInterestRate[pool] = 1e11;
         }
-        poolLastUpdateTime[pool] = block.timestamp;
+        if (poolLastUpdateTime[pool] == 0) {
+            poolLastUpdateTime[pool] = block.timestamp;
+        }
     }
 
     // Deactivates LoanParams for future loans. Active loans using it are unaffected.
