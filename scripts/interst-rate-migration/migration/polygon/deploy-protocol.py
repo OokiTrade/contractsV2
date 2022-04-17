@@ -12,7 +12,6 @@ for tokenAssetPairA in supportedTokenAssetsPairs:
     existingIToken = Contract.from_abi("existingIToken", address=tokenAssetPairA[0], abi=LoanTokenLogicStandard.abi)
     itokenPrices[existingIToken.address] = existingIToken.tokenPrice()
 
-#deployer = accounts[0]
 deployer = accounts.load("0xF6c5B9c0B57590A5be6f16380D68eAC6fd9d0Fac")
 multisig = "0x01F569df8A270eCA78597aFe97D30c65D8a8ca80"
 safe = ApeSafe(multisig)
@@ -81,16 +80,16 @@ addToCalldataSet(calldata_set,BZX.address, BZX.replaceContract.encode_input(prot
 addToCalldataSet(calldata_set,BZX.address, BZX.setSwapsImplContract.encode_input(dex_record.address))
 
 
-BZX.replaceContract(settingsImpl.address, {'from': multisig})
-BZX.replaceContract(guardianImpl.address, {'from': multisig})
-BZX.replaceContract(openingsImpl.address, {'from': multisig})
-BZX.replaceContract(maintenace2Impl.address, {'from': multisig})
-BZX.replaceContract(migrationImpl.address, {'from': multisig})
-BZX.replaceContract(maintenaceImpl.address, {'from': multisig})
-BZX.replaceContract(closingImpl.address, {'from': multisig})
-BZX.replaceContract(swapsImpl.address, {'from': multisig})
-BZX.replaceContract(protocolsettingsImpl.address, {'from': multisig})
-BZX.setSwapsImplContract(dex_record.address, {'from':multisig})
+# BZX.replaceContract(settingsImpl.address, {'from': multisig})
+# BZX.replaceContract(guardianImpl.address, {'from': multisig})
+# BZX.replaceContract(openingsImpl.address, {'from': multisig})
+# BZX.replaceContract(maintenace2Impl.address, {'from': multisig})
+# BZX.replaceContract(migrationImpl.address, {'from': multisig})
+# BZX.replaceContract(maintenaceImpl.address, {'from': multisig})
+# BZX.replaceContract(closingImpl.address, {'from': multisig})
+# BZX.replaceContract(swapsImpl.address, {'from': multisig})
+# BZX.replaceContract(protocolsettingsImpl.address, {'from': multisig})
+# BZX.setSwapsImplContract(dex_record.address, {'from':multisig})
 
 
 #generateGnosisTransactions(safe,calldata_set, gnosisTransactions, 53)

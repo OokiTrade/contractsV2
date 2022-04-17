@@ -11,10 +11,9 @@ import "./LoanTokenLogicStandard.sol";
 
 contract LoanTokenLogicWeth is LoanTokenLogicStandard {
 
-    constructor(
-        address _newOwner)
+    constructor()
         public
-        LoanTokenLogicStandard(_newOwner)
+        LoanTokenLogicStandard()
     {}
 
     function mintWithEther(

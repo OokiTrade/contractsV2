@@ -26,13 +26,13 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         _setTarget(this.getLoanParams.selector, target);
         _setTarget(this.getPoolLoanParamId.selector, target);
         _setTarget(this.getLoanParamId.selector, target);
+        _setTarget(this.getRequiredCollateral.selector, target);
+        _setTarget(this.getRequiredCollateralByParams.selector, target);
+        _setTarget(this.getBorrowAmount.selector, target);
+        _setTarget(this.getBorrowAmountByParams.selector, target);
 
         // TODO remove next deploy ? shall I even remove them if they are read only?
-        _setTarget(bytes4(keccak256("getEstimatedMarginExposure(address,address,uint256,uint256,uint256,uint256,bytes)")), address(0));
-        _setTarget(bytes4(keccak256("getRequiredCollateral(address,address,uint256,uint256,bool)")), address(0));
-        _setTarget(bytes4(keccak256("getRequiredCollateralByParams(bytes32,uint256)")), address(0));
-        _setTarget(bytes4(keccak256("getBorrowAmount(address,address,uint256,uint256,bool)")), address(0));
-        _setTarget(bytes4(keccak256("getBorrowAmountByParams(bytes32,uint256)")), address(0));
+        _setTarget(bytes4(keccak256("getEstimatedMarginExposure(address,address,uint256,uint25
     }
 
     // Note: Only callable by loan pools (iTokens)
@@ -155,7 +155,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
             loanParam.maxLoanTerm
         ));
     }
-    
+
     function setDelegatedManager(
         bytes32 loanId,
         address delegated,
@@ -170,6 +170,124 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
             msg.sender,
             delegated,
             toggle
+        );
+    }
+
+
+    function getRequiredCollateral(
+        address loanToken,
+        address collateralToken,
+        uint256 newPrincipal,
+        uint256 marginAmount,
+        bool isTorqueLoan)
+        public
+        view
+        returns (uint256 collateralAmountRequired)
+    {
+        if (marginAmount != 0) {
+            collateralAmountRequired = _getRequiredCollateral(
+                loanToken,
+                collateralToken,
+                newPrincipal,
+                marginAmount,
+                isTorqueLoan
+            );
+
+            uint256 feePercent = isTorqueLoan ?
+                borrowingFeePercent :
+                tradingFeePercent;
+            if (collateralAmountRequired != 0 && feePercent != 0) {
+                collateralAmountRequired = collateralAmountRequired
+                    .mul(WEI_PERCENT_PRECISION)
+                    .divCeil(
+                        WEI_PERCENT_PRECISION - feePercent // never will overflow
+                    );
+            }
+        }
+    }
+
+    function getRequiredCollateralByParams(
+        bytes32 loanParamsId,
+        uint256 newPrincipal)
+        public
+        view
+        returns (uint256 collateralAmountRequired)
+    {
+        LoanParams memory loanParamsLocal = loanParams[loanParamsId];
+        return getRequiredCollateral(
+            loanParamsLocal.loanToken,
+            loanParamsLocal.collateralToken,
+            newPrincipal,
+            loanParamsLocal.minInitialMargin, // marginAmount
+            loanParamsLocal.maxLoanTerm == 0 ? // isTorqueLoan
+                true :
+                false
+        );
+    }
+
+    function getBorrowAmount(
+        address loanToken,
+        address collateralToken,
+        uint256 collateralTokenAmount,
+        uint256 marginAmount,
+        bool isTorqueLoan)
+        public
+        view
+        returns (uint256 borrowAmount)
+    {
+        if (marginAmount != 0) {
+            if (isTorqueLoan) {
+                marginAmount = marginAmount
+                    .add(WEI_PERCENT_PRECISION); // adjust for over-collateralized loan
+            }
+
+            if (loanToken == collateralToken) {
+                borrowAmount = collateralTokenAmount
+                    .mul(WEI_PERCENT_PRECISION)
+                    .div(marginAmount);
+            } else {
+                (uint256 sourceToDestRate, uint256 sourceToDestPrecision) = IPriceFeeds(priceFeeds).queryRate(
+                    collateralToken,
+                    loanToken
+                );
+                if (sourceToDestPrecision != 0) {
+                    borrowAmount = collateralTokenAmount
+                        .mul(WEI_PERCENT_PRECISION)
+                        .mul(sourceToDestRate)
+                        .div(marginAmount)
+                        .div(sourceToDestPrecision);
+                }
+            }
+
+            uint256 feePercent = isTorqueLoan ?
+                borrowingFeePercent :
+                tradingFeePercent;
+            if (borrowAmount != 0 && feePercent != 0) {
+                borrowAmount = borrowAmount
+                    .mul(
+                        WEI_PERCENT_PRECISION - feePercent // never will overflow
+                    )
+                    .div(WEI_PERCENT_PRECISION);
+            }
+        }
+    }
+
+    function getBorrowAmountByParams(
+        bytes32 loanParamsId,
+        uint256 collateralTokenAmount)
+        public
+        view
+        returns (uint256 borrowAmount)
+    {
+        LoanParams memory loanParamsLocal = loanParams[loanParamsId];
+        return getBorrowAmount(
+            loanParamsLocal.loanToken,
+            loanParamsLocal.collateralToken,
+            collateralTokenAmount,
+            loanParamsLocal.minInitialMargin, // marginAmount
+            loanParamsLocal.maxLoanTerm == 0 ? // isTorqueLoan
+                true :
+                false
         );
     }
 
@@ -230,6 +348,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
                     amount
                 );
             }
+
         } else {
             amount = 0; // repurposed
 
