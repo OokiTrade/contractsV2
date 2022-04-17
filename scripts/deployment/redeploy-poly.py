@@ -1,5 +1,6 @@
 exec(open("./scripts/env/set-matic.py").read())
 deployer = accounts[2]
+from gnosis.safe import Safe, SafeOperation
 from ape_safe import ApeSafe
 
 safe = ApeSafe(GUARDIAN_MULTISIG)
@@ -27,12 +28,19 @@ loanTokenLogicWeth = Contract.from_abi("LoanTokenLogicWeth", "0x640235129F4cE151
 ookiPriceFeed = Contract.from_abi("OOKIPriceFeed", "0x392b7Baf9dBf56a0AcA52f0Ba8bC1D7451Ef8A4A", OOKIPriceFeed.abi)
 helperImpl = Contract.from_abi("HelperImpl", "0xcBC774c564f84eb6F5A388f97a2F447cC6F26791", HelperImpl.abi)
 
-BZX.replaceContract(loanMaintenance, {"from": GUARDIAN_MULTISIG})
-BZX.replaceContract(loanMaintenance_2, {"from": GUARDIAN_MULTISIG})
-BZX.replaceContract(loanOpenings, {"from": GUARDIAN_MULTISIG})
-BZX.replaceContract(loanClosings, {"from": GUARDIAN_MULTISIG})
-BZX.replaceContract(loanSettings, {"from": GUARDIAN_MULTISIG})
-BZX.replaceContract(swapsImpl, {"from": GUARDIAN_MULTISIG})
+# BZX.replaceContract(loanMaintenance, {"from": GUARDIAN_MULTISIG})
+# BZX.replaceContract(loanMaintenance_2, {"from": GUARDIAN_MULTISIG})
+# BZX.replaceContract(loanOpenings, {"from": GUARDIAN_MULTISIG})
+# BZX.replaceContract(loanClosings, {"from": GUARDIAN_MULTISIG})
+# BZX.replaceContract(loanSettings, {"from": GUARDIAN_MULTISIG})
+# BZX.replaceContract(swapsImpl, {"from": GUARDIAN_MULTISIG})
+arr = []
+arr.append([BZX, BZX.replaceContract.encode_input(loanMaintenance)])
+arr.append([BZX, BZX.replaceContract.encode_input(loanMaintenance_2)])
+arr.append([BZX, BZX.replaceContract.encode_input(loanOpenings)])
+arr.append([BZX, BZX.replaceContract.encode_input(loanClosings)])
+arr.append([BZX, BZX.replaceContract.encode_input(loanSettings)])
+arr.append([BZX, BZX.replaceContract.encode_input(swapsImpl)])
 
 # # remember deploy WETH
 # loanTokenLogicStandard = LoanTokenLogicStandard.deploy({"from": deployer})
@@ -42,25 +50,32 @@ for l in list:
     iTokenTemp = Contract.from_abi("iTokenTemp", l[0], LoanToken.abi)
     if l[1] == WMATIC:
         print("setting WMATIC")
-        iTokenTemp.setTarget(loanTokenLogicWeth, {"from": GUARDIAN_MULTISIG})
+        # iTokenTemp.setTarget(loanTokenLogicWeth, {"from": GUARDIAN_MULTISIG})
+        arr.append([iTokenTemp, iTokenTemp.setTarget.encode_input(loanTokenLogicWeth)])
     else:
-        iTokenTemp.setTarget(loanTokenLogicStandard, {"from": GUARDIAN_MULTISIG})
+        # iTokenTemp.setTarget(loanTokenLogicStandard, {"from": GUARDIAN_MULTISIG})
+        arr.append([iTokenTemp, iTokenTemp.setTarget.encode_input(loanTokenLogicStandard)])
 
 
-# ookiPriceFeed = OOKIPriceFeed.deploy({"from": deployer})
-pricefeeds = Contract.from_abi('priceFeeds',BZX.priceFeeds(),PriceFeeds.abi)
-pricefeeds.setPriceFeed([OOKI],[ookiPriceFeed], {"from": GUARDIAN_MULTISIG})
+# # ookiPriceFeed = OOKIPriceFeed.deploy({"from": deployer})
+# pricefeeds = Contract.from_abi('priceFeeds',BZX.priceFeeds(),PriceFeeds.abi)
+# pricefeeds.setPriceFeed([OOKI],[ookiPriceFeed], {"from": GUARDIAN_MULTISIG})
 
-BZX.setTWAISettings(60, 10800, {"from": GUARDIAN_MULTISIG})
+# BZX.setTWAISettings(60, 10800, {"from": GUARDIAN_MULTISIG})
+arr.append([BZX, BZX.setTWAISettings.encode_input(60, 10800)])
 
 for l in list:
-    calldata = BZX.setupLoanPoolTWAI(l[0], {"from": GUARDIAN_MULTISIG})
+    # calldata = BZX.setupLoanPoolTWAI(l[0], {"from": GUARDIAN_MULTISIG})
+    arr.append([BZX,  BZX.setupLoanPoolTWAI.encode_input(l[0])])
 
-# helperImpl = HelperImpl.deploy({"from": deployer})
 
-HELPER = Contract.from_abi("HELPER", HELPER, HelperProxy.abi)
-HELPER.replaceImplementation(helperImpl, {"from": GUARDIAN_MULTISIG})
-HELPER = Contract.from_abi("HELPER", HELPER, HelperImpl.abi)
+data1 = MULTICALL3.tryAggregate.encode_input(True, arr)
+safeTx = safe.build_multisig_tx(MULTICALL3.address, 0, data1, SafeOperation.DELEGATE_CALL.value, safe_nonce=safe.pending_nonce())
+
+# # helperImpl = HelperImpl.deploy({"from": deployer})
+# HELPER = Contract.from_abi("HELPER", HELPER, HelperProxy.abi)
+# HELPER.replaceImplementation(helperImpl, {"from": GUARDIAN_MULTISIG})
+# HELPER = Contract.from_abi("HELPER", HELPER, HelperImpl.abi)
 
 # Testing
 
