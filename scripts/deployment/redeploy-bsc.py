@@ -52,7 +52,11 @@ HELPER.replaceImplementation(helperImpl, {"from": GUARDIAN_MULTISIG})
 HELPER = Contract.from_abi("HELPER", HELPER, HelperImpl.abi)
 
 # Testing
+USDT.transfer(accounts[0] ,1000e18, {"from": "0x9aa83081aa06af7208dcc7a4cb72c94d057d2cda"})
+USDT.approve(iUSDT, 2**256-1, {"from": accounts[0]})
+iUSDT.mint(accounts[0], 100e6, {"from": accounts[0]})
+iUSDT.burn(accounts[0], 1e6, {"from": accounts[0]})
 
-iUSDC.burn("X", 10e6, {"from": "X"})
-iUSDC.mint("X", 1e6, {"from": "X"})
+
+
 
