@@ -46,7 +46,7 @@ for l in list:
 # data1 = MULTICALL3.tryAggregate.encode_input(True, arr)
 # safeTx = safe.build_multisig_tx(MULTICALL3.address, 0, data1, SafeOperation.DELEGATE_CALL.value, safe_nonce=safe.pending_nonce())
 
-# helperImpl = HelperImpl.deploy({"from": deployer})
+helperImpl = HelperImpl.deploy({"from": deployer})
 HELPER = Contract.from_abi("HELPER", HELPER, HelperProxy.abi)
 HELPER.replaceImplementation(helperImpl, {"from": GUARDIAN_MULTISIG})
 HELPER = Contract.from_abi("HELPER", HELPER, HelperImpl.abi)
