@@ -136,4 +136,9 @@ interface IToken {
     function symbol() external view  returns (string memory);
 
     function updateSettings(address settingsTarget, bytes calldata callData) external;
+
+
+    function mintWithEther(address receiver) external payable;
+
+    function burnToEther(address payable receiver,uint256 burnAmount) external returns (uint256 loanAmountPaid);
 }
