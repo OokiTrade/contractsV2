@@ -31,8 +31,8 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         _setTarget(this.getBorrowAmount.selector, target);
         _setTarget(this.getBorrowAmountByParams.selector, target);
 
-        // TODO remove next deploy ? shall I even remove them if they are read only?
-        _setTarget(bytes4(keccak256("getEstimatedMarginExposure(address,address,uint256,uint25
+        // TODO remove next deploy
+        _setTarget(bytes4(keccak256("getEstimatedMarginExposure(address,address,uint256,uint256,uint256,uint256,bytes")), address(0));
     }
 
     // Note: Only callable by loan pools (iTokens)
