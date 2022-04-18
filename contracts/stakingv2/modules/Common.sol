@@ -63,7 +63,7 @@ contract Common is StakingStateV2, PausableGuardian {
         bool skipVestingLastSyncCheck
     ) internal view returns (uint256 totalVotes) {
         uint256 _vestingLastSync = vestingLastSync[account];
-        if (proposal.proposalTime == 0 || (!skipVestingLastSyncCheck && _vestingLastSync > proposal.proposalTime - 1)) {
+        if (proposal.proposalTime == 0) {
             return 0;
         }
 
@@ -74,12 +74,18 @@ contract Common is StakingStateV2, PausableGuardian {
                 totalVotes = _vOOKIBalance * (vestingEndTimestamp - proposal.proposalTime) / vestingDurationAfterCliff;
             }
 
+
+            uint vestedAfterProposal = 0;
+            if(_vestingLastSync > proposal.proposalTime - 1){
+                uint256 timeSinceClaim = _vestingLastSync - proposal.proposalTime - 1;
+                vestedAfterProposal = _vOOKIBalance.mul(timeSinceClaim) / vestingDurationAfterCliff;
+            }
             // user is attributed a staked balance of vested OOKI, from their last update to the present (10x for OOKI)
             totalVotes = vestedBalanceForAmount(
                 _vOOKIBalance,
                 _vestingLastSync,
                 proposal.proposalTime
-            ).add(totalVotes);
+            ).add(totalVotes).sub(vestedAfterProposal);
         }
 
         totalVotes = _balancesPerToken[OOKI][account].add(ookiRewards[account]).add(totalVotes); // unclaimed BZRX rewards count as votes
