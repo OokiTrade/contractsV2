@@ -63,12 +63,9 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
         if (poolLastUpdateTime[pool] == 0) {
             poolLastUpdateTime[pool] = block.timestamp;
         }
-        
+
         poolInterestRateObservations[pool][0].blockTimestamp = 
-            uint32(
-                (poolLastUpdateTime[pool]>0
-                ?poolLastUpdateTime[pool]
-                : block.timestamp).sub(twaiLength+timeDelta));
+            uint32(poolLastUpdateTime[pool].sub(twaiLength+timeDelta));
         if (poolLastInterestRate[pool] < 1e11) {
             poolLastInterestRate[pool] = 1e11;
         }
