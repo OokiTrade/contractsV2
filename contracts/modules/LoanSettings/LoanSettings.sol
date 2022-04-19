@@ -9,11 +9,13 @@ pragma experimental ABIEncoderV2;
 import "../../core/State.sol";
 import "../../events/LoanSettingsEvents.sol";
 import "../../utils/MathUtil.sol";
+import "../../utils/InterestOracle.sol";
 import "../../mixins/InterestHandler.sol";
+import "../../governance/PausableGuardian.sol";
 
-
-contract LoanSettings is State, InterestHandler, LoanSettingsEvents {
+contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGuardian {
     using MathUtil for uint256;
+    using InterestOracle for InterestOracle.Observation[256];
     
     function initialize(
         address target)
@@ -21,6 +23,8 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents {
         onlyOwner
     {
         _setTarget(this.setupLoanParams.selector, target);
+        _setTarget(this.setupLoanPoolTWAI.selector, target);
+        _setTarget(this.setTWAISettings.selector, target);
         _setTarget(this.disableLoanParams.selector, target);
         _setTarget(this.getLoanParams.selector, target);
         _setTarget(this.getLoanParamsList.selector, target);
@@ -40,6 +44,32 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents {
         for (uint256 i = 0; i < loanParamsList.length; i++) {
             loanParamsIdList[i] = _setupLoanParams(loanParamsList[i]);
         }
+    }
+
+    function setTWAISettings(
+        uint32 delta,
+        uint32 secondsAgo)
+        external
+        onlyGuardian
+    {
+        timeDelta = delta;
+        twaiLength = secondsAgo;
+    }
+
+
+    function setupLoanPoolTWAI(address pool) external onlyGuardian {
+        require(poolInterestRateObservations[pool][0].blockTimestamp==0, "already initialized");
+
+        if (poolLastUpdateTime[pool] == 0) {
+            poolLastUpdateTime[pool] = block.timestamp;
+        }
+
+        poolInterestRateObservations[pool][0].blockTimestamp = 
+            uint32(poolLastUpdateTime[pool].sub(twaiLength+timeDelta));
+        if (poolLastInterestRate[pool] < 1e11) {
+            poolLastInterestRate[pool] = 1e11;
+        }
+
     }
 
     // Deactivates LoanParams for future loans. Active loans using it are unaffected.

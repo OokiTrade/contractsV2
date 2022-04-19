@@ -3,7 +3,7 @@ TOKEN_REGISTRY = Contract.from_abi("TOKEN_REGISTRY", "0x1BE70f29D30bB1D325E5D76E
 
 list = TOKEN_REGISTRY.getTokens(0, 100)
 for l in list:
-    iTokenTemp = Contract.from_abi("iTokenTemp", l[0], LoanTokenLogicStandard.abi)
+    iTokenTemp = Contract.from_abi("iTokenTemp", l[0], interface.IToken.abi)
     globals()[iTokenTemp.symbol()] = iTokenTemp
 
     underlyingTemp = Contract.from_abi("underlyingTemp", l[1], TestToken.abi)
@@ -14,3 +14,8 @@ BGOV = Contract.from_abi("PGOV", "0xf8E026dC4C0860771f691EcFFBbdfe2fa51c77CF", G
 
 ADMIN_LOCK = Contract.from_abi("ADMIN_LOCK", "0xcd5788e81821500cc306378e079b34b964876e55", AdminLock.abi)
 SUSHI_ROUTER = Contract.from_abi("router", "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506", interface.IPancakeRouter02.abi)
+
+GUARDIAN_MULTISIG = "0x82cedB275BF513447300f670708915F99f085FD6"
+LOAN_TOKEN_SETTINGS_LOWER_ADMIN = Contract.from_abi("LOAN_TOKEN_SETTINGS_LOWER_ADMIN", "0x2D2c97Fdad02FAd635aEfCD311d123Da9607A6f2", LoanTokenSettingsLowerAdmin.abi)
+
+MULTICALL3 = Contract.from_abi("MULTICALL3", "0xcA11bde05977b3631167028862bE2a173976CA11", interface.IMulticall3.abi)

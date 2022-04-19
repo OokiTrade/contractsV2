@@ -21,7 +21,7 @@ contract LoanClosings_Arbitrum is LoanClosingsBase_Arbitrum {
         _setTarget(this.closeWithSwap.selector, target);
 
         // TEMP: remove after upgrade
-        _setTarget(bytes4(keccak256("rollover(bytes32,bytes)")), address(0));
+        // _setTarget(bytes4(keccak256("rollover(bytes32,bytes)")), address(0));
     }
 
     function liquidate(

@@ -46,7 +46,8 @@ contract LoanClosingsEvents {
         uint256 collateralToLoanRate,
         uint256 currentMargin
     );
-
+    
+    // DEPRECATED
     event Rollover(
         address indexed user,
         address indexed caller,

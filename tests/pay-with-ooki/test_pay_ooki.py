@@ -1,0 +1,73 @@
+from brownie import *
+from eth_abi import encode_abi
+
+def test_runs():
+    globals()["BZX"] = interface.IBZx('0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8')
+    globals()["OOKI"] = '0xCd150B1F528F326f5194c012f32Eb30135C7C2c9'
+    set_pricefeed()
+    deploy_protocol()
+    supplyAccount()
+    trade_open()
+
+def set_pricefeed():
+    ooki_p = OOKIPriceFeed.deploy({'from':accounts[0]})
+    Contract.from_abi('',BZX.priceFeeds.call(),PriceFeeds.abi).setPriceFeed([OOKI],[ooki_p],{'from':BZX.owner()})
+
+def deploy_protocol():
+    TickMathV1.deploy({'from':accounts[0]})
+    loanMaintenance = LoanMaintenance.deploy({"from": accounts[0], "gas_price": Wei("0.5 gwei")})
+    loanMaintenance_2 = LoanMaintenance_2.deploy({"from": accounts[0], "gas_price": Wei("0.5 gwei")})
+    loanOpenings = LoanOpenings.deploy({"from": accounts[0], "gas_price": Wei("0.5 gwei")})
+    loanClosings = LoanClosings.deploy({"from": accounts[0], "gas_price": Wei("0.5 gwei")})
+    loanSettings = LoanSettings.deploy({"from": accounts[0], "gas_price": Wei("0.5 gwei")})
+    protocolSettings = ProtocolSettings.deploy({"from": accounts[0], "gas_price": Wei("0.5 gwei")})
+    swapsExternal = SwapsExternal.deploy({"from": accounts[0], "gas_price": Wei("0.5 gwei")})
+    BZX.replaceContract(loanMaintenance, {"from": BZX.owner()})
+    BZX.replaceContract(loanMaintenance_2, {"from": BZX.owner()})
+    BZX.replaceContract(loanOpenings, {"from": BZX.owner()})
+    BZX.replaceContract(loanClosings, {"from": BZX.owner()})
+    BZX.replaceContract(loanSettings, {"from": BZX.owner()})
+    BZX.replaceContract(protocolSettings, {"from": BZX.owner()})
+    BZX.replaceContract(swapsExternal, {"from": BZX.owner()})
+    BZX.setTWAISettings(60,10800, {'from':BZX.owner()})
+    BZX.setupLoanPoolTWAI('0xC3f6816C860e7d7893508C8F8568d5AF190f6d7d',{'from':BZX.owner()})
+
+def supplyAccount():
+    interface.IERC20(OOKI).approve(BZX, 20000000e18, {'from':accounts[0]})
+    interface.IERC20(OOKI).transfer(accounts[0],200000e18, {'from':"0xa9ff08af55b24bb5d064d776a078e8a292b8dfe2"})
+
+def trade_open():
+    bb = interface.IERC20(OOKI).balanceOf.call(accounts[0])
+    print(bb)
+    iUSDC = interface.IToken('0xC3f6816C860e7d7893508C8F8568d5AF190f6d7d')
+    USDC = interface.IToken('0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174')
+    USDC.transfer(accounts[0], 1000e6, {'from':'0xba12222222228d8ba445958a75a0704d566bf2c8'})
+    USDC.approve(iUSDC, 1000e6, {'from':accounts[0]})
+    data = encode_abi(['uint128'],[8])
+    chain.mine(timedelta=5)
+    iUSDC.marginTrade(0,2e18,1000e6,0,"0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",accounts[0],data,{'from':accounts[0]})
+    trades = BZX.getUserLoans(accounts[0], 0,1, 0,0,0)
+    assert(bb>interface.IERC20(OOKI).balanceOf.call(accounts[0]))
+    bb = interface.IERC20(OOKI).balanceOf.call(accounts[0])
+    print(bb)
+    chain.mine(timedelta=5)
+    BZX.closeWithSwap(trades[0][0],accounts[0],1e15,True,data,{'from':accounts[0]})
+    assert(bb>interface.IERC20(OOKI).balanceOf.call(accounts[0]))
+    delta = bb-interface.IERC20(OOKI).balanceOf.call(accounts[0])
+    bb = interface.IERC20(OOKI).balanceOf.call(accounts[0])
+    data = encode_abi(['uint128'],[9])
+    chain.mine(timedelta=5)
+    BZX.closeWithSwap(trades[0][0],accounts[0],1e15,True,data,{'from':accounts[0]})
+    assert(bb-interface.IERC20(OOKI).balanceOf.call(accounts[0])<delta)
+    bb = interface.IERC20(OOKI).balanceOf.call(accounts[0])
+    print(bb)
+    data = encode_abi(['uint128'],[8])
+    chain.mine(timedelta=5)
+    BZX.closeWithSwap(trades[0][0],accounts[0],1e15,False,data,{'from':accounts[0]})
+    assert(bb>interface.IERC20(OOKI).balanceOf.call(accounts[0]))
+    delta = bb-interface.IERC20(OOKI).balanceOf.call(accounts[0])
+    bb = interface.IERC20(OOKI).balanceOf.call(accounts[0])
+    data = encode_abi(['uint128'],[9])
+    chain.mine(timedelta=5)
+    BZX.closeWithSwap(trades[0][0],accounts[0],1e15,False,data,{'from':accounts[0]})
+    assert(bb-interface.IERC20(OOKI).balanceOf.call(accounts[0])<delta)

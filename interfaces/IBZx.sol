@@ -108,6 +108,9 @@ interface IBZx {
         FeeClaimType feeType
     ) external returns (uint256[] memory amounts);
 
+    /*
+    Targets still exist, but functions are decommissioned:
+
     /// @dev withdraw protocol token (BZRX) from vesting contract vBZRX
     /// @param receiver address of BZRX tokens claimed
     /// @param amount of BZRX token to be claimed. max is claimed if amount is greater than balance.
@@ -123,9 +126,9 @@ interface IBZx {
 
     function grantRewards(address[] calldata users, uint256[] calldata amounts)
         external
-        returns (uint256 totalAmount);
+        returns (uint256 totalAmount);*/
 
-    // NOTE: this doesn't sanitize inputs -> inaccurate values may be returned if there are duplicates tokens input
+    // NOTE: this doesn't sanitize inputs -> inaccurate values may be returned if there are duplicate token inputs
     function queryFees(address[] calldata tokens, FeeClaimType feeType)
         external
         view
@@ -212,6 +215,10 @@ interface IBZx {
     function setupLoanParams(LoanParams[] calldata loanParamsList)
         external
         returns (bytes32[] memory loanParamsIdList);
+
+    function setupLoanPoolTWAI(address pool) external;
+
+    function setTWAISettings(uint32 delta, uint32 secondsAgo) external;
 
     /// @dev Deactivates LoanParams for future loans. Active loans using it are unaffected.
     /// @param loanParamsIdList array of loan ids
@@ -517,45 +524,20 @@ interface IBZx {
     /// @param loanId existing loan id
     function settleInterest(bytes32 loanId) external;
 
-    /*/// @dev withdraw accrued interest rate for a loan given token address
-    /// @param loanToken loan token address
-    function withdrawAccruedInterest(address loanToken) external;*/
-
-    /*/// @dev extends loan duration by depositing more collateral
-    /// @param loanId id of the existing loan
-    /// @param depositAmount amount to deposit
-    /// @param useCollateral boolean whether to extend using collateral or deposit amount
-    /// @return secondsExtended by that number of seconds loan duration was extended
-    function extendLoanDuration(
-        bytes32 loanId,
-        uint256 depositAmount,
-        bool useCollateral,
-        bytes calldata // for future use loanDataBytes
-    ) external payable returns (uint256 secondsExtended);*/
-
-    /*/// @dev reduces loan duration by withdrawing collateral
-    /// @param loanId id of the existing loan
-    /// @param receiver address to receive tokens
-    /// @param withdrawAmount amount to withdraw
-    /// @return secondsReduced by that number of seconds loan duration was extended
-    function reduceLoanDuration(
-        bytes32 loanId,
-        address receiver,
-        uint256 withdrawAmount
-    ) external returns (uint256 secondsReduced);*/
-
     function setDepositAmount(
         bytes32 loanId,
         uint256 depositValueAsLoanToken,
         uint256 depositValueAsCollateralToken
     ) external;
 
+    function transferLoan(bytes32 loanId, address newOwner) external;
+
+    // Decommissioned function, but leave interface to allow remaining claims
     function claimRewards(address receiver)
         external
         returns (uint256 claimAmount);
 
-    function transferLoan(bytes32 loanId, address newOwner) external;
-
+    // Decommissioned function, but leave interface to allow remaining claims
     function rewardsBalanceOf(address user)
         external
         view
@@ -576,43 +558,13 @@ interface IBZx {
         uint256 _loanInterestTotal,
         uint256 _loanRatePerTokenPaid
         );
-
-    /*/// @dev Gets current lender interest data totals for all loans with a specific oracle and interest token
-    /// @param lender The lender address
-    /// @param loanToken The loan token address
-    /// @return interestPaid The total amount of interest that has been paid to a lender so far
-    /// @return interestPaidDate The date of the last interest pay out, or 0 if no interest has been withdrawn yet
-    /// @return interestOwedPerDay The amount of interest the lender is earning per day
-    /// @return interestUnPaid The total amount of interest the lender is owned and not yet withdrawn
-    /// @return interestFeePercent The fee retained by the protocol before interest is paid to the lender
-    /// @return principalTotal The total amount of outstading principal the lender has loaned
-    function getLenderInterestData(address lender, address loanToken)
+    
+    function getTWAI(
+        address pool)
         external
-        view
-        returns (
-            uint256 interestPaid,
-            uint256 interestPaidDate,
-            uint256 interestOwedPerDay,
-            uint256 interestUnPaid,
-            uint256 interestFeePercent,
-            uint256 principalTotal
+        view returns (
+            uint256 benchmarkRate
         );
-
-    /// @dev Gets current interest data for a loan
-    /// @param loanId A unique id representing the loan
-    /// @return loanToken The loan token that interest is paid in
-    /// @return interestOwedPerDay The amount of interest the borrower is paying per day
-    /// @return interestDepositTotal The total amount of interest the borrower has deposited
-    /// @return interestDepositRemaining The amount of deposited interest that is not yet owed to a lender
-    function getLoanInterestData(bytes32 loanId)
-        external
-        view
-        returns (
-            address loanToken,
-            uint256 interestOwedPerDay,
-            uint256 interestDepositTotal,
-            uint256 interestDepositRemaining
-        );*/
 
     /// @dev gets list of loans of particular user address
     /// @param user address of the loans

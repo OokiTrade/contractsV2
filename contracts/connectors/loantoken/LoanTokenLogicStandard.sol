@@ -22,8 +22,8 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
 
     //address internal constant arbitraryCaller = 0x000F400e6818158D541C3EBE45FE3AA0d47372FF; // mainnet
     address internal constant arbitraryCaller = 0x81e7dddFAD37E6FAb0eccE95f0B508fd40996e6d; // bsc
-    //address internal constant arbitraryCaller = 0x81e7dddFAD37E6FAb0eccE95f0B508fd40996e6d; // polygon
-    //address internal constant arbitraryCaller = 0x01207468F48822f8535BC96D1Cf18EddDE4A2392; // arbitrum
+    // address internal constant arbitraryCaller = 0x81e7dddFAD37E6FAb0eccE95f0B508fd40996e6d; // polygon
+    // address internal constant arbitraryCaller = 0x01207468F48822f8535BC96D1Cf18EddDE4A2392; // arbitrum
 
     //address public constant bZxContract = 0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f; // mainnet
     //address public constant wethToken = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // mainnet
@@ -34,27 +34,27 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
     address public constant bZxContract = 0xD154eE4982b83a87b0649E5a7DDA1514812aFE1f; // bsc
     address public constant wethToken = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c; // bsc
 
-    //address public constant bZxContract = 0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8; // polygon
-    //address public constant wethToken = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270; // polygon
+    // address public constant bZxContract = 0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8; // polygon
+    // address public constant wethToken = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270; // polygon
 
-    //address public constant bZxContract = 0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB; // arbitrum
-    //address public constant wethToken = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1; // arbitrum
+    // address public constant bZxContract = 0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB; // arbitrum
+    // address public constant wethToken = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1; // arbitrum
 
     bytes32 internal constant iToken_ProfitSoFar = 0x37aa2b7d583612f016e4a4de4292cb015139b3d7762663d06a53964912ea2fb6;          // keccak256("iToken_ProfitSoFar")
     bytes32 internal constant iToken_LowerAdminAddress = 0x7ad06df6a0af6bd602d90db766e0d5f253b45187c3717a0f9026ea8b10ff0d4b;    // keccak256("iToken_LowerAdminAddress")
     bytes32 internal constant iToken_LowerAdminContract = 0x34b31cff1dbd8374124bd4505521fc29cab0f9554a5386ba7d784a4e611c7e31;   // keccak256("iToken_LowerAdminContract")
 
-    constructor(
-        address _newOwner)
+    constructor()
         public
     {
-        transferOwnership(_newOwner);
+        renounceOwnership();
     }
 
     function()
         external
+        payable
     {
-        revert("fallback not allowed");
+        require(msg.sender == wethToken, "fallback not allowed");
     }
 
     /* Public functions */
@@ -377,23 +377,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         return checkpointPrices_[_user];
     }
 
-    function marketLiquidity()
-        public
-        view
-        returns (uint256)
-    {
-        return _underlyingBalance();
-    }
-
-    // legacy function
-    function avgBorrowInterestRate()
-        external
-        view
-        returns (uint256)
-    {
-        return borrowInterestRate();
-    }
-
     // the current rate being paid by borrowers in active loans
     function borrowInterestRate()
         public
@@ -403,7 +386,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         return _nextBorrowInterestRate(
             _totalAssetBorrowStored(),
             0,
-            poolLastInterestRate()
+            poolTWAI()
         );
     }
 
@@ -417,7 +400,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         return _nextBorrowInterestRate(
             totalAssetBorrow(),
             borrowAmount,
-            poolLastInterestRate()
+            poolTWAI()
         );
     }
 
@@ -429,7 +412,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
     {
         uint256 assetBorrow = _totalAssetBorrowStored();
         return _nextSupplyInterestRate(
-            _nextBorrowInterestRate(assetBorrow, 0, poolLastInterestRate()),
+            _nextBorrowInterestRate(assetBorrow, 0, poolTWAI()),
             assetBorrow,
             _totalAssetSupply(assetBorrow)
         );
@@ -437,18 +420,26 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
 
     // the minimum rate new and existing suppliers will receive after the next supply
     function nextSupplyInterestRate(
-        uint256 supplyAmount)
+        int256 supplyAmount)
         external
         view
         returns (uint256)
     {
         uint256 assetBorrow = totalAssetBorrow();
+        uint256 totalSupply = _totalAssetSupply(assetBorrow);
+
+        if(supplyAmount >= 0)
+            totalSupply = totalSupply.add(uint256(supplyAmount));
+        else
+            totalSupply = totalSupply.sub(uint256(-supplyAmount));
+
         return _nextSupplyInterestRate(
-            _nextBorrowInterestRate(assetBorrow, 0, poolLastInterestRate()),
+            _nextBorrowInterestRate(assetBorrow, 0, poolTWAI()),
             assetBorrow,
-            _totalAssetSupply(assetBorrow).add(supplyAmount)
+            totalSupply
         );
     }
+
 
     function totalAssetBorrow()
         public
@@ -485,16 +476,12 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         return IBZx(bZxContract).getPoolLastInterestRate(address(this));
     }
 
-    function getMaxEscrowAmount(
-        uint256 leverageAmount)
-        external
+    function poolTWAI()
+        public
         view
         returns (uint256)
     {
-        uint256 initialMargin = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, leverageAmount);
-        return marketLiquidity()
-            .mul(initialMargin)
-            .div(WEI_PERCENT_PRECISION);
+        return IBZx(bZxContract).getTWAI(address(this));
     }
 
     // returns the user's balance of underlying token
@@ -507,40 +494,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         return balanceOf(_owner)
             .mul(tokenPrice())
             .div(WEI_PRECISION);
-    }
-
-    // DEPRECATED, UI is handling this
-    function getEstimatedMarginDetails(
-        uint256 leverageAmount,
-        uint256 loanTokenSent,
-        uint256 collateralTokenSent,
-        address collateralTokenAddress)     // address(0) means ETH
-        external
-        view
-        returns (uint256 principal, uint256 collateral, uint256 interestRate, uint256 collateralToLoanRate)
-    {
-        if (collateralTokenAddress == address(0)) {
-            collateralTokenAddress = wethToken;
-        }
-
-        uint256 collateralToLoanPrecision;
-        (collateralToLoanRate, collateralToLoanPrecision) = IPriceFeeds(IBZx(bZxContract).priceFeeds()).queryRate(
-            collateralTokenAddress,
-            loanTokenAddress
-        );
-        require(collateralToLoanRate != 0 && collateralToLoanPrecision != 0, "20");
-        collateralToLoanRate = collateralToLoanRate
-            .mul(WEI_PRECISION)
-            .div(collateralToLoanPrecision);
-
-        collateral = IBZx(bZxContract).getEstimatedMarginExposure(
-            loanTokenAddress,
-            collateralTokenAddress,
-            loanTokenSent,
-            collateralTokenSent,
-            0, // interestRate (depreciated)
-            0 // principal
-        );
     }
 
     function getDepositAmountForBorrow(
