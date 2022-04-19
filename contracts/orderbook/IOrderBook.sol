@@ -94,13 +94,13 @@ interface IOrderBook {
     /// @param stopType true = index, false = dex price
     function changeStopType(bool stopType) external;
 
-    /// Withdraws funds from a trade that failed
-    /// @param orderID order ID for trade that failed to execute
-    function recoverFundsFromFailedOrder(bytes32 orderID) external;
+    /// Set price feed contract address
+    /// @param newFeed new price feed contract
+    function setPriceFeed(address newFeed) external;
 
     /// Return price feed contract address
     /// @return priceFeed Price Feed Contract Address
-    function getFeed() external view returns (address priceFeed);
+    function priceFeed() external view returns (address priceFeed);
 
     /// Return amount received through a specified swap
     /// @param srcToken source token address

@@ -1,5 +1,5 @@
 pragma solidity ^0.8.0;
-import "../Storage/OrderBookEvents.sol";
+import "../Events/OrderBookEvents.sol";
 import "../Storage/OrderBookStorage.sol";
 import "../OrderVault/IDeposits.sol";
 
@@ -12,7 +12,6 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         _setTarget(this.cancelOrder.selector, target);
         _setTarget(this.cancelOrderProtocol.selector, target);
         _setTarget(this.changeStopType.selector, target);
-        _setTarget(this.recoverFundsFromFailedOrder.selector, target);
     }
 
     function _caseChecks(bytes32 ID, address collateral, address loanToken)
@@ -20,27 +19,27 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         view
         returns (bool)
     {
-        IBZx.LoanReturnData memory data = protocol.getLoan(ID);
+        IBZx.LoanReturnData memory data = PROTOCOL.getLoan(ID);
         return 
             data.loanToken == loanToken &&
             data.collateralToken == collateral &&
-            protocol.delegatedManagers(ID, address(this));
+            PROTOCOL.delegatedManagers(ID, address(this));
     }
 
     function _isActiveLoan(bytes32 ID) internal view returns (bool) {
-        return protocol.loans(ID).active;
+        return PROTOCOL.loans(ID).active;
     }
 
     function _commonChecks(IOrderBook.Order calldata order) internal {
         require(!(order.collateralTokenAmount>0) || !(order.loanTokenAmount >0), "OrderBook: collateral and loan token cannot be non-zero");
-        require(protocol.supportedTokens(order.loanTokenAddress), "OrderBook: Unsupported loan token");
-        require(protocol.supportedTokens(order.base), "OrderBook: Unsupported collateral");
+        require(PROTOCOL.supportedTokens(order.loanTokenAddress), "OrderBook: Unsupported loan token");
+        require(PROTOCOL.supportedTokens(order.base), "OrderBook: Unsupported collateral");
         require(order.loanID != 0
                     ? _caseChecks(order.loanID, order.base, order.loanTokenAddress)
                     : true,
                 "OrderBook: case checks failed");
         require(order.orderType == IOrderBook.OrderType.LIMIT_OPEN
-                    ? protocol.loanPoolToUnderlying(order.iToken) == order.loanTokenAddress
+                    ? PROTOCOL.loanPoolToUnderlying(order.iToken) == order.loanTokenAddress
                     : true,
                 "OrderBook: Not a loan pool");
         require(order.orderType == IOrderBook.OrderType.LIMIT_OPEN
@@ -60,7 +59,7 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         address srcToken;
         if (order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
             if (usedToken == order.base) {
-                amountUsed = IPriceFeeds(protocol.priceFeeds()).queryReturn(
+                amountUsed = IPriceFeeds(priceFeed).queryReturn(
                     order.base,
                     order.loanTokenAddress,
                     amountUsed
@@ -77,20 +76,20 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
             srcToken = order.base;
         }
         require(
-            IPriceFeeds(protocol.priceFeeds()).queryReturn(srcToken, USDC, amountUsed) >=
+            IPriceFeeds(priceFeed).queryReturn(srcToken, USDC, amountUsed) >=
                 MIN_AMOUNT_IN_USDC,
             "OrderBook: Order too small"
         );
         require(order.status==IOrderBook.OrderStatus.ACTIVE, "OrderBook: invalid order state");
         mainOBID++;
         bytes32 ID = keccak256(abi.encode(msg.sender, mainOBID));
-        require(IDeposits(vault).getTokenUsed(ID) == address(0), "Orderbook: collision"); //in the very unlikely chance of collision on ID error is thrown
+        require(IDeposits(VAULT).getTokenUsed(ID) == address(0), "Orderbook: collision"); //in the very unlikely chance of collision on ID error is thrown
         _allOrders[ID] = order;
         _allOrders[ID].orderID = ID;
         _histOrders[msg.sender].add(ID);
         _allOrderIDs.add(ID);
         if (order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
-            IDeposits(vault).deposit(ID, amountUsed, msg.sender, usedToken);
+            IDeposits(VAULT).deposit(ID, amountUsed, msg.sender, usedToken);
         }
         emit OrderPlaced(
             msg.sender,
@@ -118,24 +117,24 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
             (uint256 amountUsed, address usedToken) = order.loanTokenAmount > order.collateralTokenAmount
                 ? (order.loanTokenAmount, order.loanTokenAddress)
                 : (order.collateralTokenAmount, order.base);
-            uint256 storedAmount = IDeposits(vault).getDeposit(
+            uint256 storedAmount = IDeposits(VAULT).getDeposit(
                 order.orderID
             );
             require(
                 usedToken ==
-                    IDeposits(vault).getTokenUsed(order.orderID),
+                    IDeposits(VAULT).getTokenUsed(order.orderID),
                 "OrderBook: invalid used token"
             );
             uint256 amountUsedOld = _allOrders[order.orderID].loanTokenAmount +
                 _allOrders[order.orderID].collateralTokenAmount;
             if (amountUsedOld > amountUsed) {
-                IDeposits(vault).partialWithdraw(
+                IDeposits(VAULT).partialWithdraw(
                     msg.sender,
                     order.orderID,
                     amountUsedOld - amountUsed
                 );
             } else {
-                IDeposits(vault).deposit(
+                IDeposits(VAULT).deposit(
                     order.orderID,
                     amountUsed - amountUsedOld,
                     msg.sender,
@@ -160,20 +159,12 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         require(_histOrders[msg.sender].remove(orderID), "OrderBook: not owner of order");
         _allOrderIDs.remove(orderID);
         if (_allOrders[orderID].orderType == IOrderBook.OrderType.LIMIT_OPEN) {
-            address usedToken = IDeposits(vault).getTokenUsed(
+            address usedToken = IDeposits(VAULT).getTokenUsed(
                 orderID
             );
-            IDeposits(vault).withdrawToTrader(msg.sender, orderID);
+            IDeposits(VAULT).withdrawToTrader(msg.sender, orderID);
         }
         emit OrderCancelled(msg.sender, orderID);
-    }
-
-    function recoverFundsFromFailedOrder(bytes32 orderID) external pausable {
-        IOrderBook.Order memory order = _allOrders[orderID];
-        require(msg.sender == order.trader, "OrderBook: Not trade owner");
-        require(order.status==IOrderBook.OrderStatus.CANCELLED, "OrderBook: Order not executed");
-        require(!_allOrderIDs.contains(orderID), "OrderBook: Order still in records");
-        IDeposits(vault).withdrawToTrader(msg.sender, orderID);
     }
 
     function cancelOrderProtocol(bytes32 orderID) external pausable {
@@ -184,13 +175,13 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
             order.loanTokenAmount;
         uint256 swapRate;
         if (order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
-            swapRate = IPriceFeeds(protocol.priceFeeds()).queryReturn(
+            swapRate = IPriceFeeds(priceFeed).queryReturn(
                 order.loanTokenAddress,
                 order.base,
                 amountUsed
             );
         } else {
-            swapRate = IPriceFeeds(protocol.priceFeeds()).queryReturn(
+            swapRate = IPriceFeeds(priceFeed).queryReturn(
                 order.base,
                 order.loanTokenAddress,
                 amountUsed
@@ -211,8 +202,8 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         _histOrders[trader].remove(orderID);
         _allOrderIDs.remove(orderID);
         if (order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
-            address usedToken = IDeposits(vault).getTokenUsed(orderID);
-            IDeposits(vault).withdrawToTrader(trader, orderID);
+            address usedToken = IDeposits(VAULT).getTokenUsed(orderID);
+            IDeposits(VAULT).withdrawToTrader(trader, orderID);
         }
         emit OrderCancelled(trader, orderID);
     }

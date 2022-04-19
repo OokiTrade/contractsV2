@@ -1,6 +1,6 @@
 pragma solidity ^0.8.0;
 
-import "../Storage/OrderBookEvents.sol";
+import "../Events/OrderBookEvents.sol";
 import "../Storage/OrderBookStorage.sol";
 import "@openzeppelin-4.3.2/token/ERC20/utils/SafeERC20.sol";
 
@@ -31,9 +31,9 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
             for (uint y; y < tokens.length;) {
                 token = tokens[y];
                 require(
-                    protocol.isLoanPool(spender) ||
-                        address(protocol) == spender ||
-                        vault == spender,
+                    PROTOCOL.isLoanPool(spender) ||
+                        address(PROTOCOL) == spender ||
+                        VAULT == spender,
                     "OrderBook: invalid spender"
                 );
                 IERC20(token).safeApprove(spender, type(uint256).max);
@@ -52,9 +52,9 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
             for (uint y; y < tokens.length;) {
                 token = tokens[y];
                 require(
-                    protocol.isLoanPool(spender) ||
-                        address(protocol) == spender ||
-                        vault == spender,
+                    PROTOCOL.isLoanPool(spender) ||
+                        address(PROTOCOL) == spender ||
+                        VAULT == spender,
                     "OrderBook: invalid spender"
                 );
                 IERC20(token).safeApprove(spender, 0);

@@ -1,15 +1,16 @@
 pragma solidity ^0.8.0;
-import "../Storage/OrderBookEvents.sol";
+import "../Events/OrderBookEvents.sol";
 import "../Storage/OrderBookStorage.sol";
 import "../../swaps/ISwapsImpl.sol";
 import "../OrderVault/IDeposits.sol";
 import "../../mixins/Flags.sol";
+import "@openzeppelin-4.3.2/token/ERC20/utils/SafeERC20.sol";
 
 contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
     using EnumerableSet for EnumerableSet.Bytes32Set;
+    using SafeERC20 for IERC20;
 
     function initialize(address target) public onlyOwner {
-        _setTarget(this.getFeed.selector, target);
         _setTarget(this.getDexRate.selector, target);
         _setTarget(this.clearOrder.selector, target);
         _setTarget(this.prelimCheck.selector, target);
@@ -18,10 +19,11 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         _setTarget(this.queryRateReturn.selector, target);
         _setTarget(this.priceCheck.selector, target);
         _setTarget(this.executeOrder.selector, target);
+        _setTarget(this.setPriceFeed.selector, target);
     }
 
     function _executeTradeOpen(IOrderBook.Order memory order) internal {
-        IDeposits(vault).withdraw(order.orderID);
+        IDeposits(VAULT).withdraw(order.orderID);
         (bool result, bytes memory data) = order.iToken.call(
             abi.encodeWithSelector(
                 IToken(order.iToken).marginTrade.selector,
@@ -35,10 +37,10 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
             )
         );
         if (!result) {
-            IDeposits(vault).refund(
-                order.orderID,
-                (order.loanTokenAmount + order.collateralTokenAmount)
-            ); //unlikely to be needed
+            (address usedToken, uint256 amount) = order.loanTokenAmount > order.collateralTokenAmount
+                ? (order.loanTokenAddress, order.loanTokenAmount)
+                : (order.base, order.collateralTokenAmount);
+            IERC20(usedToken).transfer(order.trader, amount);
         }
     }
 
@@ -48,9 +50,9 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         uint256 amount,
         bytes memory loanDataBytes
     ) internal {
-        address(protocol).call(
+        address(PROTOCOL).call(
             abi.encodeWithSelector(
-                protocol.closeWithSwap.selector,
+                PROTOCOL.closeWithSwap.selector,
                 loanID,
                 trader,
                 amount,
@@ -60,12 +62,8 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         );
     }
 
-    function getFeed() public view returns (address) {
-        return protocol.priceFeeds();
-    }
-
     function _isActiveLoan(bytes32 ID) internal view returns (bool) {
-        return protocol.loans(ID).active;
+        return PROTOCOL.loans(ID).active;
     }
 
     function clearOrder(bytes32 orderID) public view returns (bool) {
@@ -136,7 +134,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         address end,
         uint256 amount
     ) public view returns (uint256) {
-        return IPriceFeeds(getFeed())
+        return IPriceFeeds(priceFeed)
             .queryReturn(start, end, amount);
     }
 
@@ -170,7 +168,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
             }
             dSwapValue =
                 order.collateralTokenAmount +
-                protocol.getSwapExpectedReturn(
+                PROTOCOL.getSwapExpectedReturn(
                     order.loanTokenAddress,
                     order.base,
                     amountUsed,
@@ -185,7 +183,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
                 return false;
             }
             uint256 dSwapValue;
-            dSwapValue = protocol.getSwapExpectedReturn(
+            dSwapValue = PROTOCOL.getSwapExpectedReturn(
                 order.base,
                 order.loanTokenAddress,
                 order.collateralTokenAmount,
@@ -231,7 +229,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         uint256 amountIn
     ) public returns (uint256 rate) {
         uint256 tradeSize = 10**IERC20Metadata(srcToken).decimals();
-        rate = protocol.getSwapExpectedReturn(
+        rate = PROTOCOL.getSwapExpectedReturn(
             srcToken,
             destToken,
             amountIn,
@@ -300,7 +298,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
             }
             dSwapValue =
                 order.collateralTokenAmount +
-                protocol.getSwapExpectedReturn(
+                PROTOCOL.getSwapExpectedReturn(
                     order.loanTokenAddress,
                     order.base,
                     amountUsed,
@@ -320,7 +318,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         }
         else if (order.orderType == IOrderBook.OrderType.LIMIT_CLOSE) {
             uint256 dSwapValue;
-            dSwapValue = protocol.getSwapExpectedReturn(
+            dSwapValue = PROTOCOL.getSwapExpectedReturn(
                 order.base,
                 order.loanTokenAddress,
                 order.collateralTokenAmount,
@@ -383,5 +381,9 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
             emit OrderExecuted(order.trader, orderID);
             return;
         }
+    }
+
+    function setPriceFeed(address newFeed) external onlyOwner {
+        priceFeed = newFeed;
     }
 }

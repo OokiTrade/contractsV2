@@ -3,6 +3,7 @@ from eth_abi import encode_abi
 
 def test_t():
     ORDERBOOK = interface.IOrderBook('0x9A3B9d4379Ec31aA527cB226890412Ef40A3C1c8')
+    upgrade_contracts(ORDERBOOK)
     print(ORDERBOOK.getDexRate.call(
         "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619", "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174", b'', 1e18))
     print(ORDERBOOK.queryRateReturn.call(
@@ -45,6 +46,16 @@ def test_t():
     ll = protocolRank.getUserLoans.call(accounts[0],0,10,0,False,False)
     print(ll)
     assert(False)
+
+def upgrade_contracts(ORDERBOOK):
+    main = OrderBook.deploy({'from':accounts[0]})
+    data = OrderBookData.deploy({'from':accounts[0]})
+    placement = OrderBookOrderPlace.deploy({'from':accounts[0]})
+    ORDERBOOK = Contract.from_abi('',ORDERBOOK.address,OrderBookProxy.abi)
+    ORDERBOOK.replaceContract(main,{'from':ORDERBOOK.owner()})
+    ORDERBOOK.replaceContract(data,{'from':ORDERBOOK.owner()})
+    ORDERBOOK.replaceContract(placement,{'from':ORDERBOOK.owner()})
+    interface.IOrderBook(ORDERBOOK).setPriceFeed('0x600F8E7B10CF6DA18871Ff79e4A61B13caCEd9BC',{'from':ORDERBOOK.owner()})
 
 def deploy_keeper(ORDERBOOK):
     keeper = OrderKeeper.deploy({'from':accounts[0]})
