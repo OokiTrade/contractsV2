@@ -25,7 +25,8 @@ swapsImpl = Contract.from_abi("SwapsExternal", "0xf7Eb8B08C8860d494D8d8FB6529C46
 loanTokenLogicStandard = Contract.from_abi("LoanTokenLogicStandard", "0xE42f4147Ce8bf8D436554feE950ef11DBCeB90f7", LoanTokenLogicStandard.abi)
 loanTokenLogicWeth = Contract.from_abi("LoanTokenLogicWeth", "0x174AFF1bE8da9710A1eC59c1c1b73c9bF6c60b8e", LoanTokenLogicWeth.abi)
 
-helperImpl = Contract.from_abi("HelperImpl", "0x7FcB75eaB54D5cEA49cC026Ae7A36ec8F56d7616", HelperImpl.abi)
+# helperImpl = Contract.from_abi("HelperImpl", "0x7FcB75eaB54D5cEA49cC026Ae7A36ec8F56d7616", HelperImpl.abi) wrong bzxAddress
+helperImpl = Contract.from_abi("HelperImpl", "0x4A3A06D264e6F3B67e0BAae96F2457d3C4e3Fadd", HelperImpl.abi)
 
 # BZX.replaceContract(loanMaintenance, {"from": GUARDIAN_MULTISIG})
 # BZX.replaceContract(loanMaintenance_2, {"from": GUARDIAN_MULTISIG})
