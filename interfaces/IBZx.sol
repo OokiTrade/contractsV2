@@ -308,23 +308,6 @@ interface IBZx {
         bool toggle
     ) external;
 
-    /// @dev estimates margin exposure for simulated position
-    /// @param loanToken address of the loan token
-    /// @param collateralToken address of collateral token
-    /// @param loanTokenSent amout of loan token sent
-    /// @param collateralTokenSent amount of collateral token sent
-    /// @param interestRate yearly interest rate
-    /// @param newPrincipal principal amount of the loan
-    /// @return estimated margin exposure amount
-    function getEstimatedMarginExposure(
-        address loanToken,
-        address collateralToken,
-        uint256 loanTokenSent,
-        uint256 collateralTokenSent,
-        uint256 interestRate,
-        uint256 newPrincipal
-    ) external view returns (uint256);
-
     /// @dev calculates required collateral for simulated position
     /// @param loanToken address of loan token
     /// @param collateralToken address of collateral token

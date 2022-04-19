@@ -23,11 +23,13 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
     {
         _setTarget(this.borrowOrTradeFromPool.selector, target);
         _setTarget(this.setDelegatedManager.selector, target);
-        _setTarget(this.getEstimatedMarginExposure.selector, target); // DEPRECATED, remove next deploy
         _setTarget(this.getRequiredCollateral.selector, target);
         _setTarget(this.getRequiredCollateralByParams.selector, target);
         _setTarget(this.getBorrowAmount.selector, target);
         _setTarget(this.getBorrowAmountByParams.selector, target);
+
+        // TODO remove next deploy
+        _setTarget(bytes4(keccak256("getEstimatedMarginExposure(address,address,uint256,uint256,uint256,uint256,bytes")), address(0));
     }
 
     // Note: Only callable by loan pools (iTokens)
@@ -104,33 +106,6 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
             delegated,
             toggle
         );
-    }
-
-
-    // DEPRECATED, UI going to calculate this
-    function getEstimatedMarginExposure(
-        address trader,
-        address loanToken,
-        address collateralToken,
-        uint256 loanTokenSent,
-        uint256 collateralTokenSent,
-        uint256 /*interestRate*/,
-        uint256 /*newPrincipal*/,
-        bytes calldata payload)
-        external
-        returns (uint256 value)
-    {
-        value = _swapsExpectedReturn(
-            trader,
-            loanToken,
-            collateralToken,
-            loanTokenSent,
-            payload
-        );
-        if (value != 0) {
-            return collateralTokenSent
-                .add(value);
-        }
     }
 
     function getRequiredCollateral(
