@@ -22,6 +22,7 @@ contract LoanMaintenanceEvents {
         uint256 withdrawAmount
     );
 
+    // DEPRECATED
     event ExtendLoanDuration(
         address indexed user,
         address indexed depositToken,
@@ -31,6 +32,7 @@ contract LoanMaintenanceEvents {
         uint256 newEndTimestamp
     );
 
+    // DEPRECATED
     event ReduceLoanDuration(
         address indexed user,
         address indexed withdrawToken,
@@ -45,6 +47,7 @@ contract LoanMaintenanceEvents {
         uint256 depositValueAsCollateralToken
     );
 
+    // DEPRECATED
     event ClaimReward(
         address indexed user,
         address indexed receiver,

@@ -10,7 +10,8 @@ import "../../core/State.sol";
 import "../../events/LoanMaintenanceEvents.sol";
 import "../../governance/PausableGuardian.sol";
 import "../../mixins/InterestHandler.sol";
-
+import "../../utils/InterestOracle.sol";
+import "../../utils/TickMathV1.sol";
 
 contract LoanMaintenance_2 is State, LoanMaintenanceEvents, PausableGuardian, InterestHandler {
 
@@ -22,6 +23,7 @@ contract LoanMaintenance_2 is State, LoanMaintenanceEvents, PausableGuardian, In
         _setTarget(this.transferLoan.selector, target);
         _setTarget(this.settleInterest.selector, target);
         _setTarget(this.getInterestModelValues.selector, target);
+        _setTarget(this.getTWAI.selector, target);
     }
 
     function getInterestModelValues(
@@ -90,6 +92,24 @@ contract LoanMaintenance_2 is State, LoanMaintenanceEvents, PausableGuardian, In
             msg.sender, // loan pool
             loanId
         );
+    }
+
+    function getTWAI(
+        address pool)
+        external
+        view
+        returns (uint256)
+    {
+        uint32 timeSinceUpdate = uint32(block.timestamp.sub(poolLastUpdateTime[pool]));
+        return TickMathV1.getSqrtRatioAtTick(poolInterestRateObservations[pool].arithmeticMean(
+            uint32(block.timestamp),
+            [timeSinceUpdate+twaiLength, timeSinceUpdate],
+            timeSinceUpdate >= 60 ?
+                TickMathV1.getTickAtSqrtRatio(uint160(poolLastInterestRate[pool])) :
+                poolInterestRateObservations[pool][poolLastIdx[pool]].tick,
+            poolLastIdx[pool],
+            uint8(-1)
+        ));
     }
     
 }
