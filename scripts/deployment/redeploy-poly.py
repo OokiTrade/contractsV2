@@ -26,7 +26,8 @@ loanTokenLogicStandard = Contract.from_abi("LoanTokenLogicStandard", "0xB5f8A743
 loanTokenLogicWeth = Contract.from_abi("LoanTokenLogicWeth", "0x640235129F4cE151A501680DEA1e88cAC679a366", LoanTokenLogicWeth.abi)
 
 ookiPriceFeed = Contract.from_abi("OOKIPriceFeed", "0x392b7Baf9dBf56a0AcA52f0Ba8bC1D7451Ef8A4A", OOKIPriceFeed.abi)
-helperImpl = Contract.from_abi("HelperImpl", "0xcBC774c564f84eb6F5A388f97a2F447cC6F26791", HelperImpl.abi)
+# helperImpl = Contract.from_abi("HelperImpl", "0xcBC774c564f84eb6F5A388f97a2F447cC6F26791", HelperImpl.abi) # wrong bzx in constants
+helperImpl = Contract.from_abi("HelperImpl", "0x3Bcf823F4e97a44BA6F7d37806018302Dd74ED7d", HelperImpl.abi)
 
 # BZX.replaceContract(loanMaintenance, {"from": GUARDIAN_MULTISIG})
 # BZX.replaceContract(loanMaintenance_2, {"from": GUARDIAN_MULTISIG})
