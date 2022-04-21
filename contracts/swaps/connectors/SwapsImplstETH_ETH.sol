@@ -10,6 +10,7 @@ import "../../../interfaces/ICurve.sol";
 import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 import "../ISwapsImpl.sol";
 import "../../interfaces/IwstETH.sol";
+import "../../interfaces/IstETH.sol";
 
 contract SwapsImplstETH_ETH is State, ISwapsImpl {
     using SafeERC20 for IERC20;
@@ -144,9 +145,9 @@ contract SwapsImplstETH_ETH is State, ISwapsImpl {
         sourceTokenAmountUsed = minSourceTokenAmount;
         if (sourceTokenAddress == WETH) {
             IWeth(WETH).withdraw(minSourceTokenAmount);
-            STETH.call.value(minSourceTokenAmount)("");
+            destTokenAmountReceived = IstETH(STETH).submit.value(minSourceTokenAmount)(address(this));
             destTokenAmountReceived = IwstETH(WSTETH).wrap(
-                minSourceTokenAmount
+                destTokenAmountReceived
             );
         } else {
             destTokenAmountReceived = IwstETH(WSTETH).unwrap(
