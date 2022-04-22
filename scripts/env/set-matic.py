@@ -27,4 +27,3 @@ MULTICALL3 = Contract.from_abi("MULTICALL3", "0xcA11bde05977b3631167028862bE2a17
 
 OOKI = Contract.from_abi("OOKI", "0xCd150B1F528F326f5194c012f32Eb30135C7C2c9", interface.ERC20.abi)
 SWEEP_FEES = Contract.from_abi("SWEEP_FEES", "0x8c02eDeE0c759df83e31861d11E6918Dd93427d2", FeeExtractAndDistribute_Polygon.abi)
-BUYBACK = Contract.from_abi("BUYBACK", "0x12EBd8263A54751Aaf9d8C2c74740A8e62C0AfBe", BuyBackAndBurn.abi)
