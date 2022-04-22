@@ -2,7 +2,7 @@ from brownie import *
 import math
 exec(open("./scripts/env/set-eth.py").read())
 deployer = accounts[2]
-gasPrice = Wei("16 gwei")
+gasPrice = Wei("13 gwei")
 index = deployer.nonce
 
 ## TickMathV1 deploy
@@ -81,3 +81,40 @@ ookiPriceFeed = OOKIPriceFeed.deploy({"from": deployer, "gas_price": gasPrice, "
 
 index = index + 1
 helperImpl = HelperImpl.deploy({"from": deployer, "gas_price": gasPrice, "nonce": index, "required_confs": 0})
+
+
+
+
+# >>> exec(open("./scripts/dao-proposals/OOIP-11-loan-migration/before_proposal.py").read())
+# Transaction sent: 0xe910f1193fd05d409f79b1804e585d93fc64443f90011c1568b5cec1cf39d5d5
+#   Gas price: 13.0 gwei   Gas limit: 501806   Nonce: 189
+# Transaction sent: 0x5343c27bc046873e714d3b96db7fd3b699641daea099d265990b0c3ecb2ade6a
+#   Gas price: 13.0 gwei   Gas limit: 1740128   Nonce: 190
+#   File "<console>", line 1, in <module>
+#   File "<string>", line 16, in <module>
+#   File "brownie/network/contract.py", line 532, in __call__
+#     return tx["from"].deploy(
+#   File "brownie/network/account.py", line 509, in deploy
+#     data = contract.deploy.encode_input(*args)
+#   File "brownie/network/contract.py", line 556, in encode_input
+#     raise UndeployedLibrary(
+# UndeployedLibrary: Contract requires 'TickMathV1' library, but it has not been deployed yet
+# >>> tickMath = TickMathV1.deploy({"from": deployer, "gas_price": Wei("20 gwei"), "nonce": 189, "required_confs": 0})
+# Transaction sent: 0xedbcba00aff725d9acd53d3a405706d9b9ec85cebd0f0d3ec5a742a4db0898f2
+#   File "<console>", line 1, in <module>. |
+#   File "brownie/network/contract.py", line 532, in __call__
+#     return tx["from"].deploy(
+#   File "brownie/network/account.py", line 510, in deploy
+#     receipt, exc = self._make_transaction(
+#   File "brownie/network/account.py", line 744, in _make_transaction
+#     response = self._transact(tx, allow_revert)  # type: ignore
+#   File "brownie/network/account.py", line 994, in _transact
+#     response = self._provider.make_request("account_signTransaction", [tx])
+#   File "web3/providers/ipc.py", line 252, in make_request
+#     timeout.sleep(0)
+#   File "web3/_utils/threads.py", line 89, in sleep
+#     self.check()
+#   File "web3/_utils/threads.py", line 82, in check
+#     raise self
+# Timeout: 120 seconds
+# >>>
