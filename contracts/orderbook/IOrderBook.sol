@@ -64,11 +64,11 @@ interface IOrderBook {
 
     /// Returns Deposits contract address
     /// @return vault Deposits Contract
-    function vault() external view returns(address vault);
+    function VAULT() external view returns(address vault);
 
     /// Returns Protocol contract address
     /// @return protocol ooki protocol contract
-    function protocol() external view returns(address protocol);
+    function PROTOCOL() external view returns(address protocol);
 
     /// Returns minimum trade size in USDC
     /// @return size USDC amount
