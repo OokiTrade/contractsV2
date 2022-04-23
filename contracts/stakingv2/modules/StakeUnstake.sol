@@ -32,7 +32,6 @@ contract StakeUnstake is Common {
         _setTarget(this.exit.selector, target);
     }
 
-
     function totalSupplyByAsset(
         address token)
     external
@@ -43,10 +42,14 @@ contract StakeUnstake is Common {
     }
 
     function _pendingSushiRewards(address _user) internal view returns (uint256) {
-        uint256 pendingSushi = IMasterChefSushi2(SUSHI_MASTERCHEF).pendingSushi(OOKI_ETH_SUSHI_MASTERCHEF_PID, address(this));
+        uint256 lpBalance =  balanceOfByAsset(OOKI_ETH_LP, _user);
+        IStakingV2.AltRewardsUserInfo memory altRewardsUserInfo = userAltRewardsInfo[_user][SUSHI];
+        if(lpBalance == 0 && altRewardsUserInfo.pendingRewards == 0)
+            return 0;
 
+        uint256 pendingSushi = IMasterChefSushi2(SUSHI_MASTERCHEF).pendingSushi(OOKI_ETH_SUSHI_MASTERCHEF_PID, address(this));
         uint256 totalSupply = _totalSupplyPerToken[OOKI_ETH_LP];
-        return _pendingAltRewards(SUSHI, _user, balanceOfByAsset(OOKI_ETH_LP, _user), totalSupply != 0 ? pendingSushi.mul(1e12).div(totalSupply) : 0);
+        return _pendingAltRewards(SUSHI, _user,lpBalance, altRewardsUserInfo, totalSupply != 0 ? pendingSushi.mul(1e12).div(totalSupply) : 0);
     }
 
 
@@ -54,17 +57,15 @@ contract StakeUnstake is Common {
         address token,
         address _user,
         uint256 userSupply,
+        IStakingV2.AltRewardsUserInfo memory altRewardsUserInfo,
         uint256 extraRewardsPerShare
     ) internal view returns (uint256) {
 
 
-        uint256 _lastRewardsSync = vestingLastSync[_user];
+        uint256 _lastRewardsSync = altRewardsUserInfo.syncStamp == 0 ? vestingLastSync[_user] : altRewardsUserInfo.syncStamp;
         uint _altRewardsStartStamp = altRewardsStartStamp[token];
         if(_lastRewardsSync<_altRewardsStartStamp)
             _lastRewardsSync = _altRewardsStartStamp;
-
-        if (_lastRewardsSync == 0) return 0;
-        IStakingV2.AltRewardsUserInfo memory altRewardsUserInfo = userAltRewardsPerShare[_user][token];
 
         return altRewardsUserInfo.pendingRewards.add(
             (block.timestamp - _lastRewardsSync).mul(altRewardsPerSharePerSecond[token]).mul(userSupply).div(1e12)
@@ -94,7 +95,6 @@ contract StakeUnstake is Common {
             if (stakeAmount == 0) {
                 continue;
             }
-            uint256 pendingBefore = (token == OOKI_ETH_LP) ? _pendingSushiRewards(msg.sender) : 0;
             _balancesPerToken[token][msg.sender] = _balancesPerToken[token][msg.sender].add(stakeAmount);
             _totalSupplyPerToken[token] = _totalSupplyPerToken[token].add(stakeAmount);
 
@@ -102,9 +102,7 @@ contract StakeUnstake is Common {
             // Deposit to sushi masterchef
             if (token == OOKI_ETH_LP) {
                 _depositToSushiMasterchef(IERC20(OOKI_ETH_LP).balanceOf(address(this))); // updates altRewardsPerShare[SUSHI]
-                userAltRewardsPerShare[msg.sender][SUSHI] = IStakingV2.AltRewardsUserInfo({rewardsPerShare: altRewardsPerShare[SUSHI], pendingRewards: pendingBefore});
             }
-
             emit Stake(msg.sender, token, currentDelegate, stakeAmount);
         }
 
@@ -132,7 +130,7 @@ contract StakeUnstake is Common {
             if (unstakeAmount > stakedAmount) {
                 unstakeAmount = stakedAmount;
             }
-            uint256 pendingBefore = (token == OOKI_ETH_LP) ? _pendingSushiRewards(msg.sender) : 0;
+
             _balancesPerToken[token][msg.sender] = stakedAmount - unstakeAmount; // will not overflow
             _totalSupplyPerToken[token] = _totalSupplyPerToken[token].sub(unstakeAmount);
 
@@ -144,14 +142,13 @@ contract StakeUnstake is Common {
 
             // Withdraw from sushi masterchef
             if (token == OOKI_ETH_LP) {
-                uint256 pending = _pendingSushiRewards(msg.sender);
                 _withdrawFromSushiMasterchef(unstakeAmount); //This will trigger claim from masterchef, updates altRewardsPerShare[SUSHI]
-                userAltRewardsPerShare[msg.sender][SUSHI] = IStakingV2.AltRewardsUserInfo({rewardsPerShare: altRewardsPerShare[SUSHI], pendingRewards: pendingBefore});
             }
 
             IERC20(token).safeTransfer(msg.sender, unstakeAmount);
             emit Unstake(msg.sender, token, currentDelegate, unstakeAmount);
         }
+
         _voteDelegator.moveDelegatesByVotingBalance(votingBalanceBefore, _votingFromStakedBalanceOf(msg.sender, _proposalState, true), msg.sender);
     }
 
@@ -233,12 +230,12 @@ contract StakeUnstake is Common {
         if (sushiRewards != 0) {
             _addAltRewards(SUSHI, sushiRewards);
         }
-        uint256 pendingSushi = _pendingAltRewards(SUSHI, _user, lptUserSupply, 0);
+        uint256 pendingSushi = _pendingAltRewards(SUSHI, _user, lptUserSupply, userAltRewardsInfo[_user][SUSHI], 0);
         if (pendingSushi != 0) {
             IERC20(SUSHI).safeTransfer(_user, pendingSushi);
         }
 
-        userAltRewardsPerShare[_user][SUSHI] = IStakingV2.AltRewardsUserInfo({rewardsPerShare: altRewardsPerShare[SUSHI], pendingRewards: 0});
+        userAltRewardsInfo[_user][SUSHI] = IStakingV2.AltRewardsUserInfo({syncStamp: block.timestamp, pendingRewards: 0});
         return pendingSushi;
     }
 
@@ -273,13 +270,18 @@ contract StakeUnstake is Common {
 
         (ookiRewards[account], stableCoinRewards[account]) = _syncVesting(account, ookiRewardsEarned, stableCoinRewardsEarned, ookiRewardsVesting, stableCoinRewardsVesting);
 
+        uint256 pending = _pendingSushiRewards(account);
+
         vestingLastSync[account] = block.timestamp;
+
+        userAltRewardsInfo[account][SUSHI] = IStakingV2.AltRewardsUserInfo({syncStamp: block.timestamp, pendingRewards: pending});
+
         _;
     }
 
     function earned(address account)
         external
-         
+        view
         returns (
             uint256 ookiRewardsEarned,
             uint256 stableCoinRewardsEarned,
@@ -296,13 +298,7 @@ contract StakeUnstake is Common {
         uint256 multiplier = vestedBalanceForAmount(1e36, 0, block.timestamp);
         ookiRewardsVesting = ookiRewardsVesting.sub(ookiRewardsVesting.mul(multiplier).div(1e36));
         stableCoinRewardsVesting = stableCoinRewardsVesting.sub(stableCoinRewardsVesting.mul(multiplier).div(1e36));
-        uint256 pendingSushi = IMasterChefSushi2(SUSHI_MASTERCHEF).pendingSushi(OOKI_ETH_SUSHI_MASTERCHEF_PID, address(this));
-        sushiRewardsEarned = _pendingAltRewards(
-            SUSHI,
-            account,
-            balanceOfByAsset(OOKI_ETH_LP, account),
-            (_totalSupplyPerToken[OOKI_ETH_LP] != 0) ? pendingSushi.mul(1e12).div(_totalSupplyPerToken[OOKI_ETH_LP]) : 0
-        );
+        sushiRewardsEarned = _pendingSushiRewards(account);
     }
 
     function _earned(
@@ -311,7 +307,7 @@ contract StakeUnstake is Common {
         uint256 _stableCoinPerToken
     )
         internal
-        
+        view
         returns (
             uint256 ookiRewardsEarned,
             uint256 stableCoinRewardsEarned,

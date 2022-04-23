@@ -15,7 +15,7 @@ interface IStakingV2 {
     }
 
     struct AltRewardsUserInfo {
-        uint256 rewardsPerShare;
+        uint256 syncStamp;
         uint256 pendingRewards;
     }
 

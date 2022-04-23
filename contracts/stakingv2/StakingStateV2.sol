@@ -53,7 +53,7 @@ contract StakingStateV2 is StakingConstantsV2, Ownable {
     mapping(address => uint256) public altRewardsPerShare; // token => value
 
     // Token => (User => Info)
-    mapping(address => mapping(address => IStakingV2.AltRewardsUserInfo)) public userAltRewardsPerShare;
+    mapping(address => mapping(address => IStakingV2.AltRewardsUserInfo)) public userAltRewardsInfo;
 
     address public voteDelegator;
 

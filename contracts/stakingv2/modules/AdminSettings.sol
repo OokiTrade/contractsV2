@@ -19,6 +19,7 @@ contract AdminSettings is StakingStateV2 {
         _setTarget(this.migrateSushi.selector, target);
         _setTarget(this.altRewardsStartStamp.selector, target);
         _setTarget(this.altRewardsPerSharePerSecond.selector, target);
+        _setTarget(this.userAltRewardsInfo.selector, target);
 
     }
 
@@ -34,6 +35,7 @@ contract AdminSettings is StakingStateV2 {
         external
         onlyOwner
     {
+        require(altRewardsPerSharePerSecond[SUSHI] == 0 || altRewardsStartStamp[SUSHI] > 0, "Already migrated");
         altRewardsStartStamp[SUSHI] = 1643666400; //20220201
         IMasterChefSushi src = IMasterChefSushi(srcMasterchef);
         IMasterChefSushi2 dst = IMasterChefSushi2(dstMasterchef);
