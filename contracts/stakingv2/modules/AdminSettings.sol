@@ -8,6 +8,7 @@ pragma experimental ABIEncoderV2;
 
 import "../StakingStateV2.sol";
 import "../../farm/interfaces/IMasterChefSushi.sol";
+import "../../farm/interfaces/IMasterChefSushi2.sol";
 
 contract AdminSettings is StakingStateV2 {
     function initialize(address target) external onlyOwner {
@@ -15,13 +16,38 @@ contract AdminSettings is StakingStateV2 {
         _setTarget(this.setGovernor.selector, target);
         _setTarget(this.setApprovals.selector, target);
         _setTarget(this.setVoteDelegator.selector, target);
+        _setTarget(this.migrateSushi.selector, target);
+        _setTarget(this.altRewardsStartStamp.selector, target);
+        _setTarget(this.altRewardsPerSharePerSecond.selector, target);
+
     }
 
     // Withdraw all from sushi masterchef
     function exitSushi() external onlyOwner {
-        IMasterChefSushi chef = IMasterChefSushi(SUSHI_MASTERCHEF);
+        IMasterChefSushi2 chef = IMasterChefSushi2(SUSHI_MASTERCHEF);
         uint256 balance = chef.userInfo(OOKI_ETH_SUSHI_MASTERCHEF_PID, address(this)).amount;
-        chef.withdraw(OOKI_ETH_SUSHI_MASTERCHEF_PID, balance);
+        chef.withdraw(OOKI_ETH_SUSHI_MASTERCHEF_PID, balance, address(this));
+    }
+
+    //Migrate from v1 pool to v2
+    function migrateSushi(uint256 srcPoolPid, address srcMasterchef, uint256 dstPoolPid, address dstMasterchef)
+        external
+        onlyOwner
+    {
+        altRewardsStartStamp[SUSHI] = 1643666400; //20220201
+        IMasterChefSushi src = IMasterChefSushi(srcMasterchef);
+        IMasterChefSushi2 dst = IMasterChefSushi2(dstMasterchef);
+        uint256 balance = src.userInfo(srcPoolPid, address(this)).amount;
+        src.withdraw(srcPoolPid, balance);
+        setApprovals(OOKI_ETH_LP, address(src), 0);
+        setApprovals(OOKI_ETH_LP, address(dst), uint256(-1));
+        dst.deposit(dstPoolPid, balance, address(this));
+
+        uint256 totalSupply = _totalSupplyPerToken[OOKI_ETH_LP];
+        require(totalSupply != 0, "no deposits");
+        uint256 cliff = block.timestamp - altRewardsStartStamp[SUSHI];
+        altRewardsPerShare[SUSHI] = IERC20(SUSHI).balanceOf(address(this)).mul(1e12).div(totalSupply);
+        altRewardsPerSharePerSecond[SUSHI] = altRewardsPerShare[SUSHI].div(cliff);
     }
 
     // OnlyOwner functions
@@ -34,7 +60,7 @@ contract AdminSettings is StakingStateV2 {
         address _token,
         address _spender,
         uint256 _value
-    ) external onlyOwner {
+    ) public onlyOwner {
         IERC20(_token).safeApprove(_spender, _value);
     }
 

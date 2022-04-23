@@ -57,6 +57,9 @@ contract StakingStateV2 is StakingConstantsV2, Ownable {
 
     address public voteDelegator;
 
+    mapping(address => uint256) public altRewardsPerSharePerSecond; // token => value
+    mapping(address => uint256) public altRewardsStartStamp; // token => value
+
     function _setTarget(bytes4 sig, address target) internal {
         logicTargets[sig] = target;
 
