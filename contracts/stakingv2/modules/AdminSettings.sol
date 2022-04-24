@@ -17,10 +17,10 @@ contract AdminSettings is StakingStateV2 {
         _setTarget(this.setApprovals.selector, target);
         _setTarget(this.setVoteDelegator.selector, target);
         _setTarget(this.migrateSushi.selector, target);
-        _setTarget(this.altRewardsStartStamp.selector, target);
+        _setTarget(this.altRewardsTimestamp.selector, target);
         _setTarget(this.altRewardsPerSharePerSecond.selector, target);
         _setTarget(this.userAltRewardsInfo.selector, target);
-
+        _setTarget(this.setAltRewardsUserInfo.selector, target);
     }
 
     // Withdraw all from sushi masterchef
@@ -35,8 +35,8 @@ contract AdminSettings is StakingStateV2 {
         external
         onlyOwner
     {
-        require(altRewardsPerSharePerSecond[SUSHI] == 0 && altRewardsStartStamp[SUSHI] == 0, "Already migrated");
-        altRewardsStartStamp[SUSHI] = 1643666400; //20220201
+        require(altRewardsPerSharePerSecond[SUSHI] == 0 && altRewardsStartTimestamp[SUSHI] == 0, "Already migrated");
+        altRewardsStartTimestamp[SUSHI] = 1643666400; //20220201
         IMasterChefSushi src = IMasterChefSushi(srcMasterchef);
         IMasterChefSushi2 dst = IMasterChefSushi2(dstMasterchef);
         uint256 balance = src.userInfo(srcPoolPid, address(this)).amount;
@@ -47,9 +47,23 @@ contract AdminSettings is StakingStateV2 {
 
         uint256 totalSupply = _totalSupplyPerToken[OOKI_ETH_LP];
         require(totalSupply != 0, "no deposits");
-        uint256 cliff = block.timestamp - altRewardsStartStamp[SUSHI];
+        uint256 cliff = block.timestamp - altRewardsStartTimestamp[SUSHI];
         altRewardsPerShare[SUSHI] = IERC20(SUSHI).balanceOf(address(this)).mul(1e12).div(totalSupply);
         altRewardsPerSharePerSecond[SUSHI] = altRewardsPerShare[SUSHI].div(cliff);
+        altRewardsTimestamp[SUSHI] = block.timestamp;
+    }
+
+    function setAltRewardsUserInfo(address[] calldata users, uint256[] calldata stakingStartTimestamp, uint256[] calldata claimed)
+        external
+        onlyOwner
+    {
+        require(users.length == claimed.length && claimed.length == stakingStartTimestamp.length, "!length");
+        for (uint256 i = 0; i < users.length; i++) {
+            userAltRewardsInfo[users[i]][SUSHI].stakingStartTimestamp = stakingStartTimestamp[i];
+            if(claimed[i] != 0){
+                userAltRewardsInfo[users[i]][SUSHI].claimed = int256(claimed[i]);
+            }
+        }
     }
 
     // OnlyOwner functions
