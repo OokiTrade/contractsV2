@@ -243,7 +243,7 @@ stakeTopic = "0xc5017594d2723c038bb216e5bcef3ac65910ade839c0e63253bf5b59efbf0fd7
 
 users = []
 claimed = []
-stakingStartTimestamp = []
+stakingStartBlock = []
 OOKI_ETH_LP = Contract.from_abi("OOKI_ETH_LP", "0xEaaddE1E14C587a7Fb4Ba78eA78109BB32975f1e", interface.IPancakePair.abi)
 SUSHI = Contract.from_abi("SUSHI", "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2", TestToken.abi)
 for tx in arr:
@@ -278,5 +278,5 @@ for tx in arr:
                     result['stakingStartBlock'] = trans.block
                 users.append(address)
                 claimed.append(result['claimed'])
-                stakingStartTimestamp.append(result['stakingStartBlock'])
+                stakingStartBlock.append(result['stakingStartBlock'])
 
