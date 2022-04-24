@@ -119,7 +119,6 @@ contract StakeUnstake is Common {
                 }
 
                 uint256 _pending = _pendingSushiRewards(msg.sender);
-                uint256 _cliff = block.number - altRewardsStartBlock[SUSHI];
                 userAltRewardsInfo[msg.sender][SUSHI].stakingStartBlock = block.number;
                 userAltRewardsInfo[msg.sender][SUSHI].pending = _pending;
             }
@@ -165,7 +164,6 @@ contract StakeUnstake is Common {
             if (token == OOKI_ETH_LP) {
                 _withdrawFromSushiMasterchef(unstakeAmount);
                 uint256 _pending = _pendingSushiRewards(msg.sender);
-                uint256 _cliff = block.number - altRewardsStartBlock[SUSHI];
                 userAltRewardsInfo[msg.sender][SUSHI].stakingStartBlock = block.number;
                 userAltRewardsInfo[msg.sender][SUSHI].pending = _pending;
             }
@@ -437,9 +435,8 @@ contract StakeUnstake is Common {
         address poolAddress = token == SUSHI ? OOKI_ETH_LP : token;
         uint256 totalSupply = _totalSupplyPerToken[poolAddress];
         require(totalSupply != 0, "no deposits");
-        uint256 cliff = block.number - altRewardsStartBlock[token];
         _altRewardsPerShare = altRewardsPerShare[token].add(amount.mul(1e12).div(totalSupply));
-        _altRewardsPerSharePerBlock = _altRewardsPerShare.div(cliff);
+        _altRewardsPerSharePerBlock = _altRewardsPerShare.div(block.number - altRewardsStartBlock[token]);
         _altRewardsBlock = block.number;
 
     }
