@@ -265,17 +265,18 @@ for tx in arr:
 
                 if(address not in results):
                     results[address] = {
-                        'stakingStartTimestamp': 0,
+                        'stakingStartBlock': 0,
                         'claimed': 0
                     }
-                    users.append(address)
+
 
                 result = results[address]
                 if(log["topics"][0].hex() == claimTopic):
                     result['claimed'] = result['claimed'] + value
+                    result['stakingStartBlock'] = trans.block
                 if(log["topics"][0].hex() == stakeTopic):
-                    result['stakingStartTimestamp'] = trans.timestamp
-
+                    result['stakingStartBlock'] = trans.block
+                users.append(address)
                 claimed.append(result['claimed'])
-                stakingStartTimestamp.append(result['stakingStartTimestamp'])
+                stakingStartTimestamp.append(result['stakingStartBlock'])
 

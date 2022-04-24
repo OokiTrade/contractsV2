@@ -15,8 +15,8 @@ interface IStakingV2 {
     }
 
     struct AltRewardsUserInfo {
-        uint256 stakingStartTimestamp;
-        int256 claimed;
+        uint256 stakingStartBlock;
+        uint256 pending;
     }
 
     function getCurrentFeeTokens() external view returns (address[] memory);
