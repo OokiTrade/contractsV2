@@ -94,6 +94,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
 
     function withdrawGasFeeToken(uint256 amount) external {
         bytes32 orderID = keccak256(abi.encode(msg.sender, 0));
+        require(IDeposits(VAULT).getDeposit(orderID)-amount>(_histOrders[msg.sender].length())*_gasToSend(2500000), "too little gas left");
         IDeposits(VAULT).partialWithdraw(address(this), orderID, amount);
         IWeth(WRAPPED_TOKEN).withdraw(amount);
         msg.sender.call{value:amount}("");
@@ -184,6 +185,9 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
             ? order.base
             : order.loanTokenAddress;
         if (order.timeTillExpiration < block.timestamp) {
+            return false;
+        }
+        if (IDeposits(VAULT).getDeposit(keccak256(abi.encode(order.trader, 0))) < _gasToSend(2500000)) {
             return false;
         }
         if (order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {

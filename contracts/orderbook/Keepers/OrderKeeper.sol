@@ -7,7 +7,7 @@ contract OrderKeeper is PausableGuardian_0_8 {
     address public implementation;
     IOrderBook public orderBook;
 
-    function checkUpKeep(bytes calldata checkData)
+    function checkUpkeep(bytes calldata checkData)
         external
         returns (bool upkeepNeeded, bytes memory performData)
     {
@@ -24,7 +24,7 @@ contract OrderKeeper is PausableGuardian_0_8 {
         return (orderIDForExec != 0, abi.encode(orderIDForExec));
     }
 
-    function performUpKeep(bytes calldata performData) external pausable {
+    function performUpkeep(bytes calldata performData) external pausable {
         bytes32 orderId = abi.decode(performData, (bytes32));
         //emit OrderExecuted(trader,orderId);
         try orderBook.executeOrder(orderId) {

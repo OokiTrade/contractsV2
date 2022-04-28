@@ -50,12 +50,25 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         require(order.trader == msg.sender, "OrderBook: invalid trader");
     }
 
+    function _gasToSend(uint256 gasUsed) internal view returns (uint256) {
+        uint256 gasPrice = chainGasPrice == 0 ? IPriceFeeds(priceFeed).getFastGasPrice(WRAPPED_TOKEN) : chainGasPrice;
+        return gasUsed*gasPrice*2;
+    }
+
     function placeOrder(IOrderBook.Order calldata order) external pausable {
         _commonChecks(order);
         (uint256 amountUsed, address usedToken) = order.loanTokenAmount > order.collateralTokenAmount
             ? (order.loanTokenAmount, order.loanTokenAddress)
             : (order.collateralTokenAmount, order.base);
+        uint256 tradeSize;
+        if (usedToken == order.base) {
+            tradeSize = IPriceFeeds(priceFeed).queryReturn(order.base, order.loanTokenAddress, amountUsed)*order.leverage/10**18;
+        } else {
+            tradeSize = amountUsed*(order.leverage+1e18)/1e18;
+        }
+        require(IPriceFeeds(priceFeed).queryReturn(order.loanTokenAddress, USDC, tradeSize) > MIN_AMOUNT_IN_USDC, "OrderBook: trade too small");
         require(order.status==IOrderBook.OrderStatus.ACTIVE, "OrderBook: invalid order state");
+        require(IDeposits(VAULT).getDeposit(keccak256(abi.encode(order.trader,0)))>(_histOrders[order.trader].length()+1)*_gasToSend(2500000), "too little gas left");
         mainOBID++;
         bytes32 ID = keccak256(abi.encode(msg.sender, mainOBID));
         require(IDeposits(VAULT).getTokenUsed(ID) == address(0), "Orderbook: collision"); //in the very unlikely chance of collision on ID error is thrown
@@ -88,10 +101,19 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
             _allOrders[order.orderID].status==IOrderBook.OrderStatus.ACTIVE,
             "OrderBook: inactive order specified"
         );
+        (uint256 amountUsed, address usedToken) = order.loanTokenAmount > order.collateralTokenAmount
+            ? (order.loanTokenAmount, order.loanTokenAddress)
+            : (order.collateralTokenAmount, order.base);
+        uint256 tradeSize;
+        if (usedToken == order.base) {
+            tradeSize = IPriceFeeds(priceFeed).queryReturn(order.base, order.loanTokenAddress, amountUsed)*order.leverage/10**18;
+        } else {
+            tradeSize = amountUsed*(order.leverage+1e18)/1e18;
+        }
+        require(IPriceFeeds(priceFeed).queryReturn(order.loanTokenAddress, USDC, tradeSize) > MIN_AMOUNT_IN_USDC, "OrderBook: trade too small");
+
+
         if (order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
-            (uint256 amountUsed, address usedToken) = order.loanTokenAmount > order.collateralTokenAmount
-                ? (order.loanTokenAmount, order.loanTokenAddress)
-                : (order.collateralTokenAmount, order.base);
             uint256 storedAmount = IDeposits(VAULT).getDeposit(
                 order.orderID
             );
