@@ -47,7 +47,6 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
                         _isActiveLoan(order.loanID)
                     : _isActiveLoan(order.loanID),
                 "OrderBook: non-active loan specified");
-        require(order.loanDataBytes.length < 3500, "OrderBook: loanDataBytes too complex");
         require(order.trader == msg.sender, "OrderBook: invalid trader");
     }
 
@@ -56,30 +55,6 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         (uint256 amountUsed, address usedToken) = order.loanTokenAmount > order.collateralTokenAmount
             ? (order.loanTokenAmount, order.loanTokenAddress)
             : (order.collateralTokenAmount, order.base);
-        address srcToken;
-        if (order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
-            if (usedToken == order.base) {
-                amountUsed = IPriceFeeds(priceFeed).queryReturn(
-                    order.base,
-                    order.loanTokenAddress,
-                    amountUsed
-                );
-                amountUsed = (amountUsed * order.leverage) / 10**18;
-                srcToken = order.loanTokenAddress;
-            } else {
-                amountUsed +=
-                    (amountUsed * order.leverage) /
-                    10**18; //adjusts leverage
-                srcToken = order.loanTokenAddress;
-            }
-        } else {
-            srcToken = order.base;
-        }
-        require(
-            IPriceFeeds(priceFeed).queryReturn(srcToken, USDC, amountUsed) >=
-                MIN_AMOUNT_IN_USDC,
-            "OrderBook: Order too small"
-        );
         require(order.status==IOrderBook.OrderStatus.ACTIVE, "OrderBook: invalid order state");
         mainOBID++;
         bytes32 ID = keccak256(abi.encode(msg.sender, mainOBID));

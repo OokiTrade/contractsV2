@@ -24,6 +24,8 @@ contract OrderBookStorage is OrderBookConstants, PausableGuardian_0_8 {
 
     address public priceFeed = address(0);
 
+    uint256 public chainGasPrice;
+
     function _setTarget(bytes4 sig, address target) internal {
         logicTargets[sig] = target;
     }

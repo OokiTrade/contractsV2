@@ -4,6 +4,7 @@ import "../Storage/OrderBookStorage.sol";
 import "../../swaps/ISwapsImpl.sol";
 import "../OrderVault/IDeposits.sol";
 import "../../mixins/Flags.sol";
+import "../../interfaces/IWeth.sol";
 import "@openzeppelin-4.3.2/token/ERC20/utils/SafeERC20.sol";
 
 contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
@@ -11,6 +12,9 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
     using SafeERC20 for IERC20;
 
     function initialize(address target) public onlyOwner {
+        _setTarget(this.getGasPrice.selector, target);
+        _setTarget(this.depositGasFeeToken.selector, target);
+        _setTarget(this.withdrawGasFeeToken.selector, target);
         _setTarget(this.getDexRate.selector, target);
         _setTarget(this.clearOrder.selector, target);
         _setTarget(this.prelimCheck.selector, target);
@@ -20,6 +24,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         _setTarget(this.priceCheck.selector, target);
         _setTarget(this.executeOrder.selector, target);
         _setTarget(this.setPriceFeed.selector, target);
+        _setTarget(this.setGasPrice.selector, target);
     }
 
     function _executeTradeOpen(IOrderBook.Order memory order) internal {
@@ -64,6 +69,39 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
 
     function _isActiveLoan(bytes32 ID) internal view returns (bool) {
         return PROTOCOL.loans(ID).active;
+    }
+
+    function getGasPrice() public view returns (uint256) {
+        if (chainGasPrice == 0) {
+            return IPriceFeeds(priceFeed).getFastGasPrice(WRAPPED_TOKEN);
+        }
+        return chainGasPrice;
+    }
+
+    function _gasToSend(uint256 gasUsed) internal view returns (uint256) {
+        return gasUsed*getGasPrice()*2;
+    }
+
+    function depositGasFeeToken(uint256 amount) external payable {
+        require(msg.value==0||amount==0, "cant be both");
+        if(msg.value!=0){
+            IWeth(WRAPPED_TOKEN).deposit{value:msg.value}();
+            IERC20(WRAPPED_TOKEN).transfer(msg.sender, msg.value);
+        }
+        bytes32 orderID = keccak256(abi.encode(msg.sender, 0));
+        IDeposits(VAULT).deposit(orderID, amount, msg.sender, WRAPPED_TOKEN);
+    }
+
+    function withdrawGasFeeToken(uint256 amount) external {
+        bytes32 orderID = keccak256(abi.encode(msg.sender, 0));
+        IDeposits(VAULT).partialWithdraw(address(this), orderID, amount);
+        IWeth(WRAPPED_TOKEN).withdraw(amount);
+        msg.sender.call{value:amount}("");
+    }
+
+    function _spendGasFeeToken(uint256 amount, address trader, address receiver) internal {
+        bytes32 orderID = keccak256(abi.encode(trader, 0));
+        IDeposits(VAULT).partialWithdraw(receiver, orderID, amount);
     }
 
     function clearOrder(bytes32 orderID) public view returns (bool) {
@@ -267,6 +305,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
     }
 
     function executeOrder(bytes32 orderID) external pausable {
+        uint256 gasStart = gasleft();
         IOrderBook.Order memory order = _allOrders[orderID];
         require(
             order.status == IOrderBook.OrderStatus.ACTIVE,
@@ -314,7 +353,6 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
             _allOrderIDs.remove(orderID);
             _histOrders[order.trader].remove(orderID);
             emit OrderExecuted(order.trader, orderID);
-            return;
         }
         else if (order.orderType == IOrderBook.OrderType.LIMIT_CLOSE) {
             uint256 dSwapValue;
@@ -338,7 +376,6 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
             _allOrderIDs.remove(orderID);
             _histOrders[order.trader].remove(orderID);
             emit OrderExecuted(order.trader, orderID);
-            return;
         }
         else if (order.orderType == IOrderBook.OrderType.MARKET_STOP) {
             bool operand;
@@ -379,11 +416,15 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
             _allOrderIDs.remove(orderID);
             _histOrders[order.trader].remove(orderID);
             emit OrderExecuted(order.trader, orderID);
-            return;
         }
+        _spendGasFeeToken(_gasToSend(gasStart-gasleft()), order.trader, msg.sender);
     }
 
     function setPriceFeed(address newFeed) external onlyOwner {
         priceFeed = newFeed;
+    }
+
+    function setGasPrice(uint256 price) external onlyGuardian {
+        chainGasPrice = price;
     }
 }

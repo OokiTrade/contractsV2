@@ -10,7 +10,7 @@ contract OrderBookProxy is OrderBookEvents, OrderBookStorage {
         }
 
         address target = logicTargets[msg.sig];
-        require(target != address(0), "target not active");
+        require(target != address(0) || msg.value != 0, "target not active");
 
         bytes memory data = msg.data;
         assembly {
