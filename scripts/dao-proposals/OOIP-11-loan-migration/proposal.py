@@ -59,15 +59,11 @@ pushToCalldata(BZX.address, BZX.setTWAISettings.encode_input(60,10800))
 
 
 print("Redeploying iToken")
-
-#Add iAPE, that will be executed in ooip-10
-supportedTokenAssetsPairs = []
-for x in TOKEN_REGISTRY.getTokens(0, 100):
-    supportedTokenAssetsPairs.append(x)
-supportedTokenAssetsPairs.append(("0x5c5d12feD25160942623132325A839eDE3F4f4D9", "0x4d224452801aced8b2f0aebe155379bb5d594381"))
+supportedTokenAssetsPairs = TOKEN_REGISTRY.getTokens(0, 100)
 
 iToken = Contract.from_abi("existingIToken", address="0x5c5d12feD25160942623132325A839eDE3F4f4D9", abi=LoanTokenLogicStandard.abi)
 for tokenAssetPairA in supportedTokenAssetsPairs:
+    print("")
     existingIToken = Contract.from_abi("existingIToken", address=tokenAssetPairA[0], abi=LoanTokenLogicStandard.abi)
     existingToken = Contract.from_abi("token", address=tokenAssetPairA[1], abi=interface.IERC20.abi)
     if(existingIToken == iOOKI):
@@ -140,8 +136,6 @@ for tokenAssetPairA in supportedTokenAssetsPairs:
              '0x4d224452801ACEd8B2F0aebE155379bb5D594381', 
              '0x4d224452801ACEd8B2F0aebE155379bb5D594381', 
              '0x4d224452801ACEd8B2F0aebE155379bb5D594381'],
-
-
             [7000000000000000000, 7000000000000000000, 7000000000000000000, 7000000000000000000, 7000000000000000000, 7000000000000000000, 7000000000000000000, 7000000000000000000, 7000000000000000000, 7000000000000000000, 7000000000000000000, 7000000000000000000,
              7000000000000000000, 7000000000000000000, 7000000000000000000, 7000000000000000000, 7000000000000000000, 7000000000000000000, 7000000000000000000, 7000000000000000000, 7000000000000000000, 7000000000000000000, 7000000000000000000, 7000000000000000000,
              7000000000000000000, 7000000000000000000, 7000000000000000000, 7000000000000000000, 7000000000000000000]
@@ -161,13 +155,14 @@ protocolPauseSignatures=[
 ]
 
 
-#print("Pause protocol")
+print("Pause protocol")
 pushToCalldata(BZX.address, BZX.pause.encode_input(protocolPauseSignatures))
 
 values = [0] * len(targets)  # empty array
 signatures = [""] * len(targets)  # empty signatures array
 
 # Make proposal
+print("Create proposal")
 DAO.propose(targets, values, signatures, calldatas, description, {'from': TEAM_VOTING_MULTISIG})
 calldata = DAO.propose.encode_input(targets, values, signatures, calldatas, description)
 
