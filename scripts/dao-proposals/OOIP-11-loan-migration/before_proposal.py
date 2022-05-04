@@ -25,8 +25,8 @@ loanTokenLogicStandard = Contract.from_abi("LoanTokenLogicStandard", "0x528d205b
 loanTokenLogicWeth = Contract.from_abi("LoanTokenLogicWeth", "0x9b4dc5a53331c8d300ed75d84525d824d38c028a", LoanTokenLogicWeth.abi)
 
 ookiPriceFeed = Contract.from_abi("OOKIPriceFeed", "0xd219325cf1c4fa17e5984fea5911d0ba0cae60f9", OOKIPriceFeed.abi)
-helperImpl = Contract.from_abi("HelperImpl", "0xb923fc426642ed83e411bd936e4d0e4c91303d8f", HelperImpl.abi) # todo deploy proxy
-
+helperImpl = Contract.from_abi("HelperImpl", "0xb923fc426642ed83e411bd936e4d0e4c91303d8f", HelperImpl.abi)  
+helperProxy = Contract.from_abi("HelperProxy", "", HelperProxy.abi) # todo deploy proxy
 
 loanSettings = Contract.from_abi("LoanSettings", "0x307682d3cbc3f94345b8ba8f3168fd883d68af5c", LoanSettings.abi)
 
@@ -36,80 +36,81 @@ loanMaintenance_2 = Contract.from_abi("LoanMaintenance_2", "0xaecad4373dc7fd95c3
 loanClosings = Contract.from_abi("LoanClosings", "0x84c22684d3a901c2bae77f30deed3258817e737a", LoanClosings.abi)
 
 
-## TickMathV1 deploy
-# tickMath = TickMathV1.deploy({"from": deployer, "gas_price": gasPrice, "nonce": 189, "required_confs": 0})
-# 
-## ProtocolPausableGuardian
-guardianImpl = ProtocolPausableGuardian.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 190, "required_confs": 0})
-#guardianImpl = Contract.from_abi("guardianImpl", address="0xf2FBaD7E59f0DeeE0ec2E724d2b6827Ea1cCf35f", abi=ProtocolPausableGuardian.abi)
+# ## TickMathV1 deploy
+# # tickMath = TickMathV1.deploy({"from": deployer, "gas_price": gasPrice, "nonce": 189, "required_confs": 0})
+# # 
+# ## ProtocolPausableGuardian
+# guardianImpl = ProtocolPausableGuardian.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 190, "required_confs": 0})
+# #guardianImpl = Contract.from_abi("guardianImpl", address="0xf2FBaD7E59f0DeeE0ec2E724d2b6827Ea1cCf35f", abi=ProtocolPausableGuardian.abi)
 
-# LoanSettings require mathTick
-settingsImpl = LoanSettings.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 205, "required_confs": 0})
-#settingsImpl = Contract.from_abi("settingsImpl", address="0xBf2c07A86b73c6E338767E8160a24F55a656A9b7", abi=LoanSettings.abi)
+# # LoanSettings require mathTick
+# settingsImpl = LoanSettings.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 205, "required_confs": 0})
+# #settingsImpl = Contract.from_abi("settingsImpl", address="0xBf2c07A86b73c6E338767E8160a24F55a656A9b7", abi=LoanSettings.abi)
 
-## LoanOpenings
-openingsImpl = LoanOpenings.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 191, "required_confs": 0})
-#openingsImpl = Contract.from_abi("openingsImpl", address="0xF082901C5d59846fbFC699FBB87c6D0f538f099d", abi=LoanOpenings.abi)
-
-## LoanMaintenance require mathTick
-maintenace2Impl = LoanMaintenance_2.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 206, "required_confs": 0})
-# #maintenace2Impl = Contract.from_abi("maintenace2Impl", address="0x9f46635839F9b5268B1F2d17dE290663aBe0C976", abi=LoanMaintenance_2.abi)
-
-## LoanMigration
-migrationImpl = LoanMigration.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 192, "required_confs": 0})
-#migrationImpl = Contract.from_abi("maintenaceImpl", address="0x4416883645E26EB91D62EB1B9968f925d8388C44", abi=LoanMigration.abi)
+# ## LoanOpenings
+# openingsImpl = LoanOpenings.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 191, "required_confs": 0})
+# #openingsImpl = Contract.from_abi("openingsImpl", address="0xF082901C5d59846fbFC699FBB87c6D0f538f099d", abi=LoanOpenings.abi)
 
 # ## LoanMaintenance require mathTick
-maintenaceImpl = LoanMaintenance.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 207, "required_confs": 0})
-# #maintenaceImpl = Contract.from_abi("maintenaceImpl", address="0x0Efc9954ee53f0c3bd19168f34E4c0A927C40334", abi=LoanMaintenance.abi)
-# 
-# ## LoanClosings
-closingImpl = LoanClosings.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 208, "required_confs": 0})
-# #closingImpl = Contract.from_abi("closingImpl", address="0x08bd8Dc0721eF4898537a5FBE1981333D430F50f", abi=LoanClosings.abi)
-# 
-## SwapsExternal
-swapsImpl = SwapsExternal.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 193, "required_confs": 0})
+# maintenace2Impl = LoanMaintenance_2.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 206, "required_confs": 0})
+# # #maintenace2Impl = Contract.from_abi("maintenace2Impl", address="0x9f46635839F9b5268B1F2d17dE290663aBe0C976", abi=LoanMaintenance_2.abi)
 
-## ProtocolSettings
-protocolsettingsImpl = ProtocolSettings.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 194, "required_confs": 0})
+# ## LoanMigration
+# migrationImpl = LoanMigration.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 192, "required_confs": 0})
+# #migrationImpl = Contract.from_abi("maintenaceImpl", address="0x4416883645E26EB91D62EB1B9968f925d8388C44", abi=LoanMigration.abi)
 
-print("Deploying Dex Selector and Implementations")
-dex_record = DexRecords.deploy({'from':deployer, "gas_price": gasPrice, "nonce": 195, "required_confs": 0})
+# # ## LoanMaintenance require mathTick
+# maintenaceImpl = LoanMaintenance.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 207, "required_confs": 0})
+# # #maintenaceImpl = Contract.from_abi("maintenaceImpl", address="0x0Efc9954ee53f0c3bd19168f34E4c0A927C40334", abi=LoanMaintenance.abi)
+# # 
+# # ## LoanClosings
+# closingImpl = LoanClosings.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 208, "required_confs": 0})
+# # #closingImpl = Contract.from_abi("closingImpl", address="0x08bd8Dc0721eF4898537a5FBE1981333D430F50f", abi=LoanClosings.abi)
+# # 
+# ## SwapsExternal
+# swapsImpl = SwapsExternal.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 193, "required_confs": 0})
 
-univ2 = SwapsImplUniswapV2_ETH.deploy({'from':deployer, "gas_price": gasPrice, "nonce": 196, "required_confs": 0})
+# ## ProtocolSettings
+# protocolsettingsImpl = ProtocolSettings.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 194, "required_confs": 0})
 
-univ3 = SwapsImplUniswapV3_ETH.deploy({'from':deployer, "gas_price": gasPrice, "nonce": 197, "required_confs": 0})
+# print("Deploying Dex Selector and Implementations")
+# dex_record = DexRecords.deploy({'from':deployer, "gas_price": gasPrice, "nonce": 195, "required_confs": 0})
 
-# dex_record.setDexID(univ2.address, {'from':deployer, "gas_price": gasPrice, "nonce": index, "required_confs": 0})
-# dex_record.setDexID(univ3.address, {'from':deployer, "gas_price": gasPrice, "nonce": index, "required_confs": 0})
-# dex_record.transferOwnership(TIMELOCK, {'from': deployer, "gas_price": gasPrice, "nonce": index, "required_confs": 0})
+# univ2 = SwapsImplUniswapV2_ETH.deploy({'from':deployer, "gas_price": gasPrice, "nonce": 196, "required_confs": 0})
+
+# univ3 = SwapsImplUniswapV3_ETH.deploy({'from':deployer, "gas_price": gasPrice, "nonce": 197, "required_confs": 0})
+
+dexRecords.setDexID(swapsImplUniswapV2_ETH.address, {'from':deployer, "gas_price": gasPrice, "nonce": 209, "required_confs": 0})
+dexRecords.setDexID(swapsImplUniswapV3_ETH.address, {'from':deployer, "gas_price": gasPrice, "nonce": 210, "required_confs": 0})
+dexRecords.transferOwnership(GUARDIAN_MULTISIG, {'from': deployer, "gas_price": gasPrice, "nonce": 211, "required_confs": 0})
 #dex_record = Contract.from_abi("dex_record", address="0x22a2208EeEDeb1E2156370Fd1c1c081355c68f2B", abi=DexRecords.abi)
+helperProxy = HelperProxy.deploy(helperImpl.address, {'from': deployer, "gas_price": gasPrice, "nonce": 212, "required_confs": 0})
+ookiPriceFeed.updateStoredPrice(12e5, {'from':deployer, "gas_price": gasPrice, "nonce": 213, "required_confs": 0})
+helperProxy.transferOwnership(GUARDIAN_MULTISIG, {'from': deployer, "gas_price": gasPrice, "nonce": 214, "required_confs": 0})
+# # Deploy CurvedInterestRate
+# CUI = CurvedInterestRate.deploy({'from':deployer, "gas_price": gasPrice, "nonce": 198, "required_confs": 0})
+
+# #CUI = Contract.from_abi("CurvedInterestRate", address="0xDbf57A4Cf3d460D8e379dd9fAfbc7A62Af5e653e", abi=CurvedInterestRate.abi)
+
+# # Deploy LoanTokenSettings
+# settngs = LoanTokenSettings.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 199, "required_confs": 0})
+# #settngs = Contract.from_abi("settngs", address="0x2D2c97Fdad02FAd635aEfCD311d123Da9607A6f2", abi=LoanTokenSettings.abi)
+
+# # Deploy LoanTokenSettingsLowerAdmin
+# settngsLowerAdmin = LoanTokenSettingsLowerAdmin.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 200, "required_confs": 0})
+# #settngsLowerAdmin = Contract.from_abi("settngsLowerAdmin", address="0x4eFb3D5f996F1896948504217a52B2ED15E86926", abi=LoanTokenSettingsLowerAdmin.abi)
+
+# loanTokenLogicStandard = LoanTokenLogicStandard.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 201, "required_confs": 0})
+# #loanTokenLogicStandard = Contract.from_abi("loanTokenLogicStandard", address="0x272d1Fb16ECbb5ff8042Df92694791b506aA3F53", abi=LoanTokenLogicStandard.abi)
+
+# loanTokenLogicWeth = LoanTokenLogicWeth.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 202, "required_confs": 0})
+# #loanTokenLogicWeth = Contract.from_abi("LoanTokenLogicWeth", address="0xe98dE80395972Ff6e32885F6a472b38436bE1716", abi=LoanTokenLogicWeth.abi)
 
 
-# Deploy CurvedInterestRate
-CUI = CurvedInterestRate.deploy({'from':deployer, "gas_price": gasPrice, "nonce": 198, "required_confs": 0})
-
-#CUI = Contract.from_abi("CurvedInterestRate", address="0xDbf57A4Cf3d460D8e379dd9fAfbc7A62Af5e653e", abi=CurvedInterestRate.abi)
-
-# Deploy LoanTokenSettings
-settngs = LoanTokenSettings.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 199, "required_confs": 0})
-#settngs = Contract.from_abi("settngs", address="0x2D2c97Fdad02FAd635aEfCD311d123Da9607A6f2", abi=LoanTokenSettings.abi)
-
-# Deploy LoanTokenSettingsLowerAdmin
-settngsLowerAdmin = LoanTokenSettingsLowerAdmin.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 200, "required_confs": 0})
-#settngsLowerAdmin = Contract.from_abi("settngsLowerAdmin", address="0x4eFb3D5f996F1896948504217a52B2ED15E86926", abi=LoanTokenSettingsLowerAdmin.abi)
-
-loanTokenLogicStandard = LoanTokenLogicStandard.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 201, "required_confs": 0})
-#loanTokenLogicStandard = Contract.from_abi("loanTokenLogicStandard", address="0x272d1Fb16ECbb5ff8042Df92694791b506aA3F53", abi=LoanTokenLogicStandard.abi)
-
-loanTokenLogicWeth = LoanTokenLogicWeth.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 202, "required_confs": 0})
-#loanTokenLogicWeth = Contract.from_abi("LoanTokenLogicWeth", address="0xe98dE80395972Ff6e32885F6a472b38436bE1716", abi=LoanTokenLogicWeth.abi)
+# ookiPriceFeed = OOKIPriceFeed.deploy({"from": deployer, "gas_price": gasPrice, "nonce": 203, "required_confs": 0})
 
 
-ookiPriceFeed = OOKIPriceFeed.deploy({"from": deployer, "gas_price": gasPrice, "nonce": 203, "required_confs": 0})
-
-
-helperImpl = HelperImpl.deploy({"from": deployer, "gas_price": gasPrice, "nonce": 204, "required_confs": 0})
+# helperImpl = HelperImpl.deploy({"from": deployer, "gas_price": gasPrice, "nonce": 204, "required_confs": 0})
 
 
 
