@@ -41,7 +41,6 @@ DAO.execute(id, {"from": proposerAddress})
 
 
 # MIGRATE LOANS
-USDT.transfer(BZX, 1000e6, {'from': '0x61f2f664fec20a2fc1d55409cfc85e1baeb943e2'})
 def migrate(iToken, migrator):
     end = migrator.getLoanCount(iToken)
     count = 10

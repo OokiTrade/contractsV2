@@ -1,9 +1,12 @@
 from brownie import *
 import math
 exec(open("./scripts/env/set-eth.py").read())
+exec(open("./scripts/env/common-functions.py").read())
 safe = ApeSafe(GUARDIAN_MULTISIG)
 
-USDT.transfer(BZX, 1000e6, {'from': '0x61f2f664fec20a2fc1d55409cfc85e1baeb943e2'})
+calldata_set = []
+gnosisTransactions = []
+
 def migrate(iToken, migrator):
     end = migrator.getLoanCount(iToken)
     count = 10
@@ -15,7 +18,8 @@ def migrate(iToken, migrator):
     print("n", n)
     for x in range(0, n):
         print(iToken.symbol(),count * x, count)
-        migrator.migrateLoans(iToken,count * x, count, {'from': TIMELOCK})
+        addToCalldataSet(calldata_set,migrator.address,migrator.migrateLoans.encode_input(iToken, count * x, count))
+        #migrator.migrateLoans(iToken,count * x, count, {'from': GUARDIAN_MULTISIG})
 
 supportedTokenAssetsPairs = TOKEN_REGISTRY.getTokens(0, 100)
 migrator = Contract.from_abi("migrator", BZX, abi=LoanMigration.abi)
@@ -35,4 +39,6 @@ protocolPauseSignatures=[
     BZX.settleInterest.signature
 ]
 print("unpause protocol")
-BZX.unpause(protocolPauseSignatures, {'from': GUARDIAN_MULTISIG})
+addToCalldataSet(calldata_set,migrator.address,BZX.unpause.encode_input(protocolPauseSignatures))
+#BZX.unpause(protocolPauseSignatures, {'from': GUARDIAN_MULTISIG})
+generateGnosisTransactions(safe,calldata_set, gnosisTransactions)
