@@ -69,12 +69,15 @@ def marginSettings(supportedTokenAssetsPairs, iToken):
         targets.append(existingIToken.address)
         calldatas.append(existingIToken.updateSettings.encode_input(LOAN_TOKEN_SETTINGS_ADMIN.address, calldata))
 
-        loanTokensArr.append(loanTokenAddress)
-        collateralTokensArr.append(existingITokenLoanTokenAddress)
+        loanTokensArr.append(existingITokenLoanTokenAddress)
+        collateralTokensArr.append(loanTokenAddress)
         amountsArr.append(7*10**18)
         params.clear()
 
-
+    print(loanTokensArr)
+    print(collateralTokensArr)
+    print(amountsArr)
+    assert False
 targets = []
 values = []
 calldatas = []
