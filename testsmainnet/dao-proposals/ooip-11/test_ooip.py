@@ -39,6 +39,7 @@ chain.mine()
 print("execute proposal")
 DAO.execute(id, {"from": proposerAddress})
 
+
 # MIGRATE LOANS
 USDT.transfer(BZX, 1000e6, {'from': '0x61f2f664fec20a2fc1d55409cfc85e1baeb943e2'})
 def migrate(iToken, migrator):
@@ -52,7 +53,7 @@ def migrate(iToken, migrator):
     print("n", n)
     for x in range(0, n):
         print(iToken.symbol(),count * x, count)
-        migrator.migrateLoans(iToken,count * x, count, {'from': TIMELOCK})
+        migrator.migrateLoans(iToken,count * x, count, {'from': GUARDIAN_MULTISIG})
 
 supportedTokenAssetsPairs = TOKEN_REGISTRY.getTokens(0, 100)
 migrator = Contract.from_abi("migrator", BZX, abi=LoanMigration.abi)
@@ -72,7 +73,7 @@ protocolPauseSignatures=[
     BZX.settleInterest.signature
 ]
 print("unpause protocol")
-BZX.unpause(protocolPauseSignatures, {'from': TIMELOCK})
+BZX.unpause(protocolPauseSignatures, {'from': GUARDIAN_MULTISIG})
 
 LINK.transfer(accounts[1], 2000e18, {'from': "0x0d4f1ff895d12c34994d6b65fabbeefdc1a9fb39"})
 USDC.transfer(accounts[1], 10000e6, {'from': '0xdf0770df86a8034b3efef0a1bb3c889b8332ff56'})
