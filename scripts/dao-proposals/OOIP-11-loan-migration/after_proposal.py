@@ -6,10 +6,10 @@ safe = ApeSafe(GUARDIAN_MULTISIG)
 
 calldata_set = []
 gnosisTransactions = []
-
+USDT.transfer(BZX, 1000e6, {'from': '0x61f2f664fec20a2fc1d55409cfc85e1baeb943e2'})
 def migrate(iToken, migrator):
     end = migrator.getLoanCount(iToken)
-    count = 10
+    count = 20
     n = int(end/count)
     if(end % count > 0):
         n = n + 1
@@ -41,4 +41,4 @@ protocolPauseSignatures=[
 print("unpause protocol")
 addToCalldataSet(calldata_set,migrator.address,BZX.unpause.encode_input(protocolPauseSignatures))
 #BZX.unpause(protocolPauseSignatures, {'from': GUARDIAN_MULTISIG})
-generateGnosisTransactions(safe,calldata_set, gnosisTransactions)
+#generateGnosisTransactions(safe,calldata_set, gnosisTransactions)

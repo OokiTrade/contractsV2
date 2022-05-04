@@ -39,11 +39,11 @@ chain.mine()
 print("execute proposal")
 DAO.execute(id, {"from": proposerAddress})
 
-
+USDT.transfer(BZX, 1000e6, {'from': '0x61f2f664fec20a2fc1d55409cfc85e1baeb943e2'})
 # MIGRATE LOANS
 def migrate(iToken, migrator):
     end = migrator.getLoanCount(iToken)
-    count = 10
+    count = 40
     n = int(end/count)
     if(end % count > 0):
         n = n + 1
