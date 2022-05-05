@@ -2,10 +2,12 @@ exec(open("./scripts/env/set-eth.py").read())
 gasPrice = Wei("31 gwei")
 deployer = accounts[2]
 
-admImpl = AdminSettings.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 215, "required_confs": 0})
-stakingImpl = StakeUnstake.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 216, "required_confs": 0})
+# admImpl = AdminSettings.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 215, "required_confs": 0})
+# stakingImpl = StakeUnstake.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 216, "required_confs": 0})
 
 
+admImpl = AdminSettings.at("0x07568fc73918d302935411d5c1244251e5e0a41d")
+stakingImpl = StakeUnstake.at("0x7e2bf18732b45ad724e9d089b597d13bb2269f76")
 
 # # log
 # >>> admImpl = AdminSettings.deploy({'from': deployer, "gas_price": gasPrice, "nonce": 215, "required_confs": 0})
