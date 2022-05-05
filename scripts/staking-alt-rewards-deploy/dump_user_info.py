@@ -232,7 +232,18 @@ arr = [
 "0x5d80ade284db0942f35b499768aea6ba0fd9b803eff9313f8b99bfd4246c228d",
 "0x8f9e05f53f77873a31b9969282870b170d66454e45ab7e1b7b3479c010ff796c",
 "0x15eda5f9067ead18fb6970808e6c00069dfcb50c32306374dadb7f4bf19bc654",
-"0xac75938188dd04b45c58746d3f8db81facda8f3dad5d4b218fa3285cfece58b1"
+"0xac75938188dd04b45c58746d3f8db81facda8f3dad5d4b218fa3285cfece58b1",
+"0x67381ee61d26c0581336b7e140728976cbea3d7c84df74007d865ed1bce45bae",
+"0x33754bf1cbb024a1092bbeb6a73a3cd8312c0b71fa14fe722c45f496e5fad23c",
+"0xa17b6ebbce71dcc7db869ef1d6ad32356ac6a053ef09f82779f3bdc3d6da4c67",
+"0xfa4211ef1dea42d2697d5e2e78a01b7f28bb5a2e810f3c39de0eb427639337c9",
+"0x0676bbd8b837ff27c979d0004ab0055cd281e6498c09970333d4a348705a985c",
+"0xf46956f7057a4b39ed8851c9f8c5811bf0256102ae63ce8ea15220e3ca0a8057",
+"0x2f9a3856e3b4ff259a32cc255be596a29582f5716b63e1d54c27dc529c8599a7",
+"0xd9cc66e5a2d22230f2dc3a592df39f6020e8a95ca9efad850b36c0c80fa3c85d",
+"0x54b73fe7c9589b97a4321f9131d1ddb6c95e9095e3b74ef44df2b740b0e69765",
+"0x2421ee025eec515b44443f37306967a825fc7209009e4b74ac978fa85336e1c7"
+
 ]
 
 results = {}
@@ -273,9 +284,9 @@ for tx in arr:
                 result = results[address]
                 if(log["topics"][0].hex() == claimTopic):
                     result['claimed'] = result['claimed'] + value
-                    result['stakingStartBlock'] = trans.block
+                    result['stakingStartBlock'] = trans.block_number
                 if(log["topics"][0].hex() == stakeTopic):
-                    result['stakingStartBlock'] = trans.block
+                    result['stakingStartBlock'] = trans.block_number
                 users.append(address)
                 claimed.append(result['claimed'])
                 stakingStartBlock.append(result['stakingStartBlock'])
