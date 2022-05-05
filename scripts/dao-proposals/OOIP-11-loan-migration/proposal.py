@@ -148,6 +148,20 @@ for tokenAssetPairA in supportedTokenAssetsPairs:
     updateMarginSettings(settngsLowerAdmin, existingIToken, CUI)
     pushToCalldata(BZX.address, BZX.setupLoanPoolTWAI.encode_input(existingIToken))
 
+
+removeFuncStrings = [
+        "withdrawAccruedInterest(address)",
+        "extendLoanDuration(bytes32,uint256,bool,bytes)",
+        "reduceLoanDuration(bytes32,address,uint256)",
+        "getLenderInterestData(address,address)",
+        "getLoanInterestData(bytes32)",
+        "rollover(bytes32,bytes)"
+        "liquidateWithGasToken(bytes32,address,address,uint256)"
+        "closeWithDepositWithGasToken(bytes32,address,address,uint256)"
+        "closeWithSwapWithGasToken(bytes32,address,address,uint256,bool,bytes)"
+]
+pushToCalldata(BZX.address, BZX.setTargets.encode_input(removeFuncStrings, [ZERO_ADDRESS] * len(removeFuncStrings)))
+
 #Pause protocol
 protocolPauseSignatures=[
     BZX.closeWithDeposit.signature,
