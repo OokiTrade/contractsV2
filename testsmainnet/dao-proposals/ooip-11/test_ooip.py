@@ -39,7 +39,7 @@ chain.mine()
 print("execute proposal")
 DAO.execute(id, {"from": proposerAddress})
 
-USDT.transfer(BZX, 1000e6, {'from': '0x61f2f664fec20a2fc1d55409cfc85e1baeb943e2'})
+USDT.transfer(BZX, 300e6, {'from': '0x61f2f664fec20a2fc1d55409cfc85e1baeb943e2'})
 # MIGRATE LOANS
 def migrate(iToken, migrator):
     end = migrator.getLoanCount(iToken)
@@ -164,3 +164,8 @@ iAPE.marginTrade(0, 2e18, 0, 1e6, USDT, accounts[1], b'',{'from': accounts[1]})
 print("Trade USDT/APE")
 APE.approve(iUSDT, 2**256-1, {'from':accounts[1]})
 iUSDT.marginTrade(0, 2e18, 0, 1e18, APE, accounts[1], b'',{'from': accounts[1]})
+
+
+SWEEP_FEES.sweepFees({"from": GUARDIAN_MULTISIG})
+
+iUSDC.burn(accounts[1], 100e6, {'from': accounts[1]})
