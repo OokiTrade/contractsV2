@@ -10,7 +10,7 @@ import "../../core/State.sol";
 import "../../events/LoanClosingsEvents.sol";
 import "../../mixins/VaultController.sol";
 import "../../mixins/InterestHandler.sol";
-import "../../mixins/FeesHelper.sol";
+// import "../../mixins/FeesHelper.sol";
 import "../../mixins/LiquidationHelper.sol";
 import "../../swaps/SwapsUser.sol";
 import "../../interfaces/ILoanPool.sol";
@@ -18,7 +18,7 @@ import "../../interfaces/draft-IERC20Permit.sol";
 import "../../governance/PausableGuardian.sol";
 
 
-contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, InterestHandler, FeesHelper, SwapsUser, LiquidationHelper, PausableGuardian {
+contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, InterestHandler, SwapsUser, PausableGuardian {
 
     enum CloseTypes {
         Deposit,
@@ -64,7 +64,7 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
 
         loanCloseAmount = closeAmount;
 
-        (uint256 maxLiquidatable, uint256 maxSeizable) = _getLiquidationAmounts(
+        (uint256 maxLiquidatable, uint256 maxSeizable) = LiquidationHelper._getLiquidationAmounts(
             principalPlusInterest,
             loanLocal.collateral,
             currentMargin,
