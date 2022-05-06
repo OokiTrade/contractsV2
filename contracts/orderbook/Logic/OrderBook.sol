@@ -100,9 +100,14 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         msg.sender.call{value:amount}("");
     }
 
-    function _spendGasFeeToken(uint256 amount, address trader, address receiver) internal {
+    function _spendGasFeeToken(uint256 amount, address trader, address receiver) internal returns (uint256) {
         bytes32 orderID = keccak256(abi.encode(trader, 0));
+        uint256 amountStored = IDeposits(VAULT).getDeposit(orderID);
+        if (amountStored < amount) {
+            amount = amountStored;
+        }
         IDeposits(VAULT).partialWithdraw(receiver, orderID, amount);
+        return amount;
     }
 
     function clearOrder(bytes32 orderID) public view returns (bool) {
@@ -308,7 +313,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         }
     }
 
-    function executeOrder(bytes32 orderID) external pausable {
+    function executeOrder(bytes32 orderID) external pausable returns (uint256) {
         uint256 gasStart = gasleft();
         IOrderBook.Order memory order = _allOrders[orderID];
         require(
@@ -421,7 +426,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
             _histOrders[order.trader].remove(orderID);
             emit OrderExecuted(order.trader, orderID);
         }
-        _spendGasFeeToken(_gasToSend(gasStart-gasleft()), order.trader, msg.sender);
+        return(_spendGasFeeToken(_gasToSend(gasStart-gasleft()), order.trader, msg.sender));
     }
 
     function setPriceFeed(address newFeed) external onlyOwner {

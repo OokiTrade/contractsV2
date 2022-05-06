@@ -12,6 +12,7 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         _setTarget(this.cancelOrder.selector, target);
         _setTarget(this.cancelOrderProtocol.selector, target);
         _setTarget(this.changeStopType.selector, target);
+        _setTarget(this.cancelOrderGuardian.selector, target);
     }
 
     function _caseChecks(bytes32 ID, address collateral, address loanToken)
@@ -48,11 +49,15 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
                     : _isActiveLoan(order.loanID),
                 "OrderBook: non-active loan specified");
         require(order.trader == msg.sender, "OrderBook: invalid trader");
+        require(order.loanDataBytes.length < 2500, "OrderBook: too much data");
     }
 
+    function _getGasPrice() internal view returns (uint256 gasPrice) {
+        gasPrice = chainGasPrice == 0 ? IPriceFeeds(priceFeed).getFastGasPrice(WRAPPED_TOKEN) : chainGasPrice;
+    }
+ 
     function _gasToSend(uint256 gasUsed) internal view returns (uint256) {
-        uint256 gasPrice = chainGasPrice == 0 ? IPriceFeeds(priceFeed).getFastGasPrice(WRAPPED_TOKEN) : chainGasPrice;
-        return gasUsed*gasPrice*2;
+        return gasUsed*_getGasPrice()*2;
     }
 
     function placeOrder(IOrderBook.Order calldata order) external pausable {
@@ -68,7 +73,7 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         }
         require(IPriceFeeds(priceFeed).queryReturn(order.loanTokenAddress, USDC, tradeSize) > MIN_AMOUNT_IN_USDC, "OrderBook: trade too small");
         require(order.status==IOrderBook.OrderStatus.ACTIVE, "OrderBook: invalid order state");
-        require(IDeposits(VAULT).getDeposit(keccak256(abi.encode(order.trader,0)))>(_histOrders[order.trader].length()+1)*_gasToSend(2500000), "too little gas left");
+        require(IDeposits(VAULT).getDeposit(keccak256(abi.encode(order.trader,0)))>(_histOrders[order.trader].length()+1)*_gasToSend(4000000), "too little gas left");
         mainOBID++;
         bytes32 ID = keccak256(abi.encode(msg.sender, mainOBID));
         require(IDeposits(VAULT).getTokenUsed(ID) == address(0), "Orderbook: collision"); //in the very unlikely chance of collision on ID error is thrown
@@ -162,6 +167,20 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
             IDeposits(VAULT).withdrawToTrader(msg.sender, orderID);
         }
         emit OrderCancelled(msg.sender, orderID);
+    }
+
+    function cancelOrderGuardian(bytes32 orderID) external onlyGuardian {
+        _allOrders[orderID].status = IOrderBook.OrderStatus.CANCELLED;
+        address trader = _allOrders[orderID].trader;
+        _histOrders[trader].remove(orderID);
+        _allOrderIDs.remove(orderID);
+        if (_allOrders[orderID].orderType == IOrderBook.OrderType.LIMIT_OPEN) {
+            address usedToken = IDeposits(VAULT).getTokenUsed(
+                orderID
+            );
+            IDeposits(VAULT).withdrawToTrader(trader, orderID);
+        }
+        emit OrderCancelled(trader, orderID);
     }
 
     function cancelOrderProtocol(bytes32 orderID) external pausable {

@@ -90,6 +90,10 @@ interface IOrderBook {
     /// @param orderID ID of order to be canceled
     function cancelOrderProtocol(bytes32 orderID) external;
 
+    /// Force cancels order
+    /// @param orderID ID of order to be canceled
+    function cancelOrderGuardian(bytes32 orderID) external;
+
     /// Changes stop type between index and dex price
     /// @param stopType true = index, false = dex price
     function changeStopType(bool stopType) external;
@@ -98,9 +102,25 @@ interface IOrderBook {
     /// @param newFeed new price feed contract
     function setPriceFeed(address newFeed) external;
 
+    /// Set gas price to be used for incentives (if price feed does not already contain it)
+    /// @param gasPrice gas price in gwei
+    function setGasPrice(uint256 gasPrice) external;
+
     /// Return price feed contract address
     /// @return priceFeed Price Feed Contract Address
     function priceFeed() external view returns (address priceFeed);
+
+    /// Returns gas price used for incentive calculations
+    /// @return gasPrice gas price in gwei
+    function getGasPrice() external view returns (uint256 gasPrice);
+
+    /// Deposit Gas Token to pay out incentives for orders to be executed
+    /// @param amount when depositing wrapped token, this is amount to be deposited (leave as 0 if sending native token)
+    function depositGasFeeToken(uint256 amount) external payable;
+
+    /// Withdraw Gas Token (received as native token)
+    /// @param amount amount to be withdrawn
+    function withdrawGasFeeToken(uint256 amount) external;
 
     /// Return amount received through a specified swap
     /// @param srcToken source token address
@@ -144,7 +164,8 @@ interface IOrderBook {
 
     /// Executes Order
     /// @param orderID order ID
-    function executeOrder(bytes32 orderID) external;
+    /// @return incentiveAmountReceived amount received in gas token from exeuction of order
+    function executeOrder(bytes32 orderID) external returns(uint256 incentiveAmountReceived);
 
     /// sets token allowances
     /// @param spenders addresses that will be given allowance
