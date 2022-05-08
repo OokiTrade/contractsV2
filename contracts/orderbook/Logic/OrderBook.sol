@@ -73,7 +73,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
 
     function getGasPrice() public view returns (uint256) {
         if (chainGasPrice == 0) {
-            return IPriceFeeds(priceFeed).getFastGasPrice(WRAPPED_TOKEN);
+            return IPriceFeeds(priceFeed).getFastGasPrice(WRAPPED_TOKEN)/1e36;
         }
         return chainGasPrice;
     }
@@ -87,6 +87,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         if(msg.value!=0){
             IWeth(WRAPPED_TOKEN).deposit{value:msg.value}();
             IERC20(WRAPPED_TOKEN).transfer(msg.sender, msg.value);
+            amount = msg.value;
         }
         bytes32 orderID = keccak256(abi.encode(msg.sender, 0));
         IDeposits(VAULT).deposit(orderID, amount, msg.sender, WRAPPED_TOKEN);

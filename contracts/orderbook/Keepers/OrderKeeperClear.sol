@@ -5,6 +5,7 @@ import "../../governance/PausableGuardian_0_8.sol";
 
 contract OrderKeeperClear is PausableGuardian_0_8 {
     address public implementation;
+	IERC20Metadata public constant WRAPPED_TOKEN = IERC20Metadata(0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270);
     IOrderBook public orderBook;
 
     function checkUpkeep(bytes calldata checkData)
@@ -38,5 +39,9 @@ contract OrderKeeperClear is PausableGuardian_0_8 {
 
     function setOrderBook(IOrderBook contractAddress) external onlyOwner {
         orderBook = contractAddress;
+    }
+
+    function withdrawIncentivesReceived(address receiver) external onlyOwner {
+        WRAPPED_TOKEN.transfer(receiver, WRAPPED_TOKEN.balanceOf(address(this)));
     }
 }

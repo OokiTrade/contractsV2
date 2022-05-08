@@ -88,7 +88,7 @@ interface IOrderBook {
 
     /// Cancels Order
     /// @param orderID ID of order to be canceled
-    function cancelOrderProtocol(bytes32 orderID) external;
+    function cancelOrderProtocol(bytes32 orderID) external returns (uint256);
 
     /// Force cancels order
     /// @param orderID ID of order to be canceled

@@ -53,7 +53,7 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
     }
 
     function _getGasPrice() internal view returns (uint256 gasPrice) {
-        gasPrice = chainGasPrice == 0 ? IPriceFeeds(priceFeed).getFastGasPrice(WRAPPED_TOKEN) : chainGasPrice;
+        gasPrice = chainGasPrice == 0 ? IPriceFeeds(priceFeed).getFastGasPrice(WRAPPED_TOKEN)/1e36 : chainGasPrice;
     }
  
     function _gasToSend(uint256 gasUsed) internal view returns (uint256) {
@@ -66,10 +66,14 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
             ? (order.loanTokenAmount, order.loanTokenAddress)
             : (order.collateralTokenAmount, order.base);
         uint256 tradeSize;
-        if (usedToken == order.base) {
-            tradeSize = IPriceFeeds(priceFeed).queryReturn(order.base, order.loanTokenAddress, amountUsed)*order.leverage/10**18;
+        if (order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
+            if (usedToken == order.base) {
+                tradeSize = IPriceFeeds(priceFeed).queryReturn(order.base, order.loanTokenAddress, amountUsed)*order.leverage/10**18;
+            } else {
+                tradeSize = amountUsed*(order.leverage+1e18)/1e18;
+            }
         } else {
-            tradeSize = amountUsed*(order.leverage+1e18)/1e18;
+            tradeSize = amountUsed;
         }
         require(IPriceFeeds(priceFeed).queryReturn(order.loanTokenAddress, USDC, tradeSize) > MIN_AMOUNT_IN_USDC, "OrderBook: trade too small");
         require(order.status==IOrderBook.OrderStatus.ACTIVE, "OrderBook: invalid order state");
@@ -183,7 +187,18 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
         emit OrderCancelled(trader, orderID);
     }
 
-    function cancelOrderProtocol(bytes32 orderID) external pausable {
+    function _spendGasFeeToken(uint256 amount, address trader, address receiver) internal returns (uint256) {
+        bytes32 orderID = keccak256(abi.encode(trader, 0));
+        uint256 amountStored = IDeposits(VAULT).getDeposit(orderID);
+        if (amountStored < amount) {
+            amount = amountStored;
+        }
+        IDeposits(VAULT).partialWithdraw(receiver, orderID, amount);
+        return amount;
+    }
+
+    function cancelOrderProtocol(bytes32 orderID) external pausable returns (uint256) {
+        uint gasStart = gasleft();
         IOrderBook.Order memory order = _allOrders[orderID];
         address trader = order.trader;
         require(order.status==IOrderBook.OrderStatus.ACTIVE, "OrderBook: inactive order");
@@ -222,6 +237,7 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
             IDeposits(VAULT).withdrawToTrader(trader, orderID);
         }
         emit OrderCancelled(trader, orderID);
+        return(_spendGasFeeToken(_gasToSend(gasStart-gasleft()), trader, msg.sender));
     }
 
     function changeStopType(bool stop) external pausable {
