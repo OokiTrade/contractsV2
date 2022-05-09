@@ -248,9 +248,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
             _to,
             _value,
             allowed[_from][msg.sender]
-            /*IBZx(bZxContract).isLoanPool(msg.sender) ?
-                uint256(-1) :
-                allowed[_from][msg.sender]*/
         );
     }
 
@@ -278,99 +275,9 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
             .add(_value);
         balances[_to] = _balancesToNew;
 
-        // handle checkpoint update
-        // uint256 _currentPrice = tokenPrice();
-
-        // _updateCheckpoints(
-        //     _from,
-        //     _balancesFrom,
-        //     _balancesFromNew,
-        //     _currentPrice
-        // );
-        // _updateCheckpoints(
-        //     _to,
-        //     _balancesTo,
-        //     _balancesToNew,
-        //     _currentPrice
-        // );
-
         emit Transfer(_from, _to, _value);
         return true;
     }
-
-    // function _updateCheckpoints(
-    //     address _user,
-    //     uint256 _oldBalance,
-    //     uint256 _newBalance,
-    //     uint256 _currentPrice)
-    //     internal
-    // {
-    //     bytes32 slot = keccak256(
-    //         abi.encodePacked(_user, iToken_ProfitSoFar)
-    //     );
-
-    //     int256 _currentProfit;
-    //     if (_newBalance == 0) {
-    //         _currentPrice = 0;
-    //     } else if (_oldBalance != 0) {
-    //         _currentProfit = _profitOf(
-    //             slot,
-    //             _oldBalance,
-    //             _currentPrice,
-    //             checkpointPrices_[_user]
-    //         );
-    //     }
-
-    //     assembly {
-    //         sstore(slot, _currentProfit)
-    //     }
-
-    //     checkpointPrices_[_user] = _currentPrice;
-    // }
-
-    // /* Public View functions */
-
-    // function profitOf(
-    //     address user)
-    //     public
-    //     view
-    //     returns (int256)
-    // {
-    //     bytes32 slot = keccak256(
-    //         abi.encodePacked(user, iToken_ProfitSoFar)
-    //     );
-
-    //     return _profitOf(
-    //         slot,
-    //         user],
-    //         tokenPrice(),
-    //         checkpointPrices_[user]
-    //     );
-    // }
-
-    // function _profitOf(
-    //     bytes32 slot,
-    //     uint256 _balance,
-    //     uint256 _currentPrice,
-    //     uint256 _checkpointPrice)
-    //     internal
-    //     view
-    //     returns (int256 profitSoFar)
-    // {
-    //     if (_checkpointPrice == 0) {
-    //         return 0;
-    //     }
-
-    //     assembly {
-    //         profitSoFar := sload(slot)
-    //     }
-
-    //     profitSoFar = int256(_currentPrice)
-    //         .sub(int256(_checkpointPrice))
-    //         .mul(int256(_balance))
-    //         .div(sWEI_PRECISION)
-    //         .add(profitSoFar);
-    // }
 
     function tokenPrice()
         public

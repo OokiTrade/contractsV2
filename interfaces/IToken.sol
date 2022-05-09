@@ -126,9 +126,17 @@ interface IToken {
     
     function revokeApproval(address _loanTokenAddress) external;
 
+    function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
+
     /// Admin functions
     function setTarget(address _newTarget) external;
     
+    function owner() external view returns (address);
+
+    function transferOwnership(address newOwner) external;
+    
+    function initializeDomainSeparator() external;
+
     struct LoanOpenData {
         bytes32 loanId;
         uint256 principal;
