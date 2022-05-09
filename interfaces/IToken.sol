@@ -134,6 +134,10 @@ interface IToken {
     function owner() external view returns (address);
 
     function transferOwnership(address newOwner) external;
+
+    function DOMAIN_SEPARATOR() external view returns(bytes32);
+    function PERMIT_TYPEHASH() external view returns(bytes32);
+    function nonces(address) external view returns (uint);
     
     function initializeDomainSeparator() external;
 
