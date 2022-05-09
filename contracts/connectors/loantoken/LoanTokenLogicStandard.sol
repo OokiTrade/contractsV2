@@ -501,13 +501,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
             require(msg.value == depositAmount, "18");
             IWeth(wethToken).deposit.value(depositAmount)();
         }
-
-        // _updateCheckpoints(
-        //     receiver,
-        //     receiver],
-        //     _mint(receiver, mintAmount, depositAmount, currentPrice), // newBalance
-        //     currentPrice
-        // );
+        _mint(receiver, mintAmount, depositAmount, currentPrice);
     }
 
     function _burnToken(
@@ -534,13 +528,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
 
         loanAmountPaid = loanAmountOwed;
         require(loanAmountPaid <= loanAmountAvailableInContract, "37");
-
-        // _updateCheckpoints(
-        //     msg.sender,
-        //     msg.sender],
-        //     _burn(msg.sender, burnAmount, loanAmountPaid, currentPrice), // newBalance
-        //     currentPrice
-        // );
+        _burn(msg.sender, burnAmount, loanAmountPaid, currentPrice);
     }
 
     function _borrow(
