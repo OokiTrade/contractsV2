@@ -127,7 +127,9 @@ interface IToken {
     function revokeApproval(address _loanTokenAddress) external;
 
     function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
-
+    function DOMAIN_SEPARATOR() external view returns(bytes32);
+    function PERMIT_TYPEHASH() external view returns(bytes32);
+    function nonces(address) external view returns (uint);
     /// Admin functions
     function setTarget(address _newTarget) external;
     
@@ -135,9 +137,7 @@ interface IToken {
 
     function transferOwnership(address newOwner) external;
 
-    function DOMAIN_SEPARATOR() external view returns(bytes32);
-    function PERMIT_TYPEHASH() external view returns(bytes32);
-    function nonces(address) external view returns (uint);
+
     
     function initializeDomainSeparator() external;
 

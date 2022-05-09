@@ -11,6 +11,9 @@ from eth_account import Account
 from eth_account.messages import encode_structured_data
 from eip712.messages import EIP712Message, EIP712Type
 from brownie.network.account import LocalAccount
+from brownie.convert.datatypes import *
+from brownie import web3
+
 @pytest.fixture(scope="module")
 def requireFork():
     assert (network.show_active() == "fork" or "fork" in network.show_active())
@@ -42,28 +45,37 @@ def iUSDT(accounts, LoanTokenLogicStandard, interface):
     itoken = Contract.from_abi("iUSDT", address="0xd103a2D544fC02481795b0B33eb21DE430f3eD23", abi=interface.IToken.abi)
     itoken.setTarget(itokenImpl, {"from": itoken.owner()})
     itoken.initializeDomainSeparator({"from": itoken.owner()})
-    return itoken 
+    return itoken
 
 
-class Permit(EIP712Message):
-    # One of the following must be used
-    name_: "string"
-    _version_: "string" = "1"
-    chainId_: "uint256"
-    verifyingContract_: "address"
-    
-    # These are the actual fields
-    owner: "address"
-    spender: "address"
-    value: "uint256"
-    nonce: "uint256"
-    deadline: "uint256"
-    
-def test_permit(requireFork, USDT, iUSDT, accounts, BZX, interface):
+class Permit():
+    def __init__(self, name, chainId, verifyingContract, owner, spender, value, nonce, deadline, domain_separator):
+        self.name = name
+        self.chainId = chainId
+        self.verifyingContract = str(verifyingContract)
+        self.owner = str(owner)
+        self.spender = str(spender)
+        self.value = int(value)
+        self.nonce = nonce
+        self.deadline = deadline
+        self.permit_typehash = HexString("0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9", "bytes32")
+        self.domain_separator = domain_separator
+
+    def sign_message(self, local: LocalAccount):
+        domainData = web3.sha3(encode_abi(["bytes32", "address", "address", "uint256", "uint256", "uint256"],
+                                          [self.permit_typehash, str(local), self.verifyingContract, self.value, self.nonce, self.deadline]))
+        digest = web3.solidityKeccak(['bytes1', 'bytes1', 'bytes32', 'bytes32'], [b'\x19', b'\x01', self.domain_separator, domainData])
+        signed_permit = web3.eth.account.signHash(digest, local.private_key)
+        return signed_permit
+
+
+def test_permit(requireFork, USDT, iUSDT, accounts, BZX, interface, web3):
     local = accounts.add(private_key="0x416b8a7d9290502f5661da81f0cf43893e3d19cb9aea3c426cfb36e8186e9c09")
-    p = Permit(iUSDT.name(), chain.id, str(iUSDT), str(local), str(iUSDT), int(10e6), local.nonce, chain.height)
-    signed_permit = local.sign_message(p)
 
-
+    p = Permit(iUSDT.name(), chain.id, iUSDT, local, iUSDT, int(10e6), local.nonce, chain.time()+1000, iUSDT.DOMAIN_SEPARATOR())
+    signed_permit = p.sign_message(local)
+    # iUSDT.permit(p.owner, p.spender, p.value, p.deadline, signed_permit.v, signed_permit.r, signed_permit.s, {"from": local})
+    USDT.transfer(local, 1000e6, {'from': "0xb6cfcf89a7b22988bfc96632ac2a9d6dab60d641"})
+    USDT.approve(iUSDT, 2**256-1, {"from": local})
+    iUSDT.mint(local, 1000e6, {"from": local})
     assert False
-    
