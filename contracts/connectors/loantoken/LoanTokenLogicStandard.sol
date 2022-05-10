@@ -554,7 +554,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         require(loanId == 0 || msg.sender == borrower, "13");
 
         _settleInterest(loanId);
-        loanDataBytes = _checkPermit(collateralTokenAddress, loanDataBytes);
 
         if (loanId == 0) {
             loanId = keccak256(abi.encodePacked(
@@ -615,13 +614,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         require(loanId == 0 || msg.sender == trader, "13");
 
         _settleInterest(loanId);
-        address tokenUsed;
-        if (loanTokenSent == 0 && collateralTokenSent > 0) {
-            tokenUsed = collateralTokenAddress;
-        } else if (collateralTokenSent == 0 && loanTokenSent > 0) {
-            tokenUsed = loanTokenAddress;
-        }
-        loanDataBytes = _checkPermit(tokenUsed, loanDataBytes);
 
         if (loanId == 0) {
             loanId = keccak256(abi.encodePacked(
@@ -738,6 +730,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
             sentAddresses[2] = sentAddresses[1]; // receiver = borrower
         }
 
+        loanDataBytes = _checkPermit(collateralTokenAddress, loanDataBytes);
         // handle transfers prior to adding newPrincipal to loanTokenSent
         uint256 msgValue = _verifyTransfers(
             collateralTokenAddress,
