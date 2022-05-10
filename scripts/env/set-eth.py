@@ -37,10 +37,7 @@ PRICE_FEED = Contract.from_abi("PRICE_FEED", BZX.priceFeeds(), abi = PriceFeeds.
 SWEEP_FEES = Contract.from_abi("STAKING", "0xfFB328AD3b727830F9482845A4737AfDDDe85554", FeeExtractAndDistribute_ETH.abi)
 
 SUSHI_ROUTER = Contract.from_abi("SUSHI_ROUTER", "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F", interface.IPancakeRouter02.abi)
-SUSHI_CHEF_OLD = Contract.from_abi("SUSHI_CHEF", "0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd", interface.IMasterChefSushi.abi)
-
-SUSHI_CHEF = Contract.from_abi("SUSHI_CHEF", "0xEF0881eC094552b2e128Cf945EF17a6752B4Ec5d", interface.IMasterChefSushi2.abi)
-
+SUSHI_CHEF = Contract.from_abi("SUSHI_CHEF", "0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd", interface.IMasterChefSushi.abi)
 
 SUSHI = Contract.from_abi("SUSHI", "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2", TestToken.abi)
 

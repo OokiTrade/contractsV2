@@ -33,8 +33,8 @@ contract StakingConstantsV2 {
     uint256 internal constant _startingVBZRXBalance = 8893899330e18;
     // uint256 public constant initialCirculatingSupply = 10300000000e18 - _startingVBZRXBalance;
 
-    address internal constant SUSHI_MASTERCHEF = 0xEF0881eC094552b2e128Cf945EF17a6752B4Ec5d;
-    uint256 internal constant OOKI_ETH_SUSHI_MASTERCHEF_PID = 50;
+    address internal constant SUSHI_MASTERCHEF = 0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd;
+    uint256 internal constant OOKI_ETH_SUSHI_MASTERCHEF_PID = 335;
     address public constant SUSHI = 0x6B3595068778DD592e39A122f4f5a5cF09C90fE2;
 
     ICurve3Pool public constant curve3pool = ICurve3Pool(0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7);
