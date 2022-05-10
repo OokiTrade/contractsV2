@@ -88,6 +88,7 @@ def test_liquidate_itoken():
     assert False
 
 def test_guardian_create_inewitoken():
+    # TODO think about disabling loanParameters
     assert False
 
     

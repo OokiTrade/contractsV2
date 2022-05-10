@@ -111,7 +111,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
                 loanParamsLocal.collateralToken = collateralToken;
                 loanParamsLocal.minInitialMargin = 20 ether;
                 loanParamsLocal.maintenanceMargin = 15 ether;
-                loanParamsLocal.maxLoanTerm = 0;
+                loanParamsLocal.maxLoanTerm = 0; // just because its torque
                 loanParamsLocal.id = generateLoanParamStructId(loanParamsLocal);
                 loanParams[loanParamsId] = loanParamsLocal;
             } else {
@@ -126,15 +126,15 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         address loanToken,
         address collateralToken,
         bool isTorqueLoan)
+        pure
         public
-        view
         returns (bytes32) 
     {
-        return loanParamsIds[keccak256(abi.encodePacked(
+        return keccak256(abi.encodePacked(
             loanToken,
             collateralToken,
             isTorqueLoan
-        ))];
+        ));
     }
 
     function generateLoanParamStructId(

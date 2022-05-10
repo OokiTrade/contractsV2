@@ -92,8 +92,7 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
     uint32 public timeDelta;
     uint32 public twaiLength;
     /**** new interest model end */
-    
-    mapping (bytes32 => bytes32) public loanParamsIds; // kessak(loanToken,collaterlaToken,isTorque) -> loanParams
+
 
     function _setTarget(
         bytes4 sig,
