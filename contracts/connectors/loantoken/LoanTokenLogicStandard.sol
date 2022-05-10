@@ -287,15 +287,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         return _tokenPrice(_totalAssetSupply(totalAssetBorrow()));
     }
 
-    function checkpointPrice(
-        address _user)
-        public
-        view
-        returns (uint256) // price
-    {
-        return checkpointPrices_[_user];
-    }
-
     // the current rate being paid by borrowers in active loans
     function borrowInterestRate()
         public
