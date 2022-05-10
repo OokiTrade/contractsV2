@@ -178,14 +178,14 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
         external
     {
         // requires loanToken approved
-        require(supportedTokens[loanToken], "invalid");
+        require(supportedTokens[loanToken], "loan not supported");
         // requires collateralToken approved
-        require(supportedTokens[collateralToken], "invalid");
+        require(supportedTokens[collateralToken], "collateral not supported");
         // requires there is a pricefeed
-        require(IPriceFeeds(priceFeeds).pricesFeeds(collateralToken) != address(0), "invalid");
+        require(IPriceFeeds(priceFeeds).pricesFeeds(collateralToken) != address(0), "no price feed");
         // requires param does not exist
         bytes32 loanParamId = getLoanParam(loanToken, collateralToken, isTorqueLoan);
-        require(loanParamsIds[loanParamId] == 0, "invalid");
+        require(loanParamsIds[loanParamId] == 0, "params already set");
 
         LoanParams memory loanParamsLocal;
         loanParamsLocal.active = true;
@@ -196,7 +196,7 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
         loanParamsLocal.maxLoanTerm = 0;
         loanParamsLocal.id = getLoanParamId(loanParamsLocal);
         
-        require(loanParams[loanParamsLocal.id].id == 0, "invalid");
+        require(loanParams[loanParamsLocal.id].id == 0, "params already exist");
 
         loanParams[loanParamsLocal.id] = loanParamsLocal;
         loanParamsIds[loanParamId] = loanParamsLocal.id;
