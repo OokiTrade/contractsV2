@@ -24,7 +24,7 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
     mapping (bytes4 => address) public logicTargets;                                        // implementations of protocol functions
 
     mapping (bytes32 => Loan) public loans;                                                 // loanId => Loan
-    mapping (bytes32 => LoanParams) public loanParams;                                      // loanParamsId => LoanParams
+    mapping (bytes32 => LoanParams) public loanParams;                                      // loanParamsId => LoanParams loanParamsId = keccak(loanToken, collateralToken,isTorque)
 
     mapping (address => mapping (bytes32 => Order)) public lenderOrders;                    // lender => orderParamsId => Order
     mapping (address => mapping (bytes32 => Order)) public borrowerOrders;                  // borrower => orderParamsId => Order
@@ -41,7 +41,7 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
 
     mapping (address => EnumerableBytes32Set.Bytes32Set) internal lenderLoanSets;           // lender loans set
     mapping (address => EnumerableBytes32Set.Bytes32Set) internal borrowerLoanSets;         // borrow loans set
-    mapping (address => EnumerableBytes32Set.Bytes32Set) internal userLoanParamSets;        // user loan params set
+    mapping (address => EnumerableBytes32Set.Bytes32Set) internal userLoanParamSets;        // user loan params set (deprecated)
 
     address public feesController;                                                          // address controlling fee withdrawals
 
