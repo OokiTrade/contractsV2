@@ -8,7 +8,7 @@ pragma experimental ABIEncoderV2;
 
 import "../StakingStateV2.sol";
 import "./StakingPausableGuardian.sol";
-import "../../farm/interfaces/IMasterChefSushi.sol";
+import "../../farm/interfaces/IMasterChefSushi2.sol";
 import "../delegation/VoteDelegator.sol";
 import "../../interfaces/IVestingToken.sol";
 import "./Common.sol";
@@ -32,7 +32,6 @@ contract StakeUnstake is Common {
         _setTarget(this.exit.selector, target);
     }
 
-
     function totalSupplyByAsset(
         address token)
     external
@@ -43,42 +42,52 @@ contract StakeUnstake is Common {
     }
 
     function _pendingSushiRewards(address _user) internal view returns (uint256) {
-        uint256 pendingSushi = IMasterChefSushi(SUSHI_MASTERCHEF).pendingSushi(OOKI_ETH_SUSHI_MASTERCHEF_PID, address(this));
-
-        uint256 totalSupply = _totalSupplyPerToken[OOKI_ETH_LP];
-        return _pendingAltRewards(SUSHI, _user, balanceOfByAsset(OOKI_ETH_LP, _user), totalSupply != 0 ? pendingSushi.mul(1e12).div(totalSupply) : 0);
+        uint256 lpBalance =  balanceOfByAsset(OOKI_ETH_LP, _user);
+        IStakingV2.AltRewardsUserInfo memory altRewardsUserInfo = userAltRewardsInfo[_user][SUSHI];
+        uint256 pendingSushi = IMasterChefSushi2(SUSHI_MASTERCHEF).pendingSushi(OOKI_ETH_SUSHI_MASTERCHEF_PID, address(this));
+        return _pendingAltRewards(SUSHI, _user, lpBalance, altRewardsUserInfo, pendingSushi);
     }
-
 
     function _pendingAltRewards(
         address token,
         address _user,
         uint256 userSupply,
-        uint256 extraRewardsPerShare
+        IStakingV2.AltRewardsUserInfo memory altRewardsUserInfo,
+        uint256 extraRewards
     ) internal view returns (uint256) {
-        uint256 _altRewardsPerShare = altRewardsPerShare[token].add(extraRewardsPerShare);
-        if (_altRewardsPerShare == 0) return 0;
+        uint256 total;
+        if(userSupply != 0){
+            uint256 _stakingStartBlock = altRewardsUserInfo.stakingStartBlock;
+            if(altRewardsUserInfo.stakingStartBlock > block.number)
+                return 0;
 
-        IStakingV2.AltRewardsUserInfo memory altRewardsUserInfo = userAltRewardsPerShare[_user][token];
-        return altRewardsUserInfo.pendingRewards.add((_altRewardsPerShare.sub(altRewardsUserInfo.rewardsPerShare)).mul(userSupply).div(1e12));
+            uint256 _altRewardsBlock  = altRewardsBlock[token]; // Last time when addAltRewards was triggered
+            uint256 _altRewardsStartBlock = altRewardsStartBlock[token];
+            if(_stakingStartBlock < _altRewardsStartBlock){
+                _stakingStartBlock = _altRewardsStartBlock;
+            }
+
+            uint256 _altRewardsPerShare;
+            uint256 _altRewardsPerSharePerBlock;
+            if(extraRewards != 0){
+                (_altRewardsPerShare, _altRewardsPerSharePerBlock, _altRewardsBlock)  = _addAltRewards(token, extraRewards);
+            }
+            else{
+                _altRewardsPerShare = altRewardsPerShare[token];
+                _altRewardsPerSharePerBlock = altRewardsPerSharePerBlock[token];
+            }
+            total = (_altRewardsBlock - _stakingStartBlock).mul(_altRewardsPerSharePerBlock).mul(userSupply).div(1e12);
+        }
+
+        return total.add(altRewardsUserInfo.pending);
     }
 
     function _depositToSushiMasterchef(uint256 amount) internal {
-        uint256 sushiBalanceBefore = IERC20(SUSHI).balanceOf(address(this));
-        IMasterChefSushi(SUSHI_MASTERCHEF).deposit(OOKI_ETH_SUSHI_MASTERCHEF_PID, amount);
-        uint256 sushiRewards = IERC20(SUSHI).balanceOf(address(this)) - sushiBalanceBefore;
-        if (sushiRewards != 0) {
-            _addAltRewards(SUSHI, sushiRewards);
-        }
+        IMasterChefSushi2(SUSHI_MASTERCHEF).deposit(OOKI_ETH_SUSHI_MASTERCHEF_PID, amount, address(this));
     }
 
     function _withdrawFromSushiMasterchef(uint256 amount) internal {
-        uint256 sushiBalanceBefore = IERC20(SUSHI).balanceOf(address(this));
-        IMasterChefSushi(SUSHI_MASTERCHEF).withdraw(OOKI_ETH_SUSHI_MASTERCHEF_PID, amount);
-        uint256 sushiRewards = IERC20(SUSHI).balanceOf(address(this)) - sushiBalanceBefore;
-        if (sushiRewards != 0) {
-            _addAltRewards(SUSHI, sushiRewards);
-        }
+        IMasterChefSushi2(SUSHI_MASTERCHEF).withdraw(OOKI_ETH_SUSHI_MASTERCHEF_PID, amount, address(this));
     }
 
     function stake(address[] memory tokens, uint256[] memory values) public pausable updateRewards(msg.sender) {
@@ -96,18 +105,24 @@ contract StakeUnstake is Common {
             if (stakeAmount == 0) {
                 continue;
             }
-            uint256 pendingBefore = (token == OOKI_ETH_LP) ? _pendingSushiRewards(msg.sender) : 0;
-            _balancesPerToken[token][msg.sender] = _balancesPerToken[token][msg.sender].add(stakeAmount);
+            uint256 stakedAmount = _balancesPerToken[token][msg.sender];
+            uint256 _balanceAfter = stakedAmount.add(stakeAmount);
             _totalSupplyPerToken[token] = _totalSupplyPerToken[token].add(stakeAmount);
 
             IERC20(token).safeTransferFrom(msg.sender, address(this), stakeAmount);
             // Deposit to sushi masterchef
             if (token == OOKI_ETH_LP) {
                 _depositToSushiMasterchef(IERC20(OOKI_ETH_LP).balanceOf(address(this)));
+                if(userAltRewardsInfo[msg.sender][SUSHI].stakingStartBlock == 0){
+                    userAltRewardsInfo[msg.sender][SUSHI].stakingStartBlock = block.number;
+                    userAltRewardsInfo[msg.sender][SUSHI].pending = 0;
+                }
 
-                userAltRewardsPerShare[msg.sender][SUSHI] = IStakingV2.AltRewardsUserInfo({rewardsPerShare: altRewardsPerShare[SUSHI], pendingRewards: pendingBefore});
+                uint256 _pending = _pendingSushiRewards(msg.sender);
+                userAltRewardsInfo[msg.sender][SUSHI].stakingStartBlock = block.number;
+                userAltRewardsInfo[msg.sender][SUSHI].pending = _pending;
             }
-
+            _balancesPerToken[token][msg.sender] = _balanceAfter;
             emit Stake(msg.sender, token, currentDelegate, stakeAmount);
         }
 
@@ -136,14 +151,8 @@ contract StakeUnstake is Common {
                 unstakeAmount = stakedAmount;
             }
 
-            // Withdraw from sushi masterchef
-            if (token == OOKI_ETH_LP) {
-                _withdrawFromSushiMasterchef(unstakeAmount);
-                userAltRewardsPerShare[msg.sender][SUSHI] = IStakingV2.AltRewardsUserInfo({rewardsPerShare: altRewardsPerShare[SUSHI], pendingRewards: _pendingSushiRewards(msg.sender)});
-            }
-
-            _balancesPerToken[token][msg.sender] = stakedAmount - unstakeAmount; // will not overflow
-            _totalSupplyPerToken[token] = _totalSupplyPerToken[token] - unstakeAmount; // will not overflow
+            uint256 _balanceAfter = stakedAmount - unstakeAmount; // will not overflow
+            _totalSupplyPerToken[token] = _totalSupplyPerToken[token].sub(unstakeAmount);
 
             if (token == OOKI && IERC20(OOKI).balanceOf(address(this)) < unstakeAmount) {
                 // settle vested BZRX only if needed
@@ -151,9 +160,18 @@ contract StakeUnstake is Common {
                 CONVERTER.convert(address(this), IERC20(BZRX).balanceOf(address(this)));
             }
 
+            // Withdraw from sushi masterchef
+            if (token == OOKI_ETH_LP) {
+                _withdrawFromSushiMasterchef(unstakeAmount);
+                uint256 _pending = _pendingSushiRewards(msg.sender);
+                userAltRewardsInfo[msg.sender][SUSHI].stakingStartBlock = block.number;
+                userAltRewardsInfo[msg.sender][SUSHI].pending = _pending;
+            }
+            _balancesPerToken[token][msg.sender] = _balanceAfter;
             IERC20(token).safeTransfer(msg.sender, unstakeAmount);
             emit Unstake(msg.sender, token, currentDelegate, unstakeAmount);
         }
+
         _voteDelegator.moveDelegatesByVotingBalance(votingBalanceBefore, _votingFromStakedBalanceOf(msg.sender, _proposalState, true), msg.sender);
     }
 
@@ -228,18 +246,20 @@ contract StakeUnstake is Common {
 
     function _claimSushi() internal returns (uint256) {
         address _user = msg.sender;
+        uint256 pending = IMasterChefSushi2(SUSHI_MASTERCHEF).pendingSushi(OOKI_ETH_SUSHI_MASTERCHEF_PID, address(this));
         uint256 lptUserSupply = balanceOfByAsset(OOKI_ETH_LP, _user);
+        uint256 pendingSushi = _pendingAltRewards(SUSHI, _user, lptUserSupply, userAltRewardsInfo[_user][SUSHI], pending);
 
-        //This will trigger claim rewards from sushi masterchef
-        _depositToSushiMasterchef(IERC20(OOKI_ETH_LP).balanceOf(address(this)));
-
-        uint256 pendingSushi = _pendingAltRewards(SUSHI, _user, lptUserSupply, 0);
-
-        userAltRewardsPerShare[_user][SUSHI] = IStakingV2.AltRewardsUserInfo({rewardsPerShare: altRewardsPerShare[SUSHI], pendingRewards: 0});
         if (pendingSushi != 0) {
+            if(IERC20(SUSHI).balanceOf(address(this)) < pendingSushi){
+                IMasterChefSushi2(SUSHI_MASTERCHEF).harvest(OOKI_ETH_SUSHI_MASTERCHEF_PID, address(this));
+                (altRewardsPerShare[SUSHI], altRewardsPerSharePerBlock[SUSHI], altRewardsBlock[SUSHI])  = _addAltRewards(SUSHI, pendingSushi);
+                emit AddAltRewards(msg.sender, SUSHI, pendingSushi);
+            }
             IERC20(SUSHI).safeTransfer(_user, pendingSushi);
+            userAltRewardsInfo[_user][SUSHI].pending = 0;
+            userAltRewardsInfo[_user][SUSHI].stakingStartBlock = block.number;
         }
-
         return pendingSushi;
     }
 
@@ -275,13 +295,12 @@ contract StakeUnstake is Common {
         (ookiRewards[account], stableCoinRewards[account]) = _syncVesting(account, ookiRewardsEarned, stableCoinRewardsEarned, ookiRewardsVesting, stableCoinRewardsVesting);
 
         vestingLastSync[account] = block.timestamp;
-
         _;
     }
 
     function earned(address account)
         external
-         
+        view
         returns (
             uint256 ookiRewardsEarned,
             uint256 stableCoinRewardsEarned,
@@ -298,15 +317,7 @@ contract StakeUnstake is Common {
         uint256 multiplier = vestedBalanceForAmount(1e36, 0, block.timestamp);
         ookiRewardsVesting = ookiRewardsVesting.sub(ookiRewardsVesting.mul(multiplier).div(1e36));
         stableCoinRewardsVesting = stableCoinRewardsVesting.sub(stableCoinRewardsVesting.mul(multiplier).div(1e36));
-
-        uint256 pendingSushi = IMasterChefSushi(SUSHI_MASTERCHEF).pendingSushi(OOKI_ETH_SUSHI_MASTERCHEF_PID, address(this));
-
-        sushiRewardsEarned = _pendingAltRewards(
-            SUSHI,
-            account,
-            balanceOfByAsset(OOKI_ETH_LP, account),
-            (_totalSupplyPerToken[OOKI_ETH_LP] != 0) ? pendingSushi.mul(1e12).div(_totalSupplyPerToken[OOKI_ETH_LP]) : 0
-        );
+        sushiRewardsEarned = _pendingSushiRewards(account);
     }
 
     function _earned(
@@ -315,7 +326,7 @@ contract StakeUnstake is Common {
         uint256 _stableCoinPerToken
     )
         internal
-        
+        view
         returns (
             uint256 ookiRewardsEarned,
             uint256 stableCoinRewardsEarned,
@@ -413,20 +424,21 @@ contract StakeUnstake is Common {
 
     function addAltRewards(address token, uint256 amount) public {
         if (amount != 0) {
-            _addAltRewards(token, amount);
+            (altRewardsPerShare[token], altRewardsPerSharePerBlock[token], altRewardsBlock[token])  = _addAltRewards(token, amount);
             IERC20(token).transferFrom(msg.sender, address(this), amount);
+            emit AddAltRewards(msg.sender, token, amount);
         }
     }
 
-    function _addAltRewards(address token, uint256 amount) internal {
+    function _addAltRewards(address token, uint256 amount) internal view
+        returns (uint256 _altRewardsPerShare, uint256 _altRewardsPerSharePerBlock, uint256 _altRewardsBlock){
         address poolAddress = token == SUSHI ? OOKI_ETH_LP : token;
-
         uint256 totalSupply = _totalSupplyPerToken[poolAddress];
         require(totalSupply != 0, "no deposits");
+        _altRewardsPerShare = altRewardsPerShare[token].add(amount.mul(1e12).div(totalSupply));
+        _altRewardsPerSharePerBlock = _altRewardsPerShare.div(block.number - altRewardsStartBlock[token]);
+        _altRewardsBlock = block.number;
 
-        altRewardsPerShare[token] = altRewardsPerShare[token].add(amount.mul(1e12).div(totalSupply));
-
-        emit AddAltRewards(msg.sender, token, amount);
     }
 
     function balanceOfByAsset(address token, address account) public view returns (uint256 balance) {

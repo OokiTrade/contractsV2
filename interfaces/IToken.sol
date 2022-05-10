@@ -137,8 +137,6 @@ interface IToken {
 
     function transferOwnership(address newOwner) external;
 
-
-    
     function initializeDomainSeparator() external;
 
     struct LoanOpenData {
