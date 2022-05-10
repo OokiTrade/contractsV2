@@ -15,6 +15,6 @@ contract LoanParamsStruct {
         address collateralToken;    // the required collateral token
         uint256 minInitialMargin;   // the minimum allowed initial margin
         uint256 maintenanceMargin;  // an unhealthy loan when current margin is at or below this value
-        uint256 maxLoanTerm;        // the maximum term for new loans (0 means there's no max term)
+        uint256 maxLoanTerm;        // the maximum term for new loans (0 means there's no max term) historically(0 means torque non zero means fulcrum)
     }
 }
