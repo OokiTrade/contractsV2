@@ -26,3 +26,4 @@ LOAN_TOKEN_SETTINGS_LOWER_ADMIN = Contract.from_abi("LOAN_TOKEN_SETTINGS_LOWER_A
 MULTICALL3 = Contract.from_abi("MULTICALL3", "0xcA11bde05977b3631167028862bE2a173976CA11", interface.IMulticall3.abi)
 
 OOKI = Contract.from_abi("OOKI", "0xCd150B1F528F326f5194c012f32Eb30135C7C2c9", interface.ERC20.abi)
+SWEEP_FEES = Contract.from_abi("SWEEP_FEES", "0x8c02eDeE0c759df83e31861d11E6918Dd93427d2", FeeExtractAndDistribute_Polygon.abi)

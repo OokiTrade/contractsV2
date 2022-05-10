@@ -101,6 +101,8 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
             exactParams[0].amountIn = exactParams[0].amountIn.add(
                 amountIn.sub(totalAmounts)
             ); //adds displacement to first swap set
+        } else {
+            return dexAmountOut(exactParams[0].path, amountIn); //this else intentionally ignores the other swap impls. It is specifically designed to avoid edge cases
         }
         uint256 tempAmountOut;
         for (uint256 i = 0; i < exactParams.length; i++) {
@@ -141,6 +143,8 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
             exactParams[0].amountOut = exactParams[0].amountOut.add(
                 amountOut.sub(totalAmounts)
             ); //adds displacement to first swap set
+        } else {
+            return dexAmountIn(exactParams[0].path, amountOut); //this else intentionally ignores the other swap impls. It is specifically designed to avoid edge cases
         }
         uint256 tempAmountIn;
         for (uint256 i = 0; i < exactParams.length; i++) {
