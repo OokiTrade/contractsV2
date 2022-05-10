@@ -23,16 +23,12 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
     {
         _setTarget(this.borrowOrTradeFromPool.selector, target);
         _setTarget(this.setDelegatedManager.selector, target);
-        _setTarget(this.getLoanParams.selector, target);
-        _setTarget(this.getPoolLoanParamId.selector, target);
-        _setTarget(this.getLoanParamId.selector, target);
+        _setTarget(this.generateLoanParamId.selector, target);
+        _setTarget(this.generateLoanParamStructId.selector, target);
         _setTarget(this.getRequiredCollateral.selector, target);
         _setTarget(this.getRequiredCollateralByParams.selector, target);
         _setTarget(this.getBorrowAmount.selector, target);
         _setTarget(this.getBorrowAmountByParams.selector, target);
-
-        // TODO remove next deploy
-        _setTarget(bytes4(keccak256("getEstimatedMarginExposure(address,address,uint256,uint256,uint256,uint256,bytes")), address(0));
     }
 
     // Note: Only callable by loan pools (iTokens)
@@ -65,7 +61,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         address loanToken = loanPoolToUnderlying[msg.sender];
         require(loanToken != address(0), "not authorized");
 
-        LoanParams memory loanParamsLocal = getLoanParams(loanToken, collateralToken, isTorqueLoan);
+        LoanParams memory loanParamsLocal = getDefaultLoanParamsAndStore(loanToken, collateralToken, isTorqueLoan);
         require(loanParamsLocal.id != 0, "loanParams not exists");
 
         if (initialMargin == 0) {
@@ -95,16 +91,15 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         );
     }
 
-    function getLoanParams(
+    function getDefaultLoanParamsAndStore(
         address loanToken,
         address collateralToken,
         bool isTorqueLoan)
-        public
-        view
+        internal
         returns(LoanParams memory loanParamsLocal) 
     {
         
-        bytes32 loanParamsId = getPoolLoanParamId(loanToken, collateralToken, isTorqueLoan);
+        bytes32 loanParamsId = generateLoanParamId(loanToken, collateralToken, isTorqueLoan);
 
         loanParamsLocal = loanParams[loanParamsId];
         if (loanParamsLocal.id == 0) {
@@ -117,7 +112,8 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
                 loanParamsLocal.minInitialMargin = 20 ether;
                 loanParamsLocal.maintenanceMargin = 15 ether;
                 loanParamsLocal.maxLoanTerm = 0;
-                loanParamsLocal.id = getLoanParamId(loanParamsLocal);
+                loanParamsLocal.id = generateLoanParamStructId(loanParamsLocal);
+                loanParams[loanParamsId] = loanParamsLocal;
             } else {
                 // we can't use iToken as collateral for marginTrade yet
             }
@@ -126,7 +122,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         }
     }
 
-    function getPoolLoanParamId(
+    function generateLoanParamId(
         address loanToken,
         address collateralToken,
         bool isTorqueLoan)
@@ -141,7 +137,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         ))];
     }
 
-    function getLoanParamId(
+    function generateLoanParamStructId(
         LoanParams memory loanParam)
         public
         pure

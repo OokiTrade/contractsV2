@@ -79,3 +79,15 @@ def test_permit(requireFork, USDT, iUSDT, accounts, BZX, interface, web3):
     USDT.approve(iUSDT, 2**256-1, {"from": local})
     iUSDT.mint(local, 1000e6, {"from": local})
     assert False
+
+
+def test_borrow_and_close_itoken_with_permit():
+    assert False
+
+def test_liquidate_itoken():
+    assert False
+
+def test_guardian_create_inewitoken():
+    assert False
+
+    
