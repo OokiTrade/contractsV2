@@ -26,7 +26,6 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         Liquidation
     }
 
-
     function _checkPermit(address token, bytes memory loanDataBytes) internal {
         if(abi.decode(loanDataBytes, (uint128)) & WITH_PERMIT != 0) {
             (uint128 f, bytes[] memory payload) = abi.decode(

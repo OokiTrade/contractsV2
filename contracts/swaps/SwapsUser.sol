@@ -168,7 +168,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
         } else {
             require(vals[0] <= vals[1], "min greater than max");
         }
-        bytes memory loanDataBytes;
+        
         if (loanDataBytes.length != 0 && abi.decode(loanDataBytes, (uint128)) & DEX_SELECTOR_FLAG != 0) {
             (, bytes[] memory payload) = abi.decode(
                 loanDataBytes,

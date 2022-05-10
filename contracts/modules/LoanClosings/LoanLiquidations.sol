@@ -110,12 +110,4 @@ contract LoanLiquidations is LoanClosingsBase {
 
         _closeLoan(loanLocal, loanParamsLocal.loanToken, loanCloseAmount);
     }
-
-    function _getDefaultLiquidationIncentivePercent(address loanToken, address collateralToken) view returns (uint256 incentivePercent) {
-        incentivePercent = liquidationIncentivePercent[loanToken][collateralToken];
-        if (incentivePercent == 0) {
-            // TODO
-            incentivePercent = 0;
-        }
-    }
 }
