@@ -10,14 +10,15 @@ import "../../core/State.sol";
 import "../../events/LoanClosingsEvents.sol";
 import "../../mixins/VaultController.sol";
 import "../../mixins/InterestHandler.sol";
-import "../../mixins/FeesHelper.sol";
+// import "../../mixins/FeesHelper.sol";
 import "../../mixins/LiquidationHelper.sol";
 import "../../swaps/SwapsUser.sol";
 import "../../interfaces/ILoanPool.sol";
+import "../../interfaces/draft-IERC20Permit.sol";
 import "../../governance/PausableGuardian.sol";
 
 
-contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, InterestHandler, FeesHelper, SwapsUser, LiquidationHelper, PausableGuardian {
+contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, InterestHandler, SwapsUser, PausableGuardian {
 
     enum CloseTypes {
         Deposit,
@@ -63,7 +64,7 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
 
         loanCloseAmount = closeAmount;
 
-        (uint256 maxLiquidatable, uint256 maxSeizable) = _getLiquidationAmounts(
+        (uint256 maxLiquidatable, uint256 maxSeizable) = LiquidationHelper._getLiquidationAmounts(
             principalPlusInterest,
             loanLocal.collateral,
             currentMargin,
@@ -124,10 +125,22 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         );
     }
 
+    function _checkPermit(address token, bytes memory loanDataBytes) internal {
+        if(abi.decode(loanDataBytes, (uint128)) & WITH_PERMIT != 0) {
+            (uint128 f, bytes[] memory payload) = abi.decode(
+                loanDataBytes,
+                (uint128, bytes[])
+            );
+            (address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) = abi.decode(payload[2], (address, address, uint, uint, uint8, bytes32, bytes32));
+            IERC20Permit(token).permit(owner, spender, value, deadline, v, r, s);
+        }
+    }
+
     function _closeWithDeposit(
         bytes32 loanId,
         address receiver,
-        uint256 depositAmount) // denominated in loanToken
+        uint256 depositAmount, // denominated in loanToken
+        bytes memory loanDataBytes)
         internal
         pausable
         returns (
@@ -150,6 +163,8 @@ contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, Interes
         }
 
         LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
+
+        _checkPermit(loanParamsLocal.collateralToken, loanDataBytes);
 
         uint256 principalPlusInterest = _settleInterest(loanLocal.lender, loanId)
             .add(loanLocal.principal);

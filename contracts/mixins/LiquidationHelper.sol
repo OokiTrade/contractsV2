@@ -5,11 +5,12 @@
 
 pragma solidity 0.5.17;
 
-import "../core/Constants.sol";
 import "@openzeppelin-2.5.0/math/SafeMath.sol";
 
-contract LiquidationHelper is Constants {
+library LiquidationHelper {
     using SafeMath for uint256;
+    uint256 internal constant WEI_PRECISION = 10**18;
+    uint256 internal constant WEI_PERCENT_PRECISION = 10**20;
 
     function _getLiquidationAmounts(
         uint256 principal,
@@ -18,7 +19,7 @@ contract LiquidationHelper is Constants {
         uint256 maintenanceMargin,
         uint256 collateralToLoanRate,
         uint256 incentivePercent)
-        internal
+        public
         pure
         returns (uint256 maxLiquidatable, uint256 maxSeizable)
     {

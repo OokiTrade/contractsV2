@@ -11,14 +11,20 @@ import "./AdvancedTokenStorage.sol";
 contract AdvancedToken is AdvancedTokenStorage {
     using SafeMath for uint256;
 
-    function approve(
+    function _approve(
+        address owner,
         address _spender,
         uint256 _value)
         public
         returns (bool)
     {
-        allowed[msg.sender][_spender] = _value;
-        emit Approval(msg.sender, _spender, _value);
+        allowed[owner][_spender] = _value;
+        emit Approval(owner, _spender, _value);
+        return true;
+    }
+
+    function approve(address spender, uint value) external returns (bool) {
+        _approve(msg.sender, spender, value);
         return true;
     }
 

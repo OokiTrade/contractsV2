@@ -32,7 +32,7 @@ contract LoanClosings is LoanClosingsBase {
         bytes32 loanId,
         address receiver,
         uint256 closeAmount) // denominated in loanToken
-        external
+        public
         payable
         nonReentrant
         returns (
@@ -51,7 +51,8 @@ contract LoanClosings is LoanClosingsBase {
     function closeWithDeposit(
         bytes32 loanId,
         address receiver,
-        uint256 depositAmount) // denominated in loanToken
+        uint256 depositAmount, // denominated in loanToken
+        bytes memory loanDataBytes)
         public
         payable
         nonReentrant
@@ -64,7 +65,8 @@ contract LoanClosings is LoanClosingsBase {
         return _closeWithDeposit(
             loanId,
             receiver,
-            depositAmount
+            depositAmount,
+            loanDataBytes
         );
     }
 

@@ -15,7 +15,7 @@ import "../../swaps/SwapsUser.sol";
 import "../../governance/PausableGuardian.sol";
 
 
-contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, InterestHandler, SwapsUser, LiquidationHelper, PausableGuardian {
+contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, InterestHandler, SwapsUser, PausableGuardian {
 
     function initialize(
         address target)
@@ -401,7 +401,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         uint256 maxLiquidatable;
         uint256 maxSeizable;
         if (currentMargin <= loanParamsLocal.maintenanceMargin) {
-            (maxLiquidatable, maxSeizable) = _getLiquidationAmounts(
+            (maxLiquidatable, maxSeizable) = LiquidationHelper._getLiquidationAmounts(
                 loanLocal.principal,
                 loanLocal.collateral,
                 currentMargin,
