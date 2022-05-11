@@ -15,7 +15,7 @@ contract AdvancedToken is AdvancedTokenStorage {
         address owner,
         address _spender,
         uint256 _value)
-        public
+        internal
         returns (bool)
     {
         allowed[owner][_spender] = _value;
@@ -24,8 +24,7 @@ contract AdvancedToken is AdvancedTokenStorage {
     }
 
     function approve(address spender, uint value) external returns (bool) {
-        _approve(msg.sender, spender, value);
-        return true;
+        return _approve(msg.sender, spender, value);
     }
 
     function increaseApproval(
