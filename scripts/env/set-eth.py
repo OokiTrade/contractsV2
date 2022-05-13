@@ -5,7 +5,7 @@ TOKEN_REGISTRY = Contract.from_abi("TOKEN_REGISTRY", "0xf0E474592B455579Fe580D61
 
 list = TOKEN_REGISTRY.getTokens(0, 50)
 for l in list:
-    iTokenTemp = Contract.from_abi("iTokenTemp", l[0], LoanTokenLogicStandard.abi)
+    iTokenTemp = Contract.from_abi("iTokenTemp", l[0], interface.IToken.abi)
     globals()[iTokenTemp.symbol()] = iTokenTemp
 
 
@@ -31,7 +31,7 @@ BPT = Contract.from_abi("BPT", "0xe26A220a341EAca116bDa64cF9D5638A935ae629", Tes
 
 SLP = Contract.from_abi("SLP", "0xa30911e072A0C88D55B5D0A0984B66b0D04569d0", TestToken.abi)
 
-HELPER = Contract.from_abi("HELPER", "0x3B55369bfeA51822eb3E85868c299E8127E13c56", HelperImpl.abi)
+HELPER = Contract.from_abi("HELPER", "0xb887f5b81deec1e271b06257f138e5a9d422bc8c", HelperImpl.abi)
 PRICE_FEED = Contract.from_abi("PRICE_FEED", BZX.priceFeeds(), abi = PriceFeeds.abi)
 
 SWEEP_FEES = Contract.from_abi("STAKING", "0xfFB328AD3b727830F9482845A4737AfDDDe85554", FeeExtractAndDistribute_ETH.abi)

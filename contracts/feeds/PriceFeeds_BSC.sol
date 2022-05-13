@@ -383,7 +383,7 @@ contract PriceFeeds_BSC is Constants, Ownable {
 
     function _getFastGasPrice()
         internal
-        view
+        pure
         returns (uint256 gasPrice)
     {
         return 10e9;

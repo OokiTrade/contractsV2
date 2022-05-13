@@ -11,8 +11,11 @@ import "../../events/ProtocolSettingsEvents.sol";
 import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 import "../../interfaces/IVestingToken.sol";
 import "../../utils/MathUtil.sol";
+import "../../interfaces/IDexRecords.sol";
+import "../../governance/PausableGuardian.sol";
 
-contract ProtocolSettings is State, ProtocolSettingsEvents {
+
+contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian {
     using SafeERC20 for IERC20;
     using MathUtil for uint256;
 
@@ -35,12 +38,18 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         _setTarget(this.setMaxSwapSize.selector, target);
         _setTarget(this.setFeesController.selector, target);
         _setTarget(this.withdrawFees.selector, target);
-        _setTarget(this.withdrawProtocolToken.selector, target);
-        _setTarget(this.depositProtocolToken.selector, target);
-        _setTarget(this.grantRewards.selector, target);
         _setTarget(this.queryFees.selector, target);
         _setTarget(this.getLoanPoolsList.selector, target);
         _setTarget(this.isLoanPool.selector, target);
+        _setTarget(this.revokeApprovals.selector, target);
+
+        /*
+            Targets still exist, but functions are decommissioned:
+            _setTarget(this.withdrawProtocolToken.selector, target);
+            _setTarget(this.depositProtocolToken.selector, target);
+            _setTarget(this.grantRewards.selector, target);
+        */
+
     }
 
     function setPriceFeedContract(
@@ -136,7 +145,24 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
                 0x4a99e3a1, // setSwapApprovals(address[])
                 addrs
             );
-            (bool success,) = swapsImpl.delegatecall(data);
+            IDexRecords records = IDexRecords(swapsImpl);
+            for(uint256 i = 1; i<=records.getDexCount();i++){
+                address swapImpl = records.retrieveDexAddress(i);
+                (bool success,) = swapImpl.delegatecall(data);
+                require(success, "approval calls failed");
+            }
+        }
+    }
+    
+    function revokeApprovals(address[] calldata addrs) external onlyGuardian {
+        bytes memory data = abi.encodeWithSelector(
+            0x7265766f, // revokeApprovals(address[])
+            addrs
+        );
+        IDexRecords records = IDexRecords(swapsImpl);
+        for(uint256 i = 1; i<=records.getDexCount();i++){
+            address swapImpl = records.retrieveDexAddress(i);
+            (bool success,) = swapImpl.delegatecall(data);
             require(success, "approval calls failed");
         }
     }
@@ -346,6 +372,70 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
         }
     }
 
+    // NOTE: this doesn't sanitize inputs -> inaccurate values may be returned if there are duplicates tokens input
+    function queryFees(
+        address[] calldata tokens,
+        FeeClaimType feeType)
+        external
+        view
+        returns (uint256[] memory amountsHeld, uint256[] memory amountsPaid)
+    {
+        amountsHeld = new uint256[](tokens.length);
+        amountsPaid = new uint256[](tokens.length);
+        address token;
+        for (uint256 i = 0; i < tokens.length; i++) {
+            token = tokens[i];
+            
+            if (feeType == FeeClaimType.Lending) {
+                amountsHeld[i] = lendingFeeTokensHeld[token];
+                amountsPaid[i] = lendingFeeTokensPaid[token];
+            } else if (feeType == FeeClaimType.Trading) {
+                amountsHeld[i] = tradingFeeTokensHeld[token];
+                amountsPaid[i] = tradingFeeTokensPaid[token];
+            } else if (feeType == FeeClaimType.Borrowing) {
+                amountsHeld[i] = borrowingFeeTokensHeld[token];
+                amountsPaid[i] = borrowingFeeTokensPaid[token];
+            } else {
+                amountsHeld[i] = lendingFeeTokensHeld[token] + tradingFeeTokensHeld[token] + borrowingFeeTokensHeld[token]; // will not overflow
+                amountsPaid[i] = lendingFeeTokensPaid[token] + tradingFeeTokensPaid[token] + borrowingFeeTokensPaid[token]; // will not overflow
+            }
+        }
+    }
+
+    function getLoanPoolsList(
+        uint256 start,
+        uint256 count)
+        external
+        view
+        returns (address[] memory loanPoolsList)
+    {
+        EnumerableBytes32Set.Bytes32Set storage set = loanPoolsSet;
+        uint256 end = start.add(count).min256(set.length());
+        if (start >= end) {
+            return loanPoolsList;
+        }
+        count = end-start;
+
+        loanPoolsList = new address[](count);
+        for (uint256 i = --end; i >= start; i--) {
+            loanPoolsList[--count] = set.getAddress(i);
+
+            if (i == 0) {
+                break;
+            }
+        }
+    }
+
+    function isLoanPool(
+        address loanPool)
+        external
+        view
+        returns (bool)
+    {
+        return loanPoolToUnderlying[loanPool] != address(0);
+    }
+
+    /*
     function withdrawProtocolToken(
         address receiver,
         uint256 amount)
@@ -435,67 +525,6 @@ contract ProtocolSettings is State, ProtocolSettingsEvents {
             );
         }
     }
+    */
 
-    // NOTE: this doesn't sanitize inputs -> inaccurate values may be returned if there are duplicates tokens input
-    function queryFees(
-        address[] calldata tokens,
-        FeeClaimType feeType)
-        external
-        view
-        returns (uint256[] memory amountsHeld, uint256[] memory amountsPaid)
-    {
-        amountsHeld = new uint256[](tokens.length);
-        amountsPaid = new uint256[](tokens.length);
-        address token;
-        for (uint256 i = 0; i < tokens.length; i++) {
-            token = tokens[i];
-            
-            if (feeType == FeeClaimType.Lending) {
-                amountsHeld[i] = lendingFeeTokensHeld[token];
-                amountsPaid[i] = lendingFeeTokensPaid[token];
-            } else if (feeType == FeeClaimType.Trading) {
-                amountsHeld[i] = tradingFeeTokensHeld[token];
-                amountsPaid[i] = tradingFeeTokensPaid[token];
-            } else if (feeType == FeeClaimType.Borrowing) {
-                amountsHeld[i] = borrowingFeeTokensHeld[token];
-                amountsPaid[i] = borrowingFeeTokensPaid[token];
-            } else {
-                amountsHeld[i] = lendingFeeTokensHeld[token] + tradingFeeTokensHeld[token] + borrowingFeeTokensHeld[token]; // will not overflow
-                amountsPaid[i] = lendingFeeTokensPaid[token] + tradingFeeTokensPaid[token] + borrowingFeeTokensPaid[token]; // will not overflow
-            }
-        }
-    }
-
-    function getLoanPoolsList(
-        uint256 start,
-        uint256 count)
-        external
-        view
-        returns (address[] memory loanPoolsList)
-    {
-        EnumerableBytes32Set.Bytes32Set storage set = loanPoolsSet;
-        uint256 end = start.add(count).min256(set.length());
-        if (start >= end) {
-            return loanPoolsList;
-        }
-        count = end-start;
-
-        loanPoolsList = new address[](count);
-        for (uint256 i = --end; i >= start; i--) {
-            loanPoolsList[--count] = set.getAddress(i);
-
-            if (i == 0) {
-                break;
-            }
-        }
-    }
-
-    function isLoanPool(
-        address loanPool)
-        external
-        view
-        returns (bool)
-    {
-        return loanPoolToUnderlying[loanPool] != address(0);
-    }
 }

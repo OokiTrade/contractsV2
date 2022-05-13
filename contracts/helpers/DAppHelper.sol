@@ -74,7 +74,7 @@ contract DAppHelper {
             totalAssetSupply[i] = token.totalAssetSupply();
             totalAssetBorrow[i] = token.totalAssetBorrow();
             supplyInterestRate[i] = token.supplyInterestRate();
-            borrowInterestRate[i] = token.avgBorrowInterestRate();
+            borrowInterestRate[i] = token.borrowInterestRate();
             torqueBorrowInterestRate[i] = token.nextBorrowInterestRate(0);
 
             address loanToken = token.loanTokenAddress();

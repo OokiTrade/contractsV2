@@ -28,7 +28,8 @@ contract SwapsImplUniswapV2_BSC is State, ISwapsImpl {
         address returnToSenderAddress,
         uint256 minSourceTokenAmount,
         uint256 maxSourceTokenAmount,
-        uint256 requiredDestTokenAmount)
+        uint256 requiredDestTokenAmount,
+        bytes memory payload)
         public
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
     {
@@ -68,13 +69,12 @@ contract SwapsImplUniswapV2_BSC is State, ISwapsImpl {
     }
 
     function dexAmountOut(
-        address sourceTokenAddress,
-        address destTokenAddress,
+        bytes memory payload,
         uint256 amountIn)
         public
-        view
         returns (uint256 amountOut, address midToken)
     {
+	    (address sourceTokenAddress, address destTokenAddress) = abi.decode(payload,(address,address));
         if (sourceTokenAddress == destTokenAddress) {
             amountOut = amountIn;
         } else if (amountIn != 0) {
@@ -118,14 +118,22 @@ contract SwapsImplUniswapV2_BSC is State, ISwapsImpl {
         }
     }
 
+    function dexAmountOutFormatted(
+        bytes memory payload,
+        uint256 amountIn)
+        public
+        returns (uint256 amountOut, address midToken)
+    {
+	    return dexAmountOut(payload, amountIn);
+	}
+
     function dexAmountIn(
-        address sourceTokenAddress,
-        address destTokenAddress,
+        bytes memory payload,
         uint256 amountOut)
         public
-        view
         returns (uint256 amountIn, address midToken)
     {
+	    (address sourceTokenAddress, address destTokenAddress) = abi.decode(payload,(address,address));
         if (sourceTokenAddress == destTokenAddress) {
             amountIn = amountOut;
         } else if (amountOut != 0) {
@@ -172,6 +180,15 @@ contract SwapsImplUniswapV2_BSC is State, ISwapsImpl {
             }
         }
     }
+
+    function dexAmountInFormatted(
+        bytes memory payload,
+        uint256 amountOut)
+        public
+        returns (uint256 amountIn, address midToken)
+    {
+        return dexAmountIn(payload, amountOut);
+	}
 
     function _getAmountOut(
         uint256 amountIn,
@@ -230,6 +247,12 @@ contract SwapsImplUniswapV2_BSC is State, ISwapsImpl {
         }
     }
 
+    function revokeApprovals(address[] memory tokens) public {
+        for (uint256 i = 0; i < tokens.length; i++) {
+            IERC20(tokens[i]).safeApprove(uniswapRouter, 0);
+        }
+    }
+
     function _swapWithUni(
         address sourceTokenAddress,
         address destTokenAddress,
@@ -243,8 +266,7 @@ contract SwapsImplUniswapV2_BSC is State, ISwapsImpl {
         address midToken;
         if (requiredDestTokenAmount != 0) {
             (sourceTokenAmountUsed, midToken) = dexAmountIn(
-                sourceTokenAddress,
-                destTokenAddress,
+                abi.encode(sourceTokenAddress,destTokenAddress),
                 requiredDestTokenAmount
             );
             if (sourceTokenAmountUsed == 0) {
@@ -254,8 +276,7 @@ contract SwapsImplUniswapV2_BSC is State, ISwapsImpl {
         } else {
             sourceTokenAmountUsed = minSourceTokenAmount;
             (destTokenAmountReceived, midToken) = dexAmountOut(
-                sourceTokenAddress,
-                destTokenAddress,
+                abi.encode(sourceTokenAddress,destTokenAddress),
                 sourceTokenAmountUsed
             );
             if (destTokenAmountReceived == 0) {
