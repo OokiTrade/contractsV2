@@ -31,7 +31,7 @@ BPT = Contract.from_abi("BPT", "0xe26A220a341EAca116bDa64cF9D5638A935ae629", Tes
 
 SLP = Contract.from_abi("SLP", "0xa30911e072A0C88D55B5D0A0984B66b0D04569d0", TestToken.abi)
 
-HELPER = Contract.from_abi("HELPER", "0xFad79f3922cCef7AeB8A5674f36E45B6E81A10C7", HelperImpl.abi)
+HELPER = Contract.from_abi("HELPER", "0xb887f5b81deec1e271b06257f138e5a9d422bc8c", HelperImpl.abi)
 PRICE_FEED = Contract.from_abi("PRICE_FEED", BZX.priceFeeds(), abi = PriceFeeds.abi)
 
 SWEEP_FEES = Contract.from_abi("STAKING", "0xfFB328AD3b727830F9482845A4737AfDDDe85554", FeeExtractAndDistribute_ETH.abi)
