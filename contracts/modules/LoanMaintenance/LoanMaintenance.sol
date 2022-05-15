@@ -36,13 +36,6 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             Targets still exist, but functions are decommissioned:
             _setTarget(this.claimRewards.selector, target);
             _setTarget(this.rewardsBalanceOf.selector, target);
-        
-        // TEMP: remove after upgrade ETH
-        _setTarget(bytes4(keccak256("withdrawAccruedInterest(address)")), address(0));
-        _setTarget(bytes4(keccak256("extendLoanDuration(bytes32,uint256,bool,bytes)")), address(0));
-        _setTarget(bytes4(keccak256("reduceLoanDuration(bytes32,address,uint256)")), address(0));
-        _setTarget(bytes4(keccak256("getLenderInterestData(address,address)")), address(0));
-        _setTarget(bytes4(keccak256("getLoanInterestData(bytes32)")), address(0));
         */
     }
 
