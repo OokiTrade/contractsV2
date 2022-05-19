@@ -136,7 +136,10 @@ interface IToken {
     function symbol() external view  returns (string memory);
 
     function updateSettings(address settingsTarget, bytes calldata callData) external;
+    
+    function owner() external view returns (address);
 
+    function transferOwnership(address newOwner) external;
 
     function mintWithEther(address receiver) external payable;
 
