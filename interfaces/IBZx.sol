@@ -362,6 +362,20 @@ interface IBZx {
         external
         view
         returns(LoanParams memory loanParamsLocal);
+    
+    function getDefaultLoanParams(
+        address loanToken,
+        address collateralToken,
+        bool isTorqueLoan)
+        external
+        view
+        returns(LoanParams memory loanParamsLocal, bool isDefault);
+
+    function generateLoanParamId(
+        address loanToken,
+        address collateralToken,
+        bool isTorqueLoan
+    ) external pure returns (bytes32);
 
     function getPoolLoanParamId(
         address loanToken,

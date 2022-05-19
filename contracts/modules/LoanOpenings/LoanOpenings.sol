@@ -18,7 +18,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         _setTarget(this.borrowOrTradeFromPool.selector, target);
         _setTarget(this.setDelegatedManager.selector, target);
         _setTarget(this.generateLoanParamId.selector, target);
-        _setTarget(this.generateLoanParamStructId.selector, target);
+        _setTarget(this.getDefaultLoanParams.selector, target);
         _setTarget(this.getRequiredCollateral.selector, target);
         _setTarget(this.getRequiredCollateralByParams.selector, target);
         _setTarget(this.getBorrowAmount.selector, target);
@@ -71,8 +71,20 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         address collateralToken,
         bool isTorqueLoan
     ) internal returns (LoanParams memory loanParamsLocal) {
-        bytes32 loanParamsId = generateLoanParamId(loanToken, collateralToken, isTorqueLoan);
+        bool isDefault;
+        (loanParamsLocal, isDefault) = getDefaultLoanParams(loanToken, collateralToken, isTorqueLoan);
+        if (isDefault) {
+            // store if its default
+            loanParams[loanParamsLocal.id] = loanParamsLocal;
+        }
+    }
 
+    function getDefaultLoanParams(
+        address loanToken,
+        address collateralToken,
+        bool isTorqueLoan
+    ) public view returns (LoanParams memory loanParamsLocal, bool isDefault) {
+        bytes32 loanParamsId = generateLoanParamId(loanToken, collateralToken, isTorqueLoan);
         loanParamsLocal = loanParams[loanParamsId];
         if (loanParamsLocal.id == 0) {
             if (isTorqueLoan) {
@@ -84,13 +96,13 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
                 loanParamsLocal.minInitialMargin = 20 ether;
                 loanParamsLocal.maintenanceMargin = 15 ether;
                 loanParamsLocal.maxLoanTerm = 0; // just because its torque
-                loanParamsLocal.id = generateLoanParamStructId(loanParamsLocal);
-                loanParams[loanParamsId] = loanParamsLocal;
+                loanParamsLocal.id = loanParamsId;
+                return (loanParamsLocal, true);
             } else {
                 // we can't use iToken as collateral for marginTrade yet
             }
         } else {
-            return loanParamsLocal;
+            return (loanParamsLocal, false);
         }
     }
 
@@ -100,10 +112,6 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         bool isTorqueLoan
     ) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(loanToken, collateralToken, isTorqueLoan));
-    }
-
-    function generateLoanParamStructId(LoanParams memory loanParam) public pure returns (bytes32) {
-        return keccak256(abi.encode(loanParam.loanToken, loanParam.collateralToken, loanParam.minInitialMargin, loanParam.maintenanceMargin, loanParam.maxLoanTerm));
     }
 
     function setDelegatedManager(

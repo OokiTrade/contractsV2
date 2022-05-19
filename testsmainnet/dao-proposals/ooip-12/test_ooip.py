@@ -128,13 +128,15 @@ def testGovernanceProposal(requireMainnetFork, accounts, DAO, TIMELOCK, iLINK, i
 
 
 def testITotokenCollateral(requireMainnetFork, accounts, DAO, TIMELOCK, iLINK, iUSDT, iUSDC, iWBTC, iWETH, LINK, USDT, USDC, WBTC, WETH, BZX, LoanSettings, LoanOpenings, GUARDIAN_MULTISIG):
+    tickMathV1 = accounts[0].deploy(TickMathV1)
     lo = accounts[0].deploy(LoanOpenings)
     ls = accounts[0].deploy(LoanSettings)
     BZX.replaceContract(lo, {"from": BZX.owner()})
     BZX.replaceContract(ls, {"from": BZX.owner()})
-
-    loanParams = BZX.getLoanParams(USDC ,USDT, True)
-    loanParamsIToken = BZX.getLoanParams(USDC ,iUSDT, True)
+    loanParamsId = BZX.generateLoanParamId(USDC ,USDT, True)
+    loanParams = BZX.loanParams(loanParamsId)
+    loanParamsId = BZX.generateLoanParamId(USDC ,iUSDT, True)
+    loanParamsIToken = BZX.loanParams(loanParamsId)
     assert loanParams[1] == loanParamsIToken[1]
     assert loanParams[2] == loanParamsIToken[2]
     assert loanParams[3] == loanParamsIToken[3]
@@ -149,8 +151,9 @@ def testITotokenCollateral(requireMainnetFork, accounts, DAO, TIMELOCK, iLINK, i
 
     BZX.migrateLoanParamsList(iUSDT, 0, 100, {"from": BZX.owner()})
     BZX.migrateLoanParamsList(iUSDC, 0, 100, {"from": BZX.owner()})
-
+    loanParamsId = BZX.generateLoanParamId(USDC ,USDT, True)
     loanParams = BZX.getLoanParams(USDC ,USDT, False)
+    loanParamsId = BZX.generateLoanParamId(USDC ,iUSDT, True)
     loanParamsIToken = BZX.getLoanParams(USDC ,iUSDT, False)
 
     assert loanParamsIToken[0] == "0x0000000000000000000000000000000000000000000000000000000000000000"
