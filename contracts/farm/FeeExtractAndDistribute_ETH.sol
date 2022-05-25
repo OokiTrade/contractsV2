@@ -13,17 +13,7 @@ import "../../interfaces/IStakingV2.sol";
 import "./../staking/interfaces/ICurve3Pool.sol";
 import "@openzeppelin-4.3.2/token/ERC20/utils/SafeERC20.sol";
 import "../governance/PausableGuardian_0_8.sol";
-
-interface IBridge {
-    function send(
-        address _receiver,
-        address _token,
-        uint256 _amount,
-        uint64 _dstChainId,
-        uint64 _nonce,
-        uint32 _maxSlippage
-    ) external;
-}
+import "@celer/contracts/interfaces/IBridge.sol";
 
 contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
     using SafeERC20 for IERC20;
@@ -55,6 +45,8 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
     mapping(address => uint256) public stakingRewards;
     address[] public feeTokens;
     uint256 public buybackPercent;
+
+    uint32 public slippage = 10000;
 
     event ExtractAndDistribute();
 
@@ -221,7 +213,7 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
             bridgeAmount,
             DEST_CHAINID,
             uint64(block.timestamp),
-            10000
+            slippage
         );
     }
 
@@ -423,5 +415,17 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
 
     function setFeeTokens(address[] calldata tokens) external onlyOwner {
         feeTokens = tokens;
+    }
+
+    function setSlippage(uint32 newSlippage) external onlyGuardian {
+        slippage = newSlippage;
+    }
+
+    function requestRefund(bytes calldata wdmsg, bytes[] calldata sigs, address[] calldata signers, uint256[] calldata powers) external onlyGuardian {
+        IBridge(BRIDGE).withdraw(wdmsg, sigs, signers, powers);
+    }
+
+    function guardianBridge() external onlyGuardian {
+        _bridgeFeesToPolygon(IERC20(USDC).balanceOf(address(this)));
     }
 }

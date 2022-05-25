@@ -39,6 +39,8 @@ contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
 
     uint256 public buybackPercentInWEI; //set to 30e18
 
+    uint32 public slippage = 10000;
+
     event ExtractAndDistribute(uint256 amountTreasury, uint256 amountStakers);
 
     event AssetSwap(
@@ -146,7 +148,7 @@ contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
             IERC20(USDC).balanceOf(address(this)),
             DEST_CHAINID,
             uint64(block.timestamp),
-            10000
+            slippage
         );
     }
 
@@ -203,5 +205,17 @@ contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
 
     function setBuyBackPercentage(uint256 _percentage) external onlyOwner {
         buybackPercentInWEI = _percentage;
+    }
+
+    function setSlippage(uint32 newSlippage) external onlyGuardian {
+        slippage = newSlippage;
+    }
+
+    function requestRefund(bytes calldata wdmsg, bytes[] calldata sigs, address[] calldata signers, uint256[] calldata powers) external onlyGuardian {
+        IBridge(bridge).withdraw(wdmsg, sigs, signers, powers);
+    }
+
+    function guardianBridge() external onlyGuardian {
+        _bridgeFeesAndDistribute();
     }
 }
