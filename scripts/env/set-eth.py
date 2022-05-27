@@ -31,13 +31,16 @@ BPT = Contract.from_abi("BPT", "0xe26A220a341EAca116bDa64cF9D5638A935ae629", Tes
 
 SLP = Contract.from_abi("SLP", "0xa30911e072A0C88D55B5D0A0984B66b0D04569d0", TestToken.abi)
 
-HELPER = Contract.from_abi("HELPER", "0xFad79f3922cCef7AeB8A5674f36E45B6E81A10C7", HelperImpl.abi)
+HELPER = Contract.from_abi("HELPER", "0xb887f5b81deec1e271b06257f138e5a9d422bc8c", HelperImpl.abi)
 PRICE_FEED = Contract.from_abi("PRICE_FEED", BZX.priceFeeds(), abi = PriceFeeds.abi)
 
 SWEEP_FEES = Contract.from_abi("STAKING", "0xfFB328AD3b727830F9482845A4737AfDDDe85554", FeeExtractAndDistribute_ETH.abi)
 
 SUSHI_ROUTER = Contract.from_abi("SUSHI_ROUTER", "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F", interface.IPancakeRouter02.abi)
-SUSHI_CHEF = Contract.from_abi("SUSHI_CHEF", "0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd", interface.IMasterChefSushi.abi)
+SUSHI_CHEF_OLD = Contract.from_abi("SUSHI_CHEF", "0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd", interface.IMasterChefSushi.abi)
+
+SUSHI_CHEF = Contract.from_abi("SUSHI_CHEF", "0xEF0881eC094552b2e128Cf945EF17a6752B4Ec5d", interface.IMasterChefSushi2.abi)
+
 
 SUSHI = Contract.from_abi("SUSHI", "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2", TestToken.abi)
 
