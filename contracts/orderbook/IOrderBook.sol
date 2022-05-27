@@ -189,7 +189,7 @@ interface IOrderBook {
 
     /// Retrieves order corresponding to an order ID
     /// @param orderID order ID
-    function getOrderByOrderID(bytes32 orderID) external view returns (Order[] memory);
+    function getOrderByOrderID(bytes32 orderID) external view returns (Order memory);
 
     /// Retrieves active order IDs for a trader
     /// @param trader address of trader
