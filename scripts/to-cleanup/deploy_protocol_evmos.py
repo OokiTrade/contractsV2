@@ -1,5 +1,5 @@
 deployer = accounts.load('deployer')
-accounts[0].transfer(deployer, 10e18)
+#accounts[0].transfer(deployer, 10e18)
 
 gas_price = 5e9
 
@@ -23,6 +23,7 @@ usdt = "0x7FF4a56B32ee13D7D4D405887E0eA37d61Ed919e" # usdt
 usdc = "0x51e44FfaD5C2B122C8b635671FCC8139dc636E82" # usdc
 weth = "0x5842C5532b61aCF3227679a8b1BD0242a41752f2" # weth
 wbtc = "0xF80699Dc594e00aE7bA200c7533a07C1604A106D" # wbtc
+wevmos="0xD4949664cD82660AaE99bEdc034a0deA8A0bd517" # wevmos
 
 
 #arbitraryCaller = ArbitraryCaller.deploy(params)
@@ -131,36 +132,39 @@ feeds = Contract.from_abi("feeds", address="0x10b158EDF554dc15dCdBFd93049759e6e3
 #     ,params
 # )
 #
-# feeds.setPriceFeed(
-#     [usdc, usdt, dai, weth, wbtc],
-#     [usdc_FluxPricefeed, usdt_FluxPricefeed, dai_FluxPricefeed, weth_FluxPricefeed, wbtc_FluxPricefeed],
-#     params
-# )
-#
-
 # bzx.setLoanPool(
 #     [idai, iusdt, iusdc, ieth, ibtc],
 #     [dai, usdt, usdc, weth, wbtc],
 #     params
 # )
+#evmosPricefeed = OOKIPriceFeed.deploy(params)
+evmosPricefeed = Contract.from_abi("evmosPricefeed", "0xA87334Eb2Fb7878Dd1Dfdc643670528041b5A7fd", OOKIPriceFeed.abi)
 
-exec(open("./scripts/add-token/add-itoken-evmos.py").read())
-deployment(loanTokenSettings, settngsLowerAdmin, dai, 'DAI', idai)
-deployment(loanTokenSettings, settngsLowerAdmin, usdc, 'USDC', iusdc)
-deployment(loanTokenSettings, settngsLowerAdmin, usdt, 'USDT', iusdt)
-deployment(loanTokenSettings, settngsLowerAdmin, weth, 'ETH', ieth)
-deployment(loanTokenSettings, settngsLowerAdmin, wbtc, 'BTC', ibtc)
+# feeds.setPriceFeed(
+#     [usdc, usdt, dai, weth, wbtc, wevmos],
+#     [usdc_FluxPricefeed, usdt_FluxPricefeed, dai_FluxPricefeed, weth_FluxPricefeed, wbtc_FluxPricefeed, evmosPricefeed],
+#     params
+# )
+#
+# evmosPricefeed.updateStoredPrice(0.001696149e8, params)
 
-marginSettings(TOKEN_REGISTRY, settngsLowerAdmin, idai, [dai, usdc, usdt])
-marginSettings(TOKEN_REGISTRY, settngsLowerAdmin, iusdc, [dai, usdc, usdt])
-marginSettings(TOKEN_REGISTRY, settngsLowerAdmin, iusdt, [dai, usdc, usdt])
-marginSettings(TOKEN_REGISTRY, settngsLowerAdmin, ieth, [dai, usdc, usdt])
-marginSettings(TOKEN_REGISTRY, settngsLowerAdmin, ibtc, [dai, usdc, usdt])
-demandCurve(bzx, settngsLowerAdmin, idai, CUI)
-demandCurve(bzx, settngsLowerAdmin, iusdc, CUI)
-demandCurve(bzx, settngsLowerAdmin, iusdt, CUI)
-demandCurve(bzx, settngsLowerAdmin, ieth, CUI)
-demandCurve(bzx, settngsLowerAdmin, ibtc, CUI)
+#exec(open("./scripts/add-token/add-itoken-evmos.py").read())
+#deployment(loanTokenSettings, settngsLowerAdmin, dai, 'DAI', idai)
+#deployment(loanTokenSettings, settngsLowerAdmin, usdc, 'USDC', iusdc)
+#deployment(loanTokenSettings, settngsLowerAdmin, usdt, 'USDT', iusdt)
+#deployment(loanTokenSettings, settngsLowerAdmin, weth, 'ETH', ieth)
+#deployment(loanTokenSettings, settngsLowerAdmin, wbtc, 'BTC', ibtc)
+
+#marginSettings(TOKEN_REGISTRY, settngsLowerAdmin, idai, [dai, usdc, usdt])
+#marginSettings(TOKEN_REGISTRY, settngsLowerAdmin, iusdc, [dai, usdc, usdt])
+#marginSettings(TOKEN_REGISTRY, settngsLowerAdmin, iusdt, [dai, usdc, usdt])
+#marginSettings(TOKEN_REGISTRY, settngsLowerAdmin, ieth, [dai, usdc, usdt])
+#marginSettings(TOKEN_REGISTRY, settngsLowerAdmin, ibtc, [dai, usdc, usdt])
+#demandCurve(bzx, settngsLowerAdmin, idai, CUI)
+#demandCurve(bzx, settngsLowerAdmin, iusdc, CUI)
+#demandCurve(bzx, settngsLowerAdmin, iusdt, CUI)
+#demandCurve(bzx, settngsLowerAdmin, ieth, CUI)
+#demandCurve(bzx, settngsLowerAdmin, ibtc, CUI)
 
 #bzx.setFeesController("XXXX", params)
 

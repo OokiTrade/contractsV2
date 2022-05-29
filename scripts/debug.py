@@ -27,7 +27,9 @@ trades = BZX.getUserLoans(acct, 0,10, 0,0,0)
 interface.IERC20(trades[0][2]).approve(BZX, 2**256-1, {'from': acct})
 BZX.closeWithDeposit(trades[0][0],acct,trades[0][4],{'from':acct})
 
-iUSDC.marginTrade(0, 2e18, 0, 0.1e18, WETH, acct, b'',{'from': acct})
+iUSDC.marginTrade(0, 2e18, 0, 0.01e18, WETH, acct, b'',{'from': acct})
 
 
 
+
+iBTC.marginTrade(0, 2e18, 0, 0.01e18, WETH, acct, b'',{'from': acct})
