@@ -19,18 +19,6 @@ interface IStakingV2 {
         uint256 pending;
     }
 
-    function getCurrentFeeTokens() external view returns (address[] memory);
-
-    function maxUniswapDisagreement() external view returns (uint256);
-
-    function fundsWallet() external view returns (address);
-
-    function callerRewardDivisor() external view returns (uint256);
-
-    function maxCurveDisagreement() external view returns (uint256);
-
-    function rewardPercent() external view returns (uint256);
-
     function addRewards(uint256 newOOKI, uint256 newStableCoin) external;
 
     function stake(address[] calldata tokens, uint256[] calldata values) external;
