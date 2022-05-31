@@ -30,3 +30,12 @@ for t in totalCollateral:
     bzxBalance = underlying.balanceOf(BZX)
     diff = bzxBalance - totalCollateral[t]
     print(symbol, t, totalCollateral[t], bzxBalance, diff)
+
+print("name collateralAddress held paid")
+for t in totalCollateral:
+    underlying = Contract.from_abi("a", address=t, abi=interface.ERC20.abi)
+    symbol = underlying.symbol()
+    held = BZX.lendingFeeTokensHeld(underlying)
+    paid = BZX.lendingFeeTokensPaid(underlying)
+    
+    print(symbol, t, held, paid)
