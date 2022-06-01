@@ -22,7 +22,6 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
         _setTarget(this.setupLoanPoolTWAI.selector, target);
         _setTarget(this.setTWAISettings.selector, target);
         _setTarget(this.disableLoanParams.selector, target);
-        // _setTarget(this.getLoanParams.selector, target);
         _setTarget(this.getTotalPrincipal.selector, target);
         _setTarget(this.getPoolPrincipalStored.selector, target);
         _setTarget(this.getPoolLastInterestRate.selector, target);
@@ -72,25 +71,6 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
         }
     }
 
-    // function getLoanParams(bytes32[] memory loanParamsIdList) public view returns (LoanParams[] memory loanParamsList) {
-    //     loanParamsList = new LoanParams[](loanParamsIdList.length);
-    //     uint256 itemCount;
-
-    //     for (uint256 i = 0; i < loanParamsIdList.length; i++) {
-    //         LoanParams memory loanParamsLocal = loanParams[loanParamsIdList[i]];
-    //         if (loanParamsLocal.id == 0) {
-    //             continue;
-    //         }
-    //         loanParamsList[itemCount] = loanParamsLocal;
-    //         itemCount++;
-    //     }
-
-    //     if (itemCount < loanParamsList.length) {
-    //         assembly {
-    //             mstore(loanParamsList, itemCount)
-    //         }
-    //     }
-    // }
 
     function migrateLoanParamsList(
         address owner,
