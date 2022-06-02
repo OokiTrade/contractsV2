@@ -993,13 +993,12 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         view
         returns (uint256 nextRate)
     {
-        uint256 utilRate = _utilizationRate(
-            totalBorrow.add(newBorrowNotYetRealized),
+	    return _nextBorrowInterestRate(
+	        totalBorrow,
+            newBorrowNotYetRealized,
+            lastIR,
             _totalAssetSupply(totalBorrow)
         );
-
-        //utilRate from 0e18 to 100e18
-        nextRate = rateHelper.calculateIR(utilRate, lastIR);
     }
 
     /* Internal View functions */
