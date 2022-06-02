@@ -30,6 +30,7 @@ contract HelperImpl is Ownable {
     // address public constant wethToken = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c; // bsc
     // address public constant wethToken = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270; // polygon
     // address public constant wethToken = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1; // arbitrum
+    // address public constant wethToken = 0x4200000000000000000000000000000000000006; // optimism
 
     uint256 internal constant WEI_PRECISION = 10**18;
     uint256 internal constant WEI_PERCENT_PRECISION = 10**20;

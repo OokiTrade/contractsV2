@@ -1,28 +1,36 @@
+<<<<<<< HEAD
+=======
+import time
+>>>>>>> 2c5653d (optimism deployment)
 deployer = accounts.load('deployer')
 params  = {'from': deployer}
 BZX = Contract.from_abi("BZX", "0xAcedbFd5Bc1fb0dDC948579d4195616c05E74Fd1", bZxProtocol.abi)
 
 #
-# dai_FluxPricefeed = "0xb235ff2D8B8ccD4a4a5c16c9689014d6D2BF2A76" # dai
-# usdt_FluxPricefeed = "0x8FeAE79dB32595d8Ee57D40aA7De0512cBe36625" # usdt
-# usdc_FluxPricefeed = "0x3B2AF9149360e9F954C18f280aD0F4Adf1B613b8" # usdc
-# weth_FluxPricefeed = "0x4C8f111a1048fEc7Ea9c9cbAB96a2cB5d1B94560" # weth
-# wbtc_FluxPricefeed = "0x08fDc3CE77f4449D26461A70Acc222140573956e" # wbtc
+dai_Pricefeed = "0x8dBa75e83DA73cc766A7e5a0ee71F656BAb470d6" # dai
+usdt_Pricefeed = "0xECef79E109e997bCA29c1c0897ec9d7b03647F5E" # usdt
+usdc_Pricefeed = "0x16a9FA2FDa030272Ce99B29CF780dFA30361E0f3" # usdc
+weth_Pricefeed = "0x13e3Ee699D1909E989722E753853AE30b17e08c5" # weth
+wbtc_Pricefeed = "0xD702DD976Fb76Fffc2D3963D037dfDae5b04E593" # wbtc
+frax_Pricefeed = "0xc7D132BeCAbE7Dcc4204841F33bae45841e41D9C" # frax
+# op_Pricefeed = "0x3B2AF9149360e9F954C18f280aD0F4Adf1B613b8" # usdc
+
 #
-# idai = "0x206C689DC38c84cc7B54cd7c81c4F24ee3388731"
-# iusdt = "0xD15667cB9A2d2c6D8Acabb6c138B936c6642b0E5"
-# iusdc = "0xec260573e04186714E39a24786e7bBb2AB3E73d7"
-# ieth = "0xc3190c617569441D63c3cBd571CA1346Ac866478"
-# ibtc = "0x3cA8b998712278342b07b94d4f1FE8DEb88c1b7F"
+idai = "0xE60d6142D3d683a58B02337E1F0D08C69B946aCF"
+iusdt = "0x32246a17896d8b7aEc4AC4EDc3f5899D0f066855"
+iusdc = "0xBFcf8755Ba9d23F7F0EBbA0da70819A907dA2aCC"
+ieth = "0x10b158EDF554dc15dCdBFd93049759e6e35c1384"
+ibtc = "0x0515fDe94bb95d6A5b7640f8F0d3AC98C9390903"
+ifrax = "0x1dbc7f43d432C8E92762FC9680A5BcF4646FB5e5"
+
 #
-# dai = "0x63743ACF2c7cfee65A5E356A4C4A005b586fC7AA" # dai
-# usdt = "0x7FF4a56B32ee13D7D4D405887E0eA37d61Ed919e" # usdt
-# usdc = "0x51e44FfaD5C2B122C8b635671FCC8139dc636E82" # usdc
-# weth = "0x5842C5532b61aCF3227679a8b1BD0242a41752f2" # weth
-# wbtc = "0xF80699Dc594e00aE7bA200c7533a07C1604A106D" # wbtc
-
-
-
+dai = "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1" # dai
+usdt = "0x94b008aA00579c1307B0EF2c499aD98a8ce58e58" # usdt
+usdc = "0x7F5c764cBc14f9669B88837ca1490cCa17c31607" # usdc
+weth = "0x4200000000000000000000000000000000000006" # weth
+wbtc = "0x68f180fcCe6836688e9084f035309E29Bf0A2095" # wbtc
+frax = "0x2E3D870790dC77A83DD1d18184Acc7439A53f475" # wbtc
+# op = "0x4200000000000000000000000000000000000042" # op
 
 #TOKEN_REGISTRY = TokenRegistry.deploy(params, publish_source=True)
 TOKEN_REGISTRY = Contract.from_abi("TOKEN_REGISTRY", "0x22a2208EeEDeb1E2156370Fd1c1c081355c68f2B", TokenRegistry.abi)
@@ -75,20 +83,16 @@ CUI = Contract.from_abi("CurvedInterestRate", address="0x4eFb3D5f996F18969485042
 
 # # Deploy LoanTokenSettings
 #loanTokenSettings = LoanTokenSettings.deploy(params, publish_source=True)
-#!!!!! Not verified
 loanTokenSettings = Contract.from_abi("settings", address="0xe98dE80395972Ff6e32885F6a472b38436bE1716", abi=LoanTokenSettings.abi)
 
 # # Deploy LoanTokenSettingsLowerAdmin
-#!!!!! Not verified
 #settngsLowerAdmin = LoanTokenSettingsLowerAdmin.deploy(params, publish_source=True)
 settngsLowerAdmin = Contract.from_abi("settngsLowerAdmin", address="0x46530E77a3ad47f432D1ad206fB8c44435932B91", abi=LoanTokenSettingsLowerAdmin.abi)
 
 #loanTokenLogicStandard = LoanTokenLogicStandard.deploy(params, publish_source=True)
-#!!!!! Not verified
 loanTokenLogicStandard = Contract.from_abi("loanTokenLogicStandard", address="0xc2cC7403905B6B49BF891Ab3679b15F77AD743B6", abi=LoanTokenLogicStandard.abi)
 
 #loanTokenLogicweth = LoanTokenLogicWeth.deploy(params, publish_source=True)
-#!!!!! Not verified
 loanTokenLogicWeth = Contract.from_abi("LoanTokenLogicWeth", address="0x5690974015fc2b7a7EBB277BC377507d8Db43c2b", abi=LoanTokenLogicWeth.abi)
 
 
@@ -97,12 +101,15 @@ loanTokenLogicWeth = Contract.from_abi("LoanTokenLogicWeth", address="0x56909740
 #helper = HelperProxy.deploy(helperImpl.address, params, publish_source=True)
 HELPER = Contract.from_abi("HELPER", "0x3920993FEca46AF170d296466d8bdb47A4b4e152", HelperImpl.abi)
 
-assert False
-univ3 = SwapsImplUniswapV3_OPTIMISM.deploy(params)
-#univ3 = Contract.from_abi("SwapsImplUniswapV2_EVMOS", "0x13f2d2053E20Ff8d20fb63bf2647515ec330d731", SwapsImplUniswapV3_OPTIMISM.abi)
-dex_record.setDexID(univ3.address, params)
+#univ3 = SwapsImplUniswapV3_ETH.deploy(params)
+univ3 = Contract.from_abi("SwapsImplUniswapV3_ETH", "0x7Ec3888aaF6Fe27E73742526c832e996Eb8fd7Fe", SwapsImplUniswapV3_ETH.abi)
 
-#
+## PriceFeeds
+# print("Deploying PriceFeeds.")
+# feeds = PriceFeeds_OPTIMISM.deploy(params)
+feeds = Contract.from_abi("feeds", address="0x723bD1672b4bafF0B8132eAfc082EB864cF18D24", abi=PriceFeeds_OPTIMISM.abi)
+
+
 # BZX.replaceContract(loanSettingsImpl.address, params)
 # BZX.replaceContract(guardianImpl.address, params)
 # BZX.replaceContract(openingsImpl.address, params)
