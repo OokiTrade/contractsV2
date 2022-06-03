@@ -351,10 +351,10 @@ interface IBZx {
         bool isTorqueLoan
     ) external view returns (uint256 borrowAmount);
 
-    // function getBorrowAmountByParams(
-    //     bytes32 loanParamsId,
-    //     uint256 collateralTokenAmount
-    // ) external view returns (uint256 borrowAmount);
+    function getBorrowAmountByParams(
+        bytes32 loanParamsId,
+        uint256 collateralTokenAmount
+    ) external view returns (uint256 borrowAmount);
 
     
     // function getLoanParams(

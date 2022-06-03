@@ -430,6 +430,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         }
     }
 
+    // TODO get rid of this in the future
     function getBorrowAmountForDeposit(
         uint256 depositAmount,
         uint256 initialLoanDuration,        // duration in seconds
@@ -456,6 +457,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         }
     }
 
+    // TODO get rid of this in the future
     function getPoolUtilization()
         external
         view

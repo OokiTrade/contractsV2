@@ -22,6 +22,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         _setTarget(this.getRequiredCollateral.selector, target);
         _setTarget(this.getRequiredCollateralByParams.selector, target);
         _setTarget(this.getBorrowAmount.selector, target);
+        _setTarget(this.getBorrowAmountByParams.selector, target);
     }
 
     // Note: Only callable by loan pools (iTokens)
@@ -186,6 +187,22 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
             }
         }
     }
+
+
+    function getBorrowAmountByParams(bytes32 loanParamsId, uint256 collateralTokenAmount) public view returns (uint256 borrowAmount) {
+        LoanParams memory loanParamsLocal = loanParams[loanParamsId];
+        return
+            getBorrowAmount(
+                loanParamsLocal.loanToken,
+                loanParamsLocal.collateralToken,
+                collateralTokenAmount,
+                loanParamsLocal.minInitialMargin, // marginAmount
+                loanParamsLocal.maxLoanTerm == 0 // isTorqueLoan
+                    ? true
+                    : false
+            );
+    }
+
 
     function _borrowOrTrade(
         LoanParams memory loanParamsLocal,
