@@ -155,9 +155,6 @@ def testHelperContract(requireMainnetFork, helperContract, accounts, iUSDC, USDC
     
     actualResult = helperContract.profitOf.call([iUSDC, iWBTC], accounts[0])
     assert(actualResult == [iUSDC.profitOf(accounts[0]), iWBTC.profitOf(accounts[0])])
-    
-    actualResult = helperContract.marketLiquidity.call([iUSDC, iWBTC])
-    assert(actualResult == [iUSDC.marketLiquidity(), iWBTC.marketLiquidity()])
 
     actualResult = helperContract.reserveDetails([iUSDC, iWBTC])
 
@@ -167,17 +164,40 @@ def testHelperContract(requireMainnetFork, helperContract, accounts, iUSDC, USDC
     assert(actualResult[0][1] == iUSDC.totalAssetSupply())
     assert(actualResult[0][2] == iUSDC.totalAssetBorrow()) 
     assert(actualResult[0][3] == iUSDC.supplyInterestRate()) 
-    assert(actualResult[0][4] == iUSDC.avgBorrowInterestRate()) 
     assert(actualResult[0][5] == iUSDC.nextBorrowInterestRate(0)) 
 
 
     assert(actualResult[1][1] == iWBTC.totalAssetSupply())
     assert(actualResult[1][2] == iWBTC.totalAssetBorrow()) 
-    assert(actualResult[1][3] == iWBTC.supplyInterestRate()) 
-    assert(actualResult[1][4] == iWBTC.avgBorrowInterestRate()) 
+    assert(actualResult[1][3] == iWBTC.supplyInterestRate())
     assert(actualResult[1][5] == iWBTC.nextBorrowInterestRate(0)) 
 
     actualResult = helperContract.assetRates(USDC, [WBTC], [10**18])
     assert actualResult[0][0] > 0
     assert True
 
+
+def test_borrow(requireMainnetFork, helperContract, accounts, iUSDC, USDC, iUSDT, USDT, iWBTC, WBTC, WETH):
+
+    assert helperContract.getBorrowAmountForDeposit(1e6, WBTC, USDC) == iWBTC.getBorrowAmountForDeposit(1e6, 0, USDC)
+    assert helperContract.getBorrowAmountForDeposit(10000e6, WBTC, USDC) == iWBTC.getBorrowAmountForDeposit(10000e6, 0, USDC)
+    assert helperContract.getBorrowAmountForDeposit(1000000e6, WBTC, USDC) == iWBTC.getBorrowAmountForDeposit(1000000e6, 0, USDC)
+
+    assert helperContract.getBorrowAmountForDeposit(1e6, WBTC, WETH) == iWBTC.getBorrowAmountForDeposit(1e6, 0, WETH)
+    assert helperContract.getBorrowAmountForDeposit(10000e6, WBTC, WETH) == iWBTC.getBorrowAmountForDeposit(10000e6, 0, WETH)
+    assert helperContract.getBorrowAmountForDeposit(1000000e6, WBTC, WETH) == iWBTC.getBorrowAmountForDeposit(1000000e6, 0, WETH)
+
+    assert helperContract.getBorrowAmountForDeposit(1e8, USDC, WBTC) == iUSDC.getBorrowAmountForDeposit(1e8, 0, WBTC)
+
+    assert True
+
+def test_deposit(requireMainnetFork, helperContract, accounts, iUSDC, USDC, iUSDT, USDT, iWBTC, WBTC, WETH):
+    assert helperContract.getDepositAmountForBorrow(1e8, WBTC, USDC) == iWBTC.getDepositAmountForBorrow(1e8, 0, USDC)
+    assert helperContract.getDepositAmountForBorrow(100e8, WBTC, USDC) == iWBTC.getDepositAmountForBorrow(100e8, 0, USDC)
+
+
+    assert helperContract.getDepositAmountForBorrow(1e6, WBTC, WETH) == iWBTC.getDepositAmountForBorrow(1e6, 0, WETH)
+    assert helperContract.getDepositAmountForBorrow(10000e6, WBTC, WETH) == iWBTC.getDepositAmountForBorrow(10000e6, 0, WETH)
+    assert helperContract.getDepositAmountForBorrow(1000000e6, WBTC, WETH) == iWBTC.getDepositAmountForBorrow(1000000e6, 0, WETH)
+
+    assert True
