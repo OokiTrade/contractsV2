@@ -74,7 +74,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
             loanParams[loanParamsLocal.id] = loanParamsLocal;
         }
     }
-
+    // collateralToken is passed from the iToken and there it guarantees no invalid value can be passed
     function getDefaultLoanParams(
         address loanToken,
         address collateralToken,

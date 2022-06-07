@@ -25,8 +25,8 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         _setTarget(this.depositCollateral.selector, target);
         _setTarget(this.withdrawCollateral.selector, target);
         _setTarget(this.setDepositAmount.selector, target);
-        _setTarget(this.getUserLoans.selector, target);
-        _setTarget(this.getUserLoansCount.selector, target);
+        // _setTarget(this.getUserLoans.selector, target);
+        // _setTarget(this.getUserLoansCount.selector, target);
         _setTarget(this.getLoan.selector, target);
         _setTarget(this.getActiveLoans.selector, target);
         _setTarget(this.getActiveLoansAdvanced.selector, target);
@@ -196,75 +196,75 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         );
     }
 
-    // Only returns data for loans that are active
-    // All(0): all loans
-    // Margin(1): margin trade loans
-    // NonMargin(2): non-margin trade loans
-    // only active loans are returned
-    function getUserLoans(
-        address user,
-        uint256 start,
-        uint256 count,
-        LoanType loanType,
-        bool isLender,
-        bool unsafeOnly)
-        external
-        view
-        returns (LoanReturnData[] memory loansData)
-    {
-        EnumerableBytes32Set.Bytes32Set storage set = isLender ?
-            lenderLoanSets[user] :
-            borrowerLoanSets[user];
+    // // Only returns data for loans that are active
+    // // All(0): all loans
+    // // Margin(1): margin trade loans
+    // // NonMargin(2): non-margin trade loans
+    // // only active loans are returned
+    // function getUserLoans(
+    //     address user,
+    //     uint256 start,
+    //     uint256 count,
+    //     LoanType loanType,
+    //     bool isLender,
+    //     bool unsafeOnly)
+    //     external
+    //     view
+    //     returns (LoanReturnData[] memory loansData)
+    // {
+    //     EnumerableBytes32Set.Bytes32Set storage set = isLender ?
+    //         lenderLoanSets[user] :
+    //         borrowerLoanSets[user];
 
-        uint256 end = start.add(count).min256(set.length());
-        if (start >= end) {
-            return loansData;
-        }
-        count = end-start;
+    //     uint256 end = start.add(count).min256(set.length());
+    //     if (start >= end) {
+    //         return loansData;
+    //     }
+    //     count = end-start;
 
-        uint256 idx = count;
-        LoanReturnData memory loanData;
-        loansData = new LoanReturnData[](idx);
-        for (uint256 i = --end; i >= start; i--) {
-            loanData = _getLoan(
-                set.get(i), // loanId
-                loanType,
-                unsafeOnly
-            );
-            if (loanData.loanId == 0) {
-                if (i == 0) {
-                    break;
-                } else {
-                    continue;
-                }
-            }
+    //     uint256 idx = count;
+    //     LoanReturnData memory loanData;
+    //     loansData = new LoanReturnData[](idx);
+    //     for (uint256 i = --end; i >= start; i--) {
+    //         loanData = _getLoan(
+    //             set.get(i), // loanId
+    //             loanType,
+    //             unsafeOnly
+    //         );
+    //         if (loanData.loanId == 0) {
+    //             if (i == 0) {
+    //                 break;
+    //             } else {
+    //                 continue;
+    //             }
+    //         }
 
-            loansData[count-(idx--)] = loanData;
+    //         loansData[count-(idx--)] = loanData;
 
-            if (i == 0) {
-                break;
-            }
-        }
+    //         if (i == 0) {
+    //             break;
+    //         }
+    //     }
 
-        if (idx != 0) {
-            count -= idx;
-            assembly {
-                mstore(loansData, count)
-            }
-        }
-    }
+    //     if (idx != 0) {
+    //         count -= idx;
+    //         assembly {
+    //             mstore(loansData, count)
+    //         }
+    //     }
+    // }
 
-    function getUserLoansCount(
-        address user,
-        bool isLender)
-        external
-        view
-        returns (uint256)
-    {
-        return isLender ?
-            lenderLoanSets[user].length() :
-            borrowerLoanSets[user].length();
-    }
+    // function getUserLoansCount(
+    //     address user,
+    //     bool isLender)
+    //     external
+    //     view
+    //     returns (uint256)
+    // {
+    //     return isLender ?
+    //         lenderLoanSets[user].length() :
+    //         borrowerLoanSets[user].length();
+    // }
 
     function getLoan(
         bytes32 loanId)
