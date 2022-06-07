@@ -23,6 +23,16 @@ contract HelperImpl is Ownable {
     //address public constant bZxProtocol = 0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8; // polygon
     // address public constant bZxProtocol = 0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB; // arbitrum
 
+
+    address public constant wethToken = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // mainnet
+    // address public constant wethToken = 0xd0A1E359811322d97991E03f863a0C30C2cF029C; // kovan
+    // address public constant wethToken = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c; // bsc
+    // address public constant wethToken = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270; // polygon
+    // address public constant wethToken = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1; // arbitrum
+
+    uint256 internal constant WEI_PRECISION = 10**18;
+    uint256 internal constant WEI_PERCENT_PRECISION = 10**20;
+
     function balanceOf(IERC20[] calldata tokens, address wallet)
         public view
         returns (uint256[] memory balances)
@@ -174,4 +184,146 @@ contract HelperImpl is Ownable {
             }
         }
     }
+
+
+
+    function getDepositAmountForBorrow(
+        uint256 borrowAmount,
+        address loanTokenAddress,
+        address collateralTokenAddress)     // address(0) means ETH
+        external
+        view
+        returns (uint256) // depositAmount
+    {   
+        IToken iToken = IToken(IBZx(bZxProtocol).underlyingToLoanPool(loanTokenAddress));
+        if (borrowAmount != 0) {
+            if (borrowAmount <= IERC20(loanTokenAddress).balanceOf(address(iToken))) {
+                if (collateralTokenAddress == address(0)) {
+                    collateralTokenAddress = wethToken;
+                }
+                return getRequiredCollateralByParams(
+                    iToken.loanParamsIds(uint256(keccak256(abi.encodePacked(
+                        collateralTokenAddress,
+                        true
+                    )))),
+                    borrowAmount
+                ) + 10; // some dust to compensate for rounding errors
+            }
+        }
+    }
+
+    function getBorrowAmountForDeposit(
+        uint256 depositAmount,
+        address loanTokenAddress,
+        address collateralTokenAddress)     // address(0) means ETH
+        external
+        view
+        returns (uint256 borrowAmount)
+    {
+        IToken iToken = IToken(IBZx(bZxProtocol).underlyingToLoanPool(loanTokenAddress));
+        if (depositAmount != 0) {
+            if (collateralTokenAddress == address(0)) {
+                collateralTokenAddress = wethToken;
+            }
+            borrowAmount = IBZx(bZxProtocol).getBorrowAmountByParams(
+                iToken.loanParamsIds(uint256(keccak256(abi.encodePacked(
+                    collateralTokenAddress,
+                    true
+                )))),
+                depositAmount
+            );
+
+            if (borrowAmount > IERC20(loanTokenAddress).balanceOf(address(iToken))) {
+                borrowAmount = 0;
+            }
+        }
+    }
+
+    function getRequiredCollateralByParams(
+        bytes32 loanParamsId,
+        uint256 newPrincipal)
+        internal
+        view
+        returns (uint256 collateralAmountRequired)
+    {
+        IBZx.LoanParams memory loanParamsLocal = IBZx(bZxProtocol).loanParams(loanParamsId);
+        return IBZx(bZxProtocol).getRequiredCollateral(
+            loanParamsLocal.loanToken,
+            loanParamsLocal.collateralToken,
+            newPrincipal,
+            loanParamsLocal.minInitialMargin, // marginAmount
+            loanParamsLocal.maxLoanTerm == 0 ? // isTorqueLoan
+                true :
+                false
+        );
+    }
+
+    function getBorrowAmountByParams(
+        bytes32 loanParamsId,
+        uint256 collateralTokenAmount)
+        internal
+        view
+        returns (uint256 borrowAmount)
+    {
+        IBZx.LoanParams memory loanParamsLocal = IBZx(bZxProtocol).loanParams(loanParamsId);
+        return getBorrowAmount(
+            loanParamsLocal.loanToken,
+            loanParamsLocal.collateralToken,
+            collateralTokenAmount,
+            loanParamsLocal.minInitialMargin, // marginAmount
+            loanParamsLocal.maxLoanTerm == 0 ? // isTorqueLoan
+                true :
+                false
+        );
+    }
+
+
+
+    function getBorrowAmount(
+        address loanToken,
+        address collateralToken,
+        uint256 collateralTokenAmount,
+        uint256 marginAmount,
+        bool isTorqueLoan)
+        internal
+        view
+        returns (uint256 borrowAmount)
+    {
+        if (marginAmount != 0) {
+            if (isTorqueLoan) {
+                marginAmount = marginAmount
+                    + (WEI_PERCENT_PRECISION); // adjust for over-collateralized loan
+            }
+
+            if (loanToken == collateralToken) {
+                borrowAmount = collateralTokenAmount
+                    * (WEI_PERCENT_PRECISION)
+                    / (marginAmount);
+            } else {
+                (uint256 sourceToDestRate, uint256 sourceToDestPrecision) = IPriceFeeds(IBZx(bZxProtocol).priceFeeds()).queryRate(
+                    collateralToken,
+                    loanToken
+                );
+                if (sourceToDestPrecision != 0) {
+                    borrowAmount = collateralTokenAmount
+                        * (WEI_PERCENT_PRECISION)
+                        * (sourceToDestRate)
+                        / (marginAmount)
+                        / (sourceToDestPrecision);
+                }
+            }
+
+            uint256 feePercent = isTorqueLoan ?
+                IBZx(bZxProtocol).borrowingFeePercent() :
+                IBZx(bZxProtocol).tradingFeePercent();
+            if (borrowAmount != 0 && feePercent != 0) {
+                borrowAmount = borrowAmount
+                    * (
+                        WEI_PERCENT_PRECISION - feePercent // never will overflow
+                    )
+                    / (WEI_PERCENT_PRECISION);
+            }
+        }
+    }
+
 }
