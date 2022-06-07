@@ -201,11 +201,9 @@ contract HelperImpl is Ownable {
                 if (collateralTokenAddress == address(0)) {
                     collateralTokenAddress = wethToken;
                 }
+                bytes32 loanParamId = IBZx(bZxProtocol).generateLoanParamId(loanTokenAddress, collateralTokenAddress, true);
                 return getRequiredCollateralByParams(
-                    iToken.loanParamsIds(uint256(keccak256(abi.encodePacked(
-                        collateralTokenAddress,
-                        true
-                    )))),
+                    loanParamId,
                     borrowAmount
                 ) + 10; // some dust to compensate for rounding errors
             }
@@ -225,13 +223,9 @@ contract HelperImpl is Ownable {
             if (collateralTokenAddress == address(0)) {
                 collateralTokenAddress = wethToken;
             }
-            borrowAmount = IBZx(bZxProtocol).getBorrowAmountByParams(
-                iToken.loanParamsIds(uint256(keccak256(abi.encodePacked(
-                    collateralTokenAddress,
-                    true
-                )))),
-                depositAmount
-            );
+
+            bytes32 loanParamId = IBZx(bZxProtocol).generateLoanParamId(loanTokenAddress, collateralTokenAddress, true);
+            borrowAmount = getBorrowAmountByParams(loanParamId, depositAmount);
 
             if (borrowAmount > IERC20(loanTokenAddress).balanceOf(address(iToken))) {
                 borrowAmount = 0;

@@ -8,9 +8,7 @@ pragma experimental ABIEncoderV2;
 
 import "../../core/State.sol";
 import "../../events/LoanClosingsEvents.sol";
-import "../../mixins/VaultController.sol";
 import "../../mixins/InterestHandler.sol";
-// import "../../mixins/FeesHelper.sol";
 import "../../mixins/LiquidationHelper.sol";
 import "../../swaps/SwapsUser.sol";
 import "../../interfaces/ILoanPool.sol";
@@ -18,7 +16,7 @@ import "../../interfaces/draft-IERC20Permit.sol";
 import "../../governance/PausableGuardian.sol";
 
 
-contract LoanClosingsBase is State, LoanClosingsEvents, VaultController, InterestHandler, SwapsUser, PausableGuardian {
+contract LoanClosingsBase is State, LoanClosingsEvents, InterestHandler, SwapsUser, PausableGuardian {
 
     enum CloseTypes {
         Deposit,

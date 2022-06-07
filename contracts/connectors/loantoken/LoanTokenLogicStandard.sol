@@ -222,62 +222,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         );
     }
 
-    function transfer(
-        address _to,
-        uint256 _value)
-        external
-        returns (bool)
-    {
-        return _internalTransferFrom(
-            msg.sender,
-            _to,
-            _value,
-            uint256(-1)
-        );
-    }
-
-    function transferFrom(
-        address _from,
-        address _to,
-        uint256 _value)
-        external
-        returns (bool)
-    {
-        return _internalTransferFrom(
-            _from,
-            _to,
-            _value,
-            allowed[_from][msg.sender]
-        );
-    }
-
-    function _internalTransferFrom(
-        address _from,
-        address _to,
-        uint256 _value,
-        uint256 _allowanceAmount)
-        internal
-        returns (bool)
-    {
-        if (_allowanceAmount != uint256(-1)) {
-            allowed[_from][msg.sender] = _allowanceAmount.sub(_value, "14");
-        }
-
-        require(_to != address(0), "15");
-
-        uint256 _balancesFrom = balances[_from];
-        uint256 _balancesFromNew = _balancesFrom
-            .sub(_value, "16");
-        balances[_from] = _balancesFromNew;
-
-        uint256 _balancesTo = balances[_to];
-        uint256 _balancesToNew = _balancesTo
-            .add(_value);
-        balances[_to] = _balancesToNew;
-
-        emit Transfer(_from, _to, _value);
-        return true;
-    }
 
     function tokenPrice()
         public
@@ -406,58 +350,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
             .div(WEI_PRECISION);
     }
 
-    function getDepositAmountForBorrow(
-        uint256 borrowAmount,
-        uint256 initialLoanDuration,        // duration in seconds
-        address collateralTokenAddress)     // address(0) means ETH
-        external
-        view
-        returns (uint256) // depositAmount
-    {
-        if (borrowAmount != 0) {
-            if (borrowAmount <= _underlyingBalance()) {
-                if (collateralTokenAddress == address(0)) {
-                    collateralTokenAddress = wethToken;
-                }
-                return IBZx(bZxContract).getRequiredCollateralByParams(
-                    loanParamsIds[uint256(keccak256(abi.encodePacked(
-                        collateralTokenAddress,
-                        true
-                    )))],
-                    borrowAmount
-                ).add(10); // some dust to compensate for rounding errors
-            }
-        }
-    }
-
-    // TODO get rid of this in the future
-    function getBorrowAmountForDeposit(
-        uint256 depositAmount,
-        uint256 initialLoanDuration,        // duration in seconds
-        address collateralTokenAddress)     // address(0) means ETH
-        external
-        view
-        returns (uint256 borrowAmount)
-    {
-        if (depositAmount != 0) {
-            if (collateralTokenAddress == address(0)) {
-                collateralTokenAddress = wethToken;
-            }
-            borrowAmount = IBZx(bZxContract).getBorrowAmountByParams(
-                loanParamsIds[uint256(keccak256(abi.encodePacked(
-                    collateralTokenAddress,
-                    true
-                )))],
-                depositAmount
-            );
-
-            if (borrowAmount > _underlyingBalance()) {
-                borrowAmount = 0;
-            }
-        }
-    }
-
-    // TODO get rid of this in the future
+    // TODO get rid of this in the future, should be in helper of some sort
     function getPoolUtilization()
         external
         view
@@ -494,7 +387,9 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
             require(msg.value == depositAmount, "18");
             IWeth(wethToken).deposit.value(depositAmount)();
         }
-        _mint(receiver, mintAmount, depositAmount, currentPrice);
+
+        _mint(receiver, mintAmount);
+        emit Mint(receiver, mintAmount, depositAmount, currentPrice);
     }
 
     function _burnToken(
@@ -521,7 +416,8 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
 
         loanAmountPaid = loanAmountOwed;
         require(loanAmountPaid <= loanAmountAvailableInContract, "37");
-        _burn(msg.sender, burnAmount, loanAmountPaid, currentPrice);
+        _burn(msg.sender, burnAmount);
+        emit Burn(msg.sender, burnAmount, loanAmountPaid, currentPrice);
     }
 
     function _borrow(
@@ -871,13 +767,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         }
     }
 
-    function _underlyingBalance()
-        internal
-        view
-        returns (uint256)
-    {
-        return IERC20(loanTokenAddress).balanceOf(address(this));
-    }
 
     function _nextSupplyInterestRate(
         uint256 nextBorrowRate,
@@ -912,6 +801,13 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     }
 
     /* Internal View functions */
+    function _underlyingBalance()
+        internal
+        view
+        returns (uint256)
+    {
+        return IERC20(loanTokenAddress).balanceOf(address(this));
+    }
 
     function _nextBorrowInterestRate(
         uint256 totalBorrow,
@@ -937,7 +833,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         view
         returns (uint256)
     {
-        uint256 totalTokenSupply = totalSupply_;
+        uint256 totalTokenSupply = _totalSupply;
 
         return totalTokenSupply != 0 ?
             assetSupply
