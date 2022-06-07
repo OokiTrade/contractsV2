@@ -350,7 +350,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
             .div(WEI_PRECISION);
     }
 
-    // TODO get rid of this in the future, should be in helper of some sort
     function getPoolUtilization()
         external
         view
