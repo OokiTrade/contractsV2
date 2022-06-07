@@ -332,40 +332,6 @@ interface IBZx {
         uint256 marginAmount,
         bool isTorqueLoan
     ) external view returns (uint256 collateralAmountRequired);
-
-    // function getRequiredCollateralByParams(
-    //     bytes32 loanParamsId,
-    //     uint256 newPrincipal
-    // ) external view returns (uint256 collateralAmountRequired);
-
-    // /// @dev calculates borrow amount for simulated position
-    // /// @param loanToken address of loan token
-    // /// @param collateralToken address of collateral token
-    // /// @param collateralTokenAmount amount of collateral token sent
-    // /// @param marginAmount margin amount
-    // /// @param isTorqueLoan boolean torque or non torque loan
-    // /// @return borrowAmount possible borrow amount
-    // function getBorrowAmount(
-    //     address loanToken,
-    //     address collateralToken,
-    //     uint256 collateralTokenAmount,
-    //     uint256 marginAmount,
-    //     bool isTorqueLoan
-    // ) external view returns (uint256 borrowAmount);
-
-    // function getBorrowAmountByParams(
-    //     bytes32 loanParamsId,
-    //     uint256 collateralTokenAmount
-    // ) external view returns (uint256 borrowAmount);
-
-    
-    // function getLoanParams(
-    //     address collateralToken,
-    //     address loanToken,
-    //     bool isTorqueLoan)
-    //     external
-    //     view
-    //     returns(LoanParams memory loanParamsLocal);
     
     function getDefaultLoanParams(
         address loanToken,
@@ -381,19 +347,6 @@ interface IBZx {
         bool isTorqueLoan
     ) external pure returns (bytes32);
 
-    function getPoolLoanParamId(
-        address loanToken,
-        address collateralToken,
-        bool isTorqueLoan)
-        external
-        view
-        returns (bytes32);
-    
-    function getLoanParamId(
-        LoanParams calldata loanParam)
-        external
-        pure
-        returns (bytes32);
 
     ////// Loan Closings //////
 
