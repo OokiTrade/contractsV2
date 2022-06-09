@@ -11,11 +11,11 @@ import "../../events/LoanMaintenanceEvents.sol";
 import "../../mixins/VaultController.sol";
 import "../../mixins/InterestHandler.sol";
 import "../../mixins/LiquidationHelper.sol";
-import "../../swaps/SwapsUser.sol";
+import "../../../interfaces/IPriceFeeds.sol";
 import "../../governance/PausableGuardian.sol";
 
 
-contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, InterestHandler, SwapsUser, PausableGuardian {
+contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, InterestHandler, PausableGuardian {
 
     function initialize(
         address target)
