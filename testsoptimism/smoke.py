@@ -94,3 +94,16 @@ Token1BalanceAfter = getTokenBalance(Token1, acct)
 Token2BalanceAfter = getTokenBalance(Token2, acct)
 assert (Token1BalanceAfter - Token1BalanceBefore < 0 )
 assert (Token2BalanceAfter - Token2BalanceBefore > 0 )
+
+
+if(Token2 == WETH):
+    iToken1.marginTrade(0, 2e18, 0, 0.01*10**token2Decimals, ZERO_ADDRESS, acct, openSendOut,{'from': acct, 'value': 0.01*10**token2Decimals})
+    loans = BZX.getUserLoans(acct, 0,10, 0, False, False)
+    Token1BalanceBefore = getTokenBalance(Token1, acct)
+    Token2BalanceBefore = getTokenBalance(Token2, acct)
+    BZX.closeWithDeposit(loans[0][0], acct,  2**256-1, {'from':acct})
+    Token1BalanceAfter = getTokenBalance(Token1, acct)
+    Token2BalanceAfter = getTokenBalance(Token2, acct)
+    assert(Token1BalanceAfter - Token1BalanceBefore < 0)
+    assert(Token2BalanceAfter - Token2BalanceBefore > 0)
+
