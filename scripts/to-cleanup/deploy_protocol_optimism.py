@@ -1,7 +1,4 @@
-<<<<<<< HEAD
-=======
 import time
->>>>>>> 2c5653d (optimism deployment)
 deployer = accounts.load('deployer')
 params  = {'from': deployer}
 BZX = Contract.from_abi("BZX", "0xAcedbFd5Bc1fb0dDC948579d4195616c05E74Fd1", bZxProtocol.abi)
@@ -97,7 +94,7 @@ loanTokenLogicWeth = Contract.from_abi("LoanTokenLogicWeth", address="0x56909740
 
 
 #helperImpl = HelperImpl.deploy(params, publish_source=True)
-#helperImpl = Contract.from_abi("HelperImpl", "0x14E62422eA87349e999a8bcbFB9aD107D1BcDf52", HelperImpl.abi)
+#helperImpl = Contract.from_abi("HelperImpl", "0xD039fc87407d3062D05a974C5f16550e2BaBDE4e", HelperImpl.abi)
 #helper = HelperProxy.deploy(helperImpl.address, params, publish_source=True)
 HELPER = Contract.from_abi("HELPER", "0x3920993FEca46AF170d296466d8bdb47A4b4e152", HelperImpl.abi)
 
