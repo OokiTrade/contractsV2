@@ -10,7 +10,7 @@ def test_t():
     interface.IWeth(WETH).deposit({'from':accounts[0],'value': 1e18})
     interface.IERC20(WETH).transfer(stETH, 1e18, {'from':accounts[0]})
     print(interface.IERC20(WETH).balanceOf(stETH))
-    stETH.dexSwap(WETH, wstETH, accounts[0], accounts[0], 1e18, 0, 0, b'', {'from':accounts[0]})
+    stETH.dexSwap(WETH, wstETH, accounts[0], accounts[0], 1e18, 0, 0, encode_abi(['uint256'],[0]), {'from':accounts[0]})
     assert(interface.IERC20(wstETH).balanceOf(accounts[0]) > 0)
     interface.IERC20(wstETH).transfer(stETH, interface.IERC20(wstETH).balanceOf(accounts[0]), {'from':accounts[0]})
     stETH.dexSwap(wstETH, WETH, accounts[0], accounts[0], interface.IERC20(wstETH).balanceOf(stETH), 0, 0, encode_abi(['uint256','address','address'],[int(1e17),wstETH,WETH]), {'from':accounts[0]})

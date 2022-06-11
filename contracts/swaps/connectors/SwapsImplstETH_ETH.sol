@@ -82,9 +82,15 @@ contract SwapsImplstETH_ETH is State, ISwapsImpl {
                 (uint256, address, address)
             );
             if (srcToken == WETH) {
-                amountOut = IwstETH(WSTETH).getWstETHBystETH(amountIn);
+                if (abi.decode(payload, (uint256)) > 0) {
+                    amountIn = STETHPOOL.get_dy(0, 1, amountIn);
+                    amountOut = IwstETH(WSTETH).getWstETHBystETH(amountIn);
+                } else {
+                    amountOut = IwstETH(WSTETH).getWstETHBystETH(amountIn);
+                }
             } else {
-                amountOut = IwstETH(WSTETH).getStETHByWstETH(amountIn);
+                amountIn = IwstETH(WSTETH).getStETHByWstETH(amountIn);
+                amountOut = STETHPOOL.get_dy(1, 0, amountIn);
             }
         }
     }
@@ -145,7 +151,11 @@ contract SwapsImplstETH_ETH is State, ISwapsImpl {
         sourceTokenAmountUsed = minSourceTokenAmount;
         if (sourceTokenAddress == WETH) {
             IWeth(WETH).withdraw(minSourceTokenAmount);
-            destTokenAmountReceived = IstETH(STETH).submit.value(minSourceTokenAmount)(address(this));
+            if (abi.decode(payload, (uint256)) > 0) {
+                destTokenAmountReceived = STETHPOOL.exchange(0, 1, minSourceTokenAmount, abi.decode(payload, (uint256)));
+            } else {
+                destTokenAmountReceived = IstETH(STETH).submit.value(minSourceTokenAmount)(address(this));
+            }
             destTokenAmountReceived = IwstETH(WSTETH).wrap(
                 destTokenAmountReceived
             );
