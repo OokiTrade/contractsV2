@@ -11,6 +11,7 @@ import "./Objects.sol";
 import "../mixins/EnumerableBytes32Set.sol";
 import "../utils/ReentrancyGuard.sol";
 import "../utils/InterestOracle.sol";
+import "../utils/VolumeOracle.sol";
 import "@openzeppelin-2.5.0/ownership/Ownable.sol";
 import "@openzeppelin-2.5.0/math/SafeMath.sol";
 
@@ -92,6 +93,11 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
     uint32 public timeDelta;
     uint32 public twaiLength;
     /**** new interest model end */
+
+    mapping(address => VolumeOracle.Observation[256]) internal volumeTradedObservations;
+    mapping(address => uint8) internal volumeLastIdx;
+    uint32 public timeDeltaVolume;
+    uint32 public volumeTimeLength;
 
 
     function _setTarget(

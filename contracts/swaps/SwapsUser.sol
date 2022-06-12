@@ -11,10 +11,13 @@ import "../../interfaces/IPriceFeeds.sol";
 import "../events/SwapsEvents.sol";
 import "../mixins/FeesHelper.sol";
 import "./ISwapsImpl.sol";
+import "../utils/TickMathV1.sol";
 import "../interfaces/IDexRecords.sol";
 import "../mixins/Flags.sol";
+import "../utils/VolumeOracle.sol";
 
 contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
+    using VolumeOracle for VolumeOracle.Observation[256];
     function _loanSwap(
         bytes32 loanId,
         address sourceToken,
@@ -93,7 +96,6 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
 
         uint256 destTokenAmountReceived;
         uint256 sourceTokenAmountUsed;
-
         uint256 tradingFee;
         if (!miscBool) {
             // bypassFee
@@ -179,6 +181,22 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
             destTokenAmountReceived,
             sourceTokenAmountUsed
         ) = _swapsCall_internal(addrs, vals, loanDataBytes);
+
+        if (loanDataBytes.length != 0 && abi.decode(loanDataBytes, (uint128)) & TRACK_VOLUME_FLAG != 0) {
+            uint160 tradingVolumeInUSDC = uint160(IPriceFeeds(priceFeeds)
+                .queryReturn(
+                    addrs[0],
+                    USDC,
+                    sourceTokenAmountUsed
+                ));
+            volumeLastIdx[addrs[4]] = volumeTradedObservations[addrs[4]].write(
+                volumeLastIdx[addrs[4]],
+                uint32(block.timestamp),
+                TickMathV1.getTickAtSqrtRatio(tradingVolumeInUSDC),
+                uint8(-1),
+                timeDeltaVolume
+            );
+        }
 
         if (vals[2] == 0) {
             // there's no minimum destTokenAmount, but all of vals[0] (minSourceTokenAmount) must be spent, and amount spent can't exceed vals[0]
