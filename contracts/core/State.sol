@@ -96,9 +96,6 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
 
     mapping(address => VolumeOracle.Observation[256]) internal volumeTradedObservations;
     mapping(address => uint8) internal volumeLastIdx;
-    uint32 public timeDeltaVolume;
-    uint32 public volumeTimeLength;
-
 
     function _setTarget(
         bytes4 sig,

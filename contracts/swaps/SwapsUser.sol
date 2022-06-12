@@ -183,18 +183,18 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
         ) = _swapsCall_internal(addrs, vals, loanDataBytes);
 
         if (loanDataBytes.length != 0 && abi.decode(loanDataBytes, (uint128)) & TRACK_VOLUME_FLAG != 0) {
-            uint160 tradingVolumeInUSDC = uint160(IPriceFeeds(priceFeeds)
+            int24 tradingVolumeInUSDC = TickMathV1.getTickAtSqrtRatio(uint160(IPriceFeeds(priceFeeds)
                 .queryReturn(
                     addrs[0],
                     USDC,
                     sourceTokenAmountUsed
-                ));
+                )));
             volumeLastIdx[addrs[4]] = volumeTradedObservations[addrs[4]].write(
                 volumeLastIdx[addrs[4]],
                 uint32(block.timestamp),
-                TickMathV1.getTickAtSqrtRatio(tradingVolumeInUSDC),
+                tradingVolumeInUSDC,
                 uint8(-1),
-                timeDeltaVolume
+                uint8(86400)
             );
         }
 
