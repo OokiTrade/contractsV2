@@ -12,9 +12,12 @@ import "../../../interfaces/IBZx.sol";
 import "../../../interfaces/IPriceFeeds.sol";
 import "../../mixins/Flags.sol";
 import "../../interfaces/draft-IERC20Permit.sol";
+import "../../interfaces/IERC20Detailed.sol";
+import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 
 contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
     using SignedSafeMath for int256;
 
 
@@ -42,9 +45,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     // address public constant bZxContract = 0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB; // arbitrum
     // address public constant wethToken = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1; // arbitrum
 
-    bytes32 internal constant iToken_ProfitSoFar = 0x37aa2b7d583612f016e4a4de4292cb015139b3d7762663d06a53964912ea2fb6;          // keccak256("iToken_ProfitSoFar")
-    bytes32 internal constant iToken_LowerAdminAddress = 0x7ad06df6a0af6bd602d90db766e0d5f253b45187c3717a0f9026ea8b10ff0d4b;    // keccak256("iToken_LowerAdminAddress")
-    bytes32 internal constant iToken_LowerAdminContract = 0x34b31cff1dbd8374124bd4505521fc29cab0f9554a5386ba7d784a4e611c7e31;   // keccak256("iToken_LowerAdminContract")
 
     constructor()
         public
@@ -906,46 +906,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         _approve(owner, spender, value);
     }
 
-
-    /* Owner-Only functions */
-
-    function updateSettings(
-        address settingsTarget,
-        bytes memory callData)
-        public
-    {
-        if (msg.sender != owner()) {
-            address _lowerAdmin;
-            address _lowerAdminContract;
-            assembly {
-                _lowerAdmin := sload(iToken_LowerAdminAddress)
-                _lowerAdminContract := sload(iToken_LowerAdminContract)
-            }
-            require(msg.sender == _lowerAdmin && settingsTarget == _lowerAdminContract);
-        }
-
-        address currentTarget = target_;
-        target_ = settingsTarget;
-
-        (bool result,) = address(this).call(callData);
-
-        uint256 size;
-        uint256 ptr;
-        assembly {
-            size := returndatasize
-            ptr := mload(0x40)
-            returndatacopy(ptr, 0, size)
-            if eq(result, 0) { revert(ptr, size) }
-        }
-
-        target_ = currentTarget;
-
-        assembly {
-            return(ptr, size)
-        }
-    }
-    
-
     function initializeDomainSeparator() public onlyGuardian {
         uint chainId;
         assembly {
@@ -961,6 +921,24 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
             )
         );
     }
+
+    function initialize(
+        address _loanTokenAddress,
+        string memory _name,
+        string memory _symbol)
+        public onlyGuardian
+    {
+        loanTokenAddress = _loanTokenAddress;
+
+        name = _name;
+        symbol = _symbol;
+        decimals = IERC20Detailed(loanTokenAddress).decimals();
+
+        initialPrice = WEI_PRECISION; // starting price of 1
+
+        IERC20(_loanTokenAddress).safeApprove(bZxContract, uint256(-1));
+    }
+
 
     function setDemandCurve(ICurvedInterestRate _rateHelper) public onlyGuardian {
         require(address(_rateHelper) != address(0), "no zero address");
