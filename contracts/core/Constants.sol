@@ -46,8 +46,15 @@ contract Constants {
     //address public constant bzrxTokenAddress = address(0); // avax
     //address public constant vbzrxTokenAddress = address(0); // avax
 
-    //IWethERC20 public constant wethToken = IWethERC20(0x82aF49447D8a07e3bd95BD0d56f35241523fBab1); // arbitrum
-    //address public constant bzrxTokenAddress = address(0); // arbitrum
-    //address public constant vbzrxTokenAddress = address(0); // arbitrum
-    //address public constant OOKI = 0x400F3ff129Bc9C9d239a567EaF5158f1850c65a4; // arbitrum
+
+    // IWethERC20 public constant wethToken = IWethERC20(0x82aF49447D8a07e3bd95BD0d56f35241523fBab1); // arbitrum
+    // address public constant bzrxTokenAddress = address(0); // arbitrum
+    // address public constant vbzrxTokenAddress = address(0); // arbitrum
+    // address public constant OOKI = address(0x400F3ff129Bc9C9d239a567EaF5158f1850c65a4); // arbitrum
+
+    // IWethERC20 public constant wethToken = IWethERC20(0x4200000000000000000000000000000000000006); // optimism (Wrapped eth)
+    // address public constant bzrxTokenAddress = address(0); // optimism
+    // address public constant vbzrxTokenAddress = address(0); // optimism
+    // address public constant OOKI = address(0); // optimism
+
 }
