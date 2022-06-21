@@ -148,6 +148,10 @@ contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
             IERC20(USDC).balanceOf(address(this)) > MIN_USDC_AMOUNT,
             "FeeExtractAndDistribute: bridge amount too low"
         );
+        _bridgeFees();
+    }
+
+    function _bridgeFees() internal {
         IBridge(bridge).send(
             treasuryWallet,
             USDC,
@@ -222,6 +226,6 @@ contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
     }
 
     function guardianBridge() external onlyGuardian {
-        _bridgeFeesAndDistribute();
+        _bridgeFees();
     }
 }
