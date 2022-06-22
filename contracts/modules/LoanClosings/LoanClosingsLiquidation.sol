@@ -1,8 +1,9 @@
 pragma solidity 0.5.17;
 
-import "./LoanClosingsBase_2.sol";
+import "./LoanClosingsShared.sol";
+import "../../mixins/LiquidationHelper.sol";
 
-contract LoanClosingsLiquidation is LoanClosingsBase_2 {
+contract LoanClosingsLiquidation is LoanClosingsShared {
 
     function initialize(
         address target)
@@ -70,7 +71,7 @@ contract LoanClosingsLiquidation is LoanClosingsBase_2 {
 
         loanCloseAmount = closeAmount;
 
-        (uint256 maxLiquidatable, uint256 maxSeizable) = _getLiquidationAmounts(
+        (uint256 maxLiquidatable, uint256 maxSeizable) = LiquidationHelper._getLiquidationAmounts(
             principalPlusInterest,
             loanLocal.collateral,
             currentMargin,

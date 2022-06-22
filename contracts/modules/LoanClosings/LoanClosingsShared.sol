@@ -4,12 +4,11 @@ import "../../core/State.sol";
 import "../../events/LoanClosingsEvents.sol";
 import "../../mixins/VaultController.sol";
 import "../../mixins/InterestHandler.sol";
-import "../../mixins/LiquidationHelper.sol";
 import "../../swaps/SwapsUser.sol";
 import "../../interfaces/ILoanPool.sol";
 import "../../governance/PausableGuardian.sol";
 
-contract LoanClosingsBase_2 is State, LoanClosingsEvents, VaultController, InterestHandler, SwapsUser, LiquidationHelper, PausableGuardian {
+contract LoanClosingsShared is State, LoanClosingsEvents, VaultController, InterestHandler, SwapsUser, PausableGuardian {
 
     enum CloseTypes {
         Deposit,
