@@ -1,24 +1,23 @@
-/**
- * Copyright 2017-2022, OokiDao. All Rights Reserved.
- * Licensed under the Apache License, Version 2.0.
- */
-
 pragma solidity 0.5.17;
-pragma experimental ABIEncoderV2;
 
-import "./LoanClosingsBase.sol";
+import "./LoanClosingsShared.sol";
+import "../../mixins/LiquidationHelper.sol";
 
-contract LoanLiquidations is LoanClosingsBase {
-    function initialize(address target) external onlyOwner {
+contract LoanClosingsLiquidation is LoanClosingsShared {
+
+    function initialize(
+        address target)
+        external
+        onlyOwner
+    {
         _setTarget(this.liquidate.selector, target);
     }
 
     function liquidate(
         bytes32 loanId,
         address receiver,
-        uint256 closeAmount // denominated in loanToken
-    )
-        public
+        uint256 closeAmount) // denominated in loanToken
+        external
         payable
         nonReentrant
         returns (
@@ -27,14 +26,17 @@ contract LoanLiquidations is LoanClosingsBase {
             address seizedToken
         )
     {
-        return _liquidate(loanId, receiver, closeAmount);
+        return _liquidate(
+            loanId,
+            receiver,
+            closeAmount
+        );
     }
 
-    function _liquidate(
+        function _liquidate(
         bytes32 loanId,
         address receiver,
-        uint256 closeAmount
-    )
+        uint256 closeAmount)
         internal
         pausable
         returns (
@@ -48,7 +50,8 @@ contract LoanLiquidations is LoanClosingsBase {
 
         LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
-        uint256 principalPlusInterest = _settleInterest(loanLocal.lender, loanId).add(loanLocal.principal);
+        uint256 principalPlusInterest = _settleInterest(loanLocal.lender, loanId)
+            .add(loanLocal.principal);
 
         (uint256 currentMargin, uint256 collateralToLoanRate) = _getCurrentMargin(
             loanParamsLocal.loanToken,
@@ -57,7 +60,10 @@ contract LoanLiquidations is LoanClosingsBase {
             loanLocal.collateral,
             false // silentFail
         );
-        require(currentMargin <= loanParamsLocal.maintenanceMargin, "healthy position");
+        require(
+            currentMargin <= loanParamsLocal.maintenanceMargin,
+            "healthy position"
+        );
 
         if (receiver == address(0)) {
             receiver = msg.sender;
@@ -75,7 +81,9 @@ contract LoanLiquidations is LoanClosingsBase {
         );
 
         if (loanCloseAmount < maxLiquidatable) {
-            seizedAmount = maxSeizable.mul(loanCloseAmount).div(maxLiquidatable);
+            seizedAmount = maxSeizable
+                .mul(loanCloseAmount)
+                .div(maxLiquidatable);
         } else {
             if (loanCloseAmount > maxLiquidatable) {
                 // adjust down the close amount to the max
@@ -87,14 +95,23 @@ contract LoanLiquidations is LoanClosingsBase {
         require(loanCloseAmount != 0, "nothing to liquidate");
 
         // liquidator deposits the principal being closed
-        _returnPrincipalWithDeposit(loanParamsLocal.loanToken, loanLocal.lender, loanCloseAmount);
+        _returnPrincipalWithDeposit(
+            loanParamsLocal.loanToken,
+            loanLocal.lender,
+            loanCloseAmount
+        );
 
         seizedToken = loanParamsLocal.collateralToken;
 
         if (seizedAmount != 0) {
-            loanLocal.collateral = loanLocal.collateral.sub(seizedAmount);
+            loanLocal.collateral = loanLocal.collateral
+                .sub(seizedAmount);
 
-            _withdrawAsset(seizedToken, receiver, seizedAmount);
+            _withdrawAsset(
+                seizedToken,
+                receiver,
+                seizedAmount
+            );
         }
 
         _emitClosingEvents(
@@ -108,6 +125,10 @@ contract LoanLiquidations is LoanClosingsBase {
             CloseTypes.Liquidation
         );
 
-        _closeLoan(loanLocal, loanParamsLocal.loanToken, loanCloseAmount);
+        _closeLoan(
+            loanLocal,
+            loanParamsLocal.loanToken,
+            loanCloseAmount
+        );
     }
 }
