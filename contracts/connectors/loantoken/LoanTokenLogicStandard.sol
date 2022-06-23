@@ -49,10 +49,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
 //    address public constant bZxContract = 0xAcedbFd5Bc1fb0dDC948579d4195616c05E74Fd1; // optimism
 //    address public constant wethToken = 0x4200000000000000000000000000000000000006; // optimism
 
-    bytes32 internal constant iToken_ProfitSoFar = 0x37aa2b7d583612f016e4a4de4292cb015139b3d7762663d06a53964912ea2fb6;          // keccak256("iToken_ProfitSoFar")
-    bytes32 internal constant iToken_LowerAdminAddress = 0x7ad06df6a0af6bd602d90db766e0d5f253b45187c3717a0f9026ea8b10ff0d4b;    // keccak256("iToken_LowerAdminAddress")
-    bytes32 internal constant iToken_LowerAdminContract = 0x34b31cff1dbd8374124bd4505521fc29cab0f9554a5386ba7d784a4e611c7e31;   // keccak256("iToken_LowerAdminContract")
-
     constructor()
         public
     {
@@ -179,7 +175,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     function borrow(
         bytes32 loanId,                 // 0 if new loan
         uint256 withdrawAmount,
-        uint256 initialLoanDuration,    // duration in seconds
+        uint256,    // duration in seconds DEPRECATED
         uint256 collateralTokenSent,    // if 0, loanId must be provided; any ETH sent must equal this value
         address collateralTokenAddress, // if address(0), this means ETH and ETH must be sent with the call or loanId must be provided
         address borrower,
@@ -194,7 +190,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         return _borrow(
             loanId,
             withdrawAmount,
-            initialLoanDuration,
+            0,
             collateralTokenSent,
             collateralTokenAddress,
             borrower,
@@ -746,17 +742,19 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     }
 
     function _checkPermit(address token, bytes memory loanDataBytes) internal returns (bytes memory) {
-        if(abi.decode(loanDataBytes, (uint128)) & WITH_PERMIT != 0) {
-            (uint128 f, bytes[] memory payload) = abi.decode(
-                loanDataBytes,
-                (uint128, bytes[])
-            );
-            (address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) = abi.decode(payload[2], (address, address, uint, uint, uint8, bytes32, bytes32));
-            IERC20Permit(token).permit(owner, spender, value, deadline, v, r, s);
-            payload[2] = "";
-            loanDataBytes = abi.encode(f, payload);
+        if (loanDataBytes.length != 0) {
+            if(abi.decode(loanDataBytes, (uint128)) & WITH_PERMIT != 0) {
+                (uint128 f, bytes[] memory payload) = abi.decode(
+                    loanDataBytes,
+                    (uint128, bytes[])
+                );
+                (address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) = abi.decode(payload[2], (address, address, uint, uint, uint8, bytes32, bytes32));
+                IERC20Permit(token).permit(owner, spender, value, deadline, v, r, s);
+                payload[2] = "";
+                loanDataBytes = abi.encode(f, payload);
+            }
+            return loanDataBytes;
         }
-        return loanDataBytes;
     }
 
     function _callOptionalReturn(
