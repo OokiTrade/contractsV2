@@ -11,16 +11,16 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
     function initialize(address target) public onlyOwner {
         _setTarget(this.adjustAllowance.selector, target);
         _setTarget(this.revokeAllowance.selector, target);
-        _setTarget(this.getActiveOrders.selector, target);
-        _setTarget(this.getActiveOrdersLimited.selector, target);
+        _setTarget(this.getUserOrders.selector, target);
+        _setTarget(this.getUserOrdersLimited.selector, target);
         _setTarget(this.getOrderByOrderID.selector, target);
-        _setTarget(this.getActiveOrderIDs.selector, target);
-        _setTarget(this.getTotalOrders.selector, target);
-        _setTarget(this.getTotalOrderIDs.selector, target);
-        _setTarget(this.getOrderIDs.selector, target);
-        _setTarget(this.getOrders.selector, target);
-        _setTarget(this.getOrderIDsLimited.selector, target);
-        _setTarget(this.getOrdersLimited.selector, target);
+        _setTarget(this.getUserOrderIDs.selector, target);
+        _setTarget(this.getUserOrdersCount.selector, target);
+        _setTarget(this.getGlobalOrderIDs.selector, target);
+        _setTarget(this.getGlobalOrdersCount.selector, target);
+        _setTarget(this.getGlobalOrders.selector, target);
+        _setTarget(this.getGlobalOrderIDsLimited.selector, target);
+        _setTarget(this.getGlobalOrdersLimited.selector, target);
     }
 
     function adjustAllowance(address[] memory spenders, address[] memory tokens) external onlyOwner {
@@ -64,7 +64,7 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
         }
 
     }
-    function getActiveOrders(address trader)
+    function getUserOrders(address trader)
         external
         view
         returns (IOrderBook.Order[] memory fullList)
@@ -79,7 +79,7 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
         return fullList;
     }
 
-    function getActiveOrdersLimited(address trader, uint start, uint end)
+    function getUserOrdersLimited(address trader, uint start, uint end)
         external
         view
         returns (IOrderBook.Order[] memory fullList)
@@ -101,7 +101,7 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
         return _allOrders[orderID];
     }
 
-    function getActiveOrderIDs(address trader)
+    function getUserOrderIDs(address trader)
         external
         view
         returns (bytes32[] memory)
@@ -109,19 +109,19 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
         return _histOrders[trader].values();
     }
 
-    function getTotalOrders(address trader) external view returns (uint256) {
+    function getUserOrdersCount(address trader) external view returns (uint256) {
         return _histOrders[trader].length();
     }
 
-    function getOrderIDs() external view returns (bytes32[] memory) {
+    function getGlobalOrderIDs() external view returns (bytes32[] memory) {
         return _allOrderIDs.values();
     }
 
-    function getTotalOrderIDs() external view returns (uint256) {
+    function getGlobalOrdersCount() external view returns (uint256) {
         return _allOrderIDs.length();
     }
 
-    function getOrderIDsLimited(uint start, uint end) external view returns (bytes32[] memory fullList) {
+    function getGlobalOrderIDsLimited(uint start, uint end) external view returns (bytes32[] memory fullList) {
         require(end<=_allOrderIDs.length(), "OrderBook: end is past max orders");
         fullList = new bytes32[](end-start);
         for (uint256 i = start; i < end;) {
@@ -131,7 +131,7 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
         return fullList;
     }
 
-    function getOrders()
+    function getGlobalOrders()
         external
         view
         returns (IOrderBook.Order[] memory fullList)
@@ -146,7 +146,7 @@ contract OrderBookData is OrderBookEvents, OrderBookStorage {
         return fullList;
     }
 
-    function getOrdersLimited(uint start, uint end)
+    function getGlobalOrdersLimited(uint start, uint end)
         external
         view
         returns (IOrderBook.Order[] memory fullList)

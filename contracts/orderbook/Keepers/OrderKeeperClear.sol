@@ -14,7 +14,7 @@ contract OrderKeeperClear is PausableGuardian_0_8 {
         returns (bool upkeepNeeded, bytes memory performData)
     {
         (uint256 start, uint256 end) = abi.decode(checkData, (uint256, uint256));
-        uint256 orderIDLength = orderBook.getTotalOrderIDs();
+        uint256 orderIDLength = orderBook.getGlobalOrdersCount();
         if (start > orderIDLength) {
             return (upkeepNeeded, performData);
         }

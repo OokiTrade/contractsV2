@@ -179,13 +179,13 @@ interface IOrderBook {
 
     /// Retrieves active orders for a trader
     /// @param trader address of trader
-    function getActiveOrders(address trader) external view returns (Order[] memory);
+    function getUserOrders(address trader) external view returns (Order[] memory);
 
     /// Retrieves active orders for a trader
     /// @param trader address of trader
     /// @param start starting index
     /// @param end ending index
-    function getActiveOrdersLimited(address trader, uint256 start, uint256 end) external view returns (Order[] memory);
+    function getUserOrdersLimited(address trader, uint256 start, uint256 end) external view returns (Order[] memory);
 
     /// Retrieves order corresponding to an order ID
     /// @param orderID order ID
@@ -193,28 +193,28 @@ interface IOrderBook {
 
     /// Retrieves active order IDs for a trader
     /// @param trader address of trader
-    function getActiveOrderIDs(address trader) external view returns (bytes32[] memory);
+    function getUserOrderIDs(address trader) external view returns (bytes32[] memory);
 
     /// Returns total active orders count for a trader
     /// @param trader address of trader
-    function getTotalOrders(address trader) external view returns (uint256);
+    function getUserOrdersCount(address trader) external view returns (uint256);
 
     /// Returns total active orders count
-    function getTotalOrderIDs() external view returns (uint256);
+    function getGlobalOrdersCount() external view returns (uint256);
 
     /// Returns total active order IDs
-    function getOrderIDs() external view returns (bytes32[] memory);
+    function getGlobalOrderIDs() external view returns (bytes32[] memory);
     
     /// Returns total active orders
-    function getOrders() external view returns (Order[] memory);
+    function getGlobalOrders() external view returns (Order[] memory);
 
     /// Returns active order IDs
     /// @param start starting index
     /// @param end ending index
-    function getOrderIDsLimited(uint256 start, uint256 end) external view returns (bytes32[] memory);
+    function getGlobalOrderIDsLimited(uint256 start, uint256 end) external view returns (bytes32[] memory);
 
     /// Returns active orders
     /// @param start starting index
     /// @param end ending index
-    function getOrdersLimited(uint256 start, uint256 end) external view returns (Order[] memory);
+    function getGlobalOrdersLimited(uint256 start, uint256 end) external view returns (Order[] memory);
 }
