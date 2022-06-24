@@ -167,7 +167,13 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         bytes32 tempID;
         for (uint256 i = start; i < end;) {
             tempID = _allOrderIDs.at(i);
-            if (prelimCheck(tempID)) {
+            (bool result, bytes memory returnData) = address(this).call(
+                abi.encodeWithSelector(this.prelimCheck.selector, tempID)
+            );
+            if (!result) {
+                continue;
+            }
+            if (abi.decode(returnData, (bool))) {
                 return tempID;
             }
             unchecked { ++i; } 
