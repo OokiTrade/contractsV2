@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-library VolumeOracle {
+library VolumeTracker {
     struct Observation {
         uint32 blockTimestamp;
         int56 volCumulative;
@@ -29,13 +29,13 @@ library VolumeOracle {
     /// @param cardinality populated elements
     /// @return indexUpdated The new index
     function write(
-        Observation[256] storage self,
-        uint8 index,
+        Observation[65535] storage self,
+        uint16 index,
         uint32 blockTimestamp,
         int24 tick,
-        uint8 cardinality,
+        uint16 cardinality,
         uint32 minDelta
-    ) public returns (uint8 indexUpdated) {
+    ) public returns (uint16 indexUpdated) {
         Observation memory last = self[index];
 
         // early return if we've already written an observation in last minDelta seconds
@@ -52,11 +52,12 @@ library VolumeOracle {
     /// @param index latest index
     /// @param cardinality populated elements
     function binarySearch(
-        Observation[256] storage self,
+        Observation[65535] storage self,
         uint32 target,
-        uint8 index,
-        uint8 cardinality
-    ) private view returns (Observation memory beforeOrAt, Observation memory atOrAfter) {
+        uint16 index,
+        uint16 cardinality
+    ) private view returns (Observation memory beforeOrAt) {
+        Observation memory atOrAfter;
         uint256 l = (index + 1) % cardinality; // oldest observation
         uint256 r = l + cardinality - 1; // newest observation
         uint256 i;
@@ -91,19 +92,19 @@ library VolumeOracle {
     /// @param index latest index
     /// @param cardinality populated elements
     function getSurroundingObservations(
-        Observation[256] storage self,
+        Observation[65535] storage self,
         uint32 target,
-        uint8 index,
-        uint8 cardinality
-    ) private view returns (Observation memory beforeOrAt, Observation memory atOrAfter) {
+        uint16 index,
+        uint16 cardinality
+    ) private view returns (Observation memory beforeOrAt) {
 
         beforeOrAt = self[index];
 
         if (beforeOrAt.blockTimestamp <= target) {
             if (beforeOrAt.blockTimestamp == target) {
-                return (beforeOrAt, atOrAfter);
+                return beforeOrAt;
             } else {
-                return (beforeOrAt, beforeOrAt);
+                return beforeOrAt;
             }
         }
 
@@ -114,10 +115,10 @@ library VolumeOracle {
     }
 
     function checkLastTradeTime(
-        Observation[256] storage self,
+        Observation[65535] storage self,
         uint32 time,
         uint32 secondsAgo,
-        uint8 index
+        uint16 index
     ) internal view returns (bool) {
         return self[index].blockTimestamp >= time-secondsAgo;
     }
@@ -129,11 +130,11 @@ library VolumeOracle {
     /// @param cardinality populated elements
     /// @return volCumulative cumulative volume
     function observeSingle(
-        Observation[256] storage self,
+        Observation[65535] storage self,
         uint32 time,
         uint32 secondsAgo,
-        uint8 index,
-        uint8 cardinality
+        uint16 index,
+        uint16 cardinality
     ) internal view returns (int56 volCumulative) {
         if (secondsAgo == 0) {
             Observation memory last = self[index];
@@ -142,16 +143,7 @@ library VolumeOracle {
 
         uint32 target = time - secondsAgo;
 
-        (Observation memory beforeOrAt, Observation memory atOrAfter) =
-            getSurroundingObservations(self, target, index, cardinality);
-
-        if (target == beforeOrAt.blockTimestamp) {
-            // left boundary
-            return beforeOrAt.volCumulative;
-        } else {
-            // right boundary
-            return atOrAfter.volCumulative;
-        }
+        return getSurroundingObservations(self, target, index, cardinality).volCumulative;
     }
 
     /// @param self oracle array
@@ -161,11 +153,11 @@ library VolumeOracle {
     /// @param cardinality populated elements
     /// @return volDelta Volume delta based on time period
     function volumeDelta(
-        Observation[256] storage self,
+        Observation[65535] storage self,
         uint32 time,
         uint32[2] memory secondsAgos,
-        uint8 index,
-        uint8 cardinality
+        uint16 index,
+        uint16 cardinality
     ) public view returns (int24 volDelta) {
         if (!checkLastTradeTime(self, time, secondsAgos[0], index)) return 0; //no trades since the furthest seconds back
         int56 firstPoint = observeSingle(self, time, secondsAgos[1], index, cardinality);

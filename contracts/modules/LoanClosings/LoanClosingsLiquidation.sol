@@ -2,7 +2,6 @@ pragma solidity 0.5.17;
 
 import "./LoanClosingsShared.sol";
 import "../../mixins/LiquidationHelper.sol";
-import "./LoanClosingsBase_2.sol";
 
 contract LoanClosingsLiquidation is LoanClosingsShared {
 

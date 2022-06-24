@@ -14,10 +14,10 @@ import "./ISwapsImpl.sol";
 import "../utils/TickMathV1.sol";
 import "../interfaces/IDexRecords.sol";
 import "../mixins/Flags.sol";
-import "../utils/VolumeOracle.sol";
+import "../utils/VolumeTracker.sol";
 
 contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
-    using VolumeOracle for VolumeOracle.Observation[256];
+    using VolumeTracker for VolumeTracker.Observation[256];
     function _loanSwap(
         bytes32 loanId,
         address sourceToken,
@@ -183,6 +183,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
         ) = _swapsCall_internal(addrs, vals, loanDataBytes);
 
         if (loanDataBytes.length != 0 && abi.decode(loanDataBytes, (uint128)) & TRACK_VOLUME_FLAG != 0) {
+            if (volumeTradedCardinality[addrs[4]] == 0) volumeTradedCardinality[addrs[4]] = 256;
             int24 tradingVolumeInUSDC = TickMathV1.getTickAtSqrtRatio(uint160(IPriceFeeds(priceFeeds)
                 .queryReturn(
                     addrs[0],
@@ -193,8 +194,8 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
                 volumeLastIdx[addrs[4]],
                 uint32(block.timestamp),
                 tradingVolumeInUSDC,
-                uint8(-1),
-                uint8(86400)
+                volumeTradedCardinality[user],
+                uint32(86400)
             );
         }
 
