@@ -110,7 +110,7 @@ def test_cases():
     # Test Case 9: mint/burn
     # Test Case 10: borrow
     # Test Case 11: marginTrade
-    # Test Case 12: marginTrade with iToken as collateral
+    # Test Case 12: set iToken pricefeed
     assert True
 
 def test_case1(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULTISIG, FRAX, LoanTokenLogicStandard, LoanToken, CurvedInterestRate, PriceFeeds, PRICE_FEED, interface):
@@ -174,11 +174,11 @@ def test_case2(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULTI
     iUSDT.marginTrade(0, 2e18, 0, 100e18, AAVE, accounts[0], b'',{'from': accounts[0]})
     AAVE.approve(BZX, 2**256-1, {"from": accounts[0]})
     loans = BZX.getUserLoans(accounts[0], 0, 10, 0, 0, 0)
-    BZX.closeWithSwap(loans[0][0], accounts[0], 100e18, True, b"", {"from": accounts[0]})
+    BZX.closeWithSwap(loans[0][0], accounts[0], 10000e18, True, b"", {"from": accounts[0]})
 
-    # margint trade AAVE principal - you can't since no where to borrow
+    # margint trade AAVE principal - you can't since no where to borrow, you can't short aave
 
-    assert False
+    assert True
 
 # this checks that migrateLoanParamsList works for all
 def test_case4_1(BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULTISIG):
@@ -289,3 +289,41 @@ def test_case5(BZX, USDC, USDT, iUSDT, iUSDC):
     assert loanParams[0][7] == 0
 
     assert True
+
+
+def test_case13(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULTISIG, FRAX, LoanTokenLogicStandard, LoanToken, CurvedInterestRate, PriceFeeds, PRICE_FEED, interface, PriceFeedIToken):
+    USDC.transfer(accounts[0], 100000e6, {"from": "0xcffad3200574698b78f32232aa9d63eabd290703"})
+    USDT.transfer(accounts[0], 100000e6, {"from": "0x5a52e96bacdabb82fd05763e25335261b270efcb"})
+
+    USDC.approve(iUSDC, 2**256-1, {"from": accounts[0]})
+    iUSDC.mint(accounts[0], 10000e6, {"from": accounts[0]})
+
+    USDT.approve(iUSDT, 2**256-1, {"from": accounts[0]})
+    iUSDT.mint(accounts[0], 10000e6, {"from": accounts[0]})
+
+    USDC.approve(iUSDT, 2**256-1, {"from": accounts[0]})
+    iUSDT.marginTrade(0, 2e18, 0, 100e6, USDC, accounts[0], b'',{'from': accounts[0]})
+
+    # setting pricefeed for iToken
+    USDCPriceFeed = PRICE_FEED.pricesFeeds(USDC)
+    USDCPriceFeed = Contract.from_abi("pricefeed", USDCPriceFeed, abi = interface.IPriceFeedsExt.abi)
+    price_feed = PriceFeeds.deploy({"from": accounts[0]})
+    BZX.setPriceFeedContract(price_feed, {"from": BZX.owner()})
+    price_feed.changeGuardian(GUARDIAN_MULTISIG, {"from": accounts[0]})
+    price_feed.setPriceFeed([USDC], [USDCPriceFeed], {"from": GUARDIAN_MULTISIG})
+
+    # priceFeed = PriceFeedIToken.deploy(USDCPriceFeed, iUSDC, {"from": accounts[0]})
+    # PRICE_FEED.setPriceFeed([iUSDC], [priceFeed], {'from': PRICE_FEED.owner()})
+
+    # USDTPriceFeed = PRICE_FEED.pricesFeeds(USDT)
+    # priceFeed = PriceFeedIToken.deploy(USDTPriceFeed, iUSDT, {"from": accounts[0]})
+    # PRICE_FEED.setPriceFeed([iUSDT], [priceFeed], {'from': PRICE_FEED.owner()})
+    # priceFeedExt = 
+    assert False
+    
+    iUSDC.approve(iUSDT, 2**256-1, {"from": accounts[0]})
+    iUSDT.marginTrade(0, 2e18, 0, 100e6, iUSDC, accounts[0], b'',{'from': accounts[0]})
+    
+
+
+    assert False
