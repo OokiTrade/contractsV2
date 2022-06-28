@@ -223,6 +223,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
             dSwapValue =
                 order.collateralTokenAmount +
                 PROTOCOL.getSwapExpectedReturn(
+                    order.trader,
                     order.loanTokenAddress,
                     order.base,
                     amountUsed,
@@ -238,6 +239,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
             }
             uint256 dSwapValue;
             dSwapValue = PROTOCOL.getSwapExpectedReturn(
+                order.trader,
                 order.base,
                 order.loanTokenAddress,
                 order.collateralTokenAmount,
@@ -284,6 +286,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
     ) public returns (uint256 rate) {
         uint256 tradeSize = 10**IERC20Metadata(srcToken).decimals();
         rate = PROTOCOL.getSwapExpectedReturn(
+            address(this),
             srcToken,
             destToken,
             amountIn,
@@ -354,6 +357,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
             dSwapValue =
                 order.collateralTokenAmount +
                 PROTOCOL.getSwapExpectedReturn(
+                    order.trader,
                     order.loanTokenAddress,
                     order.base,
                     amountUsed,
@@ -373,6 +377,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         else if (order.orderType == IOrderBook.OrderType.LIMIT_CLOSE) {
             uint256 dSwapValue;
             dSwapValue = PROTOCOL.getSwapExpectedReturn(
+                order.trader,
                 order.base,
                 order.loanTokenAddress,
                 order.collateralTokenAmount,
