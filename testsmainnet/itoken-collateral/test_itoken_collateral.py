@@ -1,7 +1,5 @@
 #!/usr/bin/python3
-#!/usr/bin/python3
 
-from imp import load_module
 import pytest
 from brownie import ZERO_ADDRESS, network, Contract, reverts, chain
 from brownie.convert.datatypes import Wei
@@ -63,6 +61,14 @@ def FRAX(accounts, TestToken):
 def AAVE(accounts, TestToken):
     return Contract.from_abi("AAVE", address="0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", abi=TestToken.abi)
 
+@pytest.fixture(scope="module")
+def STETH(accounts, TestToken):
+    return Contract.from_abi("STETH", address="0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84", abi=TestToken.abi)
+
+@pytest.fixture(scope="module")
+def ALCX(accounts, TestToken):
+    return Contract.from_abi("ALCX", address="0xdBdb4d16EdA451D0503b854CF79D55697F90c8DF", abi=TestToken.abi)
+
 
 @pytest.fixture(scope="module")
 def WETH(accounts, TestToken):
@@ -108,7 +114,7 @@ def test_cases():
     # Test Case 7: make sure guardian can create/updates existing loan params with specific settings
     # Test Case 8: test HELPER getBorrowAmount for deposit and vice versa
     # Test Case 9: mint/burn
-    # Test Case 10: borrow
+    # Test Case 10: borrow with iToken
     # Test Case 11: marginTrade
     # Test Case 12: set iToken pricefeed
     assert True
@@ -157,26 +163,43 @@ def test_case1(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULTI
 
     assert True
 
-def test_case2(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULTISIG, FRAX, LoanTokenLogicStandard, LoanToken, CurvedInterestRate, PriceFeeds, PRICE_FEED, interface, AAVE):
-    PRICE_FEED.setPriceFeed([AAVE], ['0x6Df09E975c830ECae5bd4eD9d90f3A95a4f88012'], {'from': PRICE_FEED.owner()})
-    BZX.setSupportedTokens([AAVE], [True], True, {'from': GUARDIAN_MULTISIG})
+def test_case2(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULTISIG, FRAX, LoanTokenLogicStandard, LoanToken, CurvedInterestRate, PriceFeeds, PRICE_FEED, interface, ALCX):
+    PRICE_FEED.setPriceFeed([ALCX], ['0x194a9AaF2e0b67c35915cD01101585A33Fe25CAa'], {'from': PRICE_FEED.owner()})
+    BZX.setSupportedTokens([ALCX], [True], True, {'from': GUARDIAN_MULTISIG})
 
-    # get some AAVE
-    AAVE.transfer(accounts[0], 100000e18, {"from": "0x26a78d5b6d7a7aceedd1e6ee3229b372a624d8b7"})
+    # get some ALCX
+    ALCX.transfer(accounts[0], 10000e18, {"from": "0x6bb8bc41e668b7c8ef3850486c9455b5c86830b3"})
 
-    # borrow using AAVE as collateral
-    AAVE.approve(iUSDT, 2**256-1, {"from": accounts[0]})
-    iUSDT.borrow("", 50e6, 0, 100e18, AAVE, accounts[0], accounts[0], b"", {'from': accounts[0]})
+    # borrow using ALCX as collateral
+    ALCX.approve(iUSDT, 2**256-1, {"from": accounts[0]})
+    iUSDT.borrow("", 50e6, 0, 100e18, ALCX, accounts[0], accounts[0], b"", {'from': accounts[0]})
     loans = BZX.getUserLoans(accounts[0], 0, 10, 0, 0, 0)
     BZX.closeWithSwap(loans[0][0], accounts[0], 100e18, True, b"", {"from": accounts[0]})
 
-    # margint trade AAVE collateral
-    iUSDT.marginTrade(0, 2e18, 0, 100e18, AAVE, accounts[0], b'',{'from': accounts[0]})
-    AAVE.approve(BZX, 2**256-1, {"from": accounts[0]})
+    # margint trade ALCX collateral
+    iUSDT.marginTrade(0, 2e18, 0, 100e18, ALCX, accounts[0], b'',{'from': accounts[0]})
+    ALCX.approve(BZX, 2**256-1, {"from": accounts[0]})
     loans = BZX.getUserLoans(accounts[0], 0, 10, 0, 0, 0)
+    USDT.approve(BZX, 2*256-1, {"from": accounts[0]})
     BZX.closeWithSwap(loans[0][0], accounts[0], 10000e18, True, b"", {"from": accounts[0]})
+    BZX.closeWithDeposit(loans[0][0], accounts[0], 10000e6, {"from": accounts[0]})
+    # margint trade STETH principal - you can't since no where to borrow, you can't short aave
 
-    # margint trade AAVE principal - you can't since no where to borrow, you can't short aave
+    assert False
+
+
+def test_case2_1(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULTISIG, FRAX, LoanTokenLogicStandard, LoanToken, CurvedInterestRate, PriceFeeds, PRICE_FEED, interface, ALCX):
+    PRICE_FEED.setPriceFeed([ALCX], ['0x194a9AaF2e0b67c35915cD01101585A33Fe25CAa'], {'from': PRICE_FEED.owner()})
+    # BZX.setSupportedTokens([ALCX], [True], True, {'from': GUARDIAN_MULTISIG})
+
+    # get some ALCX
+    ALCX.transfer(accounts[0], 10000e18, {"from": "0x6bb8bc41e668b7c8ef3850486c9455b5c86830b3"})
+
+    # borrow using ALCX as collateral
+    ALCX.approve(iUSDT, 2**256-1, {"from": accounts[0]})
+    with reverts("unsupported token"):
+        iUSDT.borrow("", 50e6, 0, 100e18, ALCX, accounts[0], accounts[0], b"", {'from': accounts[0]})
+ 
 
     assert True
 
@@ -291,7 +314,37 @@ def test_case5(BZX, USDC, USDT, iUSDT, iUSDC):
     assert True
 
 
-def test_case13(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULTISIG, FRAX, LoanTokenLogicStandard, LoanToken, CurvedInterestRate, PriceFeeds, PRICE_FEED, interface, PriceFeedIToken):
+def test_case11(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULTISIG, FRAX, LoanTokenLogicStandard, LoanToken, CurvedInterestRate, PriceFeeds, PRICE_FEED, interface, PriceFeedIToken):
+    USDC.transfer(accounts[0], 100000e6, {"from": "0xcffad3200574698b78f32232aa9d63eabd290703"})
+    USDT.transfer(accounts[0], 100000e6, {"from": "0x5a52e96bacdabb82fd05763e25335261b270efcb"})
+
+    # setting pricefeed for iToken
+    USDCPriceFeed = PRICE_FEED.pricesFeeds(USDC)
+    USDCPriceFeed = Contract.from_abi("pricefeed", USDCPriceFeed, abi = interface.IPriceFeedsExt.abi)
+    
+    USDTPriceFeed = PRICE_FEED.pricesFeeds(USDT)
+    USDTPriceFeed = Contract.from_abi("pricefeed", USDTPriceFeed, abi = interface.IPriceFeedsExt.abi)
+
+    price_feed = PriceFeeds.deploy({"from": accounts[0]})
+    BZX.setPriceFeedContract(price_feed, {"from": BZX.owner()})
+    price_feed.changeGuardian(GUARDIAN_MULTISIG, {"from": accounts[0]})
+    price_feed.setPriceFeed([USDC, USDT], [USDCPriceFeed, USDTPriceFeed], {"from": GUARDIAN_MULTISIG})
+
+    USDC.approve(iUSDC, 2**256-1, {"from": accounts[0]})
+    iUSDC.mint(accounts[0], 10000e6, {"from": accounts[0]})
+
+    iUSDC.approve(iUSDT, 2**256-1, {"from": accounts[0]})
+    with reverts("unsupported token"):
+        iUSDT.borrow("", 50e6, 0, 100e6, iUSDC, accounts[0], accounts[0], b"", {'from': accounts[0]})
+
+    BZX.setSupportedTokens([iUSDC], [True], True, {'from': GUARDIAN_MULTISIG})
+    iUSDT.borrow("", 50e6, 0, 100e6, iUSDC, accounts[0], accounts[0], b"", {'from': accounts[0]})
+
+    loans = BZX.getUserLoans(accounts[0], 0, 10, 0, 0, 0)
+    BZX.closeWithSwap(loans[0][0], accounts[0], 10000e18, True, b"", {"from": accounts[0]})
+    assert False
+
+def test_case12(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULTISIG, FRAX, LoanTokenLogicStandard, LoanToken, CurvedInterestRate, PriceFeeds, PRICE_FEED, interface, PriceFeedIToken):
     USDC.transfer(accounts[0], 100000e6, {"from": "0xcffad3200574698b78f32232aa9d63eabd290703"})
     USDT.transfer(accounts[0], 100000e6, {"from": "0x5a52e96bacdabb82fd05763e25335261b270efcb"})
 
@@ -319,11 +372,6 @@ def test_case13(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULT
     # priceFeed = PriceFeedIToken.deploy(USDTPriceFeed, iUSDT, {"from": accounts[0]})
     # PRICE_FEED.setPriceFeed([iUSDT], [priceFeed], {'from': PRICE_FEED.owner()})
     # priceFeedExt = 
-    assert False
-    
-    iUSDC.approve(iUSDT, 2**256-1, {"from": accounts[0]})
-    iUSDT.marginTrade(0, 2e18, 0, 100e6, iUSDC, accounts[0], b'',{'from': accounts[0]})
-    
-
-
-    assert False
+    assert abs(1/(price_feed.getPrice(iUSDC)/iUSDC.tokenPrice()) - 1/(price_feed.getPrice(USDC)/1e18)) < 10
+    assert abs(1/(price_feed.getPrice(iUSDC)/iUSDC.tokenPrice()) - 1/(USDCPriceFeed.latestAnswer()/1e18)) < 10
+    assert True
