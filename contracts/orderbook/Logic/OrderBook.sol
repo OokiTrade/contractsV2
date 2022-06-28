@@ -171,6 +171,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
                 abi.encodeWithSelector(this.prelimCheck.selector, tempID)
             );
             if (!result) {
+                unchecked { ++i; }
                 continue;
             }
             if (abi.decode(returnData, (bool))) {
