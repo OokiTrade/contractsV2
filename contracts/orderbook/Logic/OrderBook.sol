@@ -197,7 +197,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
         srcToken = order.collateralTokenAmount > order.loanTokenAmount
             ? order.base
             : order.loanTokenAddress;
-        if (order.timeTillExpiration < block.timestamp) {
+        if (order.timeTillExpiration < block.timestamp || order.status != IOrderBook.OrderStatus.ACTIVE) {
             return false;
         }
         if (IDeposits(VAULT).getDeposit(keccak256(abi.encode(order.trader, 0))) < _gasToSend(2500000)) {
@@ -249,11 +249,19 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
             if (order.amountReceived <= dSwapValue) {
                 return true;
             }
-        } else {
+        } else if (order.orderType == IOrderBook.OrderType.MARKET_STOP) {
             if (!_isActiveLoan(order.loanID)) {
                 return false;
             }
+            //order.leverage is repurposed to be min amount received. optional
             bool operand;
+            uint256 dexSwapReceived = PROTOCOL.getSwapExpectedReturn(
+                order.trader,
+                order.base,
+                order.loanTokenAddress,
+                order.collateralTokenAmount,
+                order.loanDataBytes
+            );
             if (_useOracle[order.trader]) {
                 operand =
                     order.amountReceived >=
@@ -263,16 +271,9 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
                         order.collateralTokenAmount
                     );
             } else {
-                operand =
-                    order.amountReceived >=
-                    getDexRate(
-                        order.base,
-                        order.loanTokenAddress,
-                        order.loanDataBytes,
-                        order.collateralTokenAmount
-                    );
+                operand = order.amountReceived >= dexSwapReceived;
             }
-            if (operand) {
+            if (order.leverage <= dexSwapReceived && operand) {
                 return true;
             }
         }
@@ -416,7 +417,7 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
                         order.base,
                         order.loanTokenAddress,
                         order.collateralTokenAmount
-                    ); //TODO: Adjust for precision
+                    );
             } else {
                 operand = order.amountReceived >= dexSwapReceived;
             }
