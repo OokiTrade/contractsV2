@@ -400,7 +400,15 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
             emit OrderExecuted(order.trader, orderID);
         }
         else if (order.orderType == IOrderBook.OrderType.MARKET_STOP) {
+            //order.leverage is repurposed to be min amount received. optional
             bool operand;
+            uint256 dexSwapReceived = PROTOCOL.getSwapExpectedReturn(
+                order.trader,
+                order.base,
+                order.loanTokenAddress,
+                order.collateralTokenAmount,
+                order.loanDataBytes
+            );
             if (_useOracle[order.trader]) {
                 operand =
                     order.amountReceived >=
@@ -410,16 +418,10 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
                         order.collateralTokenAmount
                     ); //TODO: Adjust for precision
             } else {
-                operand =
-                    order.amountReceived >=
-                    getDexRate(
-                        order.base,
-                        order.loanTokenAddress,
-                        order.loanDataBytes,
-                        order.collateralTokenAmount
-                    );
+                operand = order.amountReceived >= dexSwapReceived;
             }
             require(
+                order.leverage <= dexSwapReceived &&
                 operand &&
                     priceCheck(
                         order.base,
