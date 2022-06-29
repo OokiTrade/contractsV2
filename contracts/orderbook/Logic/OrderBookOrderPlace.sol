@@ -73,7 +73,7 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
                 tradeSize = amountUsed*(order.leverage+1e18)/1e18;
             }
         } else {
-            tradeSize = amountUsed;
+            tradeSize = IPriceFeeds(priceFeed).queryReturn(order.base, order.loanTokenAddress, amountUsed);
         }
         require(IPriceFeeds(priceFeed).queryReturn(order.loanTokenAddress, USDC, tradeSize) > MIN_AMOUNT_IN_USDC, "OrderBook: trade too small");
         require(order.status==IOrderBook.OrderStatus.ACTIVE, "OrderBook: invalid order state");
@@ -114,10 +114,14 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
             ? (order.loanTokenAmount, order.loanTokenAddress)
             : (order.collateralTokenAmount, order.base);
         uint256 tradeSize;
-        if (usedToken == order.base) {
-            tradeSize = IPriceFeeds(priceFeed).queryReturn(order.base, order.loanTokenAddress, amountUsed)*order.leverage/10**18;
+        if (order.orderType == IOrderBook.OrderType.LIMIT_OPEN) {
+            if (usedToken == order.base) {
+                tradeSize = IPriceFeeds(priceFeed).queryReturn(order.base, order.loanTokenAddress, amountUsed)*order.leverage/10**18;
+            } else {
+                tradeSize = amountUsed*(order.leverage+1e18)/1e18;
+            }
         } else {
-            tradeSize = amountUsed*(order.leverage+1e18)/1e18;
+            tradeSize = IPriceFeeds(priceFeed).queryReturn(order.base, order.loanTokenAddress, amountUsed);
         }
         require(IPriceFeeds(priceFeed).queryReturn(order.loanTokenAddress, USDC, tradeSize) > MIN_AMOUNT_IN_USDC, "OrderBook: trade too small");
 
