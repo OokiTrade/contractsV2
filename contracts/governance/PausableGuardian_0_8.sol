@@ -19,6 +19,10 @@ contract PausableGuardian_0_8 is Ownable {
         _;
     }
 
+    modifier onlyGuardian() {
+        require(msg.sender==owner() || msg.sender==getGuardian(), "unauthorized");_;
+    }
+
     function _isPaused(bytes4 sig) public view returns (bool isPaused) {
         bytes32 slot = keccak256(abi.encodePacked(sig, Pausable_FunctionPause));
         assembly {
