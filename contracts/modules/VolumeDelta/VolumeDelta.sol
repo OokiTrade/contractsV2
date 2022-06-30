@@ -11,7 +11,16 @@ import "../../utils/VolumeTracker.sol";
 import "../../utils/TickMathV1.sol";
 
 contract VolumeDelta is State {
-    using VolumeTracker for VolumeTracker.Observation[256];
+    using VolumeTracker for VolumeTracker.Observation[65535];
+
+    function initialize(
+        address target)
+        external
+        onlyOwner
+    {
+        _setTarget(this.retrieveTradedVolume.selector, target);
+        _setTarget(this.adjustCardinality.selector, target);
+    }
 
     /*restricted by the last timestamp of the observations. 
     If periodEnd extends past the last time period an error will be thrown. 
@@ -21,15 +30,14 @@ contract VolumeDelta is State {
     function retrieveTradedVolume(address user, uint32 periodStart, uint32 periodEnd) public view returns (uint256) {
         if (periodStart >= block.timestamp) return 0;
         if (periodStart >= periodEnd) return 0;
-        if (block.timestamp < periodEnd) periodEnd = block.timestamp;
-        return TickMathV1.getSqrtRatioAtTick(
-            volumeTradedObservations[user].volumeDelta(
-                block.timestamp,
-                [block.timestamp-periodStart, block.timestamp-periodEnd],
+        uint32 ts = uint32(block.timestamp);
+        if (block.timestamp < periodEnd) periodEnd = ts;
+        return volumeTradedObservations[user].volumeDelta(
+                ts,
+                [ts-periodStart, ts-periodEnd],
                 volumeLastIdx[user],
                 volumeTradedCardinality[user]
-            )
-        );
+            );
     }
 
     //sets new cardinality. WARNING: CAN ONLY BE INCREASED. as it is increased, gas costs for binary searches increase. Use with caution

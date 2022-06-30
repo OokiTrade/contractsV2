@@ -3,7 +3,7 @@ pragma solidity ^0.5.0;
 library VolumeTracker {
     struct Observation {
         uint32 blockTimestamp;
-        int56 volCumulative;
+        uint96 volCumulative;
     }
 
     /// @param last The specified observation
@@ -13,12 +13,12 @@ library VolumeTracker {
     function convert(
         Observation memory last,
         uint32 blockTimestamp,
-        int24 tick
+        uint96 tick
     ) private pure returns (Observation memory) {
         return
             Observation({
                 blockTimestamp: blockTimestamp,
-                volCumulative: last.volCumulative + int56(tick)
+                volCumulative: last.volCumulative + uint96(tick)
             });
     }
 
@@ -32,7 +32,7 @@ library VolumeTracker {
         Observation[65535] storage self,
         uint16 index,
         uint32 blockTimestamp,
-        int24 tick,
+        uint96 tick,
         uint16 cardinality,
         uint32 minDelta
     ) public returns (uint16 indexUpdated) {
@@ -135,7 +135,7 @@ library VolumeTracker {
         uint32 secondsAgo,
         uint16 index,
         uint16 cardinality
-    ) internal view returns (int56 volCumulative) {
+    ) internal view returns (uint96 volCumulative) {
         if (secondsAgo == 0) {
             Observation memory last = self[index];
             return last.volCumulative;
@@ -158,10 +158,16 @@ library VolumeTracker {
         uint32[2] memory secondsAgos,
         uint16 index,
         uint16 cardinality
-    ) public view returns (int24 volDelta) {
+    ) public view returns (uint96 volDelta) {
         if (!checkLastTradeTime(self, time, secondsAgos[0], index)) return 0; //no trades since the furthest seconds back
-        int56 firstPoint = observeSingle(self, time, secondsAgos[1], index, cardinality);
-        int56 secondPoint = observeSingle(self, time, secondsAgos[0], index, cardinality);
-        return int24(firstPoint-secondPoint);
+        uint96 secondPoint;
+        //acts as a way to ensure data is available for new traders. If passed cardinality in reporting then it is fair game for errors as assumptions cannot be made
+        if (self[cardinality].volCumulative == 0 && self[0].blockTimestamp > secondsAgos[0]) {
+            secondPoint = 0;
+        } else { 
+            secondPoint = observeSingle(self, time, secondsAgos[0], index, cardinality);
+        }
+        uint96 firstPoint = observeSingle(self, time, secondsAgos[1], index, cardinality);
+        return firstPoint-secondPoint;
     }
 }

@@ -17,7 +17,8 @@ import "../mixins/Flags.sol";
 import "../utils/VolumeTracker.sol";
 
 contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
-    using VolumeTracker for VolumeTracker.Observation[256];
+    using VolumeTracker for VolumeTracker.Observation[65535];
+    uint32 public constant SECONDS = 86400;
     function _loanSwap(
         bytes32 loanId,
         address sourceToken,
@@ -97,11 +98,12 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
         uint256 destTokenAmountReceived;
         uint256 sourceTokenAmountUsed;
         uint256 tradingFee;
+        uint128 flagNumber = loanDataBytes.length != 0 ? abi.decode(loanDataBytes, (uint128)) : 0;
         if (!miscBool) {
             // bypassFee
             if (vals[2] == 0) {
                 // condition: vals[0] will always be used as sourceAmount
-                if (loanDataBytes.length != 0 && abi.decode(loanDataBytes, (uint128)) & PAY_WITH_OOKI_FLAG != 0) {
+                if (flagNumber & PAY_WITH_OOKI_FLAG != 0) {
                     tradingFee = _getTradingFeeWithOOKI(addrs[0], vals[0]);
                     if(tradingFee != 0){
                         if(abi.decode(loanDataBytes, (uint128)) & HOLD_OOKI_FLAG != 0){
@@ -119,7 +121,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
                 } else {
                     tradingFee = _getTradingFee(vals[0]);
                     if (tradingFee != 0) {
-                        if(loanDataBytes.length != 0 && abi.decode(loanDataBytes, (uint128)) & HOLD_OOKI_FLAG != 0){
+                        if(flagNumber & HOLD_OOKI_FLAG != 0){
                             tradingFee = _adjustForHeldBalance(tradingFee, addrs[4]);
                         }
                         _payTradingFee(
@@ -135,7 +137,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
             } else {
                 // condition: unknown sourceAmount will be used
 
-                if (loanDataBytes.length != 0 && abi.decode(loanDataBytes, (uint128)) & PAY_WITH_OOKI_FLAG != 0) {
+                if (flagNumber & PAY_WITH_OOKI_FLAG != 0) {
                     tradingFee = _getTradingFeeWithOOKI(addrs[1], vals[2]);
                     if(tradingFee != 0){
                         if(abi.decode(loanDataBytes, (uint128)) & HOLD_OOKI_FLAG != 0){
@@ -154,7 +156,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
                     tradingFee = _getTradingFee(vals[2]);
 
                     if (tradingFee != 0) {
-                        if(loanDataBytes.length != 0 && abi.decode(loanDataBytes, (uint128)) & HOLD_OOKI_FLAG != 0){
+                        if(flagNumber & HOLD_OOKI_FLAG != 0){
                             tradingFee = _adjustForHeldBalance(tradingFee, addrs[4]);
                         }
                         vals[2] = vals[2].add(tradingFee);
@@ -170,7 +172,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
         } else {
             require(vals[0] <= vals[1], "min greater than max");
         }
-        if (loanDataBytes.length != 0 && abi.decode(loanDataBytes, (uint128)) & DEX_SELECTOR_FLAG != 0) {
+        if (flagNumber & DEX_SELECTOR_FLAG != 0) {
             (, bytes[] memory payload) = abi.decode(
                 loanDataBytes,
                 (uint128, bytes[])
@@ -182,21 +184,8 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
             sourceTokenAmountUsed
         ) = _swapsCall_internal(addrs, vals, loanDataBytes);
 
-        if (loanDataBytes.length != 0 && abi.decode(loanDataBytes, (uint128)) & TRACK_VOLUME_FLAG != 0) {
-            if (volumeTradedCardinality[addrs[4]] == 0) volumeTradedCardinality[addrs[4]] = 256;
-            int24 tradingVolumeInUSDC = TickMathV1.getTickAtSqrtRatio(uint160(IPriceFeeds(priceFeeds)
-                .queryReturn(
-                    addrs[0],
-                    USDC,
-                    sourceTokenAmountUsed
-                )));
-            volumeLastIdx[addrs[4]] = volumeTradedObservations[addrs[4]].write(
-                volumeLastIdx[addrs[4]],
-                uint32(block.timestamp),
-                tradingVolumeInUSDC,
-                volumeTradedCardinality[user],
-                uint32(86400)
-            );
+        if (flagNumber & TRACK_VOLUME_FLAG != 0) {
+            _writeVolume(addrs[4], addrs[0], sourceTokenAmountUsed);
         }
 
         if (vals[2] == 0) {
@@ -230,6 +219,23 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
         }
 
         return (destTokenAmountReceived, sourceTokenAmountUsed);
+    }
+
+    function _writeVolume(address user, address tradeToken, uint256 amount) internal {
+        if (volumeTradedCardinality[user] == 0) volumeTradedCardinality[user] = 256;
+        uint96 tradingVolumeInUSDC = uint96(IPriceFeeds(priceFeeds)
+            .queryReturn(
+                tradeToken,
+                USDC,
+                amount
+            ));
+        volumeLastIdx[user] = volumeTradedObservations[user].write(
+            volumeLastIdx[user],
+            uint32(block.timestamp),
+            tradingVolumeInUSDC,
+            volumeTradedCardinality[user],
+            SECONDS
+        );
     }
 
     function _swapsCall_internal(
