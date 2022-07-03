@@ -16,7 +16,6 @@ contract DexRecords is Ownable {
     }
 
     function setDexID(uint256 ID, address dex) public onlyOwner {
-        require(dexes[ID] != address(0), "DexRecords: Invalid ID inputted");
         dexes[ID] = dex;
     }
 	
