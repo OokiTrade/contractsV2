@@ -71,6 +71,14 @@ def ALCX(accounts, TestToken):
 
 
 @pytest.fixture(scope="module")
+def HELPER(accounts, HelperImpl, HelperProxy, GUARDIAN_MULTISIG):
+    # helperImpl = HelperImpl.deploy({"from": accounts[0]})
+
+    # HELPER = Contract.from_abi("HELPER", "0xB8329B5458B1E493EFd8D9DA8C3B5E6D68e67C21", HelperProxy.abi)
+    # HELPER.replaceImplementation(helperImpl, {"from": GUARDIAN_MULTISIG})
+    return Contract.from_abi("HELPER", "0xb887f5b81deec1e271b06257f138e5a9d422bc8c", HelperImpl.abi)
+
+@pytest.fixture(scope="module")
 def WETH(accounts, TestToken):
     return Contract.from_abi("USDT", address="0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", abi=TestToken.abi)
 
@@ -113,9 +121,7 @@ def test_cases():
     # Test Case 6: make sure you can't intentionally borrowOrTradeFromPool and create undexpected loanParam
     # Test Case 7: make sure guardian can create/updates existing loan params with specific settings
     # Test Case 8: test HELPER getBorrowAmount for deposit and vice versa
-    # Test Case 9: mint/burn
-    # Test Case 10: borrow with iToken
-    # Test Case 11: marginTrade
+    # Test Case 11: borrow with iToken
     # Test Case 12: set iToken pricefeed
     assert True
 
@@ -313,6 +319,23 @@ def test_case5(BZX, USDC, USDT, iUSDT, iUSDC):
 
     assert True
 
+def test_case8(BZX, USDC, USDT, iUSDT, iUSDC, HELPER, accounts, HelperProxy, HelperImpl, GUARDIAN_MULTISIG, LoanTokenLogicStandard, interface):
+    
+    helperImpl = HelperImpl.deploy({"from": accounts[0]})
+
+    HELPER = Contract.from_abi("HELPER", "0xb887f5b81deec1e271b06257f138e5a9d422bc8c", HelperProxy.abi)
+    HELPER.replaceImplementation(helperImpl, {"from": GUARDIAN_MULTISIG})
+    HELPER = Contract.from_abi("HELPER", "0xb887f5b81deec1e271b06257f138e5a9d422bc8c", HelperImpl.abi)
+    borrowAmountForDeposit = iUSDC.getBorrowAmountForDeposit(1e6, 0, USDT)
+    
+    itokenImpl = accounts[0].deploy(LoanTokenLogicStandard)
+    itoken = Contract.from_abi("iUSDC", address=iUSDC, abi=interface.IToken.abi)
+    itoken.setTarget(itokenImpl, {"from": itoken.owner()})
+    itoken.initializeDomainSeparator({"from": itoken.owner()})
+
+    BZX.migrateLoanParamsList(iUSDC, 0, 100, {"from": BZX.owner()})
+    borrowAmountForDepositAfter = HELPER.getBorrowAmountForDeposit(1e6, USDC, USDT)
+    assert borrowAmountForDeposit == borrowAmountForDepositAfter
 
 def test_case11(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULTISIG, FRAX, LoanTokenLogicStandard, LoanToken, CurvedInterestRate, PriceFeeds, PRICE_FEED, interface, PriceFeedIToken):
     USDC.transfer(accounts[0], 100000e6, {"from": "0xcffad3200574698b78f32232aa9d63eabd290703"})
