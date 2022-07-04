@@ -123,12 +123,12 @@ feeds = Contract.from_abi("feeds", address="0x723bD1672b4bafF0B8132eAfc082EB864c
 
 bzx = Contract.from_abi("bzx", address=BZX, abi=interface.IBZx.abi)
 
-# bzx.setSupportedTokens(
-#     [dai, usdt, usdc, weth, wbtc],
-#     [True, True, True, True, True],
-#     True,
-#     params
-# )
+bzx.setSupportedTokens(
+    [dai, usdt, usdc, weth, wbtc],
+    [True, True, True, True, True],
+    True,
+    params
+)
 
 # bzx.setSupportedTokens(
 #     [dai, usdt, usdc, weth, wbtc, op],
