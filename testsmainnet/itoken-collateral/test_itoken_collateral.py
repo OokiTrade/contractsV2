@@ -341,7 +341,8 @@ def test_case11(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULT
     iUSDT.borrow("", 50e6, 0, 100e6, iUSDC, accounts[0], accounts[0], b"", {'from': accounts[0]})
 
     loans = BZX.getUserLoans(accounts[0], 0, 10, 0, 0, 0)
-    BZX.closeWithSwap(loans[0][0], accounts[0], 10000e18, True, b"", {"from": accounts[0]})
+    USDT.approve(BZX, 1000e6, {"from": accounts[0]})
+    BZX.closeWithDeposit(loans[0][0], accounts[0], 1000e6, {"from": accounts[0]})
     assert False
 
 def test_case12(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULTISIG, FRAX, LoanTokenLogicStandard, LoanToken, CurvedInterestRate, PriceFeeds, PRICE_FEED, interface, PriceFeedIToken):
