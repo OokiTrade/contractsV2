@@ -130,44 +130,56 @@ bzx = Contract.from_abi("bzx", address=BZX, abi=interface.IBZx.abi)
 #     params
 # )
 
-## PriceFeeds
-print("Deploying PriceFeeds.")
-feeds = Contract.from_abi("feeds", address="0x723bD1672b4bafF0B8132eAfc082EB864cF18D24", abi=PriceFeeds_EVMOS.abi)
+# bzx.setSupportedTokens(
+#     [dai, usdt, usdc, weth, wbtc, op],
+#     [True, True, True, True, True, True],
+#     True,
+#     params
+# )
+
 # bzx.setPriceFeedContract(
 #     feeds.address # priceFeeds
 #     ,params
 # )
 #
 # feeds.setPriceFeed(
-#     [usdc, usdt, dai, weth, wbtc],
-#     [usdc_FluxPricefeed, usdt_FluxPricefeed, dai_FluxPricefeed, weth_FluxPricefeed, wbtc_FluxPricefeed],
+#     [usdc, usdt, dai, weth, wbtc, frax, op],
+#     [usdc_Pricefeed, usdt_Pricefeed, dai_Pricefeed, weth_Pricefeed, wbtc_Pricefeed, frax_Pricefeed, op_Pricefeed],
 #     params
 # )
 #
 
 # bzx.setLoanPool(
-#     [idai, iusdt, iusdc, ieth, ibtc],
-#     [dai, usdt, usdc, weth, wbtc],
+#     [idai, iusdt, iusdc, ieth, ibtc, ifrax, iop],
+#     [dai, usdt, usdc, weth, wbtc, frax, op],
 #     params
 # )
 
-exec(open("./scripts/add-token/add-itoken-evmos.py").read())
+exec(open("./scripts/add-token/add-itoken-optimism.py").read())
+
 deployment(loanTokenSettings, settngsLowerAdmin, dai, 'DAI', idai)
 deployment(loanTokenSettings, settngsLowerAdmin, usdc, 'USDC', iusdc)
 deployment(loanTokenSettings, settngsLowerAdmin, usdt, 'USDT', iusdt)
 deployment(loanTokenSettings, settngsLowerAdmin, weth, 'ETH', ieth)
 deployment(loanTokenSettings, settngsLowerAdmin, wbtc, 'BTC', ibtc)
+deployment(loanTokenSettings, settngsLowerAdmin, op, 'OP', iop)
+deployment(loanTokenSettings, settngsLowerAdmin, op, 'FRAX', ifrax)
 
 marginSettings(TOKEN_REGISTRY, settngsLowerAdmin, idai, [dai, usdc, usdt])
 marginSettings(TOKEN_REGISTRY, settngsLowerAdmin, iusdc, [dai, usdc, usdt])
 marginSettings(TOKEN_REGISTRY, settngsLowerAdmin, iusdt, [dai, usdc, usdt])
 marginSettings(TOKEN_REGISTRY, settngsLowerAdmin, ieth, [dai, usdc, usdt])
 marginSettings(TOKEN_REGISTRY, settngsLowerAdmin, ibtc, [dai, usdc, usdt])
+marginSettings(TOKEN_REGISTRY, settngsLowerAdmin, iop, [dai, usdc, usdt])
+marginSettings(TOKEN_REGISTRY, settngsLowerAdmin, ifrax, [dai, usdc, usdt])
+
 demandCurve(bzx, settngsLowerAdmin, idai, CUI)
 demandCurve(bzx, settngsLowerAdmin, iusdc, CUI)
 demandCurve(bzx, settngsLowerAdmin, iusdt, CUI)
 demandCurve(bzx, settngsLowerAdmin, ieth, CUI)
 demandCurve(bzx, settngsLowerAdmin, ibtc, CUI)
+demandCurve(bzx, settngsLowerAdmin, iop, CUI)
+demandCurve(bzx, settngsLowerAdmin, ifrax, CUI)
 
 #bzx.setFeesController("XXXX", params)
 
