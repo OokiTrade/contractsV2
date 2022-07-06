@@ -71,6 +71,23 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
         }
     }
 
+    function modifyLoanParams(LoanParams[] calldata loanParamsList) external onlyGuardian {
+        for (uint256 i = 0; i < loanParamsList.length; i++) {
+
+            emit LoanParamsSetup(
+                loanParamsList[0].id,
+                loanParamsList[0].owner,
+                loanParamsList[0].loanToken,
+                loanParamsList[0].collateralToken,
+                loanParamsList[0].minInitialMargin,
+                loanParamsList[0].maintenanceMargin,
+                loanParamsList[0].maxLoanTerm
+            );
+            emit LoanParamsIdSetup(loanParamsList[0], loanParamsList[0].owner);
+
+        }
+    }
+
 
     function migrateLoanParamsList(
         address owner,

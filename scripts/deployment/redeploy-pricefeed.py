@@ -1,4 +1,4 @@
-exec(open("./scripts/env/set-eth.py").read())
+exec(open("./scripts/env/set-arbitrum.py").read())
 
 
 price_feed = PriceFeeds.deploy({"from": accounts[0]})
