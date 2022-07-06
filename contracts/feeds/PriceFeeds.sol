@@ -15,7 +15,7 @@ import "../governance/PausableGuardian.sol";
 import "../../interfaces/IToken.sol";
 import "../utils/SignedSafeMath.sol";
 
-contract PriceFeeds is Constants, Ownable, PausableGuardian {
+contract PriceFeeds is Constants, PausableGuardian {
     using SafeMath for uint256;
     using SignedSafeMath for int256;
 
