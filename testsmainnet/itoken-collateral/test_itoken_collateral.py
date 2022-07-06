@@ -58,10 +58,6 @@ def FRAX(accounts, TestToken):
     return Contract.from_abi("FRAX", address="0x853d955aCEf822Db058eb8505911ED77F175b99e", abi=TestToken.abi)
 
 @pytest.fixture(scope="module")
-def AAVE(accounts, TestToken):
-    return Contract.from_abi("AAVE", address="0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9", abi=TestToken.abi)
-
-@pytest.fixture(scope="module")
 def STETH(accounts, TestToken):
     return Contract.from_abi("STETH", address="0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84", abi=TestToken.abi)
 
@@ -110,7 +106,7 @@ def GUARDIAN_MULTISIG():
 @pytest.fixture(scope="module")
 def REGISTRY(accounts, TokenRegistry):
     return Contract.from_abi("REGISTRY", address="0xf0E474592B455579Fe580D610b846BdBb529C6F7",
-                             abi=TokenRegistry.abi, owner=accounts[0])
+                             abi=TokenRegistry.abi)
 
 def test_cases():
     # Test Case 1: check you can setup a working iToken using guardian only power
