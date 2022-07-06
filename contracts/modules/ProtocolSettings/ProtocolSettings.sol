@@ -141,29 +141,46 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian {
         }
 
         if (withApprovals) {
-            bytes memory data = abi.encodeWithSelector(
+            bytes memory setSwapApprovalsData = abi.encodeWithSelector(
                 0x4a99e3a1, // setSwapApprovals(address[])
                 addrs
             );
             IDexRecords records = IDexRecords(swapsImpl);
             for(uint256 i = 1; i<=records.getDexCount();i++){
-                address swapImpl = records.retrieveDexAddress(i);
-                (bool success,) = swapImpl.delegatecall(data);
+                address swapImpl = _getDexRecord(i);
+                if(swapImpl == address(0))
+                    continue;
+                (bool success,) = swapImpl.delegatecall(setSwapApprovalsData);
                 require(success, "approval calls failed");
             }
         }
     }
     
     function revokeApprovals(address[] calldata addrs) external onlyGuardian {
-        bytes memory data = abi.encodeWithSelector(
+        bytes memory revokeApprovalsData = abi.encodeWithSelector(
             0x7265766f, // revokeApprovals(address[])
             addrs
         );
         IDexRecords records = IDexRecords(swapsImpl);
         for(uint256 i = 1; i<=records.getDexCount();i++){
-            address swapImpl = records.retrieveDexAddress(i);
-            (bool success,) = swapImpl.delegatecall(data);
+            address swapImpl =_getDexRecord(i);
+            if(swapImpl == address(0))
+                continue;
+            (bool success,) = swapImpl.delegatecall(revokeApprovalsData);
             require(success, "approval calls failed");
+        }
+    }
+
+    function _getDexRecord(uint256 index) internal returns(address) {
+        bytes memory retrieveDexAddressData = abi.encodeWithSelector(
+            0x8d514555, // retrieveDexAddress(unint256)
+            index
+        );
+        (bool success, bytes memory returndata) = swapsImpl.call(retrieveDexAddressData);
+        if (success) {
+            return abi.decode(returndata, (address));
+        } else {
+            return address(0);
         }
     }
 

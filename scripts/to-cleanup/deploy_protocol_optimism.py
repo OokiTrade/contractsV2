@@ -10,7 +10,7 @@ usdc_Pricefeed = "0x16a9FA2FDa030272Ce99B29CF780dFA30361E0f3" # usdc
 weth_Pricefeed = "0x13e3Ee699D1909E989722E753853AE30b17e08c5" # weth
 wbtc_Pricefeed = "0xD702DD976Fb76Fffc2D3963D037dfDae5b04E593" # wbtc
 frax_Pricefeed = "0xc7D132BeCAbE7Dcc4204841F33bae45841e41D9C" # frax
-# op_Pricefeed = "0x3B2AF9149360e9F954C18f280aD0F4Adf1B613b8" # usdc
+op_Pricefeed = "0x3B2AF9149360e9F954C18f280aD0F4Adf1B613b8" # usdc
 
 #
 idai = "0xE60d6142D3d683a58B02337E1F0D08C69B946aCF"
@@ -122,12 +122,12 @@ feeds = Contract.from_abi("feeds", address="0x723bD1672b4bafF0B8132eAfc082EB864c
 
 bzx = Contract.from_abi("bzx", address=BZX, abi=interface.IBZx.abi)
 
-# bzx.setSupportedTokens(
-#     [dai, usdt, usdc, weth, wbtc],
-#     [True, True, True, True, True],
-#     True,
-#     params
-# )
+bzx.setSupportedTokens(
+    [dai, usdt, usdc, weth, wbtc],
+    [True, True, True, True, True],
+    True,
+    params
+)
 
 ## PriceFeeds
 print("Deploying PriceFeeds.")
