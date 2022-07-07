@@ -322,6 +322,13 @@ def test_case5(BZX, USDC, USDT, iUSDT, iUSDC):
 
     assert True
 
+def test_case7(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULTISIG, FRAX, LoanTokenLogicStandard, LoanToken, CurvedInterestRate, PriceFeeds, PRICE_FEED, interface, PriceFeedIToken):
+    BZX.migrateLoanParamsList(iUSDC, 0, 100, {"from": BZX.owner()})
+    loanParamId = BZX.generateLoanParamId(USDC, USDT, True)
+    loanParam = BZX.loanParams(loanParamId)
+    BZX.modifyLoanParams([loanParam], {"from": GUARDIAN_MULTISIG})
+    assert True
+
 def test_case8(BZX, USDC, USDT, iUSDT, iUSDC, HELPER, accounts, HelperProxy, HelperImpl, GUARDIAN_MULTISIG, LoanTokenLogicStandard, interface):
     
     helperImpl = HelperImpl.deploy({"from": accounts[0]})

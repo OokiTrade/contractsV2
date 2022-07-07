@@ -74,21 +74,31 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
 
     function modifyLoanParams(LoanParams[] calldata loanParamsList) external onlyGuardian {
         for (uint256 i = 0; i < loanParamsList.length; i++) {
-
-            emit LoanParamsSetup(
-                loanParamsList[0].id,
-                loanParamsList[0].owner,
-                loanParamsList[0].loanToken,
-                loanParamsList[0].collateralToken,
-                loanParamsList[0].minInitialMargin,
-                loanParamsList[0].maintenanceMargin,
-                loanParamsList[0].maxLoanTerm
+            require(
+                supportedTokens[loanParamsList[i].loanToken] &&
+                    supportedTokens[loanParamsList[i].collateralToken] &&
+                    loanParamsList[i].id ==
+                    generateLoanParamId(
+                        loanParamsList[i].loanToken,
+                        loanParamsList[i].collateralToken,
+                        loanParamsList[i].maxLoanTerm == 0 // isTorqueLoan
+                            ? true
+                            : false && loanParamsList[i].minInitialMargin > loanParamsList[i].maintenanceMargin
+                    ),
+                "invalid loanParam"
             );
-            emit LoanParamsIdSetup(loanParamsList[0], loanParamsList[0].owner);
-
+            emit LoanParamsSetup(
+                loanParamsList[i].id,
+                loanParamsList[i].owner,
+                loanParamsList[i].loanToken,
+                loanParamsList[i].collateralToken,
+                loanParamsList[i].minInitialMargin,
+                loanParamsList[i].maintenanceMargin,
+                loanParamsList[i].maxLoanTerm
+            );
+            emit LoanParamsIdSetup(loanParamsList[i].id, loanParamsList[i].owner);
         }
     }
-
 
     function migrateLoanParamsList(
         address owner,

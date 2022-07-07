@@ -394,7 +394,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         uint256 maxLiquidatable;
         uint256 maxSeizable;
         if (currentMargin <= loanParamsLocal.maintenanceMargin) {
-            (maxLiquidatable, maxSeizable) = LiquidationHelper._getLiquidationAmounts(
+            (maxLiquidatable, maxSeizable) = LiquidationHelper.getLiquidationAmounts(
                 loanLocal.principal,
                 loanLocal.collateral,
                 currentMargin,
