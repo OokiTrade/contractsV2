@@ -72,7 +72,7 @@ contract LoanClosingsLiquidation is LoanClosingsShared {
 
         loanCloseAmount = closeAmount;
 
-        (uint256 maxLiquidatable, uint256 maxSeizable) = LiquidationHelper._getLiquidationAmounts(
+        (uint256 maxLiquidatable, uint256 maxSeizable) = LiquidationHelper.getLiquidationAmounts(
             principalPlusInterest,
             loanLocal.collateral,
             currentMargin,

@@ -228,6 +228,10 @@ interface IBZx {
     /// @param loanParamsIdList array of loan ids
     function disableLoanParams(bytes32[] calldata loanParamsIdList) external;
 
+    /// @dev Modifies or adds new loan params, guardianOnly
+    /// @param loanParamsList array of loanParams
+    function modifyLoanParams(LoanParams[] calldata loanParamsList) external;
+
     /// @dev gets array of LoanParams by given ids
     /// @param loanParamsIdList array of loan ids
     /// @return loanParamsList array of LoanParams

@@ -19,7 +19,7 @@ contract FeeExtractAndDistribute_BSC is PausableGuardian_0_8 {
 
     address public constant BNB = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
     address public constant USDC = 0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d;
-    uint256 public constant MIN_USDC_AMOUNT = 1e18; //1 USDC minimum bridge amount
+    uint256 public constant MIN_USDC_AMOUNT = 30e18; //30 USDC minimum bridge amount
     uint64 public constant DEST_CHAINID = 137; //send to polygon
 
     IUniswapV2Router public constant SWAPS_ROUTER_V2 =
@@ -36,6 +36,8 @@ contract FeeExtractAndDistribute_BSC is PausableGuardian_0_8 {
     address payable public treasuryWallet;
 
     address public bridge; //bridging contract
+
+    uint32 public slippage = 10000;
 
     event ExtractAndDistribute(uint256 amountTreasury, uint256 amountStakers);
 
@@ -175,7 +177,7 @@ contract FeeExtractAndDistribute_BSC is PausableGuardian_0_8 {
             IERC20(USDC).balanceOf(address(this)),
             DEST_CHAINID,
             uint64(block.timestamp),
-            10000
+            slippage
         );
     }
 
@@ -202,5 +204,17 @@ contract FeeExtractAndDistribute_BSC is PausableGuardian_0_8 {
 
     function setBridge(address _wallet) public onlyOwner {
         bridge = _wallet;
+    }
+
+    function setSlippage(uint32 newSlippage) external onlyGuardian {
+        slippage = newSlippage;
+    }
+
+    function requestRefund(bytes calldata wdmsg, bytes[] calldata sigs, address[] calldata signers, uint256[] calldata powers) external onlyGuardian {
+        IBridge(bridge).withdraw(wdmsg, sigs, signers, powers);
+    }
+
+    function guardianBridge() external onlyGuardian {
+        _bridgeFeesAndDistribute();
     }
 }

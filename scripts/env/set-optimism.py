@@ -19,5 +19,5 @@ LOAN_TOKEN_SETTINGS = Contract.from_abi("LOAN_TOKEN_SETTINGS", "0xe98dE80395972F
 MULTICALL3 = Contract.from_abi("MULTICALL3", "0xcA11bde05977b3631167028862bE2a173976CA11", interface.IMulticall3.abi)
 
 DEX_RECORDS = Contract.from_abi("DexRecords", BZX.swapsImpl(), DexRecords.abi)
-
+PRICE_FEED = Contract.from_abi("PRICE_FEED", BZX.priceFeeds(), abi = PriceFeeds.abi)
 #SWEEP_FEES = Contract.from_abi("SWEEP_FEES", "XXXX", FeeExtractAndDistribute_Arbitrum.abi)

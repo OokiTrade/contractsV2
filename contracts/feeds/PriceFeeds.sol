@@ -12,9 +12,12 @@ import "../interfaces/IERC20Detailed.sol";
 import "../core/Constants.sol";
 import "./IPriceFeedsExt.sol";
 import "../governance/PausableGuardian.sol";
+import "../../interfaces/IToken.sol";
+import "../utils/SignedSafeMath.sol";
 
-contract PriceFeeds is Constants, Ownable, PausableGuardian {
+contract PriceFeeds is Constants, PausableGuardian {
     using SafeMath for uint256;
+    using SignedSafeMath for int256;
 
     event GlobalPricingPaused(
         address indexed sender,
@@ -23,8 +26,6 @@ contract PriceFeeds is Constants, Ownable, PausableGuardian {
 
     mapping (address => IPriceFeedsExt) public pricesFeeds;     // token => pricefeed
     mapping (address => uint256) public decimals;               // decimals of supported tokens
-
-    bool public globalPricingPaused = false;
 
     constructor()
         public
@@ -38,9 +39,9 @@ contract PriceFeeds is Constants, Ownable, PausableGuardian {
         address destToken)
         public
         view
+        pausable
         returns (uint256 rate, uint256 precision)
     {
-        require(!globalPricingPaused, "pricing is paused");
         return _queryRate(
             sourceToken,
             destToken
@@ -59,18 +60,15 @@ contract PriceFeeds is Constants, Ownable, PausableGuardian {
             WEI_PRECISION;
     }
 
-    //// NOTE: This function returns 0 during a pause, rather than a revert. Ensure calling contracts handle correctly. ///
     function queryReturn(
         address sourceToken,
         address destToken,
         uint256 sourceAmount)
         public
         view
+        pausable
         returns (uint256 destAmount)
     {
-        if (globalPricingPaused) {
-            return 0;
-        }
         (uint256 rate, uint256 precision) = _queryRate(
             sourceToken,
             destToken
@@ -89,9 +87,9 @@ contract PriceFeeds is Constants, Ownable, PausableGuardian {
         uint256 maxSlippage)
         public
         view
+        pausable
         returns (uint256 sourceToDestSwapRate)
     {
-        require(!globalPricingPaused, "pricing is paused");
         (uint256 rate, uint256 precision) = _queryRate(
             sourceToken,
             destToken
@@ -282,18 +280,6 @@ contract PriceFeeds is Constants, Ownable, PausableGuardian {
         }
     }
 
-    function setGlobalPricingPaused(
-        bool isPaused)
-        external
-        onlyOwner
-    {
-        globalPricingPaused = isPaused;
-
-        emit GlobalPricingPaused(
-            msg.sender,
-            isPaused
-        );
-    }
 
     /*
     * Internal functions
@@ -328,12 +314,30 @@ contract PriceFeeds is Constants, Ownable, PausableGuardian {
         returns (uint256 rate)
     {
         if (token != address(wethToken)) {
-            IPriceFeedsExt _Feed = pricesFeeds[token];
-            require(address(_Feed) != address(0), "unsupported price feed");
-            rate = uint256(_Feed.latestAnswer());
+            // IPriceFeedsExt _Feed = 
+            // require(address(_Feed) != address(0), "unsupported price feed");
+            rate = getPrice(token);
             require(rate != 0 && (rate >> 128) == 0, "price error");
         } else {
             rate = WEI_PRECISION;
+        }
+    }
+
+    function getPrice(address token)
+        public
+        view
+        returns(uint256 price) 
+    {
+        IPriceFeedsExt feed = pricesFeeds[token];
+        if (address(feed) != address(0)) {
+            price = uint256(feed.latestAnswer());
+        } else {
+            // if token is invalid it will fail on `loanTokenAddress` however if token is arbitrary somebody can implement loanTokenAddress() and tokenPrice()
+            feed = pricesFeeds[IToken(token).loanTokenAddress()];
+            price = uint256(IPriceFeedsExt(feed).latestAnswer());
+
+            price = price.mul(IToken(token).tokenPrice())
+                .div(1e18);
         }
     }
 

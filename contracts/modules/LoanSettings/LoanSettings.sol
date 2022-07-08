@@ -27,6 +27,7 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
         _setTarget(this.getPoolLastInterestRate.selector, target);
         _setTarget(this.getLoanPrincipal.selector, target);
         _setTarget(this.getLoanInterestOutstanding.selector, target);
+        _setTarget(this.modifyLoanParams.selector, target);
         _setTarget(this.migrateLoanParamsList.selector, target); // TODO remove after migration
 
         // TODO remove after deployment
@@ -71,6 +72,33 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
         }
     }
 
+    function modifyLoanParams(LoanParams[] calldata loanParamsList) external onlyGuardian {
+        for (uint256 i = 0; i < loanParamsList.length; i++) {
+            require(
+                supportedTokens[loanParamsList[i].loanToken] &&
+                    supportedTokens[loanParamsList[i].collateralToken] &&
+                    loanParamsList[i].id ==
+                    generateLoanParamId(
+                        loanParamsList[i].loanToken,
+                        loanParamsList[i].collateralToken,
+                        loanParamsList[i].maxLoanTerm == 0 // isTorqueLoan
+                            ? true
+                            : false && loanParamsList[i].minInitialMargin > loanParamsList[i].maintenanceMargin
+                    ),
+                "invalid loanParam"
+            );
+            emit LoanParamsSetup(
+                loanParamsList[i].id,
+                loanParamsList[i].owner,
+                loanParamsList[i].loanToken,
+                loanParamsList[i].collateralToken,
+                loanParamsList[i].minInitialMargin,
+                loanParamsList[i].maintenanceMargin,
+                loanParamsList[i].maxLoanTerm
+            );
+            emit LoanParamsIdSetup(loanParamsList[i].id, loanParamsList[i].owner);
+        }
+    }
 
     function migrateLoanParamsList(
         address owner,
@@ -111,60 +139,6 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
     ) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked(loanToken, collateralToken, isTorqueLoan));
     }
-
-    // // This function intends to be PUBLIC so that anyone can create params if loanToken and collateralToken are approved by the protocol
-    // function createDefaultParams(
-    //     address loanToken,
-    //     address collateralToken,
-    //     bool isTorqueLoan
-    // ) external {
-    //     // requires loanToken approved
-    //     require(supportedTokens[loanToken], "loan not supported");
-    //     // requires collateralToken approved
-    //     require(supportedTokens[collateralToken], "collateral not supported");
-    //     // requires there is a pricefeed
-    //     require(IPriceFeeds(priceFeeds).pricesFeeds(collateralToken) != address(0), "no price feed");
-    //     // requires param does not exist
-    //     bytes32 loanParamId = generateLoanParamId(loanToken, collateralToken, isTorqueLoan);
-
-    //     LoanParams memory loanParamsLocal;
-    //     loanParamsLocal.active = true;
-    //     loanParamsLocal.loanToken = loanToken;
-    //     loanParamsLocal.collateralToken = collateralToken;
-    //     loanParamsLocal.minInitialMargin = 20 ether;
-    //     loanParamsLocal.maintenanceMargin = 15 ether;
-    //     if (isTorqueLoan) {
-    //         loanParamsLocal.maxLoanTerm = 0;
-    //     } else {
-    //         loanParamsLocal.maxLoanTerm = 28 days; // for historical reasons zero means torque loans non zero means fulcrum loans
-    //     }
-
-    //     loanParamsLocal.id = loanParamId;
-
-    //     require(loanParams[loanParamId].id == 0, "params already exist");
-
-    //     loanParams[loanParamId] = loanParamsLocal;
-
-    //     // tripple healty check just as before
-    //     require(
-    //         loanParamsLocal.loanToken != address(0) &&
-    //             loanParamsLocal.collateralToken != address(0) &&
-    //             loanParamsLocal.minInitialMargin > loanParamsLocal.maintenanceMargin &&
-    //             (loanParamsLocal.maxLoanTerm == 0 || loanParamsLocal.maxLoanTerm > 1 hours), // a defined maxLoanTerm has to be greater than one hour
-    //         "invalid params"
-    //     );
-
-    //     emit LoanParamsSetup(
-    //         loanParamId,
-    //         loanParamsLocal.owner,
-    //         loanParamsLocal.loanToken,
-    //         loanParamsLocal.collateralToken,
-    //         loanParamsLocal.minInitialMargin,
-    //         loanParamsLocal.maintenanceMargin,
-    //         loanParamsLocal.maxLoanTerm
-    //     );
-    //     emit LoanParamsIdSetup(loanParamId, loanParamsLocal.owner);
-    // }
 
     function getTotalPrincipal(
         address lender,
