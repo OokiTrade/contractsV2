@@ -3,7 +3,7 @@ pragma solidity ^0.5.0;
 library VolumeTracker {
     struct Observation {
         uint32 blockTimestamp;
-        uint96 volCumulative;
+        uint128 volCumulative;
     }
 
     /// @param last The specified observation
@@ -13,12 +13,12 @@ library VolumeTracker {
     function convert(
         Observation memory last,
         uint32 blockTimestamp,
-        uint96 tick
+        uint128 tick
     ) private pure returns (Observation memory) {
         return
             Observation({
                 blockTimestamp: blockTimestamp,
-                volCumulative: last.volCumulative + uint96(tick)
+                volCumulative: last.volCumulative + tick
             });
     }
 
@@ -32,7 +32,7 @@ library VolumeTracker {
         Observation[65535] storage self,
         uint16 index,
         uint32 blockTimestamp,
-        uint96 tick,
+        uint128 tick,
         uint16 cardinality,
         uint32 minDelta
     ) public returns (uint16 indexUpdated) {
@@ -135,7 +135,7 @@ library VolumeTracker {
         uint32 secondsAgo,
         uint16 index,
         uint16 cardinality
-    ) internal view returns (uint96 volCumulative) {
+    ) internal view returns (uint128 volCumulative) {
         if (secondsAgo == 0) {
             Observation memory last = self[index];
             return last.volCumulative;
@@ -158,16 +158,16 @@ library VolumeTracker {
         uint32[2] memory secondsAgos,
         uint16 index,
         uint16 cardinality
-    ) public view returns (uint96 volDelta) {
+    ) public view returns (uint128 volDelta) {
         if (!checkLastTradeTime(self, time, secondsAgos[0], index)) return 0; //no trades since the furthest seconds back
-        uint96 secondPoint;
+        uint128 secondPoint;
         //acts as a way to ensure data is available for new traders. If passed cardinality in reporting then it is fair game for errors as assumptions cannot be made
         if (self[cardinality].volCumulative == 0 && self[0].blockTimestamp > secondsAgos[0]) {
             secondPoint = 0;
         } else { 
             secondPoint = observeSingle(self, time, secondsAgos[0], index, cardinality);
         }
-        uint96 firstPoint = observeSingle(self, time, secondsAgos[1], index, cardinality);
+        uint128 firstPoint = observeSingle(self, time, secondsAgos[1], index, cardinality);
         return firstPoint-secondPoint;
     }
 }

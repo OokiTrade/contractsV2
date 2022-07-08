@@ -24,8 +24,9 @@ contract VolumeDelta is State {
 
     /*restricted by the last timestamp of the observations. 
     If periodEnd extends past the last time period an error will be thrown. 
-    this means if the earliest trade recorded < 30 days ago OR > user cardinality of trades occurred in last 30 days it will fail.
-    If planning to trade often please adjust the cardinality up as max is 65535. This is a warning.
+    for example, this means if the earliest trade recorded < 30 days ago OR > user cardinality of trades occurred in last 30 days it will fail.
+    Cardinality is initially set at 256 which means up to 256 days of data can be stored as each index slot is dedicated for a rolling day. 
+    the time periods are not synchronised
     */
     function retrieveTradedVolume(address user, uint32 periodStart, uint32 periodEnd) public view returns (uint256) {
         if (periodStart >= block.timestamp) return 0;

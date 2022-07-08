@@ -18,7 +18,6 @@ import "../utils/VolumeTracker.sol";
 
 contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
     using VolumeTracker for VolumeTracker.Observation[65535];
-    uint32 public constant SECONDS = 86400;
     function _loanSwap(
         bytes32 loanId,
         address sourceToken,
@@ -106,7 +105,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
                 if (flagNumber & PAY_WITH_OOKI_FLAG != 0) {
                     tradingFee = _getTradingFeeWithOOKI(addrs[0], vals[0]);
                     if(tradingFee != 0){
-                        if(abi.decode(loanDataBytes, (uint128)) & HOLD_OOKI_FLAG != 0){
+                        if(flagNumber & HOLD_OOKI_FLAG != 0){
                             tradingFee = _adjustForHeldBalance(tradingFee, addrs[4]);
                         }
                         IERC20(OOKI).safeTransferFrom(addrs[4], address(this), tradingFee);
@@ -140,7 +139,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
                 if (flagNumber & PAY_WITH_OOKI_FLAG != 0) {
                     tradingFee = _getTradingFeeWithOOKI(addrs[1], vals[2]);
                     if(tradingFee != 0){
-                        if(abi.decode(loanDataBytes, (uint128)) & HOLD_OOKI_FLAG != 0){
+                        if(flagNumber & HOLD_OOKI_FLAG != 0){
                             tradingFee = _adjustForHeldBalance(tradingFee, addrs[4]);
                         }
                         IERC20(OOKI).safeTransferFrom(addrs[4], address(this), tradingFee);
@@ -223,7 +222,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
 
     function _writeVolume(address user, address tradeToken, uint256 amount) internal {
         if (volumeTradedCardinality[user] == 0) volumeTradedCardinality[user] = 256;
-        uint96 tradingVolumeInUSDC = uint96(IPriceFeeds(priceFeeds)
+        uint128 tradingVolumeInUSDC = uint128(IPriceFeeds(priceFeeds)
             .queryReturn(
                 tradeToken,
                 USDC,
@@ -234,7 +233,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
             uint32(block.timestamp),
             tradingVolumeInUSDC,
             volumeTradedCardinality[user],
-            SECONDS
+            uint32(86400)
         );
     }
 
