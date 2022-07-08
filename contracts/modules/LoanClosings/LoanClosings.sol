@@ -104,7 +104,7 @@ contract LoanClosings is LoanClosingsShared {
 
         LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
-        _checkPermit(loanParamsLocal.collateralToken, loanDataBytes);
+        _checkPermit(loanParamsLocal.loanToken, loanDataBytes);
 
         uint256 principalPlusInterest = _settleInterest(loanLocal.lender, loanId)
             .add(loanLocal.principal);
