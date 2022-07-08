@@ -87,6 +87,8 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
                     ),
                 "invalid loanParam"
             );
+            LoanParams memory loanParam = loanParamsList[i];
+            loanParams[loanParam.id] = loanParam;
             emit LoanParamsSetup(
                 loanParamsList[i].id,
                 loanParamsList[i].owner,
