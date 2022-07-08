@@ -112,8 +112,7 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
         if (start >= end) {
             return;
         }
-        count = end - start;
-
+        
         bytes32 loanParamId;
         LoanParams memory loanParamsLocal;
         bytes32 oldLoanParamId;
