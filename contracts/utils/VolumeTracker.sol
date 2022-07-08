@@ -162,7 +162,7 @@ library VolumeTracker {
         if (!checkLastTradeTime(self, time, secondsAgos[0], index)) return 0; //no trades since the furthest seconds back
         uint128 secondPoint;
         //acts as a way to ensure data is available for new traders. If passed cardinality in reporting then it is fair game for errors as assumptions cannot be made
-        if (self[cardinality].volCumulative == 0 && self[0].blockTimestamp > secondsAgos[0]) {
+        if (self[cardinality].volCumulative == 0 && self[1].blockTimestamp > secondsAgos[0]) {
             secondPoint = 0;
         } else { 
             secondPoint = observeSingle(self, time, secondsAgos[0], index, cardinality);

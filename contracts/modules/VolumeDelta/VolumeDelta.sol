@@ -29,6 +29,7 @@ contract VolumeDelta is State {
     the time periods are not synchronised
     */
     function retrieveTradedVolume(address user, uint32 periodStart, uint32 periodEnd) public view returns (uint256) {
+        require(volumeTradedCardinality[user]>0, "unused");
         if (periodStart >= block.timestamp) return 0;
         if (periodStart >= periodEnd) return 0;
         uint32 ts = uint32(block.timestamp);
