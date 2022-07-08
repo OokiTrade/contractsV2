@@ -68,3 +68,10 @@ def test_main(BZX, migrate_params, USDC, IUSDC, ETH):
     chain.sleep(10)
     chain.mine()
     assert(2e6*0.9985==BZX.retrieveTradedVolume(accounts[0],chain.time()-30,chain.time())) #compares trade volume. volume traded is fee exclusive
+    chain.sleep(600)
+    chain.mine()
+    IUSDC.marginTrade(0,1e18,1e6,0,ETH.address,accounts[0],mainPayload,{'from':accounts[0]})
+    chain.sleep(10)
+    chain.mine()
+    assert(0==BZX.retrieveTradedVolume(accounts[0],chain.time()-30,chain.time())) #no volume should be attributed as it is stored based on the day as it sacrifices granularity for more data
+    assert(4e6*0.9985==BZX.retrieveTradedVolume(accounts[0],chain.time()-800,chain.time())) #compares trade volume. volume traded is fee exclusive
