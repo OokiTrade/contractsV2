@@ -95,7 +95,7 @@ def test_case2(accounts, BZX, DEX_RECORDS, WSTETH_PRICE_FEED, WSTETH_SWAP_IMPL, 
     BZX.setSupportedTokens([WETH, WSTETH], [True, True], True, {'from': GUARDIAN_MULTISIG})
     BZX.modifyLoanParams([[BZX.generateLoanParamId(WETH,WSTETH,False),True,iETH,WETH,WSTETH,int(6.6667*1e18), int(5*1e18), 1]],{'from':GUARDIAN_MULTISIG}) #set params for margin trading
     #prep data
-    dex_payload = encode_abi(['uint256'],[int(15*1.027*1e18)])
+    dex_payload = encode_abi(['uint256'],[int(15*1e18)])
     selector_payload = encode_abi(['uint256','bytes'],[3,dex_payload])
     loanDataBytes = encode_abi(['uint128','bytes[]'],[2,[selector_payload]]) #flag value of Base-2: 10
 
@@ -108,7 +108,7 @@ def test_case2(accounts, BZX, DEX_RECORDS, WSTETH_PRICE_FEED, WSTETH_SWAP_IMPL, 
     assert(loanToAnalyze[5] >= 13e18)
     assert(WSTETH.balanceOf(BZX)-balanceBefore==loanToAnalyze[5])
 
-    dex_payload = encode_abi(['uint256'],[int(14509130332633630850)])
+    dex_payload = encode_abi(['uint256'],[loanToAnalyze[4]])
     selector_payload = encode_abi(['uint256','bytes'],[3,dex_payload])
     loanDataBytes = encode_abi(['uint128','bytes[]'],[2,[selector_payload]]) #flag value of Base-2: 10    
     BZX.closeWithSwap(loanToAnalyze[0], accounts[0], loanToAnalyze[5], False, loanDataBytes, {'from':accounts[0]})
