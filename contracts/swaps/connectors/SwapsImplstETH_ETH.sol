@@ -152,7 +152,7 @@ contract SwapsImplstETH_ETH is State, ISwapsImpl {
         if (sourceTokenAddress == WETH) {
             IWeth(WETH).withdraw(minSourceTokenAmount);
             if (abi.decode(payload, (uint256)) > 0) {
-                destTokenAmountReceived = STETHPOOL.exchange(0, 1, minSourceTokenAmount, abi.decode(payload, (uint256)));
+                destTokenAmountReceived = STETHPOOL.exchange.value(minSourceTokenAmount)(0, 1, minSourceTokenAmount, abi.decode(payload, (uint256)));
             } else {
                 destTokenAmountReceived = IstETH(STETH).submit.value(minSourceTokenAmount)(address(this));
             }
@@ -160,13 +160,13 @@ contract SwapsImplstETH_ETH is State, ISwapsImpl {
                 destTokenAmountReceived
             );
         } else {
-            destTokenAmountReceived = IwstETH(WSTETH).unwrap(
+            requiredDestTokenAmount = IwstETH(WSTETH).unwrap(
                 minSourceTokenAmount
             );
             destTokenAmountReceived = STETHPOOL.exchange(
                 1,
                 0,
-                destTokenAmountReceived,
+                requiredDestTokenAmount,
                 abi.decode(payload, (uint256))
             );
             IWeth(WETH).deposit.value(destTokenAmountReceived)();
@@ -177,10 +177,5 @@ contract SwapsImplstETH_ETH is State, ISwapsImpl {
                 destTokenAmountReceived
             );
         }
-    }
-
-    //will be removed on live deployment as unneeded. only used for testing
-    function() external payable {
-
     }
 }
