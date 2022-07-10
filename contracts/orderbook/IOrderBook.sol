@@ -62,6 +62,14 @@ interface IOrderBook {
         bytes loanDataBytes; //data passed for margin trades
     }
 
+    /// Returns proxy owner
+    /// @return owner Contract owner
+    function owner() external view returns(address owner);
+
+    /// Returns guardian
+    /// @return guardian Protocol guardian address
+    function getGuardian() external view returns(address guardian);
+
     /// Returns Deposits contract address
     /// @return vault Deposits Contract
     function VAULT() external view returns(address vault);
