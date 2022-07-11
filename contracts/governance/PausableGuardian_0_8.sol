@@ -20,7 +20,7 @@ contract PausableGuardian_0_8 is Ownable {
     }
 
     modifier onlyGuardian() {
-        require(msg.sender == getGuardian() || msg.sender == owner(), "unauthorized");_;
+        require(msg.sender==owner() || msg.sender==getGuardian(), "unauthorized");_;
     }
 
     function _isPaused(bytes4 sig) public view returns (bool isPaused) {
