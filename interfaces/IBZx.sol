@@ -693,12 +693,37 @@ interface IBZx {
         bytes calldata swapData
     ) external view returns (uint256);
 
+    /// @dev calculate simulated return of swap
+    /// @param trader the wallet that will be used to execute the trade
+    /// @param sourceToken source token address
+    /// @param destToken destination token address
+    /// @param sourceTokenAmount specifies source token amount
+    /// @param payload loanDataBytes used
+    /// @return amount amount received
     function getSwapExpectedReturn(
         address trader,
         address sourceToken,
         address destToken,
         uint256 sourceTokenAmount,
         bytes calldata payload)
+        external
+        returns (uint256);
+
+    /// @dev calculate simulated return of swap
+    /// @param trader the wallet that will be used to execute the trade
+    /// @param sourceToken source token address
+    /// @param destToken destination token address
+    /// @param tokenAmount specifies either token amount in or specific amount out
+    /// @param payload loanDataBytes used
+    /// @param isAmountIn if marked as true it is returning an amount received and if false it returns an amount in 
+    /// @return amount amount received or amount in needed based on isAmountIn selection
+    function getSwapExpectedReturn(
+        address trader,
+        address sourceToken,
+        address destToken,
+        uint256 tokenAmount,
+        bytes calldata payload,
+        bool isAmountIn)
         external
         returns (uint256);
 
