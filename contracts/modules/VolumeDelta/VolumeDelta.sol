@@ -44,8 +44,8 @@ contract VolumeDelta is State {
 
     //sets new cardinality. WARNING: CAN ONLY BE INCREASED. as it is increased, gas costs for binary searches increase. Use with caution
     function adjustCardinality(uint16 cardinality) public {
-        require(cardinality > volumeTradedCardinality[address(this)], "too low");
-        volumeTradedCardinality[address(this)] = cardinality;
+        require(cardinality > volumeTradedCardinality[msg.sender], "too low");
+        volumeTradedCardinality[msg.sender] = cardinality;
     }
 
 }
