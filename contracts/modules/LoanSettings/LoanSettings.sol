@@ -82,9 +82,8 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
                         loanParamsList[i].loanToken,
                         loanParamsList[i].collateralToken,
                         loanParamsList[i].maxLoanTerm == 0 // isTorqueLoan
-                            ? true
-                            : false && loanParamsList[i].minInitialMargin > loanParamsList[i].maintenanceMargin
-                    ),
+                    ) &&
+                    loanParamsList[i].minInitialMargin > loanParamsList[i].maintenanceMargin,
                 "invalid loanParam"
             );
             LoanParams memory loanParam = loanParamsList[i];

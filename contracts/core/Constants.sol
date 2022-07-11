@@ -49,7 +49,6 @@ contract Constants {
     //address public constant bzrxTokenAddress = address(0); // avax
     //address public constant vbzrxTokenAddress = address(0); // avax
 
-
     IWethERC20 public constant wethToken = IWethERC20(0x82aF49447D8a07e3bd95BD0d56f35241523fBab1); // arbitrum
     address public constant bzrxTokenAddress = address(0); // arbitrum
     address public constant vbzrxTokenAddress = address(0); // arbitrum
