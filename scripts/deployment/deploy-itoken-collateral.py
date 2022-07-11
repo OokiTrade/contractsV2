@@ -3,6 +3,7 @@ deployer = accounts[2]
 
 tickMathV1 = accounts[0].deploy(TickMathV1)
 liquidationHelper = accounts[0].deploy(LiquidationHelper)
+volumeTracker = accounts[0].deploy(VolumeTracker)
 
 lo = deployer.deploy(LoanOpenings)
 ls = deployer.deploy(LoanSettings)

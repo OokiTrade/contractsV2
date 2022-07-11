@@ -28,6 +28,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian {
         _setTarget(this.setSwapsImplContract.selector, target);
         _setTarget(this.setLoanPool.selector, target);
         _setTarget(this.setSupportedTokens.selector, target);
+        _setTarget(this.setApprovals.selector, target);
         _setTarget(this.setLendingFeePercent.selector, target);
         _setTarget(this.setTradingFeePercent.selector, target);
         _setTarget(this.setBorrowingFeePercent.selector, target);
@@ -155,7 +156,23 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian {
             }
         }
     }
-    
+
+    function setApprovals(address[] calldata tokens, uint256[] calldata dexIDs) external onlyGuardian {
+        bytes memory setSwapApprovalsData = abi.encodeWithSelector(
+            0x4a99e3a1, // setSwapApprovals(address[])
+            tokens
+        );
+        for (uint i=0;i<dexIDs.length;i++) {
+            address swapImpl = _getDexRecord(i);
+            if(swapImpl == address(0))
+                continue;
+            for (uint j=0;j<tokens.length;j++) {
+                (bool success,) = swapImpl.delegatecall(setSwapApprovalsData);
+                require(success, "approval calls failed");
+            }
+        }
+    }
+
     function revokeApprovals(address[] calldata addrs) external onlyGuardian {
         bytes memory revokeApprovalsData = abi.encodeWithSelector(
             0x7265766f, // revokeApprovals(address[])

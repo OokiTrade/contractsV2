@@ -25,9 +25,10 @@ def isolation(fn_isolation):
 
 
 @pytest.fixture(scope="module")
-def BZX(accounts, interface, TickMathV1, LoanOpenings, LoanSettings, ProtocolSettings, LoanClosingsLiquidation, LoanMaintenance, LiquidationHelper):
+def BZX(accounts, interface, TickMathV1, LoanOpenings, LoanSettings, ProtocolSettings, LoanClosingsLiquidation, LoanMaintenance, LiquidationHelper, VolumeTracker):
     tickMathV1 = accounts[0].deploy(TickMathV1)
     liquidationHelper = accounts[0].deploy(LiquidationHelper)
+    accounts[0].deploy(VolumeTracker)
 
     lo = accounts[0].deploy(LoanOpenings)
     ls = accounts[0].deploy(LoanSettings)
@@ -409,3 +410,9 @@ def test_case12(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULT
     assert abs(1/(price_feed.getPrice(iUSDC)/iUSDC.tokenPrice()) - 1/(price_feed.getPrice(USDC)/1e18)) < 50
     assert abs(1/(price_feed.getPrice(iUSDC)/iUSDC.tokenPrice()) - 1/(USDCPriceFeed.latestAnswer()/1e18)) < 50
     assert True
+
+def test_case13(BZX, USDC, GUARDIAN_MULTISIG):
+    allowance_before = USDC.allowance(BZX, "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506")
+    BZX.setApprovals([USDC], [1,2], {"from":GUARDIAN_MULTISIG})
+    allowance_after = USDC.allowance(BZX, "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506")
+    assert(allowance_after > allowance_before)
