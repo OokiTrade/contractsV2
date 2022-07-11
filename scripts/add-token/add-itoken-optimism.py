@@ -103,7 +103,7 @@ def marginSettings(bzxRegistry,loanTokenSettingsLowerAdmin, iTokenProxy, stableI
                 base_data_copy[5] = Wei("20 ether")  # minInitialMargin
                 base_data_copy[6] = Wei("15 ether")  # maintenanceMargin
 
-            #print(base_data_copy)
+            print(base_data_copy)
             params.append(base_data_copy)
 
             loanTokensArr.append(existingITokenLoanTokenAddress)
