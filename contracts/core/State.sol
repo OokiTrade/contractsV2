@@ -11,6 +11,7 @@ import "./Objects.sol";
 import "../mixins/EnumerableBytes32Set.sol";
 import "../utils/ReentrancyGuard.sol";
 import "../utils/InterestOracle.sol";
+import "../utils/VolumeTracker.sol";
 import "@openzeppelin-2.5.0/ownership/Ownable.sol";
 import "@openzeppelin-2.5.0/math/SafeMath.sol";
 
@@ -93,6 +94,9 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
     uint32 public twaiLength;
     /**** new interest model end */
 
+    mapping(address => VolumeTracker.Observation[65535]) internal volumeTradedObservations; //recorded Observations for every trade per user
+    mapping(address => uint16) internal volumeLastIdx; //last index in the observation array. bounded by cardinality
+    mapping(address => uint16) internal volumeTradedCardinality; //upper bound for recording data into array. Can be increased, not decreased, and increases cost for binary searches when increased. increase with caution
 
     function _setTarget(
         bytes4 sig,

@@ -5,6 +5,7 @@ import "../../mixins/LiquidationHelper.sol";
 
 contract LoanClosingsLiquidation is LoanClosingsShared {
 
+
     function initialize(
         address target)
         external
