@@ -293,11 +293,12 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
         address trader,
         address sourceToken,
         address destToken,
-        uint256 sourceTokenAmount,
-        bytes memory payload
+        uint256 tokenAmount,
+        bytes memory payload,
+        bool isAmountOut
     ) internal returns (uint256 expectedReturn) {
         
-        uint256 tradingFee = _getTradingFee(sourceTokenAmount);
+        uint256 tradingFee = _getTradingFee(tokenAmount);
 
         address swapImplAddress;
         bytes memory dataToSend;
@@ -322,17 +323,30 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
             }
         }
         if (tradingFee != 0) {
-            sourceTokenAmount = sourceTokenAmount.sub(tradingFee);
+            if (isAmountOut) {
+                tokenAmount = tokenAmount.sub(tradingFee);
+            } else {
+                tokenAmount = tokenAmount.add(tradingFee);
+            }
+            
         }
         
         swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(
             dexNumber
         );
 
-        (expectedReturn, ) = ISwapsImpl(swapImplAddress).dexAmountOutFormatted(
-            dataToSend,
-            sourceTokenAmount
-        );
+        if (isAmountOut) {
+            (expectedReturn, ) = ISwapsImpl(swapImplAddress).dexAmountOutFormatted(
+                dataToSend,
+                tokenAmount
+            );
+        } else {
+            (expectedReturn, ) = ISwapsImpl(swapImplAddress).dexAmountInFormatted(
+                dataToSend,
+                tokenAmount
+            ); 
+        }
+
     }
 
     function _checkSwapSize(address tokenAddress, uint256 amount)
