@@ -56,6 +56,11 @@ interface IBZx {
         bool withApprovals
     ) external;
 
+    /// @dev sets approvals for tokens for specific dexes on dex selector
+    /// @param tokens tokens to have their approvals set
+    /// @param dexIDs IDs of the swap impls on dex selector
+    function setApprovals(address[] calldata tokens, uint256[] calldata dexIDs) external;
+
     /// @dev sets lending fee with WEI_PERCENT_PRECISION
     /// @param newValue lending fee percent
     function setLendingFeePercent(uint256 newValue) external;
