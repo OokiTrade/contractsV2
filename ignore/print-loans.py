@@ -10,7 +10,7 @@ for i in range(0, BZX.getActiveLoansCount()):
     except Exception as e:
         print(i, "error")
         pass
-    time.sleep(3)
+    time.sleep(1)
 
 
 totalCollateral = {}
@@ -31,6 +31,7 @@ for t in totalCollateral:
     diff = bzxBalance - totalCollateral[t]
     print(symbol, t, totalCollateral[t], bzxBalance, diff)
 
+print("lending")
 print("name collateralAddress held paid")
 for t in totalCollateral:
     underlying = Contract.from_abi("a", address=t, abi=interface.ERC20.abi)
@@ -39,3 +40,26 @@ for t in totalCollateral:
     paid = BZX.lendingFeeTokensPaid(underlying)
     
     print(symbol, t, held, paid)
+    time.sleep(1)
+
+print("borrowing")
+print("name collateralAddress held paid")
+for t in totalCollateral:
+    underlying = Contract.from_abi("a", address=t, abi=interface.ERC20.abi)
+    symbol = underlying.symbol()
+    held = BZX.borrowingFeeTokensHeld(underlying)
+    paid = BZX.borrowingFeeTokensPaid(underlying)
+    
+    print(symbol, t, held, paid)
+    time.sleep(1)
+
+print("trading")
+print("name collateralAddress held paid")
+for t in totalCollateral:
+    underlying = Contract.from_abi("a", address=t, abi=interface.ERC20.abi)
+    symbol = underlying.symbol()
+    held = BZX.tradingFeeTokensHeld(underlying)
+    paid = BZX.tradingFeeTokensPaid(underlying)
+    
+    print(symbol, t, held, paid)
+    time.sleep(1)
