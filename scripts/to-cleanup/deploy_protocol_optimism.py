@@ -10,7 +10,7 @@ usdc_Pricefeed = "0x16a9FA2FDa030272Ce99B29CF780dFA30361E0f3" # usdc
 weth_Pricefeed = "0x13e3Ee699D1909E989722E753853AE30b17e08c5" # weth
 wbtc_Pricefeed = "0xD702DD976Fb76Fffc2D3963D037dfDae5b04E593" # wbtc
 frax_Pricefeed = "0xc7D132BeCAbE7Dcc4204841F33bae45841e41D9C" # frax
-op_Pricefeed = "0x3B2AF9149360e9F954C18f280aD0F4Adf1B613b8" # usdc
+op_Pricefeed = "0x0D276FC14719f9292D5C1eA2198673d1f4269246" # op
 
 #
 idai = "0xE60d6142D3d683a58B02337E1F0D08C69B946aCF"
@@ -19,6 +19,7 @@ iusdc = "0xBFcf8755Ba9d23F7F0EBbA0da70819A907dA2aCC"
 ieth = "0x10b158EDF554dc15dCdBFd93049759e6e35c1384"
 ibtc = "0x0515fDe94bb95d6A5b7640f8F0d3AC98C9390903"
 ifrax = "0x1dbc7f43d432C8E92762FC9680A5BcF4646FB5e5"
+iop = "0xd1B23cA8119A6C196847F7Ba78536BfcFfc82780"
 
 #
 dai = "0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1" # dai
@@ -27,7 +28,7 @@ usdc = "0x7F5c764cBc14f9669B88837ca1490cCa17c31607" # usdc
 weth = "0x4200000000000000000000000000000000000006" # weth
 wbtc = "0x68f180fcCe6836688e9084f035309E29Bf0A2095" # wbtc
 frax = "0x2E3D870790dC77A83DD1d18184Acc7439A53f475" # wbtc
-# op = "0x4200000000000000000000000000000000000042" # op
+op = "0x4200000000000000000000000000000000000042" # op
 
 #TOKEN_REGISTRY = TokenRegistry.deploy(params, publish_source=True)
 TOKEN_REGISTRY = Contract.from_abi("TOKEN_REGISTRY", "0x22a2208EeEDeb1E2156370Fd1c1c081355c68f2B", TokenRegistry.abi)
@@ -129,45 +130,56 @@ bzx.setSupportedTokens(
     params
 )
 
-## PriceFeeds
-print("Deploying PriceFeeds.")
-#feeds = PriceFeeds_EVMOS.deploy(params)
-feeds = Contract.from_abi("feeds", address="0x10b158EDF554dc15dCdBFd93049759e6e35c1384", abi=PriceFeeds_EVMOS.abi)
+# bzx.setSupportedTokens(
+#     [dai, usdt, usdc, weth, wbtc, op],
+#     [True, True, True, True, True, True],
+#     True,
+#     params
+# )
+
 # bzx.setPriceFeedContract(
 #     feeds.address # priceFeeds
 #     ,params
 # )
 #
 # feeds.setPriceFeed(
-#     [usdc, usdt, dai, weth, wbtc],
-#     [usdc_FluxPricefeed, usdt_FluxPricefeed, dai_FluxPricefeed, weth_FluxPricefeed, wbtc_FluxPricefeed],
+#     [usdc, usdt, dai, weth, wbtc, frax, op],
+#     [usdc_Pricefeed, usdt_Pricefeed, dai_Pricefeed, weth_Pricefeed, wbtc_Pricefeed, frax_Pricefeed, op_Pricefeed],
 #     params
 # )
 #
 
 # bzx.setLoanPool(
-#     [idai, iusdt, iusdc, ieth, ibtc],
-#     [dai, usdt, usdc, weth, wbtc],
+#     [idai, iusdt, iusdc, ieth, ibtc, ifrax, iop],
+#     [dai, usdt, usdc, weth, wbtc, frax, op],
 #     params
 # )
 
-exec(open("./scripts/add-token/add-itoken-evmos.py").read())
+exec(open("./scripts/add-token/add-itoken-optimism.py").read())
+
 deployment(loanTokenSettings, settngsLowerAdmin, dai, 'DAI', idai)
 deployment(loanTokenSettings, settngsLowerAdmin, usdc, 'USDC', iusdc)
 deployment(loanTokenSettings, settngsLowerAdmin, usdt, 'USDT', iusdt)
 deployment(loanTokenSettings, settngsLowerAdmin, weth, 'ETH', ieth)
 deployment(loanTokenSettings, settngsLowerAdmin, wbtc, 'BTC', ibtc)
+deployment(loanTokenSettings, settngsLowerAdmin, op, 'OP', iop)
+deployment(loanTokenSettings, settngsLowerAdmin, op, 'FRAX', ifrax)
 
 marginSettings(TOKEN_REGISTRY, settngsLowerAdmin, idai, [dai, usdc, usdt])
 marginSettings(TOKEN_REGISTRY, settngsLowerAdmin, iusdc, [dai, usdc, usdt])
 marginSettings(TOKEN_REGISTRY, settngsLowerAdmin, iusdt, [dai, usdc, usdt])
 marginSettings(TOKEN_REGISTRY, settngsLowerAdmin, ieth, [dai, usdc, usdt])
 marginSettings(TOKEN_REGISTRY, settngsLowerAdmin, ibtc, [dai, usdc, usdt])
+marginSettings(TOKEN_REGISTRY, settngsLowerAdmin, iop, [dai, usdc, usdt])
+marginSettings(TOKEN_REGISTRY, settngsLowerAdmin, ifrax, [dai, usdc, usdt])
+
 demandCurve(bzx, settngsLowerAdmin, idai, CUI)
 demandCurve(bzx, settngsLowerAdmin, iusdc, CUI)
 demandCurve(bzx, settngsLowerAdmin, iusdt, CUI)
 demandCurve(bzx, settngsLowerAdmin, ieth, CUI)
 demandCurve(bzx, settngsLowerAdmin, ibtc, CUI)
+demandCurve(bzx, settngsLowerAdmin, iop, CUI)
+demandCurve(bzx, settngsLowerAdmin, ifrax, CUI)
 
 #bzx.setFeesController("XXXX", params)
 

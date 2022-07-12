@@ -178,6 +178,10 @@ interface IBZx {
 
     function borrowingFeeTokensPaid(address) external view returns (uint256);
 
+    function tradingFeeTokensHeld(address) external view returns (uint256);
+
+    function tradingFeeTokensPaid(address) external view returns (uint256);
+
     function tradingFeePercent() external view returns (uint256);
 
     function protocolTokenHeld() external view returns (uint256);
