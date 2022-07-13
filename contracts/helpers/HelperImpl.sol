@@ -22,6 +22,7 @@ contract HelperImpl is Ownable {
     //address public constant bZxProtocol = 0xD154eE4982b83a87b0649E5a7DDA1514812aFE1f; // bsc
     //address public constant bZxProtocol = 0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8; // polygon
     address public constant bZxProtocol = 0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB; // arbitrum
+    //address public constant bZxProtocol = 0xf2FBaD7E59f0DeeE0ec2E724d2b6827Ea1cCf35f; // evmos
     //address public constant bZxProtocol = 0xAcedbFd5Bc1fb0dDC948579d4195616c05E74Fd1; // optimism
 
 
@@ -30,6 +31,7 @@ contract HelperImpl is Ownable {
     // address public constant wethToken = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c; // bsc
     // address public constant wethToken = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270; // polygon
     address public constant wethToken = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1; // arbitrum
+    // address public constant wethToken = 0xD4949664cD82660AaE99bEdc034a0deA8A0bd517; // evmos
     // address public constant wethToken = 0x4200000000000000000000000000000000000006; // optimism
 
     uint256 internal constant WEI_PRECISION = 10**18;
@@ -203,9 +205,11 @@ contract HelperImpl is Ownable {
                 if (collateralTokenAddress == address(0)) {
                     collateralTokenAddress = wethToken;
                 }
-                bytes32 loanParamId = IBZx(bZxProtocol).generateLoanParamId(loanTokenAddress, collateralTokenAddress, true);
                 return getRequiredCollateralByParams(
-                    loanParamId,
+                    iToken.loanParamsIds(uint256(keccak256(abi.encodePacked(
+                        collateralTokenAddress,
+                        true
+                    )))),
                     borrowAmount
                 ) + 10; // some dust to compensate for rounding errors
             }
@@ -225,9 +229,13 @@ contract HelperImpl is Ownable {
             if (collateralTokenAddress == address(0)) {
                 collateralTokenAddress = wethToken;
             }
-
-            bytes32 loanParamId = IBZx(bZxProtocol).generateLoanParamId(loanTokenAddress, collateralTokenAddress, true);
-            borrowAmount = getBorrowAmountByParams(loanParamId, depositAmount);
+            borrowAmount = IBZx(bZxProtocol).getBorrowAmountByParams(
+                iToken.loanParamsIds(uint256(keccak256(abi.encodePacked(
+                    collateralTokenAddress,
+                    true
+                )))),
+                depositAmount
+            );
 
             if (borrowAmount > IERC20(loanTokenAddress).balanceOf(address(iToken))) {
                 borrowAmount = 0;
