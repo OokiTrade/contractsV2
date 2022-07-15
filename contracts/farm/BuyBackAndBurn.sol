@@ -18,6 +18,10 @@ contract BuyBackAndBurn is Upgradeable_0_8 {
     bool public isPaused;
     address public treasuryWallet;
     IPriceGetterP125 public priceGetter;
+    uint256 public counterForAllowance;
+    uint256 public unspentAllowance;
+    uint256 public setAllowance;
+    uint256 public timeDelta;
 
     address public constant USDC = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
     address public constant P125 = 0x83000597e8420aD7e9EDD410b2883Df1b83823cF;
@@ -65,6 +69,9 @@ contract BuyBackAndBurn is Upgradeable_0_8 {
         } else {
             (execPrice, balanceUsed, buyAmount) = _buyDebtToken(percentage); //uses partial
         }
+        if (block.timestamp >= counterForAllowance+timeDelta) unspentAllowance = setAllowance;
+        require(balanceUsed <= unspentAllowance, "too much spent");
+        unspentAllowance -= balanceUsed;
         emit BuyBack(execPrice, balanceUsed, buyAmount);
     }
 
@@ -138,5 +145,10 @@ contract BuyBackAndBurn is Upgradeable_0_8 {
             msg.sender,
             _token.balanceOf(address(this))
         );
+    }
+
+    function settingsForTimeAllowance(uint256 tDelta, uint256 allowance) external onlyOwner {
+        timeDelta = tDelta;
+        setAllowance = allowance;
     }
 }
