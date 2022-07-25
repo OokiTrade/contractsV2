@@ -3,9 +3,9 @@ pragma solidity >=0.8.4;
 
 import "prb-math/contracts/PRBMathUD60x18.sol";
 import "../interfaces/ICurvedInterestRate.sol";
-import "./Guardian.sol";
+import "../governance/PausableGuardian_0_8.sol";
 
-contract CurvedInterestRate is ICurvedInterestRate, Guardian {
+contract CurvedInterestRate is PausableGuardian_0_8, ICurvedInterestRate {
     using PRBMathUD60x18 for uint256;
 
     // uint256 public constant IR2 = 120e18;
