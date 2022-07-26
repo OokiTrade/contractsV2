@@ -312,8 +312,9 @@ contract PriceFeeds is Constants, PausableGuardian {
         internal
         view
         returns (uint256 rate)
-    {
-        if (token != address(wethToken)) {
+    {   
+        // on ETH all pricefeeds are etherum denominated. on all other chains its USD denominated. so on ETH the price of 1 eth is 1 eth
+        if (getChainId() != 1 || token != address(wethToken)) {
             // IPriceFeedsExt _Feed = 
             // require(address(_Feed) != address(0), "unsupported price feed");
             rate = getPrice(token);
@@ -339,6 +340,12 @@ contract PriceFeeds is Constants, PausableGuardian {
             price = price.mul(IToken(token).tokenPrice())
                 .div(1e18);
         }
+    }
+
+    function getChainId() internal pure returns (uint) {
+        uint256 chainId;
+        assembly { chainId := chainid() }
+        return chainId;
     }
 
     function _getDecimalPrecision(
