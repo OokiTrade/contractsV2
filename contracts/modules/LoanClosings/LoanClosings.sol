@@ -16,6 +16,10 @@ contract LoanClosings is LoanClosingsShared {
         external
         onlyOwner
     {
+        // TODO remove after migration
+        _setTarget(bytes4(keccak256("closeWithDeposit(bytes32,address,uint256)")), address(0));
+        _setTarget(bytes4(keccak256("closeWithSwap(bytes32,address,uint256)")), address(0));
+
         _setTarget(this.closeWithDeposit.selector, target);
         _setTarget(this.closeWithSwap.selector, target);
     }
