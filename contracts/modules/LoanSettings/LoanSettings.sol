@@ -126,7 +126,7 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
                     : false
             );
             loanParamsLocal.id = loanParamId;
-            delete loanParams[oldLoanParamId];
+            // delete loanParams[oldLoanParamId]; don't delete old so that existing positions can be closed
             loanParams[loanParamId] = loanParamsLocal;
             // userLoanParamSets[owner].removeBytes32(oldLoanParamId); removing in loop breaks the index. we don't really need to clean this up
         }
