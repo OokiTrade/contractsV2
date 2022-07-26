@@ -314,7 +314,7 @@ contract PriceFeeds is Constants, PausableGuardian {
         returns (uint256 rate)
     {   
         // on ETH all pricefeeds are etherum denominated. on all other chains its USD denominated. so on ETH the price of 1 eth is 1 eth
-        if (getChainId() != 1 && token != address(wethToken)) {
+        if (getChainId() != 1 || token != address(wethToken)) {
             // IPriceFeedsExt _Feed = 
             // require(address(_Feed) != address(0), "unsupported price feed");
             rate = getPrice(token);
