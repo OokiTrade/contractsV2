@@ -15,6 +15,10 @@ import "../../governance/PausableGuardian.sol";
 
 contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHandler, SwapsUser, PausableGuardian {
     function initialize(address target) external onlyOwner {
+        
+         // TODO remove after migration
+        _setTarget(bytes4(keccak256("borrowOrTradeFromPool(bytes32,bytes32,bool,uint256,address,uint256,bytes)")), address(0));
+
         _setTarget(this.borrowOrTradeFromPool.selector, target);
         _setTarget(this.setDelegatedManager.selector, target);
         _setTarget(this.generateLoanParamId.selector, target);
