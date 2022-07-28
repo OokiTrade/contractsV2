@@ -385,13 +385,15 @@ interface IBZx {
     /// @param loanId id of the loan
     /// @param receiver collateral token reciever address
     /// @param depositAmount amount of loan token to deposit
+    /// @param loanDataBytes additional functionality e.g permits
     /// @return loanCloseAmount loan close amount
     /// @return withdrawAmount loan token withdraw amount
     /// @return withdrawToken loan token address
     function closeWithDeposit(
         bytes32 loanId,
         address receiver,
-        uint256 depositAmount // denominated in loanToken
+        uint256 depositAmount, // denominated in loanToken
+        bytes calldata loanDataBytes
     )
         external
         payable
