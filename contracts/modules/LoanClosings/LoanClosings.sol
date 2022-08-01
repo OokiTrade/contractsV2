@@ -70,13 +70,15 @@ contract LoanClosings is LoanClosingsShared {
     }
 
     function _checkPermit(address token, bytes memory loanDataBytes) internal {
-        if(abi.decode(loanDataBytes, (uint128)) & WITH_PERMIT != 0) {
-            (uint128 f, bytes[] memory payload) = abi.decode(
-                loanDataBytes,
-                (uint128, bytes[])
-            );
-            (address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) = abi.decode(payload[2], (address, address, uint, uint, uint8, bytes32, bytes32));
-            IERC20Permit(token).permit(owner, spender, value, deadline, v, r, s);
+        if (loanDataBytes.length != 0) {
+            if(abi.decode(loanDataBytes, (uint128)) & WITH_PERMIT != 0) {
+                (uint128 f, bytes[] memory payload) = abi.decode(
+                    loanDataBytes,
+                    (uint128, bytes[])
+                );
+                (address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) = abi.decode(payload[2], (address, address, uint, uint, uint8, bytes32, bytes32));
+                IERC20Permit(token).permit(owner, spender, value, deadline, v, r, s);
+            }
         }
     }
 

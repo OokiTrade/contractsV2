@@ -25,12 +25,13 @@ def isolation(fn_isolation):
 
 
 @pytest.fixture(scope="module")
-def BZX(accounts, interface, TickMathV1, LoanOpenings, LoanSettings, ProtocolSettings, LoanClosingsLiquidation, LoanMaintenance, LiquidationHelper, VolumeTracker):
+def BZX(accounts, interface, TickMathV1, LoanOpenings, LoanSettings, ProtocolSettings, LoanClosingsLiquidation, LoanMaintenance, LiquidationHelper, VolumeTracker, LoanClosings):
     tickMathV1 = accounts[0].deploy(TickMathV1)
     liquidationHelper = accounts[0].deploy(LiquidationHelper)
     accounts[0].deploy(VolumeTracker)
 
     lo = accounts[0].deploy(LoanOpenings)
+    lc = accounts[0].deploy(LoanClosings)
     ls = accounts[0].deploy(LoanSettings)
     ps = accounts[0].deploy(ProtocolSettings)
     lcs = accounts[0].deploy(LoanClosingsLiquidation)
@@ -38,6 +39,7 @@ def BZX(accounts, interface, TickMathV1, LoanOpenings, LoanSettings, ProtocolSet
 
     bzx = Contract.from_abi("bzx", address="0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB", abi=interface.IBZx.abi)
     bzx.replaceContract(lo, {"from": bzx.owner()})
+    bzx.replaceContract(lc, {"from": bzx.owner()})
     bzx.replaceContract(ls, {"from": bzx.owner()})
     bzx.replaceContract(ps, {"from": bzx.owner()})
     bzx.replaceContract(lcs, {"from": bzx.owner()})
@@ -192,7 +194,7 @@ def test_case2(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULTI
     USDT.approve(BZX, 2*256-1, {"from": accounts[0]})
     BZX.closeWithSwap(loans[0][0], accounts[0], 1000e18, True, b"", {"from": accounts[0]})
     with reverts("loan is closed"):
-        BZX.closeWithDeposit(loans[0][0], accounts[0], 1000e6, {"from": accounts[0]})
+        BZX.closeWithDeposit(loans[0][0], accounts[0], 1000e6, b"", {"from": accounts[0]})
     # margint trade STETH principal - you can't since no where to borrow, you can't short aave
 
     assert True
@@ -376,7 +378,7 @@ def test_case11(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULT
 
     loans = BZX.getUserLoans(accounts[0], 0, 10, 0, 0, 0)
     USDT.approve(BZX, 1000e6, {"from": accounts[0]})
-    BZX.closeWithDeposit(loans[0][0], accounts[0], 1000e6, {"from": accounts[0]})
+    BZX.closeWithDeposit(loans[0][0], accounts[0], 1000e6, b'', {"from": accounts[0]})
     assert True
 
 def test_case12(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULTISIG, FRAX, LoanTokenLogicStandard, LoanToken, CurvedInterestRate, PriceFeeds, PRICE_FEED, interface, PriceFeedIToken):

@@ -428,74 +428,6 @@ interface IBZx {
 
     ////// Loan Closings With Gas Token //////
 
-    /// @dev liquidates unhealty loans by using Gas token
-    /// @param loanId id of the loan
-    /// @param receiver address receiving liquidated loan collateral
-    /// @param gasTokenUser user address of the GAS token
-    /// @param closeAmount amount to close denominated in loanToken
-    /// @return loanCloseAmount loan close amount
-    /// @return seizedAmount loan token withdraw amount
-    /// @return seizedToken loan token address
-    function liquidateWithGasToken(
-        bytes32 loanId,
-        address receiver,
-        address gasTokenUser,
-        uint256 closeAmount // denominated in loanToken
-    )
-        external
-        payable
-        returns (
-            uint256 loanCloseAmount,
-            uint256 seizedAmount,
-            address seizedToken
-        );
-
-    /// @dev close position with loan token deposit
-    /// @param loanId id of the loan
-    /// @param receiver collateral token reciever address
-    /// @param gasTokenUser user address of the GAS token
-    /// @param depositAmount amount of loan token to deposit denominated in loanToken
-    /// @return loanCloseAmount loan close amount
-    /// @return withdrawAmount loan token withdraw amount
-    /// @return withdrawToken loan token address
-    function closeWithDepositWithGasToken(
-        bytes32 loanId,
-        address receiver,
-        address gasTokenUser,
-        uint256 depositAmount
-    )
-        external
-        payable
-        returns (
-            uint256 loanCloseAmount,
-            uint256 withdrawAmount,
-            address withdrawToken
-        );
-
-    /// @dev close position with swap
-    /// @param loanId id of the loan
-    /// @param receiver collateral token reciever address
-    /// @param gasTokenUser user address of the GAS token
-    /// @param swapAmount amount of loan token to swap denominated in collateralToken
-    /// @param returnTokenIsCollateral  true: withdraws collateralToken, false: withdraws loanToken
-    /// @return loanCloseAmount loan close amount
-    /// @return withdrawAmount loan token withdraw amount
-    /// @return withdrawToken loan token address
-    function closeWithSwapWithGasToken(
-        bytes32 loanId,
-        address receiver,
-        address gasTokenUser,
-        uint256 swapAmount,
-        bool returnTokenIsCollateral,
-        bytes calldata loanDataBytes
-    )
-        external
-        returns (
-            uint256 loanCloseAmount,
-            uint256 withdrawAmount,
-            address withdrawToken
-        );
-
     ////// Loan Maintenance //////
 
     /// @dev deposit collateral to existing loan
@@ -650,34 +582,6 @@ interface IBZx {
         address destToken,
         address receiver,
         address returnToSender,
-        uint256 sourceTokenAmount,
-        uint256 requiredDestTokenAmount,
-        bytes calldata swapData
-    )
-        external
-        payable
-        returns (
-            uint256 destTokenAmountReceived,
-            uint256 sourceTokenAmountUsed
-        );
-
-    /// @dev swap thru external integration using GAS
-    /// @param sourceToken source token address
-    /// @param destToken destintaion token address
-    /// @param receiver address to receive tokens
-    /// @param returnToSender TODO
-    /// @param gasTokenUser user address of the GAS token
-    /// @param sourceTokenAmount source token amount
-    /// @param requiredDestTokenAmount destination token amount
-    /// @param swapData TODO
-    /// @return destTokenAmountReceived destination token received
-    /// @return sourceTokenAmountUsed source token amount used
-    function swapExternalWithGasToken(
-        address sourceToken,
-        address destToken,
-        address receiver,
-        address returnToSender,
-        address gasTokenUser,
         uint256 sourceTokenAmount,
         uint256 requiredDestTokenAmount,
         bytes calldata swapData
