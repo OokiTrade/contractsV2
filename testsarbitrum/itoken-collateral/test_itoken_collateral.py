@@ -3,7 +3,7 @@
 import pytest
 from brownie import ZERO_ADDRESS, network, Contract, reverts, chain
 from brownie.convert.datatypes import Wei
-from eth_abi import encode_abi, is_encodable, encode_single
+from eth_abi import encode_abi, is_encodable, encode_single, is_encodable_type
 from eth_abi.packed import encode_single_packed, encode_abi_packed
 from hexbytes import HexBytes
 import json
@@ -13,6 +13,8 @@ from eip712.messages import EIP712Message, EIP712Type
 from brownie.network.account import LocalAccount
 from brownie.convert.datatypes import *
 from brownie import web3
+from eth_abi import encode_abi
+
 
 @pytest.fixture(scope="module")
 def requireFork():
@@ -103,8 +105,11 @@ def iUSDT(accounts, LoanTokenLogicStandard, interface):
 
 
 @pytest.fixture(scope="module")
-def iUSDC(accounts, interface):
+def iUSDC(accounts, LoanTokenLogicStandard, interface):
+    itokenImpl = accounts[0].deploy(LoanTokenLogicStandard)
     itoken = Contract.from_abi("iUSDC", address="0xEDa7f294844808B7C93EE524F990cA7792AC2aBd", abi=interface.IToken.abi)
+    itoken.setTarget(itokenImpl, {"from": itoken.owner()})
+    itoken.initializeDomainSeparator({"from": itoken.owner()})
     return itoken
 
 @pytest.fixture(scope="module")
@@ -127,6 +132,8 @@ def test_cases():
     # Test Case 8: test HELPER getBorrowAmount for deposit and vice versa
     # Test Case 11: borrow with iToken
     # Test Case 12: set iToken pricefeed
+    # Test Case 13: test approvals
+    # Test Case 14: iToken permit borrow
     assert True
 
 def test_case1(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULTISIG, DAI, LoanTokenLogicStandard, LoanToken, CurvedInterestRate, PriceFeeds, PRICE_FEED, interface):
@@ -418,3 +425,71 @@ def test_case13(BZX, USDC, GUARDIAN_MULTISIG):
     BZX.setApprovals([USDC], [1,2], {"from":GUARDIAN_MULTISIG})
     allowance_after = USDC.allowance(BZX, "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506")
     assert(allowance_after > allowance_before)
+
+
+
+class Permit():
+    def __init__(self, name, chainId, verifyingContract, owner, spender, value, nonce, deadline, domain_separator):
+        self.name = name
+        self.chainId = chainId
+        self.verifyingContract = str(verifyingContract)
+        self.owner = str(owner)
+        self.spender = str(spender)
+        self.value = int(value)
+        self.nonce = nonce
+        self.deadline = deadline
+        self.permit_typehash = HexString("0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9", "bytes32")
+        self.domain_separator = domain_separator
+
+    def sign_message(self, local: LocalAccount):
+        domainData = web3.sha3(encode_abi(["bytes32", "address", "address", "uint256", "uint256", "uint256"],
+                                          [self.permit_typehash, str(local), self.verifyingContract, self.value, self.nonce, self.deadline]))
+        digest = web3.solidityKeccak(['bytes1', 'bytes1', 'bytes32', 'bytes32'], [b'\x19', b'\x01', self.domain_separator, domainData])
+        signed_permit = web3.eth.account.signHash(digest, local.private_key)
+        return signed_permit
+
+
+def test_case14(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULTISIG, FRAX, LoanTokenLogicStandard, LoanToken, CurvedInterestRate, PriceFeeds, PRICE_FEED, interface, PriceFeedIToken):
+
+    local = accounts.add(private_key="0x416b8a7d9290502f5661da81f0cf43893e3d19cb9aea3c426cfb36e8186e9c09")
+    accounts[0].transfer(to=local, amount=Wei("10 ether"))
+
+
+    p = Permit(iUSDC.name(), chain.id, iUSDT, local, iUSDT, int(100e6), local.nonce, chain.time()+1000, iUSDC.DOMAIN_SEPARATOR())
+    signed_permit = p.sign_message(local)
+    payload = encode_abi(['address', 'address', 'uint', 'uint', 'uint8', 'bytes32', 'bytes32'],[p.owner, p.spender, p.value, p.deadline, signed_permit.v, HexBytes(signed_permit.r), HexBytes(signed_permit.s)])
+    loanDataBytes = encode_abi(['uint128','bytes[]'], [16, [payload]]) #flag value WITH_PERMIT = 16
+    
+    # iUSDT.permit(p.owner, p.spender, p.value, p.deadline, signed_permit.v, signed_permit.r, signed_permit.s, {"from": local})
+
+
+    USDC.transfer(local, 100000e6, {"from": "0x1714400ff23db4af24f9fd64e7039e6597f18c2b"})
+    USDT.transfer(local, 100000e6, {"from": "0xb6cfcf89a7b22988bfc96632ac2a9d6dab60d641"})
+
+    # setting pricefeed for iToken
+    USDCPriceFeed = PRICE_FEED.pricesFeeds(USDC)
+    USDCPriceFeed = Contract.from_abi("pricefeed", USDCPriceFeed, abi = interface.IPriceFeedsExt.abi)
+    
+    USDTPriceFeed = PRICE_FEED.pricesFeeds(USDT)
+    USDTPriceFeed = Contract.from_abi("pricefeed", USDTPriceFeed, abi = interface.IPriceFeedsExt.abi)
+
+    price_feed = PriceFeeds.deploy({"from": local})
+    BZX.setPriceFeedContract(price_feed, {"from": BZX.owner()})
+    price_feed.changeGuardian(GUARDIAN_MULTISIG, {"from": local})
+    price_feed.setPriceFeed([USDC, USDT], [USDCPriceFeed, USDTPriceFeed], {"from": GUARDIAN_MULTISIG})
+
+    USDC.approve(iUSDC, 2**256-1, {"from": local})
+    iUSDC.mint(local, 10000e6, {"from": local})
+
+    # iUSDC.approve(iUSDT, 2**256-1, {"from": accounts[0]}) loanDataBytes(permit) is handling this
+    
+    # with reverts("OOKI: INVALID_SIGNATURE"):
+    #     iUSDT.borrow("", 50e6, 0, 100e6, iUSDC, local, local, loanDataBytes, {'from': local})
+
+    BZX.setSupportedTokens([iUSDC], [True], True, {'from': GUARDIAN_MULTISIG})
+    iUSDT.borrow("", 50e6, 0, 100e6, iUSDC, local, local, loanDataBytes, {'from': local})
+
+    loans = BZX.getUserLoans(local, 0, 10, 0, 0, 0)
+    USDT.approve(BZX, 1000e6, {"from": local})
+    BZX.closeWithDeposit(loans[0][0], local, 1000e6, b'', {"from": local})
+    assert True

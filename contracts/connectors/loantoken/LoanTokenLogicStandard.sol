@@ -629,13 +629,14 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
             sentAddresses[2] = sentAddresses[1]; // receiver = borrower
         }
 
-        loanDataBytes = _checkPermit(collateralTokenAddress, loanDataBytes);
+        
         // handle transfers prior to adding newPrincipal to loanTokenSent
         uint256 msgValue = _verifyTransfers(
             collateralTokenAddress,
             sentAddresses,
             sentAmounts,
-            withdrawAmount
+            withdrawAmount,
+            loanDataBytes
         );
 
         // adding the loan token portion from the lender to loanTokenSent
@@ -681,7 +682,8 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         address collateralTokenAddress,
         address[4] memory sentAddresses,
         uint256[5] memory sentAmounts,
-        uint256 withdrawalAmount)
+        uint256 withdrawalAmount,
+        bytes memory loanDataBytes)
         internal
         returns (uint256 msgValue)
     {
@@ -711,11 +713,13 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
                 _safeTransfer(collateralTokenAddress, bZxContract, collateralTokenSent, "28");
                 msgValue -= collateralTokenSent;
             } else {
+                loanDataBytes = _checkPermit(collateralTokenAddress, loanDataBytes);
                 _safeTransferFrom(collateralTokenAddress, msg.sender, bZxContract, collateralTokenSent, "28");
             }
         }
 
         if (loanTokenSent != 0) {
+            loanDataBytes = _checkPermit(_loanTokenAddress, loanDataBytes);
             _safeTransferFrom(_loanTokenAddress, msg.sender, bZxContract, loanTokenSent, "29");
         }
     }
@@ -756,9 +760,9 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
                     loanDataBytes,
                     (uint128, bytes[])
                 );
-                (address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) = abi.decode(payload[2], (address, address, uint, uint, uint8, bytes32, bytes32));
+                (address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) = abi.decode(payload[0], (address, address, uint, uint, uint8, bytes32, bytes32));
                 IERC20Permit(token).permit(owner, spender, value, deadline, v, r, s);
-                payload[2] = "";
+                payload[0] = "";
                 loanDataBytes = abi.encode(f, payload);
             }
             return loanDataBytes;
