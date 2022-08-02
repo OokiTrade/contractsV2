@@ -136,54 +136,73 @@ def demandCurve(bzx, settngsLowerAdmin, iTokenProxy, CUI):
     iToken.updateSettings(settngsLowerAdmin.address, calldata,  {"from": deployer})
     bzx.setupLoanPoolTWAI(iTokenProxy, {"from": deployer})
 
-'''
+
 def updateOwner():
-
-bzxAddress: 0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB
-PriceFeeds_ARBITRUM: 0x8f6A694fe9d99F4913501e6592438598DA415C9e
-SwapsImplUniswapV2_ARBITRUM: 0xA9033952ac045168243A1A50c889516445247618
-HelperProxy: 0xB8329B5458B1E493EFd8D9DA8C3B5E6D68e67C21
-
-
-    guardian_multisig = "0x111F9F3e59e44e257b24C5d1De57E05c380C07D2"
-
+    guardian_multisig = "0x4e5b10F8221eadCeDEAA84a122620e22775F82Df"
     ## bZxProtocol
-    c = Contract.from_abi("c", address="0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB", abi=LoanToken.abi, owner=deployer)
-    print("old owner:", c.owner())
-    c.transferOwnership(guardian_multisig, {"from": deployer})
-    print("new owner:", c.owner())
+    BZX = Contract.from_abi("BZX", "0xAcedbFd5Bc1fb0dDC948579d4195616c05E74Fd1", bZxProtocol.abi)
+    print("old owner:", BZX.owner())
+    BZX.transferOwnership(guardian_multisig, {"from": deployer})
+    print("new owner:", BZX.owner())
     print("----")
 
-    ## PriceFeeds_ARBITRUM
-    c = Contract.from_abi("c", address="0x8f6A694fe9d99F4913501e6592438598DA415C9e", abi=LoanToken.abi, owner=deployer)
-    print("old owner:", c.owner())
-    c.transferOwnership(guardian_multisig, {"from": deployer})
-    print("new owner:", c.owner())
+    ## PriceFeeds_OPTIMISM
+    feeds = Contract.from_abi("feeds", address="0x723bD1672b4bafF0B8132eAfc082EB864cF18D24", abi=PriceFeeds_OPTIMISM.abi)
+    print("old owner:", feeds.owner())
+    feeds.transferOwnership(guardian_multisig, {"from": deployer})
+    print("new owner:", feeds.owner())
     print("----")
 
-    ## SwapsImplUniswapV2_ARBITRUM
-    c = Contract.from_abi("c", address="0xA9033952ac045168243A1A50c889516445247618", abi=LoanToken.abi, owner=deployer)
-    print("old owner:", c.owner())
-    c.transferOwnership(guardian_multisig, {"from": deployer})
-    print("new owner:", c.owner())
-    print("----")
 
     ## HelperProxy
-    c = Contract.from_abi("c", address="0xB8329B5458B1E493EFd8D9DA8C3B5E6D68e67C21", abi=LoanToken.abi, owner=deployer)
-    print("old owner:", c.owner())
-    c.transferOwnership(guardian_multisig, {"from": deployer})
-    print("new owner:", c.owner())
+    HELPER = Contract.from_abi("HELPER", "0x3920993FEca46AF170d296466d8bdb47A4b4e152", HelperImpl.abi)
+    print("old owner:", HELPER.owner())
+    HELPER.transferOwnership(guardian_multisig, {"from": deployer})
+    print("new owner:", HELPER.owner())
     print("----")
 
-    bzxRegistry = Contract.from_abi("bzxRegistry", address="0x86003099131d83944d826F8016E09CC678789A30", abi=TokenRegistry.abi)
-    supportedTokenAssetsPairs = bzxRegistry.getTokens(0, 100) # TODO move this into a loop for permissionless to support more than 100
+    # ## FeeExtractAndDistribute
+    # c = Contract.from_abi("c", address="0xf970FA9E6797d0eBfdEE8e764FC5f3123Dc6befD", abi=LoanToken.abi, owner=deployer)
+    # print("old owner:", c.owner())
+    # c.transferOwnership(guardian_multisig, {"from": deployer})
+    # print("new owner:", c.owner())
+    # print("----")
+
+    ## DexRecords
+    dex_record = Contract.from_abi("DexRecords", "0x8FA2c0864fE84D1f56D6C3C33e31E00564425782", DexRecords.abi)
+    print("old owner:", dex_record.owner())
+    dex_record.transferOwnership(guardian_multisig, {"from": deployer})
+    print("new owner:", dex_record.owner())
+    print("----")
+
+    ## SwapsImplUniswapV3_ETH
+    univ3 = Contract.from_abi("SwapsImplUniswapV3_ETH", "0x7Ec3888aaF6Fe27E73742526c832e996Eb8fd7Fe", SwapsImplUniswapV3_ETH.abi)
+    print("old owner:", univ3.owner())
+    univ3.transferOwnership(guardian_multisig, {"from": deployer})
+    print("new owner:", univ3.owner())
+    print("----")
+
+    ## LoanTokenSettings
+    loanTokenSettings = Contract.from_abi("settings", address="0xe98dE80395972Ff6e32885F6a472b38436bE1716", abi=LoanTokenSettings.abi)
+    print("old owner:", loanTokenSettings.owner())
+    loanTokenSettings.transferOwnership(guardian_multisig, {"from": deployer})
+    print("new owner:", loanTokenSettings.owner())
+    print("----")
+
+    ## LoanTokenSettingsLowerAdmin
+    settngsLowerAdmin = Contract.from_abi("settngsLowerAdmin", address="0x46530E77a3ad47f432D1ad206fB8c44435932B91", abi=LoanTokenSettingsLowerAdmin.abi)
+    print("old owner:", settngsLowerAdmin.owner())
+    settngsLowerAdmin.transferOwnership(guardian_multisig, {"from": deployer})
+    print("new owner:", settngsLowerAdmin.owner())
+    print("----")
+
+    TOKEN_REGISTRY = Contract.from_abi("TOKEN_REGISTRY", "0x22a2208EeEDeb1E2156370Fd1c1c081355c68f2B", TokenRegistry.abi)
+    supportedTokenAssetsPairs = TOKEN_REGISTRY.getTokens(0, 100)
 
     for tokenAssetPairA in supportedTokenAssetsPairs:
-
         existingIToken = Contract.from_abi("existingIToken", address=tokenAssetPairA[0], abi=LoanToken.abi, owner=deployer)
         print("itoken", existingIToken.name(), tokenAssetPairA[0])
         print("old owner:", existingIToken.owner())
         existingIToken.transferOwnership(guardian_multisig, {"from": deployer})
         print("new owner:", existingIToken.owner())
         print("----")
-'''
