@@ -1,7 +1,7 @@
 import schedule
 import time
 
-deployer = accounts.load("0xF6c5B9c0B57590A5be6f16380D68eAC6fd9d0Fac")
+deployer = accounts.load("buyback")
 exec(open("./scripts/env/set-matic.py").read())
 buyback = Contract.from_abi("buyback","0x12ebd8263a54751aaf9d8c2c74740a8e62c0afbe",BuyBackAndBurn.abi)
 
