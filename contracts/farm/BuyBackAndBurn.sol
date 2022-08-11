@@ -69,7 +69,10 @@ contract BuyBackAndBurn is Upgradeable_0_8 {
         } else {
             (execPrice, balanceUsed, buyAmount) = _buyDebtToken(percentage); //uses partial
         }
-        if (block.timestamp >= counterForAllowance+timeDelta) unspentAllowance = setAllowance;
+        if (block.timestamp >= counterForAllowance+timeDelta) {
+            unspentAllowance = setAllowance;
+            counterForAllowance = block.timestamp;
+        }
         require(balanceUsed <= unspentAllowance, "too much spent");
         unspentAllowance -= balanceUsed;
         emit BuyBack(execPrice, balanceUsed, buyAmount);
