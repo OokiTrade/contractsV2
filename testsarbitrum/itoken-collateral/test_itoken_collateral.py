@@ -96,20 +96,26 @@ def PRICE_FEED(accounts, BZX, PriceFeeds):
 
 
 @pytest.fixture(scope="module")
-def iUSDT(accounts, LoanTokenLogicStandard, interface):
+def iUSDT(accounts, LoanTokenLogicStandard, interface, CurvedInterestRate, GUARDIAN_MULTISIG):
     itokenImpl = accounts[0].deploy(LoanTokenLogicStandard)
     itoken = Contract.from_abi("iUSDT", address="0xd103a2D544fC02481795b0B33eb21DE430f3eD23", abi=interface.IToken.abi)
     itoken.setTarget(itokenImpl, {"from": itoken.owner()})
     itoken.initializeDomainSeparator({"from": itoken.owner()})
+    cui = CurvedInterestRate.deploy({'from': GUARDIAN_MULTISIG})
+    cui.updateParams((120e18,80e18,100e18,100e18,110e18,0.1e18, 1e11), itoken)
+    itoken.setDemandCurve(cui, {'from': GUARDIAN_MULTISIG})
     return itoken
 
 
 @pytest.fixture(scope="module")
-def iUSDC(accounts, LoanTokenLogicStandard, interface):
+def iUSDC(accounts, LoanTokenLogicStandard, interface, CurvedInterestRate, GUARDIAN_MULTISIG):
     itokenImpl = accounts[0].deploy(LoanTokenLogicStandard)
     itoken = Contract.from_abi("iUSDC", address="0xEDa7f294844808B7C93EE524F990cA7792AC2aBd", abi=interface.IToken.abi)
     itoken.setTarget(itokenImpl, {"from": itoken.owner()})
     itoken.initializeDomainSeparator({"from": itoken.owner()})
+    cui = CurvedInterestRate.deploy({'from': GUARDIAN_MULTISIG})
+    cui.updateParams((120e18,80e18,100e18,100e18,110e18,0.1e18, 1e11), itoken)
+    itoken.setDemandCurve(cui, {'from': GUARDIAN_MULTISIG})
     return itoken
 
 @pytest.fixture(scope="module")
@@ -147,6 +153,7 @@ def test_case1(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULTI
     iToken.initialize(DAI, iTokenName, iTokenSymbol, {"from": GUARDIAN_MULTISIG})
     iToken.initializeDomainSeparator({"from": GUARDIAN_MULTISIG})
     cui = CurvedInterestRate.deploy({'from': GUARDIAN_MULTISIG})
+    cui.updateParams((120e18,80e18,100e18,100e18,110e18,0.1e18, 1e11), iToken)
     iToken.setDemandCurve(cui, {'from': GUARDIAN_MULTISIG})
 
     
@@ -162,7 +169,7 @@ def test_case1(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULTI
     # lend frax
     iDAI = Contract.from_abi("iDAI", address=iToken, abi=interface.IToken.abi)
     DAI.approve(iDAI, 2**256-1, {"from": accounts[0]})
-
+    
     iDAI.mint(accounts[0], 10000e18, {"from": accounts[0]})
 
     # borrow frax
@@ -224,6 +231,7 @@ def test_case2_1(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MUL
 
 # this checks that migrateLoanParamsList works for all
 def test_case4_1(BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULTISIG):
+    # assert False
     supportedTokenAssetsPairs = REGISTRY.getTokens(0, 100)
     for assetPair in supportedTokenAssetsPairs:
         BZX.migrateLoanParamsList(assetPair[0], 0, 100, {"from": GUARDIAN_MULTISIG})
@@ -339,23 +347,23 @@ def test_case7(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULTI
     BZX.modifyLoanParams([loanParam], {"from": GUARDIAN_MULTISIG})
     assert True
 
-def test_case8(BZX, USDC, USDT, iUSDT, iUSDC, HELPER, accounts, HelperProxy, HelperImpl, GUARDIAN_MULTISIG, LoanTokenLogicStandard, interface):
+# def test_case8(BZX, USDC, USDT, iUSDT, iUSDC, HELPER, accounts, HelperProxy, HelperImpl, GUARDIAN_MULTISIG, LoanTokenLogicStandard, interface):
     
-    helperImpl = HelperImpl.deploy({"from": accounts[0]})
+#     helperImpl = HelperImpl.deploy({"from": accounts[0]})
 
-    HELPER = Contract.from_abi("HELPER", "0xB8329B5458B1E493EFd8D9DA8C3B5E6D68e67C21", HelperProxy.abi)
-    HELPER.replaceImplementation(helperImpl, {"from": GUARDIAN_MULTISIG})
-    HELPER = Contract.from_abi("HELPER", "0xB8329B5458B1E493EFd8D9DA8C3B5E6D68e67C21", HelperImpl.abi)
-    borrowAmountForDeposit = iUSDC.getBorrowAmountForDeposit(1e6, 0, USDT)
+#     HELPER = Contract.from_abi("HELPER", "0xB8329B5458B1E493EFd8D9DA8C3B5E6D68e67C21", HelperProxy.abi)
+#     HELPER.replaceImplementation(helperImpl, {"from": GUARDIAN_MULTISIG})
+#     HELPER = Contract.from_abi("HELPER", "0xB8329B5458B1E493EFd8D9DA8C3B5E6D68e67C21", HelperImpl.abi)
+#     borrowAmountForDeposit = iUSDC.getBorrowAmountForDeposit(1e6, 0, USDT)
     
-    itokenImpl = accounts[0].deploy(LoanTokenLogicStandard)
-    itoken = Contract.from_abi("iUSDC", address=iUSDC, abi=interface.IToken.abi)
-    itoken.setTarget(itokenImpl, {"from": itoken.owner()})
-    itoken.initializeDomainSeparator({"from": itoken.owner()})
+#     itokenImpl = accounts[0].deploy(LoanTokenLogicStandard)
+#     itoken = Contract.from_abi("iUSDC", address=iUSDC, abi=interface.IToken.abi)
+#     itoken.setTarget(itokenImpl, {"from": itoken.owner()})
+#     itoken.initializeDomainSeparator({"from": itoken.owner()})
 
-    BZX.migrateLoanParamsList(iUSDC, 0, 100, {"from": BZX.owner()})
-    borrowAmountForDepositAfter = HELPER.getBorrowAmountForDeposit(1e6, USDC, USDT)
-    assert borrowAmountForDeposit == borrowAmountForDepositAfter
+#     BZX.migrateLoanParamsList(iUSDC, 0, 100, {"from": BZX.owner()})
+#     borrowAmountForDepositAfter = HELPER.getBorrowAmountForDeposit(1e6, USDC, USDT)
+#     assert borrowAmountForDeposit == borrowAmountForDepositAfter
 
 def test_case11(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULTISIG, FRAX, LoanTokenLogicStandard, LoanToken, CurvedInterestRate, PriceFeeds, PRICE_FEED, interface, PriceFeedIToken):
     USDC.transfer(accounts[0], 100000e6, {"from": "0x1714400ff23db4af24f9fd64e7039e6597f18c2b"})
@@ -458,7 +466,7 @@ def test_case14(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULT
     p = Permit(iUSDC.name(), chain.id, iUSDT, local, iUSDT, int(100e6), local.nonce, chain.time()+1000, iUSDC.DOMAIN_SEPARATOR())
     signed_permit = p.sign_message(local)
     payload = encode_abi(['address', 'address', 'uint', 'uint', 'uint8', 'bytes32', 'bytes32'],[p.owner, p.spender, p.value, p.deadline, signed_permit.v, HexBytes(signed_permit.r), HexBytes(signed_permit.s)])
-    loanDataBytes = encode_abi(['uint128','bytes[]'], [16, [payload]]) #flag value WITH_PERMIT = 16
+    loanDataBytes = encode_abi(['uint128','bytes[]'], [16, [b'',b'',payload]]) #flag value WITH_PERMIT = 16
     
     # iUSDT.permit(p.owner, p.spender, p.value, p.deadline, signed_permit.v, signed_permit.r, signed_permit.s, {"from": local})
 
