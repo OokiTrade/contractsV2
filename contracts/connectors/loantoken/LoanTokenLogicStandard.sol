@@ -25,10 +25,10 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
 
     uint256 public constant VERSION = 8;
 
-    // address internal constant arbitraryCaller = 0x000F400e6818158D541C3EBE45FE3AA0d47372FF; // mainnet
+    address internal constant arbitraryCaller = 0x000F400e6818158D541C3EBE45FE3AA0d47372FF; // mainnet
     // address internal constant arbitraryCaller = 0x81e7dddFAD37E6FAb0eccE95f0B508fd40996e6d; // bsc
     // address internal constant arbitraryCaller = 0x81e7dddFAD37E6FAb0eccE95f0B508fd40996e6d; // polygon
-    address internal constant arbitraryCaller = 0x01207468F48822f8535BC96D1Cf18EddDE4A2392; // arbitrum
+    // address internal constant arbitraryCaller = 0x01207468F48822f8535BC96D1Cf18EddDE4A2392; // arbitrum
     // address internal constant arbitraryCaller = 0xcbdF21de4D0aD99Ae02aAdfEd51CdA4C6c4714D9; // evmos
     // address internal constant arbitraryCaller = 0x8150F58218120AB900105C7cDBf0F12061D94441; // optimism
 
@@ -198,6 +198,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         return _borrow(
             loanId,
             withdrawAmount,
+            0,
             collateralTokenSent,
             collateralTokenAddress,
             borrower,
@@ -432,6 +433,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     function _borrow(
         bytes32 loanId,                 // 0 if new loan
         uint256 withdrawAmount,
+        uint256 initialLoanDuration,    // duration in seconds
         uint256 collateralTokenSent,    // if 0, loanId must be provided; any ETH sent must equal this value
         address collateralTokenAddress, // if address(0), this means ETH and ETH must be sent with the call or loanId must be provided
         address borrower,
@@ -711,13 +713,13 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
                 _safeTransfer(collateralTokenAddress, bZxContract, collateralTokenSent, "28");
                 msgValue -= collateralTokenSent;
             } else {
-                _checkPermit(collateralTokenAddress, loanDataBytes);
+                loanDataBytes = _checkPermit(collateralTokenAddress, loanDataBytes);
                 _safeTransferFrom(collateralTokenAddress, msg.sender, bZxContract, collateralTokenSent, "28");
             }
         }
 
         if (loanTokenSent != 0) {
-            _checkPermit(_loanTokenAddress, loanDataBytes);
+            loanDataBytes = _checkPermit(_loanTokenAddress, loanDataBytes);
             _safeTransferFrom(_loanTokenAddress, msg.sender, bZxContract, loanTokenSent, "29");
         }
     }
