@@ -631,7 +631,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
 
         
         // handle transfers prior to adding newPrincipal to loanTokenSent
-        uint256 msgValue = _verifyTransfers(
+        (uint256 msgValue, bytes memory loanDataBytes) = _verifyTransfers(
             collateralTokenAddress,
             sentAddresses,
             sentAmounts,
@@ -685,7 +685,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         uint256 withdrawalAmount,
         bytes memory loanDataBytes)
         internal
-        returns (uint256 msgValue)
+        returns (uint256 msgValue, bytes memory)
     {
         address _wethToken = wethToken;
         address _loanTokenAddress = loanTokenAddress;
@@ -722,6 +722,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
             loanDataBytes = _checkPermit(_loanTokenAddress, loanDataBytes);
             _safeTransferFrom(_loanTokenAddress, msg.sender, bZxContract, loanTokenSent, "29");
         }
+        return (msgValue, loanDataBytes);
     }
 
     function _safeTransfer(
