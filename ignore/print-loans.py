@@ -25,8 +25,12 @@ for l in loans:
 print("name collateralAddress collateralAmount BZXBalance, diff")
 for t in totalCollateral:
     underlying = Contract.from_abi("a", address=t, abi=interface.ERC20.abi)
-    symbol = underlying.symbol()
-    
+    if underlying == "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2":
+        # print("underlying", underlying)
+        symbol = "MKR"
+    else:
+        symbol = underlying.symbol()
+        
     bzxBalance = underlying.balanceOf(BZX)
     diff = bzxBalance - totalCollateral[t]
     print(symbol, t, totalCollateral[t], bzxBalance, diff)
@@ -35,7 +39,11 @@ print("lending")
 print("name collateralAddress held paid")
 for t in totalCollateral:
     underlying = Contract.from_abi("a", address=t, abi=interface.ERC20.abi)
-    symbol = underlying.symbol()
+    if underlying == "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2":
+        # print("underlying", underlying)
+        symbol = "MKR"
+    else:
+        symbol = underlying.symbol()
     held = BZX.lendingFeeTokensHeld(underlying)
     paid = BZX.lendingFeeTokensPaid(underlying)
     
@@ -46,7 +54,12 @@ print("borrowing")
 print("name collateralAddress held paid")
 for t in totalCollateral:
     underlying = Contract.from_abi("a", address=t, abi=interface.ERC20.abi)
-    symbol = underlying.symbol()
+    if underlying == "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2":
+        # print("underlying", underlying)
+        symbol = "MKR"
+    else:
+        symbol = underlying.symbol()
+        
     held = BZX.borrowingFeeTokensHeld(underlying)
     paid = BZX.borrowingFeeTokensPaid(underlying)
     
@@ -57,7 +70,12 @@ print("trading")
 print("name collateralAddress held paid")
 for t in totalCollateral:
     underlying = Contract.from_abi("a", address=t, abi=interface.ERC20.abi)
-    symbol = underlying.symbol()
+    if underlying == "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2":
+        # print("underlying", underlying)
+        symbol = "MKR"
+    else:
+        symbol = underlying.symbol()
+        
     held = BZX.tradingFeeTokensHeld(underlying)
     paid = BZX.tradingFeeTokensPaid(underlying)
     
