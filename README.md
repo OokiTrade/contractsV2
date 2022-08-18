@@ -1,12 +1,12 @@
 <br/>
-<p align="center"><img src="https://ooki.com/favicon_96x96.png" width="256" /></p>
+<p align="center"><img src="https://user-images.githubusercontent.com/1526150/185404709-25820340-18e6-4dd6-b0f8-05a1b91ba803.png" width="256" /></p>
 
 <div align="center">
 
   <a href='' style="text-decoration:none;">
     <img src='https://img.shields.io/coveralls/github/OokiTrade/contractsV2' alt='Coverage Status' />
   </a>
-  <a href='https://github.com/OokiTrade/blob/master/LICENSE' style="text-decoration:none;">
+  <a href='https://github.com/OokiTrade/contractsV2/blob/development/LICENSE' style="text-decoration:none;">
     <img src='https://img.shields.io/github/license/OokiTrade/contractsV2' alt='License' />
   </a>
   <a href='https://docs.openzeppelin.com/' style="text-decoration:none;">
