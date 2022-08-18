@@ -3,9 +3,9 @@
 
 <div align="center">
 
-  <a href='' style="text-decoration:none;">
+  <!-- <a href='' style="text-decoration:none;">
     <img src='https://img.shields.io/coveralls/github/OokiTrade/contractsV2' alt='Coverage Status' />
-  </a>
+  </a> -->
   <a href='https://github.com/OokiTrade/contractsV2/blob/development/LICENSE' style="text-decoration:none;">
     <img src='https://img.shields.io/github/license/OokiTrade/contractsV2' alt='License' />
   </a>
@@ -25,7 +25,7 @@
   
 </div>
 
-# OOKI v2.0 Smart Contracts
+# OOKI Smart Contracts
 
 ## Dependencies
 
