@@ -8,7 +8,7 @@ pragma experimental ABIEncoderV2;
 
 import "./StakingState.sol";
 import "./StakingConstants.sol";
-import "../farm/interfaces/IMasterChefSushi.sol";
+import "../interfaces/IMasterChefSushi.sol";
 import "../governance/PausableGuardian.sol";
 import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 
