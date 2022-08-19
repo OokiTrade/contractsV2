@@ -295,7 +295,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
         address destToken,
         uint256 tokenAmount,
         bytes memory payload,
-        bool isAmountOut
+        bool isGetAmountOut
     ) internal returns (uint256 expectedReturn) {
         
         uint256 tradingFee = _getTradingFee(tokenAmount);
@@ -323,7 +323,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
             }
         }
         if (tradingFee != 0) {
-            if (isAmountOut) {
+            if (isGetAmountOut) {
                 tokenAmount = tokenAmount.sub(tradingFee);
             } else {
                 tokenAmount = tokenAmount.add(tradingFee);
@@ -335,7 +335,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
             dexNumber
         );
 
-        if (isAmountOut) {
+        if (isGetAmountOut) {
             (expectedReturn, ) = ISwapsImpl(swapImplAddress).dexAmountOutFormatted(
                 dataToSend,
                 tokenAmount

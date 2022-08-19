@@ -118,7 +118,7 @@ contract SwapsExternal is State, VaultController, SwapsUser, PausableGuardian {
         address destToken,
         uint256 tokenAmount,
         bytes calldata payload,
-        bool isAmountIn)
+        bool isGetAmountOut)
         external
         returns (uint256)
     {
@@ -128,7 +128,7 @@ contract SwapsExternal is State, VaultController, SwapsUser, PausableGuardian {
             destToken,
             tokenAmount,
             payload,
-            isAmountIn
+            isGetAmountOut
         );
     }
 }
