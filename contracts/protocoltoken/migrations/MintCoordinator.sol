@@ -5,8 +5,8 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin-4.3.2/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin-4.3.2/access/Ownable.sol";
+import "@openzeppelin-4.7.0/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin-4.7.0/access/Ownable.sol";
 import "../OokiToken.sol";
  
 contract MintCoordinator is Ownable {
