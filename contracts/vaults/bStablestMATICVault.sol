@@ -5,6 +5,7 @@ import "@openzeppelin-4.7.0/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin-4.7.0/token/ERC20/ERC20.sol";
 import "../interfaces/IBalancerGauge.sol";
 import "../interfaces/IBalancerVault.sol";
+import "../interfaces/IBalancerPool.sol";
 import "../../interfaces/IPriceFeeds.sol";
 contract bStablestMATICVault is ERC20, IVault {
     using SafeERC20 for IERC20;
@@ -148,7 +149,7 @@ contract bStablestMATICVault is ERC20, IVault {
         address[] memory addrs = new address[](2);
         addrs[0] = WMATIC;
         addrs[1] = STMATIC;
-        uint256 rateForConversion = IBalancerVault(asset).getRate();
+        uint256 rateForConversion = IBalancerPool(asset).getRate();
         if (rateForConversion > 102e16 || rateForConversion < 98e16) return; //silently fail if rate from reference rate is > 2% difference. Acts as manipulation protection
         minAmountOut = IPriceFeeds(priceFeed).queryReturn(WMATIC, asset, swapReceived)*985/1000;
         IBalancerVault.JoinPoolRequest memory req = IBalancerVault.JoinPoolRequest({
