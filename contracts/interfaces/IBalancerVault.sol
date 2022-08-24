@@ -1,4 +1,5 @@
-pragma solidity ^0.8.0;
+pragma solidity >=0.5.17 <0.9.0;
+pragma experimental ABIEncoderV2;
 
 interface IBalancerVault {
 
@@ -6,7 +7,7 @@ interface IBalancerVault {
         bytes32 poolId,
         address sender,
         address recipient,
-        JoinPoolRequest memory request
+        JoinPoolRequest calldata request
     ) external payable;
 
     struct JoinPoolRequest {
@@ -17,8 +18,8 @@ interface IBalancerVault {
     }
 
     function swap(
-        SingleSwap memory singleSwap,
-        FundManagement memory funds,
+        SingleSwap calldata singleSwap,
+        FundManagement calldata funds,
         uint256 limit,
         uint256 deadline
     ) external payable returns (uint256);
@@ -33,6 +34,29 @@ interface IBalancerVault {
         uint256 amount;
         bytes userData;
     }
+
+    struct BatchSwapStep {
+        bytes32 poolId;
+        uint256 assetInIndex;
+        uint256 assetOutIndex;
+        uint256 amount;
+        bytes userData;
+    }
+
+    function batchSwap(
+        SwapKind kind,
+        BatchSwapStep[] calldata swaps,
+        address[] calldata assets,
+        FundManagement calldata funds,
+        int256[] calldata limits,
+        uint256 deadline
+    ) external returns (int256[] memory assetDeltas);
+
+    function queryBatchSwap(SwapKind kind,
+        BatchSwapStep[] calldata swaps,
+        address[] calldata assets,
+        FundManagement calldata funds
+    ) external returns (int256[] memory assetDeltas);
 
     struct FundManagement {
         address sender;

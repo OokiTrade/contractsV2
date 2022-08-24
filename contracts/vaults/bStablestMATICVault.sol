@@ -148,7 +148,7 @@ contract bStablestMATICVault is ERC20, IVault {
         address[] memory addrs = new address[](2);
         addrs[0] = WMATIC;
         addrs[1] = STMATIC;
-        uint256 rateForConversion = IBalancerVault(_vault).getRate();
+        uint256 rateForConversion = IBalancerVault(asset).getRate();
         if (rateForConversion > 102e16 || rateForConversion < 98e16) return; //silently fail if rate from reference rate is > 2% difference. Acts as manipulation protection
         minAmountOut = IPriceFeeds(priceFeed).queryReturn(WMATIC, asset, swapReceived)*985/1000;
         IBalancerVault.JoinPoolRequest memory req = IBalancerVault.JoinPoolRequest({
