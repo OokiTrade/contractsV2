@@ -6,6 +6,9 @@ deployer = accounts[0]
 price_feed_old = PRICE_FEED
 
 price_feed_new = PriceFeeds.deploy({"from": deployer})
+# <PriceFeeds Contract '0x392b7Baf9dBf56a0AcA52f0Ba8bC1D7451Ef8A4A'>
+# <PriceFeeds Contract '0xcBC774c564f84eb6F5A388f97a2F447cC6F26791'>
+# price_feed_new = PriceFeeds.at("0x392b7Baf9dBf56a0AcA52f0Ba8bC1D7451Ef8A4A")
 
 supportedTokenAssetsPairs = TOKEN_REGISTRY.getTokens(0, 100)
 tokens = []
