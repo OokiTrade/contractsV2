@@ -26,4 +26,4 @@ price_feed_new.changeGuardian(GUARDIAN_MULTISIG, {"from": deployer})
 price_feed_new.transferOwnership(GUARDIAN_MULTISIG, {"from": deployer})
 
 
-# BZX.setPriceFeedContract(price_feed_new, {"from": GUARDIAN_MULTISIG})
+BZX.setPriceFeedContract(price_feed_new, {"from": GUARDIAN_MULTISIG})
