@@ -43,7 +43,8 @@ USDC.transfer(accounts[0], 100000e6, {"from": "0x1714400ff23db4af24f9fd64e7039e6
 USDC.approve(iUSDC, 2**256-1, {"from": accounts[0]})
 iUSDC.mint(accounts[0], 10000e6, {"from": accounts[0]})
 
-BZX.setSupportedTokens([iUSDC], [True], True, {'from': GUARDIAN_MULTISIG})
+iTokens = [item[0] for item in TOKEN_REGISTRY.getTokens(0, 100)]
+BZX.setSupportedTokens(iTokens, [True] * len(iTokens), True, {'from': GUARDIAN_MULTISIG})
 
 iUSDC.approve(iUSDT, 2**256-1, {"from": accounts[0]})
 iUSDT.borrow("", 50e6, 0, 100e6, iUSDC, accounts[0], accounts[0], b"", {'from': accounts[0]})
