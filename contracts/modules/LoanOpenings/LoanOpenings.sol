@@ -92,7 +92,11 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         require(supportedTokens[newCollateralToken], "unsupported");
         Loan storage loanLocal = loans[loanId];
         require(loanLocal.active, "loan is closed");
-
+        require(
+            msg.sender == loanLocal.borrower ||
+            delegatedManagers[loanLocal.id][msg.sender],
+            "unauthorized"
+        );
         LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
         address loanToken = loanParamsLocal.loanToken;
