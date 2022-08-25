@@ -24,6 +24,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         _setTarget(this.generateLoanParamId.selector, target);
         _setTarget(this.getDefaultLoanParams.selector, target);
         _setTarget(this.getRequiredCollateral.selector, target);
+        _setTarget(this.swapLoanCollateral.selector, target);
     }
 
     // Note: Only callable by loan pools (iTokens)
@@ -79,6 +80,51 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
             loanParams[loanParamsLocal.id] = loanParamsLocal;
         }
     }
+
+    function swapLoanCollateral(
+        bytes32 loanId,
+        address newCollateralToken,
+        bytes calldata loanDataBytes)
+        external
+        nonReentrant
+        pausable
+    {
+        require(supportedTokens[newCollateralToken], "unsupported");
+        Loan storage loanLocal = loans[loanId];
+        require(loanLocal.active, "loan is closed");
+
+        LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
+
+        address loanToken = loanParamsLocal.loanToken;
+        address oldCollateralToken = loanParamsLocal.collateralToken;
+        require(loanLocal.loanParamsId == keccak256(abi.encodePacked(loanToken, oldCollateralToken, true)), "not torque");
+        require(loanToken != newCollateralToken, "not allowed");
+        LoanParams memory params = getDefaultLoanParamsAndStore(loanToken, newCollateralToken, true);
+        loanLocal.loanParamsId = params.id;
+
+        (loanLocal.collateral,, ) = _loanSwap(
+            loanId,
+            oldCollateralToken,
+            newCollateralToken,
+            loanLocal.borrower,
+            loanLocal.collateral,
+            0,
+            0,
+            false,
+            loanDataBytes
+        );
+
+        (uint256 initialMargin, uint256 collateralToLoanRate) = IPriceFeeds(priceFeeds).getCurrentMargin(
+            loanToken,
+            newCollateralToken,
+            loanLocal.principal,
+            loanLocal.collateral
+        );
+        require(initialMargin > params.maintenanceMargin, "unhealthy position");
+
+        emit LoanCollateralSwap(loanLocal.borrower, loanId, oldCollateralToken, newCollateralToken, loanLocal.collateral, collateralToLoanRate, initialMargin);
+    }
+
     // collateralToken is passed from the iToken and there it guarantees no invalid value can be passed
     function getDefaultLoanParams(
         address loanToken,

@@ -319,6 +319,12 @@ interface IBZx {
         bytes calldata loanDataBytes
     ) external payable returns (LoanOpenData memory);
 
+    function swapLoanCollateral(
+        bytes32 loanId,
+        address newCollateralToken,
+        bytes calldata loanDataBytes
+    ) external;
+
     /// @dev sets/disables/enables the delegated manager for the loan
     /// @param loanId id of the loan
     /// @param delegated delegated manager address
