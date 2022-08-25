@@ -1,4 +1,5 @@
 pragma solidity 0.5.17;
+pragma experimental ABIEncoderV2;
 
 import "../../core/State.sol";
 import "../ISwapsImpl.sol";
@@ -88,8 +89,8 @@ contract SwapsImplstMATICVault_POLYGON is State, ISwapsImpl {
         returns (uint256 amountOut, address midToken)
     {
         if (amountIn != 0) {
-            (uint256 limiter) = abi.decode(payload, (uint256));
-            if (srcToken == WMATIC) {
+            (uint256 limiter, address sourceToken) = abi.decode(payload, (uint256, address));
+            if (sourceToken == WMATIC) {
                 uint256 joinKind = 1;
                 uint256[] memory values = new uint256[](2);
                 values[0] = amountIn;
@@ -97,7 +98,7 @@ contract SwapsImplstMATICVault_POLYGON is State, ISwapsImpl {
                 address[] memory addrs = new address[](2);
                 addrs[0] = WMATIC;
                 addrs[1] = STMATIC;
-                IBalancerVault.JoinPoolRequest memory req = IBalancerVault.JoinPoolRequest({
+                IBalancerHelpers.JoinPoolRequest memory req = IBalancerHelpers.JoinPoolRequest({
                     assets: addrs,
                     maxAmountsIn: values,
                     userData: abi.encode(joinKind, values, limiter),
@@ -114,13 +115,13 @@ contract SwapsImplstMATICVault_POLYGON is State, ISwapsImpl {
                 address[] memory addrs = new address[](2);
                 addrs[0] = WMATIC;
                 addrs[1] = STMATIC;
-                IBalancerVault.ExitPoolRequest memory req = IBalancerVault.ExitPoolRequest({
+                IBalancerHelpers.ExitPoolRequest memory req = IBalancerHelpers.ExitPoolRequest({
                     assets: addrs,
                     minAmountsOut: values,
                     userData: abi.encode(exitKind, amountIn, 0),
-                    fromInternalBalance: false
+                    toInternalBalance: false
                 });
-                (, uint256[] memory amountsOut) = HELPER.queryJoin(poolId, address(this), address(this), req);
+                (, uint256[] memory amountsOut) = HELPER.queryExit(poolId, address(this), address(this), req);
                 amountOut = amountsOut[0];
             }
         }
@@ -185,9 +186,9 @@ contract SwapsImplstMATICVault_POLYGON is State, ISwapsImpl {
             "required dest token amount unsupported"
         );
         sourceTokenAmountUsed = minSourceTokenAmount;
+        address _thisAddress = address(this);
         if (sourceTokenAddress == WMATIC) {
             (uint256 minAmountOut) = abi.decode(payload, (uint256));
-            uint256 joinKind = 1;
             uint256[] memory values = new uint256[](2);
             values[0] = minSourceTokenAmount;
             values[1] = 0;
@@ -197,17 +198,16 @@ contract SwapsImplstMATICVault_POLYGON is State, ISwapsImpl {
             IBalancerVault.JoinPoolRequest memory req = IBalancerVault.JoinPoolRequest({
                 assets: addrs,
                 maxAmountsIn: values,
-                userData: abi.encode(joinKind, values, minAmountOut),
+                userData: abi.encode(1, values, minAmountOut),
                 fromInternalBalance: false
             });
-            uint256 prevBal = IERC20(ASSET).balanceOf(address(this));
-            IBalancerVault(_vault).joinPool(poolId, address(this), address(this), req);
-            destTokenAmountReceived = VAULT.deposit(IERC20(ASSET).balanceOf(address(this))-prevBal, receiverAddress);
+            destTokenAmountReceived = IERC20(ASSET).balanceOf(_thisAddress);
+            IBalancerVault(_vault).joinPool(poolId, _thisAddress, _thisAddress, req);
+            destTokenAmountReceived = VAULT.deposit(IERC20(ASSET).balanceOf(_thisAddress)-destTokenAmountReceived, receiverAddress);
 
         } else {
-            minSourceTokenAmount = VAULT.redeem(minSourceTokenAmount, address(this));
+            minSourceTokenAmount = VAULT.redeem(minSourceTokenAmount, _thisAddress);
             (uint256 minAmountOut) = abi.decode(payload, (uint256));
-            uint256 exitKind = 0;
             uint256[] memory values = new uint256[](2);
             values[0] = minAmountOut;
             values[1] = 0;
@@ -217,12 +217,12 @@ contract SwapsImplstMATICVault_POLYGON is State, ISwapsImpl {
             IBalancerVault.ExitPoolRequest memory req = IBalancerVault.ExitPoolRequest({
                 assets: addrs,
                 minAmountsOut: values,
-                userData: abi.encode(exitKind, minSourceTokenAmount, 0),
-                fromInternalBalance: false
+                userData: abi.encode(0, minSourceTokenAmount, 0),
+                toInternalBalance: false
             });
-            uint256 prevBal = IERC20(WMATIC).balanceOf(receiverAddress);
-            IBalancerVault(_vault).exitPool(poolId, address(this), address(uint160(receiverAddress)), req);
-            destTokenAmountReceived = IERC20(WMATIC).balanceOf(receiverAddress)-prevBal;
+            destTokenAmountReceived = IERC20(WMATIC).balanceOf(receiverAddress);
+            IBalancerVault(_vault).exitPool(poolId, _thisAddress, address(uint160(receiverAddress)), req);
+            destTokenAmountReceived = IERC20(WMATIC).balanceOf(receiverAddress)-destTokenAmountReceived;
         }
     }
 }
