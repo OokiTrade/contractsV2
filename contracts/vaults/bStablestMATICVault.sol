@@ -24,10 +24,25 @@ contract bStablestMATICVault is ERC20, IVault {
     bytes32 public constant POOLID = 0xaf5e0b5425de1f5a630a8cb5aa9d97b8141c908d000200000000000000000366;
     address public constant WMATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
     address public constant STMATIC = 0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4;
+    address public constant USDC = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
 
     bytes32 public constant POOLIDSWAP = 0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002;
 
     address public constant PRICEFEED = 0x600F8E7B10CF6DA18871Ff79e4A61B13caCEd9BC;
+
+    IBalancerVault.FundManagement internal _funds = IBalancerVault.FundManagement({
+        sender: address(this),
+        fromInternalBalance: false,
+        recipient: payable(address(uint160(address(this)))),
+        toInternalBalance: false
+    });
+
+    IBalancerVault.FundManagement internal _feeFunds = IBalancerVault.FundManagement({
+        sender: address(this),
+        fromInternalBalance: false,
+        recipient: payable(0x8c02eDeE0c759df83e31861d11E6918Dd93427d2), //fee distributor
+        toInternalBalance: false
+    });
 
     constructor () ERC20("bStable-stMATIC/MATIC-Vault", "OVault") {}
 
@@ -131,6 +146,8 @@ contract bStablestMATICVault is ERC20, IVault {
         IBalancerGauge(_bStableGauge).claim_rewards();
         if (tokensClaimed == 0) return;
         bytes memory blank;
+        uint256 feeAmount = tokensClaimed/10;
+        tokensClaimed -= feeAmount;
         IBalancerVault.SingleSwap memory swapParams = IBalancerVault.SingleSwap({
             poolId: POOLIDSWAP,
             kind: IBalancerVault.SwapKind.GIVEN_IN,
@@ -139,14 +156,19 @@ contract bStablestMATICVault is ERC20, IVault {
             amount: tokensClaimed,
             userData: blank
         });
-        IBalancerVault.FundManagement memory funds = IBalancerVault.FundManagement({
-            sender: address(this),
-            fromInternalBalance: false,
-            recipient: payable(address(uint160(address(this)))),
-            toInternalBalance: false
-        });
+
         uint256 minAmountOut = IPriceFeeds(PRICEFEED).queryReturn(BAL, WMATIC, tokensClaimed)*985/1000;
-        uint256 swapReceived = IBalancerVault(_vault).swap(swapParams, funds, minAmountOut, block.timestamp);
+        uint256 swapReceived = IBalancerVault(_vault).swap(swapParams, _funds, minAmountOut, block.timestamp);
+        swapParams = IBalancerVault.SingleSwap({
+            poolId: POOLIDSWAP,
+            kind: IBalancerVault.SwapKind.GIVEN_IN,
+            assetIn: BAL,
+            assetOut: USDC,
+            amount: feeAmount,
+            userData: blank
+        });
+        minAmountOut =  IPriceFeeds(PRICEFEED).queryReturn(BAL, USDC, feeAmount)*985/1000;
+        IBalancerVault(_vault).swap(swapParams, _feeFunds, minAmountOut, block.timestamp);
         uint256 joinKind = 1;
         uint256[] memory values = new uint256[](2);
         values[0] = swapReceived;

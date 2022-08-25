@@ -208,10 +208,10 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
                     minSourceTokenAmount = minSourceTokenAmount.add(swapParams[i].amount);
                 }
             }
-            if (requiredDestTokenAmount > minSourceTokenAmount) {
-                swapParams[swapParams.length-1].amount = swapParams[swapParams.length-1].amount.sub(requiredDestTokenAmount-minSourceTokenAmount);
-            } else if (requiredDestTokenAmount < minSourceTokenAmount) {
-                swapParams[swapParams.length-1].amount += minSourceTokenAmount - requiredDestTokenAmount;
+            if (requiredDestTokenAmount < minSourceTokenAmount) {
+                swapParams[swapParams.length-1].amount = swapParams[swapParams.length-1].amount.sub(minSourceTokenAmount-requiredDestTokenAmount);
+            } else if (requiredDestTokenAmount > minSourceTokenAmount) {
+                swapParams[swapParams.length-1].amount += requiredDestTokenAmount - minSourceTokenAmount;
             }
             IBalancerVault.FundManagement memory funds = IBalancerVault.FundManagement({
                 sender: address(this),
