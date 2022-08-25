@@ -98,8 +98,9 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
 
             if (!isTorqueLoan) {
                 loanParamsLocal.maxLoanTerm = 2419200; // this number makes sure we don't break existing logic as this was previosly used for fulcrum
-            // loanParamsLocal.maxLoanTerm = 0; // ZERO is the default just because its torque
-            
+            }
+            //else loanParamsLocal.maxLoanTerm = 0; // ZERO is the default just because its torque
+
             return (loanParamsLocal, true);
 
         } else {
