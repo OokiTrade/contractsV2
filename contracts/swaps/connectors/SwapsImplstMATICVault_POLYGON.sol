@@ -10,7 +10,7 @@ import "../../interfaces/IBalancerHelpers.sol";
 interface IVault {
     function deposit(uint256 assets, address receiver) external returns (uint256 shares);
 
-    function redeem(uint256 shares, address receiver) external returns (uint256 assets);
+    function redeem(uint256 shares, address receiver, address owner) external returns (uint256 assets);
 
     function convertAssetsToShares(uint256 assets, address receiver) external view returns (uint256 shares);
 
@@ -25,7 +25,7 @@ contract SwapsImplstMATICVault_POLYGON is State, ISwapsImpl {
 
     address internal constant _vault = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
 
-    bytes32 public constant poolId = 0xaf5e0b5425de1f5a630a8cb5aa9d97b8141c908d000200000000000000000366;
+    bytes32 public constant POOLID = 0xaf5e0b5425de1f5a630a8cb5aa9d97b8141c908d000200000000000000000366;
 
     IBalancerHelpers public constant HELPER = IBalancerHelpers(0x239e55F427D44C3cc793f49bFB507ebe76638a2b);
 
@@ -104,7 +104,7 @@ contract SwapsImplstMATICVault_POLYGON is State, ISwapsImpl {
                     userData: abi.encode(joinKind, values, limiter),
                     fromInternalBalance: false
                 });
-                (amountOut, ) = HELPER.queryJoin(poolId, address(this), address(this), req);
+                (amountOut, ) = HELPER.queryJoin(POOLID, address(this), address(this), req);
                 amountOut = VAULT.convertAssetsToShares(amountOut, address(this));
             } else {
                 amountIn = VAULT.convertSharesToAssets(amountIn, address(this));
@@ -121,7 +121,7 @@ contract SwapsImplstMATICVault_POLYGON is State, ISwapsImpl {
                     userData: abi.encode(exitKind, amountIn, 0),
                     toInternalBalance: false
                 });
-                (, uint256[] memory amountsOut) = HELPER.queryExit(poolId, address(this), address(this), req);
+                (, uint256[] memory amountsOut) = HELPER.queryExit(POOLID, address(this), address(this), req);
                 amountOut = amountsOut[0];
             }
         }
@@ -202,11 +202,11 @@ contract SwapsImplstMATICVault_POLYGON is State, ISwapsImpl {
                 fromInternalBalance: false
             });
             destTokenAmountReceived = IERC20(ASSET).balanceOf(_thisAddress);
-            IBalancerVault(_vault).joinPool(poolId, _thisAddress, _thisAddress, req);
+            IBalancerVault(_vault).joinPool(POOLID, _thisAddress, _thisAddress, req);
             destTokenAmountReceived = VAULT.deposit(IERC20(ASSET).balanceOf(_thisAddress)-destTokenAmountReceived, receiverAddress);
 
         } else {
-            minSourceTokenAmount = VAULT.redeem(minSourceTokenAmount, _thisAddress);
+            minSourceTokenAmount = VAULT.redeem(minSourceTokenAmount, _thisAddress, _thisAddress);
             (uint256 minAmountOut) = abi.decode(payload, (uint256));
             uint256[] memory values = new uint256[](2);
             values[0] = minAmountOut;
@@ -221,7 +221,7 @@ contract SwapsImplstMATICVault_POLYGON is State, ISwapsImpl {
                 toInternalBalance: false
             });
             destTokenAmountReceived = IERC20(WMATIC).balanceOf(receiverAddress);
-            IBalancerVault(_vault).exitPool(poolId, _thisAddress, address(uint160(receiverAddress)), req);
+            IBalancerVault(_vault).exitPool(POOLID, _thisAddress, address(uint160(receiverAddress)), req);
             destTokenAmountReceived = IERC20(WMATIC).balanceOf(receiverAddress)-destTokenAmountReceived;
         }
     }
