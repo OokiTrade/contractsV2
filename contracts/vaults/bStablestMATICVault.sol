@@ -9,24 +9,25 @@ import "../interfaces/IBalancerPool.sol";
 import "../../interfaces/IPriceFeeds.sol";
 contract bStablestMATICVault is ERC20, IVault {
     using SafeERC20 for IERC20;
-    address public constant asset = 0xaF5E0B5425dE1F5a630A8cB5AA9D97B8141C908D;
 
     uint256 public totalAssets;
+
+    uint256 internal _sharePrice = 1e18;
+
+    address public constant asset = 0xaF5E0B5425dE1F5a630A8cB5AA9D97B8141C908D;
 
     address internal constant _bStableGauge = 0x9928340f9E1aaAd7dF1D95E27bd9A5c715202a56;
     address internal constant _vault = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
 
-    address public constant BAL = 0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3;
+    address public constant BAL = 0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3; 
 
-    uint256 internal _sharePrice = 1e18;
-
-    bytes32 public constant poolId = 0xaf5e0b5425de1f5a630a8cb5aa9d97b8141c908d000200000000000000000366;
+    bytes32 public constant POOLID = 0xaf5e0b5425de1f5a630a8cb5aa9d97b8141c908d000200000000000000000366;
     address public constant WMATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
     address public constant STMATIC = 0x3A58a54C066FdC0f2D55FC9C89F0415C92eBf3C4;
 
-    bytes32 public constant poolIdSwap = 0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002;
+    bytes32 public constant POOLIDSWAP = 0x0297e37f1873d2dab4487aa67cd56b58e2f27875000100000000000000000002;
 
-    address public constant priceFeed = 0x600F8E7B10CF6DA18871Ff79e4A61B13caCEd9BC;
+    address public constant PRICEFEED = 0x600F8E7B10CF6DA18871Ff79e4A61B13caCEd9BC;
 
     constructor () ERC20("bStable-stMATIC/MATIC-Vault", "OVault") {}
 
@@ -127,9 +128,11 @@ contract bStablestMATICVault is ERC20, IVault {
         uint256 rateForConversion = IBalancerPool(asset).getRate();
         if (rateForConversion > 102e16 || rateForConversion < 98e16) return; //silently return if rate from reference rate is > 2% difference. Acts as manipulation protection
         uint256 tokensClaimed = IBalancerGauge(_bStableGauge).claimable_reward_write(address(this), BAL);
+        IBalancerGauge(_bStableGauge).claim_rewards();
+        if (tokensClaimed == 0) return;
         bytes memory blank;
         IBalancerVault.SingleSwap memory swapParams = IBalancerVault.SingleSwap({
-            poolId: poolIdSwap,
+            poolId: POOLIDSWAP,
             kind: IBalancerVault.SwapKind.GIVEN_IN,
             assetIn: BAL,
             assetOut: WMATIC,
@@ -142,7 +145,7 @@ contract bStablestMATICVault is ERC20, IVault {
             recipient: payable(address(uint160(address(this)))),
             toInternalBalance: false
         });
-        uint256 minAmountOut = IPriceFeeds(priceFeed).queryReturn(BAL, WMATIC, tokensClaimed)*985/1000;
+        uint256 minAmountOut = IPriceFeeds(PRICEFEED).queryReturn(BAL, WMATIC, tokensClaimed)*985/1000;
         uint256 swapReceived = IBalancerVault(_vault).swap(swapParams, funds, minAmountOut, block.timestamp);
         uint256 joinKind = 1;
         uint256[] memory values = new uint256[](2);
@@ -151,15 +154,15 @@ contract bStablestMATICVault is ERC20, IVault {
         address[] memory addrs = new address[](2);
         addrs[0] = WMATIC;
         addrs[1] = STMATIC;
-        minAmountOut = IPriceFeeds(priceFeed).queryReturn(WMATIC, asset, swapReceived)*985/1000;
+        minAmountOut = IPriceFeeds(PRICEFEED).queryReturn(WMATIC, asset, swapReceived)*985/1000;
         IBalancerVault.JoinPoolRequest memory req = IBalancerVault.JoinPoolRequest({
             assets: addrs,
             maxAmountsIn: values,
             userData: abi.encode(joinKind, values, minAmountOut),
             fromInternalBalance: false
         });
-        IBalancerVault(_vault).joinPool(poolId, address(this), address(this), req);
+        IBalancerVault(_vault).joinPool(POOLID, address(this), address(this), req);
         IBalancerGauge(_bStableGauge).deposit(IERC20(asset).balanceOf(address(this)));
-        _sharePrice = IERC20(_bStableGauge).balanceOf(address(this))/totalSupply();
+        _sharePrice = IERC20(_bStableGauge).balanceOf(address(this))*1e18/totalSupply();
     }
 }
