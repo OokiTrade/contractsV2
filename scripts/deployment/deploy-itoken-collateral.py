@@ -27,9 +27,13 @@ HELPER.replaceImplementation(helperImpl, {"from": GUARDIAN_MULTISIG})
 HELPER = Contract.from_abi("HELPER", HELPER, HelperImpl.abi)
 
 itokenImpl = deployer.deploy(LoanTokenLogicStandard)
+itokenImplWeth = deployer.deploy(LoanTokenLogicWeth)
 for l in list:
     iToken = Contract.from_abi("LoanTokenLogicStandard", address=l[0], abi=interface.IToken.abi)
-    iToken.setTarget(itokenImpl, {"from": iToken.owner()})
+    if(iToken == iETH):
+        iToken.setTarget(itokenImplWeth, {"from": iToken.owner()})
+    else:
+        iToken.setTarget(itokenImpl, {"from": iToken.owner()})
     iToken.initializeDomainSeparator({"from": iToken.owner()})
     BZX.migrateLoanParamsList(l[0], 0, 1000, {"from": BZX.owner()})
 
