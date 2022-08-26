@@ -35,6 +35,7 @@ contract SwapsExternal is State, VaultController, SwapsUser, PausableGuardian {
         public
         payable
         nonReentrant
+        pausable
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
     {
         return _swapExternal(

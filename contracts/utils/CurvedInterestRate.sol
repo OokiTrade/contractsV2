@@ -81,7 +81,7 @@ contract CurvedInterestRate is PausableGuardian_0_8, ICurvedInterestRate {
         }
 
         (uint256 a, uint256 b) = getAB(_IR1, localParam.IR2, localParam.UR1, localParam.UR2, localParam.IR_MIN, localParam.IR_MAX);
-        return getInterestRate(_U, a, b, localParam.IR_MAX, localParam.IR_ABSOLUTE_MIN);
+        return getInterestRate(_U, a, b, localParam.UR_MAX, localParam.IR_ABSOLUTE_MIN);
     }
 
     function updateParams(CurveIRParams calldata _curveIRParams, address owner) public onlyGuardian {

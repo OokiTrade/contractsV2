@@ -6,13 +6,13 @@
 pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
-import "./interfaces/IUniswapV2Router.sol";
-import "../../interfaces/IBZx.sol";
-import "../../interfaces/IPriceFeeds.sol";
-import "../../interfaces/IStakingV2.sol";
-import "./../staking/interfaces/ICurve3Pool.sol";
-import "@openzeppelin-4.7.0/token/ERC20/utils/SafeERC20.sol";
-import "../governance/PausableGuardian_0_8.sol";
+import "../../interfaces/IUniswapV2Router.sol";
+import "../../../interfaces/IBZx.sol";
+import "../../../interfaces/IPriceFeeds.sol";
+import "../../../interfaces/IStakingV2.sol";
+import "./../../staking/interfaces/ICurve3Pool.sol";
+import "@openzeppelin-4.3.2/token/ERC20/utils/SafeERC20.sol";
+import "../../governance/PausableGuardian_0_8.sol";
 import "@celer/contracts/interfaces/IBridge.sol";
 
 contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {

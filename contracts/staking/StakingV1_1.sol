@@ -12,7 +12,7 @@ import "../interfaces/IVestingToken.sol";
 import "../../interfaces/IBZx.sol";
 import "../../interfaces/IPriceFeeds.sol";
 import "../utils/MathUtil.sol";
-import "../farm/interfaces/IMasterChefSushi.sol";
+import "../interfaces/IMasterChefSushi.sol";
 import "../../interfaces/IStaking.sol";
 import "../governance/PausableGuardian.sol";
 

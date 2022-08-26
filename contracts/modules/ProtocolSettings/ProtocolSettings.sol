@@ -163,13 +163,11 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian {
             tokens
         );
         for (uint i=0;i<dexIDs.length;i++) {
-            address swapImpl = _getDexRecord(i);
+            address swapImpl = _getDexRecord(dexIDs[i]);
             if(swapImpl == address(0))
                 continue;
-            for (uint j=0;j<tokens.length;j++) {
-                (bool success,) = swapImpl.delegatecall(setSwapApprovalsData);
-                require(success, "approval calls failed");
-            }
+            (bool success,) = swapImpl.delegatecall(setSwapApprovalsData);
+            require(success, "approval calls failed");
         }
     }
 

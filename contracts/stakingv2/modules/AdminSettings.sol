@@ -6,8 +6,8 @@
 pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
 
-import "../../farm/interfaces/IMasterChefSushi.sol";
-import "../../farm/interfaces/IMasterChefSushi2.sol";
+import "../../interfaces/IMasterChefSushi.sol";
+import "../../interfaces/IMasterChefSushi2.sol";
 import "./StakingPausableGuardian.sol";
 import "./Common.sol";
 

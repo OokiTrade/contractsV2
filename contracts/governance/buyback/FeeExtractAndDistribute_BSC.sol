@@ -6,12 +6,12 @@
 pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin-4.7.0/token/ERC20/IERC20.sol";
-import "./interfaces/IUniswapV2Router.sol";
-import "../../interfaces/IBZx.sol";
+import "@openzeppelin-4.3.2/token/ERC20/IERC20.sol";
+import "../../interfaces/IUniswapV2Router.sol";
+import "../../../interfaces/IBZx.sol";
 import "@celer/contracts/interfaces/IBridge.sol";
-import "../../interfaces/IPriceFeeds.sol";
-import "../governance/PausableGuardian_0_8.sol";
+import "../../../interfaces/IPriceFeeds.sol";
+import "../../governance/PausableGuardian_0_8.sol";
 
 contract FeeExtractAndDistribute_BSC is PausableGuardian_0_8 {
     address public implementation;
