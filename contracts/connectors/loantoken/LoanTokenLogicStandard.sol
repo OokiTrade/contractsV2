@@ -10,15 +10,20 @@ import "./AdvancedToken.sol";
 import "./StorageExtension.sol";
 import "../../../interfaces/IBZx.sol";
 import "../../../interfaces/IPriceFeeds.sol";
+import "../../mixins/Flags.sol";
+import "../../interfaces/draft-IERC20Permit.sol";
+import "../../interfaces/IERC20Detailed.sol";
+import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 
-contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
+contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
     using SignedSafeMath for int256;
 
 
     //// CONSTANTS ////
 
-    uint256 public constant VERSION = 7;
+    uint256 public constant VERSION = 8;
 
     address internal constant arbitraryCaller = 0x000F400e6818158D541C3EBE45FE3AA0d47372FF; // mainnet
     // address internal constant arbitraryCaller = 0x81e7dddFAD37E6FAb0eccE95f0B508fd40996e6d; // bsc
@@ -27,8 +32,8 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
     // address internal constant arbitraryCaller = 0xcbdF21de4D0aD99Ae02aAdfEd51CdA4C6c4714D9; // evmos
     // address internal constant arbitraryCaller = 0x8150F58218120AB900105C7cDBf0F12061D94441; // optimism
 
-    address public constant bZxContract = 0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f; // mainnet
-    address public constant wethToken = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // mainnet
+    // address public constant bZxContract = 0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f; // mainnet
+    // address public constant wethToken = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // mainnet
 
     //address public constant bZxContract = 0x5cfba2639a3db0D9Cc264Aa27B2E6d134EeA486a; // kovan
     //address public constant wethToken = 0xd0A1E359811322d97991E03f863a0C30C2cF029C; // kovan
@@ -39,14 +44,14 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
     // address public constant bZxContract = 0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8; // polygon
     // address public constant wethToken = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270; // polygon
 
-    // address public constant bZxContract = 0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB; // arbitrum
-    // address public constant wethToken = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1; // arbitrum
+    address public constant bZxContract = 0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB; // arbitrum
+    address public constant wethToken = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1; // arbitrum
+
+    // address public constant bZxContract = 0xAcedbFd5Bc1fb0dDC948579d4195616c05E74Fd1; // optimism
+    // address public constant wethToken = 0x4200000000000000000000000000000000000006; // optimism
 
     // address public constant bZxContract = 0xf2FBaD7E59f0DeeE0ec2E724d2b6827Ea1cCf35f; // evmos
     // address public constant wethToken = 0xD4949664cD82660AaE99bEdc034a0deA8A0bd517; // evmos
-
-//    address public constant bZxContract = 0xAcedbFd5Bc1fb0dDC948579d4195616c05E74Fd1; // optimism
-//    address public constant wethToken = 0x4200000000000000000000000000000000000006; // optimism
 
     bytes32 internal constant iToken_ProfitSoFar = 0x37aa2b7d583612f016e4a4de4292cb015139b3d7762663d06a53964912ea2fb6;          // keccak256("iToken_ProfitSoFar")
     bytes32 internal constant iToken_LowerAdminAddress = 0x7ad06df6a0af6bd602d90db766e0d5f253b45187c3717a0f9026ea8b10ff0d4b;    // keccak256("iToken_LowerAdminAddress")
@@ -66,11 +71,21 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
     }
 
     /* Public functions */
+    function mint(
+        address receiver,
+        uint256 depositAmount,
+        bytes memory loanDataBytes)
+        public
+        returns (uint256) // mintAmount
+    {  
+        _checkPermit(loanTokenAddress, loanDataBytes);
+        mint(receiver, depositAmount);
+    }
 
     function mint(
         address receiver,
         uint256 depositAmount)
-        external
+        public
         nonReentrant
         pausable
         returns (uint256) // mintAmount
@@ -84,7 +99,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
     function burn(
         address receiver,
         uint256 burnAmount)
-        external
+        public
         nonReentrant
         pausable
         returns (uint256 loanAmountPaid)
@@ -168,12 +183,12 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
     function borrow(
         bytes32 loanId,                 // 0 if new loan
         uint256 withdrawAmount,
-        uint256 initialLoanDuration,    // duration in seconds
+        uint256,    // duration in seconds DEPRECATED
         uint256 collateralTokenSent,    // if 0, loanId must be provided; any ETH sent must equal this value
         address collateralTokenAddress, // if address(0), this means ETH and ETH must be sent with the call or loanId must be provided
         address borrower,
         address receiver,
-        bytes memory /*loanDataBytes*/) // arbitrary order data
+        bytes memory loanDataBytes) // arbitrary order data
         public
         payable
         nonReentrant
@@ -183,12 +198,12 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         return _borrow(
             loanId,
             withdrawAmount,
-            initialLoanDuration,
+            0,
             collateralTokenSent,
             collateralTokenAddress,
             borrower,
             receiver,
-            ""
+            loanDataBytes
         );
     }
 
@@ -218,155 +233,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         );
     }
 
-    function transfer(
-        address _to,
-        uint256 _value)
-        external
-        returns (bool)
-    {
-        return _internalTransferFrom(
-            msg.sender,
-            _to,
-            _value,
-            uint256(-1)
-        );
-    }
-
-    function transferFrom(
-        address _from,
-        address _to,
-        uint256 _value)
-        external
-        returns (bool)
-    {
-        return _internalTransferFrom(
-            _from,
-            _to,
-            _value,
-            allowed[_from][msg.sender]
-            /*IBZx(bZxContract).isLoanPool(msg.sender) ?
-                uint256(-1) :
-                allowed[_from][msg.sender]*/
-        );
-    }
-
-    function _internalTransferFrom(
-        address _from,
-        address _to,
-        uint256 _value,
-        uint256 _allowanceAmount)
-        internal
-        returns (bool)
-    {
-        if (_allowanceAmount != uint256(-1)) {
-            allowed[_from][msg.sender] = _allowanceAmount.sub(_value, "14");
-        }
-
-        require(_to != address(0), "15");
-
-        uint256 _balancesFrom = balances[_from];
-        uint256 _balancesFromNew = _balancesFrom
-            .sub(_value, "16");
-        balances[_from] = _balancesFromNew;
-
-        uint256 _balancesTo = balances[_to];
-        uint256 _balancesToNew = _balancesTo
-            .add(_value);
-        balances[_to] = _balancesToNew;
-
-        // handle checkpoint update
-        uint256 _currentPrice = tokenPrice();
-
-        _updateCheckpoints(
-            _from,
-            _balancesFrom,
-            _balancesFromNew,
-            _currentPrice
-        );
-        _updateCheckpoints(
-            _to,
-            _balancesTo,
-            _balancesToNew,
-            _currentPrice
-        );
-
-        emit Transfer(_from, _to, _value);
-        return true;
-    }
-
-    function _updateCheckpoints(
-        address _user,
-        uint256 _oldBalance,
-        uint256 _newBalance,
-        uint256 _currentPrice)
-        internal
-    {
-        bytes32 slot = keccak256(
-            abi.encodePacked(_user, iToken_ProfitSoFar)
-        );
-
-        int256 _currentProfit;
-        if (_newBalance == 0) {
-            _currentPrice = 0;
-        } else if (_oldBalance != 0) {
-            _currentProfit = _profitOf(
-                slot,
-                _oldBalance,
-                _currentPrice,
-                checkpointPrices_[_user]
-            );
-        }
-
-        assembly {
-            sstore(slot, _currentProfit)
-        }
-
-        checkpointPrices_[_user] = _currentPrice;
-    }
-
-    /* Public View functions */
-
-    function profitOf(
-        address user)
-        public
-        view
-        returns (int256)
-    {
-        bytes32 slot = keccak256(
-            abi.encodePacked(user, iToken_ProfitSoFar)
-        );
-
-        return _profitOf(
-            slot,
-            balances[user],
-            tokenPrice(),
-            checkpointPrices_[user]
-        );
-    }
-
-    function _profitOf(
-        bytes32 slot,
-        uint256 _balance,
-        uint256 _currentPrice,
-        uint256 _checkpointPrice)
-        internal
-        view
-        returns (int256 profitSoFar)
-    {
-        if (_checkpointPrice == 0) {
-            return 0;
-        }
-
-        assembly {
-            profitSoFar := sload(slot)
-        }
-
-        profitSoFar = int256(_currentPrice)
-            .sub(int256(_checkpointPrice))
-            .mul(int256(_balance))
-            .div(sWEI_PRECISION)
-            .add(profitSoFar);
-    }
 
     function tokenPrice()
         public
@@ -374,15 +240,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         returns (uint256) // price
     {
         return _tokenPrice(_totalAssetSupply(totalAssetBorrow()));
-    }
-
-    function checkpointPrice(
-        address _user)
-        public
-        view
-        returns (uint256) // price
-    {
-        return checkpointPrices_[_user];
     }
 
     // the current rate being paid by borrowers in active loans
@@ -442,7 +299,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
             totalSupply = totalSupply.sub(uint256(-supplyAmount));
 
         return _nextSupplyInterestRate(
-            _nextBorrowInterestRate(assetBorrow, 0, poolTWAI()),
+            _nextBorrowInterestRate(assetBorrow, 0, poolTWAI(), totalSupply),
             assetBorrow,
             totalSupply
         );
@@ -504,56 +361,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
             .div(WEI_PRECISION);
     }
 
-    function getDepositAmountForBorrow(
-        uint256 borrowAmount,
-        uint256 initialLoanDuration,        // duration in seconds
-        address collateralTokenAddress)     // address(0) means ETH
-        external
-        view
-        returns (uint256) // depositAmount
-    {
-        if (borrowAmount != 0) {
-            if (borrowAmount <= _underlyingBalance()) {
-                if (collateralTokenAddress == address(0)) {
-                    collateralTokenAddress = wethToken;
-                }
-                return IBZx(bZxContract).getRequiredCollateralByParams(
-                    loanParamsIds[uint256(keccak256(abi.encodePacked(
-                        collateralTokenAddress,
-                        true
-                    )))],
-                    borrowAmount
-                ).add(10); // some dust to compensate for rounding errors
-            }
-        }
-    }
-
-    function getBorrowAmountForDeposit(
-        uint256 depositAmount,
-        uint256 initialLoanDuration,        // duration in seconds
-        address collateralTokenAddress)     // address(0) means ETH
-        external
-        view
-        returns (uint256 borrowAmount)
-    {
-        if (depositAmount != 0) {
-            if (collateralTokenAddress == address(0)) {
-                collateralTokenAddress = wethToken;
-            }
-            borrowAmount = IBZx(bZxContract).getBorrowAmountByParams(
-                loanParamsIds[uint256(keccak256(abi.encodePacked(
-                    collateralTokenAddress,
-                    true
-                )))],
-                depositAmount
-            );
-
-            if (borrowAmount > _underlyingBalance()) {
-                borrowAmount = 0;
-            }
-        }
-    }
-
     function getPoolUtilization()
         external
         view
@@ -591,12 +398,8 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
             IWeth(wethToken).deposit.value(depositAmount)();
         }
 
-        _updateCheckpoints(
-            receiver,
-            balances[receiver],
-            _mint(receiver, mintAmount, depositAmount, currentPrice), // newBalance
-            currentPrice
-        );
+        _mint(receiver, mintAmount);
+        emit Mint(receiver, mintAmount, depositAmount, currentPrice);
     }
 
     function _burnToken(
@@ -623,13 +426,8 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
 
         loanAmountPaid = loanAmountOwed;
         require(loanAmountPaid <= loanAmountAvailableInContract, "37");
-
-        _updateCheckpoints(
-            msg.sender,
-            balances[msg.sender],
-            _burn(msg.sender, burnAmount, loanAmountPaid, currentPrice), // newBalance
-            currentPrice
-        );
+        _burn(msg.sender, burnAmount);
+        emit Burn(msg.sender, burnAmount, loanAmountPaid, currentPrice);
     }
 
     function _borrow(
@@ -640,7 +438,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         address collateralTokenAddress, // if address(0), this means ETH and ETH must be sent with the call or loanId must be provided
         address borrower,
         address receiver,
-        bytes memory /*loanDataBytes*/) // arbitrary order data
+        bytes memory loanDataBytes) // arbitrary order data
         internal
         pausable
         returns (IBZx.LoanOpenData memory)
@@ -695,7 +493,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
             collateralTokenAddress,
             sentAddresses,
             sentAmounts,
-            "" // loanDataBytes
+            loanDataBytes // loanDataBytes
         );
     }
 
@@ -831,12 +629,14 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
             sentAddresses[2] = sentAddresses[1]; // receiver = borrower
         }
 
+        
         // handle transfers prior to adding newPrincipal to loanTokenSent
-        uint256 msgValue = _verifyTransfers(
+        (uint256 msgValue, bytes memory loanDataBytes) = _verifyTransfers(
             collateralTokenAddress,
             sentAddresses,
             sentAmounts,
-            withdrawAmount
+            withdrawAmount,
+            loanDataBytes
         );
 
         // adding the loan token portion from the lender to loanTokenSent
@@ -853,18 +653,13 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
             true :
             false;
 
-        bytes32 loanParamsId = loanParamsIds[uint256(keccak256(abi.encodePacked(
-            collateralTokenAddress,
-            isTorqueLoan
-        )))];
-
         // converting to initialMargin
         if (leverageAmount != 0) {
             leverageAmount = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, leverageAmount);
         }
 
         return IBZx(bZxContract).borrowOrTradeFromPool.value(msgValue)(
-            loanParamsId,
+            collateralTokenAddress,
             loanId,
             isTorqueLoan,
             leverageAmount, // initialMargin
@@ -887,9 +682,10 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         address collateralTokenAddress,
         address[4] memory sentAddresses,
         uint256[5] memory sentAmounts,
-        uint256 withdrawalAmount)
+        uint256 withdrawalAmount,
+        bytes memory loanDataBytes)
         internal
-        returns (uint256 msgValue)
+        returns (uint256 msgValue, bytes memory)
     {
         address _wethToken = wethToken;
         address _loanTokenAddress = loanTokenAddress;
@@ -917,13 +713,16 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
                 _safeTransfer(collateralTokenAddress, bZxContract, collateralTokenSent, "28");
                 msgValue -= collateralTokenSent;
             } else {
+                loanDataBytes = _checkPermit(collateralTokenAddress, loanDataBytes);
                 _safeTransferFrom(collateralTokenAddress, msg.sender, bZxContract, collateralTokenSent, "28");
             }
         }
 
         if (loanTokenSent != 0) {
+            loanDataBytes = _checkPermit(_loanTokenAddress, loanDataBytes);
             _safeTransferFrom(_loanTokenAddress, msg.sender, bZxContract, loanTokenSent, "29");
         }
+        return (msgValue, loanDataBytes);
     }
 
     function _safeTransfer(
@@ -955,6 +754,23 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         );
     }
 
+    function _checkPermit(address token, bytes memory loanDataBytes) internal returns (bytes memory) {
+        if (loanDataBytes.length != 0) {
+            if(abi.decode(loanDataBytes, (uint128)) & WITH_PERMIT != 0) {
+                (uint128 f, bytes[] memory payload) = abi.decode(
+                    loanDataBytes,
+                    (uint128, bytes[])
+                );
+                (address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) = abi.decode(payload[2], (address, address, uint, uint, uint8, bytes32, bytes32));
+                require(spender == address(this), "Permit");
+                IERC20Permit(token).permit(owner, spender, value, deadline, v, r, s);
+                payload[2] = "";
+                loanDataBytes = abi.encode(f, payload);
+            }
+        }
+        return loanDataBytes;
+    }
+
     function _callOptionalReturn(
         address token,
         bytes memory data,
@@ -969,13 +785,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         }
     }
 
-    function _underlyingBalance()
-        internal
-        view
-        returns (uint256)
-    {
-        return IERC20(loanTokenAddress).balanceOf(address(this));
-    }
 
     function _nextSupplyInterestRate(
         uint256 nextBorrowRate,
@@ -1001,16 +810,40 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         view
         returns (uint256 nextRate)
     {
+	    return _nextBorrowInterestRate(
+	        totalBorrow,
+            newBorrowNotYetRealized,
+            lastIR,
+            _totalAssetSupply(totalBorrow)
+        );
+    }
+
+    /* Internal View functions */
+    function _underlyingBalance()
+        internal
+        view
+        returns (uint256)
+    {
+        return IERC20(loanTokenAddress).balanceOf(address(this));
+    }
+
+    function _nextBorrowInterestRate(
+        uint256 totalBorrow,
+        uint256 newBorrowNotYetRealized,
+        uint256 lastIR,
+        uint256 assetSupply)
+        internal
+        view
+        returns (uint256 nextRate)
+    {
         uint256 utilRate = _utilizationRate(
             totalBorrow.add(newBorrowNotYetRealized),
-            _totalAssetSupply(totalBorrow)
+            assetSupply
         );
 
         //utilRate from 0e18 to 100e18
         nextRate = rateHelper.calculateIR(utilRate, lastIR);
     }
-
-    /* Internal View functions */
 
     function _tokenPrice(
         uint256 assetSupply)
@@ -1018,7 +851,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
         view
         returns (uint256)
     {
-        uint256 totalTokenSupply = totalSupply_;
+        uint256 totalTokenSupply = _totalSupply;
 
         return totalTokenSupply != 0 ?
             assetSupply
@@ -1078,42 +911,57 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
     }
 
 
-    /* Owner-Only functions */
+    function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) public {
+        require(deadline >= block.timestamp, "OOKI: EXPIRED");
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                "\x19\x01",
+                DOMAIN_SEPARATOR,
+                keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline))
+            )
+        );
+        address recoveredAddress = ecrecover(digest, v, r, s);
+        require(recoveredAddress != address(0) && recoveredAddress == owner, "OOKI: INVALID_SIGNATURE");
+        _approve(owner, spender, value);
+    }
 
-    function updateSettings(
-        address settingsTarget,
-        bytes memory callData)
-        public
+    function initializeDomainSeparator() public onlyGuardian {
+        uint chainId;
+        assembly {
+            chainId := chainid
+        }
+        DOMAIN_SEPARATOR = keccak256(
+            abi.encode(
+                keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'),
+                keccak256(bytes(name)),
+                keccak256(bytes('1')),
+                chainId,
+                address(this)
+            )
+        );
+    }
+
+    function initialize(
+        address _loanTokenAddress,
+        string memory _name,
+        string memory _symbol)
+        public onlyGuardian
     {
-        if (msg.sender != owner()) {
-            address _lowerAdmin;
-            address _lowerAdminContract;
-            assembly {
-                _lowerAdmin := sload(iToken_LowerAdminAddress)
-                _lowerAdminContract := sload(iToken_LowerAdminContract)
-            }
-            require(msg.sender == _lowerAdmin && settingsTarget == _lowerAdminContract);
-        }
+        loanTokenAddress = _loanTokenAddress;
 
-        address currentTarget = target_;
-        target_ = settingsTarget;
+        name = _name;
+        symbol = _symbol;
+        decimals = IERC20Detailed(loanTokenAddress).decimals();
 
-        (bool result,) = address(this).call(callData);
+        initialPrice = WEI_PRECISION; // starting price of 1
 
-        uint256 size;
-        uint256 ptr;
-        assembly {
-            size := returndatasize
-            ptr := mload(0x40)
-            returndatacopy(ptr, 0, size)
-            if eq(result, 0) { revert(ptr, size) }
-        }
+        IERC20(_loanTokenAddress).safeApprove(bZxContract, uint256(-1));
+    }
 
-        target_ = currentTarget;
 
-        assembly {
-            return(ptr, size)
-        }
+    function setDemandCurve(ICurvedInterestRate _rateHelper) public onlyGuardian {
+        require(address(_rateHelper) != address(0), "no zero address");
+        rateHelper = _rateHelper;
     }
 
     function updateFlashBorrowFeePercent(uint256 newFeePercent) public onlyOwner {
@@ -1121,24 +969,3 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension {
     }
 }
 
-/*
-pragma solidity 0.5.16;
-
-contract ArbitraryCaller {
-    function sendCall(
-        address target,
-        bytes calldata callData)
-        external
-        payable
-    {
-        (bool success,) = target.call.value(msg.value)(callData);
-        assembly {
-            let size := returndatasize()
-            let ptr := mload(0x40)
-            returndatacopy(ptr, 0, size)
-            if eq(success, 0) { revert(ptr, size) }
-            return(ptr, size)
-        }
-    }
-}
-*/

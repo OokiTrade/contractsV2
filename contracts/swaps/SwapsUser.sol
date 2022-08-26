@@ -11,10 +11,13 @@ import "../../interfaces/IPriceFeeds.sol";
 import "../events/SwapsEvents.sol";
 import "../mixins/FeesHelper.sol";
 import "./ISwapsImpl.sol";
+import "../utils/TickMathV1.sol";
 import "../interfaces/IDexRecords.sol";
 import "../mixins/Flags.sol";
+import "../utils/VolumeTracker.sol";
 
 contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
+    using VolumeTracker for VolumeTracker.Observation[65535];
     function _loanSwap(
         bytes32 loanId,
         address sourceToken,
@@ -93,16 +96,16 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
 
         uint256 destTokenAmountReceived;
         uint256 sourceTokenAmountUsed;
-
         uint256 tradingFee;
+        uint128 flagNumber = loanDataBytes.length != 0 ? abi.decode(loanDataBytes, (uint128)) : 0;
         if (!miscBool) {
             // bypassFee
             if (vals[2] == 0) {
                 // condition: vals[0] will always be used as sourceAmount
-                if (loanDataBytes.length != 0 && abi.decode(loanDataBytes, (uint128)) & PAY_WITH_OOKI_FLAG != 0) {
+                if (flagNumber & PAY_WITH_OOKI_FLAG != 0) {
                     tradingFee = _getTradingFeeWithOOKI(addrs[0], vals[0]);
                     if(tradingFee != 0){
-                        if(abi.decode(loanDataBytes, (uint128)) & HOLD_OOKI_FLAG != 0){
+                        if(flagNumber & HOLD_OOKI_FLAG != 0){
                             tradingFee = _adjustForHeldBalance(tradingFee, addrs[4]);
                         }
                         IERC20(OOKI).safeTransferFrom(addrs[4], address(this), tradingFee);
@@ -117,7 +120,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
                 } else {
                     tradingFee = _getTradingFee(vals[0]);
                     if (tradingFee != 0) {
-                        if(loanDataBytes.length != 0 && abi.decode(loanDataBytes, (uint128)) & HOLD_OOKI_FLAG != 0){
+                        if(flagNumber & HOLD_OOKI_FLAG != 0){
                             tradingFee = _adjustForHeldBalance(tradingFee, addrs[4]);
                         }
                         _payTradingFee(
@@ -133,10 +136,10 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
             } else {
                 // condition: unknown sourceAmount will be used
 
-                if (loanDataBytes.length != 0 && abi.decode(loanDataBytes, (uint128)) & PAY_WITH_OOKI_FLAG != 0) {
+                if (flagNumber & PAY_WITH_OOKI_FLAG != 0) {
                     tradingFee = _getTradingFeeWithOOKI(addrs[1], vals[2]);
                     if(tradingFee != 0){
-                        if(abi.decode(loanDataBytes, (uint128)) & HOLD_OOKI_FLAG != 0){
+                        if(flagNumber & HOLD_OOKI_FLAG != 0){
                             tradingFee = _adjustForHeldBalance(tradingFee, addrs[4]);
                         }
                         IERC20(OOKI).safeTransferFrom(addrs[4], address(this), tradingFee);
@@ -152,7 +155,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
                     tradingFee = _getTradingFee(vals[2]);
 
                     if (tradingFee != 0) {
-                        if(loanDataBytes.length != 0 && abi.decode(loanDataBytes, (uint128)) & HOLD_OOKI_FLAG != 0){
+                        if(flagNumber & HOLD_OOKI_FLAG != 0){
                             tradingFee = _adjustForHeldBalance(tradingFee, addrs[4]);
                         }
                         vals[2] = vals[2].add(tradingFee);
@@ -168,7 +171,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
         } else {
             require(vals[0] <= vals[1], "min greater than max");
         }
-        if (loanDataBytes.length != 0 && abi.decode(loanDataBytes, (uint128)) & DEX_SELECTOR_FLAG != 0) {
+        if (flagNumber & DEX_SELECTOR_FLAG != 0) {
             (, bytes[] memory payload) = abi.decode(
                 loanDataBytes,
                 (uint128, bytes[])
@@ -179,6 +182,10 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
             destTokenAmountReceived,
             sourceTokenAmountUsed
         ) = _swapsCall_internal(addrs, vals, loanDataBytes);
+
+        if (flagNumber & TRACK_VOLUME_FLAG != 0) {
+            _writeVolume(addrs[4], addrs[0], sourceTokenAmountUsed);
+        }
 
         if (vals[2] == 0) {
             // there's no minimum destTokenAmount, but all of vals[0] (minSourceTokenAmount) must be spent, and amount spent can't exceed vals[0]
@@ -211,6 +218,23 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
         }
 
         return (destTokenAmountReceived, sourceTokenAmountUsed);
+    }
+
+    function _writeVolume(address user, address tradeToken, uint256 amount) internal {
+        if (volumeTradedCardinality[user] == 0) volumeTradedCardinality[user] = 256;
+        uint128 tradingVolumeInUSDC = uint128(IPriceFeeds(priceFeeds)
+            .queryReturn(
+                tradeToken,
+                USDC,
+                amount
+            ));
+        volumeLastIdx[user] = volumeTradedObservations[user].write(
+            volumeLastIdx[user],
+            uint32(block.timestamp),
+            tradingVolumeInUSDC,
+            volumeTradedCardinality[user],
+            uint32(86400)
+        );
     }
 
     function _swapsCall_internal(
@@ -269,11 +293,12 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
         address trader,
         address sourceToken,
         address destToken,
-        uint256 sourceTokenAmount,
-        bytes memory payload
+        uint256 tokenAmount,
+        bytes memory payload,
+        bool isGetAmountOut
     ) internal returns (uint256 expectedReturn) {
         
-        uint256 tradingFee = _getTradingFee(sourceTokenAmount);
+        uint256 tradingFee = _getTradingFee(tokenAmount);
 
         address swapImplAddress;
         bytes memory dataToSend;
@@ -298,17 +323,30 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
             }
         }
         if (tradingFee != 0) {
-            sourceTokenAmount = sourceTokenAmount.sub(tradingFee);
+            if (isGetAmountOut) {
+                tokenAmount = tokenAmount.sub(tradingFee);
+            } else {
+                tokenAmount = tokenAmount.add(tradingFee);
+            }
+            
         }
         
         swapImplAddress = IDexRecords(swapsImpl).retrieveDexAddress(
             dexNumber
         );
 
-        (expectedReturn, ) = ISwapsImpl(swapImplAddress).dexAmountOutFormatted(
-            dataToSend,
-            sourceTokenAmount
-        );
+        if (isGetAmountOut) {
+            (expectedReturn, ) = ISwapsImpl(swapImplAddress).dexAmountOutFormatted(
+                dataToSend,
+                tokenAmount
+            );
+        } else {
+            (expectedReturn, ) = ISwapsImpl(swapImplAddress).dexAmountInFormatted(
+                dataToSend,
+                tokenAmount
+            ); 
+        }
+
     }
 
     function _checkSwapSize(address tokenAddress, uint256 amount)

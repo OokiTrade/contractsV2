@@ -5,7 +5,7 @@
 
 pragma solidity 0.5.17;
 
-import "./IPriceFeedsExt.sol";
+import "../IPriceFeedsExt.sol";
 
 
 // mainnet: 0xA9F9F897dD367C416e350c33a92fC12e53e1Cee5

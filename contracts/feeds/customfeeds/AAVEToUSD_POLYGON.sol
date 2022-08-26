@@ -5,7 +5,7 @@
 
 pragma solidity 0.5.17;
 
-import "./IPriceFeedsExt.sol";
+import "../IPriceFeedsExt.sol";
 
 
 // polygon: 0xC47812857A74425e2039b57891a3DFcF51602d5d

@@ -11,11 +11,11 @@ import "../../events/LoanMaintenanceEvents.sol";
 import "../../mixins/VaultController.sol";
 import "../../mixins/InterestHandler.sol";
 import "../../mixins/LiquidationHelper.sol";
-import "../../swaps/SwapsUser.sol";
+import "../../../interfaces/IPriceFeeds.sol";
 import "../../governance/PausableGuardian.sol";
 
 
-contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, InterestHandler, SwapsUser, LiquidationHelper, PausableGuardian {
+contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, InterestHandler, PausableGuardian {
 
     function initialize(
         address target)
@@ -36,13 +36,6 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             Targets still exist, but functions are decommissioned:
             _setTarget(this.claimRewards.selector, target);
             _setTarget(this.rewardsBalanceOf.selector, target);
-        
-        // TEMP: remove after upgrade ETH
-        _setTarget(bytes4(keccak256("withdrawAccruedInterest(address)")), address(0));
-        _setTarget(bytes4(keccak256("extendLoanDuration(bytes32,uint256,bool,bytes)")), address(0));
-        _setTarget(bytes4(keccak256("reduceLoanDuration(bytes32,address,uint256)")), address(0));
-        _setTarget(bytes4(keccak256("getLenderInterestData(address,address)")), address(0));
-        _setTarget(bytes4(keccak256("getLoanInterestData(bytes32)")), address(0));
         */
     }
 
@@ -401,7 +394,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         uint256 maxLiquidatable;
         uint256 maxSeizable;
         if (currentMargin <= loanParamsLocal.maintenanceMargin) {
-            (maxLiquidatable, maxSeizable) = _getLiquidationAmounts(
+            (maxLiquidatable, maxSeizable) = LiquidationHelper.getLiquidationAmounts(
                 loanLocal.principal,
                 loanLocal.collateral,
                 currentMargin,

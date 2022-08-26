@@ -19,3 +19,4 @@ MULTICALL3 = Contract.from_abi("MULTICALL3", "0xcA11bde05977b3631167028862bE2a17
 
 OOKI = Contract.from_abi("OOKI", "0x400F3ff129Bc9C9d239a567EaF5158f1850c65a4", interface.ERC20.abi)
 SWEEP_FEES = Contract.from_abi("SWEEP_FEES", "0xcbDE8C5603D4bA855a162A450B1d054A02D8448f", FeeExtractAndDistribute_Arbitrum.abi)
+PRICE_FEED = Contract.from_abi("PRICE_FEED", BZX.priceFeeds(), abi = PriceFeeds.abi)

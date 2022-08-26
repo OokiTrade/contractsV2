@@ -28,6 +28,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian {
         _setTarget(this.setSwapsImplContract.selector, target);
         _setTarget(this.setLoanPool.selector, target);
         _setTarget(this.setSupportedTokens.selector, target);
+        _setTarget(this.setApprovals.selector, target);
         _setTarget(this.setLendingFeePercent.selector, target);
         _setTarget(this.setTradingFeePercent.selector, target);
         _setTarget(this.setBorrowingFeePercent.selector, target);
@@ -86,7 +87,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian {
         address[] calldata pools,
         address[] calldata assets)
         external
-        onlyOwner
+        onlyGuardian
     {
         require(pools.length == assets.length, "count mismatch");
 
@@ -126,7 +127,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian {
         bool[] calldata toggles,
         bool withApprovals)
         external
-        onlyOwner
+        onlyGuardian
     {
         require(addrs.length == toggles.length, "count mismatch");
 
@@ -155,7 +156,21 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian {
             }
         }
     }
-    
+
+    function setApprovals(address[] calldata tokens, uint256[] calldata dexIDs) external onlyGuardian {
+        bytes memory setSwapApprovalsData = abi.encodeWithSelector(
+            0x4a99e3a1, // setSwapApprovals(address[])
+            tokens
+        );
+        for (uint i=0;i<dexIDs.length;i++) {
+            address swapImpl = _getDexRecord(dexIDs[i]);
+            if(swapImpl == address(0))
+                continue;
+            (bool success,) = swapImpl.delegatecall(setSwapApprovalsData);
+            require(success, "approval calls failed");
+        }
+    }
+
     function revokeApprovals(address[] calldata addrs) external onlyGuardian {
         bytes memory revokeApprovalsData = abi.encodeWithSelector(
             0x7265766f, // revokeApprovals(address[])
@@ -253,7 +268,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian {
         address[] calldata collateralTokens,
         uint256[] calldata amounts)
         external
-        onlyOwner
+        onlyGuardian
     {
         require(loanTokens.length == collateralTokens.length && loanTokens.length == amounts.length, "count mismatch");
 

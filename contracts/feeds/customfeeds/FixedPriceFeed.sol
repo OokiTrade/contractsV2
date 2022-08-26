@@ -5,7 +5,7 @@
 
 pragma solidity 0.5.17;
 
-import "./IPriceFeedsExt.sol";
+import "../IPriceFeedsExt.sol";
 import "@openzeppelin-2.5.0/ownership/Ownable.sol";
 
 
