@@ -8,7 +8,7 @@ pragma experimental ABIEncoderV2;
 
 import "../StakingStateV2.sol";
 import "./StakingPausableGuardian.sol";
-import "../../farm/interfaces/IMasterChefSushi2.sol";
+import "../../interfaces/IMasterChefSushi2.sol";
 import "../delegation/VoteDelegator.sol";
 import "../../interfaces/IVestingToken.sol";
 import "./Common.sol";
