@@ -101,7 +101,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
 
         address loanToken = loanParamsLocal.loanToken;
         address oldCollateralToken = loanParamsLocal.collateralToken;
-        require(loanLocal.loanParamsId == keccak256(abi.encodePacked(loanToken, oldCollateralToken, true)), "not torque");
+        require(loanParamsLocal.maxLoanTerm == 0, "not torque");
         require(loanToken != newCollateralToken, "not allowed");
         LoanParams memory params = getDefaultLoanParamsAndStore(loanToken, newCollateralToken, true);
         loanLocal.loanParamsId = params.id;
