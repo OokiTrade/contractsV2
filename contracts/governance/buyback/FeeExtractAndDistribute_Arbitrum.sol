@@ -1,5 +1,5 @@
 /**
- * Copyright 2017-2022, OokiDao. All Rights Reserved.
+ * Copyright 2017-2021, bZxDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
@@ -7,29 +7,26 @@ pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin-4.3.2/token/ERC20/IERC20.sol";
-import "./interfaces/IUniswapV2Router.sol";
-import "../../interfaces/IBZx.sol";
+import "../../interfaces/IUniswapV2Router.sol";
+import "../../../interfaces/IBZx.sol";
 import "@celer/contracts/interfaces/IBridge.sol";
-import "../../interfaces/IPriceFeeds.sol";
-import "../governance/PausableGuardian_0_8.sol";
+import "../../../interfaces/IPriceFeeds.sol";
+import "../../governance/PausableGuardian_0_8.sol";
 
-contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
+contract FeeExtractAndDistribute_Arbitrum is PausableGuardian_0_8 {
     address public implementation;
-    IBZx public constant BZX = IBZx(0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8);
+    IBZx public constant BZX = IBZx(0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB);
 
-    address public constant BUYBACK_ADDRESS =
-        0x12EBd8263A54751Aaf9d8C2c74740A8e62C0AfBe;
-    address public constant MATIC = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
-    address public constant USDC = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
-    address public constant WETH = 0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619;
-    address public constant WBTC = 0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6;
-    uint256 public constant WEI_PRECISION_PERCENT = 10**20;
-    uint64 public constant DEST_CHAINID = 1; //to be set
-    uint256 public constant MIN_USDC_AMOUNT = 1000e6; //1000 USDC minimum bridge amount
+    address public constant ETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
+    address public constant USDC = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
+    uint64 public constant DEST_CHAINID = 137; //send to polygon
+    uint256 public constant MIN_USDC_AMOUNT = 30e6; //$30 min bridge amount
     IUniswapV2Router public constant SWAPS_ROUTER_V2 =
-        IUniswapV2Router(0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506); // Sushiswap
+        IUniswapV2Router(0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506);
 
     address internal constant ZERO_ADDRESS = address(0);
+
+    uint256 public constant MAX_DISAGREEMENT = 5e18;
 
     mapping(address => uint256) public exportedFees;
 
@@ -39,9 +36,7 @@ contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
 
     address public bridge; //bridging contract
 
-    uint256 public buybackPercentInWEI; //set to 30e18
-
-    uint32 public slippage = 10000;
+    uint32 public slippage = 10000; //1%
 
     event ExtractAndDistribute(uint256 amountTreasury, uint256 amountStakers);
 
@@ -84,15 +79,12 @@ contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
             exportedFees[asset] = 0;
 
             if (amount != 0) {
-                if (asset == MATIC) {
-                    usdcOutput = _swapWithPair([asset, USDC], amount);
-                } else if (asset == WBTC) {
-                    usdcOutput = _swapWithPair([asset, WETH, USDC], amount);
-                } else {
-                    usdcOutput = _swapWithPair([asset, MATIC, USDC], amount); //builds route for all tokens to route through MATIC
-                }
+                usdcOutput += asset == ETH
+                    ? _swapWithPair([asset, USDC], amount)
+                    : _swapWithPair([asset, ETH, USDC], amount); //builds route for all tokens to route through ETH
             }
         }
+
         if (usdcOutput != 0) {
             _bridgeFeesAndDistribute(); //bridges fees to Ethereum to be distributed to stakers
             emit ExtractAndDistribute(usdcOutput, 0); //for tracking distribution amounts
@@ -115,7 +107,12 @@ contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
         );
 
         returnAmount = amounts[1];
-        _checkUniDisagreement(path[0], inAmount, returnAmount, 5e18);
+        _checkUniDisagreement(
+            path[0],
+            inAmount,
+            returnAmount,
+            MAX_DISAGREEMENT
+        );
     }
 
     function _swapWithPair(address[3] memory route, uint256 inAmount)
@@ -135,23 +132,19 @@ contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
         );
 
         returnAmount = amounts[2];
-        _checkUniDisagreement(path[0], inAmount, returnAmount, 5e18);
+        _checkUniDisagreement(
+            path[0],
+            inAmount,
+            returnAmount,
+            MAX_DISAGREEMENT
+        );
     }
 
     function _bridgeFeesAndDistribute() internal {
-        uint256 total = IERC20(USDC).balanceOf(address(this));
-        IERC20(USDC).transfer(
-            BUYBACK_ADDRESS,
-            (total * buybackPercentInWEI) / WEI_PRECISION_PERCENT
-        ); //allocates funds for buyback
         require(
-            IERC20(USDC).balanceOf(address(this)) > MIN_USDC_AMOUNT,
-            "FeeExtractAndDistribute: bridge amount too low"
+            IERC20(USDC).balanceOf(address(this)) >= MIN_USDC_AMOUNT,
+            "FeeExtractAndDistribute_Arbitrum: Fees Bridged Too Little"
         );
-        _bridgeFees();
-    }
-
-    function _bridgeFees() internal {
         IBridge(bridge).send(
             treasuryWallet,
             USDC,
@@ -160,6 +153,32 @@ contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
             uint64(block.timestamp),
             slippage
         );
+    }
+
+    // OnlyOwner functions
+
+    function setTreasuryWallet(address payable _wallet) public onlyOwner {
+        treasuryWallet = _wallet;
+    }
+
+    function setFeeTokens(address[] calldata tokens) public onlyOwner {
+        currentFeeTokens = tokens;
+        for (uint256 i = 0; i < tokens.length; i++) {
+            IERC20(tokens[i]).approve(address(SWAPS_ROUTER_V2), 0);
+            IERC20(tokens[i]).approve(
+                address(SWAPS_ROUTER_V2),
+                type(uint256).max
+            );
+        }
+    }
+
+    function setBridgeApproval(address token) public onlyOwner {
+        IERC20(token).approve(bridge, 0);
+        IERC20(token).approve(bridge, type(uint256).max);
+    }
+
+    function setBridge(address _wallet) public onlyOwner {
+        bridge = _wallet;
     }
 
     function _checkUniDisagreement(
@@ -187,36 +206,6 @@ contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
         }
     }
 
-    // OnlyOwner functions
-
-    function setTreasuryWallet(address payable _wallet) external onlyOwner {
-        treasuryWallet = _wallet;
-    }
-
-    function setFeeTokens(address[] calldata tokens) external onlyOwner {
-        currentFeeTokens = tokens;
-        for (uint256 i = 0; i < tokens.length; i++) {
-            IERC20(tokens[i]).approve(address(SWAPS_ROUTER_V2), 0);
-            IERC20(tokens[i]).approve(
-                address(SWAPS_ROUTER_V2),
-                type(uint256).max
-            );
-        }
-    }
-
-    function setBridgeApproval(address token) external onlyOwner {
-        IERC20(token).approve(bridge, 0);
-        IERC20(token).approve(bridge, type(uint256).max);
-    }
-
-    function setBridge(address _wallet) external onlyOwner {
-        bridge = _wallet;
-    }
-
-    function setBuyBackPercentage(uint256 _percentage) external onlyOwner {
-        buybackPercentInWEI = _percentage;
-    }
-
     function setSlippage(uint32 newSlippage) external onlyGuardian {
         slippage = newSlippage;
     }
@@ -226,6 +215,6 @@ contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
     }
 
     function guardianBridge() external onlyGuardian {
-        _bridgeFees();
+        _bridgeFeesAndDistribute();
     }
 }
