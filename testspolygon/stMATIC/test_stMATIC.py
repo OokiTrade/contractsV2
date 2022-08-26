@@ -23,8 +23,14 @@ def PRICE_FEED(Contract, BZX, PriceFeeds):
     return Contract.from_abi("PRICE_FEED", BZX.priceFeeds(), PriceFeeds.abi)
 
 @pytest.fixture(scope="module")
-def B_STABLE_VAULT(accounts, bStablestMATICVault):
-    vault = bStablestMATICVault.deploy({"from":accounts[0]})
+def VAULT_FEED(accounts, PriceFeedbStablestMATICVault):
+    return PriceFeedbStablestMATICVault.deploy({"from":accounts[0]})
+
+@pytest.fixture(scope="module")
+def B_STABLE_VAULT(Contract, accounts, bStablestMATICVault):
+    #vault = bStablestMATICVault.deploy({"from":accounts[0]})
+    #vault.setApprovals({"from":accounts[0]})
+    vault = Contract.from_abi("B_STABLE_VAULT","0x976f31D12df9272f10c2f20BE2887824Cc3d974c",bStablestMATICVault.abi)
     vault.setApprovals({"from":accounts[0]})
     return vault
 
@@ -35,9 +41,12 @@ def DEX_RECORDS(Contract, DexRecords, BZX):
 @pytest.fixture(scope="module")
 def SET_SWAP_IMPL(accounts, BZX, DEX_RECORDS, SwapsImplBalancer_POLYGON, SwapsImplstMATICVault_POLYGON):
     bal = SwapsImplBalancer_POLYGON.deploy({"from":accounts[0]})
+    vault = SwapsImplstMATICVault_POLYGON.deploy({"from":accounts[0]})
     DEX_RECORDS.setDexID(bal, {"from":DEX_RECORDS.owner()})
+    DEX_RECORDS.setDexID(vault, {"from":DEX_RECORDS.owner()})
 
-def test_cases():
+def test_cases(B_STABLE_VAULT):
+    print(B_STABLE_VAULT.address)
     assert True
     #test_case1(accounts, PRICE_FEED, PriceFeedstMATIC, PriceFeedbStablestMATIC, bStable)
     #test_case2(accounts, bStablestMATICVault, bStable)
@@ -53,7 +62,7 @@ def test_case2(accounts, B_STABLE_VAULT, bStable, PRICE_FEED):
     PRICE_FEED.setPriceFeed(["0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3"], ["0xd106b538f2a868c28ca1ec7e298c3325e0251d66"], {"from":PRICE_FEED.owner()})
     bStable.transfer(accounts[0], 100e18, {"from":"0x78d799be3fd3d96f0e024b9b35adb4479a9556f5"})
     bStable.approve(B_STABLE_VAULT, 100e18, {"from":accounts[0]})
-    B_STABLE_VAULT.mint(50e18, accounts[0], {"from":accounts[0]})
+    B_STABLE_VAULT.deposit(50e18, accounts[0], {"from":accounts[0]})
     assert(B_STABLE_VAULT.balanceOf(accounts[0]) == 50e18)
     for i in range(10):
         chain.sleep(60000)
@@ -64,23 +73,33 @@ def test_case2(accounts, B_STABLE_VAULT, bStable, PRICE_FEED):
     chain.sleep(600)
     chain.mine()
     assert(bStable.balanceOf(accounts[0]) == 0)
-    assets = B_STABLE_VAULT.redeem(B_STABLE_VAULT.balanceOf(accounts[0]), accounts[0], accounts[0], {"from":accounts[0]}).return_value
-    assert(B_STABLE_VAULT.balanceOf(accounts[0]) == 0) 
+    assets = B_STABLE_VAULT.redeem(B_STABLE_VAULT.balanceOf(accounts[0])-1e18, accounts[0], accounts[0], {"from":accounts[0]}).return_value
+    assert(B_STABLE_VAULT.balanceOf(accounts[0]) == 1e18) 
     assert(bStable.balanceOf(accounts[0]) == assets)
 
-def test_case3(accounts, BZX, DEX_RECORDS, SET_SWAP_IMPL, stMATIC, WMATIC, PRICE_FEED):
+def test_case3(accounts, BZX, DEX_RECORDS, SET_SWAP_IMPL, stMATIC, WMATIC, B_STABLE_VAULT, PRICE_FEED, VAULT_FEED):
+    PRICE_FEED.setPriceFeed([B_STABLE_VAULT], [VAULT_FEED], {"from":PRICE_FEED.owner()})
     dexID = DEX_RECORDS.getDexCount()
     BZX.setSupportedTokens([stMATIC, WMATIC], [True, True], True, {"from":BZX.owner()})
     minAmountOut = int(PRICE_FEED.queryReturn(stMATIC, WMATIC, 1e18)*0.99)
     poolID = bytes.fromhex("af5e0b5425de1f5a630a8cb5aa9d97b8141c908d000200000000000000000366")
     poolData = (poolID,0,1,int(1e18),b'')
     dex_payload = encode_abi(['(bytes32,uint256,uint256,uint256,bytes)[]','address[]','uint256[]'],[[poolData],[stMATIC.address, WMATIC.address], [int(1e18), 0]])
-    selector_payload = encode_abi(['uint256','bytes'],[dexID,dex_payload])
+    selector_payload = encode_abi(['uint256','bytes'],[dexID-1,dex_payload])
     loanDataBytes = encode_abi(['uint128','bytes[]'],[2,[selector_payload]]) #flag value of Base-2: 10  
 
     stMATIC.transfer(accounts[0], 1e18, {"from":"0x765c6d09ef9223b1becd3b92a0ec01548d53cfba"})
     stMATIC.approve(BZX, 1e18, {"from":accounts[0]})
-
+    prevBalS = stMATIC.balanceOf(accounts[0])
     receivedAmount, usedAmount = BZX.swapExternal(stMATIC, WMATIC, accounts[0], accounts[0], 1e18, 1030212678534005222, loanDataBytes, {"from":accounts[0]}).return_value
     print(receivedAmount)
-    assert(False)
+    assert(usedAmount == prevBalS-stMATIC.balanceOf(accounts[0]))
+    minAmountOut = int(PRICE_FEED.queryReturn(B_STABLE_VAULT, WMATIC, 1e18)*0.99)
+    dex_payload = encode_abi(['uint256','address'],[int(minAmountOut),WMATIC.address])
+    selector_payload = encode_abi(['uint256','bytes'],[dexID,dex_payload])
+    loanDataBytes = encode_abi(['uint128','bytes[]'],[2,[selector_payload]]) #flag value of Base-2: 10  
+
+    B_STABLE_VAULT.approve(BZX, 1e18, {"from":accounts[0]})
+    receivedAmount, usedAmount = BZX.swapExternal(B_STABLE_VAULT, WMATIC, accounts[0], accounts[0], 1e18, 0, loanDataBytes, {"from":accounts[0]}).return_value
+    print(receivedAmount)
+    assert(receivedAmount > minAmountOut)
