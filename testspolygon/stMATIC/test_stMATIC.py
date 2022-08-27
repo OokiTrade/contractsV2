@@ -77,7 +77,7 @@ def test_case2(accounts, B_STABLE_VAULT, bStable, PRICE_FEED):
     assert(B_STABLE_VAULT.balanceOf(accounts[0]) == 1e18) 
     assert(bStable.balanceOf(accounts[0]) == assets)
 
-def test_case3(accounts, BZX, DEX_RECORDS, SET_SWAP_IMPL, stMATIC, WMATIC, B_STABLE_VAULT, PRICE_FEED, VAULT_FEED):
+def test_case3(accounts, BZX, DEX_RECORDS, SET_SWAP_IMPL, stMATIC, WMATIC, bStable, B_STABLE_VAULT, PRICE_FEED, VAULT_FEED):
     PRICE_FEED.setPriceFeed([B_STABLE_VAULT], [VAULT_FEED], {"from":PRICE_FEED.owner()})
     dexID = DEX_RECORDS.getDexCount()
     BZX.setSupportedTokens([stMATIC, WMATIC], [True, True], True, {"from":BZX.owner()})
@@ -100,6 +100,7 @@ def test_case3(accounts, BZX, DEX_RECORDS, SET_SWAP_IMPL, stMATIC, WMATIC, B_STA
     loanDataBytes = encode_abi(['uint128','bytes[]'],[2,[selector_payload]]) #flag value of Base-2: 10  
 
     B_STABLE_VAULT.approve(BZX, 1e18, {"from":accounts[0]})
+    print(PRICE_FEED.queryReturn(bStable, WMATIC, 1e18))
     receivedAmount, usedAmount = BZX.swapExternal(B_STABLE_VAULT, WMATIC, accounts[0], accounts[0], 1e18, 0, loanDataBytes, {"from":accounts[0]}).return_value
     print(receivedAmount)
     assert(receivedAmount > minAmountOut)

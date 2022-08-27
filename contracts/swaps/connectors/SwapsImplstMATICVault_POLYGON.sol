@@ -30,7 +30,7 @@ contract SwapsImplstMATICVault_POLYGON is State, ISwapsImpl {
     IBalancerHelpers public constant HELPER = IBalancerHelpers(0x239e55F427D44C3cc793f49bFB507ebe76638a2b);
 
     IVault public constant VAULT =
-        IVault(address(0));
+        IVault(0x976f31D12df9272f10c2f20BE2887824Cc3d974c);
     address public constant ASSET = 0xaF5E0B5425dE1F5a630A8cB5AA9D97B8141C908D;
     function dexSwap(
         address sourceTokenAddress,
