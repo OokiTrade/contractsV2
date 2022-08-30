@@ -10,11 +10,10 @@ import "../../interfaces/IPriceFeeds.sol";
 contract bStablestMATICVault is ERC20, IVault {
     using SafeERC20 for IERC20;
 
-    uint256 public totalAssets;
+    uint256 public override totalAssets;
+    address public constant override asset = 0xaF5E0B5425dE1F5a630A8cB5AA9D97B8141C908D;
 
     uint256 internal _sharePrice = 1e18;
-
-    address public constant asset = 0xaF5E0B5425dE1F5a630A8cB5AA9D97B8141C908D;
 
     address internal constant _bStableGauge = 0x9928340f9E1aaAd7dF1D95E27bd9A5c715202a56;
     address internal constant _vault = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
@@ -46,24 +45,24 @@ contract bStablestMATICVault is ERC20, IVault {
 
     constructor () ERC20("bStable-stMATIC/MATIC-Vault", "OVault") {}
 
-    function convertToShares(uint256 assets) public view returns (uint256 shares) {
+    function convertToShares(uint256 assets) public view override returns (uint256 shares) {
         return assets*1e18/_sharePrice;
     }
 
-    function convertToAssets(uint256 shares) public view returns (uint256 assets) {
+    function convertToAssets(uint256 shares) public view override returns (uint256 assets) {
         return shares*_sharePrice/1e18;
     }
 
-    function maxDeposit(address receiver) external view returns (uint256) {
+    function maxDeposit(address receiver) external view override returns (uint256) {
         return type(uint256).max;
     }
 
     //Note: Due to how compounding works with Balancer, the share amount will likely be overstated; however, there is no loss of funds as the share price will increase with it
-    function previewDeposit(uint256 assets) public view returns (uint256) {
+    function previewDeposit(uint256 assets) public view override returns (uint256) {
         return convertToShares(assets);
     }
 
-    function deposit(uint256 assets, address receiver) external returns (uint256 shares) {
+    function deposit(uint256 assets, address receiver) external override returns (uint256 shares) {
         compound();
         IERC20(asset).safeTransferFrom(msg.sender, address(this), assets);
         shares = convertToShares(assets);
@@ -72,16 +71,16 @@ contract bStablestMATICVault is ERC20, IVault {
         emit Deposit(msg.sender, receiver, assets, shares);
     }
 
-    function maxMint(address receiver) external view returns (uint256) {
+    function maxMint(address receiver) external view override returns (uint256) {
         return type(uint256).max;
     }
 
     //Note: Due to how compounding works with Balancer, the asset amount will likely be understated; however, there is no loss of funds as the share price will increase with it
-    function previewMint(uint256 shares) external view returns (uint256 assets) {
+    function previewMint(uint256 shares) external view override returns (uint256 assets) {
         return convertToAssets(shares);
     }
 
-    function mint(uint256 shares, address receiver) external returns (uint256 assets) {
+    function mint(uint256 shares, address receiver) external override returns (uint256 assets) {
         compound();
         assets = convertToAssets(shares);
         IERC20(asset).safeTransferFrom(msg.sender, address(this), assets);
@@ -90,15 +89,15 @@ contract bStablestMATICVault is ERC20, IVault {
         emit Deposit(msg.sender, receiver, assets, shares);
     }
 
-    function maxWithdraw(address owner) external view returns (uint256) {
+    function maxWithdraw(address owner) external view override returns (uint256) {
         return type(uint256).max;
     }
 
-    function previewWithdraw(uint256 assets) external view returns (uint256) {
+    function previewWithdraw(uint256 assets) external view override returns (uint256) {
         return convertToShares(assets);
     }
 
-    function withdraw(uint256 assets, address receiver, address owner) external returns (uint256 shares) {
+    function withdraw(uint256 assets, address receiver, address owner) external override returns (uint256 shares) {
         require(msg.sender == owner, "unauthorized");
         compound();
         shares = convertToShares(assets);
@@ -109,15 +108,15 @@ contract bStablestMATICVault is ERC20, IVault {
         emit Withdraw(msg.sender, receiver, owner, assets, shares);
     }
 
-    function maxRedeem(address owner) external view returns (uint256) {
+    function maxRedeem(address owner) external view override returns (uint256) {
         return type(uint256).max;
     }
 
-    function previewRedeem(uint256 shares) external view returns (uint256) {
+    function previewRedeem(uint256 shares) external view override returns (uint256) {
         return convertToAssets(shares);
     }
 
-    function redeem(uint256 shares, address receiver, address owner) external returns (uint256 assets) {
+    function redeem(uint256 shares, address receiver, address owner) external override returns (uint256 assets) {
         require(msg.sender == owner, "unauthorized");
         compound();
         assets = convertToAssets(shares);
@@ -139,7 +138,7 @@ contract bStablestMATICVault is ERC20, IVault {
         IERC20(asset).safeApprove(_bStableGauge, type(uint256).max);
     }
 
-    function compound() public {
+    function compound() public override {
         uint256 rateForConversion = IBalancerPool(asset).getLatest(0);
         if (rateForConversion > 102e16 || rateForConversion < 98e16) return; //silently return if rate from reference rate is > 2% difference. Acts as manipulation protection
         uint256 tokensClaimed = IBalancerGauge(_bStableGauge).claimable_reward_write(address(this), BAL);
