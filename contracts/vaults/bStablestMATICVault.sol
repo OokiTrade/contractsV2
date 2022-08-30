@@ -15,8 +15,8 @@ contract bStablestMATICVault is ERC20, IVault {
 
     uint256 internal _sharePrice = 1e18;
 
-    address internal constant _bStableGauge = 0x9928340f9E1aaAd7dF1D95E27bd9A5c715202a56;
-    address internal constant _vault = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
+    address internal constant _BSTABLEGAUGE = 0x9928340f9E1aaAd7dF1D95E27bd9A5c715202a56;
+    address internal constant _VAULT = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
 
     address public constant BAL = 0x9a71012B13CA4d3D0Cdc72A177DF3ef03b0E76A3; 
 
@@ -66,7 +66,7 @@ contract bStablestMATICVault is ERC20, IVault {
         compound();
         IERC20(asset).safeTransferFrom(msg.sender, address(this), assets);
         shares = convertToShares(assets);
-        IBalancerGauge(_bStableGauge).deposit(assets);
+        IBalancerGauge(_BSTABLEGAUGE).deposit(assets);
         _mint(receiver, shares);
         emit Deposit(msg.sender, receiver, assets, shares);
     }
@@ -84,7 +84,7 @@ contract bStablestMATICVault is ERC20, IVault {
         compound();
         assets = convertToAssets(shares);
         IERC20(asset).safeTransferFrom(msg.sender, address(this), assets);
-        IBalancerGauge(_bStableGauge).deposit(assets);
+        IBalancerGauge(_BSTABLEGAUGE).deposit(assets);
         _mint(receiver, shares);
         emit Deposit(msg.sender, receiver, assets, shares);
     }
@@ -102,7 +102,7 @@ contract bStablestMATICVault is ERC20, IVault {
         compound();
         shares = convertToShares(assets);
         _burn(owner, shares);
-        IBalancerGauge(_bStableGauge).withdraw(assets);
+        IBalancerGauge(_BSTABLEGAUGE).withdraw(assets);
         IERC20(asset).transfer(receiver, assets);
 
         emit Withdraw(msg.sender, receiver, owner, assets, shares);
@@ -121,28 +121,28 @@ contract bStablestMATICVault is ERC20, IVault {
         compound();
         assets = convertToAssets(shares);
         _burn(owner, shares);
-        IBalancerGauge(_bStableGauge).withdraw(assets);
+        IBalancerGauge(_BSTABLEGAUGE).withdraw(assets);
         IERC20(asset).transfer(receiver, assets);
 
         emit Withdraw(msg.sender, receiver, owner, assets, shares);
     }
 
     function setApprovals() public {
-        IERC20(BAL).safeApprove(_vault, 0);
-        IERC20(BAL).safeApprove(_vault, type(uint256).max);
+        IERC20(BAL).safeApprove(_VAULT, 0);
+        IERC20(BAL).safeApprove(_VAULT, type(uint256).max);
 
-        IERC20(WMATIC).safeApprove(_vault, 0);
-        IERC20(WMATIC).safeApprove(_vault, type(uint256).max);
+        IERC20(WMATIC).safeApprove(_VAULT, 0);
+        IERC20(WMATIC).safeApprove(_VAULT, type(uint256).max);
 
-        IERC20(asset).safeApprove(_bStableGauge, 0);
-        IERC20(asset).safeApprove(_bStableGauge, type(uint256).max);
+        IERC20(asset).safeApprove(_BSTABLEGAUGE, 0);
+        IERC20(asset).safeApprove(_BSTABLEGAUGE, type(uint256).max);
     }
 
     function compound() public override {
         uint256 rateForConversion = IBalancerPool(asset).getLatest(0);
         if (rateForConversion > 102e16 || rateForConversion < 98e16) return; //silently return if rate from reference rate is > 2% difference. Acts as manipulation protection
-        uint256 tokensClaimed = IBalancerGauge(_bStableGauge).claimable_reward_write(address(this), BAL);
-        IBalancerGauge(_bStableGauge).claim_rewards();
+        uint256 tokensClaimed = IBalancerGauge(_BSTABLEGAUGE).claimable_reward_write(address(this), BAL);
+        IBalancerGauge(_BSTABLEGAUGE).claim_rewards();
         if (tokensClaimed == 0) return;
         bytes memory blank;
         uint256 feeAmount = tokensClaimed/10;
@@ -157,7 +157,7 @@ contract bStablestMATICVault is ERC20, IVault {
         });
 
         uint256 minAmountOut = IPriceFeeds(PRICEFEED).queryReturn(BAL, WMATIC, tokensClaimed)*985/1000;
-        uint256 swapReceived = IBalancerVault(_vault).swap(swapParams, _funds, minAmountOut, block.timestamp);
+        uint256 swapReceived = IBalancerVault(_VAULT).swap(swapParams, _funds, minAmountOut, block.timestamp);
         swapParams = IBalancerVault.SingleSwap({
             poolId: POOLIDSWAP,
             kind: IBalancerVault.SwapKind.GIVEN_IN,
@@ -167,7 +167,7 @@ contract bStablestMATICVault is ERC20, IVault {
             userData: blank
         });
         minAmountOut =  IPriceFeeds(PRICEFEED).queryReturn(BAL, USDC, feeAmount)*985/1000;
-        IBalancerVault(_vault).swap(swapParams, _feeFunds, minAmountOut, block.timestamp);
+        IBalancerVault(_VAULT).swap(swapParams, _feeFunds, minAmountOut, block.timestamp);
         uint256 joinKind = 1;
         uint256[] memory values = new uint256[](2);
         values[0] = swapReceived;
@@ -182,8 +182,8 @@ contract bStablestMATICVault is ERC20, IVault {
             userData: abi.encode(joinKind, values, minAmountOut),
             fromInternalBalance: false
         });
-        IBalancerVault(_vault).joinPool(POOLID, address(this), address(this), req);
-        IBalancerGauge(_bStableGauge).deposit(IERC20(asset).balanceOf(address(this)));
-        _sharePrice = IERC20(_bStableGauge).balanceOf(address(this))*1e18/totalSupply();
+        IBalancerVault(_VAULT).joinPool(POOLID, address(this), address(this), req);
+        IBalancerGauge(_BSTABLEGAUGE).deposit(IERC20(asset).balanceOf(address(this)));
+        _sharePrice = IERC20(_BSTABLEGAUGE).balanceOf(address(this))*1e18/totalSupply();
     }
 }
