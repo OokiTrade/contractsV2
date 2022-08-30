@@ -213,6 +213,21 @@ def test_case2(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULTI
 
     assert True
 
+def test_case3(accounts, BZX, USDC, USDT, iUSDT, FRAX):
+    # get some FRAX
+    FRAX.transfer(accounts[0], 1000e18, {"from": "0x59bf0545fca0e5ad48e13da269facd2e8c886ba4"})
+
+    # borrow using FRAX as collateral
+    FRAX.approve(iUSDT, 2**256-1, {"from": accounts[0]})
+    iUSDT.borrow("", 1e5, 0, 1e18, FRAX, accounts[0], accounts[0], b"", {'from': accounts[0]})
+    loans = BZX.getUserLoans(accounts[0], 0, 10, 0, 0, 0)
+    #change collateral to USDC
+    BZX.swapLoanCollateral(loans[0][0],USDC,b'',{"from":accounts[0]})
+    loansNew = BZX.getUserLoans(accounts[0], 0, 10, 0, 0, 0)
+    assert(loansNew[0][3] == USDC.address)
+    assert(loansNew[0][5] != loans[0][5])
+    assert(loansNew[0][2] == USDT.address)  
+    BZX.closeWithSwap(loans[0][0], accounts[0], loansNew[0][5], True, b"", {"from": accounts[0]})
 
 def test_case2_1(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULTISIG, FRAX, LoanTokenLogicStandard, LoanToken, CurvedInterestRate, PriceFeeds, PRICE_FEED, interface, CRV):
     PRICE_FEED.setPriceFeed([CRV], ['0xaebDA2c976cfd1eE1977Eac079B4382acb849325'], {'from': PRICE_FEED.owner()})
