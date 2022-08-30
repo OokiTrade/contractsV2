@@ -38,6 +38,9 @@ for l in list:
     BZX.migrateLoanParamsList(l[0], 0, 1000, {"from": BZX.owner()})
 
 
+price_feed_new = PriceFeeds.at("0x392b7Baf9dBf56a0AcA52f0Ba8bC1D7451Ef8A4A")
+BZX.setPriceFeedContract(price_feed_new, {"from": GUARDIAN_MULTISIG})
+
 # small test
 USDC.transfer(accounts[0], 100000e6, {"from": "0x1714400ff23db4af24f9fd64e7039e6597f18c2b"})
 USDC.approve(iUSDC, 2**256-1, {"from": accounts[0]})
