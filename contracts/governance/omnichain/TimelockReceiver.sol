@@ -55,6 +55,7 @@ contract TimelockReceiver is PausableGuardian_0_8 {
         bytes calldata message,
         address exec
     ) external payable onlyMessageBus returns (ExecutionStatus) {
+        emit MessageToBeExecuted(exec, message, block.timestamp);
         if (sender != timelockDistributor || srcChainId != 1) {
             return ExecutionStatus.Fail;
         }
@@ -66,8 +67,6 @@ contract TimelockReceiver is PausableGuardian_0_8 {
         }catch {
             return ExecutionStatus.Fail;
         }
-
-        emit MessageToBeExecuted(exec, message, block.timestamp);
     }
 
 }
