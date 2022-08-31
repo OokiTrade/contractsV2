@@ -9,10 +9,6 @@ contract Executor is PausableGuardian_0_8 {
         uint256 etherSendAmount;
     }
 
-    event MessageExecute(
-        bytes message,
-        uint256 timestamp
-    );
     function executeMessage(bytes calldata message) external payable onlyGuardian {
         TxnData[] memory transactions = abi.decode(message, (TxnData[]));
         uint256 unspentBalance = msg.value;
@@ -25,7 +21,5 @@ contract Executor is PausableGuardian_0_8 {
             require(success, "fail");
             unchecked { ++i; }
         }
-
-        emit MessageExecute(message, block.timestamp);
     }
 }
