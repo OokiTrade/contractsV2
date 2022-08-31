@@ -10,7 +10,6 @@ for l in list:
     globals()[underlyingTemp.symbol()] = underlyingTemp
 
 HELPER = Contract.from_abi("HELPER", "0x81B91c9a68b94F88f3DFC4F375f101223dDd5007", HelperImpl.abi)
-BGOV = Contract.from_abi("PGOV", "0xf8E026dC4C0860771f691EcFFBbdfe2fa51c77CF", GovToken.abi)
 
 ADMIN_LOCK = Contract.from_abi("ADMIN_LOCK", "0xcd5788e81821500cc306378e079b34b964876e55", AdminLock.abi)
 SUSHI_ROUTER = Contract.from_abi("router", "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506", interface.IPancakeRouter02.abi)
