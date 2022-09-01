@@ -12,7 +12,8 @@ MINIMAL_RATES = {
     "iMATIC":   0.1e18,
 }
 
-cui = CurvedInterestRate.deploy({'from': deployer})
+# cui = CurvedInterestRate.deploy({'from': deployer})
+cui = CurvedInterestRate.at("0x0aec8457111de708fac9b48fd1570801b4371cfe")
 cui.updateParams((120e18, 80e18, 100e18, 100e18, 110e18, 0.1e18, 0.01e18), ZERO_ADDRESS, {"from": deployer}) # default across all
 
 supportedTokenAssetsPairs = TOKEN_REGISTRY.getTokens(0, 100)
