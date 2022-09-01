@@ -1,6 +1,6 @@
 pragma solidity ^0.8.0;
 
-import "@openzeppelin-4.3.2/token/ERC20/IERC20.sol";
+import "@openzeppelin-4.7.0/token/ERC20/IERC20.sol";
 import "../../interfaces/IStaking.sol";
 import "../governance/PausableGuardian_0_8.sol";
 
