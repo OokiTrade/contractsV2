@@ -14,7 +14,7 @@ contract PriceFeedbStablestMATIC {
 
     IBalancerPool.OracleAverageQuery public TWAP = IBalancerPool.OracleAverageQuery({
         variable: 1,
-        secs: 1200,
+        secs: 3600,
         ago: 300
     });
 
