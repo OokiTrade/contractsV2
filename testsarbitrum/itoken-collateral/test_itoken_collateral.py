@@ -394,7 +394,7 @@ def test_case11(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULT
     price_feed = PriceFeeds.deploy({"from": accounts[0]})
     BZX.setPriceFeedContract(price_feed, {"from": BZX.owner()})
     price_feed.changeGuardian(GUARDIAN_MULTISIG, {"from": accounts[0]})
-    price_feed.setPriceFeed([USDC, USDT], [USDCPriceFeed, USDTPriceFeed], {"from": GUARDIAN_MULTISIG})
+    price_feed.setPriceFeed([USDC, USDT], [USDCPriceFeed, USDTPriceFeed], {"from": price_feed.owner()})
 
     USDC.approve(iUSDC, 2**256-1, {"from": accounts[0]})
     iUSDC.mint(accounts[0], 10000e6, {"from": accounts[0]})
@@ -430,7 +430,7 @@ def test_case12(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULT
     price_feed = PriceFeeds.deploy({"from": accounts[0]})
     BZX.setPriceFeedContract(price_feed, {"from": BZX.owner()})
     price_feed.changeGuardian(GUARDIAN_MULTISIG, {"from": accounts[0]})
-    price_feed.setPriceFeed([USDC], [USDCPriceFeed], {"from": GUARDIAN_MULTISIG})
+    price_feed.setPriceFeed([USDC], [USDCPriceFeed], {"from": price_feed.owner()})
 
     # priceFeed = PriceFeedIToken.deploy(USDCPriceFeed, iUSDC, {"from": accounts[0]})
     # PRICE_FEED.setPriceFeed([iUSDC], [priceFeed], {'from': PRICE_FEED.owner()})
@@ -499,7 +499,7 @@ def test_case14(accounts, BZX, USDC, USDT, iUSDT, iUSDC, REGISTRY, GUARDIAN_MULT
     price_feed = PriceFeeds.deploy({"from": local})
     BZX.setPriceFeedContract(price_feed, {"from": BZX.owner()})
     price_feed.changeGuardian(GUARDIAN_MULTISIG, {"from": local})
-    price_feed.setPriceFeed([USDC, USDT], [USDCPriceFeed, USDTPriceFeed], {"from": GUARDIAN_MULTISIG})
+    price_feed.setPriceFeed([USDC, USDT], [USDCPriceFeed, USDTPriceFeed], {"from": price_feed.owner()})
 
     USDC.approve(iUSDC, 2**256-1, {"from": local})
     iUSDC.mint(local, 10000e6, {"from": local})
