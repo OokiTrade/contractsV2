@@ -157,7 +157,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian {
         }
     }
 
-    function setApprovals(address[] calldata tokens, uint256[] calldata dexIDs) external onlyOwner {
+    function setApprovals(address[] calldata tokens, uint256[] calldata dexIDs) external onlyGuardian {
         bytes memory setSwapApprovalsData = abi.encodeWithSelector(
             0x4a99e3a1, // setSwapApprovals(address[])
             tokens
