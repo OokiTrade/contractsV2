@@ -959,7 +959,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     }
 
 
-    function setDemandCurve(ICurvedInterestRate _rateHelper) public onlyGuardian {
+    function setDemandCurve(ICurvedInterestRate _rateHelper) public onlyOwner {
         require(address(_rateHelper) != address(0), "no zero address");
         rateHelper = _rateHelper;
     }

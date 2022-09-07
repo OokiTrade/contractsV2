@@ -261,7 +261,7 @@ contract PriceFeeds is Constants, PausableGuardian {
         address[] calldata tokens,
         IPriceFeedsExt[] calldata feeds)
         external
-        onlyGuardian
+        onlyOwner
     {
         require(tokens.length == feeds.length, "count mismatch");
 
