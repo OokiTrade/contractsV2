@@ -90,7 +90,7 @@ contract bStablestMATICVault is ERC20, IVault {
     }
 
     function maxWithdraw(address owner) external view override returns (uint256) {
-        return type(uint256).max;
+        return convertToShares(balanceOf(owner));
     }
 
     function previewWithdraw(uint256 assets) external view override returns (uint256) {
@@ -109,7 +109,7 @@ contract bStablestMATICVault is ERC20, IVault {
     }
 
     function maxRedeem(address owner) external view override returns (uint256) {
-        return type(uint256).max;
+        return balanceOf(owner);
     }
 
     function previewRedeem(uint256 shares) external view override returns (uint256) {
