@@ -9,7 +9,7 @@ import "../../../interfaces/IPriceFeeds.sol";
 contract FeedFactory is PausableGuardian_0_8{
     address public constant QUOTE = address(0);
     address public constant PRICE_FEEDS = address(0);
-    address public constant UNIV3_FACTORY = address(0);
+    address public constant UNIV3_FACTORY = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
     IUniv3Twap.V3Specs public specs;
 
     constructor() {}
