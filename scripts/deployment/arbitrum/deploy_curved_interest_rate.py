@@ -4,13 +4,13 @@ exec(open("./scripts/env/set-arbitrum.py").read())
 deployer = accounts[0]
 
 MINIMAL_RATES = {
-    "iETH":   0.01e18,
+    "iETH":   0.1e18,
     "iBTC":   0.1e18,
     "iSPELL": 0.1e18,
     "iLINK":  0.1e18,
     "iUSDC":  0.8e18,
     "iUSDT":  0.8e18,
-    "iMIM":   0.1e18,
+    "iMIM":   0.8e18,
     "iFRAX":  0.8e18,
     # "iETH":   0.1e18,
     # "iBTC":   0.1e18,
