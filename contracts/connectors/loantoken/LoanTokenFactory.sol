@@ -13,6 +13,7 @@ contract LoanTokenFactory is PausableGuardian {
     address public rateHelper;
     uint256 flashLoanFeePercent;
     address public target;
+    address public whitelistedITokenTarget;
 
     function addNewToken(
         address loanTokenAddress)
@@ -87,6 +88,26 @@ contract LoanTokenFactory is PausableGuardian {
         onlyOwner
     {
         target = newTarget;
+    }
+
+    function setWhitelistTarget(address newTarget)
+        external
+        onlyOwner
+    {
+        whitelistedITokenTarget = newTarget;
+    }
+
+    function convertITokenToWhitelisted(address payable iTokenAddress, address _rateHelper, uint256 flashLoanFeePercent)
+        external
+        onlyOwner
+    {
+        FactoryLoanToken f = FactoryLoanToken(iTokenAddress);
+        f.setTarget(whitelistedITokenTarget);
+        f.setFactory(address(0));
+        IToken(iTokenAddress).setDemandCurve(_rateHelper);
+        IToken(iTokenAddress).updateFlashBorrowFeePercent(flashLoanFeePercent);
+        f.transferOwnership(owner());
+        
     }
 
     function isPaused(bytes calldata data)

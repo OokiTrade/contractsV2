@@ -7,8 +7,10 @@ contract FactoryLoanToken is LoanToken {
     address factory;
     constructor()
         public
-        LoanToken(address(0), address(0))
-    {}
+        LoanToken(msg.sender, address(0))
+    {
+        factory = msg.sender;
+    }
 
     function()
         external
@@ -36,7 +38,18 @@ contract FactoryLoanToken is LoanToken {
         internal
         returns (address)
     {
-        return ILoanTokenFactory(factory).getTargetForLoanToken();
+        if (factory != address(0)){
+            return ILoanTokenFactory(factory).getTargetForLoanToken();
+        } else {
+            return super._getTarget();
+        }
     }
 
+    function setFactory(
+        address newFactory)
+        external
+    {
+        require(msg.sender == factory, "unauthorized");
+        factory = newFactory;
+    }
 }
