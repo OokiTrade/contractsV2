@@ -149,6 +149,8 @@ interface IBZx {
 
     function loanParams(bytes32) external view returns (LoanParams memory);
 
+    function factory() external view returns (address);
+
     // we don't use this yet
     // function lenderOrders(address, bytes32) external returns (Order memory);
     // function borrowerOrders(address, bytes32) external returns (Order memory);
