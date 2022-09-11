@@ -18,7 +18,7 @@ contract FactoryFeed{
         base = baseToken;
         quote = quoteToken;
         pool = poolAddress;
-        require(10**IERC20Metadata(base).decimals() <= 18, "too high of decimals");
+        require(IERC20Metadata(base).decimals() <= 18, "too high of decimals");
         baseAmount = uint128(10**IERC20Metadata(base).decimals());
     }
 
