@@ -25,15 +25,49 @@ interface IToken {
     event Burn(address indexed burner,uint256 tokenAmount,uint256 assetAmount,uint256 price);
     event FlashBorrow(address borrower,address target,address loanToken,uint256 loanAmount);
 
+    //ERC-4626 functions
+    function asset() external view returns (address assetTokenAddress);
+
+    function totalAssets() external view returns (uint256 totalManagedAssets);
+
+    function convertToShares(uint256 assets) external view returns (uint256 shares);
+
+    function convertToAssets(uint256 shares) external view returns (uint256 assets);
+
+    function maxDeposit(address receiver) external view returns (uint256 maxAssets);
+
+    function previewDeposit(uint256 assets) external view returns (uint256 shares);
+
+    function deposit(uint256 assets, address receiver) external returns (uint256 shares);
+
+    function maxMint(address receiver) external view returns (uint256 maxShares);
+
+    function previewMint(uint256 shares) external view returns (uint256 assets);
+
+    function mint(uint256 shares, address receiver) external returns (uint256 assets);
+
+    function maxWithdraw(address owner) external view returns (uint256 maxAssets);
+
+    function previewWithdraw(uint256 assets) external view returns (uint256 shares);
+
+    function withdraw(
+        uint256 assets,
+        address receiver,
+        address owner
+    ) external returns (uint256 shares);
+
+    function maxRedeem(address owner) external view returns (uint256 maxShares);
+
+    function previewRedeem(uint256 shares) external view returns (uint256 assets);
+
+    function redeem(
+        uint256 shares,
+        address receiver,
+        address owner
+    ) external returns (uint256 assets);  
+
+    //LoanTokenLogicStandard functions
     function tokenPrice() external view returns (uint256);
-
-    function mint(address receiver, uint256 depositAmount)
-        external
-        returns (uint256);
-
-    function burn(address receiver, uint256 burnAmount)
-        external
-        returns (uint256 loanAmountPaid);
 
     function flashBorrow(
         uint256 borrowAmount,
@@ -89,10 +123,6 @@ interface IToken {
 
     function totalAssetBorrow() external view returns (uint256);
 
-    function totalAssetSupply() external view returns (uint256);
-
-    function assetBalanceOf(address _owner) external view returns (uint256);
-
     function getDepositAmountForBorrow(
         uint256 borrowAmount,
         uint256 initialLoanDuration, // duration in seconds
@@ -109,8 +139,7 @@ interface IToken {
 
     function initialPrice() external view returns (uint256);
 
-    function loanParamsIds(uint256) external view returns (bytes32);
-
+    function loanParamsIds(uint256) external view returns (bytes32); 
 
     /// Guardian interface
 
@@ -126,10 +155,6 @@ interface IToken {
     
     function revokeApproval(address _loanTokenAddress) external;
 
-    function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
-    function DOMAIN_SEPARATOR() external view returns(bytes32);
-    function PERMIT_TYPEHASH() external view returns(bytes32);
-    function nonces(address) external view returns (uint);
     /// Admin functions
     function setTarget(address _newTarget) external;
     
@@ -137,7 +162,11 @@ interface IToken {
 
     function transferOwnership(address newOwner) external;
 
-    function initializeDomainSeparator() external;
+    function initialize(
+        address loanToken,
+        string calldata name,
+        string calldata symbol)
+        external;
 
     struct LoanOpenData {
         bytes32 loanId;
