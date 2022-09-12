@@ -18,6 +18,10 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
     using MathUtil for uint256;
     using InterestOracle for InterestOracle.Observation[256];
 
+    modifier onlyGuardianOrFactory() {
+        require(msg.sender == factory || msg.sender == getGuardian() || msg.sender == owner(), "unauthorized");_;
+    }
+
     function initialize(address target) external onlyOwner {
         _setTarget(this.setupLoanPoolTWAI.selector, target);
         _setTarget(this.setTWAISettings.selector, target);
@@ -40,7 +44,7 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
         twaiLength = secondsAgo;
     }
 
-    function setupLoanPoolTWAI(address pool) external onlyGuardian {
+    function setupLoanPoolTWAI(address pool) external onlyGuardianOrFactory {
         require(poolInterestRateObservations[pool][0].blockTimestamp == 0, "already initialized");
 
         if (poolLastUpdateTime[pool] == 0) {

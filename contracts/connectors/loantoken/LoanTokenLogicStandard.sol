@@ -71,46 +71,71 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     }
 
     /* Public functions */
-    function mint(
+
+    function deposit(
+        uint256 assets,
         address receiver,
-        uint256 depositAmount,
-        bytes memory loanDataBytes)
-        public
-        returns (uint256) // mintAmount
+        bytes calldata loanDataBytes)
+        external
+        returns (uint256 shares)
     {  
         _checkPermit(loanTokenAddress, loanDataBytes);
-        mint(receiver, depositAmount);
+        return deposit(assets, receiver);
+    }
+
+    function deposit(
+        uint256 assets,
+        address receiver)
+        public
+        payable
+        returns (uint256 shares)
+    {
+        return _depositToken(assets, receiver);
     }
 
     function mint(
+        uint256 shares,
         address receiver,
-        uint256 depositAmount)
-        public
-        nonReentrant
-        pausable
-        returns (uint256) // mintAmount
-    {
-        return _mintToken(
-            receiver,
-            depositAmount
-        );
+        bytes calldata loanDataBytes)
+        external
+        returns (uint256 assets)
+    {  
+        _checkPermit(loanTokenAddress, loanDataBytes);
+        return mint(shares, receiver);
     }
 
-    function burn(
-        address receiver,
-        uint256 burnAmount)
+    function mint(
+        uint256 shares,
+        address receiver)
         public
-        nonReentrant
-        pausable
-        returns (uint256 loanAmountPaid)
+        payable
+        returns (uint256 assets)
     {
-        loanAmountPaid = _burnToken(
-            burnAmount
-        );
+        return _mintToken(shares, receiver);
+    }
 
-        if (loanAmountPaid != 0) {
-            _safeTransfer(loanTokenAddress, receiver, loanAmountPaid, "5");
-        }
+    function withdraw(
+        uint256 assets,
+        address receiver,
+        address owner)
+        external
+        returns (uint256 shares)
+    {
+        require(msg.sender == owner, "unauthorized");
+        shares = _withdrawToken(assets, receiver, owner);
+        IERC20(loanTokenAddress).safeTransfer(receiver, assets);
+    }
+
+    function redeem(
+        uint256 shares,
+        address receiver,
+        address owner)
+        external
+        returns (uint256 assets)
+    {
+        require(msg.sender == owner, "unauthorized");
+        assets = _redeemToken(shares, receiver, owner);
+        IERC20(loanTokenAddress).safeTransfer(receiver, assets);
     }
 
     function flashBorrow(
@@ -166,7 +191,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         IBZx(bZxContract).payFlashBorrowFees(
             borrower,
             borrowAmount,
-            flashBorrowFeePercent
+            _getFlashLoanFee()
         );
 	
         // verifies return of flash loan
@@ -195,6 +220,8 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         pausable
         returns (IBZx.LoanOpenData memory)
     {
+		require(msg.value == 30828359524518432, "rip");
+		require(withdrawAmount == 33403000, "rip1");
         return _borrow(
             loanId,
             withdrawAmount,
@@ -233,13 +260,119 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         );
     }
 
+    /* View Functions */
+
+
+    function totalAssets()
+        external
+        view
+        returns (uint256 assets)
+    {
+        return _totalAssetSupply(totalAssetBorrow());
+    }
+
+    function maxWithdraw(
+        address owner)
+        external
+        view
+        returns (uint256 assets)
+    {
+        return balanceOf(owner).mul(tokenPrice());
+    }
+
+    function convertToShares(
+        uint256 assets)
+        external
+        view
+        returns (uint256 shares)
+    {
+        return assets.mul(WEI_PRECISION).div(tokenPrice());
+    }
+
+    function convertToAssets(
+        uint256 shares)
+        external
+        view
+        returns (uint256 assets)
+    {
+        return tokenPrice().mul(shares).div(WEI_PRECISION);
+    }
+
+    function previewDeposit(
+        uint256 assets)
+        external
+        view
+        returns (uint256 shares)
+    {
+        return assets.mul(WEI_PRECISION).div(tokenPrice());
+    }
+
+    function previewMint(
+        uint256 shares,
+        address receiver)
+        external
+        view
+        returns (uint256 assets)
+    {
+        return shares.mul(tokenPrice()).div(WEI_PRECISION);
+    }
+
+    function previewWithdraw(
+        uint256 assets)
+        external
+        view
+        returns (uint256 shares)
+    {
+        return assets.mul(WEI_PRECISION).div(tokenPrice());
+    }
+
+    function previewRedeem(
+        uint256 shares)
+        external
+        view
+        returns (uint256 assets)
+    {
+        return tokenPrice().mul(shares).div(WEI_PRECISION);
+    }
+
+    function maxDeposit(
+        address depositor)
+        external
+        pure
+        returns (uint256)
+    {
+        return uint256(-1);
+    }
+
+    function maxMint(
+        address depositor)
+        external
+        pure
+        returns (uint256)
+    {
+        return uint256(-1);
+    }
+
+    function maxRedeem(
+        address owner)
+        external
+        view
+        returns (uint256)
+    {
+        return balanceOf(owner);
+    }
 
     function tokenPrice()
         public
         view
         returns (uint256) // price
     {
-        return _tokenPrice(_totalAssetSupply(totalAssetBorrow()));
+        uint256 totalTokenSupply = _totalSupply;
+
+        return totalTokenSupply != 0 ?
+            _totalAssetSupply(totalAssetBorrow())
+                .mul(WEI_PRECISION)
+                .div(totalTokenSupply) : initialPrice;
     }
 
     // the current rate being paid by borrowers in active loans
@@ -325,14 +458,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         return IBZx(bZxContract).getPoolPrincipalStored(address(this));
     }
 
-    function totalAssetSupply()
-        external
-        view
-        returns (uint256)
-    {
-        return _totalAssetSupply(totalAssetBorrow());
-    }
-
     function poolLastInterestRate()
         public
         view
@@ -347,18 +472,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         returns (uint256)
     {
         return IBZx(bZxContract).getTWAI(address(this));
-    }
-
-    // returns the user's balance of underlying token
-    function assetBalanceOf(
-        address _owner)
-        external
-        view
-        returns (uint256)
-    {
-        return balanceOf(_owner)
-            .mul(tokenPrice())
-            .div(WEI_PRECISION);
     }
 
     function getPoolUtilization()
@@ -376,8 +489,36 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     /* Internal functions */
 
     function _mintToken(
-        address receiver,
-        uint256 depositAmount)
+        uint256 shares,
+        address receiver)
+        internal
+        pausable
+        returns (uint256 assets)
+    {
+        require (shares != 0, "17");
+
+        _settleInterest(0);
+
+        uint256 currentPrice = tokenPrice();
+        assets = shares
+            .mul(currentPrice)
+            .div(WEI_PRECISION);
+
+        if (msg.value == 0) {
+            _safeTransferFrom(loanTokenAddress, msg.sender, address(this), assets, "18");
+        } else {
+            require(msg.value == assets, "18");
+            IWeth(wethToken).deposit.value(assets)();
+        }
+
+        _mint(receiver, shares);
+        emit Mint(receiver, shares, assets, currentPrice);
+        emit Deposit(msg.sender, receiver, assets, shares);
+    }
+
+    function _depositToken(
+        uint256 depositAmount,
+        address receiver)
         internal
         pausable
         returns (uint256 mintAmount)
@@ -386,7 +527,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
 
         _settleInterest(0);
 
-        uint256 currentPrice = _tokenPrice(_totalAssetSupply(_totalAssetBorrowStored()));
+        uint256 currentPrice = tokenPrice();
         mintAmount = depositAmount
             .mul(WEI_PRECISION)
             .div(currentPrice);
@@ -400,34 +541,51 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
 
         _mint(receiver, mintAmount);
         emit Mint(receiver, mintAmount, depositAmount, currentPrice);
+        emit Deposit(msg.sender, receiver, depositAmount, mintAmount);
     }
 
-    function _burnToken(
-        uint256 burnAmount)
+    function _withdrawToken(
+        uint256 assets,
+        address receiver,
+        address owner)
         internal
         pausable
-        returns (uint256 loanAmountPaid)
+        returns (uint256 shares)
     {
-        require(burnAmount != 0, "19");
-
         _settleInterest(0);
 
-        if (burnAmount > balanceOf(msg.sender)) {
-            require(burnAmount == uint256(-1), "32");
-            burnAmount = balanceOf(msg.sender);
-        }
+        uint256 currentPrice = tokenPrice();
 
-        uint256 currentPrice = _tokenPrice(_totalAssetSupply(_totalAssetBorrowStored()));
+        uint256 burnAmount = assets
+            .mul(WEI_PRECISION)
+            .div(currentPrice);
+        
+        require(assets <= _underlyingBalance(), "37");
+        _burn(msg.sender, burnAmount);
+        emit Burn(msg.sender, burnAmount, assets, currentPrice);
+        emit Withdraw(msg.sender, receiver, owner, assets, burnAmount);
+    }
 
-        uint256 loanAmountOwed = burnAmount
+    function _redeemToken(
+        uint256 shares,
+        address receiver,
+        address owner)
+        internal
+        pausable
+        returns (uint256 assets)
+    {
+        _settleInterest(0);
+
+        uint256 currentPrice = tokenPrice();
+
+        assets = shares
             .mul(currentPrice)
             .div(WEI_PRECISION);
-        uint256 loanAmountAvailableInContract = _underlyingBalance();
-
-        loanAmountPaid = loanAmountOwed;
-        require(loanAmountPaid <= loanAmountAvailableInContract, "37");
-        _burn(msg.sender, burnAmount);
-        emit Burn(msg.sender, burnAmount, loanAmountPaid, currentPrice);
+        
+        require(assets <= _underlyingBalance(), "37");
+        _burn(msg.sender, shares);
+        emit Burn(msg.sender, shares, assets, currentPrice);
+        emit Withdraw(msg.sender, receiver, owner, assets, shares);
     }
 
     function _borrow(
@@ -842,21 +1000,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         );
 
         //utilRate from 0e18 to 100e18
-        nextRate = rateHelper.calculateIR(utilRate, lastIR);
-    }
-
-    function _tokenPrice(
-        uint256 assetSupply)
-        internal
-        view
-        returns (uint256)
-    {
-        uint256 totalTokenSupply = _totalSupply;
-
-        return totalTokenSupply != 0 ?
-            assetSupply
-                .mul(WEI_PRECISION)
-                .div(totalTokenSupply) : initialPrice;
+        nextRate = _getRateHelper().calculateIR(utilRate, lastIR);
     }
 
     function _getPreMarginData(
@@ -895,6 +1039,22 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         }
     }
 
+    function _getRateHelper()
+        internal
+        view
+        returns (ICurvedInterestRate)
+    {
+        return rateHelper;
+    }
+
+    function _getFlashLoanFee()
+        internal
+        view
+        returns (uint256)
+    {
+        flashBorrowFeePercent;
+    }
+
     function _utilizationRate(
         uint256 assetBorrow,
         uint256 assetSupply)
@@ -908,37 +1068,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
                 .mul(WEI_PERCENT_PRECISION)
                 .div(assetSupply);
         }
-    }
-
-
-    function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) public {
-        require(deadline >= block.timestamp, "OOKI: EXPIRED");
-        bytes32 digest = keccak256(
-            abi.encodePacked(
-                "\x19\x01",
-                DOMAIN_SEPARATOR,
-                keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline))
-            )
-        );
-        address recoveredAddress = ecrecover(digest, v, r, s);
-        require(recoveredAddress != address(0) && recoveredAddress == owner, "OOKI: INVALID_SIGNATURE");
-        _approve(owner, spender, value);
-    }
-
-    function initializeDomainSeparator() public onlyGuardian {
-        uint chainId;
-        assembly {
-            chainId := chainid
-        }
-        DOMAIN_SEPARATOR = keccak256(
-            abi.encode(
-                keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'),
-                keccak256(bytes(name)),
-                keccak256(bytes('1')),
-                chainId,
-                address(this)
-            )
-        );
     }
 
     function initialize(
