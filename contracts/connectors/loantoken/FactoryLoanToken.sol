@@ -7,7 +7,7 @@ contract FactoryLoanToken is LoanToken {
     address factory;
     constructor()
         public
-        LoanToken(msg.sender, address(0))
+        LoanToken(msg.sender, msg.sender)
     {
         factory = msg.sender;
     }
@@ -22,7 +22,7 @@ contract FactoryLoanToken is LoanToken {
 
         address target = _getTarget();
         bytes memory data = msg.data;
-        require(ILoanTokenFactory(factory).isPaused(msg.data), "paused");
+        require(!ILoanTokenFactory(factory).isPaused(msg.data), "paused");
         assembly {
             let result := delegatecall(gas, target, add(data, 0x20), mload(data), 0, 0)
             let size := returndatasize
@@ -39,7 +39,7 @@ contract FactoryLoanToken is LoanToken {
         returns (address)
     {
         if (factory != address(0)){
-            return ILoanTokenFactory(factory).getTargetForLoanToken();
+            return ILoanTokenFactory(factory).getTarget();
         } else {
             return super._getTarget();
         }

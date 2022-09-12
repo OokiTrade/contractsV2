@@ -36,6 +36,8 @@ interface IBZx {
     /// @param newContract module address for the IPriceFeeds implementation
     function setPriceFeedContract(address newContract) external;
 
+    function setFactory(address newFactory) external;
+
     /// @dev sets swaps contract address. The contract on the addres should implement ISwapsImpl interface
     /// @param newContract module address for the ISwapsImpl implementation
     function setSwapsImplContract(address newContract) external;

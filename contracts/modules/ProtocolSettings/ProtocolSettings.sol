@@ -28,6 +28,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian {
         external
         onlyOwner
     {
+        _setTarget(this.factory.selector, target);
         _setTarget(this.setFactory.selector, target);
         _setTarget(this.setPriceFeedContract.selector, target);
         _setTarget(this.setSwapsImplContract.selector, target);

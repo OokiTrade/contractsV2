@@ -3,12 +3,11 @@ pragma experimental ABIEncoderV2;
 
 import "./LoanTokenLogicStandard.sol";
 import "../../../interfaces/ILoanTokenFactory.sol";
+import "../../../interfaces/IBZx.sol";
 contract LoanTokenLogicFactory is LoanTokenLogicStandard {
 
-    address public constant FACTORY = address(0);
-
     modifier onlyFactory() {
-        require(msg.sender == FACTORY, "not factory");_;
+        require(msg.sender == _getFactory(), "not factory");_;
     }
 
     constructor()
@@ -29,9 +28,7 @@ contract LoanTokenLogicFactory is LoanTokenLogicStandard {
         symbol = _symbol;
         decimals = IERC20Detailed(loanTokenAddress).decimals();
 
-        if (initialPrice == 0) {
-            initialPrice = WEI_PRECISION; // starting price of 1
-        }
+        initialPrice = WEI_PRECISION; // starting price of 1
 
         IERC20(_loanTokenAddress).safeApprove(bZxContract, uint256(-1));
     }
@@ -45,7 +42,15 @@ contract LoanTokenLogicFactory is LoanTokenLogicStandard {
         view
         returns (ICurvedInterestRate)
     {
-        return ICurvedInterestRate(ILoanTokenFactory(FACTORY).getRateHelper());
+        return ICurvedInterestRate(ILoanTokenFactory(_getFactory()).getRateHelper());
+    }
+
+    function _getFactory()
+        internal
+        view
+        returns (address)
+    {
+        return IBZx(bZxContract).factory();
     }
 
     function _getFlashLoanFee()
@@ -53,6 +58,6 @@ contract LoanTokenLogicFactory is LoanTokenLogicStandard {
         view
         returns (uint256)
     {
-        ILoanTokenFactory(FACTORY).getFlashLoanFeePercent();
+        ILoanTokenFactory(_getFactory()).getFlashLoanFeePercent();
     }
 }

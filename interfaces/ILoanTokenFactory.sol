@@ -11,7 +11,7 @@ interface ILoanTokenFactory {
         view
         returns (uint256);
     
-    function getTargetForLoanToken()
+    function getTarget()
         external
         view
         returns (address);
