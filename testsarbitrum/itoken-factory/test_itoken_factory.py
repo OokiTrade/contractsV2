@@ -1,4 +1,4 @@
-from brownie import *
+from brownie import reverts, chain
 import pytest
 
 @pytest.fixture(scope="module")
@@ -22,7 +22,7 @@ def ITOKEN_LOGIC(LoanTokenLogicStandard, accounts):
     return LoanTokenLogicStandard.deploy({"from":accounts[0]})
 
 @pytest.fixture(scope="module")
-def BZX(accounts, interface, TickMathV1, LoanOpenings, LoanSettings, ProtocolSettings, LoanClosingsLiquidation, LoanMaintenance, LiquidationHelper, VolumeTracker, LoanClosings):
+def BZX(accounts, Contract, interface, TickMathV1, LoanOpenings, LoanSettings, ProtocolSettings, LoanClosingsLiquidation, LoanMaintenance, LiquidationHelper, VolumeTracker, LoanClosings):
     tickMathV1 = accounts[0].deploy(TickMathV1)
     liquidationHelper = accounts[0].deploy(LiquidationHelper)
     accounts[0].deploy(VolumeTracker)
@@ -62,3 +62,7 @@ def test_case1(FACTORY_LOGIC, FACTORY, CUI, ITOKEN_LOGIC, BZX, accounts, interfa
     interface.IERC20("0xfc5A1A6EB076a2C7aD06eD22C90d7E710E35ad0a").approve(iToken, 1e18, {"from":"0x80a9ae39310abf666a87c743d6ebbd0e8c42158e"})
     iToken.deposit(1e18, "0x80a9ae39310abf666a87c743d6ebbd0e8c42158e", {"from":"0x80a9ae39310abf666a87c743d6ebbd0e8c42158e"})
     assert(iToken.convertToAssets(iToken.balanceOf("0x80a9ae39310abf666a87c743d6ebbd0e8c42158e")) == 1e18)
+    FACTORY.toggleFunctionPause("0x6e553f65", {"from":FACTORY.owner()})
+    with reverts("paused"):
+        iToken.deposit(1e18, "0x80a9ae39310abf666a87c743d6ebbd0e8c42158e", {"from":"0x80a9ae39310abf666a87c743d6ebbd0e8c42158e"})
+    assert(FACTORY.isPaused("0x6e553f65") == True)
