@@ -37,21 +37,6 @@ contract AdvancedTokenStorage is LoanTokenBase {
         uint256 price
     );
 
-    event Deposit(
-        address indexed caller,
-        address indexed owner,
-        uint256 assets,
-        uint256 shares
-    );
-
-    event Withdraw(
-        address indexed caller,
-        address indexed receiver,
-        address indexed owner,
-        uint256 assets,
-        uint256 shares
-    );
-
     event FlashBorrow(
         address borrower,
         address target,

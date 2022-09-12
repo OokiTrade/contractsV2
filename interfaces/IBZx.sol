@@ -36,8 +36,6 @@ interface IBZx {
     /// @param newContract module address for the IPriceFeeds implementation
     function setPriceFeedContract(address newContract) external;
 
-    function setFactory(address newFactory) external;
-
     /// @dev sets swaps contract address. The contract on the addres should implement ISwapsImpl interface
     /// @param newContract module address for the ISwapsImpl implementation
     function setSwapsImplContract(address newContract) external;
@@ -150,8 +148,6 @@ interface IBZx {
     function loans(bytes32) external view returns (Loan memory);
 
     function loanParams(bytes32) external view returns (LoanParams memory);
-
-    function factory() external view returns (address);
 
     // we don't use this yet
     // function lenderOrders(address, bytes32) external returns (Order memory);
