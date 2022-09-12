@@ -5,14 +5,24 @@ import "../../../interfaces/IUniv3Twap.sol";
 import "../../governance/PausableGuardian_0_8.sol";
 import "./FactoryFeed.sol";
 import "../../../interfaces/IPriceFeeds.sol";
+import "@uniswap/v3-core/contracts/interfaces/pool/IUniswapV3PoolActions.sol";
 
 contract FeedFactory is PausableGuardian_0_8{
-    address public constant QUOTE = address(0);
-    address public constant PRICE_FEEDS = address(0);
     address public constant UNIV3_FACTORY = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
+
+    address public immutable QUOTE;
+    address public immutable PRICE_FEEDS;
+    address public immutable TWAP;
+    uint256 public immutable OFFSET;
+
     IUniv3Twap.V3Specs public specs;
 
-    constructor() {}
+    constructor(address priceFeed, address twapSource, address quote, uint256 decimalOffset) {
+        PRICE_FEEDS = priceFeed;
+        TWAP = twapSource;
+        QUOTE = quote;
+        OFFSET = 10**decimalOffset;
+    }
 
     /* Code from PoolAddress.sol from Uniswap repo but there is compiler issue so it is fixed in here */
     bytes32 internal constant POOL_INIT_CODE_HASH = 0xe34f199b19b2b4f47f68442619d555527d244f78a3297ea89325f843f87b8b54;
@@ -59,15 +69,15 @@ contract FeedFactory is PausableGuardian_0_8{
     /* End of code from PoolAddress.sol */
 
     function newPriceFeed(address token) public {
-
         address pool = computeAddress(UNIV3_FACTORY, getPoolKey(token, QUOTE, 3000));
-        FactoryFeed f = new FactoryFeed(token, QUOTE, pool);
+        FactoryFeed f = new FactoryFeed(token, QUOTE, pool, TWAP, OFFSET);
         address[] memory tokens = new address[](1);
         address[] memory feeds = new address[](1);
         tokens[0] = token;
         feeds[0] = address(f);
         require(IPriceFeeds(PRICE_FEEDS).pricesFeeds(token) == address(0), "already populated");
         IPriceFeeds(PRICE_FEEDS).setPriceFeed(tokens, feeds);
+        IPriceFeeds(PRICE_FEEDS).setDecimals(tokens);
     }
 
     function setSpecs(IUniv3Twap.V3Specs calldata newSpecs) external onlyOwner {
