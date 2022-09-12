@@ -1,7 +1,7 @@
 from brownie import *
 
 exec(open("./scripts/env/set-bsc.py").read())
-deployer = accounts[0]
+#deployer = accounts[0]
 
 MINIMAL_RATES = {
     "iETH":   0.1e18,
@@ -27,12 +27,15 @@ for assetPair in supportedTokenAssetsPairs:
 #cui.transferOwnership(GUARDIAN_MULTISIG, {"from": deployer})
 
 call3Sets = []
+call = ""
 for assetPair in supportedTokenAssetsPairs:
     existingIToken = Contract.from_abi("existingIToken", address=assetPair[0], abi=interface.IToken.abi)
     call = existingIToken.updateSettings.encode_input(LOAN_TOKEN_SETTINGS_LOWER_ADMIN, LOAN_TOKEN_SETTINGS_LOWER_ADMIN.setDemandCurve.encode_input(cui))
     target = existingIToken.address
     failure = False
     call3Sets.append((target, failure, call))
+    print(target)
 
-print(interface.IMulticall3("0xcA11bde05977b3631167028862bE2a173976CA11").aggregate3.encode_input(call3Sets))
+print(call)
+#print(interface.IMulticall3("0xcA11bde05977b3631167028862bE2a173976CA11").aggregate3.encode_input(call3Sets))
 
