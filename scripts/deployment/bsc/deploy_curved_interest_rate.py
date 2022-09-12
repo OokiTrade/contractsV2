@@ -1,18 +1,18 @@
 from brownie import *
 
-exec(open("./scripts/env/set-matic.py").read())
+exec(open("./scripts/env/set-bsc.py").read())
 #deployer = accounts[0]
 
 MINIMAL_RATES = {
     "iETH":   0.1e18,
     "iBTC":   0.1e18,
     "iLINK":  0.1e18,
-    "iUSDC":  0.8e18,
+    "iBUSD":  0.8e18,
     "iUSDT":  0.8e18,
-    "iMATIC":   0.1e18,
+    "iBNB":   0.1e18,
 }
 
-cui = CurvedInterestRate.at("0xf37d88b79955d68E40608CF40744f7C4003EE265")
+cui = CurvedInterestRate.at("0x4EEf3725ff6A322D7BD694DFc1d89CDB5EF500bC")
 # cui = CurvedInterestRate.deploy({'from': deployer}, publish_source=True)
 #cui.updateParams((120e18, 80e18, 100e18, 100e18, 110e18, 0.1e18, 0.1e18), ZERO_ADDRESS, {"from": deployer}) # default across all
 

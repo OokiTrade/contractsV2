@@ -4,13 +4,13 @@ exec(open("./scripts/env/set-arbitrum.py").read())
 deployer = accounts[0]
 
 MINIMAL_RATES = {
-    "iETH":   0.01e18,
+    "iETH":   0.1e18,
     "iBTC":   0.1e18,
     "iSPELL": 0.1e18,
     "iLINK":  0.1e18,
     "iUSDC":  0.8e18,
     "iUSDT":  0.8e18,
-    "iMIM":   0.1e18,
+    "iMIM":   0.8e18,
     "iFRAX":  0.8e18,
     # "iETH":   0.1e18,
     # "iBTC":   0.1e18,
@@ -24,7 +24,7 @@ MINIMAL_RATES = {
 
 # cui = CurvedInterestRate.deploy({'from': deployer})
 cui = CurvedInterestRate.at("0x11e1251651bA36aD58B6bdaCaf11E5347a5D6e50")
-# cui.updateParams((120e18, 80e18, 100e18, 100e18, 110e18, 0.1e18, 0.01e18), ZERO_ADDRESS, {"from": deployer}) # default across all
+# cui.updateParams((120e18, 80e18, 100e18, 100e18, 110e18, 0.1e18, 0.1e18), ZERO_ADDRESS, {"from": deployer}) # default across all
 
 # supportedTokenAssetsPairs = TOKEN_REGISTRY.getTokens(0, 100)
 # for assetPair in supportedTokenAssetsPairs:
