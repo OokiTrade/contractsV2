@@ -1,4 +1,4 @@
-pragma solidity 0.5.17;
+pragma solidity ^0.8.0;
 
 import "./LoanClosingsShared.sol";
 import "../../mixins/LiquidationHelper.sol";
@@ -51,8 +51,7 @@ contract LoanClosingsLiquidation is LoanClosingsShared {
 
         LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
-        uint256 principalPlusInterest = _settleInterest(loanLocal.lender, loanId)
-            .add(loanLocal.principal);
+        uint256 principalPlusInterest = _settleInterest(loanLocal.lender, loanId) + loanLocal.principal;
 
         (uint256 currentMargin, uint256 collateralToLoanRate) = _getCurrentMargin(
             loanParamsLocal.loanToken,
@@ -82,9 +81,7 @@ contract LoanClosingsLiquidation is LoanClosingsShared {
         );
 
         if (loanCloseAmount < maxLiquidatable) {
-            seizedAmount = maxSeizable
-                .mul(loanCloseAmount)
-                .div(maxLiquidatable);
+            seizedAmount = maxSeizable * loanCloseAmount / maxLiquidatable;
         } else {
             if (loanCloseAmount > maxLiquidatable) {
                 // adjust down the close amount to the max
@@ -105,8 +102,7 @@ contract LoanClosingsLiquidation is LoanClosingsShared {
         seizedToken = loanParamsLocal.collateralToken;
 
         if (seizedAmount != 0) {
-            loanLocal.collateral = loanLocal.collateral
-                .sub(seizedAmount);
+            loanLocal.collateral -= seizedAmount;
 
             _withdrawAsset(
                 seizedToken,

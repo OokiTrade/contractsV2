@@ -3,21 +3,17 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin-2.5.0/math/SafeMath.sol";
-import "@openzeppelin-2.5.0/ownership/Ownable.sol";
-import "@openzeppelin-2.5.0/token/ERC20/IERC20.sol";
-import "../interfaces/IERC20Detailed.sol";
+import "@openzeppelin-4.7.0/access/Ownable.sol";
+import "@openzeppelin-4.7.0/token/ERC20/IERC20.sol";
+import "@openzeppelin-4.7.0/token/ERC20/extensions/IERC20Metadata.sol";
 import "../core/Constants.sol";
 import "./IPriceFeedsExt.sol";
-import "../governance/PausableGuardian.sol";
+import "../governance/PausableGuardian_0_8.sol";
 import "../../interfaces/IToken.sol";
-import "../utils/SignedSafeMath.sol";
 
-contract PriceFeeds is Constants, PausableGuardian {
-    using SafeMath for uint256;
-    using SignedSafeMath for int256;
+contract PriceFeeds is Constants, PausableGuardian_0_8 {
 
     event GlobalPricingPaused(
         address indexed sender,
@@ -74,9 +70,7 @@ contract PriceFeeds is Constants, PausableGuardian {
             destToken
         );
 
-        destAmount = sourceAmount
-            .mul(rate)
-            .div(precision);
+        destAmount = sourceAmount * rate / precision;
     }
 
     function checkPriceDisagreement(
@@ -95,22 +89,18 @@ contract PriceFeeds is Constants, PausableGuardian {
             destToken
         );
 
-        rate = rate
-            .mul(WEI_PRECISION)
-            .div(precision);
+        rate *= WEI_PRECISION;
+        rate /= precision;
 
-        sourceToDestSwapRate = destAmount
-            .mul(WEI_PRECISION)
-            .div(sourceAmount);
+        sourceToDestSwapRate = destAmount * WEI_PRECISION / sourceAmount;
 
         uint256 spreadValue = sourceToDestSwapRate > rate ?
             sourceToDestSwapRate - rate :
             rate - sourceToDestSwapRate;
 
         if (spreadValue != 0) {
-            spreadValue = spreadValue
-                .mul(WEI_PERCENT_PRECISION)
-                .div(sourceToDestSwapRate);
+            spreadValue *= WEI_PERCENT_PRECISION;
+            spreadValue /= sourceToDestSwapRate;
 
             require(
                 spreadValue <= maxSlippage,
@@ -133,9 +123,7 @@ contract PriceFeeds is Constants, PausableGuardian {
                 tokenAddress,
                 address(wethToken)
             );
-            ethAmount = amount
-                .mul(toEthRate)
-                .div(toEthPrecision);
+            ethAmount = amount * toEthRate / toEthPrecision;
         }
     }
 
@@ -157,17 +145,10 @@ contract PriceFeeds is Constants, PausableGuardian {
                 loanToken,
                 collateralToken
             );
-            loanToCollateralAmount = loanAmount
-                .mul(rate)
-                .div(precision);
+            loanToCollateralAmount = loanAmount * rate / precision;
         }
 
-        uint256 combined = loanToCollateralAmount
-            .add(
-                loanToCollateralAmount
-                    .mul(margin)
-                    .div(WEI_PERCENT_PRECISION)
-                );
+        uint256 combined = loanToCollateralAmount + loanToCollateralAmount * margin / WEI_PERCENT_PRECISION;
 
         maxDrawdown = collateralAmount > combined ?
             collateralAmount - combined :
@@ -216,20 +197,13 @@ contract PriceFeeds is Constants, PausableGuardian {
                 loanToken
             );
 
-            collateralToLoanRate = collateralToLoanRate
-                .mul(WEI_PRECISION)
-                .div(collateralToLoanPrecision);
+            collateralToLoanRate = collateralToLoanRate * WEI_PRECISION / collateralToLoanPrecision;
 
-            collateralToLoanAmount = collateralAmount
-                .mul(collateralToLoanRate)
-                .div(WEI_PRECISION);
+            collateralToLoanAmount = collateralAmount * collateralToLoanRate / WEI_PRECISION;
         }
 
         if (loanAmount != 0 && collateralToLoanAmount >= loanAmount) {
-            currentMargin = collateralToLoanAmount
-                .sub(loanAmount)
-                .mul(WEI_PERCENT_PRECISION)
-                .div(loanAmount);
+            currentMargin = (collateralToLoanAmount - loanAmount) * WEI_PERCENT_PRECISION / loanAmount;
         }
     }
 
@@ -271,7 +245,7 @@ contract PriceFeeds is Constants, PausableGuardian {
     }
 
     function setDecimals(
-        IERC20Detailed[] calldata tokens)
+        IERC20Metadata[] calldata tokens)
         external
         onlyGuardian
     {
@@ -296,9 +270,7 @@ contract PriceFeeds is Constants, PausableGuardian {
             uint256 sourceRate = _queryRateCall(sourceToken);
             uint256 destRate = _queryRateCall(destToken);
 
-            rate = sourceRate
-                .mul(WEI_PRECISION)
-                .div(destRate);
+            rate = sourceRate * WEI_PRECISION / destRate;
 
             precision = _getDecimalPrecision(sourceToken, destToken);
         } else {
@@ -337,12 +309,12 @@ contract PriceFeeds is Constants, PausableGuardian {
             feed = pricesFeeds[IToken(token).loanTokenAddress()];
             price = uint256(IPriceFeedsExt(feed).latestAnswer());
 
-            price = price.mul(IToken(token).tokenPrice())
-                .div(1e18);
+            price *= IToken(token).tokenPrice();
+            price /= 1e18;
         }
     }
 
-    function getChainId() internal pure returns (uint) {
+    function getChainId() internal view returns (uint) {
         uint256 chainId;
         assembly { chainId := chainid() }
         return chainId;
@@ -360,16 +332,16 @@ contract PriceFeeds is Constants, PausableGuardian {
         } else {
             uint256 sourceTokenDecimals = decimals[sourceToken];
             if (sourceTokenDecimals == 0)
-                sourceTokenDecimals = IERC20Detailed(sourceToken).decimals();
+                sourceTokenDecimals = IERC20Metadata(sourceToken).decimals();
 
             uint256 destTokenDecimals = decimals[destToken];
             if (destTokenDecimals == 0)
-                destTokenDecimals = IERC20Detailed(destToken).decimals();
+                destTokenDecimals = IERC20Metadata(destToken).decimals();
 
             if (destTokenDecimals >= sourceTokenDecimals)
-                return 10**(SafeMath.sub(18, destTokenDecimals-sourceTokenDecimals));
+                return 10**(18 - destTokenDecimals-sourceTokenDecimals);
             else
-                return 10**(SafeMath.add(18, sourceTokenDecimals-destTokenDecimals));
+                return 10**(18 + sourceTokenDecimals-destTokenDecimals);
         }
     }
 }

@@ -3,7 +3,7 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+pragma solidity ^0.8.0;
 
 /**
  * @dev Library for managing loan sets
@@ -50,7 +50,8 @@ library EnumerableBytes32Set {
         returns (bool)
     {
         if (!contains(set, value)){
-            set.index[value] = set.values.push(value);
+            set.values.push(value);
+            set.index[value] = set.values.length;
             return true;
         } else {
             return false;

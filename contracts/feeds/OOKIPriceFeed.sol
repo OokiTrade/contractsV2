@@ -3,12 +3,12 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+pragma solidity ^0.8.0;
 
 import "./IPriceFeedsExt.sol";
-import "../governance/PausableGuardian.sol";
+import "../governance/PausableGuardian_0_8.sol";
 
-contract OOKIPriceFeed is PausableGuardian, IPriceFeedsExt {
+contract OOKIPriceFeed is PausableGuardian_0_8, IPriceFeedsExt {
     int256 public storedPrice = 2e6; // $0.02
 
     function updateStoredPrice(

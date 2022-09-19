@@ -1,6 +1,5 @@
-pragma solidity ^0.5.16;
+pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
-
 import "@openzeppelin-2.5.0/token/ERC20/IERC20.sol";
 import "./GovernorBravoInterfaces.sol";
 
@@ -178,9 +177,9 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
 
     /**
       * @notice Gets the current voting quroum
-      * @return The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
+      * @return votes The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
       */
-    function quorumVotes() public view returns (uint256) {
+    function quorumVotes() public view returns (uint256 votes) {
         uint256 totalSupply = IERC20(0x0De05F6447ab4D22c8827449EE4bA2D5C288379B) // OOKI
             .totalSupply();
         return totalSupply * quorumPercentage / 1e20;
@@ -188,9 +187,9 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
 
     /**
       * @notice Gets the current proposal threshold
-      * @return The number of votes required to create new proposal
+      * @return threshold The number of votes required to create new proposal
       */
-    function proposalThreshold() public view returns (uint256) {
+    function proposalThreshold() public view returns (uint256 threshold) {
         uint256 totalSupply = IERC20(0x0De05F6447ab4D22c8827449EE4bA2D5C288379B) // OOKI
             .totalSupply();
         return totalSupply * proposalThresholdPercentage / 1e20;
@@ -199,7 +198,11 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
     /**
       * @notice Gets actions of a proposal
       * @param proposalId the id of the proposal
-      * @return Targets, values, signatures, and calldatas of the proposal actions
+      * @return targets of the proposal actions
+      * @return values of the proposal actions
+      * @return signatures of the proposal actions
+      * @return calldatas of the proposal actions
+
       */
     function getActions(uint proposalId) external view returns (address[] memory targets, uint[] memory values, string[] memory signatures, bytes[] memory calldatas) {
         Proposal storage p = proposals[proposalId];

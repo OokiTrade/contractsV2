@@ -3,14 +3,13 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
 import "../StakingStateV2.sol";
-import "../../governance/PausableGuardian.sol";
+import "../../governance/PausableGuardian_0_8.sol";
 
 
-contract StakingPausableGuardian is StakingStateV2, PausableGuardian {
+contract StakingPausableGuardian is StakingStateV2, PausableGuardian_0_8 {
 
     function initialize(
         address target)

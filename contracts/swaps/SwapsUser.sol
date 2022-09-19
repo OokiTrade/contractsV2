@@ -3,8 +3,7 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
 import "../core/State.sol";
 import "../../interfaces/IPriceFeeds.sol";
@@ -18,6 +17,7 @@ import "../utils/VolumeTracker.sol";
 
 contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
     using VolumeTracker for VolumeTracker.Observation[65535];
+    using SafeERC20 for IERC20;
     function _loanSwap(
         bytes32 loanId,
         address sourceToken,
@@ -130,9 +130,9 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
                             tradingFee
                         );
 
-                        vals[0] = vals[0].sub(tradingFee);
+                        vals[0] = vals[0] - tradingFee;
                         if (vals[1] != 0) {
-                            vals[1] = vals[1].sub(tradingFee);
+                            vals[1] = vals[1] - tradingFee;
                         }
                     }
                 }
@@ -161,7 +161,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
                         if(flagNumber & HOLD_OOKI_FLAG != 0){
                             tradingFee = _adjustForHeldBalance(tradingFee, addrs[4]);
                         }
-                        vals[2] = vals[2].add(tradingFee);
+                        vals[2] = vals[2] + tradingFee;
                     }
                 }
 
@@ -281,7 +281,7 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
         if (!success) {
             assembly {
                 let ptr := mload(0x40)
-                let size := returndatasize
+                let size := returndatasize()
                 returndatacopy(ptr, 0, size)
                 revert(ptr, size)
             }
@@ -327,9 +327,9 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
         }
         if (tradingFee != 0) {
             if (isGetAmountOut) {
-                tokenAmount = tokenAmount.sub(tradingFee);
+                tokenAmount = tokenAmount - tradingFee;
             } else {
-                tokenAmount = tokenAmount.add(tradingFee);
+                tokenAmount = tokenAmount + tradingFee;
             }
             
         }

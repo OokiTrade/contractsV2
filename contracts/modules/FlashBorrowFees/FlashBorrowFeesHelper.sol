@@ -3,7 +3,7 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+pragma solidity ^0.8.0;
 
 import "../../core/State.sol";
 import "../../mixins/VaultController.sol";
@@ -33,9 +33,7 @@ contract FlashBorrowFeesHelper is State, VaultController {
         // only callable by loan pools
         require(feeToken != address(0), "not authorized");
 
-        uint256 feeTokenAmount = borrowAmount
-            .mul(flashBorrowFeePercent)
-            .div(WEI_PERCENT_PRECISION);
+        uint256 feeTokenAmount = borrowAmount*flashBorrowFeePercent/WEI_PERCENT_PRECISION;
 
         vaultDeposit(
             feeToken,
@@ -44,8 +42,7 @@ contract FlashBorrowFeesHelper is State, VaultController {
         );
 
         if (feeTokenAmount != 0) {
-            borrowingFeeTokensHeld[feeToken] = borrowingFeeTokensHeld[feeToken]
-                .add(feeTokenAmount);
+            borrowingFeeTokensHeld[feeToken] = borrowingFeeTokensHeld[feeToken] + feeTokenAmount;
         }
 
         emit PayFlashBorrowFee(

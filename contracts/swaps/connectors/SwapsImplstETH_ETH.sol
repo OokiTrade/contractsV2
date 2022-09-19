@@ -3,11 +3,11 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
+
 import "../../core/State.sol";
 import "../../../interfaces/ICurve.sol";
-import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
+import "@openzeppelin-4.7.0/token/ERC20/utils/SafeERC20.sol";
 import "../ISwapsImpl.sol";
 import "../../interfaces/IwstETH.sol";
 import "../../interfaces/IstETH.sol";
@@ -120,9 +120,9 @@ contract SwapsImplstETH_ETH is State, ISwapsImpl {
         address[] memory /*tokens*/
     ) public {
         IERC20(STETH).safeApprove(WSTETH, 0);
-        IERC20(STETH).safeApprove(WSTETH, uint256(-1));
+        IERC20(STETH).safeApprove(WSTETH, type(uint256).max);
         IERC20(STETH).safeApprove(address(STETHPOOL), 0);
-        IERC20(STETH).safeApprove(address(STETHPOOL), uint256(-1));
+        IERC20(STETH).safeApprove(address(STETHPOOL), type(uint256).max);
     }
 
     function revokeApprovals(
@@ -152,9 +152,9 @@ contract SwapsImplstETH_ETH is State, ISwapsImpl {
         if (sourceTokenAddress == WETH) {
             IWeth(WETH).withdraw(minSourceTokenAmount);
             if (abi.decode(payload, (uint256)) > 0) {
-                destTokenAmountReceived = STETHPOOL.exchange.value(minSourceTokenAmount)(0, 1, minSourceTokenAmount, abi.decode(payload, (uint256)));
+                destTokenAmountReceived = STETHPOOL.exchange{value:minSourceTokenAmount}(0, 1, minSourceTokenAmount, abi.decode(payload, (uint256)));
             } else {
-                destTokenAmountReceived = IstETH(STETH).submit.value(minSourceTokenAmount)(address(this));
+                destTokenAmountReceived = IstETH(STETH).submit{value:minSourceTokenAmount}(address(this));
             }
             destTokenAmountReceived = IwstETH(WSTETH).wrap(
                 destTokenAmountReceived
@@ -169,7 +169,7 @@ contract SwapsImplstETH_ETH is State, ISwapsImpl {
                 requiredDestTokenAmount,
                 abi.decode(payload, (uint256))
             );
-            IWeth(WETH).deposit.value(destTokenAmountReceived)();
+            IWeth(WETH).deposit{value:destTokenAmountReceived}();
         }
         if (receiverAddress != address(this)) {
             IERC20(destTokenAddress).transfer(

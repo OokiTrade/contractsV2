@@ -3,10 +3,9 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 import "../../core/State.sol";
-import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
+import "@openzeppelin-4.7.0/token/ERC20/utils/SafeERC20.sol";
 import "../ISwapsImpl.sol";
 import "../../interfaces/IUniswapV3SwapRouter.sol";
 import "../../interfaces/IUniswapQuoter.sol";
@@ -93,14 +92,10 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
             uniqueInputParam < exactParams.length;
             uniqueInputParam++
         ) {
-            totalAmounts = totalAmounts.add(
-                exactParams[uniqueInputParam].amountIn
-            );
+            totalAmounts += exactParams[uniqueInputParam].amountIn;
         }
         if (totalAmounts < amountIn) {
-            exactParams[0].amountIn = exactParams[0].amountIn.add(
-                amountIn.sub(totalAmounts)
-            ); //adds displacement to first swap set
+            exactParams[0].amountIn += amountIn - totalAmounts; //adds displacement to first swap set
         } else {
             return dexAmountOut(exactParams[0].path, amountIn); //this else intentionally ignores the other swap impls. It is specifically designed to avoid edge cases
         }
@@ -110,7 +105,7 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                 exactParams[i].path,
                 exactParams[i].amountIn
             );
-            amountOut = amountOut.add(tempAmountOut);
+            amountOut += tempAmountOut;
         }
     }
 
@@ -135,14 +130,10 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
             uniqueOutputParam < exactParams.length;
             uniqueOutputParam++
         ) {
-            totalAmounts = totalAmounts.add(
-                exactParams[uniqueOutputParam].amountOut
-            );
+            totalAmounts += exactParams[uniqueOutputParam].amountOut;
         }
         if (totalAmounts < amountOut) {
-            exactParams[0].amountOut = exactParams[0].amountOut.add(
-                amountOut.sub(totalAmounts)
-            ); //adds displacement to first swap set
+            exactParams[0].amountOut += amountOut - totalAmounts; //adds displacement to first swap set
         } else {
             return dexAmountIn(exactParams[0].path, amountOut); //this else intentionally ignores the other swap impls. It is specifically designed to avoid edge cases
         }
@@ -152,7 +143,7 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                 exactParams[i].path,
                 exactParams[i].amountOut
             );
-            amountOut.add(tempAmountIn);
+            amountOut + tempAmountIn;
         }
     }
 
@@ -177,7 +168,7 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
             IERC20(tokens[i]).safeApprove(address(uniswapSwapRouter), 0);
             IERC20(tokens[i]).safeApprove(
                 address(uniswapSwapRouter),
-                uint256(-1)
+                type(uint256).max
             );
         }
     }
@@ -222,12 +213,8 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                         sourceTokenAddress,
                     "improper route"
                 );
-                totalAmountsOut = totalAmountsOut.add(
-                    exactParams[uniqueOutputParam].amountOut
-                );
-                totalAmountsInMax = totalAmountsInMax.add(
-                    exactParams[uniqueOutputParam].amountInMaximum
-                );
+                totalAmountsOut += exactParams[uniqueOutputParam].amountOut;
+                totalAmountsInMax += exactParams[uniqueOutputParam].amountInMaximum;
                 encodedTXs[uniqueOutputParam] = abi.encodeWithSelector(
                     uniswapSwapRouter.exactOutput.selector,
                     exactParams[uniqueOutputParam]
@@ -256,9 +243,7 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                     totalAmountsOut,
                     requiredDestTokenAmount
                 );
-                exactParams[0].amountOut = exactParams[0].amountOut.sub(
-                    displace
-                ); //adds displacement to first swap set
+                exactParams[0].amountOut -= displace; //adds displacement to first swap set
                 totalAmountsOut = requiredDestTokenAmount;
                 encodedTXs[0] = abi.encodeWithSelector(
                     uniswapSwapRouter.exactOutput.selector,
@@ -269,8 +254,7 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                 address(this)
             );
             uniswapSwapRouter.multicall(encodedTXs);
-            sourceTokenAmountUsed =
-                balanceBefore.sub(IERC20(sourceTokenAddress).balanceOf(address(this)));
+            sourceTokenAmountUsed = balanceBefore - IERC20(sourceTokenAddress).balanceOf(address(this));
             destTokenAmountReceived = requiredDestTokenAmount;
         } else {
             IUniswapV3SwapRouter.ExactInputParams[] memory exactParams = abi
@@ -292,9 +276,7 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                         destTokenAddress,
                     "improper route"
                 );
-                sourceTokenAmountUsed = sourceTokenAmountUsed.add(
-                    exactParams[uniqueInputParam].amountIn
-                );
+                sourceTokenAmountUsed += exactParams[uniqueInputParam].amountIn;
                 encodedTXs[uniqueInputParam] = abi.encodeWithSelector(
                     uniswapSwapRouter.exactInput.selector,
                     exactParams[uniqueInputParam]
@@ -318,7 +300,7 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
                     sourceTokenAmountUsed,
                     minSourceTokenAmount
                 );
-                exactParams[0].amountIn = exactParams[0].amountIn.sub(displace);
+                exactParams[0].amountIn -= displace;
                 sourceTokenAmountUsed = minSourceTokenAmount; //does not need safe math as it cannot underflow
                 encodedTXs[0] = abi.encodeWithSelector(
                     uniswapSwapRouter.exactInput.selector,
@@ -330,7 +312,7 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
             );
             uniswapSwapRouter.multicall(encodedTXs);
             destTokenAmountReceived =
-                IERC20(destTokenAddress).balanceOf(receiverAddress).sub(balanceBefore);
+                IERC20(destTokenAddress).balanceOf(receiverAddress) - balanceBefore;
         }
     }
 

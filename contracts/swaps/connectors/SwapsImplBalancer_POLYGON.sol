@@ -1,8 +1,7 @@
-pragma solidity 0.5.17;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
 import "../../core/State.sol";
-import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
+import "@openzeppelin-4.7.0/token/ERC20/utils/SafeERC20.sol";
 import "../ISwapsImpl.sol";
 import "../../interfaces/IBalancerVault.sol";
 
@@ -70,11 +69,11 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
         uint256 amountInSpecified = 0;
         for (uint i; i < swapParams.length; ++i) {
             if (swapParams[i].assetInIndex == 0) {
-                amountInSpecified = amountInSpecified.add(swapParams[i].amount);
+                amountInSpecified += swapParams[i].amount;
             }
         }
         if (amountInSpecified > amountIn) {
-            swapParams[0].amount = swapParams[0].amount.sub(amountInSpecified-amountIn);
+            swapParams[0].amount -=amountInSpecified-amountIn;
         } else if (amountInSpecified < amountIn) {
             swapParams[0].amount += amountIn - amountInSpecified;
         }
@@ -82,7 +81,7 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
             IBalancerVault.FundManagement memory funds = IBalancerVault.FundManagement({
                 sender: address(this),
                 fromInternalBalance: false,
-                recipient: address(uint160(address(this))),
+                recipient: payable(address(this)),
                 toInternalBalance: false
             });
             int256[] memory deltas = VAULT.queryBatchSwap(IBalancerVault.SwapKind.GIVEN_IN, swapParams, tokens, funds);
@@ -105,11 +104,11 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
         uint256 amountOutSpecified = 0;
         for (uint i; i < swapParams.length; ++i) {
             if (swapParams[i].assetOutIndex == swapParams.length-1) {
-                amountOutSpecified = amountOutSpecified.add(swapParams[i].amount);
+                amountOutSpecified += swapParams[i].amount;
             }
         }
         if (amountOutSpecified > amountOut) {
-            swapParams[0].amount = swapParams[0].amount.sub(amountOutSpecified -amountOut);
+            swapParams[0].amount -= amountOutSpecified -amountOut;
         } else if (amountOutSpecified < amountOut) {
             swapParams[0].amount += amountOut - amountOutSpecified;
         }
@@ -117,7 +116,7 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
             IBalancerVault.FundManagement memory funds = IBalancerVault.FundManagement({
                 sender: address(this),
                 fromInternalBalance: false,
-                recipient: address(uint160(address(this))),
+                recipient: payable(address(this)),
                 toInternalBalance: false
             });
             int256[] memory deltas = VAULT.queryBatchSwap(IBalancerVault.SwapKind.GIVEN_OUT, swapParams, tokens, funds);
@@ -137,7 +136,7 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
     ) public {
         for (uint i; i<tokens.length;++i) {
             IERC20(tokens[i]).safeApprove(address(VAULT), 0);
-            IERC20(tokens[i]).safeApprove(address(VAULT), uint256(-1));
+            IERC20(tokens[i]).safeApprove(address(VAULT), type(uint256).max);
         }
     }
 
@@ -170,18 +169,18 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
                 if (swapParams[i].assetInIndex != 0) {
                     require(swapParams[i].amount == 0, "invalid amount");
                 } else {
-                    maxSourceTokenAmount = maxSourceTokenAmount.add(swapParams[i].amount);
+                    maxSourceTokenAmount += swapParams[i].amount;
                 }
             }
             if (maxSourceTokenAmount > minSourceTokenAmount) {
-                swapParams[0].amount = swapParams[0].amount.sub(maxSourceTokenAmount-minSourceTokenAmount);
+                swapParams[0].amount -= maxSourceTokenAmount-minSourceTokenAmount;
             } else if (maxSourceTokenAmount < minSourceTokenAmount) {
                 swapParams[0].amount += minSourceTokenAmount - maxSourceTokenAmount;
             }
             IBalancerVault.FundManagement memory funds = IBalancerVault.FundManagement({
                 sender: address(this),
                 fromInternalBalance: false,
-                recipient: address(uint160(receiverAddress)),
+                recipient: payable(receiverAddress),
                 toInternalBalance: false
             });
 
@@ -205,18 +204,18 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
                 if (swapParams[i].assetOutIndex != tokens.length-1) {
                     require(swapParams[i].amount == 0, "invalid amount");
                 } else {
-                    minSourceTokenAmount = minSourceTokenAmount.add(swapParams[i].amount);
+                    minSourceTokenAmount += swapParams[i].amount;
                 }
             }
             if (requiredDestTokenAmount < minSourceTokenAmount) {
-                swapParams[swapParams.length-1].amount = swapParams[swapParams.length-1].amount.sub(minSourceTokenAmount-requiredDestTokenAmount);
+                swapParams[swapParams.length-1].amount -= minSourceTokenAmount-requiredDestTokenAmount;
             } else if (requiredDestTokenAmount > minSourceTokenAmount) {
                 swapParams[swapParams.length-1].amount += requiredDestTokenAmount - minSourceTokenAmount;
             }
             IBalancerVault.FundManagement memory funds = IBalancerVault.FundManagement({
                 sender: address(this),
                 fromInternalBalance: false,
-                recipient: address(uint160(receiverAddress)),
+                recipient: payable(receiverAddress),
                 toInternalBalance: false
             });
 

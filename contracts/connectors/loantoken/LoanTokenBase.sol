@@ -3,18 +3,16 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin-2.5.0/math/SafeMath.sol";
-import "../../utils/SignedSafeMath.sol";
-import "../../utils/ReentrancyGuard.sol";
-import "@openzeppelin-2.5.0/ownership/Ownable.sol";
-import "@openzeppelin-2.5.0/utils/Address.sol";
-import "../../interfaces/IWethERC20.sol";
-import "../../governance/PausableGuardian.sol";
+import "@openzeppelin-4.7.0/security/ReentrancyGuard.sol";
+import "@openzeppelin-4.7.0/access/Ownable.sol";
+import "@openzeppelin-4.7.0/utils/Address.sol";
+import "../../interfaces/IWeth.sol";
+import "../../governance/PausableGuardian_0_8.sol";
+import "@openzeppelin-4.7.0/token/ERC20/extensions/IERC20Metadata.sol";
 
-
-contract LoanTokenBase is ReentrancyGuard, Ownable, PausableGuardian {
+contract LoanTokenBase is ReentrancyGuard, Ownable, PausableGuardian_0_8 {
 
     uint256 internal constant WEI_PRECISION = 10**18;
     uint256 internal constant WEI_PERCENT_PRECISION = 10**20;

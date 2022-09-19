@@ -3,14 +3,12 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+pragma solidity ^0.8.0;
 
 import "./LoanTokenBase.sol";
 
 
 contract AdvancedTokenStorage is LoanTokenBase {
-    using SafeMath for uint256;
-
     event Transfer(
         address indexed from,
         address indexed to,

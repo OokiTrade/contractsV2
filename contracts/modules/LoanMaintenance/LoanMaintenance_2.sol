@@ -3,18 +3,18 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
 import "../../core/State.sol";
 import "../../events/LoanMaintenanceEvents.sol";
-import "../../governance/PausableGuardian.sol";
+import "../../governance/PausableGuardian_0_8.sol";
 import "../../mixins/InterestHandler.sol";
 import "../../utils/InterestOracle.sol";
 import "../../utils/TickMathV1.sol";
 
-contract LoanMaintenance_2 is State, LoanMaintenanceEvents, PausableGuardian, InterestHandler {
-
+contract LoanMaintenance_2 is State, LoanMaintenanceEvents, PausableGuardian_0_8, InterestHandler {
+    using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
+    using InterestOracle for InterestOracle.Observation[256];
     function initialize(
         address target)
         external
@@ -100,7 +100,7 @@ contract LoanMaintenance_2 is State, LoanMaintenanceEvents, PausableGuardian, In
         view
         returns (uint256)
     {
-        uint32 timeSinceUpdate = uint32(block.timestamp.sub(poolLastUpdateTime[pool]));
+        uint32 timeSinceUpdate = uint32(block.timestamp - poolLastUpdateTime[pool]);
         return TickMathV1.getSqrtRatioAtTick(poolInterestRateObservations[pool].arithmeticMean(
             uint32(block.timestamp),
             [timeSinceUpdate+twaiLength, timeSinceUpdate],
@@ -108,7 +108,7 @@ contract LoanMaintenance_2 is State, LoanMaintenanceEvents, PausableGuardian, In
                 TickMathV1.getTickAtSqrtRatio(uint160(poolLastInterestRate[pool])) :
                 poolInterestRateObservations[pool][poolLastIdx[pool]].tick,
             poolLastIdx[pool],
-            uint8(-1)
+            type(uint8).max
         ));
     }
     

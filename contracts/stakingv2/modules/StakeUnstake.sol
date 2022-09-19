@@ -3,8 +3,7 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
 import "../StakingStateV2.sol";
 import "./StakingPausableGuardian.sol";
@@ -14,6 +13,8 @@ import "../../interfaces/IVestingToken.sol";
 import "./Common.sol";
 
 contract StakeUnstake is Common {
+    using SafeERC20 for IERC20;
+    
     function initialize(address target) external onlyOwner {
         _setTarget(this.totalSupplyByAsset.selector, target);
         _setTarget(this.stake.selector, target);
@@ -76,10 +77,10 @@ contract StakeUnstake is Common {
                 _altRewardsPerShare = altRewardsPerShare[token];
                 _altRewardsPerSharePerBlock = altRewardsPerSharePerBlock[token];
             }
-            total = (_altRewardsBlock - _stakingStartBlock).mul(_altRewardsPerSharePerBlock).mul(userSupply).div(1e12);
+            total = (_altRewardsBlock - _stakingStartBlock) * _altRewardsPerSharePerBlock * userSupply / 1e12;
         }
 
-        return total.add(altRewardsUserInfo.pending);
+        return total + altRewardsUserInfo.pending;
     }
 
     function _depositToSushiMasterchef(uint256 amount) internal {
@@ -106,8 +107,8 @@ contract StakeUnstake is Common {
                 continue;
             }
             uint256 stakedAmount = _balancesPerToken[token][msg.sender];
-            uint256 _balanceAfter = stakedAmount.add(stakeAmount);
-            _totalSupplyPerToken[token] = _totalSupplyPerToken[token].add(stakeAmount);
+            uint256 _balanceAfter = stakedAmount + stakeAmount;
+            _totalSupplyPerToken[token] = _totalSupplyPerToken[token] + stakeAmount;
 
             IERC20(token).safeTransferFrom(msg.sender, address(this), stakeAmount);
             // Deposit to sushi masterchef
@@ -152,7 +153,7 @@ contract StakeUnstake is Common {
             }
 
             uint256 _balanceAfter = stakedAmount - unstakeAmount; // will not overflow
-            _totalSupplyPerToken[token] = _totalSupplyPerToken[token].sub(unstakeAmount);
+            _totalSupplyPerToken[token] = _totalSupplyPerToken[token] - unstakeAmount;
 
             if (token == OOKI && IERC20(OOKI).balanceOf(address(this)) < unstakeAmount) {
                 // settle vested BZRX only if needed
@@ -264,9 +265,9 @@ contract StakeUnstake is Common {
     }
 
     function _restakeBZRX(address account, uint256 amount) internal {
-        _balancesPerToken[OOKI][account] = _balancesPerToken[OOKI][account].add(amount);
+        _balancesPerToken[OOKI][account] = _balancesPerToken[OOKI][account] + amount;
 
-        _totalSupplyPerToken[OOKI] = _totalSupplyPerToken[OOKI].add(amount);
+        _totalSupplyPerToken[OOKI] = _totalSupplyPerToken[OOKI] + amount;
 
         emit Stake(
             account,
@@ -315,8 +316,8 @@ contract StakeUnstake is Common {
 
         // discount vesting amounts for vesting time
         uint256 multiplier = vestedBalanceForAmount(1e36, 0, block.timestamp);
-        ookiRewardsVesting = ookiRewardsVesting.sub(ookiRewardsVesting.mul(multiplier).div(1e36));
-        stableCoinRewardsVesting = stableCoinRewardsVesting.sub(stableCoinRewardsVesting.mul(multiplier).div(1e36));
+        ookiRewardsVesting = ookiRewardsVesting - (ookiRewardsVesting*multiplier/1e36);
+        stableCoinRewardsVesting = stableCoinRewardsVesting-(stableCoinRewardsVesting*multiplier/1e36);
         sushiRewardsEarned = _pendingSushiRewards(account);
     }
 
@@ -334,8 +335,8 @@ contract StakeUnstake is Common {
             uint256 stableCoinRewardsVesting
         )
     {
-        uint256 ookiPerTokenUnpaid = _ookiPerToken.sub(ookiRewardsPerTokenPaid[account]);
-        uint256 stableCoinPerTokenUnpaid = _stableCoinPerToken.sub(stableCoinRewardsPerTokenPaid[account]);
+        uint256 ookiPerTokenUnpaid = _ookiPerToken-ookiRewardsPerTokenPaid[account];
+        uint256 stableCoinPerTokenUnpaid = _stableCoinPerToken-stableCoinRewardsPerTokenPaid[account];
 
         ookiRewardsEarned = ookiRewards[account];
         stableCoinRewardsEarned = stableCoinRewards[account];
@@ -348,40 +349,40 @@ contract StakeUnstake is Common {
             uint256 lastSync;
 
             (uint256 vestedBalance, uint256 vestingBalance) = balanceOfStored(account);
-            value = vestedBalance.mul(ookiPerTokenUnpaid);
+            value = vestedBalance * ookiPerTokenUnpaid;
             value /= 1e36;
-            ookiRewardsEarned = value.add(ookiRewardsEarned);
-            value = vestedBalance.mul(stableCoinPerTokenUnpaid);
+            ookiRewardsEarned = value + ookiRewardsEarned;
+            value = vestedBalance * stableCoinPerTokenUnpaid;
             value /= 1e36;
-            stableCoinRewardsEarned = value.add(stableCoinRewardsEarned);
+            stableCoinRewardsEarned = value + stableCoinRewardsEarned;
 
             if (vestingBalance != 0 && ookiPerTokenUnpaid != 0) {
                 // add new vesting amount for BZRX
-                value = vestingBalance.mul(ookiPerTokenUnpaid);
+                value = vestingBalance * ookiPerTokenUnpaid;
                 value /= 1e36;
-                ookiRewardsVesting = ookiRewardsVesting.add(value);
+                ookiRewardsVesting = ookiRewardsVesting + value;
                 // true up earned amount to vBZRX vesting schedule
                 lastSync = vestingLastSync[account];
                 multiplier = vestedBalanceForAmount(1e36, 0, lastSync);
-                value = value.mul(multiplier);
+                value *= multiplier;
                 value /= 1e36;
-                ookiRewardsEarned = ookiRewardsEarned.add(value);
+                ookiRewardsEarned = ookiRewardsEarned + value;
             }
             if (vestingBalance != 0 && stableCoinPerTokenUnpaid != 0) {
                 
                 // add new vesting amount for 3crv
-                value = vestingBalance.mul(stableCoinPerTokenUnpaid);
+                value = vestingBalance * stableCoinPerTokenUnpaid;
                 value /= 1e36;
-                stableCoinRewardsVesting = stableCoinRewardsVesting.add(value);
+                stableCoinRewardsVesting = stableCoinRewardsVesting + value;
 
                 // true up earned amount to vBZRX vesting schedule
                 if (lastSync == 0) {
                     lastSync = vestingLastSync[account];
                     multiplier = vestedBalanceForAmount(1e36, 0, lastSync);
                 }
-                value = value.mul(multiplier);
+                value *= multiplier;
                 value /= 1e36;
-                stableCoinRewardsEarned = stableCoinRewardsEarned.add(value);
+                stableCoinRewardsEarned = stableCoinRewardsEarned + value;
             }
         }
     }
@@ -400,12 +401,12 @@ contract StakeUnstake is Common {
             uint256 multiplier = vestedBalanceForAmount(1e36, lastVestingSync, block.timestamp);
 
             if (ookiRewardsVesting != 0) {
-                rewardsVested = ookiRewardsVesting.mul(multiplier).div(1e36);
+                rewardsVested = ookiRewardsVesting * multiplier / 1e36;
                 ookiRewardsEarned += rewardsVested;
             }
 
             if (stableCoinRewardsVesting != 0) {
-                rewardsVested = stableCoinRewardsVesting.mul(multiplier).div(1e36);
+                rewardsVested = stableCoinRewardsVesting * multiplier / 1e36;
                 stableCoinRewardsEarned += rewardsVested;
             }
 
@@ -413,8 +414,7 @@ contract StakeUnstake is Common {
             uint256 vBZRXBalance = _balancesPerToken[vBZRX][account];
             if (vBZRXBalance != 0) {
                 // add vested OOKI to rewards balance
-                rewardsVested = vBZRXBalance.mul(multiplier)
-                    .div(1e35);  // OOKI is 10x BZRX
+                rewardsVested = vBZRXBalance * multiplier / 1e35;  // OOKI is 10x BZRX
                 ookiRewardsEarned += rewardsVested;
             }
         }
@@ -435,8 +435,8 @@ contract StakeUnstake is Common {
         address poolAddress = token == SUSHI ? OOKI_ETH_LP : token;
         uint256 totalSupply = _totalSupplyPerToken[poolAddress];
         require(totalSupply != 0, "no deposits");
-        _altRewardsPerShare = altRewardsPerShare[token].add(amount.mul(1e12).div(totalSupply));
-        _altRewardsPerSharePerBlock = _altRewardsPerShare.div(block.number - altRewardsStartBlock[token]);
+        _altRewardsPerShare = altRewardsPerShare[token] + (amount*1e12/totalSupply);
+        _altRewardsPerSharePerBlock = _altRewardsPerShare / (block.number - altRewardsStartBlock[token]);
         _altRewardsBlock = block.number;
 
     }
@@ -461,20 +461,19 @@ contract StakeUnstake is Common {
     function balanceOfStored(address account) public view returns (uint256 vestedBalance, uint256 vestingBalance) {
         uint256 balance = _balancesPerToken[vBZRX][account];
         if (balance != 0) {
-            vestingBalance = balance.mul(vBZRXWeightStored)
-                .div(1e17); // OOKI is 10x BZRX
+            vestingBalance = balance * vBZRXWeightStored / 1e17; // OOKI is 10x BZRX
         }
 
         vestedBalance = _balancesPerToken[OOKI][account];
 
         balance = _balancesPerToken[iOOKI][account];
         if (balance != 0) {
-            vestedBalance = balance.mul(iOOKIWeightStored).div(1e50).add(vestedBalance);
+            vestedBalance = balance * iOOKIWeightStored / 1e50 + vestedBalance;
         }
 
         balance = _balancesPerToken[OOKI_ETH_LP][account];
         if (balance != 0) {
-            vestedBalance = balance.mul(LPTokenWeightStored).div(1e18).add(vestedBalance);
+            vestedBalance = balance * LPTokenWeightStored / 1e18 + vestedBalance;
         }
     }
 
@@ -489,10 +488,10 @@ contract StakeUnstake is Common {
         tokens[1] = OOKI_ETH_LP;
         tokens[2] = vBZRX;
         tokens[3] = OOKI;
-        values[0] = uint256(-1);
-        values[1] = uint256(-1);
-        values[2] = uint256(-1);
-        values[3] = uint256(-1);
+        values[0] = type(uint256).max;
+        values[1] = type(uint256).max;
+        values[2] = type(uint256).max;
+        values[3] = type(uint256).max;
         
         unstake(tokens, values); // calls updateRewards
         _claim(false);

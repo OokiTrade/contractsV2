@@ -3,21 +3,20 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
 import "../../core/State.sol";
 import "../../events/LoanSettingsEvents.sol";
 import "../../utils/MathUtil.sol";
 import "../../utils/InterestOracle.sol";
 import "../../mixins/InterestHandler.sol";
-import "../../governance/PausableGuardian.sol";
+import "../../governance/PausableGuardian_0_8.sol";
 import "../../../interfaces/IPriceFeeds.sol";
 
-contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGuardian {
+contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGuardian_0_8 {
     using MathUtil for uint256;
     using InterestOracle for InterestOracle.Observation[256];
-
+    using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
     function initialize(address target) external onlyOwner {
         _setTarget(this.setupLoanPoolTWAI.selector, target);
         _setTarget(this.setTWAISettings.selector, target);
@@ -47,7 +46,7 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
             poolLastUpdateTime[pool] = block.timestamp;
         }
 
-        poolInterestRateObservations[pool][0].blockTimestamp = uint32(poolLastUpdateTime[pool].sub(twaiLength + timeDelta));
+        poolInterestRateObservations[pool][0].blockTimestamp = uint32(poolLastUpdateTime[pool] - (twaiLength + timeDelta));
         if (poolLastInterestRate[pool] < 1e11) {
             poolLastInterestRate[pool] = 1e11;
         }
@@ -107,7 +106,10 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
         uint256 count
     ) external onlyGuardian {
         EnumerableBytes32Set.Bytes32Set storage set = userLoanParamSets[owner];
-        uint256 end = start.add(count).min256(set.length());
+        uint256 end = start + count;
+        if (end > set.length()) {
+            end = set.length();
+        }
         if (start >= end) {
             return;
         }
@@ -149,9 +151,9 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
 
     function getPoolPrincipalStored(address pool) external view returns (uint256) {
         uint256 _poolInterestTotal = poolInterestTotal[pool];
-        uint256 lendingFee = _poolInterestTotal.mul(lendingFeePercent).divCeil(WEI_PERCENT_PRECISION);
+        uint256 lendingFee = (_poolInterestTotal * lendingFeePercent).divCeil(WEI_PERCENT_PRECISION);
 
-        return poolPrincipalTotal[pool].add(_poolInterestTotal).sub(lendingFee);
+        return poolPrincipalTotal[pool] + _poolInterestTotal - lendingFee;
     }
 
     function getPoolLastInterestRate(address pool) external view returns (uint256) {

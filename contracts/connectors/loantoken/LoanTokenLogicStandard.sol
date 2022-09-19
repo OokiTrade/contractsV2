@@ -3,27 +3,23 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
+import "@openzeppelin-4.7.0/token/ERC20/utils/SafeERC20.sol";
 import "./AdvancedToken.sol";
 import "./StorageExtension.sol";
 import "../../../interfaces/IBZx.sol";
 import "../../../interfaces/IPriceFeeds.sol";
 import "../../mixins/Flags.sol";
-import "../../interfaces/draft-IERC20Permit.sol";
-import "../../interfaces/IERC20Detailed.sol";
-import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
+import "@openzeppelin-4.7.0/token/ERC20/extensions/IERC20Metadata.sol";
 
 contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
-    using SafeMath for uint256;
     using SafeERC20 for IERC20;
-    using SignedSafeMath for int256;
 
 
     //// CONSTANTS ////
 
-    uint256 public constant VERSION = 8;
+    uint256 public constant VERSION = 9;
 
     address internal constant arbitraryCaller = 0x000F400e6818158D541C3EBE45FE3AA0d47372FF; // mainnet
     // address internal constant arbitraryCaller = 0x81e7dddFAD37E6FAb0eccE95f0B508fd40996e6d; // bsc
@@ -59,11 +55,12 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
 
     constructor()
         public
+        AdvancedToken("","")
     {
         renounceOwnership();
     }
 
-    function()
+    fallback()
         external
         payable
     {
@@ -130,9 +127,8 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         _settleInterest(0);
 
         // save before balances
-        uint256 beforeEtherBalance = address(this).balance.sub(msg.value);
-        uint256 beforeAssetsBalance = _underlyingBalance()
-            .add(_totalAssetBorrowStored());
+        uint256 beforeEtherBalance = address(this).balance - msg.value;
+        uint256 beforeAssetsBalance = _underlyingBalance() + _totalAssetBorrowStored();
 
         // lock totalAssetSupply for duration of flash loan
         _flTotalAssetSupply = beforeAssetsBalance;
@@ -150,7 +146,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         }
 
         // arbitrary call
-        (bool success, bytes memory returnData) = arbitraryCaller.call.value(msg.value)(
+        (bool success, bytes memory returnData) = arbitraryCaller.call{value:msg.value}(
             abi.encodeWithSelector(
                 0xde064e0d, // sendCall(address,bytes)
                 target,
@@ -172,8 +168,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         // verifies return of flash loan
         require(
             address(this).balance >= beforeEtherBalance &&
-            _underlyingBalance()
-                .add(_totalAssetBorrowStored()) >= beforeAssetsBalance,
+            _underlyingBalance() + _totalAssetBorrowStored() >= beforeAssetsBalance,
             "40"
         );
 
@@ -294,9 +289,9 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         uint256 totalSupply = _totalAssetSupply(assetBorrow);
 
         if(supplyAmount >= 0)
-            totalSupply = totalSupply.add(uint256(supplyAmount));
+            totalSupply = totalSupply + uint256(supplyAmount);
         else
-            totalSupply = totalSupply.sub(uint256(-supplyAmount));
+            totalSupply = totalSupply - uint256(-supplyAmount);
 
         return _nextSupplyInterestRate(
             _nextBorrowInterestRate(assetBorrow, 0, poolTWAI(), totalSupply),
@@ -356,9 +351,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         view
         returns (uint256)
     {
-        return balanceOf(_owner)
-            .mul(tokenPrice())
-            .div(WEI_PRECISION);
+        return balanceOf(_owner)*tokenPrice()/WEI_PRECISION;
     }
 
     function getPoolUtilization()
@@ -387,15 +380,13 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         _settleInterest(0);
 
         uint256 currentPrice = _tokenPrice(_totalAssetSupply(_totalAssetBorrowStored()));
-        mintAmount = depositAmount
-            .mul(WEI_PRECISION)
-            .div(currentPrice);
+        mintAmount = depositAmount*WEI_PRECISION/currentPrice;
 
         if (msg.value == 0) {
             _safeTransferFrom(loanTokenAddress, msg.sender, address(this), depositAmount, "18");
         } else {
             require(msg.value == depositAmount, "18");
-            IWeth(wethToken).deposit.value(depositAmount)();
+            IWeth(wethToken).deposit{value:depositAmount}();
         }
 
         _mint(receiver, mintAmount);
@@ -413,15 +404,13 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         _settleInterest(0);
 
         if (burnAmount > balanceOf(msg.sender)) {
-            require(burnAmount == uint256(-1), "32");
+            require(burnAmount == type(uint256).max, "32");
             burnAmount = balanceOf(msg.sender);
         }
 
         uint256 currentPrice = _tokenPrice(_totalAssetSupply(_totalAssetBorrowStored()));
 
-        uint256 loanAmountOwed = burnAmount
-            .mul(currentPrice)
-            .div(WEI_PRECISION);
+        uint256 loanAmountOwed = burnAmount*currentPrice/WEI_PRECISION;
         uint256 loanAmountAvailableInContract = _underlyingBalance();
 
         loanAmountPaid = loanAmountOwed;
@@ -566,9 +555,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         IBZx(bZxContract).setDepositAmount(
             loanOpenData.loanId,
             totalDeposit,
-            totalDeposit
-                .mul(WEI_PRECISION)
-                .div(collateralToLoanRate)
+            totalDeposit*WEI_PRECISION/collateralToLoanRate
         );
 
         return loanOpenData;
@@ -595,16 +582,11 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
             loanTokenAddress
         );
         require(collateralToLoanRate != 0 && collateralToLoanPrecision != 0, "20");
-        collateralToLoanRate = collateralToLoanRate
-            .mul(WEI_PRECISION)
-            .div(collateralToLoanPrecision);
+        collateralToLoanRate = collateralToLoanRate*WEI_PRECISION/collateralToLoanPrecision;
 
         totalDeposit = loanTokenSent;
         if (collateralTokenSent != 0) {
-            totalDeposit = collateralTokenSent
-                .mul(collateralToLoanRate)
-                .div(WEI_PRECISION)
-                .add(totalDeposit);
+            totalDeposit = collateralTokenSent*collateralToLoanRate/WEI_PRECISION+totalDeposit;
         }
     }
 
@@ -640,13 +622,11 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         );
 
         // adding the loan token portion from the lender to loanTokenSent
-        sentAmounts[3] = sentAmounts[3]
-            .add(sentAmounts[1]); // newPrincipal
+        sentAmounts[3] = sentAmounts[3] + sentAmounts[1]; // newPrincipal
 
         if (withdrawAmount != 0) {
             // withdrawAmount already sent to the borrower, so we aren't sending it to the protocol
-            sentAmounts[3] = sentAmounts[3]
-                .sub(withdrawAmount);
+            sentAmounts[3] = sentAmounts[3] - withdrawAmount;
         }
 
         bool isTorqueLoan = withdrawAmount != 0 ?
@@ -655,10 +635,10 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
 
         // converting to initialMargin
         if (leverageAmount != 0) {
-            leverageAmount = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, leverageAmount);
+            leverageAmount = WEI_PRECISION * WEI_PERCENT_PRECISION / leverageAmount;
         }
 
-        return IBZx(bZxContract).borrowOrTradeFromPool.value(msgValue)(
+        return IBZx(bZxContract).borrowOrTradeFromPool{value:msgValue}(
             collateralTokenAddress,
             loanId,
             isTorqueLoan,
@@ -685,6 +665,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         uint256 withdrawalAmount,
         bytes memory loanDataBytes)
         internal
+        virtual
         returns (uint256 msgValue, bytes memory)
     {
         address _wethToken = wethToken;
@@ -709,7 +690,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
 
         if (collateralTokenSent != 0) {
             if (collateralTokenAddress == _wethToken && msgValue != 0 && msgValue >= collateralTokenSent) {
-                IWeth(_wethToken).deposit.value(collateralTokenSent)();
+                IWeth(_wethToken).deposit{value:collateralTokenSent}();
                 _safeTransfer(collateralTokenAddress, bZxContract, collateralTokenSent, "28");
                 msgValue -= collateralTokenSent;
             } else {
@@ -796,9 +777,10 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     {
         if (assetBorrow != 0 && assetSupply >= assetBorrow) {
             return nextBorrowRate
-                .mul(_utilizationRate(assetBorrow, assetSupply))
-                .mul(SafeMath.sub(WEI_PERCENT_PRECISION, IBZx(bZxContract).lendingFeePercent()))
-                .div(WEI_PERCENT_PRECISION * WEI_PERCENT_PRECISION);
+                * _utilizationRate(assetBorrow, assetSupply)
+                * (WEI_PERCENT_PRECISION - IBZx(bZxContract).lendingFeePercent())
+                * _utilizationRate(assetBorrow, assetSupply)
+                / (WEI_PERCENT_PRECISION * WEI_PERCENT_PRECISION);
         }
     }
 
@@ -837,7 +819,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         returns (uint256 nextRate)
     {
         uint256 utilRate = _utilizationRate(
-            totalBorrow.add(newBorrowNotYetRealized),
+            totalBorrow + newBorrowNotYetRealized,
             assetSupply
         );
 
@@ -854,9 +836,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         uint256 totalTokenSupply = _totalSupply;
 
         return totalTokenSupply != 0 ?
-            assetSupply
-                .mul(WEI_PRECISION)
-                .div(totalTokenSupply) : initialPrice;
+            assetSupply*WEI_PRECISION/totalTokenSupply : initialPrice;
     }
 
     function _getPreMarginData(
@@ -874,12 +854,10 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
             loanTokenSent
         );
 
-        uint256 initialMargin = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, leverageAmount);
+        uint256 initialMargin = WEI_PRECISION * WEI_PERCENT_PRECISION / leverageAmount;
 
         // assumes that loan and collateral token are the same
-        borrowAmount = totalDeposit
-            .mul(WEI_PERCENT_PRECISION)
-            .div(initialMargin);
+        borrowAmount = totalDeposit*WEI_PERCENT_PRECISION/initialMargin;
     }
 
     function _totalAssetSupply(
@@ -890,8 +868,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     {
         totalSupply = _flTotalAssetSupply; // temporary locked totalAssetSupply during a flash loan transaction
         if (totalSupply == 0) {
-            totalSupply = _underlyingBalance()
-                .add(totalBorrow);
+            totalSupply = _underlyingBalance() + totalBorrow;
         }
     }
 
@@ -904,9 +881,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     {
         if (assetSupply != 0) {
             // U = total_borrow / total_supply
-            return assetBorrow
-                .mul(WEI_PERCENT_PRECISION)
-                .div(assetSupply);
+            return assetBorrow*WEI_PERCENT_PRECISION/assetSupply;
         }
     }
 
@@ -926,10 +901,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     }
 
     function initializeDomainSeparator() public onlyGuardian {
-        uint chainId;
-        assembly {
-            chainId := chainid
-        }
+        uint chainId = block.chainid;
         DOMAIN_SEPARATOR = keccak256(
             abi.encode(
                 keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'),
@@ -951,11 +923,11 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
 
         name = _name;
         symbol = _symbol;
-        decimals = IERC20Detailed(loanTokenAddress).decimals();
+        decimals = IERC20Metadata(loanTokenAddress).decimals();
 
         initialPrice = WEI_PRECISION; // starting price of 1
 
-        IERC20(_loanTokenAddress).safeApprove(bZxContract, uint256(-1));
+        IERC20(_loanTokenAddress).safeApprove(bZxContract, type(uint256).max);
     }
 
 

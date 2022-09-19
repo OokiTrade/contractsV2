@@ -3,18 +3,17 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
 import "../../core/State.sol";
 import "../../mixins/VaultController.sol";
 import "../../swaps/SwapsUser.sol";
 import "../../swaps/ISwapsImpl.sol";
-import "../../governance/PausableGuardian.sol";
+import "../../governance/PausableGuardian_0_8.sol";
 
 
-contract SwapsExternal is State, VaultController, SwapsUser, PausableGuardian {
-
+contract SwapsExternal is State, VaultController, SwapsUser, PausableGuardian_0_8 {
+    using SafeERC20 for IERC20;
     function initialize(
         address target)
         external
@@ -69,7 +68,7 @@ contract SwapsExternal is State, VaultController, SwapsUser, PausableGuardian {
                 require(sourceToken == address(wethToken), "sourceToken mismatch");
             }
             require(msg.value == sourceTokenAmount, "sourceTokenAmount mismatch");
-            wethToken.deposit.value(sourceTokenAmount)();
+            wethToken.deposit{value:sourceTokenAmount}();
         } else {
             IERC20 sourceTokenContract = IERC20(sourceToken);
 
@@ -82,8 +81,7 @@ contract SwapsExternal is State, VaultController, SwapsUser, PausableGuardian {
             );
 
             // explicit balance check so that we can support deflationary tokens
-            sourceTokenAmount = sourceTokenContract.balanceOf(address(this))
-                .sub(balanceBefore);
+            sourceTokenAmount = sourceTokenContract.balanceOf(address(this)) - balanceBefore;
         }
 
         (destTokenAmountReceived, sourceTokenAmountUsed) = _swapsCall(

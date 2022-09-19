@@ -3,11 +3,11 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+pragma solidity ^0.8.0;
 
 import "../core/State.sol";
-import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
-import "@openzeppelin-2.5.0/token/ERC20/ERC20Detailed.sol";
+import "@openzeppelin-4.7.0/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin-4.7.0/token/ERC20/extensions/IERC20Metadata.sol";
 import "../../interfaces/IPriceFeeds.sol";
 import "./VaultController.sol";
 import "../events/FeesEvents.sol";
@@ -23,13 +23,13 @@ contract FeesHelper is State, VaultController, FeesEvents {
         internal view
         returns (uint256)
     {
-        uint256 balance = ERC20Detailed(OOKI).balanceOf(user);
+        uint256 balance = IERC20Metadata(OOKI).balanceOf(user);
         if (balance > 1e25) {
-            return feeAmount.mul(4).divCeil(5);
+            return (feeAmount*4).divCeil(5);
         } else if (balance > 1e24) {
-            return feeAmount.mul(85).divCeil(100);
+            return (feeAmount*85).divCeil(100);
         } else if (balance > 1e23) {
-            return feeAmount.mul(9).divCeil(10);
+            return (feeAmount*9).divCeil(10);
         } else {
             return feeAmount;
         }
@@ -42,8 +42,7 @@ contract FeesHelper is State, VaultController, FeesEvents {
         view
         returns (uint256)
     {
-        return feeTokenAmount
-            .mul(tradingFeePercent)
+        return (feeTokenAmount*tradingFeePercent)
             .divCeil(WEI_PERCENT_PRECISION);
     }
 
@@ -59,8 +58,7 @@ contract FeesHelper is State, VaultController, FeesEvents {
             .queryReturn(
                 sourceToken,
                 OOKI,
-                feeTokenAmount
-                    .mul(tradingFeePercent)
+                (feeTokenAmount * tradingFeePercent)
                     .divCeil(WEI_PERCENT_PRECISION)
             );
     }
@@ -72,8 +70,7 @@ contract FeesHelper is State, VaultController, FeesEvents {
         view
         returns (uint256)
     {
-        return feeTokenAmount
-            .mul(borrowingFeePercent)
+        return (feeTokenAmount * borrowingFeePercent)
             .divCeil(WEI_PERCENT_PRECISION);
     }
 
@@ -89,8 +86,7 @@ contract FeesHelper is State, VaultController, FeesEvents {
             .queryReturn(
                 sourceToken,
                 OOKI,
-                feeTokenAmount
-                    .mul(borrowingFeePercent)
+                (feeTokenAmount * borrowingFeePercent)
                     .divCeil(WEI_PERCENT_PRECISION)
             );
     }
@@ -102,8 +98,7 @@ contract FeesHelper is State, VaultController, FeesEvents {
         view
         returns (uint256)
     {
-        return feeTokenAmount
-            .mul(lendingFeePercent)
+        return (feeTokenAmount * lendingFeePercent)
             .divCeil(WEI_PERCENT_PRECISION);
     }
 
@@ -116,8 +111,7 @@ contract FeesHelper is State, VaultController, FeesEvents {
         internal
     {
         if (tradingFee != 0) {
-            tradingFeeTokensHeld[feeToken] = tradingFeeTokensHeld[feeToken]
-                .add(tradingFee);
+            tradingFeeTokensHeld[feeToken] = tradingFeeTokensHeld[feeToken] + tradingFee;
 
             emit PayTradingFee(
                 user,
@@ -137,8 +131,7 @@ contract FeesHelper is State, VaultController, FeesEvents {
         internal
     {
         if (borrowingFee != 0) {
-            borrowingFeeTokensHeld[feeToken] = borrowingFeeTokensHeld[feeToken]
-                .add(borrowingFee);
+            borrowingFeeTokensHeld[feeToken] = borrowingFeeTokensHeld[feeToken] + borrowingFee;
 
             emit PayBorrowingFee(
                 user,
@@ -157,8 +150,7 @@ contract FeesHelper is State, VaultController, FeesEvents {
         internal
     {
         if (lendingFee != 0) {
-            lendingFeeTokensHeld[feeToken] = lendingFeeTokensHeld[feeToken]
-                .add(lendingFee);
+            lendingFeeTokensHeld[feeToken] = lendingFeeTokensHeld[feeToken] + lendingFee;
 
             vaultTransfer(
                 feeToken,

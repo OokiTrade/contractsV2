@@ -3,22 +3,21 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
 import "../../core/State.sol";
 import "../../events/ProtocolSettingsEvents.sol";
-import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
+import "@openzeppelin-4.7.0/token/ERC20/utils/SafeERC20.sol";
 import "../../interfaces/IVestingToken.sol";
 import "../../utils/MathUtil.sol";
 import "../../interfaces/IDexRecords.sol";
-import "../../governance/PausableGuardian.sol";
+import "../../governance/PausableGuardian_0_8.sol";
 
 
-contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian {
+contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8 {
     using SafeERC20 for IERC20;
     using MathUtil for uint256;
-
+    using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
     function initialize(
         address target)
         external
@@ -354,8 +353,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian {
                 if (balance != 0) {
                     amounts[i] = balance;  // will not overflow
                     lendingFeeTokensHeld[token] = 0;
-                    lendingFeeTokensPaid[token] = lendingFeeTokensPaid[token]
-                        .add(balance);
+                    lendingFeeTokensPaid[token] = lendingFeeTokensPaid[token] + balance;
                     emit WithdrawLendingFees(
                         msg.sender,
                         token,
@@ -369,8 +367,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian {
                 if (balance != 0) {
                     amounts[i] += balance;  // will not overflow
                     tradingFeeTokensHeld[token] = 0;
-                    tradingFeeTokensPaid[token] = tradingFeeTokensPaid[token]
-                        .add(balance);
+                    tradingFeeTokensPaid[token] = tradingFeeTokensPaid[token] + balance;
                     emit WithdrawTradingFees(
                         msg.sender,
                         token,
@@ -384,8 +381,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian {
                 if (balance != 0) {
                     amounts[i] += balance;  // will not overflow
                     borrowingFeeTokensHeld[token] = 0;
-                    borrowingFeeTokensPaid[token] = borrowingFeeTokensPaid[token]
-                        .add(balance);
+                    borrowingFeeTokensPaid[token] = borrowingFeeTokensPaid[token] + balance;
                     emit WithdrawBorrowingFees(
                         msg.sender,
                         token,
@@ -442,7 +438,10 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian {
         returns (address[] memory loanPoolsList)
     {
         EnumerableBytes32Set.Bytes32Set storage set = loanPoolsSet;
-        uint256 end = start.add(count).min256(set.length());
+        uint256 end = start + count;
+        if (end > set.length()) {
+            end = set.length();
+        }
         if (start >= end) {
             return loanPoolsList;
         }

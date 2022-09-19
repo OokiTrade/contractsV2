@@ -3,13 +3,10 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin-2.5.0/math/SafeMath.sol";
-import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
-import "../../governance/GovernorBravoDelegate.sol";
-import "../../governance/PausableGuardian.sol";
+import "@openzeppelin-4.7.0/token/ERC20/utils/SafeERC20.sol";
+import "../../governance/PausableGuardian_0_8.sol";
 import "../../../interfaces/IStakingV2.sol";
 import "./VoteDelegatorState.sol";
 import "./VoteDelegatorConstants.sol";
@@ -17,8 +14,7 @@ import "./VoteDelegatorConstants.sol";
 
 
 
-contract VoteDelegator is VoteDelegatorState, VoteDelegatorConstants, PausableGuardian {
-    using SafeMath for uint256;
+contract VoteDelegator is VoteDelegatorState, VoteDelegatorConstants, PausableGuardian_0_8 {
     using SafeERC20 for IERC20;
 
     /**
@@ -83,7 +79,7 @@ contract VoteDelegator is VoteDelegatorState, VoteDelegatorConstants, PausableGu
         address signatory = ecrecover(digest, v, r, s);
         require(signatory != ZERO_ADDRESS, "Staking::delegateBySig: invalid signature");
         require(nonce == nonces[signatory]++, "Staking::delegateBySig: invalid nonce");
-        require(now <= expiry, "Staking::delegateBySig: signature expired");
+        require(block.timestamp <= expiry, "Staking::delegateBySig: signature expired");
         return _delegate(signatory, delegatee);
     }
 
@@ -194,12 +190,12 @@ contract VoteDelegator is VoteDelegatorState, VoteDelegatorConstants, PausableGu
 
         if(votingBalanceBefore > votingBalanceAfter){
             _moveDelegates(currentDelegate, ZERO_ADDRESS,
-                votingBalanceBefore.sub(votingBalanceAfter)
+                votingBalanceBefore - votingBalanceAfter
             );
         }
         else{
             _moveDelegates(ZERO_ADDRESS, currentDelegate,
-                votingBalanceAfter.sub(votingBalanceBefore)
+                votingBalanceAfter - votingBalanceBefore
             );
         }
     }
@@ -210,7 +206,7 @@ contract VoteDelegator is VoteDelegatorState, VoteDelegatorConstants, PausableGu
                 // decrease old representative
                 uint32 srcRepNum = numCheckpoints[srcRep];
                 uint256 srcRepOld = srcRepNum > 0 ? checkpoints[srcRep][srcRepNum - 1].votes : 0;
-                uint256 srcRepNew = srcRepOld.sub((amount > srcRepOld)? srcRepOld : amount);
+                uint256 srcRepNew = srcRepOld - ((amount > srcRepOld)? srcRepOld : amount);
                 _writeCheckpoint(srcRep, srcRepNum, srcRepOld, srcRepNew);
             }
 
@@ -218,7 +214,7 @@ contract VoteDelegator is VoteDelegatorState, VoteDelegatorConstants, PausableGu
                 // increase new representative
                 uint32 dstRepNum = numCheckpoints[dstRep];
                 uint256 dstRepOld = dstRepNum > 0 ? checkpoints[dstRep][dstRepNum - 1].votes : 0;
-                uint256 dstRepNew = dstRepOld.add(amount);
+                uint256 dstRepNew = dstRepOld + amount;
                 _writeCheckpoint(dstRep, dstRepNum, dstRepOld, dstRepNew);
             }
         }
@@ -242,7 +238,7 @@ contract VoteDelegator is VoteDelegatorState, VoteDelegatorConstants, PausableGu
         return uint32(n);
     }
 
-    function getChainId() internal pure returns (uint) {
+    function getChainId() internal view returns (uint) {
         uint256 chainId;
         assembly { chainId := chainid() }
         return chainId;

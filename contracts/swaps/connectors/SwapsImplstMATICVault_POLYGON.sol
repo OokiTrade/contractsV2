@@ -1,9 +1,8 @@
-pragma solidity 0.5.17;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
 import "../../core/State.sol";
 import "../ISwapsImpl.sol";
-import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
+import "@openzeppelin-4.7.0/token/ERC20/utils/SafeERC20.sol";
 import "../../interfaces/IBalancerVault.sol";
 import "../../interfaces/IBalancerHelpers.sol";
 //Added because of version issues
@@ -152,13 +151,13 @@ contract SwapsImplstMATICVault_POLYGON is State, ISwapsImpl {
         address[] memory /*tokens*/
     ) public {
         IERC20(WMATIC).safeApprove(_vault, 0);
-        IERC20(WMATIC).safeApprove(_vault, uint256(-1));
+        IERC20(WMATIC).safeApprove(_vault, type(uint256).max);
 
         IERC20(ASSET).safeApprove(address(VAULT), 0);
-        IERC20(ASSET).safeApprove(address(VAULT), uint256(-1));
+        IERC20(ASSET).safeApprove(address(VAULT), type(uint256).max);
 
         IERC20(ASSET).safeApprove(_vault, 0);
-        IERC20(ASSET).safeApprove(_vault, uint256(-1));
+        IERC20(ASSET).safeApprove(_vault, type(uint256).max);
     }
 
     function revokeApprovals(
@@ -221,7 +220,7 @@ contract SwapsImplstMATICVault_POLYGON is State, ISwapsImpl {
                 toInternalBalance: false
             });
             destTokenAmountReceived = IERC20(WMATIC).balanceOf(receiverAddress);
-            IBalancerVault(_vault).exitPool(POOLID, _thisAddress, address(uint160(receiverAddress)), req);
+            IBalancerVault(_vault).exitPool(POOLID, _thisAddress, payable(receiverAddress), req);
             destTokenAmountReceived = IERC20(WMATIC).balanceOf(receiverAddress)-destTokenAmountReceived;
         }
     }

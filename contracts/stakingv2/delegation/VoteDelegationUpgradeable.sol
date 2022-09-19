@@ -3,9 +3,9 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin-2.5.0/ownership/Ownable.sol";
+import "@openzeppelin-4.7.0/access/Ownable.sol";
 
 
 contract VoteDelegationUpgradeable is Ownable {

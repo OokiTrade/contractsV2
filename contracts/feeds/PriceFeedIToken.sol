@@ -1,17 +1,15 @@
-pragma solidity 0.5.17;
+pragma solidity ^0.8.0;
 
 import "./IPriceFeedsExt.sol";
 import "../../interfaces/IToken.sol";
-import "../utils/SignedSafeMath.sol";
 
 
 contract PriceFeedIToken {
-    using SignedSafeMath for int256;
 
     IPriceFeedsExt public priceFeedAddress; // underlying token Chainlink feed address
     IToken public iTokenAddress;
 
-    constructor(IPriceFeedsExt _priceFeedAddress, IToken _iTokenAddress) public {
+    constructor(IPriceFeedsExt _priceFeedAddress, IToken _iTokenAddress) {
         priceFeedAddress = _priceFeedAddress;
         iTokenAddress = _iTokenAddress;
     }
@@ -20,7 +18,7 @@ contract PriceFeedIToken {
         return
             priceFeedAddress
                 .latestAnswer()
-                .mul(int256(iTokenAddress.tokenPrice()))
-                .div(1e18);
+                * int256(iTokenAddress.tokenPrice())
+                / 1e18;
     }
 }

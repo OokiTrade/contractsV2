@@ -3,10 +3,10 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+pragma solidity ^0.8.0;
 
 import "../core/Constants.sol";
-import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
+import "@openzeppelin-4.7.0/token/ERC20/utils/SafeERC20.sol";
 
 
 contract VaultController is Constants {
@@ -28,8 +28,8 @@ contract VaultController is Constants {
         uint256 value)
         internal
     {
-        IWethERC20 _wethToken = wethToken;
-        _wethToken.deposit.value(value)();
+        IWeth _wethToken = wethToken;
+        _wethToken.deposit{value:value}();
 
         emit VaultDeposit(
             address(_wethToken),
@@ -44,12 +44,12 @@ contract VaultController is Constants {
         internal
     {
         if (value != 0) {
-            IWethERC20 _wethToken = wethToken;
+            IWeth _wethToken = wethToken;
             uint256 balance = address(this).balance;
             if (value > balance) {
                 _wethToken.withdraw(value - balance);
             }
-            Address.sendValue(address(uint160(to)), value);
+            Address.sendValue(payable(address(uint160(to))), value);
 
             emit VaultWithdraw(
                 address(_wethToken),

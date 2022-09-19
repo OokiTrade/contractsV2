@@ -3,8 +3,7 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
 import "./Common.sol";
 
@@ -34,9 +33,9 @@ contract Rewards is Common {
         uint256 totalTokens = totalSupplyStored();
         require(totalTokens != 0, "nothing staked");
         
-        ookiPerTokenStored = newOOKI.mul(1e36).div(totalTokens).add(ookiPerTokenStored);
+        ookiPerTokenStored = newOOKI * 1e36 / totalTokens + ookiPerTokenStored;
 
-        stableCoinPerTokenStored = newStableCoin.mul(1e36).div(totalTokens).add(stableCoinPerTokenStored);
+        stableCoinPerTokenStored = newStableCoin * 1e36 / totalTokens + stableCoinPerTokenStored;
 
         lastRewardsAddTime = block.timestamp;
 
@@ -54,7 +53,7 @@ contract Rewards is Common {
     {
         uint256 totalVested = vestedBalanceForAmount(_startingVBZRXBalance, 0, block.timestamp);
 
-        vBZRXWeight = SafeMath.mul(_startingVBZRXBalance - totalVested, 1e18).div(_startingVBZRXBalance); // overflow not possible
+        vBZRXWeight = (_startingVBZRXBalance - totalVested) * 1e18 / _startingVBZRXBalance; // overflow not possible
 
         iOOKIWeight = _calcIOOKIWeight();
 
@@ -63,18 +62,17 @@ contract Rewards is Common {
             // staked LP tokens are assumed to represent the total unstaked supply (circulated supply - staked OOKI)
             uint256 normalizedLPTokenSupply = IERC20(OOKI).totalSupply() - _totalSupplyPerToken[OOKI];
 
-            LPTokenWeight = normalizedLPTokenSupply.mul(1e18).div(lpTokenSupply);
+            LPTokenWeight = normalizedLPTokenSupply * 1e18 / lpTokenSupply;
         }
     }
 
     function totalSupplyStored() public view returns (uint256 supply) {
-        supply = _totalSupplyPerToken[vBZRX].mul(vBZRXWeightStored)
-            .div(1e17); // OOKI is 10x OOKI
+        supply = _totalSupplyPerToken[vBZRX] * vBZRXWeightStored / 1e17; // OOKI is 10x OOKI
 
-        supply = _totalSupplyPerToken[OOKI].add(supply);
+        supply = _totalSupplyPerToken[OOKI] + supply;
 
-        supply = _totalSupplyPerToken[iOOKI].mul(iOOKIWeightStored).div(1e50).add(supply);
+        supply = _totalSupplyPerToken[iOOKI] * iOOKIWeightStored / 1e50 + supply;
 
-        supply = _totalSupplyPerToken[OOKI_ETH_LP].mul(LPTokenWeightStored).div(1e18).add(supply);
+        supply = _totalSupplyPerToken[OOKI_ETH_LP] * LPTokenWeightStored / 1e18 + supply;
     }
 }

@@ -3,16 +3,13 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin-2.5.0/math/SafeMath.sol";
 import "../interfaces/IVestingToken.sol";
-import "../proxies/0_5/Upgradeable_0_5.sol";
+import "../proxies/0_8/Upgradeable_0_8.sol";
 
 
-contract VBZRXWrapper is Upgradeable_0_5 {
-    using SafeMath for uint256;
-
+contract VBZRXWrapper is Upgradeable_0_8 {
     // --- ERC20 Data ---
     string  public constant name     = "Wrapped vBZRX";
     string  public constant symbol   = "wvBZRX";
@@ -46,15 +43,13 @@ contract VBZRXWrapper is Upgradeable_0_5 {
 
         uint256 srcBalance = balanceOf[src];
         require(srcBalance >= value, "vBZRXWrapper/insufficient-balance");
-        if (src != msg.sender && allowance[src][msg.sender] != uint256(-1)) {
+        if (src != msg.sender && allowance[src][msg.sender] != type(uint256).max) {
             require(allowance[src][msg.sender] >= value, "vBZRXWrapper/insufficient-allowance");
             allowance[src][msg.sender] -= value;
         }
 
         // move proportional vesties to dst
-        uint256 moveAmount = bzrxVesties[src]
-            .mul(value)
-            .div(srcBalance);
+        uint256 moveAmount = bzrxVesties[src] * value / srcBalance;
         bzrxVesties[src] -= moveAmount;
         bzrxVesties[dst] += moveAmount;
 
@@ -80,11 +75,7 @@ contract VBZRXWrapper is Upgradeable_0_5 {
             
             vBZRX.claim();
 
-            _bzrxVestiesPerTokenStored = BZRX.balanceOf(address(this))
-                .sub(balanceBefore)
-                .mul(1e36)
-                .div(_totalSupply)
-                .add(_bzrxVestiesPerTokenStored);
+            _bzrxVestiesPerTokenStored = ((BZRX.balanceOf(address(this)) - balanceBefore) * 1e36 / _totalSupply) + _bzrxVestiesPerTokenStored;
         }
 
         bzrxVesties[account] = _claimable(
@@ -96,13 +87,10 @@ contract VBZRXWrapper is Upgradeable_0_5 {
     }
 
     function _claimable(address account, uint256 _bzrxPerToken) internal view returns (uint256 bzrxVestiesClaimable) {
-        uint256 bzrxPerTokenUnpaid = _bzrxPerToken.sub(bzrxVestiesPerTokenPaid[account]);
+        uint256 bzrxPerTokenUnpaid = _bzrxPerToken - (bzrxVestiesPerTokenPaid[account]);
         bzrxVestiesClaimable = bzrxVesties[account];
         if (bzrxPerTokenUnpaid != 0) {
-            bzrxVestiesClaimable = balanceOf[account]
-                .mul(bzrxPerTokenUnpaid)
-                .div(1e36)
-                .add(bzrxVestiesClaimable);
+            bzrxVestiesClaimable = (balanceOf[account] * bzrxPerTokenUnpaid / 1e36) + bzrxVestiesClaimable;
         }
     }
 
@@ -122,10 +110,7 @@ contract VBZRXWrapper is Upgradeable_0_5 {
         }
         return _claimable(
             account,
-            vBZRX.vestedBalanceOf(address(this))
-                .mul(1e36)
-                .div(_totalSupply)
-                .add(bzrxVestiesPerTokenStored)
+            (vBZRX.vestedBalanceOf(address(this)) * 1e36 / _totalSupply) + bzrxVestiesPerTokenStored
         );
     }
 
@@ -135,7 +120,7 @@ contract VBZRXWrapper is Upgradeable_0_5 {
     }
 
     function exit() external {
-        withdraw(uint256(-1));
+        withdraw(type(uint256).max);
         _claim();
     }
 

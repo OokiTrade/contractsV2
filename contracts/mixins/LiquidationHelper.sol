@@ -3,12 +3,9 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
-
-import "@openzeppelin-2.5.0/math/SafeMath.sol";
+pragma solidity ^0.8.0;
 
 library LiquidationHelper {
-    using SafeMath for uint256;
     uint256 internal constant WEI_PRECISION = 10**18;
     uint256 internal constant WEI_PERCENT_PRECISION = 10**20;
 
@@ -27,19 +24,19 @@ library LiquidationHelper {
             return (principal, collateral);
         }
 
-        uint256 desiredMargin = maintenanceMargin.add(5 ether); // 5 percentage points above maintenance
+        uint256 desiredMargin = maintenanceMargin + 5 ether; // 5 percentage points above maintenance
 
         // maxLiquidatable = ((1 + desiredMargin)*principal - collateralToLoanRate*collateral) / (desiredMargin - incentivePercent)
-        maxLiquidatable = desiredMargin.add(WEI_PERCENT_PRECISION).mul(principal).div(WEI_PERCENT_PRECISION);
-        maxLiquidatable = maxLiquidatable.sub(collateral.mul(collateralToLoanRate).div(WEI_PRECISION));
-        maxLiquidatable = maxLiquidatable.mul(WEI_PERCENT_PRECISION).div(desiredMargin.sub(incentivePercent));
+        maxLiquidatable = (desiredMargin + WEI_PERCENT_PRECISION)*principal/WEI_PERCENT_PRECISION;
+        maxLiquidatable -= collateral*collateralToLoanRate/WEI_PRECISION;
+        maxLiquidatable = (maxLiquidatable*WEI_PERCENT_PRECISION/desiredMargin) - incentivePercent;
         if (maxLiquidatable > principal) {
             maxLiquidatable = principal;
         }
 
         // maxSeizable = maxLiquidatable * (1 + incentivePercent) / collateralToLoanRate
-        maxSeizable = maxLiquidatable.mul(incentivePercent.add(WEI_PERCENT_PRECISION));
-        maxSeizable = maxSeizable.div(collateralToLoanRate).div(100);
+        maxSeizable = maxLiquidatable * (incentivePercent + WEI_PERCENT_PRECISION);
+        maxSeizable = maxSeizable/collateralToLoanRate/100;
         if (maxSeizable > collateral) {
             maxSeizable = collateral;
         }

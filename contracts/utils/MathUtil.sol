@@ -3,7 +3,7 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity >=0.5.0 <0.8.0;
+pragma solidity ^0.8.0;
 
 library MathUtil {
 
@@ -18,9 +18,6 @@ library MathUtil {
     * @dev Integer division of two numbers, rounding up and truncating the quotient
     */
     function divCeil(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
-        // Solidity only automatically asserts when dividing by 0
-        require(b != 0, errorMessage);
-
         if (a == 0) {
             return 0;
         }

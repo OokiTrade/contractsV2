@@ -3,14 +3,13 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
 import "../../core/State.sol";
-import "../../governance/PausableGuardian.sol";
+import "../../governance/PausableGuardian_0_8.sol";
 
 
-contract ProtocolPausableGuardian is State, PausableGuardian {
+contract ProtocolPausableGuardian is State, PausableGuardian_0_8 {
 
     function initialize(
         address target)

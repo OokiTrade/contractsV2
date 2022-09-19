@@ -3,17 +3,15 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin-2.5.0/math/SafeMath.sol";
-import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
+import "@openzeppelin-4.7.0/token/ERC20/utils/SafeERC20.sol";
 import "../mixins/EnumerableBytes32Set.sol";
 import "../../interfaces/IStakingV2.sol";
-import "@openzeppelin-2.5.0/ownership/Ownable.sol";
+import "@openzeppelin-4.7.0/access/Ownable.sol";
 import "./StakingConstantsV2.sol";
 
 contract StakingStateV2 is StakingConstantsV2, Ownable {
-    using SafeMath for uint256;
     using SafeERC20 for IERC20;
     using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
 

@@ -1,4 +1,4 @@
-pragma solidity 0.5.17;
+pragma solidity ^0.8.0;
 
 import "../core/State.sol";
 
@@ -11,7 +11,7 @@ contract Receiver is State {
     {
         _setTarget(0, target);
     }
-    function() external payable {
+    fallback() external payable {
 
     }
 }

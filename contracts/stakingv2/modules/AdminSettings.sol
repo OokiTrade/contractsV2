@@ -3,8 +3,7 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
 import "../../interfaces/IMasterChefSushi.sol";
 import "../../interfaces/IMasterChefSushi2.sol";
@@ -12,6 +11,8 @@ import "./StakingPausableGuardian.sol";
 import "./Common.sol";
 
 contract AdminSettings is Common {
+    using SafeERC20 for IERC20;
+
     function initialize(address target) external onlyOwner {
         _setTarget(this.exitSushi.selector, target);
         _setTarget(this.setGovernor.selector, target);
@@ -43,14 +44,14 @@ contract AdminSettings is Common {
         uint256 balance = src.userInfo(srcPoolPid, address(this)).amount;
         src.withdraw(srcPoolPid, balance);
         setApprovals(OOKI_ETH_LP, address(src), 0);
-        setApprovals(OOKI_ETH_LP, address(dst), uint256(-1));
+        setApprovals(OOKI_ETH_LP, address(dst), type(uint256).max);
         dst.deposit(dstPoolPid, balance, address(this));
 
         uint256 totalSupply = _totalSupplyPerToken[OOKI_ETH_LP];
         require(totalSupply != 0, "no deposits");
         uint256 cliff = block.number - altRewardsStartBlock[SUSHI];
-        altRewardsPerShare[SUSHI] = IERC20(SUSHI).balanceOf(address(this)).mul(1e12).div(totalSupply);
-        altRewardsPerSharePerBlock[SUSHI] = altRewardsPerShare[SUSHI].div(cliff);
+        altRewardsPerShare[SUSHI] = IERC20(SUSHI).balanceOf(address(this)) * 1e12 / totalSupply;
+        altRewardsPerSharePerBlock[SUSHI] = altRewardsPerShare[SUSHI] / cliff;
         altRewardsBlock[SUSHI] = block.number;
     }
 
@@ -86,7 +87,7 @@ contract AdminSettings is Common {
     function updateSettings(address settingsTarget, bytes memory callData) public onlyOwner returns (bytes memory) {
         (bool result, ) = settingsTarget.delegatecall(callData);
         assembly {
-            let size := returndatasize
+            let size := returndatasize()
             let ptr := mload(0x40)
             returndatacopy(ptr, 0, size)
             if eq(result, 0) {

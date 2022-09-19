@@ -4,7 +4,7 @@
  */
 
 
-pragma solidity ^0.5.0;
+pragma solidity ^0.8.0;
 
 // import "prb-math/contracts/PRBMathUD60x18.sol";
 // import "@openzeppelin-4.7.0/math/SafeMath";
@@ -43,7 +43,7 @@ contract TestTwapCurvedInterestRate {
                                                             poolLastIdx,
                                                             uint32(block.timestamp),
                                                             TickMathV1.getTickAtSqrtRatio(uint160(lastIR)),
-                                                            uint8(-1),
+                                                            type(uint8).max,
                                                             60
                                                         );
 
@@ -52,7 +52,7 @@ contract TestTwapCurvedInterestRate {
                                                                 [uint32(3*3600), 0],
                                                                 poolInterestRateObservations[poolLastIdx].tick,
                                                                 poolLastIdx,
-                                                                uint8(-1)
+                                                                type(uint8).max
                                                             ));
         interestRate = rateHelper.calculateIR(newUtilization, benchmarkRate);
         if (interestRate < 1e10) {

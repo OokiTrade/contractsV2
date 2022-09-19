@@ -3,14 +3,13 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
 import "../StakingStateV2.sol";
-import "../../governance/PausableGuardian.sol";
+import "../../governance/PausableGuardian_0_8.sol";
 import "../../utils/MathUtil.sol";
 
-contract Common is StakingStateV2, PausableGuardian {
+contract Common is StakingStateV2, PausableGuardian_0_8 {
     using MathUtil for uint256;
 
     function _getProposalState() internal view returns (ProposalState memory) {
@@ -26,7 +25,7 @@ contract Common is StakingStateV2, PausableGuardian {
     function _calcIOOKIWeight() internal view returns (uint256) {
         uint256 total = IERC20(iOOKI).totalSupply();
         if(total != 0)
-            return IERC20(OOKI).balanceOf(iOOKI).mul(1e50).div(total);
+            return IERC20(OOKI).balanceOf(iOOKI) * 1e50 / total;
         return 0;
     }
  
@@ -51,8 +50,8 @@ contract Common is StakingStateV2, PausableGuardian {
                 vestingEndTime = vestingEndTimestamp;
             }
 
-            uint256 timeSinceClaim = vestingEndTime.sub(lastUpdate);
-            vested = tokenBalance.mul(timeSinceClaim) / vestingDurationAfterCliff; // will never divide by 0
+            uint256 timeSinceClaim = vestingEndTime - lastUpdate;
+            vested = tokenBalance * timeSinceClaim / vestingDurationAfterCliff; // will never divide by 0
         }
     }
 
@@ -79,12 +78,12 @@ contract Common is StakingStateV2, PausableGuardian {
                 _vOOKIBalance,
                 _vestingLastSync,
                 proposal.proposalTime
-            ).add(totalVotes);
+            ) + totalVotes;
         }
 
-        totalVotes = _balancesPerToken[OOKI][account].add(ookiRewards[account]).add(totalVotes); // unclaimed BZRX rewards count as votes
+        totalVotes = _balancesPerToken[OOKI][account] + ookiRewards[account] + totalVotes; // unclaimed BZRX rewards count as votes
 
-        totalVotes = _balancesPerToken[iOOKI][account].mul(proposal.iOOKIWeight).div(1e50).add(totalVotes);
+        totalVotes = _balancesPerToken[iOOKI][account] * proposal.iOOKIWeight / 1e50 + totalVotes;
 
         // LPToken votes are measured based on amount of underlying BZRX staked
         /*totalVotes = proposal.lpBZRXBalance

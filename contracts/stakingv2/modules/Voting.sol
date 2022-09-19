@@ -3,8 +3,7 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
 import "./Common.sol";
 import "../../governance/GovernorBravoInterfaces.sol";
@@ -59,7 +58,7 @@ contract Voting is Common {
             totalVotes = _voteDelegator.getPriorVotes(account, blocknumber);
             if (_delegate == ZERO_ADDRESS) {
                 // has not delegated yet
-                return totalVotes.add(_votingFromStakedBalanceOf(account, proposal, false));
+                return totalVotes + _votingFromStakedBalanceOf(account, proposal, false);
             }
             return totalVotes;
         }

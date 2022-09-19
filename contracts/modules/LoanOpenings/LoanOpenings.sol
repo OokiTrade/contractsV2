@@ -3,17 +3,18 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
 import "../../core/State.sol";
 import "../../events/LoanOpeningsEvents.sol";
 import "../../mixins/VaultController.sol";
 import "../../mixins/InterestHandler.sol";
 import "../../swaps/SwapsUser.sol";
-import "../../governance/PausableGuardian.sol";
+import "../../governance/PausableGuardian_0_8.sol";
 
-contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHandler, SwapsUser, PausableGuardian {
+contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHandler, SwapsUser, PausableGuardian_0_8 {
+    using MathUtil for uint256;
+    using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
     function initialize(address target) external onlyOwner {
         
          // TODO remove after migration
@@ -191,7 +192,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
 
             uint256 feePercent = isTorqueLoan ? borrowingFeePercent : tradingFeePercent;
             if (collateralAmountRequired != 0 && feePercent != 0) {
-                collateralAmountRequired = collateralAmountRequired.mul(WEI_PERCENT_PRECISION).divCeil(
+                collateralAmountRequired = (collateralAmountRequired * WEI_PERCENT_PRECISION).divCeil(
                     WEI_PERCENT_PRECISION - feePercent // never will overflow
                 );
             }
@@ -231,7 +232,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         // initialize loan
         Loan storage loanLocal = _initializeLoan(loanParamsLocal, loanId, initialMargin, sentAddresses, sentValues);
 
-        poolPrincipalTotal[sentAddresses[0]] = poolPrincipalTotal[sentAddresses[0]].add(sentValues[1]); // newPrincipal
+        poolPrincipalTotal[sentAddresses[0]] = poolPrincipalTotal[sentAddresses[0]] + sentValues[1]; // newPrincipal
 
         uint256 amount;
         if (isTorqueLoan) {
@@ -264,7 +265,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
                 false, // bypassFee
                 loanDataBytes
             );
-            sentValues[4] = sentValues[4].add(receivedAmount); // collateralTokenReceived
+            sentValues[4] = sentValues[4] + receivedAmount; // collateralTokenReceived
         }
 
         // settle collateral
@@ -280,11 +281,11 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
             "collateral insufficient"
         );
 
-        loanLocal.collateral = loanLocal.collateral.add(sentValues[4]).sub(amount); // borrowingFee
+        loanLocal.collateral = loanLocal.collateral + sentValues[4] - amount; // borrowingFee
 
         if (!isTorqueLoan) {
             // reclaiming varaible -> entryLeverage = 100 / initialMargin
-            sentValues[2] = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, initialMargin);
+            sentValues[2] = WEI_PRECISION * WEI_PERCENT_PRECISION / initialMargin;
         }
 
         _finalizeOpen(loanParamsLocal, loanLocal, sentAddresses, sentValues, isTorqueLoan);
@@ -348,7 +349,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
             );
         } else {
             // currentLeverage = 100 / currentMargin
-            margin = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, margin);
+            margin = WEI_PRECISION * WEI_PERCENT_PRECISION / margin;
 
             emit Trade(
                 sentAddresses[1], // user (trader)
@@ -387,7 +388,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         uint256 borrowingFee
     ) internal view returns (bool) {
         // allow at most 2% under-collateralized
-        collateralAmountRequired = collateralAmountRequired.mul(98 ether).div(100 ether).add(borrowingFee);
+        collateralAmountRequired = (collateralAmountRequired * 98 ether / 100 ether) + borrowingFee;
 
         if (newCollateral < collateralAmountRequired) {
             // check that existing collateral is sufficient coverage
@@ -399,7 +400,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
                     loanLocal.collateral,
                     initialMargin
                 );
-                return newCollateral.add(maxDrawdown) >= collateralAmountRequired;
+                return newCollateral + maxDrawdown >= collateralAmountRequired;
             } else {
                 return false;
             }
@@ -453,7 +454,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
             require(sloanLocal.lender == lender, "lender mismatch");
             require(sloanLocal.loanParamsId == loanParamsLocal.id, "loanParams mismatch");
 
-            sloanLocal.principal = sloanLocal.principal.add(newPrincipal);
+            sloanLocal.principal += newPrincipal;
         }
 
         if (manager != address(0)) {
@@ -469,16 +470,16 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         bool isTorqueLoan
     ) internal view returns (uint256 collateralTokenAmount) {
         if (loanToken == collateralToken) {
-            collateralTokenAmount = newPrincipal.mul(marginAmount).divCeil(WEI_PERCENT_PRECISION);
+            collateralTokenAmount = (newPrincipal * marginAmount).divCeil(WEI_PERCENT_PRECISION);
         } else {
             (uint256 sourceToDestRate, uint256 sourceToDestPrecision) = IPriceFeeds(priceFeeds).queryRate(collateralToken, loanToken);
             if (sourceToDestRate != 0) {
-                collateralTokenAmount = newPrincipal.mul(sourceToDestPrecision).mul(marginAmount).divCeil(sourceToDestRate * WEI_PERCENT_PRECISION);
+                collateralTokenAmount = (newPrincipal * sourceToDestPrecision * marginAmount).divCeil(sourceToDestRate * WEI_PERCENT_PRECISION);
             }
         }
 
         if (isTorqueLoan && collateralTokenAmount != 0) {
-            collateralTokenAmount = collateralTokenAmount.mul(WEI_PERCENT_PRECISION).divCeil(marginAmount).add(collateralTokenAmount);
+            collateralTokenAmount = (collateralTokenAmount * WEI_PERCENT_PRECISION).divCeil(marginAmount) + collateralTokenAmount;
         }
     }
 }

@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.8.0;
 
 library InterestOracle {
     struct Observation {
@@ -19,7 +19,7 @@ library InterestOracle {
         return
             Observation({
                 blockTimestamp: blockTimestamp,
-                irCumulative: last.irCumulative + int56(tick) * (blockTimestamp - last.blockTimestamp),
+                irCumulative: last.irCumulative + int56(tick) * int32(blockTimestamp - last.blockTimestamp),
                 tick: tick
             });
     }
@@ -153,8 +153,8 @@ library InterestOracle {
             // middle
             return
                 beforeOrAt.irCumulative +
-                    ((atOrAfter.irCumulative - beforeOrAt.irCumulative) / (atOrAfter.blockTimestamp - beforeOrAt.blockTimestamp)) *
-                    (target - beforeOrAt.blockTimestamp);
+                    ((atOrAfter.irCumulative - beforeOrAt.irCumulative) / int32(atOrAfter.blockTimestamp - beforeOrAt.blockTimestamp)) *
+                    int32(target - beforeOrAt.blockTimestamp);
         }
     }
 
@@ -174,6 +174,6 @@ library InterestOracle {
     ) internal view returns (int24) {
         int56 firstPoint = observeSingle(self, time, secondsAgos[1], tick, index, cardinality);
         int56 secondPoint = observeSingle(self, time, secondsAgos[0], tick, index, cardinality);
-        return int24((firstPoint-secondPoint) / (secondsAgos[0]-secondsAgos[1]));
+        return int24((firstPoint-secondPoint) / int32(secondsAgos[0]-secondsAgos[1]));
     }
 }

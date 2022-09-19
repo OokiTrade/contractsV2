@@ -3,11 +3,11 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+pragma solidity ^0.8.0;
 
 import "../../core/State.sol";
 import "../../interfaces/IUniswapV2Router.sol";
-import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
+import "@openzeppelin-4.7.0/token/ERC20/utils/SafeERC20.sol";
 import "../ISwapsImpl.sol";
 
 
@@ -175,7 +175,7 @@ contract SwapsImplUniswapV2_BSC is State, ISwapsImpl {
                 }
             }
 
-            if (amountIn == uint256(-1)) {
+            if (amountIn == type(uint256).max) {
                 amountIn = 0;
             }
         }
@@ -233,7 +233,7 @@ contract SwapsImplUniswapV2_BSC is State, ISwapsImpl {
             }
         }
         if (amountIn == 0) {
-            amountIn = uint256(-1);
+            amountIn = type(uint256).max;
         }
     }
 
@@ -243,7 +243,7 @@ contract SwapsImplUniswapV2_BSC is State, ISwapsImpl {
     {
         for (uint256 i = 0; i < tokens.length; i++) {
             IERC20(tokens[i]).safeApprove(uniswapRouter, 0);
-            IERC20(tokens[i]).safeApprove(uniswapRouter, uint256(-1));
+            IERC20(tokens[i]).safeApprove(uniswapRouter, type(uint256).max);
         }
     }
 

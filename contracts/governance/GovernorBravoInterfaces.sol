@@ -1,4 +1,4 @@
-pragma solidity ^0.5.16;
+pragma solidity >=0.5.0 <0.9.0;
 pragma experimental ABIEncoderV2;
 
 

@@ -1,4 +1,4 @@
-pragma solidity 0.5.17;
+pragma solidity ^0.8.0;
 
 import "../../core/State.sol";
 import "../../events/LoanClosingsEvents.sol";
@@ -6,10 +6,10 @@ import "../../mixins/VaultController.sol";
 import "../../mixins/InterestHandler.sol";
 import "../../swaps/SwapsUser.sol";
 import "../../interfaces/ILoanPool.sol";
-import "../../governance/PausableGuardian.sol";
+import "../../governance/PausableGuardian_0_8.sol";
 
-contract LoanClosingsShared is State, LoanClosingsEvents, VaultController, InterestHandler, SwapsUser, PausableGuardian {
-
+contract LoanClosingsShared is State, LoanClosingsEvents, VaultController, InterestHandler, SwapsUser, PausableGuardian_0_8 {
+    using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
     enum CloseTypes {
         Deposit,
         Swap,
@@ -23,6 +23,7 @@ contract LoanClosingsShared is State, LoanClosingsEvents, VaultController, Inter
         uint256 collateral,
         bool silentFail)
         internal
+        virtual
         returns (uint256 currentMargin, uint256 collateralToLoanRate)
     {
         address _priceFeeds = priceFeeds;
@@ -56,14 +57,14 @@ contract LoanClosingsShared is State, LoanClosingsEvents, VaultController, Inter
             if (msg.value == 0) {
                 vaultTransfer(
                     loanToken,
-                    msg.sender,
+                    payable(msg.sender),
                     receiver,
                     principalNeeded
                 );
             } else {
                 require(loanToken == address(wethToken), "wrong asset sent");
                 require(msg.value >= principalNeeded, "not enough ether");
-                wethToken.deposit.value(principalNeeded)();
+                wethToken.deposit{value:principalNeeded}();
                 if (receiver != address(this)) {
                     vaultTransfer(
                         loanToken,
@@ -75,7 +76,7 @@ contract LoanClosingsShared is State, LoanClosingsEvents, VaultController, Inter
                 if (msg.value > principalNeeded) {
                     // refund overage
                     Address.sendValue(
-                        msg.sender,
+                        payable(msg.sender),
                         msg.value - principalNeeded
                     );
                 }
@@ -97,9 +98,8 @@ contract LoanClosingsShared is State, LoanClosingsEvents, VaultController, Inter
         principalBefore = loanLocal.principal;
         uint256 loanInterest = loanInterestTotal[loanLocal.id];
 
-        if (loanCloseAmount == principalBefore.add(loanInterest)) {
-            poolPrincipalTotal[loanLocal.lender] = poolPrincipalTotal[loanLocal.lender]
-                .sub(principalBefore);
+        if (loanCloseAmount == principalBefore + loanInterest) {
+            poolPrincipalTotal[loanLocal.lender] = poolPrincipalTotal[loanLocal.lender] - principalBefore;
             loanLocal.principal = 0;
 
             loanInterestTotal[loanLocal.id] = 0;
@@ -113,11 +113,10 @@ contract LoanClosingsShared is State, LoanClosingsEvents, VaultController, Inter
         } else {
             // interest is paid before principal
             if (loanCloseAmount >= loanInterest) {
-                principalAfter = principalBefore.sub(loanCloseAmount - loanInterest);
+                principalAfter = principalBefore - (loanCloseAmount - loanInterest);
 
                 loanLocal.principal = principalAfter;
-                poolPrincipalTotal[loanLocal.lender] = poolPrincipalTotal[loanLocal.lender]
-                    .sub(loanCloseAmount - loanInterest);
+                poolPrincipalTotal[loanLocal.lender] = poolPrincipalTotal[loanLocal.lender] - (loanCloseAmount - loanInterest);
 
                 loanInterestTotal[loanLocal.id] = 0;
             } else {
@@ -172,12 +171,12 @@ contract LoanClosingsShared is State, LoanClosingsEvents, VaultController, Inter
         } else if (closeType == CloseTypes.Swap) {
             // exitPrice = 1 / collateralToLoanSwapRate
             if (collateralToLoanSwapRate != 0) {
-                collateralToLoanSwapRate = SafeMath.div(WEI_PRECISION * WEI_PRECISION, collateralToLoanSwapRate);
+                collateralToLoanSwapRate = (WEI_PRECISION * WEI_PRECISION) / collateralToLoanSwapRate;
             }
 
             // currentLeverage = 100 / currentMargin
             if (currentMargin != 0) {
-                currentMargin = SafeMath.div(10**38, currentMargin);
+                currentMargin = 10**38 / currentMargin;
             }
 
             emit CloseWithSwap(

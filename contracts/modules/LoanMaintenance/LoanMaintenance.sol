@@ -3,8 +3,7 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
 import "../../core/State.sol";
 import "../../events/LoanMaintenanceEvents.sol";
@@ -12,11 +11,11 @@ import "../../mixins/VaultController.sol";
 import "../../mixins/InterestHandler.sol";
 import "../../mixins/LiquidationHelper.sol";
 import "../../../interfaces/IPriceFeeds.sol";
-import "../../governance/PausableGuardian.sol";
+import "../../governance/PausableGuardian_0_8.sol";
 
 
-contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, InterestHandler, PausableGuardian {
-
+contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, InterestHandler, PausableGuardian_0_8 {
+    using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
     function initialize(
         address target)
         external
@@ -59,8 +58,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
 
         require(msg.value == 0 || collateralToken == address(wethToken), "wrong asset sent");
 
-        collateral = collateral
-            .add(depositAmount);
+        collateral = collateral + depositAmount;
         loanLocal.collateral = collateral;
 
         if (msg.value == 0) {
@@ -85,9 +83,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         if (collateralToLoanRate != 0) {
             _setDepositAmount(
                 loanId,
-                depositAmount
-                    .mul(collateralToLoanRate)
-                    .div(collateralToLoanPrecision),
+                depositAmount * collateralToLoanRate / collateralToLoanPrecision,
                 depositAmount,
                 false // isSubtraction
             );
@@ -138,8 +134,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             actualWithdrawAmount = withdrawAmount;
         }
 
-        collateral = collateral
-            .sub(actualWithdrawAmount, "withdrawAmount too high");
+        collateral = collateral - actualWithdrawAmount;
         loanLocal.collateral = collateral;
 
         if (collateralToken == address(wethToken)) {
@@ -163,9 +158,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         if (collateralToLoanRate != 0) {
             _setDepositAmount(
                 loanId,
-                actualWithdrawAmount
-                    .mul(collateralToLoanRate)
-                    .div(collateralToLoanPrecision),
+                actualWithdrawAmount * collateralToLoanRate / collateralToLoanPrecision,
                 actualWithdrawAmount,
                 true // isSubtraction
             );
@@ -215,8 +208,10 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         EnumerableBytes32Set.Bytes32Set storage set = isLender ?
             lenderLoanSets[user] :
             borrowerLoanSets[user];
-
-        uint256 end = start.add(count).min256(set.length());
+        uint256 end = start + count;
+        if (end > set.length()) {
+            end = set.length();
+        }
         if (start >= end) {
             return loansData;
         }
@@ -311,7 +306,10 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         view 
         returns (LoanReturnData[] memory loansData)
     {
-        uint256 end = start.add(count).min256(activeLoansSet.length());
+        uint256 end = start + count;
+        if (end > activeLoansSet.length()) {
+            end = activeLoansSet.length();
+        }
         if (start >= end) {
             return loansData;
         }

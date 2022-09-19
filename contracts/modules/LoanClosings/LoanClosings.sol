@@ -3,11 +3,9 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
 
 import "./LoanClosingsShared.sol";
-import "../../interfaces/draft-IERC20Permit.sol";
 
 contract LoanClosings is LoanClosingsShared {
 
@@ -113,8 +111,7 @@ contract LoanClosings is LoanClosingsShared {
 
         _checkPermit(loanParamsLocal.loanToken, loanDataBytes);
 
-        uint256 principalPlusInterest = _settleInterest(loanLocal.lender, loanId)
-            .add(loanLocal.principal);
+        uint256 principalPlusInterest = _settleInterest(loanLocal.lender, loanId) + loanLocal.principal;
 
         // can't close more than the full principal
         loanCloseAmount = depositAmount > principalPlusInterest ?
@@ -181,8 +178,7 @@ contract LoanClosings is LoanClosingsShared {
 
         LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
-        uint256 principalPlusInterest = _settleInterest(loanLocal.lender, loanId)
-            .add(loanLocal.principal);
+        uint256 principalPlusInterest = _settleInterest(loanLocal.lender, loanId) + loanLocal.principal;
 
         if (swapAmount > loanLocal.collateral) {
             swapAmount = loanLocal.collateral;
@@ -190,9 +186,7 @@ contract LoanClosings is LoanClosingsShared {
 
         loanCloseAmount = principalPlusInterest;
         if (swapAmount != loanLocal.collateral) {
-            loanCloseAmount = loanCloseAmount
-                .mul(swapAmount)
-                .div(loanLocal.collateral);
+            loanCloseAmount = loanCloseAmount * swapAmount / loanLocal.collateral;
         }
         require(loanCloseAmount != 0, "loanCloseAmount == 0");
 
@@ -217,8 +211,7 @@ contract LoanClosings is LoanClosingsShared {
         }
 
         if (usedCollateral != 0) {
-            loanLocal.collateral = loanLocal.collateral
-                .sub(usedCollateral);
+            loanLocal.collateral = loanLocal.collateral - usedCollateral;
         }
 
         withdrawToken = returnTokenIsCollateral ?
@@ -369,6 +362,7 @@ contract LoanClosings is LoanClosingsShared {
         uint256 collateral,
         bool silentFail)
         internal
+        override
         returns (uint256 currentMargin, uint256 collateralToLoanRate)
     {
         address _priceFeeds = priceFeeds;
