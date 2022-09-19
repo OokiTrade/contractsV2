@@ -15,7 +15,7 @@ import "../utils/VolumeTracker.sol";
 import "@openzeppelin-4.7.0/access/Ownable.sol";
 
 
-contract State is Constants, Objects, ReentrancyGuard, Ownable {
+abstract contract State is Constants, Objects, ReentrancyGuard, Ownable {
     using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
     address public priceFeeds;                                                              // handles asset reference price lookups
     address public swapsImpl;                                                               // handles asset swaps using dex liquidity

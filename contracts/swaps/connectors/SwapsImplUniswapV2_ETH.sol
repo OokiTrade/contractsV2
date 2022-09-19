@@ -21,6 +21,12 @@ contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
     address public constant usdc = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     address public constant usdt = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
 
+    constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki)
+    Constants(wethtoken, usdc, bzrx, vbzrx, ooki)
+    {
+        
+    }
+
     function dexSwap(
         address sourceTokenAddress,
         address destTokenAddress,

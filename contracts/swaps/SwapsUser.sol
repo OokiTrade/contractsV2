@@ -15,7 +15,7 @@ import "../interfaces/IDexRecords.sol";
 import "../mixins/Flags.sol";
 import "../utils/VolumeTracker.sol";
 
-contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
+abstract contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
     using VolumeTracker for VolumeTracker.Observation[65535];
     using SafeERC20 for IERC20;
     function _loanSwap(

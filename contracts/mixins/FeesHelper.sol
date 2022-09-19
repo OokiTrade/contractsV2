@@ -13,7 +13,7 @@ import "./VaultController.sol";
 import "../events/FeesEvents.sol";
 import "../utils/MathUtil.sol";
 
-contract FeesHelper is State, VaultController, FeesEvents {
+abstract contract FeesHelper is State, VaultController, FeesEvents {
     using SafeERC20 for IERC20;
     using MathUtil for uint256;
 

@@ -15,6 +15,11 @@ import "../../utils/TickMathV1.sol";
 contract LoanMaintenance_2 is State, LoanMaintenanceEvents, PausableGuardian_0_8, InterestHandler {
     using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
     using InterestOracle for InterestOracle.Observation[256];
+    constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki)
+    Constants(wethtoken, usdc, bzrx, vbzrx, ooki)
+    {
+        
+    }
     function initialize(
         address target)
         external

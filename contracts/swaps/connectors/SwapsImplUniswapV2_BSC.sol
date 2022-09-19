@@ -21,6 +21,12 @@ contract SwapsImplUniswapV2_BSC is State, ISwapsImpl {
     address public constant busd = 0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56;
     address public constant usdt = 0x55d398326f99059fF775485246999027B3197955;
 
+    constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki)
+    Constants(wethtoken, usdc, bzrx, vbzrx, ooki)
+    {
+        
+    }
+
     function dexSwap(
         address sourceTokenAddress,
         address destTokenAddress,

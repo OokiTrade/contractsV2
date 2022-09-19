@@ -15,6 +15,13 @@ import "../../governance/PausableGuardian_0_8.sol";
 contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHandler, SwapsUser, PausableGuardian_0_8 {
     using MathUtil for uint256;
     using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
+
+    constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki)
+    Constants(wethtoken, usdc, bzrx, vbzrx, ooki)
+    {
+        
+    }
+
     function initialize(address target) external onlyOwner {
         
          // TODO remove after migration

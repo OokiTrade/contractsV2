@@ -4,6 +4,13 @@ import "../core/State.sol";
 
 
 contract Receiver is State {
+
+    constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki)
+    Constants(wethtoken, usdc, bzrx, vbzrx, ooki)
+    {
+        
+    }
+
     function initialize(
         address target)
         external

@@ -9,7 +9,7 @@ import "../core/Constants.sol";
 import "@openzeppelin-4.7.0/token/ERC20/utils/SafeERC20.sol";
 
 
-contract VaultController is Constants {
+abstract contract VaultController is Constants {
     using SafeERC20 for IERC20;
 
     event VaultDeposit(

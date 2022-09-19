@@ -18,6 +18,13 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
     using SafeERC20 for IERC20;
     using MathUtil for uint256;
     using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
+
+    constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki)
+    Constants(wethtoken, usdc, bzrx, vbzrx, ooki)
+    {
+        
+    }
+
     function initialize(
         address target)
         external

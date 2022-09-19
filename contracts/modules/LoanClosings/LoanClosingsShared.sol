@@ -8,7 +8,7 @@ import "../../swaps/SwapsUser.sol";
 import "../../interfaces/ILoanPool.sol";
 import "../../governance/PausableGuardian_0_8.sol";
 
-contract LoanClosingsShared is State, LoanClosingsEvents, VaultController, InterestHandler, SwapsUser, PausableGuardian_0_8 {
+abstract contract LoanClosingsShared is State, LoanClosingsEvents, VaultController, InterestHandler, SwapsUser, PausableGuardian_0_8 {
     using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
     enum CloseTypes {
         Deposit,

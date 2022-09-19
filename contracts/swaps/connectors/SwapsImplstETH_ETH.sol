@@ -16,9 +16,14 @@ contract SwapsImplstETH_ETH is State, ISwapsImpl {
     using SafeERC20 for IERC20;
     address public constant STETH = 0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84;
     address public constant WSTETH = 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0;
-    address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     ICurve public constant STETHPOOL =
         ICurve(0xDC24316b9AE028F1497c275EB9192a3Ea0f67022);
+
+    constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki)
+    Constants(wethtoken, usdc, bzrx, vbzrx, ooki)
+    {
+        
+    }
 
     function dexSwap(
         address sourceTokenAddress,
@@ -35,8 +40,8 @@ contract SwapsImplstETH_ETH is State, ISwapsImpl {
     {
         require(sourceTokenAddress != destTokenAddress, "source == dest");
         require(
-            (sourceTokenAddress == WSTETH || sourceTokenAddress == WETH) &&
-                (destTokenAddress == WSTETH || destTokenAddress == WETH),
+            (sourceTokenAddress == WSTETH || sourceTokenAddress == address(wethToken)) &&
+                (destTokenAddress == WSTETH || destTokenAddress == address(wethToken)),
             "unsupported tokens"
         );
 
@@ -81,7 +86,7 @@ contract SwapsImplstETH_ETH is State, ISwapsImpl {
                 payload,
                 (uint256, address, address)
             );
-            if (srcToken == WETH) {
+            if (srcToken == address(wethToken)) {
                 if (abi.decode(payload, (uint256)) > 0) {
                     amountIn = STETHPOOL.get_dy(0, 1, amountIn);
                     amountOut = IwstETH(WSTETH).getWstETHBystETH(amountIn);
@@ -149,8 +154,8 @@ contract SwapsImplstETH_ETH is State, ISwapsImpl {
             "required dest token amount unsupported"
         );
         sourceTokenAmountUsed = minSourceTokenAmount;
-        if (sourceTokenAddress == WETH) {
-            IWeth(WETH).withdraw(minSourceTokenAmount);
+        if (sourceTokenAddress == address(wethToken)) {
+            wethToken.withdraw(minSourceTokenAmount);
             if (abi.decode(payload, (uint256)) > 0) {
                 destTokenAmountReceived = STETHPOOL.exchange{value:minSourceTokenAmount}(0, 1, minSourceTokenAmount, abi.decode(payload, (uint256)));
             } else {
@@ -169,7 +174,7 @@ contract SwapsImplstETH_ETH is State, ISwapsImpl {
                 requiredDestTokenAmount,
                 abi.decode(payload, (uint256))
             );
-            IWeth(WETH).deposit{value:destTokenAmountReceived}();
+            wethToken.deposit{value:destTokenAmountReceived}();
         }
         if (receiverAddress != address(this)) {
             IERC20(destTokenAddress).transfer(

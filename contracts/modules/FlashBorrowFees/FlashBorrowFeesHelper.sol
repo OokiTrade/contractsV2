@@ -11,6 +11,12 @@ import "../../mixins/VaultController.sol";
 
 contract FlashBorrowFeesHelper is State, VaultController {
 
+    constructor()
+    Constants(IWeth(address(0)), address(0), address(0), address(0), address(0))
+    {
+
+    }
+
     event PayFlashBorrowFee(
         address indexed payer,
         address indexed token,

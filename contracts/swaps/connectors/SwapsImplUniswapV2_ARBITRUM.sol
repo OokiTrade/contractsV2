@@ -16,6 +16,12 @@ contract SwapsImplUniswapV2_ARBITRUM is State, ISwapsImpl {
     address public constant uniswapRouter =
         0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506; // Sushiswap
 
+    constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki)
+    Constants(wethtoken, usdc, bzrx, vbzrx, ooki)
+    {
+        
+    }
+
     function dexSwap(
         address sourceTokenAddress,
         address destTokenAddress,

@@ -5,6 +5,11 @@ import "../../mixins/LiquidationHelper.sol";
 
 contract LoanClosingsLiquidation is LoanClosingsShared {
 
+    constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki)
+    Constants(wethtoken, usdc, bzrx, vbzrx, ooki)
+    {
+        
+    }
 
     function initialize(
         address target)

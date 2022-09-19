@@ -14,6 +14,13 @@ import "../../governance/PausableGuardian_0_8.sol";
 
 contract SwapsExternal is State, VaultController, SwapsUser, PausableGuardian_0_8 {
     using SafeERC20 for IERC20;
+
+    constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki)
+    Constants(wethtoken, usdc, bzrx, vbzrx, ooki)
+    {
+        
+    }
+
     function initialize(
         address target)
         external

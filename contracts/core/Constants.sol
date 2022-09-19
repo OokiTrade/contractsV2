@@ -10,6 +10,14 @@ import "../interfaces/IWeth.sol";
 
 contract Constants {
 
+    constructor(IWeth weth, address usdc, address bzrx, address vbzrx, address ooki) {
+        wethToken = weth;
+        USDC = usdc;
+        bzrxTokenAddress = bzrx;
+        vbzrxTokenAddress = vbzrx;
+        OOKI = ooki;
+    }
+
     uint256 internal constant WEI_PRECISION = 10**18;
     uint256 internal constant WEI_PERCENT_PRECISION = 10**20;
 
@@ -18,6 +26,12 @@ contract Constants {
 
     // string internal constant UserRewardsID = "UserRewards"; // decommissioned
     string internal constant LoanDepositValueID = "LoanDepositValue";
+
+    IWeth public immutable wethToken;
+    address public immutable USDC;
+    address public immutable bzrxTokenAddress;
+    address public immutable vbzrxTokenAddress;
+    address public immutable OOKI;
 
     // IWeth public constant wethToken = IWeth(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // mainnet
     // address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48; // mainnet
@@ -49,11 +63,11 @@ contract Constants {
     //address public constant bzrxTokenAddress = address(0); // avax
     //address public constant vbzrxTokenAddress = address(0); // avax
 
-    IWeth public constant wethToken = IWeth(0x82aF49447D8a07e3bd95BD0d56f35241523fBab1); // arbitrum
+    /*IWeth public constant wethToken = IWeth(0x82aF49447D8a07e3bd95BD0d56f35241523fBab1); // arbitrum
     address public constant bzrxTokenAddress = address(0); // arbitrum
     address public constant vbzrxTokenAddress = address(0); // arbitrum
     address public constant USDC = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8; // arbitrum
-    address public constant OOKI = address(0x400F3ff129Bc9C9d239a567EaF5158f1850c65a4); // arbitrum
+    address public constant OOKI = address(0x400F3ff129Bc9C9d239a567EaF5158f1850c65a4); // arbitrum*/
 
     // IWeth public constant wethToken = IWeth(0xD4949664cD82660AaE99bEdc034a0deA8A0bd517); // evmos (Wrapped evmos)
     // address public constant bzrxTokenAddress = address(0); // evmos

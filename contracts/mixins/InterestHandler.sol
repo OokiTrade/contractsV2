@@ -12,7 +12,7 @@ import "../events/InterestRateEvents.sol";
 import "../utils/InterestOracle.sol";
 import "../utils/TickMathV1.sol";
 
-contract InterestHandler is State, InterestRateEvents {
+abstract contract InterestHandler is State, InterestRateEvents {
     using MathUtil for uint256;
     using InterestOracle for InterestOracle.Observation[256];
     // returns up to date loan interest or 0 if not applicable

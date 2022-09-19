@@ -22,6 +22,12 @@ contract SwapsImplUniswapV2_POLYGON is State, ISwapsImpl {
     address public constant usdc = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
     address public constant usdt = 0xc2132D05D31c914a87C6611C10748AEb04B58e8F;
 
+    constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki)
+    Constants(wethtoken, usdc, bzrx, vbzrx, ooki)
+    {
+        
+    }
+
     function dexSwap(
         address sourceTokenAddress,
         address destTokenAddress,

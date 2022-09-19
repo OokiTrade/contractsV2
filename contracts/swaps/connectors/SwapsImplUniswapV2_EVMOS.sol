@@ -16,6 +16,12 @@ contract SwapsImplUniswapV2_EVMOS is State, ISwapsImpl {
     address public constant uniswapRouter =
     0x64C3b10636baBb3Ef46a7E2E5248b0dE43198fCB; // EvmoSwapRouter
 
+    constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki)
+    Constants(wethtoken, usdc, bzrx, vbzrx, ooki)
+    {
+        
+    }
+
     function dexSwap(
         address sourceTokenAddress,
         address destTokenAddress,

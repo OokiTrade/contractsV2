@@ -16,6 +16,13 @@ import "../../governance/PausableGuardian_0_8.sol";
 
 contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, InterestHandler, PausableGuardian_0_8 {
     using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
+
+    constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki)
+    Constants(wethtoken, usdc, bzrx, vbzrx, ooki)
+    {
+        
+    }
+
     function initialize(
         address target)
         external

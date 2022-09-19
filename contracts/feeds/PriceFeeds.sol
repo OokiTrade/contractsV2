@@ -23,8 +23,8 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
     mapping (address => IPriceFeedsExt) public pricesFeeds;     // token => pricefeed
     mapping (address => uint256) public decimals;               // decimals of supported tokens
 
-    constructor()
-        public
+    constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki)
+    Constants(wethtoken, usdc, bzrx, vbzrx, ooki)
     {
         // set decimals for ether
         decimals[address(wethToken)] = 18;
