@@ -3,7 +3,7 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity ^0.8.0;
+pragma solidity 0.5.17;
 
 import "@openzeppelin-2.5.0/math/SafeMath.sol";
 import "../governance/GovernorBravoDelegate.sol";

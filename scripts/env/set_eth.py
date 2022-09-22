@@ -65,9 +65,23 @@ OOKI_ETH_LP = Contract.from_abi("OOKI_ETH_LP", "0xEaaddE1E14C587a7Fb4Ba78eA78109
 
 
 # old contracts
-SWEEP_FEES_OLD = Contract.from_abi("SWEEP_FEES_OLD", "0x93B02EE3132D10c938dd178C03a66595154f2940", FeeExtractAndDistribute_ETH.abi)
-STAKING_OLD = Contract.from_abi("STAKING", "0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4", StakingV1_1.abi)
-STAKING_VOTE_DELEGATOR_OLD = Contract.from_abi("STAKING_VOTE_DELEGATOR", "0x7e9d7A0ff725f88Cc6Ab3ccF714a1feA68aC160b", StakingVoteDelegator.abi)
-DAO_OLD = Contract.from_abi("governorBravoDelegator", address="0x9da41f7810c2548572f4Fa414D06eD9772cA9e6E", abi=GovernorBravoDelegate.abi)
+#SWEEP_FEES_OLD = Contract.from_abi("SWEEP_FEES_OLD", "0x93B02EE3132D10c938dd178C03a66595154f2940", FeeExtractAndDistribute_ETH.abi)
+#STAKING_OLD = Contract.from_abi("STAKING", "0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4", StakingV1_1.abi)
+#STAKING_VOTE_DELEGATOR_OLD = Contract.from_abi("STAKING_VOTE_DELEGATOR", "0x7e9d7A0ff725f88Cc6Ab3ccF714a1feA68aC160b", StakingVoteDelegator.abi)
+#DAO_OLD = Contract.from_abi("governorBravoDelegator", address="0x9da41f7810c2548572f4Fa414D06eD9772cA9e6E", abi=GovernorBravoDelegate.abi)
 
 CUI = CurvedInterestRate.at("0xfbdd8919c8b2ad0ea06da5ca8bc4d3e29cf3d2e4")
+
+class Deployment_Immutables:
+    def WETH():
+        return "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+    def BZRX():
+        return "0x56d811088235F11C8920698a204A5010a788f4b3"
+    def VBZRX():
+        return "0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F"
+    def OOKI():
+        return "0x0De05F6447ab4D22c8827449EE4bA2D5C288379B"
+    def USDC():
+        return "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+    def ARB_CALLER():
+        return "0x000F400e6818158D541C3EBE45FE3AA0d47372FF"

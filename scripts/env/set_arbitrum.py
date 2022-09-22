@@ -22,3 +22,17 @@ SWEEP_FEES = Contract.from_abi("SWEEP_FEES", "0xcbDE8C5603D4bA855a162A450B1d054A
 PRICE_FEED = Contract.from_abi("PRICE_FEED", BZX.priceFeeds(), abi = PriceFeeds.abi)
 
 CUI = CurvedInterestRate.at("0x138236a9a3BD8A40Ec8e4aF592e6007f352f6beB")
+
+class Deployment_Immutables:
+    def WETH():
+        return "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+    def BZRX():
+        return "0x0000000000000000000000000000000000000000"
+    def VBZRX():
+        return "0x0000000000000000000000000000000000000000"
+    def OOKI():
+        return "0x400F3ff129Bc9C9d239a567EaF5158f1850c65a4"
+    def USDC():
+        return "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"
+    def ARB_CALLER():
+        return "0x01207468F48822f8535BC96D1Cf18EddDE4A2392"
