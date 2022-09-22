@@ -15,12 +15,30 @@ volumeTracker = VolumeTracker.at("0xFd1A56A9c6cD0B5dAef7956Efc131d7A39d4Ab38")
 # <LoanOpenings Contract '0xAC87a33dbeD43ca80b8C1e78A685D9ed6cf78eC5'>
 lo = LoanOpenings.at("0xAC87a33dbeD43ca80b8C1e78A685D9ed6cf78eC5")
 
-ls = deployer.deploy(LoanSettings)
-ps = deployer.deploy(ProtocolSettings)
-lcs= deployer.deploy(LoanClosingsLiquidation)
-lc = deployer.deploy(LoanClosings)
-lm = deployer.deploy(LoanMaintenance)
-se = deployer.deploy(SwapsExternal)
+# ls = deployer.deploy(LoanSettings)
+# <LoanSettings Contract '0x4E0F7FC02A59E2Da46BCBaD2b2Ea19651CbF19ce'>
+ls = LoanSettings.at("0x4E0F7FC02A59E2Da46BCBaD2b2Ea19651CbF19ce")
+
+# ps = deployer.deploy(ProtocolSettings)
+# <ProtocolSettings Contract '0x713A1CCF3cD3b85d4C9eB57b8fa68FD37dd99e72'>
+ps = ProtocolSettings.at("0x713A1CCF3cD3b85d4C9eB57b8fa68FD37dd99e72")
+
+# lcs= deployer.deploy(LoanClosingsLiquidation)
+# <LoanClosingsLiquidation Contract '0x38513c5DC59eAa698D36a6d1123EdC9fFFb4C407'>
+lcs = LoanClosingsLiquidation.at("0x38513c5DC59eAa698D36a6d1123EdC9fFFb4C407")
+
+# lc = deployer.deploy(LoanClosings)
+# <LoanClosings Contract '0x548bbdf30F7E6532c9cc6dFD11a47eF7ffC04dd4'>
+lc = LoanClosings.at("0x548bbdf30F7E6532c9cc6dFD11a47eF7ffC04dd4")
+
+# lm = deployer.deploy(LoanMaintenance)
+# <LoanMaintenance Contract '0xAEB27C726178b2C9582a883f3D075944dD9A1D76'>
+lm = LoanMaintenance.at("0xAEB27C726178b2C9582a883f3D075944dD9A1D76")
+
+# se = deployer.deploy(SwapsExternal)
+# <SwapsExternal Contract '0x6D4AEE550C6EBfaed8b5498FbAE28F404E490B58'>
+se = SwapsExternal.at("0x6D4AEE550C6EBfaed8b5498FbAE28F404E490B58")
+
 
 BZX.replaceContract(lo, {"from": BZX.owner()})
 BZX.replaceContract(ls, {"from": BZX.owner()})
@@ -30,13 +48,22 @@ BZX.replaceContract(lc, {"from": BZX.owner()})
 BZX.replaceContract(lm, {"from": BZX.owner()})
 BZX.replaceContract(se, {"from": BZX.owner()})
 
-helperImpl = HelperImpl.deploy({"from": deployer})
+# helperImpl = HelperImpl.deploy({"from": deployer})
+# <HelperImpl Contract '0x3d41a177F3cd7907f8f8fFaeb136428B69C585Eb'>
+helperImpl = HelperImpl.at("0x3d41a177F3cd7907f8f8fFaeb136428B69C585Eb")
+
 HELPER = Contract.from_abi("HELPER", HELPER, HelperProxy.abi)
 HELPER.replaceImplementation(helperImpl, {"from": GUARDIAN_MULTISIG})
 HELPER = Contract.from_abi("HELPER", HELPER, HelperImpl.abi)
 
-itokenImpl = deployer.deploy(LoanTokenLogicStandard)
-itokenImplWeth = deployer.deploy(LoanTokenLogicWeth)
+# itokenImpl = deployer.deploy(LoanTokenLogicStandard)
+# <LoanTokenLogicStandard Contract '0x9DF59cc228C19b4D63888dFD910d1Fd9A6a4d8C9'>
+itokenImpl = LoanTokenLogicStandard.at("0x9DF59cc228C19b4D63888dFD910d1Fd9A6a4d8C9")
+
+# itokenImplWeth = deployer.deploy(LoanTokenLogicWeth)
+# <LoanTokenLogicWeth Contract '0xaD7d1F1b1F96ba54565075Bd8fC570be9CD99a8F'>
+itokenImplWeth = LoanTokenLogicWeth.at("0xaD7d1F1b1F96ba54565075Bd8fC570be9CD99a8F")
+
 for l in list:
     iToken = Contract.from_abi("LoanTokenLogicStandard", address=l[0], abi=interface.IToken.abi)
     if(iToken == iETH):
