@@ -57,6 +57,9 @@ def deploy_TickMathV1(account, values_to_pass=None, verify=False):
 def deploy_LiquidationHelper(account, values_to_pass=None, verify=False):
     return LiquidationHelper.deploy({"from":account}, publish_source=verify)
 
+def deploy_VolumeTracker(account, values_to_pass=None, verify=False):
+    return VolumeTracker.deploy({"from":account}, publish_source=verify)
+
 class Contracts(Enum):
     def __call__(self, *args, **kwargs):
         return self.value[0](*args, **kwargs)
@@ -73,5 +76,6 @@ class Contracts(Enum):
     CurvedInterestRate = (deploy_CurvedInterestRate,)
     TickMathV1 = (deploy_TickMathV1,)
     LiquidationHelper = (deploy_LiquidationHelper,)
+    VolumeTracker = (deploy_VolumeTracker,)
 
 

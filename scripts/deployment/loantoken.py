@@ -8,11 +8,11 @@ def get_constructor_args(chain):
     attribute = getattr(module, "Deployment_Immutables")
     return attribute.ARB_CALLER(), module.BZX.address, attribute.WETH()
 
-def deploy_LoanToken(account, values, verify=False):
-    arb, bzx, weth = values
+def deploy_LoanToken(account, values_to_pass, verify=False):
+    arb, bzx, weth = values_to_pass
     return LoanTokenLogicStandard.deploy(arb, bzx, weth, {"from":account}, publish_source=verify)
-def deploy_LoanTokenWeth(account, values, verify=False):
-    arb, bzx, weth = values
+def deploy_LoanTokenWeth(account, values_to_pass, verify=False):
+    arb, bzx, weth = values_to_pass
     return LoanTokenLogicWeth.deploy(arb, bzx, weth, {"from":account}, publish_source=verify)
 
 class Contracts(Enum):
