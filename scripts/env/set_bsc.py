@@ -1,3 +1,4 @@
+from brownie import *
 BZX = Contract.from_abi("BZX", "0xD154eE4982b83a87b0649E5a7DDA1514812aFE1f", interface.IBZx.abi)
 TOKEN_REGISTRY = Contract.from_abi("TOKEN_REGISTRY", "0x1BE70f29D30bB1D325E5D76Ee73109de3e50A57d", TokenRegistry.abi)
 
