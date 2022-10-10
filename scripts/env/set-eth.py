@@ -71,3 +71,5 @@ STAKING_VOTE_DELEGATOR_OLD = Contract.from_abi("STAKING_VOTE_DELEGATOR", "0x7e9d
 DAO_OLD = Contract.from_abi("governorBravoDelegator", address="0x9da41f7810c2548572f4Fa414D06eD9772cA9e6E", abi=GovernorBravoDelegate.abi)
 
 CUI = CurvedInterestRate.at("0xfbdd8919c8b2ad0ea06da5ca8bc4d3e29cf3d2e4")
+
+LOAN_TOKEN_SETTINGS_LOWER_ADMIN = LoanTokenSettingsLowerAdmin.at("0x20Aa8bB73b6EEd3c48E485218C0293d1efa7Efcc")
