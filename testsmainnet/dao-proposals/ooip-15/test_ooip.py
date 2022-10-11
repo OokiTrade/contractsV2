@@ -126,6 +126,6 @@ def testGovernanceProposal(requireMainnetFork, accounts, DAO, TIMELOCK, iUSDC, O
     USDC.approve(iUSDT, 2**256-1, {"from": accounts[0]})
     iUSDT.borrow("", 50e6, 0, 100e6, USDC, accounts[0], accounts[0], b"", {'from': accounts[0]})
 
-    assert False
+    assert True
 
 

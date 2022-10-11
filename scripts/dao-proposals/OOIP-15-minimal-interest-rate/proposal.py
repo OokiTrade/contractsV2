@@ -7,7 +7,7 @@ exec(open("./scripts/env/set-eth.py").read())
 # deployer = accounts.at("0x70FC4dFc27f243789d07134Be3CA31306fD2C6B6", True)
 # deployer = accounts[2]
 
-description = "OOIP-15-minimal-interest-rate"
+description = "OOIP-15-minimal-interest-rate/Lawyer-Fund-Allocation"
 
 targets = []
 values = []
@@ -24,6 +24,11 @@ for assetPair in supportedTokenAssetsPairs:
         calldatas.append(calldata)
 
 #2 allocate funds
+BZRX_AMOUNT = 3110000e18
+calldata = BZRX.transfer.encode_input(INFRASTRUCTURE_MULTISIG, BZRX_AMOUNT)
+targets.append(BZRX)
+calldatas.append(calldata)
+
 
 values = [0] * len(targets)  # empty array
 signatures = [""] * len(targets)  # empty signatures array
