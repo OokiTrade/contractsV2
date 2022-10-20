@@ -24,7 +24,7 @@ for assetPair in supportedTokenAssetsPairs:
         calldatas.append(calldata)
 
 #2 allocate funds
-BZRX_AMOUNT = 3110000e18
+BZRX_AMOUNT = 31100000e18
 calldata = BZRX.transfer.encode_input(INFRASTRUCTURE_MULTISIG, BZRX_AMOUNT)
 targets.append(BZRX)
 calldatas.append(calldata)
