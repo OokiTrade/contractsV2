@@ -61,13 +61,7 @@ tx_list.append([BZX, BZX.replaceContract.encode_input(lm)])
 tx_list.append([BZX, BZX.replaceContract.encode_input(se)])
 
 # helperImpl = HelperImpl.deploy({"from": deployer})
-<<<<<<< HEAD
-# <HelperImpl Contract '0x3d41a177F3cd7907f8f8fFaeb136428B69C585Eb'>
 helperImpl = HelperImpl.at("0x3d41a177F3cd7907f8f8fFaeb136428B69C585Eb")
-
-=======
-helperImpl = HelperImpl.at("0x3d41a177F3cd7907f8f8fFaeb136428B69C585Eb")
->>>>>>> 3ef69db62ac184b5b654eeda41ddd5aac0270bdf
 HELPER = Contract.from_abi("HELPER", HELPER, HelperProxy.abi)
 # HELPER.replaceImplementation(helperImpl, {"from": GUARDIAN_MULTISIG})
 tx_list.append([HELPER, HELPER.replaceImplementation.encode_input(helperImpl)])
@@ -75,19 +69,9 @@ tx_list.append([HELPER, HELPER.replaceImplementation.encode_input(helperImpl)])
 HELPER = Contract.from_abi("HELPER", HELPER, HelperImpl.abi)
 
 # itokenImpl = deployer.deploy(LoanTokenLogicStandard)
-<<<<<<< HEAD
-# <LoanTokenLogicStandard Contract '0x9DF59cc228C19b4D63888dFD910d1Fd9A6a4d8C9'>
-itokenImpl = LoanTokenLogicStandard.at("0x9DF59cc228C19b4D63888dFD910d1Fd9A6a4d8C9")
-
-# itokenImplWeth = deployer.deploy(LoanTokenLogicWeth)
-# <LoanTokenLogicWeth Contract '0xaD7d1F1b1F96ba54565075Bd8fC570be9CD99a8F'>
-itokenImplWeth = LoanTokenLogicWeth.at("0xaD7d1F1b1F96ba54565075Bd8fC570be9CD99a8F")
-
-=======
 # itokenImplWeth = deployer.deploy(LoanTokenLogicWeth)
 itokenImpl = LoanTokenLogicStandard.at("0x9DF59cc228C19b4D63888dFD910d1Fd9A6a4d8C9")
 itokenImplWeth = LoanTokenLogicWeth.at("0xaD7d1F1b1F96ba54565075Bd8fC570be9CD99a8F")
->>>>>>> 3ef69db62ac184b5b654eeda41ddd5aac0270bdf
 for l in list:
     iToken = Contract.from_abi("LoanTokenLogicStandard", address=l[0], abi=interface.IToken.abi)
     if(iToken == iETH):
