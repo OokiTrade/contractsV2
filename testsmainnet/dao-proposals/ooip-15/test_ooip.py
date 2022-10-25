@@ -81,7 +81,7 @@ def testGovernanceProposal(requireMainnetFork, accounts, DAO, TIMELOCK, iUSDC, O
     voter3 = "0xE9d5472Cc0107938bBcaa630c2e4797F75A2D382"
     
 
-    exec(open("./scripts/dao-proposals/OOIP-15-minimal-interest-rate/proposal.py").read())
+    # exec(open("./scripts/dao-proposals/OOIP-15-minimal-interest-rate/proposal.py").read())
 
     proposalCount = DAO.proposalCount()
     proposal = DAO.proposals(proposalCount)
@@ -126,6 +126,6 @@ def testGovernanceProposal(requireMainnetFork, accounts, DAO, TIMELOCK, iUSDC, O
     USDC.approve(iUSDT, 2**256-1, {"from": accounts[0]})
     iUSDT.borrow("", 50e6, 0, 100e6, USDC, accounts[0], accounts[0], b"", {'from': accounts[0]})
 
-    assert True
+    assert False
 
 
