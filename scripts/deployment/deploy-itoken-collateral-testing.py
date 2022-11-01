@@ -77,8 +77,8 @@ BZX.setPriceFeedContract(price_feed_new, {"from": GUARDIAN_MULTISIG})
 # USDC.approve(iUSDC, 2**256-1, {"from": accounts[0]})
 # iUSDC.mint(accounts[0], 10000e6, {"from": accounts[0]})
 
-# iTokens = [item[0] for item in TOKEN_REGISTRY.getTokens(0, 100)]
-# BZX.setSupportedTokens(iTokens, [True] * len(iTokens), True, {'from': GUARDIAN_MULTISIG})
+iTokens = [item[0] for item in TOKEN_REGISTRY.getTokens(0, 100)]
+BZX.setSupportedTokens(iTokens, [True] * len(iTokens), True, {'from': GUARDIAN_MULTISIG})
 
 # iUSDC.approve(iUSDT, 2**256-1, {"from": accounts[0]})
 # iUSDT.borrow("", 50e6, 0, 100e6, iUSDC, accounts[0], accounts[0], b"", {'from': accounts[0]})
