@@ -42,7 +42,7 @@ for l in list:
 # BZX.setPriceFeedContract(price_feed_new, {"from": GUARDIAN_MULTISIG})
 
 # small test
-USDC.transfer(accounts[0], 100000e6, {"from": "0xF977814e90dA44bFA03b6295A0616a897441aceC"})
+USDC.transfer(accounts[0], 100000e6, {"from": "0xD6216fC19DB775Df9774a6E33526131dA7D19a2c"})
 USDC.approve(iUSDC, 2**256-1, {"from": accounts[0]})
 iUSDC.mint(accounts[0], 10000e6, {"from": accounts[0]})
 
