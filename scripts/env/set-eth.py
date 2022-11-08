@@ -69,3 +69,7 @@ SWEEP_FEES_OLD = Contract.from_abi("SWEEP_FEES_OLD", "0x93B02EE3132D10c938dd178C
 STAKING_OLD = Contract.from_abi("STAKING", "0xe95Ebce2B02Ee07dEF5Ed6B53289801F7Fc137A4", StakingV1_1.abi)
 STAKING_VOTE_DELEGATOR_OLD = Contract.from_abi("STAKING_VOTE_DELEGATOR", "0x7e9d7A0ff725f88Cc6Ab3ccF714a1feA68aC160b", StakingVoteDelegator.abi)
 DAO_OLD = Contract.from_abi("governorBravoDelegator", address="0x9da41f7810c2548572f4Fa414D06eD9772cA9e6E", abi=GovernorBravoDelegate.abi)
+
+CUI = CurvedInterestRate.at("0xfbdd8919c8b2ad0ea06da5ca8bc4d3e29cf3d2e4")
+
+LOAN_TOKEN_SETTINGS_LOWER_ADMIN = LoanTokenSettingsLowerAdmin.at("0x20Aa8bB73b6EEd3c48E485218C0293d1efa7Efcc")

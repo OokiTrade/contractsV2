@@ -90,7 +90,7 @@ contract SwapsExternal is State, VaultController, SwapsUser, PausableGuardian {
             [
                 sourceToken,
                 destToken,
-                receiver,
+                address(this),
                 returnToSender,
                 msg.sender // user
             ],
@@ -103,6 +103,8 @@ contract SwapsExternal is State, VaultController, SwapsUser, PausableGuardian {
             false, // bypassFee
             swapData
         );
+
+        IERC20(destToken).safeTransfer(receiver, destTokenAmountReceived);
 
         emit ExternalSwap(
             msg.sender, // user

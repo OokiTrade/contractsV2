@@ -22,8 +22,8 @@ def TIMELOCK(Timelock, accounts):
 
 
 @pytest.fixture(scope="module")
-def iLINK(accounts, LoanTokenLogicStandard):
-    return Contract.from_abi("iLINK", address="0x463538705E7d22aA7f03Ebf8ab09B067e1001B54", abi=LoanTokenLogicStandard.abi)
+def OOKI(accounts, TestToken):
+    return Contract.from_abi("OOKI", address="0x0De05F6447ab4D22c8827449EE4bA2D5C288379B", abi=TestToken.abi)
 
 
 @pytest.fixture(scope="module")
@@ -70,16 +70,18 @@ def WETH(TestToken):
 def GUARDIAN_MULTISIG():
     return "0x9B43a385E08EE3e4b402D4312dABD11296d09E93"
     
+@pytest.fixture(scope="module")
+def INFRASTRUCTURE_MULTISIG():
+    return "0x2a599cEba64CAb8C88549c2c7314ea02A161fC70"
 
-
-def testGovernanceProposal(requireMainnetFork, accounts, DAO, TIMELOCK, iLINK, iUSDC, LINK):
+def testGovernanceProposal(requireMainnetFork, accounts, DAO, TIMELOCK, iUSDC, OOKI, interface, INFRASTRUCTURE_MULTISIG, USDC, BZX, iUSDT, TokenRegistry):
     proposerAddress = "0x02c6819c2cb8519ab72fd1204a8a0992b5050c6e"
     voter1 = "0x3fDA2D22e7853f548C3a74df3663a9427FfbB362"
-    voter2 = "0x9030B78A312147DbA34359d1A8819336fD054230"
-
-
+    voter2 = "0x9B43a385E08EE3e4b402D4312dABD11296d09E93"
+    voter3 = "0xE9d5472Cc0107938bBcaa630c2e4797F75A2D382"
     
-    # exec(open("./scripts/dao-proposals/OOIP-8-itoken-collateral/proposal.py").read())
+
+    # exec(open("./scripts/dao-proposals/OOIP-15-minimal-interest-rate/proposal.py").read())
 
     proposalCount = DAO.proposalCount()
     proposal = DAO.proposals(proposalCount)
@@ -96,6 +98,8 @@ def testGovernanceProposal(requireMainnetFork, accounts, DAO, TIMELOCK, iLINK, i
     tx = DAO.castVote(id, 1, {"from": proposerAddress})
     tx = DAO.castVote(id, 1, {"from": voter1})
     tx = DAO.castVote(id, 1, {"from": voter2})
+    tx = DAO.castVote(id, 1, {"from": voter3})
+
 
     assert DAO.state.call(id) == 1
 
@@ -114,63 +118,14 @@ def testGovernanceProposal(requireMainnetFork, accounts, DAO, TIMELOCK, iLINK, i
     
     DAO.execute(id, {"from": proposerAddress})
 
-    trader = accounts[4]
-    LINK.transfer(trader, 100e18, {"from": "0x0D4f1ff895D12c34994D6B65FaBBeEFDc1a9fb39"})
-    LINK.approve(iLINK, 2**256-1, {"from": trader})
-    iLINK.mint(trader, 100e18, {'from': trader})
-    chain.mine()
-    LINK.approve(iUSDC, 2**256-1, {"from": trader})
-    iLINK.approve(iUSDC, 2**256-1, {"from": trader})
-    txBorrow = iUSDC.borrow("", 10e6, 7884000, 1e18, iLINK.address, trader, trader, b"", {'from': trader})
+
+    USDC.transfer(accounts[0], 100000e6, {"from": "0xf977814e90da44bfa03b6295a0616a897441acec"})
+    USDC.approve(iUSDC, 2**256-1, {"from": accounts[0]})
+    iUSDC.mint(accounts[0], 10000e6, {"from": accounts[0]})
+
+    USDC.approve(iUSDT, 2**256-1, {"from": accounts[0]})
+    iUSDT.borrow("", 50e6, 0, 100e6, USDC, accounts[0], accounts[0], b"", {'from': accounts[0]})
 
     assert False
 
 
-
-def testITotokenCollateral(requireMainnetFork, accounts, DAO, TIMELOCK, iLINK, iUSDT, iUSDC, iWBTC, iWETH, LINK, USDT, USDC, WBTC, WETH, BZX, LoanSettings, LoanOpenings, GUARDIAN_MULTISIG):
-    tickMathV1 = accounts[0].deploy(TickMathV1)
-    lo = accounts[0].deploy(LoanOpenings)
-    ls = accounts[0].deploy(LoanSettings)
-    BZX.replaceContract(lo, {"from": BZX.owner()})
-    BZX.replaceContract(ls, {"from": BZX.owner()})
-    loanParamsId = BZX.generateLoanParamId(USDC ,USDT, True)
-    loanParams = BZX.loanParams(loanParamsId)
-    loanParamsId = BZX.generateLoanParamId(USDC ,iUSDT, True)
-    loanParamsIToken = BZX.loanParams(loanParamsId)
-    assert loanParams[1] == loanParamsIToken[1]
-    assert loanParams[2] == loanParamsIToken[2]
-    assert loanParams[3] == loanParamsIToken[3]
-    assert loanParams[4] == USDT
-    assert loanParamsIToken[4] == iUSDT
-    assert loanParams[5] == loanParamsIToken[5]
-    assert loanParams[6] == loanParamsIToken[6]
-    assert loanParams[7] == loanParamsIToken[7]
-
-    
-    
-
-    BZX.migrateLoanParamsList(iUSDT, 0, 100, {"from": BZX.owner()})
-    BZX.migrateLoanParamsList(iUSDC, 0, 100, {"from": BZX.owner()})
-    loanParamsId = BZX.generateLoanParamId(USDC ,USDT, True)
-    loanParams = BZX.getLoanParams(USDC ,USDT, False)
-    loanParamsId = BZX.generateLoanParamId(USDC ,iUSDT, True)
-    loanParamsIToken = BZX.getLoanParams(USDC ,iUSDT, False)
-
-    assert loanParamsIToken[0] == "0x0000000000000000000000000000000000000000000000000000000000000000"
-    assert loanParamsIToken[1] == False
-    assert loanParamsIToken[2] == "0x0000000000000000000000000000000000000000"
-    assert loanParamsIToken[3] == "0x0000000000000000000000000000000000000000"
-    assert loanParamsIToken[4] == "0x0000000000000000000000000000000000000000"
-    assert loanParamsIToken[5] == 0
-    assert loanParamsIToken[6] == 0
-    assert loanParamsIToken[7] == 0
-
-    assert loanParams[0] != "0x0000000000000000000000000000000000000000000000000000000000000000"
-    assert loanParams[1] == True
-    assert loanParams[2] == iUSDC
-    assert loanParams[3] == USDC
-    assert loanParams[4] == USDT
-    assert loanParams[5] != 0
-    assert loanParams[6] != 0
-    assert loanParams[7] != 0
-    assert True

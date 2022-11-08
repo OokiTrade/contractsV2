@@ -21,3 +21,5 @@ MULTICALL3 = Contract.from_abi("MULTICALL3", "0xcA11bde05977b3631167028862bE2a17
 SWEEP_FEES = Contract.from_abi("SWEEP_FEES", "0xC9726942C732fa048dC56f0DeBea7fB2c596bA8C", FeeExtractAndDistribute_Arbitrum.abi)
 OOKI = Contract.from_abi("OOKI", "0xa5a6817ac4c164F27df3254B71fE83904B1C3c3e", interface.ERC20.abi)
 PRICE_FEED = Contract.from_abi("PRICE_FEED", BZX.priceFeeds(), abi = PriceFeeds.abi)
+
+CUI = CurvedInterestRate.at("0x78cb68020c4FC8BBB489C4CD197F8A0226fE4135")

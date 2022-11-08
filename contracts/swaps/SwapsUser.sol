@@ -131,6 +131,9 @@ contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
                         );
 
                         vals[0] = vals[0].sub(tradingFee);
+                        if (vals[1] != 0) {
+                            vals[1] = vals[1].sub(tradingFee);
+                        }
                     }
                 }
             } else {
