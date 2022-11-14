@@ -1,11 +1,11 @@
 pragma solidity ^0.8.0;
 
-import "@openzeppelin-4.7.0/token/ERC721/ERC721.sol";
-import "@openzeppelin-4.7.0/access/Ownable.sol";
-import "@openzeppelin-4.7.0/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin-4.7.0/token/ERC721/extensions/ERC721Pausable.sol";
-import "@openzeppelin-4.7.0/utils/math/SafeMath.sol";
-import "@openzeppelin-4.7.0/utils/Counters.sol";
+import "@openzeppelin-4.3.2/token/ERC721/ERC721.sol";
+import "@openzeppelin-4.3.2/access/Ownable.sol";
+import "@openzeppelin-4.3.2/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin-4.3.2/token/ERC721/extensions/ERC721Pausable.sol";
+import "@openzeppelin-4.3.2/utils/math/SafeMath.sol";
+import "@openzeppelin-4.3.2/utils/Counters.sol";
 
 contract OokiCollection is ERC721, Ownable, ERC721Enumerable, ERC721Pausable {
     using SafeMath for uint256;
