@@ -1,7 +1,9 @@
 # exec(open("./scripts/deployment/polygon/deploy_price_feed.py").read())
 exec(open("./scripts/env/set-matic.py").read())
-deployer = accounts[0]
-
+# deployer = accounts[0]
+from ape_safe import ApeSafe
+safe = ApeSafe(GUARDIAN_MULTISIG)
+from gnosis.safe import SafeOperation
 # tickMathV1 = accounts[0].deploy(TickMathV1) # 0x1d303522C0A40d204b50a34Ed8885c6E589351E0
 # liquidationHelper = accounts[0].deploy(LiquidationHelper) # 0x952D0CB122089fC3ecadd9beC18eCc5a623c21DF
 # volumeTracker = accounts[0].deploy(VolumeTracker) # 0xCa0C9628C2bFa8d293D9fA5874f86B23d6eBD7bF
@@ -80,10 +82,10 @@ iTokens = [item[0] for item in TOKEN_REGISTRY.getTokens(0, 100)]
 #BZX.setSupportedTokens(iTokens, [True] * len(iTokens), True, {'from': GUARDIAN_MULTISIG})
 tx_list.append([BZX, BZX.setSupportedTokens.encode_input(iTokens, [True] * len(iTokens), True)])
 
-# for tx in tx_list:
-#     sTxn = safe.build_multisig_tx(tx[0].address, 0, tx[1], SafeOperation.CALL.value, safe_nonce=safe.pending_nonce())
-#     safe.sign_with_frame(sTxn)
-#     safe.post_transaction(sTxn)
+for tx in tx_list:
+    sTxn = safe.build_multisig_tx(tx[0].address, 0, tx[1], SafeOperation.CALL.value, safe_nonce=safe.pending_nonce())
+    safe.sign_with_frame(sTxn)
+    safe.post_transaction(sTxn)
 
 # # small test
 # USDC.transfer(accounts[0], 100000e6, {"from": "0x0d0707963952f2fba59dd06f2b425ace40b492fe"})
