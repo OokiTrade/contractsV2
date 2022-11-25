@@ -76,6 +76,9 @@ price_feed_new = PriceFeeds.at("0xDB0f02A68e5b52A853d01c5e1d935645FF5c01D4") # n
 # BZX.setPriceFeedContract(price_feed_new, {"from": GUARDIAN_MULTISIG})
 tx_list.append([BZX, BZX.setPriceFeedContract.encode_input(price_feed_new)])
 
+iTokens = [item[0] for item in TOKEN_REGISTRY.getTokens(0, 100)]
+#BZX.setSupportedTokens(iTokens, [True] * len(iTokens), True, {'from': GUARDIAN_MULTISIG})
+tx_list.append([BZX, BZX.setSupportedTokens.encode_input(iTokens, [True] * len(iTokens), True)])
 
 # for tx in tx_list:
 #     sTxn = safe.build_multisig_tx(tx[0].address, 0, tx[1], SafeOperation.CALL.value, safe_nonce=safe.pending_nonce())
@@ -87,8 +90,7 @@ tx_list.append([BZX, BZX.setPriceFeedContract.encode_input(price_feed_new)])
 # USDC.approve(iUSDC, 2**256-1, {"from": accounts[0]})
 # iUSDC.mint(accounts[0], 10000e6, {"from": accounts[0]})
 
-# iTokens = [item[0] for item in TOKEN_REGISTRY.getTokens(0, 100)]
-# BZX.setSupportedTokens(iTokens, [True] * len(iTokens), True, {'from': GUARDIAN_MULTISIG})
+
 
 # iUSDC.approve(iUSDT, 2**256-1, {"from": accounts[0]})
 # iUSDT.borrow("", 50e6, 0, 100e6, iUSDC, accounts[0], accounts[0], b"", {'from': accounts[0]})
