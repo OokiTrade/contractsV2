@@ -10,6 +10,7 @@ contract StakingVault is Upgradeable_0_8, ERC1155 {
         address depositToken;
         address tokenToBack;
     }
+    address public protocol;
     IPriceFeeds public priceFeed;
     address public valuationToken;
     address[] public stakingTokens;
@@ -24,13 +25,19 @@ contract StakingVault is Upgradeable_0_8, ERC1155 {
     address public rewardToken;
     mapping(address=>mapping(uint256=>uint256)) public lastClaimRewardAccrual;
 
+    modifier onlyProtocol() {
+        require(msg.sender==protocol, "not protocol");_;
+    }
+
     constructor(string memory uri_)ERC1155(uri_) {}
 
-    function updateTokenSupport(address[] memory tokens, bool[] memory support) external onlyOwner {
+    function updateTokenSupport(address[] memory tokens, bool[] memory support, address[] memory listOfSupportedTokens) external onlyOwner {
+        stakingTokens = listOfSupportedTokens;
         for (uint i; i<tokens.length;) {
             tokenSupported[tokens[i]] = support[i];
             unchecked { ++i; }
         }
+
     }
 
     function setRewardToken(address r) external onlyOwner {
@@ -62,7 +69,7 @@ contract StakingVault is Upgradeable_0_8, ERC1155 {
         IERC20(depositToken).safeTransfer(msg.sender, sendAmount);
     }
 
-    function drawOnPool(address tokenBacked, uint256 amountToCover) external onlyOwner returns (uint256[] memory) {
+    function drawOnPool(address tokenBacked, uint256 amountToCover) external onlyProtocol returns (uint256[] memory) {
         uint256 valueOfCoverage = priceFeed.queryReturn(tokenBacked, valuationToken, amountToCover);
         address[] memory tokensStaked = stakingTokens;
         uint256[] memory tokenAmounts = new uint256[](tokensStaked.length);
@@ -177,6 +184,18 @@ contract StakingVault is Upgradeable_0_8, ERC1155 {
         uint256 newAmount = rewardsPerToken[tokenID];
         IERC20(rewardToken).safeTransfer(msg.sender, (newAmount-previousAmount)*supplyPerID[tokenID]);
         lastClaimRewardAccrual[msg.sender][tokenID] = newAmount;
+    }
+
+    function setPriceFeed(IPriceFeeds p) external onlyOwner {
+        priceFeed = p;
+    }
+
+    function setProtocol(address p) external onlyOwner {
+        protocol = p;
+    }
+
+    function setValuationToken(address v) external onlyOwner {
+        valuationToken = v;
     }
 
 }

@@ -438,6 +438,21 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         );
     }
 
+    function totalAssetSupply()
+        public
+        view
+        returns (uint256)
+    {
+        return _totalAssetSupply(0);   
+    }
+    
+    function assetBalanceOf(address wallet)
+        external
+        view
+        returns (uint256)
+    {
+        return balanceOf(wallet).mul(tokenPrice()).div(1e18);
+    }
 
     function totalAssetBorrow()
         public
