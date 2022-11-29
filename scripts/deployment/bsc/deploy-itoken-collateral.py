@@ -48,7 +48,7 @@ itokenImplWeth = LoanTokenLogicWeth.at("0x61Ed81e9cd5aD65Dff4f7E795028C496029192
 
 for l in list:
     iToken = Contract.from_abi("LoanTokenLogicStandard", address=l[0], abi=interface.IToken.abi)
-    if(iToken == iETH):
+    if(iToken == iBNB):
         iToken.setTarget(itokenImplWeth, {"from": iToken.owner()})
     else:
         iToken.setTarget(itokenImpl, {"from": iToken.owner()})
