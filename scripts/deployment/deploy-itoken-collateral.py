@@ -95,10 +95,10 @@ tx_list.append([BZX, BZX.setPriceFeedContract.encode_input(price_feed_new)])
 iTokens = [item[0] for item in TOKEN_REGISTRY.getTokens(0, 100)]
 tx_list.append([BZX, BZX.setSupportedTokens.encode_input(iTokens, [True] * len(iTokens), True)])
 
-for tx in tx_list:
-    sTxn = safe.build_multisig_tx(tx[0].address, 0, tx[1], SafeOperation.CALL.value, safe_nonce=safe.pending_nonce())
-    safe.sign_with_frame(sTxn)
-    safe.post_transaction(sTxn)
+# for tx in tx_list:
+#     sTxn = safe.build_multisig_tx(tx[0].address, 0, tx[1], SafeOperation.CALL.value, safe_nonce=safe.pending_nonce())
+#     safe.sign_with_frame(sTxn)
+#     safe.post_transaction(sTxn)
 
 # # small test
 # USDC.transfer(accounts[0], 100000e6, {"from": "0x1714400ff23db4af24f9fd64e7039e6597f18c2b"})
