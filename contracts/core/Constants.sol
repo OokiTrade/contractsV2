@@ -63,6 +63,7 @@ contract Constants {
     IWethERC20 public constant wethToken = IWethERC20(0x4200000000000000000000000000000000000006); // optimism (Wrapped eth)
     address public constant bzrxTokenAddress = address(0); // optimism
     address public constant vbzrxTokenAddress = address(0); // optimism
+    address public constant USDC = 0x7F5c764cBc14f9669B88837ca1490cCa17c31607;
     address public constant OOKI = address(0); // optimism
 
 }
