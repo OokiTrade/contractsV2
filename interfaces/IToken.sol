@@ -93,18 +93,6 @@ interface IToken {
 
     function assetBalanceOf(address _owner) external view returns (uint256);
 
-    function getDepositAmountForBorrow(
-        uint256 borrowAmount,
-        uint256 initialLoanDuration, // duration in seconds
-        address collateralTokenAddress // address(0) means ETH
-    ) external view returns (uint256); // depositAmount
-
-    function getBorrowAmountForDeposit(
-        uint256 depositAmount,
-        uint256 initialLoanDuration, // duration in seconds
-        address collateralTokenAddress // address(0) means ETH
-    ) external view returns (uint256 borrowAmount);
-
     function loanTokenAddress() external view returns (address);
 
     function initialPrice() external view returns (uint256);
@@ -159,8 +147,6 @@ interface IToken {
  
     function symbol() external view  returns (string memory);
 
-    function updateSettings(address settingsTarget, bytes calldata callData) external;
-    
     function mintWithEther(address receiver) external payable;
 
     function burnToEther(address payable receiver,uint256 burnAmount) external returns (uint256 loanAmountPaid);
