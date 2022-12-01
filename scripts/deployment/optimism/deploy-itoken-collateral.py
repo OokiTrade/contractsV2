@@ -1,5 +1,5 @@
 # exec(open("./scripts/deployment/bsc/deploy_price_feed.py").read())
-exec(open("./scripts/env/set-bsc.py").read())
+exec(open("./scripts/env/set-optimism.py").read())
 deployer = accounts[0]
 
 tickMathV1 = accounts[0].deploy(TickMathV1)
@@ -56,16 +56,18 @@ for l in list:
     BZX.migrateLoanParamsList(l[0], 0, 1000, {"from": BZX.owner()})
 
 
-price_feed_new = PriceFeeds.at("") # not verified
+price_feed_new = PriceFeeds.at("0x37A3fC76105c51D54a9c1c3167e30601EdeE8782") # not verified
 BZX.setPriceFeedContract(price_feed_new, {"from": GUARDIAN_MULTISIG})
 
+BZX.setSupportedTokens(iTokens, [True] * len(iTokens), True, {'from': GUARDIAN_MULTISIG})
+
+
 # small test
-USDT.transfer(accounts[0], 100000e6, {"from": "0xf977814e90da44bfa03b6295a0616a897441acec"})
+USDT.transfer(accounts[0], 100000e6, {"from": "0x0d0707963952f2fba59dd06f2b425ace40b492fe"})
 USDT.approve(iUSDT, 2**256-1, {"from": accounts[0]})
 iUSDT.mint(accounts[0], 10000e6, {"from": accounts[0]})
 
 iTokens = [item[0] for item in TOKEN_REGISTRY.getTokens(0, 100)]
-BZX.setSupportedTokens(iTokens, [True] * len(iTokens), True, {'from': GUARDIAN_MULTISIG})
 
-iUSDT.approve(iBUSD, 2**256-1, {"from": accounts[0]})
-iBUSD.borrow("", 50e6, 0, 100e6, iUSDT, accounts[0], accounts[0], b"", {'from': accounts[0]})
+iUSDT.approve(iUSDC, 2**256-1, {"from": accounts[0]})
+iUSDC.borrow("", 50e6, 0, 100e6, iUSDT, accounts[0], accounts[0], b"", {'from': accounts[0]})
