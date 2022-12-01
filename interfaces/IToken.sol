@@ -69,6 +69,10 @@ interface IToken {
     //LoanTokenLogicStandard functions
     function tokenPrice() external view returns (uint256);
 
+    function totalAssetSupply() external view returns (uint256);
+
+    function assetBalanceOf(address user) external view returns (uint256);
+
     function flashBorrow(
         uint256 borrowAmount,
         address borrower,

@@ -89,4 +89,8 @@ interface IPriceFeeds {
         external
         view
         returns (bool);
+
+    function setPriceFeed(address[] calldata tokens, address[] calldata feeds) external;
+
+    function setDecimals(address[] calldata tokens) external;
 }
