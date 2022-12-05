@@ -25,15 +25,15 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
 
     uint256 public constant VERSION = 8;
 
-    // address internal constant arbitraryCaller = 0x000F400e6818158D541C3EBE45FE3AA0d47372FF; // mainnet
+    address internal constant arbitraryCaller = 0x000F400e6818158D541C3EBE45FE3AA0d47372FF; // mainnet
     // address internal constant arbitraryCaller = 0x81e7dddFAD37E6FAb0eccE95f0B508fd40996e6d; // bsc
     // address internal constant arbitraryCaller = 0x81e7dddFAD37E6FAb0eccE95f0B508fd40996e6d; // polygon
     // address internal constant arbitraryCaller = 0x01207468F48822f8535BC96D1Cf18EddDE4A2392; // arbitrum
     // address internal constant arbitraryCaller = 0xcbdF21de4D0aD99Ae02aAdfEd51CdA4C6c4714D9; // evmos
-    address internal constant arbitraryCaller = 0x8150F58218120AB900105C7cDBf0F12061D94441; // optimism
+    // address internal constant arbitraryCaller = 0x8150F58218120AB900105C7cDBf0F12061D94441; // optimism
 
-    // address public constant bZxContract = 0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f; // mainnet
-    // address public constant wethToken = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // mainnet
+    address public constant bZxContract = 0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f; // mainnet
+    address public constant wethToken = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // mainnet
 
     //address public constant bZxContract = 0x5cfba2639a3db0D9Cc264Aa27B2E6d134EeA486a; // kovan
     //address public constant wethToken = 0xd0A1E359811322d97991E03f863a0C30C2cF029C; // kovan
@@ -47,8 +47,8 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     // address public constant bZxContract = 0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB; // arbitrum
     // address public constant wethToken = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1; // arbitrum
 
-    address public constant bZxContract = 0xAcedbFd5Bc1fb0dDC948579d4195616c05E74Fd1; // optimism
-    address public constant wethToken = 0x4200000000000000000000000000000000000006; // optimism
+    // address public constant bZxContract = 0xAcedbFd5Bc1fb0dDC948579d4195616c05E74Fd1; // optimism
+    // address public constant wethToken = 0x4200000000000000000000000000000000000006; // optimism
 
     // address public constant bZxContract = 0xf2FBaD7E59f0DeeE0ec2E724d2b6827Ea1cCf35f; // evmos
     // address public constant wethToken = 0xD4949664cD82660AaE99bEdc034a0deA8A0bd517; // evmos
