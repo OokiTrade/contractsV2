@@ -62,8 +62,8 @@ price_feed_new = PriceFeeds.at("0xDB0f02A68e5b52A853d01c5e1d935645FF5c01D4") # n
 tx_list.append([BZX, BZX.setPriceFeedContract.encode_input(price_feed_new)])
 
 iTokens = [item[0] for item in TOKEN_REGISTRY.getTokens(0, 100)]
-#BZX.setSupportedTokens(iTokens, [True] * len(iTokens), True, {'from': GUARDIAN_MULTISIG})
-tx_list.append([BZX, BZX.setSupportedTokens.encode_input(iTokens, [True] * len(iTokens), True)])
+BZX.setSupportedTokens(iTokens, [True] * len(iTokens), True, {'from': GUARDIAN_MULTISIG})
+# tx_list.append([BZX, BZX.setSupportedTokens.encode_input(iTokens, [True] * len(iTokens), True)])
 
 for tx in tx_list:
     sTxn = safe.build_multisig_tx(tx[0].address, 0, tx[1], SafeOperation.CALL.value, safe_nonce=safe.pending_nonce())
