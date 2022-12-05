@@ -1,7 +1,9 @@
 # exec(open("./scripts/deployment/bsc/deploy_price_feed.py").read())
 exec(open("./scripts/env/set-optimism.py").read())
 # deployer = accounts[0]
-
+from ape_safe import ApeSafe
+safe = ApeSafe(GUARDIAN_MULTISIG)
+from gnosis.safe import SafeOperation
 # tickMathV1 = accounts[0].deploy(TickMathV1)
 # liquidationHelper = accounts[0].deploy(LiquidationHelper)
 # volumeTracker = accounts[0].deploy(VolumeTracker)
@@ -14,7 +16,7 @@ exec(open("./scripts/env/set-optimism.py").read())
 # lm = deployer.deploy(LoanMaintenance)
 # se = deployer.deploy(SwapsExternal)
 
-
+tx_list = []
 tickMathV1 = TickMathV1.at("0x49743dA77Ff019424E2e153A0712eD87fFDB74Eb")
 liquidationHelpe = LiquidationHelper.at("0xeCb076B674d585521087B3162A4F2bc76534Ac54")
 volumeTracke = VolumeTracker.at("0x0DAE2558B8438c5089112F730aa319a2727E9912")
@@ -27,18 +29,26 @@ lc = LoanClosings.at("0x174AFF1bE8da9710A1eC59c1c1b73c9bF6c60b8e")
 lm = LoanMaintenance.at("0x7FcB75eaB54D5cEA49cC026Ae7A36ec8F56d7616")
 se = SwapsExternal.at("0x4A3A06D264e6F3B67e0BAae96F2457d3C4e3Fadd")
 
-BZX.replaceContract(lo, {"from": BZX.owner()})
-BZX.replaceContract(ls, {"from": BZX.owner()})
-BZX.replaceContract(ps, {"from": BZX.owner()})
-BZX.replaceContract(lcs,{"from": BZX.owner()})
-BZX.replaceContract(lc, {"from": BZX.owner()})
-BZX.replaceContract(lm, {"from": BZX.owner()})
-BZX.replaceContract(se, {"from": BZX.owner()})
+# BZX.replaceContract(lo, {"from": BZX.owner()})
+# BZX.replaceContract(ls, {"from": BZX.owner()})
+# BZX.replaceContract(ps, {"from": BZX.owner()})
+# BZX.replaceContract(lcs,{"from": BZX.owner()})
+# BZX.replaceContract(lc, {"from": BZX.owner()})
+# BZX.replaceContract(lm, {"from": BZX.owner()})
+# BZX.replaceContract(se, {"from": BZX.owner()})
+tx_list.append([BZX, BZX.replaceContract.encode_input(lo)])
+tx_list.append([BZX, BZX.replaceContract.encode_input(ls)])
+tx_list.append([BZX, BZX.replaceContract.encode_input(ps)])
+tx_list.append([BZX, BZX.replaceContract.encode_input(lcs)])
+tx_list.append([BZX, BZX.replaceContract.encode_input(lc)])
+tx_list.append([BZX, BZX.replaceContract.encode_input(lm)])
+tx_list.append([BZX, BZX.replaceContract.encode_input(se)])
 
 # helperImpl = HelperImpl.deploy({"from": accounts[0]})
 helperImpl = HelperImpl.at("0xd076bEc0c440780D63A9Ad5B1C3BBB890196Edec")
 HELPER = Contract.from_abi("HELPER", HELPER, HelperProxy.abi)
-HELPER.replaceImplementation(helperImpl, {"from": GUARDIAN_MULTISIG})
+# HELPER.replaceImplementation(helperImpl, {"from": GUARDIAN_MULTISIG})
+tx_list.append([HELPER, HELPER.replaceImplementation.encode_input(helperImpl)])
 HELPER = Contract.from_abi("HELPER", HELPER, HelperImpl.abi)
 
 # itokenImpl = deployer.deploy(LoanTokenLogicStandard)
@@ -49,25 +59,38 @@ itokenImplWeth = LoanTokenLogicWeth.at("0x8C085F8f5a5650D282BAce3A134dC22a67Cf41
 for l in list:
     iToken = Contract.from_abi("LoanTokenLogicStandard", address=l[0], abi=interface.IToken.abi)
     if(iToken == iETH):
-        iToken.setTarget(itokenImplWeth, {"from": iToken.owner()})
+        # iToken.setTarget(itokenImplWeth, {"from": iToken.owner()})
+        tx_list.append([iToken, iToken.setTarget.encode_input(itokenImplWeth)])
     else:
-        iToken.setTarget(itokenImpl, {"from": iToken.owner()})
-    iToken.initializeDomainSeparator({"from": iToken.owner()})
-    BZX.migrateLoanParamsList(l[0], 0, 1000, {"from": BZX.owner()})
+        # iToken.setTarget(itokenImpl, {"from": iToken.owner()})
+        tx_list.append([iToken, iToken.setTarget.encode_input(itokenImpl)])
+    # iToken.initializeDomainSeparator({"from": iToken.owner()})
+    # BZX.migrateLoanParamsList(l[0], 0, 1000, {"from": BZX.owner()})
+    tx_list.append([iToken, iToken.initializeDomainSeparator.encode_input()])
+    tx_list.append([BZX, BZX.migrateLoanParamsList.encode_input(l[0], 0, 1000)])
 
 
 price_feed_new = PriceFeeds.at("0x37A3fC76105c51D54a9c1c3167e30601EdeE8782") # not verified
-BZX.setPriceFeedContract(price_feed_new, {"from": GUARDIAN_MULTISIG})
+# BZX.setPriceFeedContract(price_feed_new, {"from": GUARDIAN_MULTISIG})
+tx_list.append([BZX, BZX.setPriceFeedContract.encode_input(price_feed_new)])
 iTokens = [item[0] for item in TOKEN_REGISTRY.getTokens(0, 100)]
-BZX.setSupportedTokens(iTokens, [True] * len(iTokens), True, {'from': GUARDIAN_MULTISIG})
+# BZX.setSupportedTokens(iTokens, [True] * len(iTokens), True, {'from': GUARDIAN_MULTISIG})
+tx_list.append([BZX, BZX.setSupportedTokens.encode_input(iTokens, [True] * len(iTokens), True)])
+index = 15
+for tx in tx_list:
+    sTxn = safe.build_multisig_tx(tx[0].address, 0, tx[1], SafeOperation.CALL.value, safe_nonce=index)
+    safe.sign_with_frame(sTxn)
+    safe.post_transaction(sTxn)
+    print(index)
+    index = index + 1
+    
+
+# # small test
+# USDT.transfer(accounts[0], 100000e6, {"from": "0x0d0707963952f2fba59dd06f2b425ace40b492fe"})
+# USDT.approve(iUSDT, 2**256-1, {"from": accounts[0]})
+# iUSDT.mint(accounts[0], 10000e6, {"from": accounts[0]})
 
 
-# small test
-USDT.transfer(accounts[0], 100000e6, {"from": "0x0d0707963952f2fba59dd06f2b425ace40b492fe"})
-USDT.approve(iUSDT, 2**256-1, {"from": accounts[0]})
-iUSDT.mint(accounts[0], 10000e6, {"from": accounts[0]})
 
-
-
-iUSDT.approve(iUSDC, 2**256-1, {"from": accounts[0]})
-iUSDC.borrow("", 50e6, 0, 100e6, iUSDT, accounts[0], accounts[0], b"", {'from': accounts[0]})
+# iUSDT.approve(iUSDC, 2**256-1, {"from": accounts[0]})
+# iUSDC.borrow("", 50e6, 0, 100e6, iUSDT, accounts[0], accounts[0], b"", {'from': accounts[0]})
