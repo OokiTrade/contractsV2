@@ -1,5 +1,5 @@
-# exec(open("./scripts/deployment/polygon/deploy_price_feed.py").read())
-exec(open("./scripts/env/set-eth.py").read())
+exec(open("./scripts/deployment/mainnet/deploy_price_feed.py").read())
+# exec(open("./scripts/env/set-eth.py").read())
 deployer = accounts[0]
 from ape_safe import ApeSafe
 safe = ApeSafe(GUARDIAN_MULTISIG)
@@ -58,11 +58,11 @@ for l in list:
     # tx_list.append([BZX, BZX.migrateLoanParamsList.encode_input(l[0], 0, 1000)])
 
 # price_feed_new = PriceFeeds.at("0xDB0f02A68e5b52A853d01c5e1d935645FF5c01D4") # not verified
-# BZX.setPriceFeedContract(price_feed_new, {"from": GUARDIAN_MULTISIG})
+BZX.setPriceFeedContract(price_feed_new, {"from": GUARDIAN_MULTISIG})
 # tx_list.append([BZX, BZX.setPriceFeedContract.encode_input(price_feed_new)])
 
 iTokens = [item[0] for item in TOKEN_REGISTRY.getTokens(0, 100)]
-BZX.setSupportedTokens(iTokens, [True] * len(iTokens), True, {'from': GUARDIAN_MULTISIG})
+BZX.setSupportedTokens(iTokens, [True] * len(iTokens), True, {'from': TIMELOCK})
 # tx_list.append([BZX, BZX.setSupportedTokens.encode_input(iTokens, [True] * len(iTokens), True)])
 
 # for tx in tx_list:
