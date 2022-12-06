@@ -70,8 +70,9 @@ for l in list:
         iToken.setTarget(itokenImpl, {"from": iToken.owner()})
         # tx_list.append([iToken, iToken.setTarget.encode_input(itokenImpl)])
 
-    iToken.initializeDomainSeparator({"from": iToken.owner()})
-    BZX.migrateLoanParamsList(l[0], 0, 1000, {"from": BZX.owner()})
+    # tx below will be triggered separately by guardian sig
+    # iToken.initializeDomainSeparator({"from": iToken.owner()})
+    # BZX.migrateLoanParamsList(l[0], 0, 1000, {"from": BZX.owner()})
 
     # tx_list.append([iToken, iToken.initializeDomainSeparator.encode_input()])
     # tx_list.append([BZX, BZX.migrateLoanParamsList.encode_input(l[0], 0, 1000)])
