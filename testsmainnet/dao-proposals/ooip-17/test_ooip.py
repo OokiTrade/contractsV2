@@ -8,7 +8,7 @@ import pdb
 @pytest.fixture(scope="module")
 def requireMainnetFork():
     assert (network.show_active() ==
-            "mainnet-fork" or network.show_active() == "mainnet-fork-alchemy")
+            "mainnet-fork" or network.show_active() == "mainnet-alchemy-fork")
 
 
 @pytest.fixture(scope="module")
@@ -122,20 +122,24 @@ def testGovernanceProposal(requireMainnetFork, accounts, DAO, TIMELOCK, iUSDC, O
 
 
     helperImpl = HelperImpl.at("0x476ebfdb3b00c63eace11cbe699639e737605936")
-    HELPER = Contract.from_abi("HELPER", HELPER, HelperProxy.abi)
+    
+    HELPER = Contract.from_abi("HELPER", "0xb887f5b81deec1e271b06257f138e5a9d422bc8c", HelperProxy.abi)
     HELPER.replaceImplementation(helperImpl, {"from": GUARDIAN_MULTISIG})
-
-    for l in list:
-        iToken = Contract.from_abi("LoanTokenLogicStandard", address=l[0], abi=interface.IToken.abi)
-        # transfer iOOKI to GUARDIAN_MULTISIG
-        if (iToken == iOOKI):
-            continue
-        if (iToken == iBZRX):
-            itokenImpl = LoanTokenLogicStandard.at("0x624f7f89414011b276c60ea2337bfba936d1cbbe")
-            iToken.setTarget(itokenImpl, {"from": GUARDIAN_MULTISIG})
-        # tx below will be triggered separately by guardian sig
-        iToken.initializeDomainSeparator({"from": GUARDIAN_MULTISIG})
-        BZX.migrateLoanParamsList(l[0], 0, 1000, {"from": GUARDIAN_MULTISIG})
+    HELPER = Contract.from_abi("HELPER", "0xb887f5b81deec1e271b06257f138e5a9d422bc8c", HelperImpl.abi)
+    
+    TOKEN_REGISTRY = Contract.from_abi("TOKEN_REGISTRY", "0xf0E474592B455579Fe580D610b846BdBb529C6F7", TokenRegistry.abi)
+    list = TOKEN_REGISTRY.getTokens(0, 100)
+    # for l in list:
+    #     iToken = Contract.from_abi("LoanTokenLogicStandard", address=l[0], abi=interface.IToken.abi)
+    #     # transfer iOOKI to GUARDIAN_MULTISIG
+    #     if (iToken == iOOKI):
+    #         continue
+    #     # if (iToken == iBZRX):
+    #     #     itokenImpl = LoanTokenLogicStandard.at("0x624f7f89414011b276c60ea2337bfba936d1cbbe")
+    #     #     iToken.setTarget(itokenImpl, {"from": GUARDIAN_MULTISIG})
+    #     # tx below will be triggered separately by guardian sig
+    #     iToken.initializeDomainSeparator({"from": GUARDIAN_MULTISIG})
+    #     BZX.migrateLoanParamsList(l[0], 0, 1000, {"from": GUARDIAN_MULTISIG})
 
 
     WBTC.transfer(accounts[0], 100e8, {"from": "0x218b95be3ed99141b0144dba6ce88807c4ad7c09"})
@@ -145,6 +149,6 @@ def testGovernanceProposal(requireMainnetFork, accounts, DAO, TIMELOCK, iUSDC, O
     WBTC.approve(iUSDT, 2**256-1, {"from": accounts[0]})
     iUSDT.borrow("", 50e6, 0, 10e8, WBTC, accounts[0], accounts[0], b"", {'from': accounts[0]})
 
-    assert False
+    assert True
 
 

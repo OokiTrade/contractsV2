@@ -63,7 +63,7 @@ itokenImplWeth = LoanTokenLogicWeth.at("0x9712dc729916e154daa327c36ad1b9f8e069fb
 for l in list:
     iToken = Contract.from_abi("LoanTokenLogicStandard", address=l[0], abi=interface.IToken.abi)
     # iBZRX is owned by the guardian
-    if (iToken == iBZRX or iToken == iOOKI):
+    if (iToken == iOOKI):
         continue
     if (iToken == iETH):
         iToken.setTarget(itokenImplWeth, {"from": iToken.owner()})

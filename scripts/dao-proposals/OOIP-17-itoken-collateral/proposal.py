@@ -38,17 +38,18 @@ tx_list.append([BZX, BZX.replaceContract.encode_input(lm)])
 tx_list.append([BZX, BZX.replaceContract.encode_input(se)])
 tx_list.append([BZX, BZX.setPriceFeedContract.encode_input(price_feed_new)])
 
+list = TOKEN_REGISTRY.getTokens(0, 100)
 for l in list:
     iToken = Contract.from_abi("LoanTokenLogicStandard", address=l[0], abi=interface.IToken.abi)
     # those are owned by the guardian
-    if (iToken == iBZRX or iToken == iOOKI):
+    if (iToken == iOOKI):
         continue
     if (iToken == iETH):
         tx_list.append([iToken, iToken.setTarget.encode_input(itokenImplWeth)])
     else:
         tx_list.append([iToken, iToken.setTarget.encode_input(itokenImpl)])
 
-iTokens = [item[0] for item in TOKEN_REGISTRY.getTokens(0, 100)]
+iTokens = [item[0] for item in list]
 tx_list.append([BZX, BZX.setSupportedTokens.encode_input(iTokens, [True] * len(iTokens), True)])
 
 for tx in tx_list:
