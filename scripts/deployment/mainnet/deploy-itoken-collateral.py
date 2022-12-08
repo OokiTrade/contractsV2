@@ -81,7 +81,7 @@ for l in list:
 
 price_feed_new = PriceFeeds.at("0x09Ef93750C5F33ab469851F022C1C42056a8BAda")  # not verified
 priceFeedWethEthDenominated = deployer.deploy(PriceFeedWETHETHDenominated)
-price_feed_new.setPriceFeed([WETH], [priceFeedWethEthDenominated], {"from": deployer})
+price_feed_new.setPriceFeed([WETH], [priceFeedWethEthDenominated], {"from": price_feed_new.owner()})
 BZX.setPriceFeedContract(price_feed_new, {"from": TIMELOCK})
 # tx_list.append([BZX, BZX.setPriceFeedContract.encode_input(price_feed_new)])
 
