@@ -74,12 +74,14 @@ for l in list:
 
     # tx below will be triggered separately by guardian sig
     # iToken.initializeDomainSeparator({"from": iToken.owner()})
-    # BZX.migrateLoanParamsList(l[0], 0, 1000, {"from": BZX.owner()})
+    BZX.migrateLoanParamsList(l[0], 0, 1000, {"from": BZX.owner()})
 
     # tx_list.append([iToken, iToken.initializeDomainSeparator.encode_input()])
     # tx_list.append([BZX, BZX.migrateLoanParamsList.encode_input(l[0], 0, 1000)])
 
 price_feed_new = PriceFeeds.at("0x09Ef93750C5F33ab469851F022C1C42056a8BAda")  # not verified
+priceFeedWethEthDenominated = deployer.deploy(PriceFeedWETHETHDenominated)
+price_feed_new.setPriceFeed([WETH], [priceFeedWethEthDenominated], {"from": deployer})
 BZX.setPriceFeedContract(price_feed_new, {"from": TIMELOCK})
 # tx_list.append([BZX, BZX.setPriceFeedContract.encode_input(price_feed_new)])
 
@@ -100,3 +102,9 @@ iUSDC.mint(accounts[0], 10000e6, {"from": accounts[0]})
 
 iUSDC.approve(iUSDT, 2**256-1, {"from": accounts[0]})
 iUSDT.borrow("", 50e6, 0, 100e6, iUSDC, accounts[0], accounts[0], b"", {'from': accounts[0]})
+
+
+iETH.mintWithEther(accounts[0], {"from":accounts[0], 'amount':  Wei('10 ether')})
+iETH.approve(iUSDT, 2**256-1, {"from": accounts[0]})
+
+iUSDT.borrow("", 50e6, 0, 1e18, iETH, accounts[0], accounts[0], b"", {'from': accounts[0]})
