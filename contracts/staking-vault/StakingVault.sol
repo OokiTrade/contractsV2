@@ -2,6 +2,8 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin-4.7.0/token/ERC1155/ERC1155.sol";
 import "@openzeppelin-4.7.0/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin-4.7.0/token/ERC20/extensions/IERC20Metadata.sol";
+
 import "../../interfaces/IPriceFeeds.sol";
 import "../proxies/0_8/Upgradeable_0_8.sol";
 contract StakingVault is Upgradeable_0_8, ERC1155 {
@@ -24,7 +26,7 @@ contract StakingVault is Upgradeable_0_8, ERC1155 {
     mapping(uint256=>uint256) public rewardsPerToken;
     address public rewardToken;
     mapping(address=>mapping(uint256=>uint256)) public lastClaimRewardAccrual;
-
+    mapping(uint256=>bool) public initialized;
     modifier onlyProtocol() {
         require(msg.sender==protocol, "not protocol");_;
     }
@@ -72,18 +74,16 @@ contract StakingVault is Upgradeable_0_8, ERC1155 {
     function drawOnPool(address tokenBacked, uint256 amountToCover) external onlyProtocol returns (uint256[] memory) {
         uint256 valueOfCoverage = priceFeed.queryReturn(tokenBacked, valuationToken, amountToCover);
         address[] memory tokensStaked = stakingTokens;
-        uint256[] memory tokenAmounts = new uint256[](tokensStaked.length);
-        uint256[] memory valuesPerToken = new uint256[](tokenAmounts.length);
+        uint256[] memory valuesPerToken = new uint256[](tokensStaked.length);
         uint256 totalValue;
         for (uint i=0;i<tokensStaked.length;) {
-            tokenAmounts[i] = balanceStakedPerID[convertToID(tokensStaked[i], tokenBacked)];
-            valuesPerToken[i] = priceFeed.queryReturn(tokensStaked[i], valuationToken, tokenAmounts[i]);
+            valuesPerToken[i] = priceFeed.queryReturn(tokensStaked[i], valuationToken, balanceStakedPerID[convertToID(tokensStaked[i], tokenBacked)]);
             totalValue += valuesPerToken[i];
             unchecked { ++i; }
         }
-        uint256[] memory amountDrawnPerToken = new uint256[](tokenAmounts.length);
-        for (uint i = 0;i<amountDrawnPerToken.length;) {
-            amountDrawnPerToken[i] = tokenAmounts[i]*valueOfCoverage*valuesPerToken[i]/totalValue/1e18;
+        uint256[] memory amountDrawnPerToken = new uint256[](tokensStaked.length);
+        for (uint i = 0;i<tokensStaked.length;) {
+            amountDrawnPerToken[i] = priceFeed.queryReturn(valuationToken, tokensStaked[i], valueOfCoverage*valuesPerToken[i]/totalValue);
             IERC20(tokensStaked[i]).safeTransfer(msg.sender, amountDrawnPerToken[i]);
             unchecked {++i;}
         }
@@ -92,12 +92,18 @@ contract StakingVault is Upgradeable_0_8, ERC1155 {
         return amountDrawnPerToken;
     }
 
+    function getStoredTokenPrice(uint256 ID) external view returns (uint256) {
+        return sTokenPrice[ID];
+    }
+
     function _updatePrice(address tokenBacked, uint256[] memory amountsDrawn) internal {
         address[] memory tokensStaked = stakingTokens;
+        uint256 previousBalance;
         for (uint i=0;i<tokensStaked.length;) {
             uint256 tokenID = convertToID(tokensStaked[i], tokenBacked);
-            balanceStakedPerID[tokenID] -= amountsDrawn[i];
-            sTokenPrice[tokenID] = balanceStakedPerID[tokenID]*1e18/supplyPerID[tokenID];
+            previousBalance = balanceStakedPerID[tokenID];
+            balanceStakedPerID[tokenID] = previousBalance - amountsDrawn[i];
+            sTokenPrice[tokenID] = sTokenPrice[tokenID]*(previousBalance - balanceStakedPerID[tokenID])/previousBalance;
             unchecked { ++i; }
         }
     }
@@ -125,14 +131,18 @@ contract StakingVault is Upgradeable_0_8, ERC1155 {
     }
 
     function _amountToMint(uint256 tokenID, uint256 amount) internal returns (uint256) {
-        return amount*1e18/sTokenPrice[tokenID];
+        uint8 decimals = IERC20Metadata(IDToTokens[tokenID].depositToken).decimals();
+
+        return (amount*1e18/sTokenPrice[tokenID])*10**(18-decimals);
     }
 
     function _amountToSend(uint256 tokenID, uint256 amountBurnt) internal returns (uint256) {
-        return sTokenPrice[tokenID]*amountBurnt/1e18;
+        uint8 decimals = IERC20Metadata(IDToTokens[tokenID].depositToken).decimals();
+
+        return (sTokenPrice[tokenID]*amountBurnt/1e18)/10**(18-decimals);
     }
 
-    function addRewards(uint256 rewardAmount, address tokenBacked) external {
+    function addRewards(address tokenBacked, uint256 rewardAmount) external {
         _addRewards(rewardAmount, tokenBacked);
         IERC20(rewardToken).safeTransferFrom(msg.sender, address(this), rewardAmount);
     }
@@ -177,12 +187,18 @@ contract StakingVault is Upgradeable_0_8, ERC1155 {
 
     function _claimReward(uint256 tokenID) internal {
         uint256 previousAmount = lastClaimRewardAccrual[msg.sender][tokenID];
-        if (previousAmount == 0) {
+        if (previousAmount == 0 && initialized[tokenID]) {
             lastClaimRewardAccrual[msg.sender][tokenID] = rewardsPerToken[tokenID];
             return;
         }
         uint256 newAmount = rewardsPerToken[tokenID];
-        IERC20(rewardToken).safeTransfer(msg.sender, (newAmount-previousAmount)*supplyPerID[tokenID]);
+        if (newAmount-previousAmount == 0) {
+            return;
+        }
+        IERC20(rewardToken).safeTransfer(msg.sender, (newAmount-previousAmount)*balanceOf(msg.sender, tokenID)/1e18);
+        if (!initialized[tokenID] && newAmount > 0) {
+            initialized[tokenID] = true;
+        }
         lastClaimRewardAccrual[msg.sender][tokenID] = newAmount;
     }
 
