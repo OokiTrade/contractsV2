@@ -82,7 +82,7 @@ def test_case3(accounts, Contract, interface, StakeVault, TestToken, ProtocolCon
     StakeVault.claimRewards([StakeVault.convertToID(token_to_deposit, token_to_backstop)], {"from":accounts[0]})
     assert interface.IERC20(token_to_deposit).balanceOf(accounts[0]) - bal == 1e6
     bal = interface.IERC20(token_to_deposit).balanceOf(ProtocolContract)
-    StakeVault.drawOnPool(token_to_backstop, 5e5, {"from":ProtocolContract})
+    StakeVault.drawOnPool(token_to_backstop, token_to_backstop, 5e5, {"from":ProtocolContract})
     added_amount = interface.IERC20(token_to_deposit).balanceOf(ProtocolContract) - bal
     assert added_amount > 4.95e5
     assert added_amount < 5.05e5
