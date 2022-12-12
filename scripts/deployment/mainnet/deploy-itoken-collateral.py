@@ -80,6 +80,7 @@ for l in list:
     # tx_list.append([BZX, BZX.migrateLoanParamsList.encode_input(l[0], 0, 1000)])
 
 price_feed_new = PriceFeeds.at("0x09Ef93750C5F33ab469851F022C1C42056a8BAda")  # not verified
+priceFeedWETHETHDenominated = PriceFeedWETHETHDenominated.at("0x4b22d75dd2b8e0a2787b0bf93636990d8ba12c65")
 priceFeedWethEthDenominated = deployer.deploy(PriceFeedWETHETHDenominated)
 price_feed_new.setPriceFeed([WETH], [priceFeedWethEthDenominated], {"from": price_feed_new.owner()})
 BZX.setPriceFeedContract(price_feed_new, {"from": TIMELOCK})
@@ -87,7 +88,7 @@ BZX.setPriceFeedContract(price_feed_new, {"from": TIMELOCK})
 
 iTokens = [item[0] for item in TOKEN_REGISTRY.getTokens(0, 100)]
 BZX.setSupportedTokens(iTokens, [True] * len(iTokens), True, {'from': TIMELOCK})
-tx_list.append([BZX, BZX.setSupportedTokens.encode_input(iTokens, [True] * len(iTokens), True)])
+# tx_list.append([BZX, BZX.setSupportedTokens.encode_input(iTokens, [True] * len(iTokens), True)])
 
 # for tx in tx_list:
 #     sTxn = safe.build_multisig_tx(tx[0].address, 0, tx[1], SafeOperation.CALL.value, safe_nonce=safe.pending_nonce())
