@@ -77,8 +77,8 @@ for l in list:
     # iToken.initializeDomainSeparator({"from": iToken.owner()})
     # BZX.migrateLoanParamsList(l[0], 0, 1000, {"from": BZX.owner()})
 
-    # tx_list.append([iToken, iToken.initializeDomainSeparator.encode_input()])
-    # tx_list.append([BZX, BZX.migrateLoanParamsList.encode_input(l[0], 0, 1000)])
+    tx_list.append([iToken, iToken.initializeDomainSeparator.encode_input()])
+    tx_list.append([BZX, BZX.migrateLoanParamsList.encode_input(l[0], 0, 1000)])
 
 price_feed_new = PriceFeeds.at("0x09Ef93750C5F33ab469851F022C1C42056a8BAda")  # not verified
 priceFeedWETHETHDenominated = PriceFeedWETHETHDenominated.at("0x4b22d75dd2b8e0a2787b0bf93636990d8ba12c65")
@@ -91,10 +91,10 @@ iTokens = [item[0] for item in TOKEN_REGISTRY.getTokens(0, 100)]
 BZX.setSupportedTokens(iTokens, [True] * len(iTokens), True, {'from': TIMELOCK})
 # tx_list.append([BZX, BZX.setSupportedTokens.encode_input(iTokens, [True] * len(iTokens), True)])
 
-# for tx in tx_list:
-#     sTxn = safe.build_multisig_tx(tx[0].address, 0, tx[1], SafeOperation.CALL.value, safe_nonce=safe.pending_nonce())
-#     safe.sign_with_frame(sTxn)
-#     safe.post_transaction(sTxn)
+for tx in tx_list:
+    sTxn = safe.build_multisig_tx(tx[0].address, 0, tx[1], SafeOperation.CALL.value, safe_nonce=safe.pending_nonce())
+    safe.sign_with_frame(sTxn)
+    safe.post_transaction(sTxn)
 
 # small test
 USDC.transfer(accounts[0], 100000e6, {"from": "0xf977814e90da44bfa03b6295a0616a897441acec"})
