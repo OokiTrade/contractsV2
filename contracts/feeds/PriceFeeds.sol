@@ -15,6 +15,7 @@ import "../governance/PausableGuardian.sol";
 import "../../interfaces/IToken.sol";
 import "../utils/SignedSafeMath.sol";
 
+// TODO Constans can be removed in favor of importing WEI_PRECISION 
 contract PriceFeeds is Constants, PausableGuardian {
     using SafeMath for uint256;
     using SignedSafeMath for int256;
@@ -307,6 +308,7 @@ contract PriceFeeds is Constants, PausableGuardian {
         }
     }
 
+    // TODO remove getChainId() in favor of a WETH pricefeed
     function _queryRateCall(
         address token)
         internal
