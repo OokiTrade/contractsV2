@@ -1,8 +1,9 @@
 # exec(open("./scripts/deployment/mainnet/deploy_price_feed.py").read())
-from gnosis.safe import SafeOperation
-from ape_safe import ApeSafe
+
 exec(open("./scripts/env/set-eth.py").read())
 deployer = accounts[0]
+from gnosis.safe import SafeOperation
+from ape_safe import ApeSafe
 safe = ApeSafe(GUARDIAN_MULTISIG)
 
 
@@ -62,19 +63,19 @@ itokenImpl = LoanTokenLogicStandard.at("0x624f7f89414011b276c60ea2337bfba936d1cb
 itokenImplWeth = LoanTokenLogicWeth.at("0x9712dc729916e154daa327c36ad1b9f8e069fba1")
 for l in list:
     iToken = Contract.from_abi("LoanTokenLogicStandard", address=l[0], abi=interface.IToken.abi)
-    # iBZRX is owned by the guardian
-    if (iToken == iOOKI):
-        continue
-    if (iToken == iETH):
-        iToken.setTarget(itokenImplWeth, {"from": iToken.owner()})
-        # tx_list.append([iToken, iToken.setTarget.encode_input(itokenImplWeth)])
-    else:
-        iToken.setTarget(itokenImpl, {"from": iToken.owner()})
-        # tx_list.append([iToken, iToken.setTarget.encode_input(itokenImpl)])
+    # # iBZRX is owned by the guardian
+    # if (iToken == iOOKI):
+    #     continue
+    # if (iToken == iETH):
+    #     iToken.setTarget(itokenImplWeth, {"from": iToken.owner()})
+    #     # tx_list.append([iToken, iToken.setTarget.encode_input(itokenImplWeth)])
+    # else:
+    #     iToken.setTarget(itokenImpl, {"from": iToken.owner()})
+    #     # tx_list.append([iToken, iToken.setTarget.encode_input(itokenImpl)])
 
     # tx below will be triggered separately by guardian sig
     # iToken.initializeDomainSeparator({"from": iToken.owner()})
-    BZX.migrateLoanParamsList(l[0], 0, 1000, {"from": BZX.owner()})
+    # BZX.migrateLoanParamsList(l[0], 0, 1000, {"from": BZX.owner()})
 
     # tx_list.append([iToken, iToken.initializeDomainSeparator.encode_input()])
     # tx_list.append([BZX, BZX.migrateLoanParamsList.encode_input(l[0], 0, 1000)])
