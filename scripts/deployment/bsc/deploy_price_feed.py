@@ -1,6 +1,6 @@
 from brownie import *
 
-exec(open("./scripts/env/set-matic.py").read())
+exec(open("./scripts/env/set-bsc.py").read())
 deployer = accounts[0]
 
 price_feed_old = PRICE_FEED
