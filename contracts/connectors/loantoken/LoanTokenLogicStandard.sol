@@ -38,8 +38,8 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     //address public constant bZxContract = 0x5cfba2639a3db0D9Cc264Aa27B2E6d134EeA486a; // kovan
     //address public constant wethToken = 0xd0A1E359811322d97991E03f863a0C30C2cF029C; // kovan
 
-    //address public constant bZxContract = 0xD154eE4982b83a87b0649E5a7DDA1514812aFE1f; // bsc
-    //address public constant wethToken = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c; // bsc
+    // address public constant bZxContract = 0xD154eE4982b83a87b0649E5a7DDA1514812aFE1f; // bsc
+    // address public constant wethToken = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c; // bsc
 
     // address public constant bZxContract = 0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8; // polygon
     // address public constant wethToken = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270; // polygon
@@ -58,7 +58,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     bytes32 internal constant iToken_LowerAdminContract = 0x34b31cff1dbd8374124bd4505521fc29cab0f9554a5386ba7d784a4e611c7e31;   // keccak256("iToken_LowerAdminContract")
 
     constructor(address arbCaller, address bzxcontract, address wethtoken)
-        public
         AdvancedToken("","")
     {
         arbitraryCaller = arbCaller;
@@ -620,7 +619,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
 
         
         // handle transfers prior to adding newPrincipal to loanTokenSent
-        (uint256 msgValue, bytes memory loanDataBytes) = _verifyTransfers(
+        (uint256 msgValue, bytes memory localLoanDataBytes) = _verifyTransfers(
             collateralTokenAddress,
             sentAddresses,
             sentAmounts,
@@ -652,7 +651,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
             leverageAmount, // initialMargin
             sentAddresses,
             sentAmounts,
-            loanDataBytes
+            localLoanDataBytes
         );
     }
 

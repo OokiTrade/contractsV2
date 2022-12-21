@@ -19,11 +19,11 @@ contract SwapsImplUniswapV2_POLYGON is State, ISwapsImpl {
 
     address public constant eth = 0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619;
     address public constant dai = 0x8f3Cf7ad23Cd3CaDbD9735AFf958023239c6A063;
-    address public constant usdc = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
+    // address public constant USDC = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
     address public constant usdt = 0xc2132D05D31c914a87C6611C10748AEb04B58e8F;
 
-    constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki)
-    Constants(wethtoken, usdc, bzrx, vbzrx, ooki)
+    constructor(IWeth wethtoken, address USDC, address bzrx, address vbzrx, address ooki)
+    Constants(wethtoken, USDC, bzrx, vbzrx, ooki)
     {
         
     }
@@ -132,12 +132,12 @@ contract SwapsImplUniswapV2_POLYGON is State, ISwapsImpl {
                 }
             }
 
-            if (sourceTokenAddress != usdc && destTokenAddress != usdc) {
-                path[1] = usdc;
+            if (sourceTokenAddress != USDC && destTokenAddress != USDC) {
+                path[1] = USDC;
                 tmpValue = _getAmountOut(amountIn, path);
                 if (tmpValue > amountOut) {
                     amountOut = tmpValue;
-                    midToken = usdc;
+                    midToken = USDC;
                 }
             }
 
@@ -211,12 +211,12 @@ contract SwapsImplUniswapV2_POLYGON is State, ISwapsImpl {
                 }
             }
 
-            if (sourceTokenAddress != usdc && destTokenAddress != usdc) {
-                path[1] = usdc;
+            if (sourceTokenAddress != USDC && destTokenAddress != USDC) {
+                path[1] = USDC;
                 tmpValue = _getAmountIn(amountOut, path);
                 if (tmpValue < amountIn) {
                     amountIn = tmpValue;
-                    midToken = usdc;
+                    midToken = USDC;
                 }
             }
 

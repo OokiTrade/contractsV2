@@ -270,7 +270,8 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
             uint256 sourceRate = _queryRateCall(sourceToken);
             uint256 destRate = _queryRateCall(destToken);
 
-            rate = sourceRate * WEI_PRECISION / destRate;
+            rate *= WEI_PRECISION;
+            rate /= precision;
 
             precision = _getDecimalPrecision(sourceToken, destToken);
         } else {
@@ -313,7 +314,7 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
             price /= 1e18;
         }
     }
-
+// TODO remove function
     function getChainId() internal view returns (uint) {
         uint256 chainId;
         assembly { chainId := chainid() }
@@ -337,7 +338,7 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
             uint256 destTokenDecimals = decimals[destToken];
             if (destTokenDecimals == 0)
                 destTokenDecimals = IERC20Metadata(destToken).decimals();
-
+            // TODO use abs
             if (destTokenDecimals >= sourceTokenDecimals)
                 return 10**(18 - destTokenDecimals-sourceTokenDecimals);
             else

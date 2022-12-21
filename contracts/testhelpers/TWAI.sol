@@ -24,8 +24,8 @@ contract TWAI {
     }
 
     function borrow(uint256 newUtilization) public returns (uint256 interestRate) {
-        (uint256 a, uint256 b) = getAB(lastIR);
-        interestRate = getInterestRate(newUtilization, a, b);
+        (uint256 _a, uint256 _b) = getAB(lastIR);
+        interestRate = getInterestRate(newUtilization, _a, _b);
         lastIR = interestRate;
     }
     
@@ -36,8 +36,8 @@ contract TWAI {
         uint256 UR1,
         uint256 UR2
     ) public pure returns (uint256 interestRate) {
-        (uint256 a, uint256 b) = getAB(IR1, IR2, UR1, UR2);
-        return getInterestRate(U, a, b);
+        (uint256 _a, uint256 _b) = getAB(IR1, IR2, UR1, UR2);
+        return getInterestRate(U, _a, _b);
     }
 
     // this is supposed to be more efficient but its not because 2 reads and 2 writes every time. 
@@ -55,7 +55,7 @@ contract TWAI {
         uint256 IR2,
         uint256 UR1,
         uint256 UR2
-    ) public pure returns (uint256 a, uint256 b) {
+    ) public pure returns (uint256 _a, uint256 _b) {
         // some minimal interestRate to avoid zero a or b
         if (IR1 < 0.001e18) {
             IR1 = 0.001e18;
@@ -63,19 +63,19 @@ contract TWAI {
 
         // b= math.log(1.2/0.2)/(0.9-0.8)
         // b = (ln((intRate2 * 1e18) / intRate1) * 1e18) / (utilRate2 - utilRate1);
-        b = ((IR2 * 1e18) / IR1).ln() *1e18/ (UR2 - UR1);
+        _b = ((IR2 * 1e18) / IR1).ln() *1e18/ (UR2 - UR1);
         // a = 0.2/e**(0.8 * b)
         // uint256 temp;
         // emit Logger("(IR1 * 1e18) ", (IR1 * 1e18));
         // emit Logger("((UR2 * b) / 1e18).exp()", ((UR2 * b) / 1e18).exp());
         // emit Logger("(UR2 * b) / 1e18", (UR1 * b) / 1e18);
 
-        a = (IR1 * 1e18) / ((UR1 * b) / 1e18).exp();
+        _a = (IR1 * 1e18) / ((UR1 * _b) / 1e18).exp();
     }
 
 
 
-    function getAB(uint256 interestRate) public pure returns (uint256 a, uint256 b) {
+    function getAB(uint256 interestRate) public pure returns (uint256 _a, uint256 _b) {
         // some minimal interestRate to avoid zero a or b
         if (interestRate < 0.001e18) {
             interestRate = 0.001e18;
@@ -93,17 +93,17 @@ contract TWAI {
 
         // a = (1 - (1000 * (((intRate1*1e18/intRate2) ** (1/1000)) )/(utilRate2 - utilRate1);
         // b= math.log(1.2/0.2)/(0.9-0.8)
-        b = (ln((intRate2 * 1e18) / intRate1) * 1e18) / (utilRate2 - utilRate1);
+        _b = (ln((intRate2 * 1e18) / intRate1) * 1e18) / (utilRate2 - utilRate1);
         // a = 0.2/e**(0.8 * b)
         // emit Logger("(IR1 * 1e18) ", (intRate1 * 1e18));
         // emit Logger("((UR2 * b) / 1e18).exp()", exp((utilRate1 * b) / 1e18));
         // emit Logger("(UR2 * b) / 1e18", (utilRate1 * b) / 1e18);
-        a = (intRate1 * 1e18) / exp((utilRate1 * b) / 1e18);
+        _a = (intRate1 * 1e18) / exp((utilRate1 * _b) / 1e18);
     }
 
     function getCurrentInterestRateBasedOnCurrentCurve(uint256 newUtilization) public view returns (uint256 interestRate) {
-        (uint256 a, uint256 b) = getAB(lastIR);
-        return getInterestRate(newUtilization, a, b);
+        (uint256 _a, uint256 _b) = getAB(lastIR);
+        return getInterestRate(newUtilization, _a, _b);
     }
 
     function getCurrentInterestRateBasedOnCurrentCurve2(uint256 newUtilization) public view returns (uint256 interestRate) {
@@ -113,15 +113,15 @@ contract TWAI {
 
     function getInterestRate(
         uint256 utilization,
-        uint256 a,
-        uint256 b
+        uint256 _a,
+        uint256 _b
     ) public pure returns (uint256 interestRate) {
         // (uint256 a, uint256 b) = getAB(interestRate);
         // if (utilization < 1e18) {
         //     utilization = 1e18;
         // }
         // return (a*e/1e18)**(b*interestRate/1e36);
-        return (a * exp((b * utilization) / 1e18)) / 1e18;
+        return (_a * exp((_b * utilization) / 1e18)) / 1e18;
     }
 
 

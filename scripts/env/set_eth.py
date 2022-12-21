@@ -72,6 +72,9 @@ OOKI_ETH_LP = Contract.from_abi("OOKI_ETH_LP", "0xEaaddE1E14C587a7Fb4Ba78eA78109
 
 CUI = CurvedInterestRate.at("0xfbdd8919c8b2ad0ea06da5ca8bc4d3e29cf3d2e4")
 
+LOAN_TOKEN_SETTINGS_LOWER_ADMIN = LoanTokenSettingsLowerAdmin.at("0x20Aa8bB73b6EEd3c48E485218C0293d1efa7Efcc")
+
+# TODO remove
 class Deployment_Immutables:
     def WETH():
         return "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"

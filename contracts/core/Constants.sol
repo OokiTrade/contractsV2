@@ -17,7 +17,7 @@ contract Constants {
         vbzrxTokenAddress = vbzrx;
         OOKI = ooki;
     }
-
+    
     uint256 internal constant WEI_PRECISION = 10**18;
     uint256 internal constant WEI_PERCENT_PRECISION = 10**20;
 
@@ -63,11 +63,11 @@ contract Constants {
     //address public constant bzrxTokenAddress = address(0); // avax
     //address public constant vbzrxTokenAddress = address(0); // avax
 
-    /*IWeth public constant wethToken = IWeth(0x82aF49447D8a07e3bd95BD0d56f35241523fBab1); // arbitrum
-    address public constant bzrxTokenAddress = address(0); // arbitrum
-    address public constant vbzrxTokenAddress = address(0); // arbitrum
-    address public constant USDC = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8; // arbitrum
-    address public constant OOKI = address(0x400F3ff129Bc9C9d239a567EaF5158f1850c65a4); // arbitrum*/
+    // IWeth public constant wethToken = IWeth(0x82aF49447D8a07e3bd95BD0d56f35241523fBab1); // arbitrum
+    // address public constant bzrxTokenAddress = address(0); // arbitrum
+    // address public constant vbzrxTokenAddress = address(0); // arbitrum
+    // address public constant USDC = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8; // arbitrum
+    // address public constant OOKI = address(0x400F3ff129Bc9C9d239a567EaF5158f1850c65a4); // arbitrum
 
     // IWeth public constant wethToken = IWeth(0xD4949664cD82660AaE99bEdc034a0deA8A0bd517); // evmos (Wrapped evmos)
     // address public constant bzrxTokenAddress = address(0); // evmos
@@ -77,6 +77,7 @@ contract Constants {
     // IWeth public constant wethToken = IWeth(0x4200000000000000000000000000000000000006); // optimism (Wrapped eth)
     // address public constant bzrxTokenAddress = address(0); // optimism
     // address public constant vbzrxTokenAddress = address(0); // optimism
+    // address public constant USDC = 0x7F5c764cBc14f9669B88837ca1490cCa17c31607;
     // address public constant OOKI = address(0); // optimism
 
 }

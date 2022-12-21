@@ -18,11 +18,11 @@ contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
     address public constant uniswapRouter =
         0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F; // sushiswap
     address public constant dai = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
-    address public constant usdc = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
-    address public constant usdt = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+    // address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+    address public constant USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
 
-    constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki)
-    Constants(wethtoken, usdc, bzrx, vbzrx, ooki)
+    constructor(IWeth wethtoken, address USDC, address bzrx, address vbzrx, address ooki)
+    Constants(wethtoken, USDC, bzrx, vbzrx, ooki)
     {
         
     }
@@ -119,21 +119,21 @@ contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
                 }
             }
 
-            if (sourceTokenAddress != usdc && destTokenAddress != usdc) {
-                path[1] = usdc;
+            if (sourceTokenAddress != USDC && destTokenAddress != USDC) {
+                path[1] = USDC;
                 tmpValue = _getAmountOut(amountIn, path);
                 if (tmpValue > amountOut) {
                     amountOut = tmpValue;
-                    midToken = usdc;
+                    midToken = USDC;
                 }
             }
 
-            if (sourceTokenAddress != usdt && destTokenAddress != usdt) {
-                path[1] = usdt;
+            if (sourceTokenAddress != USDT && destTokenAddress != USDT) {
+                path[1] = USDT;
                 tmpValue = _getAmountOut(amountIn, path);
                 if (tmpValue > amountOut) {
                     amountOut = tmpValue;
-                    midToken = usdt;
+                    midToken = USDT;
                 }
             }
         }
@@ -188,21 +188,21 @@ contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
                 }
             }
 
-            if (sourceTokenAddress != usdc && destTokenAddress != usdc) {
-                path[1] = usdc;
+            if (sourceTokenAddress != USDC && destTokenAddress != USDC) {
+                path[1] = USDC;
                 tmpValue = _getAmountIn(amountOut, path);
                 if (tmpValue < amountIn) {
                     amountIn = tmpValue;
-                    midToken = usdc;
+                    midToken = USDC;
                 }
             }
 
-            if (sourceTokenAddress != usdt && destTokenAddress != usdt) {
-                path[1] = usdt;
+            if (sourceTokenAddress != USDT && destTokenAddress != USDT) {
+                path[1] = USDT;
                 tmpValue = _getAmountIn(amountOut, path);
                 if (tmpValue < amountIn) {
                     amountIn = tmpValue;
-                    midToken = usdt;
+                    midToken = USDT;
                 }
             }
 
