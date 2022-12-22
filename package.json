@@ -30,7 +30,8 @@
     "analyize-contracts": "slither .",
     "lint-contracts": "solhint contracts/**/*.sol",
     "test": "brownie test",
-    "generate-merkle-root:output": "ts-node scripts/merkle-distributor/generate-merkle-root.ts --input scripts/merkle-distributor/output.json"
+    "generate-merkle-root:output": "ts-node scripts/merkle-distributor/generate-merkle-root.ts --input scripts/merkle-distributor/output.json",
+    "format": "pretty-quick --staged"
   },
   "husky": {
     "hooks": {
