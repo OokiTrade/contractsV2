@@ -127,6 +127,10 @@ interface IToken {
 
     function totalAssetBorrow() external view returns (uint256);
 
+    function totalAssetSupply() external view returns (uint256);
+
+    function assetBalanceOf(address _owner) external view returns (uint256);
+
     function getDepositAmountForBorrow(
         uint256 borrowAmount,
         uint256 initialLoanDuration, // duration in seconds
@@ -159,6 +163,10 @@ interface IToken {
     
     function revokeApproval(address _loanTokenAddress) external;
 
+    function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
+    function DOMAIN_SEPARATOR() external view returns(bytes32);
+    function PERMIT_TYPEHASH() external view returns(bytes32);
+    function nonces(address) external view returns (uint);
     /// Admin functions
     function setTarget(address _newTarget) external;
     

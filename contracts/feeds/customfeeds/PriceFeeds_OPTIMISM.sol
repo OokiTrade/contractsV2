@@ -8,9 +8,9 @@ pragma solidity 0.5.17;
 import "@openzeppelin-2.5.0/math/SafeMath.sol";
 import "@openzeppelin-2.5.0/ownership/Ownable.sol";
 import "@openzeppelin-2.5.0/token/ERC20/IERC20.sol";
-import "../interfaces/IERC20Detailed.sol";
-import "../core/Constants.sol";
-import "./IPriceFeedsExt.sol";
+import "../../interfaces/IERC20Detailed.sol";
+import "../../core/Constants.sol";
+import "./../IPriceFeedsExt.sol";
 
 
 contract PriceFeeds_OPTIMISM is Constants, Ownable {

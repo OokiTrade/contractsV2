@@ -79,9 +79,10 @@ def testGovernanceProposal(requireMainnetFork, accounts, DAO, TIMELOCK, iUSDC, O
     voter1 = "0x3fDA2D22e7853f548C3a74df3663a9427FfbB362"
     voter2 = "0x9B43a385E08EE3e4b402D4312dABD11296d09E93"
     voter3 = "0xE9d5472Cc0107938bBcaa630c2e4797F75A2D382"
+    voter4 = "0xb37dab352185c1945cc4b7d19ce05602b9db76f8"
     
 
-    # exec(open("./scripts/dao-proposals/OOIP-15-minimal-interest-rate/proposal.py").read())
+    exec(open("./scripts/dao-proposals/OOIP-16-update-WBTC-pricefeed/proposal.py").read())
 
     proposalCount = DAO.proposalCount()
     proposal = DAO.proposals(proposalCount)
@@ -99,6 +100,7 @@ def testGovernanceProposal(requireMainnetFork, accounts, DAO, TIMELOCK, iUSDC, O
     tx = DAO.castVote(id, 1, {"from": voter1})
     tx = DAO.castVote(id, 1, {"from": voter2})
     tx = DAO.castVote(id, 1, {"from": voter3})
+    tx = DAO.castVote(id, 1, {"from": voter4})
 
 
     assert DAO.state.call(id) == 1
@@ -119,12 +121,12 @@ def testGovernanceProposal(requireMainnetFork, accounts, DAO, TIMELOCK, iUSDC, O
     DAO.execute(id, {"from": proposerAddress})
 
 
-    USDC.transfer(accounts[0], 100000e6, {"from": "0xf977814e90da44bfa03b6295a0616a897441acec"})
-    USDC.approve(iUSDC, 2**256-1, {"from": accounts[0]})
-    iUSDC.mint(accounts[0], 10000e6, {"from": accounts[0]})
+    WBTC.transfer(accounts[0], 100e8, {"from": "0x218b95be3ed99141b0144dba6ce88807c4ad7c09"})
+    WBTC.approve(iWBTC, 2**256-1, {"from": accounts[0]})
+    iWBTC.mint(accounts[0], 10e8, {"from": accounts[0]})
 
-    USDC.approve(iUSDT, 2**256-1, {"from": accounts[0]})
-    iUSDT.borrow("", 50e6, 0, 100e6, USDC, accounts[0], accounts[0], b"", {'from': accounts[0]})
+    WBTC.approve(iUSDT, 2**256-1, {"from": accounts[0]})
+    iUSDT.borrow("", 50e6, 0, 10e8, WBTC, accounts[0], accounts[0], b"", {'from': accounts[0]})
 
     assert False
 
