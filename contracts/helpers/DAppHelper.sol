@@ -74,7 +74,7 @@ contract DAppHelper {
 
         for (uint256 i=0; i < tokenAddresses.length; i++) {
             IToken token = IToken(tokenAddresses[i]);
-            totalAssetSupply[i] = token.totalAssetSupply();
+            totalAssetSupply[i] = token.totalAssets();
             totalAssetBorrow[i] = token.totalAssetBorrow();
             supplyInterestRate[i] = token.supplyInterestRate();
             borrowInterestRate[i] = token.borrowInterestRate();
