@@ -277,7 +277,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         view
         returns (uint256 assets)
     {
-        return balanceOf(owner).mul(tokenPrice());
+        return balanceOf(owner).mul(tokenPrice()).div(WEI_PRECISION);
     }
 
     function convertToShares(
@@ -436,22 +436,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
             assetBorrow,
             totalSupply
         );
-    }
-
-    function totalAssetSupply()
-        public
-        view
-        returns (uint256)
-    {
-        return _totalAssetSupply(0);   
-    }
-    
-    function assetBalanceOf(address wallet)
-        external
-        view
-        returns (uint256)
-    {
-        return balanceOf(wallet).mul(tokenPrice()).div(1e18);
     }
 
     function totalAssetBorrow()
