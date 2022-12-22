@@ -3,491 +3,394 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
+// SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "../../core/State.sol";
-import "../../events/ProtocolSettingsEvents.sol";
-import "@openzeppelin-4.7.0/token/ERC20/utils/SafeERC20.sol";
-import "../../interfaces/IVestingToken.sol";
-import "../../utils/MathUtil.sol";
-import "../../interfaces/IDexRecords.sol";
-import "../../governance/PausableGuardian_0_8.sol";
+import '../../core/State.sol';
+import '../../events/ProtocolSettingsEvents.sol';
+import '@openzeppelin-4.7.0/token/ERC20/utils/SafeERC20.sol';
+import '../../interfaces/IVestingToken.sol';
+import '../../utils/MathUtil.sol';
+import '../../interfaces/IDexRecords.sol';
+import '../../governance/PausableGuardian_0_8.sol';
 
+contract ProtocolSettings is
+  State,
+  ProtocolSettingsEvents,
+  PausableGuardian_0_8
+{
+  using SafeERC20 for IERC20;
+  using MathUtil for uint256;
+  using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
 
-contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8 {
-    using SafeERC20 for IERC20;
-    using MathUtil for uint256;
-    using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
+  constructor(
+    IWeth wethtoken,
+    address usdc,
+    address bzrx,
+    address vbzrx,
+    address ooki
+  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
 
-    constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki)
-    Constants(wethtoken, usdc, bzrx, vbzrx, ooki)
-    {
-        
-    }
+  modifier onlyFactoryOrOwner() {
+    require(msg.sender == factory || msg.sender == owner(), 'unauthorized');
+    _;
+  }
 
-    modifier onlyFactoryOrOwner() {
-        require(msg.sender == factory || msg.sender == owner(), "unauthorized");_;
-    }
+  function initialize(address target) external onlyOwner {
+    _setTarget(this.factory.selector, target);
+    _setTarget(this.setFactory.selector, target);
+    _setTarget(this.setPriceFeedContract.selector, target);
+    _setTarget(this.setSwapsImplContract.selector, target);
+    _setTarget(this.setLoanPool.selector, target);
+    _setTarget(this.setSupportedTokens.selector, target);
+    _setTarget(this.setApprovals.selector, target);
+    _setTarget(this.setLendingFeePercent.selector, target);
+    _setTarget(this.setTradingFeePercent.selector, target);
+    _setTarget(this.setBorrowingFeePercent.selector, target);
+    _setTarget(this.setAffiliateFeePercent.selector, target);
+    _setTarget(this.setLiquidationIncentivePercent.selector, target);
+    _setTarget(this.setMaxDisagreement.selector, target);
+    _setTarget(this.setSourceBufferPercent.selector, target);
+    _setTarget(this.setMaxSwapSize.selector, target);
+    _setTarget(this.setFeesController.selector, target);
+    _setTarget(this.withdrawFees.selector, target);
+    _setTarget(this.queryFees.selector, target);
+    _setTarget(this.getLoanPoolsList.selector, target);
+    _setTarget(this.isLoanPool.selector, target);
+    _setTarget(this.revokeApprovals.selector, target);
 
-    function initialize(
-        address target)
-        external
-        onlyOwner
-    {
-        _setTarget(this.factory.selector, target);
-        _setTarget(this.setFactory.selector, target);
-        _setTarget(this.setPriceFeedContract.selector, target);
-        _setTarget(this.setSwapsImplContract.selector, target);
-        _setTarget(this.setLoanPool.selector, target);
-        _setTarget(this.setSupportedTokens.selector, target);
-        _setTarget(this.setApprovals.selector, target);
-        _setTarget(this.setLendingFeePercent.selector, target);
-        _setTarget(this.setTradingFeePercent.selector, target);
-        _setTarget(this.setBorrowingFeePercent.selector, target);
-        _setTarget(this.setAffiliateFeePercent.selector, target);
-        _setTarget(this.setLiquidationIncentivePercent.selector, target);
-        _setTarget(this.setMaxDisagreement.selector, target);
-        _setTarget(this.setSourceBufferPercent.selector, target);
-        _setTarget(this.setMaxSwapSize.selector, target);
-        _setTarget(this.setFeesController.selector, target);
-        _setTarget(this.withdrawFees.selector, target);
-        _setTarget(this.queryFees.selector, target);
-        _setTarget(this.getLoanPoolsList.selector, target);
-        _setTarget(this.isLoanPool.selector, target);
-        _setTarget(this.revokeApprovals.selector, target);
-
-        /*
+    /*
             Targets still exist, but functions are decommissioned:
             _setTarget(this.withdrawProtocolToken.selector, target);
             _setTarget(this.depositProtocolToken.selector, target);
             _setTarget(this.grantRewards.selector, target);
         */
+  }
 
+  function setFactory(address newFactory) external onlyOwner {
+    factory = newFactory;
+  }
+
+  function setPriceFeedContract(address newContract) external onlyOwner {
+    address oldContract = priceFeeds;
+    priceFeeds = newContract;
+
+    emit SetPriceFeedContract(msg.sender, oldContract, newContract);
+  }
+
+  function setSwapsImplContract(address newContract) external onlyOwner {
+    address oldContract = swapsImpl;
+    swapsImpl = newContract;
+
+    emit SetSwapsImplContract(msg.sender, oldContract, newContract);
+  }
+
+  function setLoanPool(
+    address[] calldata pools,
+    address[] calldata assets
+  ) external onlyFactoryOrOwner {
+    require(pools.length == assets.length, 'count mismatch');
+
+    for (uint256 i = 0; i < pools.length; i++) {
+      require(pools[i] != assets[i], 'pool == asset');
+      require(pools[i] != address(0), 'pool == 0');
+
+      address pool = loanPoolToUnderlying[pools[i]];
+      if (assets[i] == address(0)) {
+        // removal action
+        require(pool != address(0), 'pool not exists');
+      } else {
+        // add action
+        require(pool == address(0), 'pool exists');
+      }
+
+      if (assets[i] == address(0)) {
+        underlyingToLoanPool[loanPoolToUnderlying[pools[i]]] = address(0);
+        loanPoolToUnderlying[pools[i]] = address(0);
+        loanPoolsSet.removeAddress(pools[i]);
+      } else {
+        loanPoolToUnderlying[pools[i]] = assets[i];
+        underlyingToLoanPool[assets[i]] = pools[i];
+        loanPoolsSet.addAddress(pools[i]);
+      }
+
+      emit SetLoanPool(msg.sender, pools[i], assets[i]);
+    }
+  }
+
+  function setSupportedTokens(
+    address[] calldata addrs,
+    bool[] calldata toggles,
+    bool withApprovals
+  ) external onlyFactoryOrOwner {
+    require(addrs.length == toggles.length, 'count mismatch');
+
+    for (uint256 i = 0; i < addrs.length; i++) {
+      supportedTokens[addrs[i]] = toggles[i];
+
+      emit SetSupportedTokens(msg.sender, addrs[i], toggles[i]);
     }
 
-    function setFactory(
-        address newFactory)
-        external
-        onlyOwner
-    {
-        factory = newFactory;
+    if (withApprovals) {
+      bytes memory setSwapApprovalsData = abi.encodeWithSelector(
+        0x4a99e3a1, // setSwapApprovals(address[])
+        addrs
+      );
+      IDexRecords records = IDexRecords(swapsImpl);
+      for (uint256 i = 1; i <= records.getDexCount(); i++) {
+        address swapImpl = _getDexRecord(i);
+        if (swapImpl == address(0)) continue;
+        (bool success, ) = swapImpl.delegatecall(setSwapApprovalsData);
+        require(success, 'approval calls failed');
+      }
     }
+  }
 
-    function setPriceFeedContract(
-        address newContract)
-        external
-        onlyOwner
-    {
-        address oldContract = priceFeeds;
-        priceFeeds = newContract;
-
-        emit SetPriceFeedContract(
-            msg.sender,
-            oldContract,
-            newContract
-        );
+  function setApprovals(
+    address[] calldata tokens,
+    uint256[] calldata dexIDs
+  ) external {
+    bytes memory setSwapApprovalsData = abi.encodeWithSelector(
+      0x4a99e3a1, // setSwapApprovals(address[])
+      tokens
+    );
+    for (uint i = 0; i < dexIDs.length; i++) {
+      address swapImpl = _getDexRecord(dexIDs[i]);
+      if (swapImpl == address(0)) continue;
+      (bool success, ) = swapImpl.delegatecall(setSwapApprovalsData);
+      require(success, 'approval calls failed');
     }
+  }
 
-    function setSwapsImplContract(
-        address newContract)
-        external
-        onlyOwner
-    {
-        address oldContract = swapsImpl;
-        swapsImpl = newContract;
-
-        emit SetSwapsImplContract(
-            msg.sender,
-            oldContract,
-            newContract
-        );
+  function revokeApprovals(address[] calldata addrs) external onlyGuardian {
+    bytes memory revokeApprovalsData = abi.encodeWithSelector(
+      0x7265766f, // revokeApprovals(address[])
+      addrs
+    );
+    IDexRecords records = IDexRecords(swapsImpl);
+    for (uint256 i = 1; i <= records.getDexCount(); i++) {
+      address swapImpl = _getDexRecord(i);
+      if (swapImpl == address(0)) continue;
+      (bool success, ) = swapImpl.delegatecall(revokeApprovalsData);
+      require(success, 'approval calls failed');
     }
+  }
 
-    function setLoanPool(
-        address[] calldata pools,
-        address[] calldata assets)
-        external
-        onlyFactoryOrOwner
-    {
-        require(pools.length == assets.length, "count mismatch");
+  function _getDexRecord(uint256 index) internal returns (address) {
+    bytes memory retrieveDexAddressData = abi.encodeWithSelector(
+      0x8d514555, // retrieveDexAddress(unint256)
+      index
+    );
+    (bool success, bytes memory returndata) = swapsImpl.call(
+      retrieveDexAddressData
+    );
+    if (success) {
+      return abi.decode(returndata, (address));
+    } else {
+      return address(0);
+    }
+  }
 
-        for (uint256 i = 0; i < pools.length; i++) {
-            require(pools[i] != assets[i], "pool == asset");
-            require(pools[i] != address(0), "pool == 0");
+  function setLendingFeePercent(uint256 newValue) external onlyOwner {
+    require(newValue <= WEI_PERCENT_PRECISION, 'value too high');
+    uint256 oldValue = lendingFeePercent;
+    lendingFeePercent = newValue;
 
-            address pool = loanPoolToUnderlying[pools[i]];
-            if (assets[i] == address(0)) {
-                // removal action
-                require(pool != address(0), "pool not exists");
-            } else {
-                // add action
-                require(pool == address(0), "pool exists");
-            }
+    emit SetLendingFeePercent(msg.sender, oldValue, newValue);
+  }
 
-            if (assets[i] == address(0)) {
-                underlyingToLoanPool[loanPoolToUnderlying[pools[i]]] = address(0);
-                loanPoolToUnderlying[pools[i]] = address(0);
-                loanPoolsSet.removeAddress(pools[i]);
-            } else {
-                loanPoolToUnderlying[pools[i]] = assets[i];
-                underlyingToLoanPool[assets[i]] = pools[i];
-                loanPoolsSet.addAddress(pools[i]);
-            }
+  function setTradingFeePercent(uint256 newValue) external onlyOwner {
+    require(newValue <= WEI_PERCENT_PRECISION, 'value too high');
+    uint256 oldValue = tradingFeePercent;
+    tradingFeePercent = newValue;
 
-            emit SetLoanPool(
-                msg.sender,
-                pools[i],
-                assets[i]
-            );
+    emit SetTradingFeePercent(msg.sender, oldValue, newValue);
+  }
+
+  function setBorrowingFeePercent(uint256 newValue) external onlyOwner {
+    require(newValue <= WEI_PERCENT_PRECISION, 'value too high');
+    uint256 oldValue = borrowingFeePercent;
+    borrowingFeePercent = newValue;
+
+    emit SetBorrowingFeePercent(msg.sender, oldValue, newValue);
+  }
+
+  function setAffiliateFeePercent(uint256 newValue) external onlyOwner {
+    require(newValue <= WEI_PERCENT_PRECISION, 'value too high');
+    uint256 oldValue = affiliateFeePercent;
+    affiliateFeePercent = newValue;
+
+    emit SetAffiliateFeePercent(msg.sender, oldValue, newValue);
+  }
+
+  function setLiquidationIncentivePercent(
+    address[] calldata loanTokens,
+    address[] calldata collateralTokens,
+    uint256[] calldata amounts
+  ) external onlyOwner {
+    require(
+      loanTokens.length == collateralTokens.length &&
+        loanTokens.length == amounts.length,
+      'count mismatch'
+    );
+
+    for (uint256 i = 0; i < loanTokens.length; i++) {
+      require(amounts[i] <= WEI_PERCENT_PRECISION, 'value too high');
+
+      uint256 oldValue = liquidationIncentivePercent[loanTokens[i]][
+        collateralTokens[i]
+      ];
+      liquidationIncentivePercent[loanTokens[i]][collateralTokens[i]] = amounts[
+        i
+      ];
+
+      emit SetLiquidationIncentivePercent(
+        msg.sender,
+        loanTokens[i],
+        collateralTokens[i],
+        oldValue,
+        amounts[i]
+      );
+    }
+  }
+
+  function setMaxDisagreement(uint256 newValue) external onlyOwner {
+    maxDisagreement = newValue;
+  }
+
+  function setSourceBufferPercent(uint256 newValue) external onlyOwner {
+    sourceBufferPercent = newValue;
+  }
+
+  function setMaxSwapSize(uint256 newValue) external onlyOwner {
+    uint256 oldValue = maxSwapSize;
+    maxSwapSize = newValue;
+
+    emit SetMaxSwapSize(msg.sender, oldValue, newValue);
+  }
+
+  function setFeesController(address newController) external onlyOwner {
+    address oldController = feesController;
+    feesController = newController;
+
+    emit SetFeesController(msg.sender, oldController, newController);
+  }
+
+  function withdrawFees(
+    address[] calldata tokens,
+    address receiver,
+    FeeClaimType feeType
+  ) external returns (uint256[] memory amounts) {
+    require(msg.sender == feesController, 'unauthorized');
+
+    amounts = new uint256[](tokens.length);
+    uint256 balance;
+    address token;
+    for (uint256 i = 0; i < tokens.length; i++) {
+      token = tokens[i];
+
+      if (feeType == FeeClaimType.All || feeType == FeeClaimType.Lending) {
+        balance = lendingFeeTokensHeld[token];
+        if (balance != 0) {
+          amounts[i] = balance; // will not overflow
+          lendingFeeTokensHeld[token] = 0;
+          lendingFeeTokensPaid[token] = lendingFeeTokensPaid[token] + balance;
+          emit WithdrawLendingFees(msg.sender, token, receiver, balance);
         }
-    }
-
-    function setSupportedTokens(
-        address[] calldata addrs,
-        bool[] calldata toggles,
-        bool withApprovals)
-        external
-        onlyFactoryOrOwner
-    {
-        require(addrs.length == toggles.length, "count mismatch");
-
-        for (uint256 i = 0; i < addrs.length; i++) {
-            supportedTokens[addrs[i]] = toggles[i];
-
-            emit SetSupportedTokens(
-                msg.sender,
-                addrs[i],
-                toggles[i]
-            );
+      }
+      if (feeType == FeeClaimType.All || feeType == FeeClaimType.Trading) {
+        balance = tradingFeeTokensHeld[token];
+        if (balance != 0) {
+          amounts[i] += balance; // will not overflow
+          tradingFeeTokensHeld[token] = 0;
+          tradingFeeTokensPaid[token] = tradingFeeTokensPaid[token] + balance;
+          emit WithdrawTradingFees(msg.sender, token, receiver, balance);
         }
-
-        if (withApprovals) {
-            bytes memory setSwapApprovalsData = abi.encodeWithSelector(
-                0x4a99e3a1, // setSwapApprovals(address[])
-                addrs
-            );
-            IDexRecords records = IDexRecords(swapsImpl);
-            for(uint256 i = 1; i<=records.getDexCount();i++){
-                address swapImpl = _getDexRecord(i);
-                if(swapImpl == address(0))
-                    continue;
-                (bool success,) = swapImpl.delegatecall(setSwapApprovalsData);
-                require(success, "approval calls failed");
-            }
+      }
+      if (feeType == FeeClaimType.All || feeType == FeeClaimType.Borrowing) {
+        balance = borrowingFeeTokensHeld[token];
+        if (balance != 0) {
+          amounts[i] += balance; // will not overflow
+          borrowingFeeTokensHeld[token] = 0;
+          borrowingFeeTokensPaid[token] =
+            borrowingFeeTokensPaid[token] +
+            balance;
+          emit WithdrawBorrowingFees(msg.sender, token, receiver, balance);
         }
+      }
+
+      if (amounts[i] != 0) {
+        IERC20(token).safeTransfer(receiver, amounts[i]);
+      }
     }
+  }
 
-    function setApprovals(address[] calldata tokens, uint256[] calldata dexIDs) external {
-        bytes memory setSwapApprovalsData = abi.encodeWithSelector(
-            0x4a99e3a1, // setSwapApprovals(address[])
-            tokens
-        );
-        for (uint i=0;i<dexIDs.length;i++) {
-            address swapImpl = _getDexRecord(dexIDs[i]);
-            if(swapImpl == address(0))
-                continue;
-            (bool success,) = swapImpl.delegatecall(setSwapApprovalsData);
-            require(success, "approval calls failed");
-        }
+  // NOTE: this doesn't sanitize inputs -> inaccurate values may be returned if there are duplicates tokens input
+  function queryFees(
+    address[] calldata tokens,
+    FeeClaimType feeType
+  )
+    external
+    view
+    returns (uint256[] memory amountsHeld, uint256[] memory amountsPaid)
+  {
+    amountsHeld = new uint256[](tokens.length);
+    amountsPaid = new uint256[](tokens.length);
+    address token;
+    for (uint256 i = 0; i < tokens.length; i++) {
+      token = tokens[i];
+
+      if (feeType == FeeClaimType.Lending) {
+        amountsHeld[i] = lendingFeeTokensHeld[token];
+        amountsPaid[i] = lendingFeeTokensPaid[token];
+      } else if (feeType == FeeClaimType.Trading) {
+        amountsHeld[i] = tradingFeeTokensHeld[token];
+        amountsPaid[i] = tradingFeeTokensPaid[token];
+      } else if (feeType == FeeClaimType.Borrowing) {
+        amountsHeld[i] = borrowingFeeTokensHeld[token];
+        amountsPaid[i] = borrowingFeeTokensPaid[token];
+      } else {
+        amountsHeld[i] =
+          lendingFeeTokensHeld[token] +
+          tradingFeeTokensHeld[token] +
+          borrowingFeeTokensHeld[token]; // will not overflow
+        amountsPaid[i] =
+          lendingFeeTokensPaid[token] +
+          tradingFeeTokensPaid[token] +
+          borrowingFeeTokensPaid[token]; // will not overflow
+      }
     }
+  }
 
-    function revokeApprovals(address[] calldata addrs) external onlyGuardian {
-        bytes memory revokeApprovalsData = abi.encodeWithSelector(
-            0x7265766f, // revokeApprovals(address[])
-            addrs
-        );
-        IDexRecords records = IDexRecords(swapsImpl);
-        for(uint256 i = 1; i<=records.getDexCount();i++){
-            address swapImpl =_getDexRecord(i);
-            if(swapImpl == address(0))
-                continue;
-            (bool success,) = swapImpl.delegatecall(revokeApprovalsData);
-            require(success, "approval calls failed");
-        }
+  function getLoanPoolsList(
+    uint256 start,
+    uint256 count
+  ) external view returns (address[] memory loanPoolsList) {
+    EnumerableBytes32Set.Bytes32Set storage set = loanPoolsSet;
+    uint256 end = start + count;
+    if (end > set.length()) {
+      end = set.length();
     }
-
-    function _getDexRecord(uint256 index) internal returns(address) {
-        bytes memory retrieveDexAddressData = abi.encodeWithSelector(
-            0x8d514555, // retrieveDexAddress(unint256)
-            index
-        );
-        (bool success, bytes memory returndata) = swapsImpl.call(retrieveDexAddressData);
-        if (success) {
-            return abi.decode(returndata, (address));
-        } else {
-            return address(0);
-        }
+    if (start >= end) {
+      return loanPoolsList;
     }
+    count = end - start;
 
-    function setLendingFeePercent(
-        uint256 newValue)
-        external
-        onlyOwner
-    {
-        require(newValue <= WEI_PERCENT_PRECISION, "value too high");
-        uint256 oldValue = lendingFeePercent;
-        lendingFeePercent = newValue;
+    loanPoolsList = new address[](count);
+    for (uint256 i = --end; i >= start; i--) {
+      loanPoolsList[--count] = set.getAddress(i);
 
-        emit SetLendingFeePercent(
-            msg.sender,
-            oldValue,
-            newValue
-        );
+      if (i == 0) {
+        break;
+      }
     }
+  }
 
-    function setTradingFeePercent(
-        uint256 newValue)
-        external
-        onlyOwner
-    {
-        require(newValue <= WEI_PERCENT_PRECISION, "value too high");
-        uint256 oldValue = tradingFeePercent;
-        tradingFeePercent = newValue;
+  function isLoanPool(address loanPool) external view returns (bool) {
+    return loanPoolToUnderlying[loanPool] != address(0);
+  }
 
-        emit SetTradingFeePercent(
-            msg.sender,
-            oldValue,
-            newValue
-        );
-    }
-
-    function setBorrowingFeePercent(
-        uint256 newValue)
-        external
-        onlyOwner
-    {
-        require(newValue <= WEI_PERCENT_PRECISION, "value too high");
-        uint256 oldValue = borrowingFeePercent;
-        borrowingFeePercent = newValue;
-
-        emit SetBorrowingFeePercent(
-            msg.sender,
-            oldValue,
-            newValue
-        );
-    }
-
-    function setAffiliateFeePercent(
-        uint256 newValue)
-        external
-        onlyOwner
-    {
-        require(newValue <= WEI_PERCENT_PRECISION, "value too high");
-        uint256 oldValue = affiliateFeePercent;
-        affiliateFeePercent = newValue;
-
-        emit SetAffiliateFeePercent(
-            msg.sender,
-            oldValue,
-            newValue
-        );
-    }
-
-    function setLiquidationIncentivePercent(
-        address[] calldata loanTokens,
-        address[] calldata collateralTokens,
-        uint256[] calldata amounts)
-        external
-        onlyOwner
-    {
-        require(loanTokens.length == collateralTokens.length && loanTokens.length == amounts.length, "count mismatch");
-
-        for (uint256 i = 0; i < loanTokens.length; i++) {
-            require(amounts[i] <= WEI_PERCENT_PRECISION, "value too high");
-
-            uint256 oldValue = liquidationIncentivePercent[loanTokens[i]][collateralTokens[i]];
-            liquidationIncentivePercent[loanTokens[i]][collateralTokens[i]] = amounts[i];
-
-            emit SetLiquidationIncentivePercent(
-                msg.sender,
-                loanTokens[i],
-                collateralTokens[i],
-                oldValue,
-                amounts[i]
-            );
-        }
-    }
-
-    function setMaxDisagreement(
-        uint256 newValue)
-        external
-        onlyOwner
-    {
-        maxDisagreement = newValue;
-    }
-
-    function setSourceBufferPercent(
-        uint256 newValue)
-        external
-        onlyOwner
-    {
-        sourceBufferPercent = newValue;
-    }
-
-    function setMaxSwapSize(
-        uint256 newValue)
-        external
-        onlyOwner
-    {
-        uint256 oldValue = maxSwapSize;
-        maxSwapSize = newValue;
-
-        emit SetMaxSwapSize(
-            msg.sender,
-            oldValue,
-            newValue
-        );
-    }
-
-    function setFeesController(
-        address newController)
-        external
-        onlyOwner
-    {
-        address oldController = feesController;
-        feesController = newController;
-
-        emit SetFeesController(
-            msg.sender,
-            oldController,
-            newController
-        );
-    }
-
-    function withdrawFees(
-        address[] calldata tokens,
-        address receiver,
-        FeeClaimType feeType)
-        external
-        returns (uint256[] memory amounts)
-    {
-        require(msg.sender == feesController, "unauthorized");
-
-        amounts = new uint256[](tokens.length);
-        uint256 balance;
-        address token;
-        for (uint256 i = 0; i < tokens.length; i++) {
-            token = tokens[i];
-
-            if (feeType == FeeClaimType.All || feeType == FeeClaimType.Lending) {
-                balance = lendingFeeTokensHeld[token];
-                if (balance != 0) {
-                    amounts[i] = balance;  // will not overflow
-                    lendingFeeTokensHeld[token] = 0;
-                    lendingFeeTokensPaid[token] = lendingFeeTokensPaid[token] + balance;
-                    emit WithdrawLendingFees(
-                        msg.sender,
-                        token,
-                        receiver,
-                        balance
-                    );
-                }
-            }
-            if (feeType == FeeClaimType.All || feeType == FeeClaimType.Trading) {
-                balance = tradingFeeTokensHeld[token];
-                if (balance != 0) {
-                    amounts[i] += balance;  // will not overflow
-                    tradingFeeTokensHeld[token] = 0;
-                    tradingFeeTokensPaid[token] = tradingFeeTokensPaid[token] + balance;
-                    emit WithdrawTradingFees(
-                        msg.sender,
-                        token,
-                        receiver,
-                        balance
-                    );
-                }
-            }
-            if (feeType == FeeClaimType.All || feeType == FeeClaimType.Borrowing) {
-                balance = borrowingFeeTokensHeld[token];
-                if (balance != 0) {
-                    amounts[i] += balance;  // will not overflow
-                    borrowingFeeTokensHeld[token] = 0;
-                    borrowingFeeTokensPaid[token] = borrowingFeeTokensPaid[token] + balance;
-                    emit WithdrawBorrowingFees(
-                        msg.sender,
-                        token,
-                        receiver,
-                        balance
-                    );
-                }
-            }
-
-            if (amounts[i] != 0) {
-                IERC20(token).safeTransfer(
-                    receiver,
-                    amounts[i]
-                );
-            }
-        }
-    }
-
-    // NOTE: this doesn't sanitize inputs -> inaccurate values may be returned if there are duplicates tokens input
-    function queryFees(
-        address[] calldata tokens,
-        FeeClaimType feeType)
-        external
-        view
-        returns (uint256[] memory amountsHeld, uint256[] memory amountsPaid)
-    {
-        amountsHeld = new uint256[](tokens.length);
-        amountsPaid = new uint256[](tokens.length);
-        address token;
-        for (uint256 i = 0; i < tokens.length; i++) {
-            token = tokens[i];
-            
-            if (feeType == FeeClaimType.Lending) {
-                amountsHeld[i] = lendingFeeTokensHeld[token];
-                amountsPaid[i] = lendingFeeTokensPaid[token];
-            } else if (feeType == FeeClaimType.Trading) {
-                amountsHeld[i] = tradingFeeTokensHeld[token];
-                amountsPaid[i] = tradingFeeTokensPaid[token];
-            } else if (feeType == FeeClaimType.Borrowing) {
-                amountsHeld[i] = borrowingFeeTokensHeld[token];
-                amountsPaid[i] = borrowingFeeTokensPaid[token];
-            } else {
-                amountsHeld[i] = lendingFeeTokensHeld[token] + tradingFeeTokensHeld[token] + borrowingFeeTokensHeld[token]; // will not overflow
-                amountsPaid[i] = lendingFeeTokensPaid[token] + tradingFeeTokensPaid[token] + borrowingFeeTokensPaid[token]; // will not overflow
-            }
-        }
-    }
-
-    function getLoanPoolsList(
-        uint256 start,
-        uint256 count)
-        external
-        view
-        returns (address[] memory loanPoolsList)
-    {
-        EnumerableBytes32Set.Bytes32Set storage set = loanPoolsSet;
-        uint256 end = start + count;
-        if (end > set.length()) {
-            end = set.length();
-        }
-        if (start >= end) {
-            return loanPoolsList;
-        }
-        count = end-start;
-
-        loanPoolsList = new address[](count);
-        for (uint256 i = --end; i >= start; i--) {
-            loanPoolsList[--count] = set.getAddress(i);
-
-            if (i == 0) {
-                break;
-            }
-        }
-    }
-
-    function isLoanPool(
-        address loanPool)
-        external
-        view
-        returns (bool)
-    {
-        return loanPoolToUnderlying[loanPool] != address(0);
-    }
-
-    /*
+  /*
     function withdrawProtocolToken(
         address receiver,
         uint256 amount)
@@ -578,5 +481,4 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
         }
     }
     */
-
 }
