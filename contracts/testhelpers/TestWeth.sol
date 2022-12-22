@@ -59,11 +59,7 @@ contract TestWeth {
     return transferFrom(msg.sender, dst, wad);
   }
 
-  function transferFrom(
-    address src,
-    address dst,
-    uint wad
-  ) public returns (bool) {
+  function transferFrom(address src, address dst, uint wad) public returns (bool) {
     require(balanceOf[src] >= wad);
 
     if (src != msg.sender && allowance[src][msg.sender] != uint(-1)) {

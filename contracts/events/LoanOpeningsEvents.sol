@@ -36,12 +36,7 @@ contract LoanOpeningsEvents {
     uint256 currentLeverage
   );
 
-  event DelegatedManagerSet(
-    bytes32 indexed loanId,
-    address indexed delegator,
-    address indexed delegated,
-    bool isActive
-  );
+  event DelegatedManagerSet(bytes32 indexed loanId, address indexed delegator, address indexed delegated, bool isActive);
 
   event LoanCollateralSwap(
     address indexed user,

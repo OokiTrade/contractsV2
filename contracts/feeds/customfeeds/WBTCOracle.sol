@@ -16,10 +16,7 @@ contract WBTCOracle is IChainlinkAggregatorV2V3 {
   address public immutable WBTCBTCChainlinkAggregator;
   address public immutable BTCETHChainlinkAggregator;
 
-  constructor(
-    address _WBTCBTCChainlinkAggregator,
-    address _BTCETHChainlinkAggregator
-  ) {
+  constructor(address _WBTCBTCChainlinkAggregator, address _BTCETHChainlinkAggregator) {
     // WBTCBTCChainlinkAggregator = "0xfdFD9C85aD200c506Cf9e21F1FD8dd01932FBB23";
     // BTCETHChainlinkAggregator = "0xdeb288F737066589598e9214E782fa5A8eD689e8";
 
@@ -37,24 +34,16 @@ contract WBTCOracle is IChainlinkAggregatorV2V3 {
 
   /// @notice Get latest WBTC/BTC Chainlink feed timestamp
   /// @return timestamp latest WBTC/BTC Chainlink feed timestamp
-  function latestTimestamp()
-    external
-    view
-    override
-    returns (uint256 timestamp)
-  {
-    return
-      IChainlinkAggregatorV2V3(WBTCBTCChainlinkAggregator).latestTimestamp();
+  function latestTimestamp() external view override returns (uint256 timestamp) {
+    return IChainlinkAggregatorV2V3(WBTCBTCChainlinkAggregator).latestTimestamp();
   }
 
   /// @notice Get WBTC/ETH price. It does not check Chainlink oracles staleness! If staleness check needed, it's recommended to use latestTimestamp() functions on both Chainlink feeds used
   /// @return answer WBTC/ETH price or 0 if failure
   function latestAnswer() external view override returns (int256 answer) {
     // get the WBTC/BTC and BTC/ETH prices
-    int256 WBTCBTCPrice = IChainlinkAggregatorV2V3(WBTCBTCChainlinkAggregator)
-      .latestAnswer();
-    int256 BTCETHPrice = IChainlinkAggregatorV2V3(BTCETHChainlinkAggregator)
-      .latestAnswer();
+    int256 WBTCBTCPrice = IChainlinkAggregatorV2V3(WBTCBTCChainlinkAggregator).latestAnswer();
+    int256 BTCETHPrice = IChainlinkAggregatorV2V3(BTCETHChainlinkAggregator).latestAnswer();
 
     if (WBTCBTCPrice <= 0 || BTCETHPrice <= 0) return 0;
 

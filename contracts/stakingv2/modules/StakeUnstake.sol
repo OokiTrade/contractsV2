@@ -40,20 +40,9 @@ contract StakeUnstake is Common {
 
   function _pendingSushiRewards(address _user) internal view returns (uint256) {
     uint256 lpBalance = balanceOfByAsset(OOKI_ETH_LP, _user);
-    IStakingV2.AltRewardsUserInfo
-      memory altRewardsUserInfo = userAltRewardsInfo[_user][SUSHI];
-    uint256 pendingSushi = IMasterChefSushi2(SUSHI_MASTERCHEF).pendingSushi(
-      OOKI_ETH_SUSHI_MASTERCHEF_PID,
-      address(this)
-    );
-    return
-      _pendingAltRewards(
-        SUSHI,
-        _user,
-        lpBalance,
-        altRewardsUserInfo,
-        pendingSushi
-      );
+    IStakingV2.AltRewardsUserInfo memory altRewardsUserInfo = userAltRewardsInfo[_user][SUSHI];
+    uint256 pendingSushi = IMasterChefSushi2(SUSHI_MASTERCHEF).pendingSushi(OOKI_ETH_SUSHI_MASTERCHEF_PID, address(this));
+    return _pendingAltRewards(SUSHI, _user, lpBalance, altRewardsUserInfo, pendingSushi);
   }
 
   function _pendingAltRewards(
@@ -77,64 +66,35 @@ contract StakeUnstake is Common {
       uint256 _altRewardsPerShare;
       uint256 _altRewardsPerSharePerBlock;
       if (extraRewards != 0) {
-        (
-          _altRewardsPerShare,
-          _altRewardsPerSharePerBlock,
-          _altRewardsBlock
-        ) = _addAltRewards(token, extraRewards);
+        (_altRewardsPerShare, _altRewardsPerSharePerBlock, _altRewardsBlock) = _addAltRewards(token, extraRewards);
       } else {
         _altRewardsPerShare = altRewardsPerShare[token];
         _altRewardsPerSharePerBlock = altRewardsPerSharePerBlock[token];
       }
-      total =
-        ((_altRewardsBlock - _stakingStartBlock) *
-          _altRewardsPerSharePerBlock *
-          userSupply) /
-        1e12;
+      total = ((_altRewardsBlock - _stakingStartBlock) * _altRewardsPerSharePerBlock * userSupply) / 1e12;
     }
 
     return total + altRewardsUserInfo.pending;
   }
 
   function _depositToSushiMasterchef(uint256 amount) internal {
-    IMasterChefSushi2(SUSHI_MASTERCHEF).deposit(
-      OOKI_ETH_SUSHI_MASTERCHEF_PID,
-      amount,
-      address(this)
-    );
+    IMasterChefSushi2(SUSHI_MASTERCHEF).deposit(OOKI_ETH_SUSHI_MASTERCHEF_PID, amount, address(this));
   }
 
   function _withdrawFromSushiMasterchef(uint256 amount) internal {
-    IMasterChefSushi2(SUSHI_MASTERCHEF).withdraw(
-      OOKI_ETH_SUSHI_MASTERCHEF_PID,
-      amount,
-      address(this)
-    );
+    IMasterChefSushi2(SUSHI_MASTERCHEF).withdraw(OOKI_ETH_SUSHI_MASTERCHEF_PID, amount, address(this));
   }
 
-  function stake(
-    address[] memory tokens,
-    uint256[] memory values
-  ) public pausable updateRewards(msg.sender) {
+  function stake(address[] memory tokens, uint256[] memory values) public pausable updateRewards(msg.sender) {
     require(tokens.length == values.length, 'count mismatch');
     VoteDelegator _voteDelegator = VoteDelegator(voteDelegator);
     address currentDelegate = _voteDelegator.delegates(msg.sender);
 
     ProposalState memory _proposalState = _getProposalState();
-    uint256 votingBalanceBefore = _votingFromStakedBalanceOf(
-      msg.sender,
-      _proposalState,
-      true
-    );
+    uint256 votingBalanceBefore = _votingFromStakedBalanceOf(msg.sender, _proposalState, true);
     for (uint256 i = 0; i < tokens.length; i++) {
       address token = tokens[i];
-      require(
-        token == OOKI ||
-          token == vBZRX ||
-          token == iOOKI ||
-          token == OOKI_ETH_LP,
-        'invalid token'
-      );
+      require(token == OOKI || token == vBZRX || token == iOOKI || token == OOKI_ETH_LP, 'invalid token');
 
       uint256 stakeAmount = values[i];
       if (stakeAmount == 0) {
@@ -149,8 +109,7 @@ contract StakeUnstake is Common {
       if (token == OOKI_ETH_LP) {
         _depositToSushiMasterchef(IERC20(OOKI_ETH_LP).balanceOf(address(this)));
         if (userAltRewardsInfo[msg.sender][SUSHI].stakingStartBlock == 0) {
-          userAltRewardsInfo[msg.sender][SUSHI].stakingStartBlock = block
-            .number;
+          userAltRewardsInfo[msg.sender][SUSHI].stakingStartBlock = block.number;
           userAltRewardsInfo[msg.sender][SUSHI].pending = 0;
         }
 
@@ -162,38 +121,21 @@ contract StakeUnstake is Common {
       emit Stake(msg.sender, token, currentDelegate, stakeAmount);
     }
 
-    _voteDelegator.moveDelegatesByVotingBalance(
-      votingBalanceBefore,
-      _votingFromStakedBalanceOf(msg.sender, _proposalState, true),
-      msg.sender
-    );
+    _voteDelegator.moveDelegatesByVotingBalance(votingBalanceBefore, _votingFromStakedBalanceOf(msg.sender, _proposalState, true), msg.sender);
   }
 
-  function unstake(
-    address[] memory tokens,
-    uint256[] memory values
-  ) public pausable updateRewards(msg.sender) {
+  function unstake(address[] memory tokens, uint256[] memory values) public pausable updateRewards(msg.sender) {
     require(tokens.length == values.length, 'count mismatch');
 
     VoteDelegator _voteDelegator = VoteDelegator(voteDelegator);
     address currentDelegate = _voteDelegator.delegates(msg.sender);
 
     ProposalState memory _proposalState = _getProposalState();
-    uint256 votingBalanceBefore = _votingFromStakedBalanceOf(
-      msg.sender,
-      _proposalState,
-      true
-    );
+    uint256 votingBalanceBefore = _votingFromStakedBalanceOf(msg.sender, _proposalState, true);
 
     for (uint256 i = 0; i < tokens.length; i++) {
       address token = tokens[i];
-      require(
-        token == OOKI ||
-          token == vBZRX ||
-          token == iOOKI ||
-          token == OOKI_ETH_LP,
-        'invalid token'
-      );
+      require(token == OOKI || token == vBZRX || token == iOOKI || token == OOKI_ETH_LP, 'invalid token');
 
       uint256 unstakeAmount = values[i];
       uint256 stakedAmount = _balancesPerToken[token][msg.sender];
@@ -207,9 +149,7 @@ contract StakeUnstake is Common {
       uint256 _balanceAfter = stakedAmount - unstakeAmount; // will not overflow
       _totalSupplyPerToken[token] = _totalSupplyPerToken[token] - unstakeAmount;
 
-      if (
-        token == OOKI && IERC20(OOKI).balanceOf(address(this)) < unstakeAmount
-      ) {
+      if (token == OOKI && IERC20(OOKI).balanceOf(address(this)) < unstakeAmount) {
         // settle vested BZRX only if needed
         IVestingToken(vBZRX).claim();
         CONVERTER.convert(address(this), IERC20(BZRX).balanceOf(address(this)));
@@ -227,29 +167,14 @@ contract StakeUnstake is Common {
       emit Unstake(msg.sender, token, currentDelegate, unstakeAmount);
     }
 
-    _voteDelegator.moveDelegatesByVotingBalance(
-      votingBalanceBefore,
-      _votingFromStakedBalanceOf(msg.sender, _proposalState, true),
-      msg.sender
-    );
+    _voteDelegator.moveDelegatesByVotingBalance(votingBalanceBefore, _votingFromStakedBalanceOf(msg.sender, _proposalState, true), msg.sender);
   }
 
-  function claim(
-    bool restake
-  )
-    external
-    pausable
-    updateRewards(msg.sender)
-    returns (uint256 ookiRewardsEarned, uint256 stableCoinRewardsEarned)
-  {
+  function claim(bool restake) external pausable updateRewards(msg.sender) returns (uint256 ookiRewardsEarned, uint256 stableCoinRewardsEarned) {
     return _claim(restake);
   }
 
-  function claimAltRewards()
-    external
-    pausable
-    returns (uint256 sushiRewardsEarned, uint256 crvRewardsEarned)
-  {
+  function claimAltRewards() external pausable returns (uint256 sushiRewardsEarned, uint256 crvRewardsEarned) {
     sushiRewardsEarned = _claimSushi();
 
     if (sushiRewardsEarned != 0) {
@@ -257,23 +182,13 @@ contract StakeUnstake is Common {
     }
   }
 
-  function claimBzrx()
-    external
-    pausable
-    updateRewards(msg.sender)
-    returns (uint256 ookiRewardsEarned)
-  {
+  function claimBzrx() external pausable updateRewards(msg.sender) returns (uint256 ookiRewardsEarned) {
     ookiRewardsEarned = _claimBzrx(false);
 
     emit Claim(msg.sender, ookiRewardsEarned, 0);
   }
 
-  function claim3Crv()
-    external
-    pausable
-    updateRewards(msg.sender)
-    returns (uint256 stableCoinRewardsEarned)
-  {
+  function claim3Crv() external pausable updateRewards(msg.sender) returns (uint256 stableCoinRewardsEarned) {
     stableCoinRewardsEarned = _claim3Crv();
 
     emit Claim(msg.sender, 0, stableCoinRewardsEarned);
@@ -286,27 +201,16 @@ contract StakeUnstake is Common {
     }
   }
 
-  function _claim(
-    bool restake
-  )
-    internal
-    returns (uint256 ookiRewardsEarned, uint256 stableCoinRewardsEarned)
-  {
+  function _claim(bool restake) internal returns (uint256 ookiRewardsEarned, uint256 stableCoinRewardsEarned) {
     ookiRewardsEarned = _claimBzrx(restake);
     stableCoinRewardsEarned = _claim3Crv();
 
     emit Claim(msg.sender, ookiRewardsEarned, stableCoinRewardsEarned);
   }
 
-  function _claimBzrx(
-    bool restake
-  ) internal returns (uint256 ookiRewardsEarned) {
+  function _claimBzrx(bool restake) internal returns (uint256 ookiRewardsEarned) {
     ProposalState memory _proposalState = _getProposalState();
-    uint256 votingBalanceBefore = _votingFromStakedBalanceOf(
-      msg.sender,
-      _proposalState,
-      true
-    );
+    uint256 votingBalanceBefore = _votingFromStakedBalanceOf(msg.sender, _proposalState, true);
 
     ookiRewardsEarned = ookiRewards[msg.sender];
     if (ookiRewardsEarned != 0) {
@@ -317,20 +221,13 @@ contract StakeUnstake is Common {
         if (IERC20(OOKI).balanceOf(address(this)) < ookiRewardsEarned) {
           // settle vested BZRX only if needed
           IVestingToken(vBZRX).claim();
-          CONVERTER.convert(
-            address(this),
-            IERC20(BZRX).balanceOf(address(this))
-          );
+          CONVERTER.convert(address(this), IERC20(BZRX).balanceOf(address(this)));
         }
 
         IERC20(OOKI).transfer(msg.sender, ookiRewardsEarned);
       }
     }
-    VoteDelegator(voteDelegator).moveDelegatesByVotingBalance(
-      votingBalanceBefore,
-      _votingFromStakedBalanceOf(msg.sender, _proposalState, true),
-      msg.sender
-    );
+    VoteDelegator(voteDelegator).moveDelegatesByVotingBalance(votingBalanceBefore, _votingFromStakedBalanceOf(msg.sender, _proposalState, true), msg.sender);
   }
 
   function _claim3Crv() internal returns (uint256 stableCoinRewardsEarned) {
@@ -344,30 +241,14 @@ contract StakeUnstake is Common {
 
   function _claimSushi() internal returns (uint256) {
     address _user = msg.sender;
-    uint256 pending = IMasterChefSushi2(SUSHI_MASTERCHEF).pendingSushi(
-      OOKI_ETH_SUSHI_MASTERCHEF_PID,
-      address(this)
-    );
+    uint256 pending = IMasterChefSushi2(SUSHI_MASTERCHEF).pendingSushi(OOKI_ETH_SUSHI_MASTERCHEF_PID, address(this));
     uint256 lptUserSupply = balanceOfByAsset(OOKI_ETH_LP, _user);
-    uint256 pendingSushi = _pendingAltRewards(
-      SUSHI,
-      _user,
-      lptUserSupply,
-      userAltRewardsInfo[_user][SUSHI],
-      pending
-    );
+    uint256 pendingSushi = _pendingAltRewards(SUSHI, _user, lptUserSupply, userAltRewardsInfo[_user][SUSHI], pending);
 
     if (pendingSushi != 0) {
       if (IERC20(SUSHI).balanceOf(address(this)) < pendingSushi) {
-        IMasterChefSushi2(SUSHI_MASTERCHEF).harvest(
-          OOKI_ETH_SUSHI_MASTERCHEF_PID,
-          address(this)
-        );
-        (
-          altRewardsPerShare[SUSHI],
-          altRewardsPerSharePerBlock[SUSHI],
-          altRewardsBlock[SUSHI]
-        ) = _addAltRewards(SUSHI, pendingSushi);
+        IMasterChefSushi2(SUSHI_MASTERCHEF).harvest(OOKI_ETH_SUSHI_MASTERCHEF_PID, address(this));
+        (altRewardsPerShare[SUSHI], altRewardsPerSharePerBlock[SUSHI], altRewardsBlock[SUSHI]) = _addAltRewards(SUSHI, pendingSushi);
         emit AddAltRewards(msg.sender, SUSHI, pendingSushi);
       }
       IERC20(SUSHI).safeTransfer(_user, pendingSushi);
@@ -378,9 +259,7 @@ contract StakeUnstake is Common {
   }
 
   function _restakeBZRX(address account, uint256 amount) internal {
-    _balancesPerToken[OOKI][account] =
-      _balancesPerToken[OOKI][account] +
-      amount;
+    _balancesPerToken[OOKI][account] = _balancesPerToken[OOKI][account] + amount;
 
     _totalSupplyPerToken[OOKI] = _totalSupplyPerToken[OOKI] + amount;
 
@@ -396,12 +275,11 @@ contract StakeUnstake is Common {
     uint256 _ookiPerTokenStored = ookiPerTokenStored;
     uint256 _stableCoinPerTokenStored = stableCoinPerTokenStored;
 
-    (
-      uint256 ookiRewardsEarned,
-      uint256 stableCoinRewardsEarned,
-      uint256 ookiRewardsVesting,
-      uint256 stableCoinRewardsVesting
-    ) = _earned(account, _ookiPerTokenStored, _stableCoinPerTokenStored);
+    (uint256 ookiRewardsEarned, uint256 stableCoinRewardsEarned, uint256 ookiRewardsVesting, uint256 stableCoinRewardsVesting) = _earned(
+      account,
+      _ookiPerTokenStored,
+      _stableCoinPerTokenStored
+    );
     ookiRewardsPerTokenPaid[account] = _ookiPerTokenStored;
     stableCoinRewardsPerTokenPaid[account] = _stableCoinPerTokenStored;
 
@@ -409,13 +287,7 @@ contract StakeUnstake is Common {
     bzrxVesting[account] = ookiRewardsVesting;
     stableCoinVesting[account] = stableCoinRewardsVesting;
 
-    (ookiRewards[account], stableCoinRewards[account]) = _syncVesting(
-      account,
-      ookiRewardsEarned,
-      stableCoinRewardsEarned,
-      ookiRewardsVesting,
-      stableCoinRewardsVesting
-    );
+    (ookiRewards[account], stableCoinRewards[account]) = _syncVesting(account, ookiRewardsEarned, stableCoinRewardsEarned, ookiRewardsVesting, stableCoinRewardsVesting);
 
     vestingLastSync[account] = block.timestamp;
     _;
@@ -423,40 +295,15 @@ contract StakeUnstake is Common {
 
   function earned(
     address account
-  )
-    external
-    view
-    returns (
-      uint256 ookiRewardsEarned,
-      uint256 stableCoinRewardsEarned,
-      uint256 ookiRewardsVesting,
-      uint256 stableCoinRewardsVesting,
-      uint256 sushiRewardsEarned
-    )
-  {
-    (
-      ookiRewardsEarned,
-      stableCoinRewardsEarned,
-      ookiRewardsVesting,
-      stableCoinRewardsVesting
-    ) = _earned(account, ookiPerTokenStored, stableCoinPerTokenStored);
+  ) external view returns (uint256 ookiRewardsEarned, uint256 stableCoinRewardsEarned, uint256 ookiRewardsVesting, uint256 stableCoinRewardsVesting, uint256 sushiRewardsEarned) {
+    (ookiRewardsEarned, stableCoinRewardsEarned, ookiRewardsVesting, stableCoinRewardsVesting) = _earned(account, ookiPerTokenStored, stableCoinPerTokenStored);
 
-    (ookiRewardsEarned, stableCoinRewardsEarned) = _syncVesting(
-      account,
-      ookiRewardsEarned,
-      stableCoinRewardsEarned,
-      ookiRewardsVesting,
-      stableCoinRewardsVesting
-    );
+    (ookiRewardsEarned, stableCoinRewardsEarned) = _syncVesting(account, ookiRewardsEarned, stableCoinRewardsEarned, ookiRewardsVesting, stableCoinRewardsVesting);
 
     // discount vesting amounts for vesting time
     uint256 multiplier = vestedBalanceForAmount(1e36, 0, block.timestamp);
-    ookiRewardsVesting =
-      ookiRewardsVesting -
-      ((ookiRewardsVesting * multiplier) / 1e36);
-    stableCoinRewardsVesting =
-      stableCoinRewardsVesting -
-      ((stableCoinRewardsVesting * multiplier) / 1e36);
+    ookiRewardsVesting = ookiRewardsVesting - ((ookiRewardsVesting * multiplier) / 1e36);
+    stableCoinRewardsVesting = stableCoinRewardsVesting - ((stableCoinRewardsVesting * multiplier) / 1e36);
     sushiRewardsEarned = _pendingSushiRewards(account);
   }
 
@@ -464,20 +311,9 @@ contract StakeUnstake is Common {
     address account,
     uint256 _ookiPerToken,
     uint256 _stableCoinPerToken
-  )
-    internal
-    view
-    returns (
-      uint256 ookiRewardsEarned,
-      uint256 stableCoinRewardsEarned,
-      uint256 ookiRewardsVesting,
-      uint256 stableCoinRewardsVesting
-    )
-  {
-    uint256 ookiPerTokenUnpaid = _ookiPerToken -
-      ookiRewardsPerTokenPaid[account];
-    uint256 stableCoinPerTokenUnpaid = _stableCoinPerToken -
-      stableCoinRewardsPerTokenPaid[account];
+  ) internal view returns (uint256 ookiRewardsEarned, uint256 stableCoinRewardsEarned, uint256 ookiRewardsVesting, uint256 stableCoinRewardsVesting) {
+    uint256 ookiPerTokenUnpaid = _ookiPerToken - ookiRewardsPerTokenPaid[account];
+    uint256 stableCoinPerTokenUnpaid = _stableCoinPerToken - stableCoinRewardsPerTokenPaid[account];
 
     ookiRewardsEarned = ookiRewards[account];
     stableCoinRewardsEarned = stableCoinRewards[account];
@@ -489,9 +325,7 @@ contract StakeUnstake is Common {
       uint256 multiplier;
       uint256 lastSync;
 
-      (uint256 vestedBalance, uint256 vestingBalance) = balanceOfStored(
-        account
-      );
+      (uint256 vestedBalance, uint256 vestingBalance) = balanceOfStored(account);
       value = vestedBalance * ookiPerTokenUnpaid;
       value /= 1e36;
       ookiRewardsEarned = value + ookiRewardsEarned;
@@ -540,11 +374,7 @@ contract StakeUnstake is Common {
 
     if (lastVestingSync != block.timestamp) {
       uint256 rewardsVested;
-      uint256 multiplier = vestedBalanceForAmount(
-        1e36,
-        lastVestingSync,
-        block.timestamp
-      );
+      uint256 multiplier = vestedBalanceForAmount(1e36, lastVestingSync, block.timestamp);
 
       if (ookiRewardsVesting != 0) {
         rewardsVested = (ookiRewardsVesting * multiplier) / 1e36;
@@ -570,70 +400,30 @@ contract StakeUnstake is Common {
 
   function addAltRewards(address token, uint256 amount) public {
     if (amount != 0) {
-      (
-        altRewardsPerShare[token],
-        altRewardsPerSharePerBlock[token],
-        altRewardsBlock[token]
-      ) = _addAltRewards(token, amount);
+      (altRewardsPerShare[token], altRewardsPerSharePerBlock[token], altRewardsBlock[token]) = _addAltRewards(token, amount);
       IERC20(token).transferFrom(msg.sender, address(this), amount);
       emit AddAltRewards(msg.sender, token, amount);
     }
   }
 
-  function _addAltRewards(
-    address token,
-    uint256 amount
-  )
-    internal
-    view
-    returns (
-      uint256 _altRewardsPerShare,
-      uint256 _altRewardsPerSharePerBlock,
-      uint256 _altRewardsBlock
-    )
-  {
+  function _addAltRewards(address token, uint256 amount) internal view returns (uint256 _altRewardsPerShare, uint256 _altRewardsPerSharePerBlock, uint256 _altRewardsBlock) {
     address poolAddress = token == SUSHI ? OOKI_ETH_LP : token;
     uint256 totalSupply = _totalSupplyPerToken[poolAddress];
     require(totalSupply != 0, 'no deposits');
-    _altRewardsPerShare =
-      altRewardsPerShare[token] +
-      ((amount * 1e12) / totalSupply);
-    _altRewardsPerSharePerBlock =
-      _altRewardsPerShare /
-      (block.number - altRewardsStartBlock[token]);
+    _altRewardsPerShare = altRewardsPerShare[token] + ((amount * 1e12) / totalSupply);
+    _altRewardsPerSharePerBlock = _altRewardsPerShare / (block.number - altRewardsStartBlock[token]);
     _altRewardsBlock = block.number;
   }
 
-  function balanceOfByAsset(
-    address token,
-    address account
-  ) public view returns (uint256 balance) {
+  function balanceOfByAsset(address token, address account) public view returns (uint256 balance) {
     balance = _balancesPerToken[token][account];
   }
 
-  function balanceOfByAssets(
-    address account
-  )
-    external
-    view
-    returns (
-      uint256 ookiBalance,
-      uint256 iBZRXBalance,
-      uint256 vBZRXBalance,
-      uint256 LPTokenBalance
-    )
-  {
-    return (
-      balanceOfByAsset(OOKI, account),
-      balanceOfByAsset(iOOKI, account),
-      balanceOfByAsset(vBZRX, account),
-      balanceOfByAsset(OOKI_ETH_LP, account)
-    );
+  function balanceOfByAssets(address account) external view returns (uint256 ookiBalance, uint256 iBZRXBalance, uint256 vBZRXBalance, uint256 LPTokenBalance) {
+    return (balanceOfByAsset(OOKI, account), balanceOfByAsset(iOOKI, account), balanceOfByAsset(vBZRX, account), balanceOfByAsset(OOKI_ETH_LP, account));
   }
 
-  function balanceOfStored(
-    address account
-  ) public view returns (uint256 vestedBalance, uint256 vestingBalance) {
+  function balanceOfStored(address account) public view returns (uint256 vestedBalance, uint256 vestingBalance) {
     uint256 balance = _balancesPerToken[vBZRX][account];
     if (balance != 0) {
       vestingBalance = (balance * vBZRXWeightStored) / 1e17; // OOKI is 10x BZRX

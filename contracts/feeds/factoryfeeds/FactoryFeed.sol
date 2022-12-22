@@ -15,13 +15,7 @@ contract FactoryFeed {
   uint128 public immutable baseAmount;
   uint256 public immutable offset;
 
-  constructor(
-    address baseToken,
-    address quoteToken,
-    address poolAddress,
-    address twapSource,
-    uint256 decimalOffset
-  ) {
+  constructor(address baseToken, address quoteToken, address poolAddress, address twapSource, uint256 decimalOffset) {
     TWAP = twapSource;
     feedFactory = msg.sender;
     base = baseToken;
@@ -32,11 +26,7 @@ contract FactoryFeed {
     baseAmount = uint128(10 ** IERC20Metadata(base).decimals());
   }
 
-  function _getTWAPSpecs()
-    internal
-    view
-    returns (IUniv3Twap.V3Specs memory specs)
-  {
+  function _getTWAPSpecs() internal view returns (IUniv3Twap.V3Specs memory specs) {
     specs = IFeedFactory(feedFactory).specs();
     specs.token0 = base;
     specs.token1 = quote;

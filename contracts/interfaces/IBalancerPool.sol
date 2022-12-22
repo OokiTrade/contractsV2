@@ -11,9 +11,7 @@ interface IBalancerPool {
    * @dev Returns the time average weighted price corresponding to each of `queries`. Prices are represented as 18
    * decimal fixed point values.
    */
-  function getTimeWeightedAverage(
-    OracleAverageQuery[] memory queries
-  ) external view returns (uint256[] memory results);
+  function getTimeWeightedAverage(OracleAverageQuery[] memory queries) external view returns (uint256[] memory results);
 
   struct OracleAverageQuery {
     uint8 variable;

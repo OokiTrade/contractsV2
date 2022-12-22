@@ -16,10 +16,8 @@ contract VBZRXWrapper_alt is Upgradeable_0_8 {
   uint8 public constant decimals = 18;
   uint256 public totalSupply;
 
-  IERC20 public constant BZRX =
-    IERC20(0x56d811088235F11C8920698a204A5010a788f4b3);
-  IVestingToken public constant vBZRX =
-    IVestingToken(0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F);
+  IERC20 public constant BZRX = IERC20(0x56d811088235F11C8920698a204A5010a788f4b3);
+  IVestingToken public constant vBZRX = IVestingToken(0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F);
 
   mapping(address => uint256) public balanceOf;
   mapping(address => mapping(address => uint256)) public allowance;
@@ -34,11 +32,7 @@ contract VBZRXWrapper_alt is Upgradeable_0_8 {
   event Withdraw(address indexed src, uint256 value);
   event Claim(address indexed owner, uint256 value);
 
-  event TransferDepositBalance(
-    address indexed src,
-    address indexed dst,
-    uint256 value
-  );
+  event TransferDepositBalance(address indexed src, address indexed dst, uint256 value);
   mapping(address => uint256) public depositBalanceOf;
   mapping(address => bool) public bridge;
 
@@ -47,21 +41,14 @@ contract VBZRXWrapper_alt is Upgradeable_0_8 {
     return transferFrom(msg.sender, dst, value);
   }
 
-  function transferFrom(
-    address src,
-    address dst,
-    uint256 value
-  ) public returns (bool) {
+  function transferFrom(address src, address dst, uint256 value) public returns (bool) {
     settleVesting(src);
     settleVesting(dst);
 
     uint256 srcBalance = balanceOf[src];
     require(srcBalance >= value, 'vBZRXWrapper/insufficient-balance');
     if (src != msg.sender && allowance[src][msg.sender] != type(uint256).max) {
-      require(
-        allowance[src][msg.sender] >= value,
-        'vBZRXWrapper/insufficient-allowance'
-      );
+      require(allowance[src][msg.sender] >= value, 'vBZRXWrapper/insufficient-allowance');
       allowance[src][msg.sender] -= value;
     }
 
@@ -72,10 +59,7 @@ contract VBZRXWrapper_alt is Upgradeable_0_8 {
       bzrxVesties[dst] += moveAmount;
 
       uint256 depositBalance = depositBalanceOf[src];
-      require(
-        value <= depositBalance,
-        'vBZRXWrapper/insufficient-deposit-balance'
-      );
+      require(value <= depositBalance, 'vBZRXWrapper/insufficient-deposit-balance');
       depositBalanceOf[src] = depositBalance - value;
       depositBalanceOf[dst] += value;
     }
@@ -102,10 +86,7 @@ contract VBZRXWrapper_alt is Upgradeable_0_8 {
 
       vBZRX.claim();
 
-      _bzrxVestiesPerTokenStored =
-        ((BZRX.balanceOf(address(this)) - balanceBefore) * (1e36)) /
-        (_totalSupply) +
-        (_bzrxVestiesPerTokenStored);
+      _bzrxVestiesPerTokenStored = ((BZRX.balanceOf(address(this)) - balanceBefore) * (1e36)) / (_totalSupply) + (_bzrxVestiesPerTokenStored);
     }
 
     bzrxVesties[account] = _claimable(account, _bzrxVestiesPerTokenStored);
@@ -113,18 +94,11 @@ contract VBZRXWrapper_alt is Upgradeable_0_8 {
     bzrxVestiesPerTokenPaid[account] = _bzrxVestiesPerTokenStored;
   }
 
-  function _claimable(
-    address account,
-    uint256 _bzrxPerToken
-  ) internal view returns (uint256 bzrxVestiesClaimable) {
-    uint256 bzrxPerTokenUnpaid = _bzrxPerToken -
-      (bzrxVestiesPerTokenPaid[account]);
+  function _claimable(address account, uint256 _bzrxPerToken) internal view returns (uint256 bzrxVestiesClaimable) {
+    uint256 bzrxPerTokenUnpaid = _bzrxPerToken - (bzrxVestiesPerTokenPaid[account]);
     bzrxVestiesClaimable = bzrxVesties[account];
     if (bzrxPerTokenUnpaid != 0) {
-      bzrxVestiesClaimable =
-        (depositBalanceOf[account] * (bzrxPerTokenUnpaid)) /
-        (1e36) +
-        (bzrxVestiesClaimable);
+      bzrxVestiesClaimable = (depositBalanceOf[account] * (bzrxPerTokenUnpaid)) / (1e36) + (bzrxVestiesClaimable);
     }
   }
 
@@ -142,13 +116,7 @@ contract VBZRXWrapper_alt is Upgradeable_0_8 {
     if (_totalSupply == 0) {
       return bzrxVesties[account];
     }
-    return
-      _claimable(
-        account,
-        (vBZRX.vestedBalanceOf(address(this)) * (1e36)) /
-          (_totalSupply) +
-          (bzrxVestiesPerTokenStored)
-      );
+    return _claimable(account, (vBZRX.vestedBalanceOf(address(this)) * (1e36)) / (_totalSupply) + (bzrxVestiesPerTokenStored));
   }
 
   function claim() external returns (uint256) {
@@ -187,10 +155,7 @@ contract VBZRXWrapper_alt is Upgradeable_0_8 {
     totalSupply -= value;
 
     uint256 depositBalance = depositBalanceOf[msg.sender];
-    require(
-      value <= depositBalance,
-      'vBZRXWrapper/insufficient-deposit-balance'
-    );
+    require(value <= depositBalance, 'vBZRXWrapper/insufficient-deposit-balance');
     depositBalanceOf[msg.sender] = depositBalance - value;
 
     vBZRX.transfer(msg.sender, value);

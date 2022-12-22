@@ -12,21 +12,10 @@ import '../../swaps/SwapsUser.sol';
 import '../../swaps/ISwapsImpl.sol';
 import '../../governance/PausableGuardian_0_8.sol';
 
-contract SwapsExternal is
-  State,
-  VaultController,
-  SwapsUser,
-  PausableGuardian_0_8
-{
+contract SwapsExternal is State, VaultController, SwapsUser, PausableGuardian_0_8 {
   using SafeERC20 for IERC20;
 
-  constructor(
-    IWeth wethtoken,
-    address usdc,
-    address bzrx,
-    address vbzrx,
-    address ooki
-  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
+  constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
 
   function initialize(address target) external onlyOwner {
     _setTarget(this.swapExternal.selector, target);
@@ -41,23 +30,8 @@ contract SwapsExternal is
     uint256 sourceTokenAmount,
     uint256 requiredDestTokenAmount,
     bytes memory swapData
-  )
-    public
-    payable
-    nonReentrant
-    pausable
-    returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
-  {
-    return
-      _swapExternal(
-        sourceToken,
-        destToken,
-        receiver,
-        returnToSender,
-        sourceTokenAmount,
-        requiredDestTokenAmount,
-        swapData
-      );
+  ) public payable nonReentrant pausable returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed) {
+    return _swapExternal(sourceToken, destToken, receiver, returnToSender, sourceTokenAmount, requiredDestTokenAmount, swapData);
   }
 
   function _swapExternal(
@@ -68,10 +42,7 @@ contract SwapsExternal is
     uint256 sourceTokenAmount,
     uint256 requiredDestTokenAmount,
     bytes memory swapData
-  )
-    internal
-    returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
-  {
+  ) internal returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed) {
     require(sourceTokenAmount != 0, 'sourceTokenAmount == 0');
 
     if (msg.value != 0) {
@@ -81,22 +52,16 @@ contract SwapsExternal is
         require(sourceToken == address(wethToken), 'sourceToken mismatch');
       }
       require(msg.value == sourceTokenAmount, 'sourceTokenAmount mismatch');
-      wethToken.deposit{ value: sourceTokenAmount }();
+      wethToken.deposit{value: sourceTokenAmount}();
     } else {
       IERC20 sourceTokenContract = IERC20(sourceToken);
 
       uint256 balanceBefore = sourceTokenContract.balanceOf(address(this));
 
-      sourceTokenContract.safeTransferFrom(
-        msg.sender,
-        address(this),
-        sourceTokenAmount
-      );
+      sourceTokenContract.safeTransferFrom(msg.sender, address(this), sourceTokenAmount);
 
       // explicit balance check so that we can support deflationary tokens
-      sourceTokenAmount =
-        sourceTokenContract.balanceOf(address(this)) -
-        balanceBefore;
+      sourceTokenAmount = sourceTokenContract.balanceOf(address(this)) - balanceBefore;
     }
 
     (destTokenAmountReceived, sourceTokenAmountUsed) = _swapsCall(
@@ -136,14 +101,6 @@ contract SwapsExternal is
     bytes calldata payload,
     bool isGetAmountOut
   ) external returns (uint256) {
-    return
-      _swapsExpectedReturn(
-        trader,
-        sourceToken,
-        destToken,
-        tokenAmount,
-        payload,
-        isGetAmountOut
-      );
+    return _swapsExpectedReturn(trader, sourceToken, destToken, tokenAmount, payload, isGetAmountOut);
   }
 }

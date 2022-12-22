@@ -34,17 +34,11 @@ contract CheckpointingToken is IERC20 {
     return balanceOfAt(_owner, block.number);
   }
 
-  function balanceOfAt(
-    address _owner,
-    uint256 _blockNumber
-  ) public view returns (uint256) {
+  function balanceOfAt(address _owner, uint256 _blockNumber) public view returns (uint256) {
     return balancesHistory_[_owner].getValueAt(_blockNumber);
   }
 
-  function allowance(
-    address _owner,
-    address _spender
-  ) public view returns (uint256) {
+  function allowance(address _owner, address _spender) public view returns (uint256) {
     return allowances_[_owner][_spender];
   }
 
@@ -58,19 +52,12 @@ contract CheckpointingToken is IERC20 {
     return transferFrom(msg.sender, _to, _value);
   }
 
-  function transferFrom(
-    address _from,
-    address _to,
-    uint256 _value
-  ) public returns (bool) {
+  function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
     uint256 previousBalanceFrom = balanceOfAt(_from, block.number);
     require(previousBalanceFrom >= _value, 'insufficient-balance');
 
     if (_from != msg.sender && allowances_[_from][msg.sender] != uint(-1)) {
-      require(
-        allowances_[_from][msg.sender] >= _value,
-        'insufficient-allowance'
-      );
+      require(allowances_[_from][msg.sender] >= _value, 'insufficient-allowance');
       allowances_[_from][msg.sender] = allowances_[_from][msg.sender] - _value; // overflow not possible
     }
 
@@ -79,10 +66,7 @@ contract CheckpointingToken is IERC20 {
       previousBalanceFrom - _value // overflow not possible
     );
 
-    balancesHistory_[_to].addCheckpoint(
-      block.number,
-      add(balanceOfAt(_to, block.number), _value)
-    );
+    balancesHistory_[_to].addCheckpoint(block.number, add(balanceOfAt(_to, block.number), _value));
 
     emit Transfer(_from, _to, _value);
     return true;

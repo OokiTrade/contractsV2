@@ -12,11 +12,7 @@ import '../../../interfaces/IStakingV2.sol';
 import './VoteDelegatorState.sol';
 import './VoteDelegatorConstants.sol';
 
-contract VoteDelegator is
-  VoteDelegatorState,
-  VoteDelegatorConstants,
-  PausableGuardian_0_8
-{
+contract VoteDelegator is VoteDelegatorState, VoteDelegatorConstants, PausableGuardian_0_8 {
   using SafeERC20 for IERC20;
 
   /**
@@ -47,48 +43,21 @@ contract VoteDelegator is
    * @param r Half of the ECDSA signature pair
    * @param s Half of the ECDSA signature pair
    */
-  function delegateBySig(
-    address delegatee,
-    uint nonce,
-    uint expiry,
-    uint8 v,
-    bytes32 r,
-    bytes32 s
-  ) external pausable {
+  function delegateBySig(address delegatee, uint nonce, uint expiry, uint8 v, bytes32 r, bytes32 s) external pausable {
     if (delegatee == msg.sender) {
       delegatee = ZERO_ADDRESS;
     }
 
-    bytes32 domainSeparator = keccak256(
-      abi.encode(
-        DOMAIN_TYPEHASH,
-        keccak256(bytes('STAKING')),
-        getChainId(),
-        address(this)
-      )
-    );
+    bytes32 domainSeparator = keccak256(abi.encode(DOMAIN_TYPEHASH, keccak256(bytes('STAKING')), getChainId(), address(this)));
 
-    bytes32 structHash = keccak256(
-      abi.encode(DELEGATION_TYPEHASH, delegatee, nonce, expiry)
-    );
+    bytes32 structHash = keccak256(abi.encode(DELEGATION_TYPEHASH, delegatee, nonce, expiry));
 
-    bytes32 digest = keccak256(
-      abi.encodePacked('\x19\x01', domainSeparator, structHash)
-    );
+    bytes32 digest = keccak256(abi.encodePacked('\x19\x01', domainSeparator, structHash));
 
     address signatory = ecrecover(digest, v, r, s);
-    require(
-      signatory != ZERO_ADDRESS,
-      'Staking::delegateBySig: invalid signature'
-    );
-    require(
-      nonce == nonces[signatory]++,
-      'Staking::delegateBySig: invalid nonce'
-    );
-    require(
-      block.timestamp <= expiry,
-      'Staking::delegateBySig: signature expired'
-    );
+    require(signatory != ZERO_ADDRESS, 'Staking::delegateBySig: invalid signature');
+    require(nonce == nonces[signatory]++, 'Staking::delegateBySig: invalid nonce');
+    require(block.timestamp <= expiry, 'Staking::delegateBySig: signature expired');
     return _delegate(signatory, delegatee);
   }
 
@@ -109,14 +78,8 @@ contract VoteDelegator is
    * @param blockNumber The block number to get the vote balance at
    * @return The number of votes the account had as of the given block
    */
-  function getPriorVotes(
-    address account,
-    uint blockNumber
-  ) public view returns (uint256) {
-    require(
-      blockNumber < block.number,
-      'Staking::getPriorVotes: not yet determined'
-    );
+  function getPriorVotes(address account, uint blockNumber) public view returns (uint256) {
+    require(blockNumber < block.number, 'Staking::getPriorVotes: not yet determined');
 
     uint32 nCheckpoints = numCheckpoints[account];
     if (nCheckpoints == 0) {
@@ -163,9 +126,7 @@ contract VoteDelegator is
 
       if (totalDelegators[oldDelegate] == 0 && oldDelegate != ZERO_ADDRESS) {
         uint32 dstRepNum = numCheckpoints[oldDelegate];
-        uint256 dstRepOld = dstRepNum > 0
-          ? checkpoints[oldDelegate][dstRepNum - 1].votes
-          : 0;
+        uint256 dstRepOld = dstRepNum > 0 ? checkpoints[oldDelegate][dstRepNum - 1].votes : 0;
         uint256 dstRepNew = 0;
         _writeCheckpoint(oldDelegate, dstRepNum, dstRepOld, dstRepNew);
         return;
@@ -179,83 +140,47 @@ contract VoteDelegator is
     _moveDelegates(oldDelegate, delegatee, delegatorBalance);
   }
 
-  function moveDelegates(
-    address srcRep,
-    address dstRep,
-    uint256 amount
-  ) public {
+  function moveDelegates(address srcRep, address dstRep, uint256 amount) public {
     require(msg.sender == address(staking), 'unauthorized');
     _moveDelegates(srcRep, dstRep, amount);
   }
 
-  function moveDelegatesByVotingBalance(
-    uint256 votingBalanceBefore,
-    uint256 votingBalanceAfter,
-    address account
-  ) public {
+  function moveDelegatesByVotingBalance(uint256 votingBalanceBefore, uint256 votingBalanceAfter, address account) public {
     require(msg.sender == address(staking), 'unauthorized');
     address currentDelegate = _delegates[account];
     if (currentDelegate == ZERO_ADDRESS) return;
 
     if (votingBalanceBefore > votingBalanceAfter) {
-      _moveDelegates(
-        currentDelegate,
-        ZERO_ADDRESS,
-        votingBalanceBefore - votingBalanceAfter
-      );
+      _moveDelegates(currentDelegate, ZERO_ADDRESS, votingBalanceBefore - votingBalanceAfter);
     } else {
-      _moveDelegates(
-        ZERO_ADDRESS,
-        currentDelegate,
-        votingBalanceAfter - votingBalanceBefore
-      );
+      _moveDelegates(ZERO_ADDRESS, currentDelegate, votingBalanceAfter - votingBalanceBefore);
     }
   }
 
-  function _moveDelegates(
-    address srcRep,
-    address dstRep,
-    uint256 amount
-  ) internal {
+  function _moveDelegates(address srcRep, address dstRep, uint256 amount) internal {
     if (srcRep != dstRep && amount > 0) {
       if (srcRep != ZERO_ADDRESS) {
         // decrease old representative
         uint32 srcRepNum = numCheckpoints[srcRep];
-        uint256 srcRepOld = srcRepNum > 0
-          ? checkpoints[srcRep][srcRepNum - 1].votes
-          : 0;
-        uint256 srcRepNew = srcRepOld -
-          ((amount > srcRepOld) ? srcRepOld : amount);
+        uint256 srcRepOld = srcRepNum > 0 ? checkpoints[srcRep][srcRepNum - 1].votes : 0;
+        uint256 srcRepNew = srcRepOld - ((amount > srcRepOld) ? srcRepOld : amount);
         _writeCheckpoint(srcRep, srcRepNum, srcRepOld, srcRepNew);
       }
 
       if (dstRep != ZERO_ADDRESS) {
         // increase new representative
         uint32 dstRepNum = numCheckpoints[dstRep];
-        uint256 dstRepOld = dstRepNum > 0
-          ? checkpoints[dstRep][dstRepNum - 1].votes
-          : 0;
+        uint256 dstRepOld = dstRepNum > 0 ? checkpoints[dstRep][dstRepNum - 1].votes : 0;
         uint256 dstRepNew = dstRepOld + amount;
         _writeCheckpoint(dstRep, dstRepNum, dstRepOld, dstRepNew);
       }
     }
   }
 
-  function _writeCheckpoint(
-    address delegatee,
-    uint32 nCheckpoints,
-    uint256 oldVotes,
-    uint256 newVotes
-  ) internal {
-    uint32 blockNumber = safe32(
-      block.number,
-      'Staking::_writeCheckpoint: block number exceeds 32 bits'
-    );
+  function _writeCheckpoint(address delegatee, uint32 nCheckpoints, uint256 oldVotes, uint256 newVotes) internal {
+    uint32 blockNumber = safe32(block.number, 'Staking::_writeCheckpoint: block number exceeds 32 bits');
 
-    if (
-      nCheckpoints > 0 &&
-      checkpoints[delegatee][nCheckpoints - 1].fromBlock == blockNumber
-    ) {
+    if (nCheckpoints > 0 && checkpoints[delegatee][nCheckpoints - 1].fromBlock == blockNumber) {
       checkpoints[delegatee][nCheckpoints - 1].votes = newVotes;
     } else {
       checkpoints[delegatee][nCheckpoints] = Checkpoint(blockNumber, newVotes);
@@ -265,10 +190,7 @@ contract VoteDelegator is
     emit DelegateVotesChanged(delegatee, oldVotes, newVotes);
   }
 
-  function safe32(
-    uint n,
-    string memory errorMessage
-  ) internal pure returns (uint32) {
+  function safe32(uint n, string memory errorMessage) internal pure returns (uint32) {
     require(n < 2 ** 32, errorMessage);
     return uint32(n);
   }

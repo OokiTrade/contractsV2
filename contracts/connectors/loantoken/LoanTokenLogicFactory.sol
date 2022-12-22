@@ -14,17 +14,9 @@ contract LoanTokenLogicFactory is LoanTokenLogicStandard {
     _;
   }
 
-  constructor(
-    address arbCaller,
-    address bzxcontract,
-    address wethtoken
-  ) LoanTokenLogicStandard(arbCaller, bzxcontract, wethtoken) {}
+  constructor(address arbCaller, address bzxcontract, address wethtoken) LoanTokenLogicStandard(arbCaller, bzxcontract, wethtoken) {}
 
-  function initialize(
-    address _loanTokenAddress,
-    string memory _name,
-    string memory _symbol
-  ) public override onlyFactory {
+  function initialize(address _loanTokenAddress, string memory _name, string memory _symbol) public override onlyFactory {
     loanTokenAddress = _loanTokenAddress;
 
     name = _name;
@@ -40,14 +32,8 @@ contract LoanTokenLogicFactory is LoanTokenLogicStandard {
 
   // function updateFlashBorrowFeePercent(uint256 newFeePercent) public {} //overrides LoanTokenLogicStandard
 
-  function _getRateHelper()
-    internal
-    view
-    override
-    returns (ICurvedInterestRate)
-  {
-    return
-      ICurvedInterestRate(ILoanTokenFactory(_getFactory()).getRateHelper());
+  function _getRateHelper() internal view override returns (ICurvedInterestRate) {
+    return ICurvedInterestRate(ILoanTokenFactory(_getFactory()).getRateHelper());
   }
 
   function _getFactory() internal view returns (address) {

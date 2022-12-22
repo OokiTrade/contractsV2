@@ -19,14 +19,7 @@ contract StakingModularProxy is StakingStateV2 {
 
     bytes memory data = msg.data;
     assembly {
-      let result := delegatecall(
-        gas(),
-        target,
-        add(data, 0x20),
-        mload(data),
-        0,
-        0
-      )
+      let result := delegatecall(gas(), target, add(data, 0x20), mload(data), 0, 0)
       let size := returndatasize()
       let ptr := mload(0x40)
       returndatacopy(ptr, 0, size)
@@ -41,23 +34,15 @@ contract StakingModularProxy is StakingStateV2 {
   }
 
   function replaceContract(address target) external onlyOwner {
-    (bool success, ) = target.delegatecall(
-      abi.encodeWithSignature('initialize(address)', target)
-    );
+    (bool success, ) = target.delegatecall(abi.encodeWithSignature('initialize(address)', target));
     require(success, 'setup failed');
   }
 
-  function setTargets(
-    string[] calldata sigsArr,
-    address[] calldata targetsArr
-  ) external onlyOwner {
+  function setTargets(string[] calldata sigsArr, address[] calldata targetsArr) external onlyOwner {
     require(sigsArr.length == targetsArr.length, 'count mismatch');
 
     for (uint256 i = 0; i < sigsArr.length; i++) {
-      _setTarget(
-        bytes4(keccak256(abi.encodePacked(sigsArr[i]))),
-        targetsArr[i]
-      );
+      _setTarget(bytes4(keccak256(abi.encodePacked(sigsArr[i]))), targetsArr[i]);
     }
   }
 

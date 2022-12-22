@@ -24,41 +24,26 @@ contract TWAI {
     lastIR = _lastIR;
   }
 
-  function borrow(
-    uint256 newUtilization
-  ) public returns (uint256 interestRate) {
+  function borrow(uint256 newUtilization) public returns (uint256 interestRate) {
     (uint256 _a, uint256 _b) = getAB(lastIR);
     interestRate = getInterestRate(newUtilization, _a, _b);
     lastIR = interestRate;
   }
 
-  function calculateIR(
-    uint256 U,
-    uint256 IR1,
-    uint256 IR2,
-    uint256 UR1,
-    uint256 UR2
-  ) public pure returns (uint256 interestRate) {
+  function calculateIR(uint256 U, uint256 IR1, uint256 IR2, uint256 UR1, uint256 UR2) public pure returns (uint256 interestRate) {
     (uint256 _a, uint256 _b) = getAB(IR1, IR2, UR1, UR2);
     return getInterestRate(U, _a, _b);
   }
 
   // this is supposed to be more efficient but its not because 2 reads and 2 writes every time.
   // while borrow has a read + write + small calc. that small calc doesn't cover 1 read+ write
-  function borrow2(
-    uint256 newUtilization
-  ) public returns (uint256 interestRate) {
+  function borrow2(uint256 newUtilization) public returns (uint256 interestRate) {
     interestRate = getInterestRate(newUtilization, a, b);
 
     (a, b) = getAB(interestRate);
   }
 
-  function getAB(
-    uint256 IR1,
-    uint256 IR2,
-    uint256 UR1,
-    uint256 UR2
-  ) public pure returns (uint256 _a, uint256 _b) {
+  function getAB(uint256 IR1, uint256 IR2, uint256 UR1, uint256 UR2) public pure returns (uint256 _a, uint256 _b) {
     // some minimal interestRate to avoid zero a or b
     if (IR1 < 0.001e18) {
       IR1 = 0.001e18;
@@ -76,9 +61,7 @@ contract TWAI {
     _a = (IR1 * 1e18) / ((UR1 * _b) / 1e18).exp();
   }
 
-  function getAB(
-    uint256 interestRate
-  ) public pure returns (uint256 _a, uint256 _b) {
+  function getAB(uint256 interestRate) public pure returns (uint256 _a, uint256 _b) {
     // some minimal interestRate to avoid zero a or b
     if (interestRate < 0.001e18) {
       interestRate = 0.001e18;
@@ -104,24 +87,16 @@ contract TWAI {
     _a = (intRate1 * 1e18) / exp((utilRate1 * _b) / 1e18);
   }
 
-  function getCurrentInterestRateBasedOnCurrentCurve(
-    uint256 newUtilization
-  ) public view returns (uint256 interestRate) {
+  function getCurrentInterestRateBasedOnCurrentCurve(uint256 newUtilization) public view returns (uint256 interestRate) {
     (uint256 _a, uint256 _b) = getAB(lastIR);
     return getInterestRate(newUtilization, _a, _b);
   }
 
-  function getCurrentInterestRateBasedOnCurrentCurve2(
-    uint256 newUtilization
-  ) public view returns (uint256 interestRate) {
+  function getCurrentInterestRateBasedOnCurrentCurve2(uint256 newUtilization) public view returns (uint256 interestRate) {
     return getInterestRate(newUtilization, a, b);
   }
 
-  function getInterestRate(
-    uint256 utilization,
-    uint256 _a,
-    uint256 _b
-  ) public pure returns (uint256 interestRate) {
+  function getInterestRate(uint256 utilization, uint256 _a, uint256 _b) public pure returns (uint256 interestRate) {
     // (uint256 a, uint256 b) = getAB(interestRate);
     // if (utilization < 1e18) {
     //     utilization = 1e18;
@@ -131,8 +106,7 @@ contract TWAI {
   }
 
   uint256 internal constant SCALE = 1e18;
-  uint256 internal constant MAX_UD60x18 =
-    115792089237316195423570985008687907853269984665640564039457_584007913129639935;
+  uint256 internal constant MAX_UD60x18 = 115792089237316195423570985008687907853269984665640564039457_584007913129639935;
   uint256 internal constant HALF_SCALE = 5e17;
   uint256 internal constant LOG2_E = 1_442695040888963407;
 

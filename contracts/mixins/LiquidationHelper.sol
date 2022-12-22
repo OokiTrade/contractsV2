@@ -28,13 +28,9 @@ library LiquidationHelper {
     uint256 desiredMargin = maintenanceMargin + 5 ether; // 5 percentage points above maintenance
 
     // maxLiquidatable = ((1 + desiredMargin)*principal - collateralToLoanRate*collateral) / (desiredMargin - incentivePercent)
-    maxLiquidatable =
-      ((desiredMargin + WEI_PERCENT_PRECISION) * principal) /
-      WEI_PERCENT_PRECISION;
+    maxLiquidatable = ((desiredMargin + WEI_PERCENT_PRECISION) * principal) / WEI_PERCENT_PRECISION;
     maxLiquidatable -= (collateral * collateralToLoanRate) / WEI_PRECISION;
-    maxLiquidatable =
-      ((maxLiquidatable * WEI_PERCENT_PRECISION) / desiredMargin) -
-      incentivePercent;
+    maxLiquidatable = ((maxLiquidatable * WEI_PERCENT_PRECISION) / desiredMargin) - incentivePercent;
     if (maxLiquidatable > principal) {
       maxLiquidatable = principal;
     }
@@ -49,9 +45,7 @@ library LiquidationHelper {
     return (maxLiquidatable, maxSeizable);
   }
 
-  function _getDefaultLiquidationIncentivePercent(
-    uint256 incentivePercent
-  ) internal pure returns (uint256) {
+  function _getDefaultLiquidationIncentivePercent(uint256 incentivePercent) internal pure returns (uint256) {
     return (incentivePercent == 0) ? 7e18 : incentivePercent;
   }
 }

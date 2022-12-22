@@ -13,20 +13,11 @@ import './Upgradeable.sol';
 
 // mainnet proxy: 0x37cBA8d1308019594621438bd1527E5A6a34B49F
 contract DaoFunding_tmp is Upgradeable {
-  function tmp_funding_transfer(
-    IERC20 _token,
-    address _to,
-    uint256 _amount
-  ) public onlyOwner {
+  function tmp_funding_transfer(IERC20 _token, address _to, uint256 _amount) public onlyOwner {
     _token.transfer(_to, _amount);
   }
 
-  function tmp_funding_transferFrom(
-    IERC20 _token,
-    address _from,
-    address _to,
-    uint256 _amount
-  ) public onlyOwner {
+  function tmp_funding_transferFrom(IERC20 _token, address _from, address _to, uint256 _amount) public onlyOwner {
     _token.transferFrom(_from, _to, _amount);
   }
 }

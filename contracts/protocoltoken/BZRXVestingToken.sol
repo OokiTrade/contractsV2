@@ -21,18 +21,14 @@ contract BZRXVestingToken is CheckpointingToken, Ownable {
   uint256 internal constant vestingDurationAfterCliff_ = 110376000; // 86400 * 365 * 3.5
 
   uint256 public constant vestingStartTimestamp = 1594648800; // start_time
-  uint256 public constant vestingCliffTimestamp =
-    vestingStartTimestamp + cliffDuration;
-  uint256 public constant vestingEndTimestamp =
-    vestingStartTimestamp + vestingDuration;
-  uint256 public constant vestingLastClaimTimestamp =
-    vestingEndTimestamp + 86400 * 365;
+  uint256 public constant vestingCliffTimestamp = vestingStartTimestamp + cliffDuration;
+  uint256 public constant vestingEndTimestamp = vestingStartTimestamp + vestingDuration;
+  uint256 public constant vestingLastClaimTimestamp = vestingEndTimestamp + 86400 * 365;
 
   uint256 public totalClaimed; // total claimed since start
 
   //IERC20 public constant BZRX = IERC20(0x3194cBDC3dbcd3E11a07892e7bA5c3394048Cc87); // testnet
-  IERC20 public constant BZRX =
-    IERC20(0x56d811088235F11C8920698a204A5010a788f4b3); // mainnet
+  IERC20 public constant BZRX = IERC20(0x56d811088235F11C8920698a204A5010a788f4b3); // mainnet
   //IERC20 public constant BZRX = IERC20(0xB54Fc2F2ea17d798Ad5C7Aba2491055BCeb7C6b2); // kovan
 
   uint256 internal constant startingBalance_ = 889389933e18; // 889,389,933 BZRX
@@ -48,10 +44,7 @@ contract BZRXVestingToken is CheckpointingToken, Ownable {
   function initialize() external {
     require(!isInitialized_, 'already initialized');
 
-    balancesHistory_[msg.sender].addCheckpoint(
-      _getBlockNumber(),
-      startingBalance_
-    );
+    balancesHistory_[msg.sender].addCheckpoint(_getBlockNumber(), startingBalance_);
     totalSupplyHistory_.addCheckpoint(_getBlockNumber(), startingBalance_);
 
     emit Transfer(address(0), msg.sender, startingBalance_);
@@ -61,11 +54,7 @@ contract BZRXVestingToken is CheckpointingToken, Ownable {
     isInitialized_ = true;
   }
 
-  function transferFrom(
-    address _from,
-    address _to,
-    uint256 _value
-  ) public returns (bool) {
+  function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
     _claim(_from);
     if (_from != _to) {
       _claim(_to);
@@ -88,10 +77,7 @@ contract BZRXVestingToken is CheckpointingToken, Ownable {
     uint256 _blockNumber = _getBlockNumber();
     uint256 balanceBefore = balanceOfAt(msg.sender, _blockNumber);
     balancesHistory_[msg.sender].addCheckpoint(_blockNumber, 0);
-    totalSupplyHistory_.addCheckpoint(
-      _blockNumber,
-      totalSupplyAt(_blockNumber) - balanceBefore
-    ); // overflow not possible
+    totalSupplyHistory_.addCheckpoint(_blockNumber, totalSupplyAt(_blockNumber) - balanceBefore); // overflow not possible
 
     emit Transfer(msg.sender, address(0), balanceBefore);
   }
@@ -120,9 +106,7 @@ contract BZRXVestingToken is CheckpointingToken, Ownable {
   }
 
   // total that has not yet vested
-  function vestingBalanceOf(
-    address _owner
-  ) public view returns (uint256 balance) {
+  function vestingBalanceOf(address _owner) public view returns (uint256 balance) {
     balance = balanceOfAt(_owner, _getBlockNumber());
     if (balance != 0) {
       uint256 lastClaim = lastClaimTime_[_owner];
@@ -161,17 +145,10 @@ contract BZRXVestingToken is CheckpointingToken, Ownable {
     lastClaimTime_[_owner] = _getTimestamp();
   }
 
-  function _totalVested(
-    uint256 _proportionalSupply,
-    uint256 _lastClaimTime
-  ) internal view returns (uint256) {
+  function _totalVested(uint256 _proportionalSupply, uint256 _lastClaimTime) internal view returns (uint256) {
     uint256 currentTimeForVesting = _getTimestamp();
 
-    if (
-      currentTimeForVesting <= vestingCliffTimestamp ||
-      _lastClaimTime >= vestingEndTimestamp ||
-      currentTimeForVesting > vestingLastClaimTimestamp
-    ) {
+    if (currentTimeForVesting <= vestingCliffTimestamp || _lastClaimTime >= vestingEndTimestamp || currentTimeForVesting > vestingLastClaimTimestamp) {
       // time cannot be before vesting starts
       // OR all vested token has already been claimed
       // OR time cannot be after last claim date
@@ -187,7 +164,6 @@ contract BZRXVestingToken is CheckpointingToken, Ownable {
     }
 
     uint256 timeSinceClaim = sub(currentTimeForVesting, _lastClaimTime);
-    return
-      mul(_proportionalSupply, timeSinceClaim) / vestingDurationAfterCliff_; // will never divide by 0
+    return mul(_proportionalSupply, timeSinceClaim) / vestingDurationAfterCliff_; // will never divide by 0
   }
 }

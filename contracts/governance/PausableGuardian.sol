@@ -10,12 +10,10 @@ import '@openzeppelin-2.5.0/ownership/Ownable.sol';
 
 contract PausableGuardian is Ownable {
   // keccak256("Pausable_FunctionPause")
-  bytes32 internal constant Pausable_FunctionPause =
-    0xa7143c84d793a15503da6f19bf9119a2dac94448ca45d77c8bf08f57b2e91047;
+  bytes32 internal constant Pausable_FunctionPause = 0xa7143c84d793a15503da6f19bf9119a2dac94448ca45d77c8bf08f57b2e91047;
 
   // keccak256("Pausable_GuardianAddress")
-  bytes32 internal constant Pausable_GuardianAddress =
-    0x80e6706973d0c59541550537fd6a33b971efad732635e6c3b99fb01006803cdf;
+  bytes32 internal constant Pausable_GuardianAddress = 0x80e6706973d0c59541550537fd6a33b971efad732635e6c3b99fb01006803cdf;
 
   modifier pausable() {
     require(!_isPaused(msg.sig), 'paused');
@@ -23,10 +21,7 @@ contract PausableGuardian is Ownable {
   }
 
   modifier onlyGuardian() {
-    require(
-      msg.sender == getGuardian() || msg.sender == owner(),
-      'unauthorized'
-    );
+    require(msg.sender == getGuardian() || msg.sender == owner(), 'unauthorized');
     _;
   }
 

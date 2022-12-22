@@ -22,14 +22,7 @@ contract FixedSwapTokenConverterNotBurn is Ownable {
 
   address public defaultToken;
 
-  event FixedSwapTokenConvert(
-    address indexed sender,
-    address indexed receiver,
-    address indexed tokenIn,
-    uint256 amountIn,
-    address tokenOut,
-    uint256 amountOut
-  );
+  event FixedSwapTokenConvert(address indexed sender, address indexed receiver, address indexed tokenIn, uint256 amountIn, address tokenOut, uint256 amountOut);
 
   function setDefaultToken(address _token) public onlyOwner {
     defaultToken = _token;
@@ -44,12 +37,7 @@ contract FixedSwapTokenConverterNotBurn is Ownable {
     tokenIn[_tokenIn] = _swapRate;
   }
 
-  constructor(
-    address[] memory _tokensIn,
-    uint256[] memory _swapRates,
-    address _tokenOut,
-    address _defaultToken
-  ) public {
+  constructor(address[] memory _tokensIn, uint256[] memory _swapRates, address _tokenOut, address _defaultToken) public {
     require(_tokensIn.length == _swapRates.length, '!length');
     tokenOut = _tokenOut;
     defaultToken = _defaultToken;
@@ -58,11 +46,7 @@ contract FixedSwapTokenConverterNotBurn is Ownable {
     }
   }
 
-  function _convert(
-    address receiver,
-    address _token,
-    uint256 _tokenAmount
-  ) internal {
+  function _convert(address receiver, address _token, uint256 _tokenAmount) internal {
     uint256 _swapRate = tokenIn[_token];
     require(_swapRate != 0, 'swapRate == 0');
 
@@ -75,23 +59,13 @@ contract FixedSwapTokenConverterNotBurn is Ownable {
     }
 
     uint256 _amountOut = _tokenAmount.mul(_swapRate).div(1e18);
-    require(
-      IERC20(tokenOut).balanceOf(address(this)) >= _amountOut,
-      'Migrator: low balance'
-    );
+    require(IERC20(tokenOut).balanceOf(address(this)) >= _amountOut, 'Migrator: low balance');
 
     IERC20(_token).safeTransferFrom(msg.sender, address(this), _tokenAmount);
 
     totalConverted[_token] += _tokenAmount;
     IERC20(tokenOut).safeTransfer(receiver, _amountOut);
-    emit FixedSwapTokenConvert(
-      msg.sender,
-      receiver,
-      _token,
-      _tokenAmount,
-      tokenOut,
-      _amountOut
-    );
+    emit FixedSwapTokenConvert(msg.sender, receiver, _token, _tokenAmount, tokenOut, _amountOut);
   }
 
   function convert(address receiver, uint256 _tokenAmount) public {
@@ -99,11 +73,7 @@ contract FixedSwapTokenConverterNotBurn is Ownable {
     _convert(receiver, defaultToken, _tokenAmount);
   }
 
-  function convert(
-    address receiver,
-    address[] memory _tokens,
-    uint256[] memory _amounts
-  ) public {
+  function convert(address receiver, address[] memory _tokens, uint256[] memory _amounts) public {
     for (uint256 i = 0; i < _tokens.length; i++) {
       _convert(receiver, _tokens[i], _amounts[i]);
     }

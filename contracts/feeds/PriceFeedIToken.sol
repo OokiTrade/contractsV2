@@ -14,8 +14,6 @@ contract PriceFeedIToken {
   }
 
   function latestAnswer() public view returns (int256) {
-    return
-      (priceFeedAddress.latestAnswer() * int256(iTokenAddress.tokenPrice())) /
-      1e18;
+    return (priceFeedAddress.latestAnswer() * int256(iTokenAddress.tokenPrice())) / 1e18;
   }
 }

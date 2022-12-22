@@ -14,8 +14,7 @@ import './MintCoordinator.sol';
 contract BZRXv2Converter is Ownable {
   event ConvertBZRX(address indexed sender, uint256 amount);
 
-  IERC20 public constant BZRXv1 =
-    IERC20(0x56d811088235F11C8920698a204A5010a788f4b3);
+  IERC20 public constant BZRXv1 = IERC20(0x56d811088235F11C8920698a204A5010a788f4b3);
   address constant DEAD = 0x000000000000000000000000000000000000dEaD;
 
   MintCoordinator public MINT_COORDINATOR;

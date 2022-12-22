@@ -22,10 +22,7 @@ interface IMasterChefSushi2 {
   // Info of each user that stakes LP tokens.
   function userInfo(uint256, address) external view returns (UserInfo memory);
 
-  function pendingSushi(
-    uint256 _pid,
-    address _user
-  ) external view returns (uint256);
+  function pendingSushi(uint256 _pid, address _user) external view returns (uint256);
 
   function harvest(uint256 pid, address to) external;
 

@@ -7,5 +7,5 @@ pragma solidity >=0.5.0 <=0.9.0;
 pragma experimental ABIEncoderV2;
 
 interface IBZRXv2Converter {
-    function convert(address receiver, uint256 _tokenAmount) external;
+  function convert(address receiver, uint256 _tokenAmount) external;
 }

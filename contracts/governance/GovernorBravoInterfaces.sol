@@ -4,17 +4,7 @@ pragma experimental ABIEncoderV2;
 
 contract GovernorBravoEvents {
   /// @notice An event emitted when a new proposal is created
-  event ProposalCreated(
-    uint id,
-    address proposer,
-    address[] targets,
-    uint[] values,
-    string[] signatures,
-    bytes[] calldatas,
-    uint startBlock,
-    uint endBlock,
-    string description
-  );
+  event ProposalCreated(uint id, address proposer, address[] targets, uint[] values, string[] signatures, bytes[] calldatas, uint startBlock, uint endBlock, string description);
 
   /// @notice An event emitted when a vote has been cast on a proposal
   /// @param voter The address which casted a vote
@@ -22,13 +12,7 @@ contract GovernorBravoEvents {
   /// @param support Support value for the vote. 0=against, 1=for, 2=abstain
   /// @param votes Number of votes which were cast by the voter
   /// @param reason The reason given for the vote by the voter
-  event VoteCast(
-    address indexed voter,
-    uint proposalId,
-    uint8 support,
-    uint votes,
-    string reason
-  );
+  event VoteCast(address indexed voter, uint proposalId, uint8 support, uint votes, string reason);
 
   /// @notice An event emitted when a proposal has been canceled
   event ProposalCanceled(uint id);
@@ -55,10 +39,7 @@ contract GovernorBravoEvents {
   event StakingAddressSet(address oldStaking, address newStaking);
 
   /// @notice Emitted when proposal threshold is set
-  event ProposalThresholdSet(
-    uint oldProposalThreshold,
-    uint newProposalThreshold
-  );
+  event ProposalThresholdSet(uint oldProposalThreshold, uint newProposalThreshold);
 
   /// @notice Emitted when pendingAdmin is changed
   event NewPendingAdmin(address oldPendingAdmin, address newPendingAdmin);
@@ -186,45 +167,19 @@ interface TimelockInterface {
 
   function queuedTransactions(bytes32 hash) external view returns (bool);
 
-  function queueTransaction(
-    address target,
-    uint value,
-    string calldata signature,
-    bytes calldata data,
-    uint eta
-  ) external returns (bytes32);
+  function queueTransaction(address target, uint value, string calldata signature, bytes calldata data, uint eta) external returns (bytes32);
 
-  function cancelTransaction(
-    address target,
-    uint value,
-    string calldata signature,
-    bytes calldata data,
-    uint eta
-  ) external;
+  function cancelTransaction(address target, uint value, string calldata signature, bytes calldata data, uint eta) external;
 
-  function executeTransaction(
-    address target,
-    uint value,
-    string calldata signature,
-    bytes calldata data,
-    uint eta
-  ) external payable returns (bytes memory);
+  function executeTransaction(address target, uint value, string calldata signature, bytes calldata data, uint eta) external payable returns (bytes memory);
 }
 
 interface StakingInterface {
-  function votingBalanceOf(
-    address account,
-    uint proposalCount
-  ) external view returns (uint totalVotes);
+  function votingBalanceOf(address account, uint proposalCount) external view returns (uint totalVotes);
 
-  function votingBalanceOfNow(
-    address account
-  ) external view returns (uint totalVotes);
+  function votingBalanceOfNow(address account) external view returns (uint totalVotes);
 
-  function _setProposalVals(
-    address account,
-    uint proposalCount
-  ) external returns (uint);
+  function _setProposalVals(address account, uint proposalCount) external returns (uint);
 }
 
 interface GovernorAlpha {

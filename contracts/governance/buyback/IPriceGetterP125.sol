@@ -12,7 +12,5 @@ interface IPriceGetterP125 {
     bytes route;
   }
 
-  function worstExecPrice(
-    V3Specs memory specs
-  ) external view returns (uint256 quoteAmount);
+  function worstExecPrice(V3Specs memory specs) external view returns (uint256 quoteAmount);
 }

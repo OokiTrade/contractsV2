@@ -14,16 +14,9 @@ import '../ISwapsImpl.sol';
 contract SwapsImplUniswapV2_EVMOS is State, ISwapsImpl {
   using SafeERC20 for IERC20;
 
-  address public constant uniswapRouter =
-    0x64C3b10636baBb3Ef46a7E2E5248b0dE43198fCB; // EvmoSwapRouter
+  address public constant uniswapRouter = 0x64C3b10636baBb3Ef46a7E2E5248b0dE43198fCB; // EvmoSwapRouter
 
-  constructor(
-    IWeth wethtoken,
-    address usdc,
-    address bzrx,
-    address vbzrx,
-    address ooki
-  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
+  constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
 
   function dexSwap(
     address sourceTokenAddress,
@@ -34,15 +27,9 @@ contract SwapsImplUniswapV2_EVMOS is State, ISwapsImpl {
     uint256 maxSourceTokenAmount,
     uint256 requiredDestTokenAmount,
     bytes memory payload
-  )
-    public
-    returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
-  {
+  ) public returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed) {
     require(sourceTokenAddress != destTokenAddress, 'source == dest');
-    require(
-      supportedTokens[sourceTokenAddress] && supportedTokens[destTokenAddress],
-      'invalid tokens'
-    );
+    require(supportedTokens[sourceTokenAddress] && supportedTokens[destTokenAddress], 'invalid tokens');
 
     IERC20 sourceToken = IERC20(sourceTokenAddress);
     address _thisAddress = address(this);
@@ -56,34 +43,18 @@ contract SwapsImplUniswapV2_EVMOS is State, ISwapsImpl {
       requiredDestTokenAmount
     );
 
-    if (
-      returnToSenderAddress != _thisAddress &&
-      sourceTokenAmountUsed < maxSourceTokenAmount
-    ) {
+    if (returnToSenderAddress != _thisAddress && sourceTokenAmountUsed < maxSourceTokenAmount) {
       // send unused source token back
-      sourceToken.safeTransfer(
-        returnToSenderAddress,
-        maxSourceTokenAmount - sourceTokenAmountUsed
-      );
+      sourceToken.safeTransfer(returnToSenderAddress, maxSourceTokenAmount - sourceTokenAmountUsed);
     }
   }
 
-  function dexExpectedRate(
-    address sourceTokenAddress,
-    address destTokenAddress,
-    uint256 sourceTokenAmount
-  ) public view returns (uint256 expectedRate) {
+  function dexExpectedRate(address sourceTokenAddress, address destTokenAddress, uint256 sourceTokenAmount) public view returns (uint256 expectedRate) {
     revert('unsupported');
   }
 
-  function dexAmountOut(
-    bytes memory payload,
-    uint256 amountIn
-  ) public returns (uint256 amountOut, address midToken) {
-    (address sourceTokenAddress, address destTokenAddress) = abi.decode(
-      payload,
-      (address, address)
-    );
+  function dexAmountOut(bytes memory payload, uint256 amountIn) public returns (uint256 amountOut, address midToken) {
+    (address sourceTokenAddress, address destTokenAddress) = abi.decode(payload, (address, address));
     if (sourceTokenAddress == destTokenAddress) {
       amountOut = amountIn;
     } else if (amountIn != 0) {
@@ -98,10 +69,7 @@ contract SwapsImplUniswapV2_EVMOS is State, ISwapsImpl {
       path[0] = sourceTokenAddress;
       path[2] = destTokenAddress;
 
-      if (
-        sourceTokenAddress != address(wethToken) &&
-        destTokenAddress != address(wethToken)
-      ) {
+      if (sourceTokenAddress != address(wethToken) && destTokenAddress != address(wethToken)) {
         path[1] = address(wethToken);
         tmpValue = _getAmountOut(amountIn, path);
         if (tmpValue > amountOut) {
@@ -112,21 +80,12 @@ contract SwapsImplUniswapV2_EVMOS is State, ISwapsImpl {
     }
   }
 
-  function dexAmountOutFormatted(
-    bytes memory payload,
-    uint256 amountIn
-  ) public returns (uint256 amountOut, address midToken) {
+  function dexAmountOutFormatted(bytes memory payload, uint256 amountIn) public returns (uint256 amountOut, address midToken) {
     return dexAmountOut(payload, amountIn);
   }
 
-  function dexAmountIn(
-    bytes memory payload,
-    uint256 amountOut
-  ) public returns (uint256 amountIn, address midToken) {
-    (address sourceTokenAddress, address destTokenAddress) = abi.decode(
-      payload,
-      (address, address)
-    );
+  function dexAmountIn(bytes memory payload, uint256 amountOut) public returns (uint256 amountIn, address midToken) {
+    (address sourceTokenAddress, address destTokenAddress) = abi.decode(payload, (address, address));
     if (sourceTokenAddress == destTokenAddress) {
       amountIn = amountOut;
     } else if (amountOut != 0) {
@@ -141,10 +100,7 @@ contract SwapsImplUniswapV2_EVMOS is State, ISwapsImpl {
       path[0] = sourceTokenAddress;
       path[2] = destTokenAddress;
 
-      if (
-        sourceTokenAddress != address(wethToken) &&
-        destTokenAddress != address(wethToken)
-      ) {
+      if (sourceTokenAddress != address(wethToken) && destTokenAddress != address(wethToken)) {
         path[1] = address(wethToken);
         tmpValue = _getAmountIn(amountOut, path);
         if (tmpValue < amountIn) {
@@ -159,17 +115,11 @@ contract SwapsImplUniswapV2_EVMOS is State, ISwapsImpl {
     }
   }
 
-  function dexAmountInFormatted(
-    bytes memory payload,
-    uint256 amountOut
-  ) public returns (uint256 amountIn, address midToken) {
+  function dexAmountInFormatted(bytes memory payload, uint256 amountOut) public returns (uint256 amountIn, address midToken) {
     return dexAmountIn(payload, amountOut);
   }
 
-  function _getAmountOut(
-    uint256 amountIn,
-    address[] memory path
-  ) public view returns (uint256 amountOut) {
+  function _getAmountOut(uint256 amountIn, address[] memory path) public view returns (uint256 amountOut) {
     (bool success, bytes memory data) = uniswapRouter.staticcall(
       abi.encodeWithSelector(
         0xd06ca61f, // keccak("getAmountsOut(uint256,address[])")
@@ -185,10 +135,7 @@ contract SwapsImplUniswapV2_EVMOS is State, ISwapsImpl {
     }
   }
 
-  function _getAmountIn(
-    uint256 amountOut,
-    address[] memory path
-  ) public view returns (uint256 amountIn) {
+  function _getAmountIn(uint256 amountOut, address[] memory path) public view returns (uint256 amountIn) {
     (bool success, bytes memory data) = uniswapRouter.staticcall(
       abi.encodeWithSelector(
         0x1f00ca74, // keccak("getAmountsIn(uint256,address[])")
@@ -227,29 +174,17 @@ contract SwapsImplUniswapV2_EVMOS is State, ISwapsImpl {
     uint256 minSourceTokenAmount,
     uint256 maxSourceTokenAmount,
     uint256 requiredDestTokenAmount
-  )
-    internal
-    returns (uint256 sourceTokenAmountUsed, uint256 destTokenAmountReceived)
-  {
+  ) internal returns (uint256 sourceTokenAmountUsed, uint256 destTokenAmountReceived) {
     address midToken;
     if (requiredDestTokenAmount != 0) {
-      (sourceTokenAmountUsed, midToken) = dexAmountIn(
-        abi.encode(sourceTokenAddress, destTokenAddress),
-        requiredDestTokenAmount
-      );
+      (sourceTokenAmountUsed, midToken) = dexAmountIn(abi.encode(sourceTokenAddress, destTokenAddress), requiredDestTokenAmount);
       if (sourceTokenAmountUsed == 0) {
         return (0, 0);
       }
-      require(
-        sourceTokenAmountUsed <= maxSourceTokenAmount,
-        'source amount too high'
-      );
+      require(sourceTokenAmountUsed <= maxSourceTokenAmount, 'source amount too high');
     } else {
       sourceTokenAmountUsed = minSourceTokenAmount;
-      (destTokenAmountReceived, midToken) = dexAmountOut(
-        abi.encode(sourceTokenAddress, destTokenAddress),
-        sourceTokenAmountUsed
-      );
+      (destTokenAmountReceived, midToken) = dexAmountOut(abi.encode(sourceTokenAddress, destTokenAddress), sourceTokenAmountUsed);
       if (destTokenAmountReceived == 0) {
         return (0, 0);
       }
@@ -267,14 +202,13 @@ contract SwapsImplUniswapV2_EVMOS is State, ISwapsImpl {
       path[1] = destTokenAddress;
     }
 
-    uint256[] memory amounts = IUniswapV2Router(uniswapRouter)
-      .swapExactTokensForTokens(
-        sourceTokenAmountUsed,
-        1, // amountOutMin
-        path,
-        receiverAddress,
-        block.timestamp
-      );
+    uint256[] memory amounts = IUniswapV2Router(uniswapRouter).swapExactTokensForTokens(
+      sourceTokenAmountUsed,
+      1, // amountOutMin
+      path,
+      receiverAddress,
+      block.timestamp
+    );
 
     destTokenAmountReceived = amounts[amounts.length - 1];
   }

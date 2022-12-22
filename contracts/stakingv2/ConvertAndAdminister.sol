@@ -6,10 +6,7 @@ import '../../interfaces/IStaking.sol';
 import '../governance/PausableGuardian_0_8.sol';
 
 interface I3Pool {
-  function add_liquidity(
-    uint256[3] memory amounts,
-    uint256 min_mint_amount
-  ) external;
+  function add_liquidity(uint256[3] memory amounts, uint256 min_mint_amount) external;
 
   function get_virtual_price() external view returns (uint256);
 }
@@ -18,8 +15,7 @@ contract ConvertAndAdminister is PausableGuardian_0_8 {
   address public implementation;
   address public constant crv3 = 0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490;
   address public constant pool3 = 0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7;
-  IERC20 public constant USDC =
-    IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
+  IERC20 public constant USDC = IERC20(0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48);
   address public constant STAKING = 0x16f179f5C344cc29672A58Ea327A26F64B941a63; //set to staking contract
   address public constant TREASURY = 0xfedC4dD5247B93feb41e899A09C44cFaBec29Cbc;
   event Distributed(address indexed sender, uint256 treasury, uint256 stakers);
@@ -38,8 +34,7 @@ contract ConvertAndAdminister is PausableGuardian_0_8 {
 
   function _convertTo3Crv() internal returns (uint256 amountUsed) {
     amountUsed = USDC.balanceOf(address(this));
-    uint256 min_amount = (((amountUsed * 1e12 * 1e18) /
-      I3Pool(pool3).get_virtual_price()) * 995) / 1000; //0.5% slippage on minting
+    uint256 min_amount = (((amountUsed * 1e12 * 1e18) / I3Pool(pool3).get_virtual_price()) * 995) / 1000; //0.5% slippage on minting
     I3Pool(pool3).add_liquidity([0, amountUsed, 0], min_amount);
   }
 
@@ -49,11 +44,7 @@ contract ConvertAndAdminister is PausableGuardian_0_8 {
 
   //Owner functions
 
-  function setApprovals(
-    address token,
-    address spender,
-    uint256 amount
-  ) external onlyOwner {
+  function setApprovals(address token, address spender, uint256 amount) external onlyOwner {
     IERC20(token).approve(spender, 0);
     IERC20(token).approve(spender, amount);
   }

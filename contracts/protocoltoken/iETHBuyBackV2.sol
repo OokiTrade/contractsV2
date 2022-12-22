@@ -13,10 +13,7 @@ import '@openzeppelin-2.5.0/math/SafeMath.sol';
 interface iETHBuyBackV1 {
   function transferOwnership(address _newOwner) external;
 
-  function setWhitelist(
-    address[] calldata addrs,
-    uint256[] calldata amounts
-  ) external;
+  function setWhitelist(address[] calldata addrs, uint256[] calldata amounts) external;
 
   function whitelist(address _buyer) external view returns (uint256);
 
@@ -29,12 +26,9 @@ contract iETHBuyBackV2 is Ownable {
   using SafeMath for uint256;
 
   // mainnet
-  IERC20 public constant iETH =
-    IERC20(0x77f973FCaF871459aa58cd81881Ce453759281bC);
-  IERC20 public constant vBZRX =
-    IERC20(0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F);
-  iETHBuyBackV1 internal constant v1 =
-    iETHBuyBackV1(0x85A25f18ba56163450d597E521c7A79F552c93d2);
+  IERC20 public constant iETH = IERC20(0x77f973FCaF871459aa58cd81881Ce453759281bC);
+  IERC20 public constant vBZRX = IERC20(0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F);
+  iETHBuyBackV1 internal constant v1 = iETHBuyBackV1(0x85A25f18ba56163450d597E521c7A79F552c93d2);
 
   // kovan
   //IERC20 public constant iETH = IERC20(0x0afBFCe9DB35FFd1dFdF144A788fa196FD08EFe9);
@@ -48,11 +42,7 @@ contract iETHBuyBackV2 is Ownable {
   uint256 public iETHSold;
   uint256 public vBZRXBought;
 
-  constructor(
-    uint256 _iETHSwapRate,
-    uint256 _iETHSwapRateWL,
-    address _newOwner
-  ) public {
+  constructor(uint256 _iETHSwapRate, uint256 _iETHSwapRateWL, address _newOwner) public {
     iETHSwapRate = _iETHSwapRate;
     iETHSwapRateWL = _iETHSwapRateWL;
 
@@ -101,10 +91,7 @@ contract iETHBuyBackV2 is Ownable {
     }
   }
 
-  function setWhitelist(
-    address[] memory addrs,
-    uint256[] memory amounts
-  ) public onlyOwner {
+  function setWhitelist(address[] memory addrs, uint256[] memory amounts) public onlyOwner {
     v1.setWhitelist(addrs, amounts);
   }
 
@@ -138,10 +125,7 @@ contract iETHBuyBackV2 is Ownable {
     }
   }
 
-  function setiETHSwapRates(
-    uint256 _newRate,
-    uint256 _newRateWL
-  ) external onlyOwner {
+  function setiETHSwapRates(uint256 _newRate, uint256 _newRateWL) external onlyOwner {
     iETHSwapRate = _newRate;
     iETHSwapRateWL = _newRateWL;
   }

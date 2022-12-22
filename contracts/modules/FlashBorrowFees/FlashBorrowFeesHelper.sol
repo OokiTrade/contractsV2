@@ -10,43 +10,26 @@ import '../../core/State.sol';
 import '../../mixins/VaultController.sol';
 
 contract FlashBorrowFeesHelper is State, VaultController {
-  constructor(
-    IWeth wethtoken,
-    address usdc,
-    address bzrx,
-    address vbzrx,
-    address ooki
-  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
+  constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
 
-  event PayFlashBorrowFee(
-    address indexed payer,
-    address indexed token,
-    uint256 amount
-  );
+  event PayFlashBorrowFee(address indexed payer, address indexed token, uint256 amount);
 
   function initialize(address target) external onlyOwner {
     _setTarget(this.payFlashBorrowFees.selector, target);
   }
 
-  function payFlashBorrowFees(
-    address user,
-    uint256 borrowAmount,
-    uint256 flashBorrowFeePercent
-  ) external {
+  function payFlashBorrowFees(address user, uint256 borrowAmount, uint256 flashBorrowFeePercent) external {
     address feeToken = loanPoolToUnderlying[msg.sender];
 
     // only callable by loan pools
     require(feeToken != address(0), 'not authorized');
 
-    uint256 feeTokenAmount = (borrowAmount * flashBorrowFeePercent) /
-      WEI_PERCENT_PRECISION;
+    uint256 feeTokenAmount = (borrowAmount * flashBorrowFeePercent) / WEI_PERCENT_PRECISION;
 
     vaultDeposit(feeToken, msg.sender, feeTokenAmount);
 
     if (feeTokenAmount != 0) {
-      borrowingFeeTokensHeld[feeToken] =
-        borrowingFeeTokensHeld[feeToken] +
-        feeTokenAmount;
+      borrowingFeeTokensHeld[feeToken] = borrowingFeeTokensHeld[feeToken] + feeTokenAmount;
     }
 
     emit PayFlashBorrowFee(user, feeToken, feeTokenAmount);

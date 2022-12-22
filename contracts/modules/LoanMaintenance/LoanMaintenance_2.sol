@@ -13,22 +13,11 @@ import '../../mixins/InterestHandler.sol';
 import '../../utils/InterestOracle.sol';
 import '../../utils/TickMathV1.sol';
 
-contract LoanMaintenance_2 is
-  State,
-  LoanMaintenanceEvents,
-  PausableGuardian_0_8,
-  InterestHandler
-{
+contract LoanMaintenance_2 is State, LoanMaintenanceEvents, PausableGuardian_0_8, InterestHandler {
   using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
   using InterestOracle for InterestOracle.Observation[256];
 
-  constructor(
-    IWeth wethtoken,
-    address usdc,
-    address bzrx,
-    address vbzrx,
-    address ooki
-  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
+  constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
 
   function initialize(address target) external onlyOwner {
     _setTarget(this.transferLoan.selector, target);
@@ -65,23 +54,14 @@ contract LoanMaintenance_2 is
     _loanRatePerTokenPaid = loanRatePerTokenPaid[loanId];
   }
 
-  function transferLoan(
-    bytes32 loanId,
-    address newOwner
-  ) external nonReentrant pausable {
+  function transferLoan(bytes32 loanId, address newOwner) external nonReentrant pausable {
     Loan storage loanLocal = loans[loanId];
     address currentOwner = loanLocal.borrower;
     require(loanLocal.active, 'loan is closed');
     require(currentOwner != newOwner, 'no owner change');
-    require(
-      msg.sender == currentOwner || delegatedManagers[loanId][msg.sender],
-      'unauthorized'
-    );
+    require(msg.sender == currentOwner || delegatedManagers[loanId][msg.sender], 'unauthorized');
 
-    require(
-      borrowerLoanSets[currentOwner].removeBytes32(loanId),
-      'error in transfer'
-    );
+    require(borrowerLoanSets[currentOwner].removeBytes32(loanId), 'error in transfer');
     borrowerLoanSets[newOwner].addBytes32(loanId);
     loanLocal.borrower = newOwner;
 
@@ -105,9 +85,7 @@ contract LoanMaintenance_2 is
         poolInterestRateObservations[pool].arithmeticMean(
           uint32(block.timestamp),
           [timeSinceUpdate + twaiLength, timeSinceUpdate],
-          timeSinceUpdate >= 60
-            ? TickMathV1.getTickAtSqrtRatio(uint160(poolLastInterestRate[pool]))
-            : poolInterestRateObservations[pool][poolLastIdx[pool]].tick,
+          timeSinceUpdate >= 60 ? TickMathV1.getTickAtSqrtRatio(uint160(poolLastInterestRate[pool])) : poolInterestRateObservations[pool][poolLastIdx[pool]].tick,
           poolLastIdx[pool],
           type(uint8).max
         )

@@ -30,10 +30,7 @@ library EnumerableBytes32Set {
    * @dev Add an address value to a set. O(1).
    * Returns false if the value was already in the set.
    */
-  function addAddress(
-    Bytes32Set storage set,
-    address addrvalue
-  ) internal returns (bool) {
+  function addAddress(Bytes32Set storage set, address addrvalue) internal returns (bool) {
     bytes32 value;
     assembly {
       value := addrvalue
@@ -45,10 +42,7 @@ library EnumerableBytes32Set {
    * @dev Add a value to a set. O(1).
    * Returns false if the value was already in the set.
    */
-  function addBytes32(
-    Bytes32Set storage set,
-    bytes32 value
-  ) internal returns (bool) {
+  function addBytes32(Bytes32Set storage set, bytes32 value) internal returns (bool) {
     if (!contains(set, value)) {
       set.values.push(value);
       set.index[value] = set.values.length;
@@ -62,10 +56,7 @@ library EnumerableBytes32Set {
    * @dev Removes an address value from a set. O(1).
    * Returns false if the value was not present in the set.
    */
-  function removeAddress(
-    Bytes32Set storage set,
-    address addrvalue
-  ) internal returns (bool) {
+  function removeAddress(Bytes32Set storage set, address addrvalue) internal returns (bool) {
     bytes32 value;
     assembly {
       value := addrvalue
@@ -77,10 +68,7 @@ library EnumerableBytes32Set {
    * @dev Removes a value from a set. O(1).
    * Returns false if the value was not present in the set.
    */
-  function removeBytes32(
-    Bytes32Set storage set,
-    bytes32 value
-  ) internal returns (bool) {
+  function removeBytes32(Bytes32Set storage set, bytes32 value) internal returns (bool) {
     if (contains(set, value)) {
       uint256 toDeleteIndex = set.index[value] - 1;
       uint256 lastIndex = set.values.length - 1;
@@ -110,20 +98,14 @@ library EnumerableBytes32Set {
   /**
    * @dev Returns true if the value is in the set. O(1).
    */
-  function contains(
-    Bytes32Set storage set,
-    bytes32 value
-  ) internal view returns (bool) {
+  function contains(Bytes32Set storage set, bytes32 value) internal view returns (bool) {
     return set.index[value] != 0;
   }
 
   /**
    * @dev Returns true if the value is in the set. O(1).
    */
-  function containsAddress(
-    Bytes32Set storage set,
-    address addrvalue
-  ) internal view returns (bool) {
+  function containsAddress(Bytes32Set storage set, address addrvalue) internal view returns (bool) {
     bytes32 value;
     assembly {
       value := addrvalue
@@ -139,11 +121,7 @@ library EnumerableBytes32Set {
      * WARNING: This function may run out of gas on large sets: use {length} and
      * {get} instead in these cases.
      */
-  function enumerate(
-    Bytes32Set storage set,
-    uint256 start,
-    uint256 count
-  ) internal view returns (bytes32[] memory output) {
+  function enumerate(Bytes32Set storage set, uint256 start, uint256 count) internal view returns (bytes32[] memory output) {
     uint256 end = start + count;
     require(end >= start, 'addition overflow');
     end = set.values.length < end ? set.values.length : end;
@@ -173,10 +151,7 @@ library EnumerableBytes32Set {
    *
    * - `index` must be strictly less than {length}.
    */
-  function get(
-    Bytes32Set storage set,
-    uint256 index
-  ) internal view returns (bytes32) {
+  function get(Bytes32Set storage set, uint256 index) internal view returns (bytes32) {
     return set.values[index];
   }
 
@@ -188,10 +163,7 @@ library EnumerableBytes32Set {
    *
    * - `index` must be strictly less than {length}.
    */
-  function getAddress(
-    Bytes32Set storage set,
-    uint256 index
-  ) internal view returns (address) {
+  function getAddress(Bytes32Set storage set, uint256 index) internal view returns (address) {
     bytes32 value = set.values[index];
     address addrvalue;
     assembly {

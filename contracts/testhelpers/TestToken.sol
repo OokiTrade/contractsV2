@@ -25,12 +25,7 @@ contract TestToken is Ownable {
   mapping(address => mapping(address => uint256)) internal allowed;
   uint256 internal totalSupply_;
 
-  constructor(
-    string memory _name,
-    string memory _symbol,
-    uint8 _decimals,
-    uint256 _initialAmount
-  ) public {
+  constructor(string memory _name, string memory _symbol, uint8 _decimals, uint256 _initialAmount) public {
     name = _name;
     symbol = _symbol;
     decimals = _decimals;
@@ -47,10 +42,7 @@ contract TestToken is Ownable {
   }
 
   function transfer(address _to, uint256 _value) public returns (bool) {
-    require(
-      _value <= balances[msg.sender] && _to != address(0),
-      'invalid transfer'
-    );
+    require(_value <= balances[msg.sender] && _to != address(0), 'invalid transfer');
 
     balances[msg.sender] = balances[msg.sender].sub(_value);
     balances[_to] = balances[_to].add(_value);
@@ -59,18 +51,9 @@ contract TestToken is Ownable {
     return true;
   }
 
-  function transferFrom(
-    address _from,
-    address _to,
-    uint256 _value
-  ) public returns (bool) {
+  function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
     uint256 allowanceAmount = allowed[_from][msg.sender];
-    require(
-      _value <= balances[_from] &&
-        _value <= allowanceAmount &&
-        _to != address(0),
-      'invalid transfer'
-    );
+    require(_value <= balances[_from] && _value <= allowanceAmount && _to != address(0), 'invalid transfer');
 
     balances[_from] = balances[_from].sub(_value);
     balances[_to] = balances[_to].add(_value);
@@ -109,10 +92,7 @@ contract TestToken is Ownable {
     return balances[_owner];
   }
 
-  function allowance(
-    address _owner,
-    address _spender
-  ) public view returns (uint256) {
+  function allowance(address _owner, address _spender) public view returns (uint256) {
     return allowed[_owner][_spender];
   }
 }

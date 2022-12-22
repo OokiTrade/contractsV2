@@ -12,10 +12,4 @@ import './objects/OrderStruct.sol';
 import './objects/LenderInterestStruct.sol';
 import './objects/LoanInterestStruct.sol';
 
-contract Objects is
-  LoanStruct,
-  LoanParamsStruct,
-  OrderStruct,
-  LenderInterestStruct,
-  LoanInterestStruct
-{}
+contract Objects is LoanStruct, LoanParamsStruct, OrderStruct, LenderInterestStruct, LoanInterestStruct {}

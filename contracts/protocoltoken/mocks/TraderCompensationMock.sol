@@ -11,10 +11,7 @@ import '../TraderCompensation.sol';
 contract TraderCompensationMock is TraderCompensation {
   uint256 public currentTime;
 
-  constructor(
-    uint256 _optinDuration,
-    uint256 _claimDuration
-  ) public TraderCompensation(_optinDuration, _claimDuration) {}
+  constructor(uint256 _optinDuration, uint256 _claimDuration) public TraderCompensation(_optinDuration, _claimDuration) {}
 
   function setTime(uint256 _time) public {
     currentTime = _time;

@@ -9,14 +9,7 @@ import '../../swaps/SwapsUser.sol';
 import '../../interfaces/ILoanPool.sol';
 import '../../governance/PausableGuardian_0_8.sol';
 
-abstract contract LoanClosingsShared is
-  State,
-  LoanClosingsEvents,
-  VaultController,
-  InterestHandler,
-  SwapsUser,
-  PausableGuardian_0_8
-{
+abstract contract LoanClosingsShared is State, LoanClosingsEvents, VaultController, InterestHandler, SwapsUser, PausableGuardian_0_8 {
   using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
   enum CloseTypes {
     Deposit,
@@ -30,20 +23,10 @@ abstract contract LoanClosingsShared is
     uint256 principal,
     uint256 collateral,
     bool silentFail
-  )
-    internal
-    virtual
-    returns (uint256 currentMargin, uint256 collateralToLoanRate)
-  {
+  ) internal virtual returns (uint256 currentMargin, uint256 collateralToLoanRate) {
     address _priceFeeds = priceFeeds;
     (bool success, bytes memory data) = _priceFeeds.staticcall(
-      abi.encodeWithSelector(
-        IPriceFeeds(_priceFeeds).getCurrentMargin.selector,
-        loanToken,
-        collateralToken,
-        principal,
-        collateral
-      )
+      abi.encodeWithSelector(IPriceFeeds(_priceFeeds).getCurrentMargin.selector, loanToken, collateralToken, principal, collateral)
     );
     if (success) {
       assembly {
@@ -56,23 +39,14 @@ abstract contract LoanClosingsShared is
   }
 
   // The receiver always gets back an ERC20 (even WETH)
-  function _returnPrincipalWithDeposit(
-    address loanToken,
-    address receiver,
-    uint256 principalNeeded
-  ) internal {
+  function _returnPrincipalWithDeposit(address loanToken, address receiver, uint256 principalNeeded) internal {
     if (principalNeeded != 0) {
       if (msg.value == 0) {
-        vaultTransfer(
-          loanToken,
-          payable(msg.sender),
-          receiver,
-          principalNeeded
-        );
+        vaultTransfer(loanToken, payable(msg.sender), receiver, principalNeeded);
       } else {
         require(loanToken == address(wethToken), 'wrong asset sent');
         require(msg.value >= principalNeeded, 'not enough ether');
-        wethToken.deposit{ value: principalNeeded }();
+        wethToken.deposit{value: principalNeeded}();
         if (receiver != address(this)) {
           vaultTransfer(loanToken, address(this), receiver, principalNeeded);
         }
@@ -86,20 +60,14 @@ abstract contract LoanClosingsShared is
     }
   }
 
-  function _closeLoan(
-    Loan memory loanLocal,
-    address loanToken,
-    uint256 loanCloseAmount
-  ) internal returns (uint256 principalBefore, uint256 principalAfter) {
+  function _closeLoan(Loan memory loanLocal, address loanToken, uint256 loanCloseAmount) internal returns (uint256 principalBefore, uint256 principalAfter) {
     require(loanCloseAmount != 0, 'nothing to close');
 
     principalBefore = loanLocal.principal;
     uint256 loanInterest = loanInterestTotal[loanLocal.id];
 
     if (loanCloseAmount == principalBefore + loanInterest) {
-      poolPrincipalTotal[loanLocal.lender] =
-        poolPrincipalTotal[loanLocal.lender] -
-        principalBefore;
+      poolPrincipalTotal[loanLocal.lender] = poolPrincipalTotal[loanLocal.lender] - principalBefore;
       loanLocal.principal = 0;
 
       loanInterestTotal[loanLocal.id] = 0;
@@ -116,9 +84,7 @@ abstract contract LoanClosingsShared is
         principalAfter = principalBefore - (loanCloseAmount - loanInterest);
 
         loanLocal.principal = principalAfter;
-        poolPrincipalTotal[loanLocal.lender] =
-          poolPrincipalTotal[loanLocal.lender] -
-          (loanCloseAmount - loanInterest);
+        poolPrincipalTotal[loanLocal.lender] = poolPrincipalTotal[loanLocal.lender] - (loanCloseAmount - loanInterest);
 
         loanInterestTotal[loanLocal.id] = 0;
       } else {
@@ -167,9 +133,7 @@ abstract contract LoanClosingsShared is
     } else if (closeType == CloseTypes.Swap) {
       // exitPrice = 1 / collateralToLoanSwapRate
       if (collateralToLoanSwapRate != 0) {
-        collateralToLoanSwapRate =
-          (WEI_PRECISION * WEI_PRECISION) /
-          collateralToLoanSwapRate;
+        collateralToLoanSwapRate = (WEI_PRECISION * WEI_PRECISION) / collateralToLoanSwapRate;
       }
 
       // currentLeverage = 100 / currentMargin
@@ -207,11 +171,7 @@ abstract contract LoanClosingsShared is
   }
 
   // withdraws asset to receiver
-  function _withdrawAsset(
-    address assetToken,
-    address receiver,
-    uint256 assetAmount
-  ) internal {
+  function _withdrawAsset(address assetToken, address receiver, uint256 assetAmount) internal {
     if (assetAmount != 0) {
       if (assetToken == address(wethToken)) {
         vaultEtherWithdraw(receiver, assetAmount);

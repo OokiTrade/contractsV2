@@ -12,19 +12,8 @@ library InterestOracle {
   /// @param blockTimestamp The new timestamp
   /// @param tick The active tick
   /// @return Observation The newly populated observation
-  function convert(
-    Observation memory last,
-    uint32 blockTimestamp,
-    int24 tick
-  ) private pure returns (Observation memory) {
-    return
-      Observation({
-        blockTimestamp: blockTimestamp,
-        irCumulative: last.irCumulative +
-          int56(tick) *
-          int32(blockTimestamp - last.blockTimestamp),
-        tick: tick
-      });
+  function convert(Observation memory last, uint32 blockTimestamp, int24 tick) private pure returns (Observation memory) {
+    return Observation({blockTimestamp: blockTimestamp, irCumulative: last.irCumulative + int56(tick) * int32(blockTimestamp - last.blockTimestamp), tick: tick});
   }
 
   /// @param self oracle array
@@ -34,14 +23,7 @@ library InterestOracle {
   /// @param cardinality populated elements
   /// @param minDelta minimum time delta between observations
   /// @return indexUpdated The new index
-  function write(
-    Observation[256] storage self,
-    uint8 index,
-    uint32 blockTimestamp,
-    int24 tick,
-    uint8 cardinality,
-    uint32 minDelta
-  ) internal returns (uint8 indexUpdated) {
+  function write(Observation[256] storage self, uint8 index, uint32 blockTimestamp, int24 tick, uint8 cardinality, uint32 minDelta) internal returns (uint8 indexUpdated) {
     Observation memory last = self[index];
 
     // early return if we've already written an observation in last minDelta seconds
@@ -60,11 +42,7 @@ library InterestOracle {
     uint32 target,
     uint8 index,
     uint8 cardinality
-  )
-    private
-    view
-    returns (Observation memory beforeOrAt, Observation memory atOrAfter)
-  {
+  ) private view returns (Observation memory beforeOrAt, Observation memory atOrAfter) {
     uint256 l = (index + 1) % cardinality; // oldest observation
     uint256 r = l + cardinality - 1; // newest observation
     uint256 i;
@@ -105,11 +83,7 @@ library InterestOracle {
     int24 tick,
     uint8 index,
     uint8 cardinality
-  )
-    private
-    view
-    returns (Observation memory beforeOrAt, Observation memory atOrAfter)
-  {
+  ) private view returns (Observation memory beforeOrAt, Observation memory atOrAfter) {
     beforeOrAt = self[index];
 
     if (beforeOrAt.blockTimestamp <= target) {
@@ -122,10 +96,7 @@ library InterestOracle {
 
     beforeOrAt = self[(index + 1) % cardinality];
     if (beforeOrAt.blockTimestamp == 0) beforeOrAt = self[0];
-    require(
-      beforeOrAt.blockTimestamp <= target && beforeOrAt.blockTimestamp != 0,
-      'OLD'
-    );
+    require(beforeOrAt.blockTimestamp <= target && beforeOrAt.blockTimestamp != 0, 'OLD');
     return binarySearch(self, target, index, cardinality);
   }
 
@@ -135,14 +106,7 @@ library InterestOracle {
   /// @param index latest index
   /// @param cardinality populated elements
   /// @return irCumulative cumulative interest rate, calculated with rate * time
-  function observeSingle(
-    Observation[256] storage self,
-    uint32 time,
-    uint32 secondsAgo,
-    int24 tick,
-    uint8 index,
-    uint8 cardinality
-  ) internal view returns (int56 irCumulative) {
+  function observeSingle(Observation[256] storage self, uint32 time, uint32 secondsAgo, int24 tick, uint8 index, uint8 cardinality) internal view returns (int56 irCumulative) {
     if (secondsAgo == 0) {
       Observation memory last = self[index];
       if (last.blockTimestamp != time) {
@@ -153,10 +117,7 @@ library InterestOracle {
 
     uint32 target = time - secondsAgo;
 
-    (
-      Observation memory beforeOrAt,
-      Observation memory atOrAfter
-    ) = getSurroundingObservations(self, target, tick, index, cardinality);
+    (Observation memory beforeOrAt, Observation memory atOrAfter) = getSurroundingObservations(self, target, tick, index, cardinality);
 
     if (target == beforeOrAt.blockTimestamp) {
       // left boundary
@@ -168,8 +129,7 @@ library InterestOracle {
       // middle
       return
         beforeOrAt.irCumulative +
-        ((atOrAfter.irCumulative - beforeOrAt.irCumulative) /
-          int32(atOrAfter.blockTimestamp - beforeOrAt.blockTimestamp)) *
+        ((atOrAfter.irCumulative - beforeOrAt.irCumulative) / int32(atOrAfter.blockTimestamp - beforeOrAt.blockTimestamp)) *
         int32(target - beforeOrAt.blockTimestamp);
     }
   }
@@ -180,33 +140,9 @@ library InterestOracle {
   /// @param index latest index
   /// @param cardinality populated elements
   /// @return irCumulative cumulative interest rate, calculated with rate * time
-  function arithmeticMean(
-    Observation[256] storage self,
-    uint32 time,
-    uint32[2] memory secondsAgos,
-    int24 tick,
-    uint8 index,
-    uint8 cardinality
-  ) internal view returns (int24) {
-    int56 firstPoint = observeSingle(
-      self,
-      time,
-      secondsAgos[1],
-      tick,
-      index,
-      cardinality
-    );
-    int56 secondPoint = observeSingle(
-      self,
-      time,
-      secondsAgos[0],
-      tick,
-      index,
-      cardinality
-    );
-    return
-      int24(
-        (firstPoint - secondPoint) / int32(secondsAgos[0] - secondsAgos[1])
-      );
+  function arithmeticMean(Observation[256] storage self, uint32 time, uint32[2] memory secondsAgos, int24 tick, uint8 index, uint8 cardinality) internal view returns (int24) {
+    int56 firstPoint = observeSingle(self, time, secondsAgos[1], tick, index, cardinality);
+    int56 secondPoint = observeSingle(self, time, secondsAgos[0], tick, index, cardinality);
+    return int24((firstPoint - secondPoint) / int32(secondsAgos[0] - secondsAgos[1]));
   }
 }

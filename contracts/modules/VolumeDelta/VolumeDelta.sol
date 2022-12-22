@@ -13,13 +13,7 @@ import '../../utils/TickMathV1.sol';
 contract VolumeDelta is State {
   using VolumeTracker for VolumeTracker.Observation[65535];
 
-  constructor(
-    IWeth wethtoken,
-    address usdc,
-    address bzrx,
-    address vbzrx,
-    address ooki
-  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
+  constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
 
   function initialize(address target) external onlyOwner {
     _setTarget(this.retrieveTradedVolume.selector, target);
@@ -32,23 +26,13 @@ contract VolumeDelta is State {
     Cardinality is initially set at 256 which means up to 256 days of data can be stored as each index slot is dedicated for a rolling day. 
     the time periods are not synchronised
     */
-  function retrieveTradedVolume(
-    address user,
-    uint32 periodStart,
-    uint32 periodEnd
-  ) public view returns (uint256) {
+  function retrieveTradedVolume(address user, uint32 periodStart, uint32 periodEnd) public view returns (uint256) {
     require(volumeTradedCardinality[user] > 0, 'unused');
     if (periodStart >= block.timestamp) return 0;
     if (periodStart >= periodEnd) return 0;
     uint32 ts = uint32(block.timestamp);
     if (block.timestamp < periodEnd) periodEnd = ts;
-    return
-      volumeTradedObservations[user].volumeDelta(
-        ts,
-        [ts - periodStart, ts - periodEnd],
-        volumeLastIdx[user],
-        volumeTradedCardinality[user]
-      );
+    return volumeTradedObservations[user].volumeDelta(ts, [ts - periodStart, ts - periodEnd], volumeLastIdx[user], volumeTradedCardinality[user]);
   }
 
   //sets new cardinality. WARNING: CAN ONLY BE INCREASED. as it is increased, gas costs for binary searches increase. Use with caution

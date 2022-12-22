@@ -19,12 +19,10 @@ import '@celer/contracts/interfaces/IBridge.sol';
 contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
   using SafeERC20 for IERC20;
   address public implementation;
-  IStakingV2 public constant STAKING =
-    IStakingV2(0x16f179f5C344cc29672A58Ea327A26F64B941a63);
+  IStakingV2 public constant STAKING = IStakingV2(0x16f179f5C344cc29672A58Ea327A26F64B941a63);
 
   address public constant OOKI = 0x0De05F6447ab4D22c8827449EE4bA2D5C288379B;
-  IERC20 public constant CURVE_3CRV =
-    IERC20(0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490);
+  IERC20 public constant CURVE_3CRV = IERC20(0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490);
 
   address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
   address public constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
@@ -35,10 +33,8 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
   address public constant BRIDGE = 0x5427FEFA711Eff984124bFBB1AB6fbf5E3DA1820;
   uint64 public constant DEST_CHAINID = 137; //polygon
 
-  IUniswapV2Router public constant UNISWAP_ROUTER =
-    IUniswapV2Router(0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F); // sushiswap
-  ICurve3Pool public constant CURVE_3POOL =
-    ICurve3Pool(0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7);
+  IUniswapV2Router public constant UNISWAP_ROUTER = IUniswapV2Router(0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F); // sushiswap
+  ICurve3Pool public constant CURVE_3POOL = ICurve3Pool(0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7);
   IBZx public constant BZX = IBZx(0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f);
 
   mapping(address => address[]) public swapPaths;
@@ -52,46 +48,26 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
 
   event WithdrawFees(address indexed sender);
 
-  event DistributeFees(
-    address indexed sender,
-    uint256 bzrxRewards,
-    uint256 stableCoinRewards
-  );
+  event DistributeFees(address indexed sender, uint256 bzrxRewards, uint256 stableCoinRewards);
 
-  event ConvertFees(
-    address indexed sender,
-    uint256 bzrxOutput,
-    uint256 stableCoinOutput
-  );
+  event ConvertFees(address indexed sender, uint256 bzrxOutput, uint256 stableCoinOutput);
 
   // Fee Conversion Logic //
 
-  function sweepFees()
-    public
-    pausable
-    returns (uint256 bzrxRewards, uint256 crv3Rewards)
-  {
+  function sweepFees() public pausable returns (uint256 bzrxRewards, uint256 crv3Rewards) {
     uint256[] memory amounts = _withdrawFees(feeTokens);
     _convertFees(feeTokens, amounts);
     (bzrxRewards, crv3Rewards) = _distributeFees();
   }
 
-  function sweepFees(
-    address[] memory assets
-  ) public pausable returns (uint256 bzrxRewards, uint256 crv3Rewards) {
+  function sweepFees(address[] memory assets) public pausable returns (uint256 bzrxRewards, uint256 crv3Rewards) {
     uint256[] memory amounts = _withdrawFees(assets);
     _convertFees(assets, amounts);
     (bzrxRewards, crv3Rewards) = _distributeFees();
   }
 
-  function _withdrawFees(
-    address[] memory assets
-  ) internal returns (uint256[] memory) {
-    uint256[] memory amounts = BZX.withdrawFees(
-      assets,
-      address(this),
-      IBZx.FeeClaimType.All
-    );
+  function _withdrawFees(address[] memory assets) internal returns (uint256[] memory) {
+    uint256[] memory amounts = BZX.withdrawFees(assets, address(this), IBZx.FeeClaimType.All);
 
     for (uint256 i = 0; i < assets.length; i++) {
       stakingRewards[assets[i]] += amounts[i];
@@ -102,10 +78,7 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
     return amounts;
   }
 
-  function _convertFees(
-    address[] memory assets,
-    uint256[] memory amounts
-  ) internal returns (uint256 bzrxOutput, uint256 crv3Output) {
+  function _convertFees(address[] memory assets, uint256[] memory amounts) internal returns (uint256 bzrxOutput, uint256 crv3Output) {
     require(assets.length == amounts.length, 'count mismatch');
 
     IPriceFeeds priceFeeds = IPriceFeeds(BZX.priceFeeds());
@@ -131,13 +104,7 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
       }
 
       if (amounts[i] != 0) {
-        bzrxOutput += _convertFeeWithUniswap(
-          asset,
-          amounts[i],
-          priceFeeds,
-          0 /*bzrxRate*/,
-          maxDisagreement
-        );
+        bzrxOutput += _convertFeeWithUniswap(asset, amounts[i], priceFeeds, 0 /*bzrxRate*/, maxDisagreement);
       }
     }
     if (bzrxOutput != 0) {
@@ -152,10 +119,7 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
     emit ConvertFees(msg.sender, bzrxOutput, crv3Output);
   }
 
-  function _distributeFees()
-    internal
-    returns (uint256 bzrxRewards, uint256 crv3Rewards)
-  {
+  function _distributeFees() internal returns (uint256 bzrxRewards, uint256 crv3Rewards) {
     bzrxRewards = stakingRewards[OOKI];
     crv3Rewards = stakingRewards[address(CURVE_3CRV)];
     uint256 USDCBridge = 0;
@@ -172,10 +136,7 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
         bridgeRewards = (bzrxRewards * (buybackPercent)) / (1e20);
         USDCBridge = _convertToUSDCUniswap(bridgeRewards);
         rewardAmount = (bzrxRewards * (50e18)) / (1e20);
-        IERC20(OOKI).transfer(
-          _fundsWallet,
-          bzrxRewards - rewardAmount - bridgeRewards
-        );
+        IERC20(OOKI).transfer(_fundsWallet, bzrxRewards - rewardAmount - bridgeRewards);
         bzrxRewards = rewardAmount;
       }
       if (crv3Rewards != 0) {
@@ -186,10 +147,7 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
         bridgeRewards = (crv3Rewards * (buybackPercent)) / (1e20);
         USDCBridge += _convertToUSDCCurve(bridgeRewards);
         rewardAmount = (crv3Rewards * (50e18)) / (1e20);
-        CURVE_3CRV.transfer(
-          _fundsWallet,
-          crv3Rewards - rewardAmount - bridgeRewards
-        );
+        CURVE_3CRV.transfer(_fundsWallet, crv3Rewards - rewardAmount - bridgeRewards);
         crv3Rewards = rewardAmount;
       }
       STAKING.addRewards(bzrxRewards, crv3Rewards);
@@ -200,19 +158,10 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
   }
 
   function _bridgeFeesToPolygon(uint256 bridgeAmount) internal {
-    IBridge(BRIDGE).send(
-      BUYBACK,
-      USDC,
-      bridgeAmount,
-      DEST_CHAINID,
-      uint64(block.timestamp),
-      slippage
-    );
+    IBridge(BRIDGE).send(BUYBACK, USDC, bridgeAmount, DEST_CHAINID, uint64(block.timestamp), slippage);
   }
 
-  function _convertToUSDCUniswap(
-    uint256 amount
-  ) internal returns (uint256 returnAmount) {
+  function _convertToUSDCUniswap(uint256 amount) internal returns (uint256 returnAmount) {
     address[] memory path = new address[](3);
     path[0] = OOKI;
     path[1] = WETH;
@@ -237,13 +186,7 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
         );*/
   }
 
-  function _convertFeeWithUniswap(
-    address asset,
-    uint256 amount,
-    IPriceFeeds priceFeeds,
-    uint256 bzrxRate,
-    uint256 maxDisagreement
-  ) internal returns (uint256 returnAmount) {
+  function _convertFeeWithUniswap(address asset, uint256 amount, IPriceFeeds priceFeeds, uint256 bzrxRate, uint256 maxDisagreement) internal returns (uint256 returnAmount) {
     uint256 stakingReward = stakingRewards[asset];
     if (stakingReward != 0) {
       if (amount > stakingReward) {
@@ -272,19 +215,13 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
     }
   }
 
-  function _convertToUSDCCurve(
-    uint256 amount
-  ) internal returns (uint256 returnAmount) {
+  function _convertToUSDCCurve(uint256 amount) internal returns (uint256 returnAmount) {
     uint256 beforeBalance = IERC20(USDC).balanceOf(address(this));
     CURVE_3POOL.remove_liquidity_one_coin(amount, 1, 1); //does not need to be checked for disagreement as liquidity add handles that
     returnAmount = IERC20(USDC).balanceOf(address(this)) - beforeBalance; //does not underflow as USDC is not being transferred out
   }
 
-  function _convertFeesWithCurve(
-    uint256 daiAmount,
-    uint256 usdcAmount,
-    uint256 usdtAmount
-  ) internal returns (uint256 returnAmount) {
+  function _convertFeesWithCurve(uint256 daiAmount, uint256 usdcAmount, uint256 usdtAmount) internal returns (uint256 returnAmount) {
     uint256[3] memory curveAmounts;
     uint256 curveTotal;
     uint256 stakingReward;
@@ -324,29 +261,14 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
     }
 
     uint256 beforeBalance = CURVE_3CRV.balanceOf(address(this));
-    CURVE_3POOL.add_liquidity(
-      curveAmounts,
-      (((curveTotal * 1e18) / CURVE_3POOL.get_virtual_price()) * 995) / 1000
-    );
+    CURVE_3POOL.add_liquidity(curveAmounts, (((curveTotal * 1e18) / CURVE_3POOL.get_virtual_price()) * 995) / 1000);
     returnAmount = CURVE_3CRV.balanceOf(address(this)) - beforeBalance;
   }
 
-  function _checkUniDisagreement(
-    address asset,
-    address recvAsset,
-    uint256 assetAmount,
-    uint256 recvAmount,
-    uint256 maxDisagreement
-  ) internal view {
-    uint256 estAmountOut = IPriceFeeds(BZX.priceFeeds()).queryReturn(
-      asset,
-      recvAsset,
-      assetAmount
-    );
+  function _checkUniDisagreement(address asset, address recvAsset, uint256 assetAmount, uint256 recvAmount, uint256 maxDisagreement) internal view {
+    uint256 estAmountOut = IPriceFeeds(BZX.priceFeeds()).queryReturn(asset, recvAsset, assetAmount);
 
-    uint256 spreadValue = estAmountOut > recvAmount
-      ? estAmountOut - recvAmount
-      : recvAmount - estAmountOut;
+    uint256 spreadValue = estAmountOut > recvAmount ? estAmountOut - recvAmount : recvAmount - estAmountOut;
     if (spreadValue != 0) {
       spreadValue = (spreadValue * 1e20) / estAmountOut;
 
@@ -373,12 +295,7 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
     address[] memory path;
     for (uint256 i = 0; i < paths.length; i++) {
       path = paths[i];
-      require(
-        path.length >= 2 &&
-          path[0] != path[path.length - 1] &&
-          path[path.length - 1] == OOKI,
-        'invalid path'
-      );
+      require(path.length >= 2 && path[0] != path[path.length - 1] && path[path.length - 1] == OOKI, 'invalid path');
 
       // check that the path exists
       uint256[] memory amountsOut = UNISWAP_ROUTER.getAmountsOut(1e10, path);
@@ -402,12 +319,7 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
     slippage = newSlippage;
   }
 
-  function requestRefund(
-    bytes calldata wdmsg,
-    bytes[] calldata sigs,
-    address[] calldata signers,
-    uint256[] calldata powers
-  ) external onlyGuardian {
+  function requestRefund(bytes calldata wdmsg, bytes[] calldata sigs, address[] calldata signers, uint256[] calldata powers) external onlyGuardian {
     IBridge(BRIDGE).withdraw(wdmsg, sigs, signers, powers);
   }
 

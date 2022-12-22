@@ -4,10 +4,7 @@ pragma experimental ABIEncoderV2;
 
 import './GovernorBravoInterfaces.sol';
 
-contract GovernorBravoDelegator is
-  GovernorBravoDelegatorStorage,
-  GovernorBravoEvents
-{
+contract GovernorBravoDelegator is GovernorBravoDelegatorStorage, GovernorBravoEvents {
   constructor(
     address timelock_,
     address staking_,
@@ -44,14 +41,8 @@ contract GovernorBravoDelegator is
    * @param implementation_ The address of the new implementation for delegation
    */
   function _setImplementation(address implementation_) public {
-    require(
-      msg.sender == admin,
-      'GovernorBravoDelegator::_setImplementation: admin only'
-    );
-    require(
-      implementation_ != address(0),
-      'GovernorBravoDelegator::_setImplementation: invalid implementation address'
-    );
+    require(msg.sender == admin, 'GovernorBravoDelegator::_setImplementation: admin only');
+    require(implementation_ != address(0), 'GovernorBravoDelegator::_setImplementation: invalid implementation address');
 
     address oldImplementation = implementation;
     implementation = implementation_;

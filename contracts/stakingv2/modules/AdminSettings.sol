@@ -29,24 +29,13 @@ contract AdminSettings is Common {
   // Withdraw all from sushi masterchef
   function exitSushi() external onlyGuardian {
     IMasterChefSushi2 chef = IMasterChefSushi2(SUSHI_MASTERCHEF);
-    uint256 balance = chef
-      .userInfo(OOKI_ETH_SUSHI_MASTERCHEF_PID, address(this))
-      .amount;
+    uint256 balance = chef.userInfo(OOKI_ETH_SUSHI_MASTERCHEF_PID, address(this)).amount;
     chef.withdraw(OOKI_ETH_SUSHI_MASTERCHEF_PID, balance, address(this));
   }
 
   //Migrate from v1 pool to v2
-  function migrateSushi(
-    uint256 srcPoolPid,
-    address srcMasterchef,
-    uint256 dstPoolPid,
-    address dstMasterchef
-  ) external onlyGuardian {
-    require(
-      altRewardsPerSharePerBlock[SUSHI] == 0 &&
-        altRewardsStartBlock[SUSHI] == 0,
-      'Already migrated'
-    );
+  function migrateSushi(uint256 srcPoolPid, address srcMasterchef, uint256 dstPoolPid, address dstMasterchef) external onlyGuardian {
+    require(altRewardsPerSharePerBlock[SUSHI] == 0 && altRewardsStartBlock[SUSHI] == 0, 'Already migrated');
     altRewardsStartBlock[SUSHI] = 14183871; //20220201
     IMasterChefSushi src = IMasterChefSushi(srcMasterchef);
     IMasterChefSushi2 dst = IMasterChefSushi2(dstMasterchef);
@@ -59,22 +48,15 @@ contract AdminSettings is Common {
     uint256 totalSupply = _totalSupplyPerToken[OOKI_ETH_LP];
     require(totalSupply != 0, 'no deposits');
     uint256 cliff = block.number - altRewardsStartBlock[SUSHI];
-    altRewardsPerShare[SUSHI] =
-      (IERC20(SUSHI).balanceOf(address(this)) * 1e12) /
-      totalSupply;
+    altRewardsPerShare[SUSHI] = (IERC20(SUSHI).balanceOf(address(this)) * 1e12) / totalSupply;
     altRewardsPerSharePerBlock[SUSHI] = altRewardsPerShare[SUSHI] / cliff;
     altRewardsBlock[SUSHI] = block.number;
   }
 
-  function setAltRewardsUserInfo(
-    address[] calldata users,
-    uint256[] calldata stakingStartBlock
-  ) external onlyGuardian {
+  function setAltRewardsUserInfo(address[] calldata users, uint256[] calldata stakingStartBlock) external onlyGuardian {
     require(users.length == stakingStartBlock.length, '!length');
     for (uint256 i = 0; i < users.length; i++) {
-      userAltRewardsInfo[users[i]][SUSHI].stakingStartBlock = stakingStartBlock[
-        i
-      ];
+      userAltRewardsInfo[users[i]][SUSHI].stakingStartBlock = stakingStartBlock[i];
       userAltRewardsInfo[users[i]][SUSHI].pending = 0;
     }
   }
@@ -84,11 +66,7 @@ contract AdminSettings is Common {
     governor = _governor;
   }
 
-  function setApprovals(
-    address _token,
-    address _spender,
-    uint256 _value
-  ) public onlyOwner {
+  function setApprovals(address _token, address _spender, uint256 _value) public onlyOwner {
     IERC20(_token).safeApprove(_spender, _value);
   }
 
@@ -97,10 +75,7 @@ contract AdminSettings is Common {
   }
 
   // OnlyOwner functions
-  function updateSettings(
-    address settingsTarget,
-    bytes memory callData
-  ) public onlyOwner returns (bytes memory) {
+  function updateSettings(address settingsTarget, bytes memory callData) public onlyOwner returns (bytes memory) {
     (bool result, ) = settingsTarget.delegatecall(callData);
     assembly {
       let size := returndatasize()

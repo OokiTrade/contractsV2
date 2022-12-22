@@ -22,8 +22,7 @@ contract FeeExtractAndDistribute_Arbitrum is PausableGuardian_0_8 {
   address public constant USDC = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
   uint64 public constant DEST_CHAINID = 137; //send to polygon
   uint256 public constant MIN_USDC_AMOUNT = 30e6; //$30 min bridge amount
-  IUniswapV2Router public constant SWAPS_ROUTER_V2 =
-    IUniswapV2Router(0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506);
+  IUniswapV2Router public constant SWAPS_ROUTER_V2 = IUniswapV2Router(0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506);
 
   address internal constant ZERO_ADDRESS = address(0);
 
@@ -41,13 +40,7 @@ contract FeeExtractAndDistribute_Arbitrum is PausableGuardian_0_8 {
 
   event ExtractAndDistribute(uint256 amountTreasury, uint256 amountStakers);
 
-  event AssetSwap(
-    address indexed sender,
-    address indexed srcAsset,
-    address indexed dstAsset,
-    uint256 srcAmount,
-    uint256 dstAmount
-  );
+  event AssetSwap(address indexed sender, address indexed srcAsset, address indexed dstAsset, uint256 srcAmount, uint256 dstAmount);
 
   function sweepFees() public pausable {
     _extractAndDistribute(currentFeeTokens);
@@ -58,11 +51,7 @@ contract FeeExtractAndDistribute_Arbitrum is PausableGuardian_0_8 {
   }
 
   function _extractAndDistribute(address[] memory assets) internal {
-    uint256[] memory amounts = BZX.withdrawFees(
-      assets,
-      address(this),
-      IBZx.FeeClaimType.All
-    );
+    uint256[] memory amounts = BZX.withdrawFees(assets, address(this), IBZx.FeeClaimType.All);
 
     for (uint256 i = 0; i < assets.length; i++) {
       exportedFees[assets[i]] += amounts[i];
@@ -80,9 +69,7 @@ contract FeeExtractAndDistribute_Arbitrum is PausableGuardian_0_8 {
       exportedFees[asset] = 0;
 
       if (amount != 0) {
-        usdcOutput += asset == ETH
-          ? _swapWithPair([asset, USDC], amount)
-          : _swapWithPair([asset, ETH, USDC], amount); //builds route for all tokens to route through ETH
+        usdcOutput += asset == ETH ? _swapWithPair([asset, USDC], amount) : _swapWithPair([asset, ETH, USDC], amount); //builds route for all tokens to route through ETH
       }
     }
 
@@ -92,10 +79,7 @@ contract FeeExtractAndDistribute_Arbitrum is PausableGuardian_0_8 {
     }
   }
 
-  function _swapWithPair(
-    address[2] memory route,
-    uint256 inAmount
-  ) internal returns (uint256 returnAmount) {
+  function _swapWithPair(address[2] memory route, uint256 inAmount) internal returns (uint256 returnAmount) {
     address[] memory path = new address[](2);
     path[0] = route[0];
     path[1] = route[1];
@@ -111,10 +95,7 @@ contract FeeExtractAndDistribute_Arbitrum is PausableGuardian_0_8 {
     _checkUniDisagreement(path[0], inAmount, returnAmount, MAX_DISAGREEMENT);
   }
 
-  function _swapWithPair(
-    address[3] memory route,
-    uint256 inAmount
-  ) internal returns (uint256 returnAmount) {
+  function _swapWithPair(address[3] memory route, uint256 inAmount) internal returns (uint256 returnAmount) {
     address[] memory path = new address[](3);
     path[0] = route[0];
     path[1] = route[1];
@@ -132,18 +113,8 @@ contract FeeExtractAndDistribute_Arbitrum is PausableGuardian_0_8 {
   }
 
   function _bridgeFeesAndDistribute() internal {
-    require(
-      IERC20(USDC).balanceOf(address(this)) >= MIN_USDC_AMOUNT,
-      'FeeExtractAndDistribute_Arbitrum: Fees Bridged Too Little'
-    );
-    IBridge(bridge).send(
-      treasuryWallet,
-      USDC,
-      IERC20(USDC).balanceOf(address(this)),
-      DEST_CHAINID,
-      uint64(block.timestamp),
-      slippage
-    );
+    require(IERC20(USDC).balanceOf(address(this)) >= MIN_USDC_AMOUNT, 'FeeExtractAndDistribute_Arbitrum: Fees Bridged Too Little');
+    IBridge(bridge).send(treasuryWallet, USDC, IERC20(USDC).balanceOf(address(this)), DEST_CHAINID, uint64(block.timestamp), slippage);
   }
 
   // OnlyOwner functions
@@ -169,21 +140,10 @@ contract FeeExtractAndDistribute_Arbitrum is PausableGuardian_0_8 {
     bridge = _wallet;
   }
 
-  function _checkUniDisagreement(
-    address asset,
-    uint256 assetAmount,
-    uint256 recvAmount,
-    uint256 maxDisagreement
-  ) internal view {
-    uint256 estAmountOut = IPriceFeeds(BZX.priceFeeds()).queryReturn(
-      asset,
-      USDC,
-      assetAmount
-    );
+  function _checkUniDisagreement(address asset, uint256 assetAmount, uint256 recvAmount, uint256 maxDisagreement) internal view {
+    uint256 estAmountOut = IPriceFeeds(BZX.priceFeeds()).queryReturn(asset, USDC, assetAmount);
 
-    uint256 spreadValue = estAmountOut > recvAmount
-      ? estAmountOut - recvAmount
-      : recvAmount - estAmountOut;
+    uint256 spreadValue = estAmountOut > recvAmount ? estAmountOut - recvAmount : recvAmount - estAmountOut;
     if (spreadValue != 0) {
       spreadValue = (spreadValue * 1e20) / estAmountOut;
 
@@ -195,12 +155,7 @@ contract FeeExtractAndDistribute_Arbitrum is PausableGuardian_0_8 {
     slippage = newSlippage;
   }
 
-  function requestRefund(
-    bytes calldata wdmsg,
-    bytes[] calldata sigs,
-    address[] calldata signers,
-    uint256[] calldata powers
-  ) external onlyGuardian {
+  function requestRefund(bytes calldata wdmsg, bytes[] calldata sigs, address[] calldata signers, uint256[] calldata powers) external onlyGuardian {
     IBridge(bridge).withdraw(wdmsg, sigs, signers, powers);
   }
 

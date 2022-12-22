@@ -10,10 +10,7 @@ contract OokiOwnableProxy is Ownable, ERC1967Proxy {
     _fallback();
   }
 
-  constructor(
-    address _logic,
-    bytes memory _data
-  ) payable ERC1967Proxy(_logic, _data) {}
+  constructor(address _logic, bytes memory _data) payable ERC1967Proxy(_logic, _data) {}
 
   function upgradeTo(address newImplementation) public onlyOwner {
     _upgradeTo(newImplementation);

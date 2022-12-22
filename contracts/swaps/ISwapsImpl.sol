@@ -16,35 +16,17 @@ interface ISwapsImpl {
     uint256 maxSourceTokenAmount,
     uint256 requiredDestTokenAmount,
     bytes calldata payload
-  )
-    external
-    returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed);
+  ) external returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed);
 
-  function dexExpectedRate(
-    address sourceTokenAddress,
-    address destTokenAddress,
-    uint256 sourceTokenAmount
-  ) external view returns (uint256);
+  function dexExpectedRate(address sourceTokenAddress, address destTokenAddress, uint256 sourceTokenAmount) external view returns (uint256);
 
-  function dexAmountOut(
-    bytes calldata route,
-    uint256 amountIn
-  ) external returns (uint256 amountOut, address midToken);
+  function dexAmountOut(bytes calldata route, uint256 amountIn) external returns (uint256 amountOut, address midToken);
 
-  function dexAmountOutFormatted(
-    bytes calldata route,
-    uint256 amountOut
-  ) external returns (uint256 amountIn, address midToken);
+  function dexAmountOutFormatted(bytes calldata route, uint256 amountOut) external returns (uint256 amountIn, address midToken);
 
-  function dexAmountIn(
-    bytes calldata route,
-    uint256 amountOut
-  ) external returns (uint256 amountIn, address midToken);
+  function dexAmountIn(bytes calldata route, uint256 amountOut) external returns (uint256 amountIn, address midToken);
 
-  function dexAmountInFormatted(
-    bytes calldata route,
-    uint256 amountOut
-  ) external returns (uint256 amountIn, address midToken);
+  function dexAmountInFormatted(bytes calldata route, uint256 amountOut) external returns (uint256 amountIn, address midToken);
 
   function setSwapApprovals(address[] calldata tokens) external;
 

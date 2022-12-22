@@ -37,89 +37,37 @@ interface IStaking {
 
   function stake(address[] calldata tokens, uint256[] calldata values) external;
 
-  function unstake(
-    address[] calldata tokens,
-    uint256[] calldata values
-  ) external;
+  function unstake(address[] calldata tokens, uint256[] calldata values) external;
 
   function earned(
     address account
-  )
-    external
-    view
-    returns (
-      uint256 bzrxRewardsEarned,
-      uint256 stableCoinRewardsEarned,
-      uint256 bzrxRewardsVesting,
-      uint256 stableCoinRewardsVesting,
-      uint256 sushiRewardsEarned
-    );
+  ) external view returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned, uint256 bzrxRewardsVesting, uint256 stableCoinRewardsVesting, uint256 sushiRewardsEarned);
 
   function pendingCrvRewards(
     address account
-  )
-    external
-    view
-    returns (
-      uint256 bzrxRewardsEarned,
-      uint256 stableCoinRewardsEarned,
-      uint256 bzrxRewardsVesting,
-      uint256 stableCoinRewardsVesting,
-      uint256 sushiRewardsEarned
-    );
+  ) external view returns (uint256 bzrxRewardsEarned, uint256 stableCoinRewardsEarned, uint256 bzrxRewardsVesting, uint256 stableCoinRewardsVesting, uint256 sushiRewardsEarned);
 
-  function getVariableWeights()
-    external
-    view
-    returns (uint256 vBZRXWeight, uint256 iBZRXWeight, uint256 LPTokenWeight);
+  function getVariableWeights() external view returns (uint256 vBZRXWeight, uint256 iBZRXWeight, uint256 LPTokenWeight);
 
-  function balanceOfByAsset(
-    address token,
-    address account
-  ) external view returns (uint256 balance);
+  function balanceOfByAsset(address token, address account) external view returns (uint256 balance);
 
   function balanceOfByAssets(
     address account
-  )
-    external
-    view
-    returns (
-      uint256 bzrxBalance,
-      uint256 iBZRXBalance,
-      uint256 vBZRXBalance,
-      uint256 LPTokenBalance,
-      uint256 LPTokenBalanceOld
-    );
+  ) external view returns (uint256 bzrxBalance, uint256 iBZRXBalance, uint256 vBZRXBalance, uint256 LPTokenBalance, uint256 LPTokenBalanceOld);
 
-  function balanceOfStored(
-    address account
-  ) external view returns (uint256 vestedBalance, uint256 vestingBalance);
+  function balanceOfStored(address account) external view returns (uint256 vestedBalance, uint256 vestingBalance);
 
   function totalSupplyStored() external view returns (uint256 supply);
 
-  function vestedBalanceForAmount(
-    uint256 tokenBalance,
-    uint256 lastUpdate,
-    uint256 vestingEndTime
-  ) external view returns (uint256 vested);
+  function vestedBalanceForAmount(uint256 tokenBalance, uint256 lastUpdate, uint256 vestingEndTime) external view returns (uint256 vested);
 
-  function votingBalanceOf(
-    address account,
-    uint256 proposalId
-  ) external view returns (uint256 totalVotes);
+  function votingBalanceOf(address account, uint256 proposalId) external view returns (uint256 totalVotes);
 
-  function votingBalanceOfNow(
-    address account
-  ) external view returns (uint256 totalVotes);
+  function votingBalanceOfNow(address account) external view returns (uint256 totalVotes);
 
-  function votingFromStakedBalanceOf(
-    address account
-  ) external view returns (uint256 totalVotes);
+  function votingFromStakedBalanceOf(address account) external view returns (uint256 totalVotes);
 
-  function _setProposalVals(
-    address account,
-    uint256 proposalId
-  ) external returns (uint256);
+  function _setProposalVals(address account, uint256 proposalId) external returns (uint256);
 
   function exit() external;
 

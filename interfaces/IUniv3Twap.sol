@@ -11,7 +11,5 @@ interface IUniv3Twap {
     uint32 secondsAgo;
   }
 
-  function twapValue(
-    V3Specs memory specs
-  ) external view returns (uint256 quoteAmount);
+  function twapValue(V3Specs memory specs) external view returns (uint256 quoteAmount);
 }

@@ -3,12 +3,7 @@ pragma solidity >=0.5.17 <0.9.0;
 pragma experimental ABIEncoderV2;
 
 interface IBalancerVault {
-  function joinPool(
-    bytes32 poolId,
-    address sender,
-    address recipient,
-    JoinPoolRequest calldata request
-  ) external payable;
+  function joinPool(bytes32 poolId, address sender, address recipient, JoinPoolRequest calldata request) external payable;
 
   struct JoinPoolRequest {
     address[] assets;
@@ -17,12 +12,7 @@ interface IBalancerVault {
     bool fromInternalBalance;
   }
 
-  function exitPool(
-    bytes32 poolId,
-    address sender,
-    address payable recipient,
-    ExitPoolRequest calldata request
-  ) external;
+  function exitPool(bytes32 poolId, address sender, address payable recipient, ExitPoolRequest calldata request) external;
 
   struct ExitPoolRequest {
     address[] assets;
@@ -31,12 +21,7 @@ interface IBalancerVault {
     bool toInternalBalance;
   }
 
-  function swap(
-    SingleSwap calldata singleSwap,
-    FundManagement calldata funds,
-    uint256 limit,
-    uint256 deadline
-  ) external payable returns (uint256);
+  function swap(SingleSwap calldata singleSwap, FundManagement calldata funds, uint256 limit, uint256 deadline) external payable returns (uint256);
 
   enum SwapKind {
     GIVEN_IN,
@@ -69,12 +54,7 @@ interface IBalancerVault {
     uint256 deadline
   ) external returns (int256[] memory assetDeltas);
 
-  function queryBatchSwap(
-    SwapKind kind,
-    BatchSwapStep[] calldata swaps,
-    address[] calldata assets,
-    FundManagement calldata funds
-  ) external returns (int256[] memory assetDeltas);
+  function queryBatchSwap(SwapKind kind, BatchSwapStep[] calldata swaps, address[] calldata assets, FundManagement calldata funds) external returns (int256[] memory assetDeltas);
 
   struct FundManagement {
     address sender;
@@ -83,28 +63,13 @@ interface IBalancerVault {
     bool toInternalBalance;
   }
 
-  function getPoolTokens(
-    bytes32 poolId
-  )
-    external
-    view
-    returns (
-      address[] memory tokens,
-      uint256[] memory balances,
-      uint256 lastChangeBlock
-    );
+  function getPoolTokens(bytes32 poolId) external view returns (address[] memory tokens, uint256[] memory balances, uint256 lastChangeBlock);
 
-  function hasApprovedRelayer(
-    address user,
-    address relayer
-  ) external view returns (bool);
+  function hasApprovedRelayer(address user, address relayer) external view returns (bool);
 
   function getRate() external view returns (uint256);
 
-  function getInternalBalance(
-    address user,
-    address[] calldata tokens
-  ) external view returns (uint256[] memory);
+  function getInternalBalance(address user, address[] calldata tokens) external view returns (uint256[] memory);
 
   function manageUserBalance(UserBalanceOp[] calldata ops) external payable;
 
@@ -123,9 +88,7 @@ interface IBalancerVault {
     TRANSFER_EXTERNAL
   }
 
-  function getPool(
-    bytes32 poolId
-  ) external view returns (address, PoolSpecialization);
+  function getPool(bytes32 poolId) external view returns (address, PoolSpecialization);
 
   enum PoolSpecialization {
     GENERAL,
@@ -133,16 +96,5 @@ interface IBalancerVault {
     TWO_TOKEN
   }
 
-  function getPoolTokenInfo(
-    bytes32 poolId,
-    address token
-  )
-    external
-    view
-    returns (
-      uint256 cash,
-      uint256 managed,
-      uint256 lastChangeBlock,
-      address assetManager
-    );
+  function getPoolTokenInfo(bytes32 poolId, address token) external view returns (uint256 cash, uint256 managed, uint256 lastChangeBlock, address assetManager);
 }

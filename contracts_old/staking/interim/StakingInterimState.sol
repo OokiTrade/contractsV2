@@ -16,8 +16,7 @@ contract StakingInterimState is Ownable {
   using SafeERC20 for IERC20;
   using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
 
-  uint256 public constant initialCirculatingSupply =
-    1030000000e18 - 889389933e18;
+  uint256 public constant initialCirculatingSupply = 1030000000e18 - 889389933e18;
   address internal constant ZERO_ADDRESS = address(0);
 
   address public BZRX;

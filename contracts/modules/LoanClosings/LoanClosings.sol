@@ -9,24 +9,12 @@ pragma solidity ^0.8.0;
 import './LoanClosingsShared.sol';
 
 contract LoanClosings is LoanClosingsShared {
-  constructor(
-    IWeth wethtoken,
-    address usdc,
-    address bzrx,
-    address vbzrx,
-    address ooki
-  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
+  constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
 
   function initialize(address target) external onlyOwner {
     // TODO remove after migration
-    _setTarget(
-      bytes4(keccak256('closeWithDeposit(bytes32,address,uint256)')),
-      address(0)
-    );
-    _setTarget(
-      bytes4(keccak256('closeWithSwap(bytes32,address,uint256)')),
-      address(0)
-    );
+    _setTarget(bytes4(keccak256('closeWithDeposit(bytes32,address,uint256)')), address(0));
+    _setTarget(bytes4(keccak256('closeWithSwap(bytes32,address,uint256)')), address(0));
 
     _setTarget(this.closeWithDeposit.selector, target);
     _setTarget(this.closeWithSwap.selector, target);
@@ -37,16 +25,7 @@ contract LoanClosings is LoanClosingsShared {
     address receiver,
     uint256 depositAmount, // denominated in loanToken
     bytes memory loanDataBytes
-  )
-    public
-    payable
-    nonReentrant
-    returns (
-      uint256 loanCloseAmount,
-      uint256 withdrawAmount,
-      address withdrawToken
-    )
-  {
+  ) public payable nonReentrant returns (uint256 loanCloseAmount, uint256 withdrawAmount, address withdrawToken) {
     return _closeWithDeposit(loanId, receiver, depositAmount, loanDataBytes);
   }
 
@@ -56,44 +35,18 @@ contract LoanClosings is LoanClosingsShared {
     uint256 swapAmount, // denominated in collateralToken
     bool returnTokenIsCollateral, // true: withdraws collateralToken, false: withdraws loanToken
     bytes memory loanDataBytes
-  )
-    public
-    nonReentrant
-    returns (
-      uint256 loanCloseAmount,
-      uint256 withdrawAmount,
-      address withdrawToken
-    )
-  {
-    return
-      _closeWithSwap(
-        loanId,
-        receiver,
-        swapAmount,
-        returnTokenIsCollateral,
-        loanDataBytes
-      );
+  ) public nonReentrant returns (uint256 loanCloseAmount, uint256 withdrawAmount, address withdrawToken) {
+    return _closeWithSwap(loanId, receiver, swapAmount, returnTokenIsCollateral, loanDataBytes);
   }
 
   function _checkPermit(address token, bytes memory loanDataBytes) internal {
     if (loanDataBytes.length != 0) {
       if (abi.decode(loanDataBytes, (uint128)) & WITH_PERMIT != 0) {
-        (uint128 f, bytes[] memory payload) = abi.decode(
-          loanDataBytes,
-          (uint128, bytes[])
+        (uint128 f, bytes[] memory payload) = abi.decode(loanDataBytes, (uint128, bytes[]));
+        (address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) = abi.decode(
+          payload[2],
+          (address, address, uint, uint, uint8, bytes32, bytes32)
         );
-        (
-          address owner,
-          address spender,
-          uint value,
-          uint deadline,
-          uint8 v,
-          bytes32 r,
-          bytes32 s
-        ) = abi.decode(
-            payload[2],
-            (address, address, uint, uint, uint8, bytes32, bytes32)
-          );
         require(spender == address(this), 'Permit');
         IERC20Permit(token).permit(owner, spender, value, deadline, v, r, s);
       }
@@ -105,15 +58,7 @@ contract LoanClosings is LoanClosingsShared {
     address receiver,
     uint256 depositAmount, // denominated in loanToken
     bytes memory loanDataBytes
-  )
-    internal
-    pausable
-    returns (
-      uint256 loanCloseAmount,
-      uint256 withdrawAmount,
-      address withdrawToken
-    )
-  {
+  ) internal pausable returns (uint256 loanCloseAmount, uint256 withdrawAmount, address withdrawToken) {
     require(depositAmount != 0, 'depositAmount == 0');
 
     Loan memory loanLocal = loans[loanId];
@@ -127,20 +72,13 @@ contract LoanClosings is LoanClosingsShared {
 
     _checkPermit(loanParamsLocal.loanToken, loanDataBytes);
 
-    uint256 principalPlusInterest = _settleInterest(loanLocal.lender, loanId) +
-      loanLocal.principal;
+    uint256 principalPlusInterest = _settleInterest(loanLocal.lender, loanId) + loanLocal.principal;
 
     // can't close more than the full principal
-    loanCloseAmount = depositAmount > principalPlusInterest
-      ? principalPlusInterest
-      : depositAmount;
+    loanCloseAmount = depositAmount > principalPlusInterest ? principalPlusInterest : depositAmount;
 
     if (loanCloseAmount != 0) {
-      _returnPrincipalWithDeposit(
-        loanParamsLocal.loanToken,
-        loanLocal.lender,
-        loanCloseAmount
-      );
+      _returnPrincipalWithDeposit(loanParamsLocal.loanToken, loanLocal.lender, loanCloseAmount);
     }
 
     if (loanCloseAmount == principalPlusInterest) {
@@ -168,15 +106,7 @@ contract LoanClosings is LoanClosingsShared {
     uint256 swapAmount,
     bool returnTokenIsCollateral,
     bytes memory loanDataBytes
-  )
-    internal
-    pausable
-    returns (
-      uint256 loanCloseAmount,
-      uint256 withdrawAmount,
-      address withdrawToken
-    )
-  {
+  ) internal pausable returns (uint256 loanCloseAmount, uint256 withdrawAmount, address withdrawToken) {
     require(swapAmount != 0, 'swapAmount == 0');
 
     Loan memory loanLocal = loans[loanId];
@@ -188,8 +118,7 @@ contract LoanClosings is LoanClosingsShared {
 
     LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
-    uint256 principalPlusInterest = _settleInterest(loanLocal.lender, loanId) +
-      loanLocal.principal;
+    uint256 principalPlusInterest = _settleInterest(loanLocal.lender, loanId) + loanLocal.principal;
 
     if (swapAmount > loanLocal.collateral) {
       swapAmount = loanLocal.collateral;
@@ -203,11 +132,7 @@ contract LoanClosings is LoanClosingsShared {
 
     uint256 usedCollateral;
     uint256 collateralToLoanSwapRate;
-    (
-      usedCollateral,
-      withdrawAmount,
-      collateralToLoanSwapRate
-    ) = _coverPrincipalWithSwap(
+    (usedCollateral, withdrawAmount, collateralToLoanSwapRate) = _coverPrincipalWithSwap(
       loanLocal,
       loanParamsLocal,
       swapAmount,
@@ -218,40 +143,23 @@ contract LoanClosings is LoanClosingsShared {
 
     if (loanCloseAmount != 0) {
       // Repays principal to lender
-      vaultWithdraw(
-        loanParamsLocal.loanToken,
-        loanLocal.lender,
-        loanCloseAmount
-      );
+      vaultWithdraw(loanParamsLocal.loanToken, loanLocal.lender, loanCloseAmount);
     }
 
     if (usedCollateral != 0) {
       loanLocal.collateral = loanLocal.collateral - usedCollateral;
     }
 
-    withdrawToken = returnTokenIsCollateral
-      ? loanParamsLocal.collateralToken
-      : loanParamsLocal.loanToken;
+    withdrawToken = returnTokenIsCollateral ? loanParamsLocal.collateralToken : loanParamsLocal.loanToken;
 
     if (withdrawAmount != 0) {
       _withdrawAsset(withdrawToken, receiver, withdrawAmount);
     }
 
-    _finalizeClose(
-      loanLocal,
-      loanParamsLocal,
-      loanCloseAmount,
-      usedCollateral,
-      collateralToLoanSwapRate,
-      CloseTypes.Swap
-    );
+    _finalizeClose(loanLocal, loanParamsLocal, loanCloseAmount, usedCollateral, collateralToLoanSwapRate, CloseTypes.Swap);
   }
 
-  function _updateDepositAmount(
-    bytes32 loanId,
-    uint256 principalBefore,
-    uint256 principalAfter
-  ) internal {
+  function _updateDepositAmount(bytes32 loanId, uint256 principalBefore, uint256 principalAfter) internal {
     uint256 depositValueAsLoanToken;
     uint256 depositValueAsCollateralToken;
     bytes32 slot = keccak256(abi.encode(loanId, LoanDepositValueID));
@@ -262,38 +170,21 @@ contract LoanClosings is LoanClosingsShared {
         sstore(add(slot, 1), 0)
       }
       default {
-        depositValueAsLoanToken := div(
-          mul(sload(slot), principalAfter),
-          principalBefore
-        )
+        depositValueAsLoanToken := div(mul(sload(slot), principalAfter), principalBefore)
         sstore(slot, depositValueAsLoanToken)
 
         slot := add(slot, 1)
-        depositValueAsCollateralToken := div(
-          mul(sload(slot), principalAfter),
-          principalBefore
-        )
+        depositValueAsCollateralToken := div(mul(sload(slot), principalAfter), principalBefore)
         sstore(slot, depositValueAsCollateralToken)
       }
     }
 
-    emit LoanDeposit(
-      loanId,
-      depositValueAsLoanToken,
-      depositValueAsCollateralToken
-    );
+    emit LoanDeposit(loanId, depositValueAsLoanToken, depositValueAsCollateralToken);
   }
 
-  function _checkAuthorized(
-    bytes32 _id,
-    bool _active,
-    address _borrower
-  ) internal view {
+  function _checkAuthorized(bytes32 _id, bool _active, address _borrower) internal view {
     require(_active, 'loan is closed');
-    require(
-      msg.sender == _borrower || delegatedManagers[_id][msg.sender],
-      'unauthorized'
-    );
+    require(msg.sender == _borrower || delegatedManagers[_id][msg.sender], 'unauthorized');
   }
 
   function _coverPrincipalWithSwap(
@@ -303,21 +194,10 @@ contract LoanClosings is LoanClosingsShared {
     uint256 principalNeeded,
     bool returnTokenIsCollateral,
     bytes memory loanDataBytes
-  )
-    internal
-    returns (
-      uint256 usedCollateral,
-      uint256 withdrawAmount,
-      uint256 collateralToLoanSwapRate
-    )
-  {
+  ) internal returns (uint256 usedCollateral, uint256 withdrawAmount, uint256 collateralToLoanSwapRate) {
     uint256 destTokenAmountReceived;
     uint256 sourceTokenAmountUsed;
-    (
-      destTokenAmountReceived,
-      sourceTokenAmountUsed,
-      collateralToLoanSwapRate
-    ) = _doCollateralSwap(
+    (destTokenAmountReceived, sourceTokenAmountUsed, collateralToLoanSwapRate) = _doCollateralSwap(
       loanLocal,
       loanParamsLocal,
       swapAmount,
@@ -329,23 +209,15 @@ contract LoanClosings is LoanClosingsShared {
     if (returnTokenIsCollateral) {
       if (destTokenAmountReceived > principalNeeded) {
         // better fill than expected, so send excess to borrower
-        vaultWithdraw(
-          loanParamsLocal.loanToken,
-          loanLocal.borrower,
-          destTokenAmountReceived - principalNeeded
-        );
+        vaultWithdraw(loanParamsLocal.loanToken, loanLocal.borrower, destTokenAmountReceived - principalNeeded);
       }
-      withdrawAmount = swapAmount > sourceTokenAmountUsed
-        ? swapAmount - sourceTokenAmountUsed
-        : 0;
+      withdrawAmount = swapAmount > sourceTokenAmountUsed ? swapAmount - sourceTokenAmountUsed : 0;
     } else {
       require(sourceTokenAmountUsed == swapAmount, 'swap error');
       withdrawAmount = destTokenAmountReceived - principalNeeded;
     }
 
-    usedCollateral = sourceTokenAmountUsed > swapAmount
-      ? sourceTokenAmountUsed
-      : swapAmount;
+    usedCollateral = sourceTokenAmountUsed > swapAmount ? sourceTokenAmountUsed : swapAmount;
   }
 
   function _doCollateralSwap(
@@ -355,19 +227,8 @@ contract LoanClosings is LoanClosingsShared {
     uint256 principalNeeded,
     bool returnTokenIsCollateral,
     bytes memory loanDataBytes
-  )
-    internal
-    returns (
-      uint256 destTokenAmountReceived,
-      uint256 sourceTokenAmountUsed,
-      uint256 collateralToLoanSwapRate
-    )
-  {
-    (
-      destTokenAmountReceived,
-      sourceTokenAmountUsed,
-      collateralToLoanSwapRate
-    ) = _loanSwap(
+  ) internal returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed, uint256 collateralToLoanSwapRate) {
+    (destTokenAmountReceived, sourceTokenAmountUsed, collateralToLoanSwapRate) = _loanSwap(
       loanLocal.id,
       loanParamsLocal.collateralToken,
       loanParamsLocal.loanToken,
@@ -380,14 +241,8 @@ contract LoanClosings is LoanClosingsShared {
       false, // bypassFee
       loanDataBytes
     );
-    require(
-      destTokenAmountReceived >= principalNeeded,
-      'insufficient dest amount'
-    );
-    require(
-      sourceTokenAmountUsed <= loanLocal.collateral,
-      'excessive source amount'
-    );
+    require(destTokenAmountReceived >= principalNeeded, 'insufficient dest amount');
+    require(sourceTokenAmountUsed <= loanLocal.collateral, 'excessive source amount');
   }
 
   function _getCurrentMargin(
@@ -396,20 +251,10 @@ contract LoanClosings is LoanClosingsShared {
     uint256 principal,
     uint256 collateral,
     bool silentFail
-  )
-    internal
-    override
-    returns (uint256 currentMargin, uint256 collateralToLoanRate)
-  {
+  ) internal override returns (uint256 currentMargin, uint256 collateralToLoanRate) {
     address _priceFeeds = priceFeeds;
     (bool success, bytes memory data) = _priceFeeds.staticcall(
-      abi.encodeWithSelector(
-        IPriceFeeds(_priceFeeds).getCurrentMargin.selector,
-        loanToken,
-        collateralToken,
-        principal,
-        collateral
-      )
+      abi.encodeWithSelector(IPriceFeeds(_priceFeeds).getCurrentMargin.selector, loanToken, collateralToken, principal, collateral)
     );
     if (success) {
       assembly {
@@ -429,11 +274,7 @@ contract LoanClosings is LoanClosingsShared {
     uint256 collateralToLoanSwapRate,
     CloseTypes closeType
   ) internal {
-    (uint256 principalBefore, uint256 principalAfter) = _closeLoan(
-      loanLocal,
-      loanParamsLocal.loanToken,
-      loanCloseAmount
-    );
+    (uint256 principalBefore, uint256 principalAfter) = _closeLoan(loanLocal, loanParamsLocal.loanToken, loanCloseAmount);
 
     // this is still called even with full loan close to return collateralToLoanRate
     (uint256 currentMargin, uint256 collateralToLoanRate) = _getCurrentMargin(
@@ -454,15 +295,6 @@ contract LoanClosings is LoanClosingsShared {
 
     _updateDepositAmount(loanLocal.id, principalBefore, principalAfter);
 
-    _emitClosingEvents(
-      loanParamsLocal,
-      loanLocal,
-      loanCloseAmount,
-      collateralCloseAmount,
-      collateralToLoanRate,
-      collateralToLoanSwapRate,
-      currentMargin,
-      closeType
-    );
+    _emitClosingEvents(loanParamsLocal, loanLocal, loanCloseAmount, collateralCloseAmount, collateralToLoanRate, collateralToLoanSwapRate, currentMargin, closeType);
   }
 }

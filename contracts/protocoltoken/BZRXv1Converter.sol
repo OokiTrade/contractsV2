@@ -12,20 +12,14 @@ import '@openzeppelin-2.5.0/ownership/Ownable.sol';
 contract BZRXv1Converter is Ownable {
   event ConvertBZRX(address indexed sender, uint256 amount);
 
-  IERC20 public constant BZRXv1 =
-    IERC20(0x1c74cFF0376FB4031Cd7492cD6dB2D66c3f2c6B9);
-  IERC20 public constant BZRX =
-    IERC20(0x56d811088235F11C8920698a204A5010a788f4b3);
+  IERC20 public constant BZRXv1 = IERC20(0x1c74cFF0376FB4031Cd7492cD6dB2D66c3f2c6B9);
+  IERC20 public constant BZRX = IERC20(0x56d811088235F11C8920698a204A5010a788f4b3);
 
   uint256 public totalConverted;
   uint256 public terminationTimestamp;
 
   function convert(uint256 _tokenAmount) external {
-    require(
-      (_getTimestamp() < terminationTimestamp && msg.sender != address(1)) ||
-        msg.sender == owner(),
-      'convert not allowed'
-    );
+    require((_getTimestamp() < terminationTimestamp && msg.sender != address(1)) || msg.sender == owner(), 'convert not allowed');
 
     BZRXv1.transferFrom(
       msg.sender,

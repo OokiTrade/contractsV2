@@ -26,10 +26,8 @@ contract BuyBackAndBurn is Upgradeable_0_8 {
 
   address public constant USDC = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
   address public constant P125 = 0x83000597e8420aD7e9EDD410b2883Df1b83823cF;
-  IUniswapV3SwapRouter public constant SWAP_ROUTER =
-    IUniswapV3SwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564); //uni v3
-  IQuoter public constant QUOTER =
-    IQuoter(0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6); //uni v3 quote v2
+  IUniswapV3SwapRouter public constant SWAP_ROUTER = IUniswapV3SwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564); //uni v3
+  IQuoter public constant QUOTER = IQuoter(0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6); //uni v3 quote v2
   uint256 public constant WEI_PRECISION_PERCENT = 10 ** 20; //1e18 precision on percentages
 
   event BuyBack(uint256 indexed price, uint256 amountIn, uint256 amountBought);
@@ -60,9 +58,7 @@ contract BuyBackAndBurn is Upgradeable_0_8 {
     uint256 balanceUsed;
     uint256 execPrice;
     if (getDebtTokenAmountOut(fullBalance) >= minAmountOut) {
-      (execPrice, balanceUsed, buyAmount) = _buyDebtToken(
-        WEI_PRECISION_PERCENT
-      ); //uses full amount
+      (execPrice, balanceUsed, buyAmount) = _buyDebtToken(WEI_PRECISION_PERCENT); //uses full amount
     } else {
       (execPrice, balanceUsed, buyAmount) = _buyDebtToken(percentage); //uses partial
     }
@@ -75,26 +71,19 @@ contract BuyBackAndBurn is Upgradeable_0_8 {
     emit BuyBack(execPrice, balanceUsed, buyAmount);
   }
 
-  function _buyDebtToken(
-    uint256 percentage
-  ) internal returns (uint256 price, uint256 amountIn, uint256 amountOut) {
+  function _buyDebtToken(uint256 percentage) internal returns (uint256 price, uint256 amountIn, uint256 amountOut) {
     uint256 bought;
-    uint256 balanceUsed = (IERC20Metadata(USDC).balanceOf(address(this)) *
-      percentage) / WEI_PRECISION_PERCENT;
+    uint256 balanceUsed = (IERC20Metadata(USDC).balanceOf(address(this)) * percentage) / WEI_PRECISION_PERCENT;
     uint256 minAmountOut = (worstExecPrice() * balanceUsed) / 10 ** 6;
     uint256 execPrice = getDebtTokenAmountOut(balanceUsed);
-    require(
-      minAmountOut / 10 ** 12 >= balanceUsed,
-      'worst absolue price is 1:1'
-    ); //caps buyback price to $1
-    IUniswapV3SwapRouter.ExactInputParams memory params = IUniswapV3SwapRouter
-      .ExactInputParams({
-        path: specsForTWAP.route,
-        recipient: address(this),
-        deadline: block.timestamp,
-        amountIn: balanceUsed,
-        amountOutMinimum: minAmountOut
-      });
+    require(minAmountOut / 10 ** 12 >= balanceUsed, 'worst absolue price is 1:1'); //caps buyback price to $1
+    IUniswapV3SwapRouter.ExactInputParams memory params = IUniswapV3SwapRouter.ExactInputParams({
+      path: specsForTWAP.route,
+      recipient: address(this),
+      deadline: block.timestamp,
+      amountIn: balanceUsed,
+      amountOutMinimum: minAmountOut
+    });
     return (execPrice, balanceUsed, SWAP_ROUTER.exactInput(params));
   }
 
@@ -105,10 +94,7 @@ contract BuyBackAndBurn is Upgradeable_0_8 {
   }
 
   function sendToTreasury() public onlyOwner {
-    IERC20Metadata(P125).transfer(
-      treasuryWallet,
-      IERC20Metadata(P125).balanceOf(address(this))
-    ); //transfers full balance to multisig to be sent to Ethereum and burnt
+    IERC20Metadata(P125).transfer(treasuryWallet, IERC20Metadata(P125).balanceOf(address(this))); //transfers full balance to multisig to be sent to Ethereum and burnt
   }
 
   function setApproval() public onlyOwner {
@@ -128,9 +114,7 @@ contract BuyBackAndBurn is Upgradeable_0_8 {
     maxPriceDisagreement = value;
   }
 
-  function setTWAPSpecs(
-    IPriceGetterP125.V3Specs memory specs
-  ) public onlyOwner {
+  function setTWAPSpecs(IPriceGetterP125.V3Specs memory specs) public onlyOwner {
     specsForTWAP = specs;
   }
 
@@ -138,10 +122,7 @@ contract BuyBackAndBurn is Upgradeable_0_8 {
     _token.transfer(msg.sender, _token.balanceOf(address(this)));
   }
 
-  function settingsForTimeAllowance(
-    uint256 tDelta,
-    uint256 allowance
-  ) external onlyOwner {
+  function settingsForTimeAllowance(uint256 tDelta, uint256 allowance) external onlyOwner {
     timeDelta = tDelta;
     setAllowance = allowance;
   }

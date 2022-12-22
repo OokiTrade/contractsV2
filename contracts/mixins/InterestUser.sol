@@ -16,32 +16,19 @@ abstract contract InterestUser is State, VaultController, FeesHelper {
   using MathUtil for uint256;
 
   function _payInterest(address lender, address interestToken) internal {
-    LenderInterest storage lenderInterestLocal = lenderInterest[lender][
-      interestToken
-    ];
+    LenderInterest storage lenderInterestLocal = lenderInterest[lender][interestToken];
 
     uint256 interestOwedNow = 0;
-    if (
-      lenderInterestLocal.owedPerDay != 0 &&
-      lenderInterestLocal.updatedTimestamp != 0
-    ) {
-      interestOwedNow =
-        ((block.timestamp - lenderInterestLocal.updatedTimestamp) *
-          lenderInterestLocal.owedPerDay) /
-        1 days;
+    if (lenderInterestLocal.owedPerDay != 0 && lenderInterestLocal.updatedTimestamp != 0) {
+      interestOwedNow = ((block.timestamp - lenderInterestLocal.updatedTimestamp) * lenderInterestLocal.owedPerDay) / 1 days;
 
       lenderInterestLocal.updatedTimestamp = block.timestamp;
 
-      if (interestOwedNow > lenderInterestLocal.owedTotal)
-        interestOwedNow = lenderInterestLocal.owedTotal;
+      if (interestOwedNow > lenderInterestLocal.owedTotal) interestOwedNow = lenderInterestLocal.owedTotal;
 
       if (interestOwedNow != 0) {
-        lenderInterestLocal.paidTotal =
-          lenderInterestLocal.paidTotal +
-          interestOwedNow;
-        lenderInterestLocal.owedTotal =
-          lenderInterestLocal.owedTotal -
-          interestOwedNow;
+        lenderInterestLocal.paidTotal = lenderInterestLocal.paidTotal + interestOwedNow;
+        lenderInterestLocal.owedTotal = lenderInterestLocal.owedTotal - interestOwedNow;
 
         _payInterestTransfer(lender, interestToken, interestOwedNow);
       }
@@ -50,14 +37,8 @@ abstract contract InterestUser is State, VaultController, FeesHelper {
     }
   }
 
-  function _payInterestTransfer(
-    address lender,
-    address interestToken,
-    uint256 interestOwedNow
-  ) internal {
-    uint256 lendingFee = (interestOwedNow * lendingFeePercent).divCeil(
-      WEI_PERCENT_PRECISION
-    );
+  function _payInterestTransfer(address lender, address interestToken, uint256 interestOwedNow) internal {
+    uint256 lendingFee = (interestOwedNow * lendingFeePercent).divCeil(WEI_PERCENT_PRECISION);
 
     _payLendingFee(lender, interestToken, lendingFee);
 

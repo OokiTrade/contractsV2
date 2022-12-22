@@ -9,13 +9,7 @@ pragma solidity ^0.8.0;
 import '../interfaces/IWeth.sol';
 
 contract Constants {
-  constructor(
-    IWeth weth,
-    address usdc,
-    address bzrx,
-    address vbzrx,
-    address ooki
-  ) {
+  constructor(IWeth weth, address usdc, address bzrx, address vbzrx, address ooki) {
     wethToken = weth;
     USDC = usdc;
     bzrxTokenAddress = bzrx;

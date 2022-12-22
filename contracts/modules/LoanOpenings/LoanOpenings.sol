@@ -13,40 +13,17 @@ import '../../mixins/InterestHandler.sol';
 import '../../swaps/SwapsUser.sol';
 import '../../governance/PausableGuardian_0_8.sol';
 
-contract LoanOpenings is
-  State,
-  LoanOpeningsEvents,
-  VaultController,
-  InterestHandler,
-  SwapsUser,
-  PausableGuardian_0_8
-{
+contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHandler, SwapsUser, PausableGuardian_0_8 {
   using MathUtil for uint256;
   using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
 
-  constructor(
-    IWeth wethtoken,
-    address usdc,
-    address bzrx,
-    address vbzrx,
-    address ooki
-  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
+  constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
 
   function initialize(address target) external onlyOwner {
     // TODO remove after migration
-    _setTarget(
-      bytes4(
-        keccak256(
-          'borrowOrTradeFromPool(bytes32,bytes32,bool,uint256,address,uint256,bytes)'
-        )
-      ),
-      address(0)
-    );
+    _setTarget(bytes4(keccak256('borrowOrTradeFromPool(bytes32,bytes32,bool,uint256,address,uint256,bytes)')), address(0));
     // TEMP: remove after upgrade
-    _setTarget(
-      bytes4(keccak256('migrateLoans(address,uint256,uint256)')),
-      address(0)
-    );
+    _setTarget(bytes4(keccak256('migrateLoans(address,uint256,uint256)')), address(0));
     _setTarget(bytes4(keccak256('getLoanCount(address)')), address(0));
 
     _setTarget(this.borrowOrTradeFromPool.selector, target);
@@ -76,24 +53,14 @@ contract LoanOpenings is
     // collateralTokenReceived: total collateralToken deposit
     bytes calldata loanDataBytes
   ) external payable nonReentrant pausable returns (LoanOpenData memory) {
-    require(
-      msg.value == 0 || loanDataBytes.length != 0,
-      'loanDataBytes required with ether'
-    );
+    require(msg.value == 0 || loanDataBytes.length != 0, 'loanDataBytes required with ether');
 
     // only callable by loan pools
     address loanToken = loanPoolToUnderlying[msg.sender];
     require(loanToken != address(0), 'not authorized');
-    require(
-      supportedTokens[loanToken] && supportedTokens[collateralToken],
-      'unsupported token'
-    );
+    require(supportedTokens[loanToken] && supportedTokens[collateralToken], 'unsupported token');
 
-    LoanParams memory loanParamsLocal = getDefaultLoanParamsAndStore(
-      loanToken,
-      collateralToken,
-      isTorqueLoan
-    );
+    LoanParams memory loanParamsLocal = getDefaultLoanParamsAndStore(loanToken, collateralToken, isTorqueLoan);
     require(loanParamsLocal.id != 0, 'loanParams not exists');
 
     if (initialMargin == 0) {
@@ -102,115 +69,46 @@ contract LoanOpenings is
     }
 
     // get required collateral
-    uint256 collateralAmountRequired = _getRequiredCollateral(
-      loanParamsLocal.loanToken,
-      loanParamsLocal.collateralToken,
-      sentValues[1],
-      initialMargin,
-      isTorqueLoan
-    );
+    uint256 collateralAmountRequired = _getRequiredCollateral(loanParamsLocal.loanToken, loanParamsLocal.collateralToken, sentValues[1], initialMargin, isTorqueLoan);
     require(collateralAmountRequired != 0, 'collateral is 0');
 
-    return
-      _borrowOrTrade(
-        loanParamsLocal,
-        loanId,
-        isTorqueLoan,
-        collateralAmountRequired,
-        initialMargin,
-        sentAddresses,
-        sentValues,
-        loanDataBytes
-      );
+    return _borrowOrTrade(loanParamsLocal, loanId, isTorqueLoan, collateralAmountRequired, initialMargin, sentAddresses, sentValues, loanDataBytes);
   }
 
-  function getDefaultLoanParamsAndStore(
-    address loanToken,
-    address collateralToken,
-    bool isTorqueLoan
-  ) internal returns (LoanParams memory loanParamsLocal) {
+  function getDefaultLoanParamsAndStore(address loanToken, address collateralToken, bool isTorqueLoan) internal returns (LoanParams memory loanParamsLocal) {
     bool isDefault;
-    (loanParamsLocal, isDefault) = getDefaultLoanParams(
-      loanToken,
-      collateralToken,
-      isTorqueLoan
-    );
+    (loanParamsLocal, isDefault) = getDefaultLoanParams(loanToken, collateralToken, isTorqueLoan);
     if (isDefault) {
       // store if its default
       loanParams[loanParamsLocal.id] = loanParamsLocal;
     }
   }
 
-  function swapLoanCollateral(
-    bytes32 loanId,
-    address newCollateralToken,
-    bytes calldata loanDataBytes
-  ) external nonReentrant pausable {
+  function swapLoanCollateral(bytes32 loanId, address newCollateralToken, bytes calldata loanDataBytes) external nonReentrant pausable {
     require(supportedTokens[newCollateralToken], 'unsupported');
     Loan storage loanLocal = loans[loanId];
     require(loanLocal.active, 'loan is closed');
-    require(
-      msg.sender == loanLocal.borrower ||
-        delegatedManagers[loanLocal.id][msg.sender],
-      'unauthorized'
-    );
+    require(msg.sender == loanLocal.borrower || delegatedManagers[loanLocal.id][msg.sender], 'unauthorized');
     LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
     address loanToken = loanParamsLocal.loanToken;
     address oldCollateralToken = loanParamsLocal.collateralToken;
     require(loanParamsLocal.maxLoanTerm == 0, 'not torque');
     require(loanToken != newCollateralToken, 'not allowed');
-    LoanParams memory params = getDefaultLoanParamsAndStore(
-      loanToken,
-      newCollateralToken,
-      true
-    );
+    LoanParams memory params = getDefaultLoanParamsAndStore(loanToken, newCollateralToken, true);
     loanLocal.loanParamsId = params.id;
 
-    (loanLocal.collateral, , ) = _loanSwap(
-      loanId,
-      oldCollateralToken,
-      newCollateralToken,
-      loanLocal.borrower,
-      loanLocal.collateral,
-      0,
-      0,
-      false,
-      loanDataBytes
-    );
+    (loanLocal.collateral, , ) = _loanSwap(loanId, oldCollateralToken, newCollateralToken, loanLocal.borrower, loanLocal.collateral, 0, 0, false, loanDataBytes);
 
-    (uint256 initialMargin, uint256 collateralToLoanRate) = IPriceFeeds(
-      priceFeeds
-    ).getCurrentMargin(
-        loanToken,
-        newCollateralToken,
-        loanLocal.principal,
-        loanLocal.collateral
-      );
+    (uint256 initialMargin, uint256 collateralToLoanRate) = IPriceFeeds(priceFeeds).getCurrentMargin(loanToken, newCollateralToken, loanLocal.principal, loanLocal.collateral);
     require(initialMargin > params.maintenanceMargin, 'unhealthy position');
 
-    emit LoanCollateralSwap(
-      loanLocal.borrower,
-      loanId,
-      oldCollateralToken,
-      newCollateralToken,
-      loanLocal.collateral,
-      collateralToLoanRate,
-      initialMargin
-    );
+    emit LoanCollateralSwap(loanLocal.borrower, loanId, oldCollateralToken, newCollateralToken, loanLocal.collateral, collateralToLoanRate, initialMargin);
   }
 
   // collateralToken is passed from the iToken and there it guarantees no invalid value can be passed
-  function getDefaultLoanParams(
-    address loanToken,
-    address collateralToken,
-    bool isTorqueLoan
-  ) public view returns (LoanParams memory loanParamsLocal, bool isDefault) {
-    bytes32 loanParamsId = generateLoanParamId(
-      loanToken,
-      collateralToken,
-      isTorqueLoan
-    );
+  function getDefaultLoanParams(address loanToken, address collateralToken, bool isTorqueLoan) public view returns (LoanParams memory loanParamsLocal, bool isDefault) {
+    bytes32 loanParamsId = generateLoanParamId(loanToken, collateralToken, isTorqueLoan);
     loanParamsLocal = loanParams[loanParamsId];
     if (loanParamsLocal.id == 0) {
       loanParamsLocal.active = true;
@@ -232,20 +130,11 @@ contract LoanOpenings is
     }
   }
 
-  function generateLoanParamId(
-    address loanToken,
-    address collateralToken,
-    bool isTorqueLoan
-  ) public pure returns (bytes32) {
-    return
-      keccak256(abi.encodePacked(loanToken, collateralToken, isTorqueLoan));
+  function generateLoanParamId(address loanToken, address collateralToken, bool isTorqueLoan) public pure returns (bytes32) {
+    return keccak256(abi.encodePacked(loanToken, collateralToken, isTorqueLoan));
   }
 
-  function setDelegatedManager(
-    bytes32 loanId,
-    address delegated,
-    bool toggle
-  ) external pausable {
+  function setDelegatedManager(bytes32 loanId, address delegated, bool toggle) external pausable {
     require(loans[loanId].borrower == msg.sender, 'unauthorized');
 
     _setDelegatedManager(loanId, msg.sender, delegated, toggle);
@@ -259,22 +148,13 @@ contract LoanOpenings is
     bool isTorqueLoan
   ) public view returns (uint256 collateralAmountRequired) {
     if (marginAmount != 0) {
-      collateralAmountRequired = _getRequiredCollateral(
-        loanToken,
-        collateralToken,
-        newPrincipal,
-        marginAmount,
-        isTorqueLoan
-      );
+      collateralAmountRequired = _getRequiredCollateral(loanToken, collateralToken, newPrincipal, marginAmount, isTorqueLoan);
 
-      uint256 feePercent = isTorqueLoan
-        ? borrowingFeePercent
-        : tradingFeePercent;
+      uint256 feePercent = isTorqueLoan ? borrowingFeePercent : tradingFeePercent;
       if (collateralAmountRequired != 0 && feePercent != 0) {
-        collateralAmountRequired = (collateralAmountRequired *
-          WEI_PERCENT_PRECISION).divCeil(
-            WEI_PERCENT_PRECISION - feePercent // never will overflow
-          );
+        collateralAmountRequired = (collateralAmountRequired * WEI_PERCENT_PRECISION).divCeil(
+          WEI_PERCENT_PRECISION - feePercent // never will overflow
+        );
       }
     }
   }
@@ -298,14 +178,8 @@ contract LoanOpenings is
     // collateralTokenReceived: total collateralToken deposit
     bytes memory loanDataBytes
   ) internal returns (LoanOpenData memory) {
-    require(
-      loanParamsLocal.collateralToken != loanParamsLocal.loanToken,
-      'collateral/loan match'
-    );
-    require(
-      initialMargin >= loanParamsLocal.minInitialMargin,
-      'initialMargin too low'
-    );
+    require(loanParamsLocal.collateralToken != loanParamsLocal.loanToken, 'collateral/loan match');
+    require(initialMargin >= loanParamsLocal.minInitialMargin, 'initialMargin too low');
 
     // maxLoanTerm == 0 indicates a Torqueloan and requres that torqueInterest != 0
     /*require(loanParamsLocal.maxLoanTerm != 0 ||
@@ -315,17 +189,9 @@ contract LoanOpenings is
     require(loanId != 0, 'invalid loanId');
 
     // initialize loan
-    Loan storage loanLocal = _initializeLoan(
-      loanParamsLocal,
-      loanId,
-      initialMargin,
-      sentAddresses,
-      sentValues
-    );
+    Loan storage loanLocal = _initializeLoan(loanParamsLocal, loanId, initialMargin, sentAddresses, sentValues);
 
-    poolPrincipalTotal[sentAddresses[0]] =
-      poolPrincipalTotal[sentAddresses[0]] +
-      sentValues[1]; // newPrincipal
+    poolPrincipalTotal[sentAddresses[0]] = poolPrincipalTotal[sentAddresses[0]] + sentValues[1]; // newPrincipal
 
     uint256 amount;
     if (isTorqueLoan) {
@@ -381,54 +247,24 @@ contract LoanOpenings is
       sentValues[2] = (WEI_PRECISION * WEI_PERCENT_PRECISION) / initialMargin;
     }
 
-    _finalizeOpen(
-      loanParamsLocal,
-      loanLocal,
-      sentAddresses,
-      sentValues,
-      isTorqueLoan
-    );
+    _finalizeOpen(loanParamsLocal, loanLocal, sentAddresses, sentValues, isTorqueLoan);
     if (loanDataBytes.length != 0) {
       if (abi.decode(loanDataBytes, (uint128)) & DELEGATE_FLAG != 0) {
-        (, bytes[] memory payloads) = abi.decode(
-          loanDataBytes,
-          (uint128, bytes[])
-        );
-        _setDelegatedManager(
-          loanId,
-          sentAddresses[1],
-          abi.decode(payloads[1], (address)),
-          true
-        );
+        (, bytes[] memory payloads) = abi.decode(loanDataBytes, (uint128, bytes[]));
+        _setDelegatedManager(loanId, sentAddresses[1], abi.decode(payloads[1], (address)), true);
       }
     }
-    return
-      LoanOpenData({
-        loanId: loanId,
-        principal: sentValues[1],
-        collateral: sentValues[4]
-      });
+    return LoanOpenData({loanId: loanId, principal: sentValues[1], collateral: sentValues[4]});
   }
 
-  function _finalizeOpen(
-    LoanParams memory loanParamsLocal,
-    Loan storage loanLocal,
-    address[4] memory sentAddresses,
-    uint256[5] memory sentValues,
-    bool isTorqueLoan
-  ) internal {
-    (uint256 initialMargin, uint256 collateralToLoanRate) = IPriceFeeds(
-      priceFeeds
-    ).getCurrentMargin(
-        loanParamsLocal.loanToken,
-        loanParamsLocal.collateralToken,
-        loanLocal.principal,
-        loanLocal.collateral
-      );
-    require(
-      initialMargin > loanParamsLocal.maintenanceMargin,
-      'unhealthy position'
+  function _finalizeOpen(LoanParams memory loanParamsLocal, Loan storage loanLocal, address[4] memory sentAddresses, uint256[5] memory sentValues, bool isTorqueLoan) internal {
+    (uint256 initialMargin, uint256 collateralToLoanRate) = IPriceFeeds(priceFeeds).getCurrentMargin(
+      loanParamsLocal.loanToken,
+      loanParamsLocal.collateralToken,
+      loanLocal.principal,
+      loanLocal.collateral
     );
+    require(initialMargin > loanParamsLocal.maintenanceMargin, 'unhealthy position');
 
     if (loanLocal.startTimestamp == block.timestamp) {
       if (isTorqueLoan) {
@@ -438,15 +274,7 @@ contract LoanOpenings is
       }
     }
 
-    _emitOpeningEvents(
-      loanParamsLocal,
-      loanLocal,
-      sentAddresses,
-      sentValues,
-      collateralToLoanRate,
-      initialMargin,
-      isTorqueLoan
-    );
+    _emitOpeningEvents(loanParamsLocal, loanLocal, sentAddresses, sentValues, collateralToLoanRate, initialMargin, isTorqueLoan);
   }
 
   function _emitOpeningEvents(
@@ -493,12 +321,7 @@ contract LoanOpenings is
     }
   }
 
-  function _setDelegatedManager(
-    bytes32 loanId,
-    address delegator,
-    address delegated,
-    bool toggle
-  ) internal {
+  function _setDelegatedManager(bytes32 loanId, address delegator, address delegated, bool toggle) internal {
     delegatedManagers[loanId][delegated] = toggle;
 
     emit DelegatedManagerSet(loanId, delegator, delegated, toggle);
@@ -513,9 +336,7 @@ contract LoanOpenings is
     uint256 borrowingFee
   ) internal view returns (bool) {
     // allow at most 2% under-collateralized
-    collateralAmountRequired =
-      ((collateralAmountRequired * 98 ether) / 100 ether) +
-      borrowingFee;
+    collateralAmountRequired = ((collateralAmountRequired * 98 ether) / 100 ether) + borrowingFee;
 
     if (newCollateral < collateralAmountRequired) {
       // check that existing collateral is sufficient coverage
@@ -579,10 +400,7 @@ contract LoanOpenings is
       require(sloanLocal.active, 'loan has ended');
       require(sloanLocal.borrower == borrower, 'borrower mismatch');
       require(sloanLocal.lender == lender, 'lender mismatch');
-      require(
-        sloanLocal.loanParamsId == loanParamsLocal.id,
-        'loanParams mismatch'
-      );
+      require(sloanLocal.loanParamsId == loanParamsLocal.id, 'loanParams mismatch');
 
       sloanLocal.principal += newPrincipal;
     }
@@ -600,24 +418,16 @@ contract LoanOpenings is
     bool isTorqueLoan
   ) internal view returns (uint256 collateralTokenAmount) {
     if (loanToken == collateralToken) {
-      collateralTokenAmount = (newPrincipal * marginAmount).divCeil(
-        WEI_PERCENT_PRECISION
-      );
+      collateralTokenAmount = (newPrincipal * marginAmount).divCeil(WEI_PERCENT_PRECISION);
     } else {
-      (uint256 sourceToDestRate, uint256 sourceToDestPrecision) = IPriceFeeds(
-        priceFeeds
-      ).queryRate(collateralToken, loanToken);
+      (uint256 sourceToDestRate, uint256 sourceToDestPrecision) = IPriceFeeds(priceFeeds).queryRate(collateralToken, loanToken);
       if (sourceToDestRate != 0) {
-        collateralTokenAmount = (newPrincipal *
-          sourceToDestPrecision *
-          marginAmount).divCeil(sourceToDestRate * WEI_PERCENT_PRECISION);
+        collateralTokenAmount = (newPrincipal * sourceToDestPrecision * marginAmount).divCeil(sourceToDestRate * WEI_PERCENT_PRECISION);
       }
     }
 
     if (isTorqueLoan && collateralTokenAmount != 0) {
-      collateralTokenAmount =
-        (collateralTokenAmount * WEI_PERCENT_PRECISION).divCeil(marginAmount) +
-        collateralTokenAmount;
+      collateralTokenAmount = (collateralTokenAmount * WEI_PERCENT_PRECISION).divCeil(marginAmount) + collateralTokenAmount;
     }
   }
 }

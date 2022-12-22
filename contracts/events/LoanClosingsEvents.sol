@@ -60,9 +60,5 @@ contract LoanClosingsEvents {
     uint256 gasRebate
   );
 
-  event LoanDeposit(
-    bytes32 indexed loanId,
-    uint256 depositValueAsLoanToken,
-    uint256 depositValueAsCollateralToken
-  );
+  event LoanDeposit(bytes32 indexed loanId, uint256 depositValueAsLoanToken, uint256 depositValueAsCollateralToken);
 }

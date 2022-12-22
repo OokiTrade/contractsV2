@@ -25,9 +25,7 @@ contract TestTwapCurvedInterestRate {
   uint8 public poolLastIdx; //per itoken
 
   function initOracle() public {
-    poolInterestRateObservations[0].blockTimestamp = uint32(
-      block.timestamp - 10800
-    );
+    poolInterestRateObservations[0].blockTimestamp = uint32(block.timestamp - 10800);
   }
 
   function setRateHelper(ICurvedInterestRate _rateHelper) public {
@@ -38,25 +36,11 @@ contract TestTwapCurvedInterestRate {
     lastIR = _lastIR;
   }
 
-  function borrow(
-    uint256 newUtilization
-  ) public returns (uint256 interestRate) {
-    poolLastIdx = poolInterestRateObservations.write(
-      poolLastIdx,
-      uint32(block.timestamp),
-      TickMathV1.getTickAtSqrtRatio(uint160(lastIR)),
-      type(uint8).max,
-      60
-    );
+  function borrow(uint256 newUtilization) public returns (uint256 interestRate) {
+    poolLastIdx = poolInterestRateObservations.write(poolLastIdx, uint32(block.timestamp), TickMathV1.getTickAtSqrtRatio(uint160(lastIR)), type(uint8).max, 60);
 
     uint256 benchmarkRate = TickMathV1.getSqrtRatioAtTick(
-      poolInterestRateObservations.arithmeticMean(
-        uint32(block.timestamp),
-        [uint32(3 * 3600), 0],
-        poolInterestRateObservations[poolLastIdx].tick,
-        poolLastIdx,
-        type(uint8).max
-      )
+      poolInterestRateObservations.arithmeticMean(uint32(block.timestamp), [uint32(3 * 3600), 0], poolInterestRateObservations[poolLastIdx].tick, poolLastIdx, type(uint8).max)
     );
     interestRate = rateHelper.calculateIR(newUtilization, benchmarkRate);
     if (interestRate < 1e10) {
@@ -66,9 +50,6 @@ contract TestTwapCurvedInterestRate {
   }
 
   function lastRecordedIR() public view returns (uint256) {
-    return
-      TickMathV1.getSqrtRatioAtTick(
-        poolInterestRateObservations[poolLastIdx].tick
-      );
+    return TickMathV1.getSqrtRatioAtTick(poolInterestRateObservations[poolLastIdx].tick);
   }
 }

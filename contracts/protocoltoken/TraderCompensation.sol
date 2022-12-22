@@ -11,8 +11,7 @@ import '@openzeppelin-2.5.0/ownership/Ownable.sol';
 
 contract TraderCompensation is Ownable {
   // mainnet
-  IERC20 public constant vBZRX =
-    IERC20(0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F);
+  IERC20 public constant vBZRX = IERC20(0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F);
 
   // kovan
   //IERC20 public constant vBZRX = IERC20(0x6F8304039f34fd6A6acDd511988DCf5f62128a32);
@@ -29,11 +28,7 @@ contract TraderCompensation is Ownable {
   mapping(address => bool) public optinlist;
 
   constructor(uint256 _optinDuration, uint256 _claimDuration) public {
-    setTimestamps(
-      _getTimestamp(),
-      _getTimestamp() + _optinDuration,
-      _getTimestamp() + _optinDuration + _claimDuration
-    );
+    setTimestamps(_getTimestamp(), _getTimestamp() + _optinDuration, _getTimestamp() + _optinDuration + _claimDuration);
 
     isActive = true;
   }
@@ -58,10 +53,7 @@ contract TraderCompensation is Ownable {
     whitelist[msg.sender] = 0;
   }
 
-  function setWhitelist(
-    address[] memory addrs,
-    uint256[] memory amounts
-  ) public onlyOwner {
+  function setWhitelist(address[] memory addrs, uint256[] memory amounts) public onlyOwner {
     require(addrs.length == amounts.length, 'count mismatch');
 
     for (uint256 i = 0; i < addrs.length; i++) {
@@ -77,16 +69,8 @@ contract TraderCompensation is Ownable {
     isActive = _isActive;
   }
 
-  function setTimestamps(
-    uint256 _optinStartTimestamp,
-    uint256 _optinEndTimestamp,
-    uint256 _claimEndTimestamp
-  ) public onlyOwner {
-    require(
-      _optinEndTimestamp > _optinStartTimestamp &&
-        _claimEndTimestamp > _optinEndTimestamp,
-      'invalid params'
-    );
+  function setTimestamps(uint256 _optinStartTimestamp, uint256 _optinEndTimestamp, uint256 _claimEndTimestamp) public onlyOwner {
+    require(_optinEndTimestamp > _optinStartTimestamp && _claimEndTimestamp > _optinEndTimestamp, 'invalid params');
     optinStartTimestamp = _optinStartTimestamp;
     optinEndTimestamp = _optinEndTimestamp;
     claimStartTimestamp = _optinEndTimestamp;
@@ -105,22 +89,12 @@ contract TraderCompensation is Ownable {
   }
 
   function canOptin(address _user) external view returns (bool) {
-    return
-      _getTimestamp() < optinEndTimestamp &&
-      !optinlist[_user] &&
-      whitelist[_user] != 0 &&
-      isActive;
+    return _getTimestamp() < optinEndTimestamp && !optinlist[_user] && whitelist[_user] != 0 && isActive;
   }
 
   function claimable(address _user) external view returns (uint256) {
     uint256 whitelistAmount = whitelist[_user];
-    if (
-      whitelistAmount != 0 &&
-      _getTimestamp() >= claimStartTimestamp &&
-      _getTimestamp() < claimEndTimestamp &&
-      optinlist[_user] &&
-      isActive
-    ) {
+    if (whitelistAmount != 0 && _getTimestamp() >= claimStartTimestamp && _getTimestamp() < claimEndTimestamp && optinlist[_user] && isActive) {
       return whitelistAmount;
     }
   }

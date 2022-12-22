@@ -39,11 +39,7 @@ library Checkpointing {
     Checkpoint[] history;
   }
 
-  function addCheckpoint(
-    History storage _self,
-    uint256 _time,
-    uint256 _value
-  ) internal {
+  function addCheckpoint(History storage _self, uint256 _time, uint256 _value) internal {
     uint256 length = _self.history.length;
     if (length == 0) {
       _self.history.push(Checkpoint(_time, _value));
@@ -62,10 +58,7 @@ library Checkpointing {
     }
   }
 
-  function getValueAt(
-    History storage _self,
-    uint256 _time
-  ) internal view returns (uint256) {
+  function getValueAt(History storage _self, uint256 _time) internal view returns (uint256) {
     return _getValueAt(_self, _time);
   }
 
@@ -83,10 +76,7 @@ library Checkpointing {
     }
   }
 
-  function _getValueAt(
-    History storage _self,
-    uint256 _time
-  ) private view returns (uint256) {
+  function _getValueAt(History storage _self, uint256 _time) private view returns (uint256) {
     uint256 length = _self.history.length;
 
     // Short circuit if there's no checkpoints yet

@@ -14,10 +14,8 @@ contract iETHBuyBack is Ownable {
   using SafeMath for uint256;
 
   // mainnet
-  IERC20 public constant iETH =
-    IERC20(0x77f973FCaF871459aa58cd81881Ce453759281bC);
-  IERC20 public constant vBZRX =
-    IERC20(0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F);
+  IERC20 public constant iETH = IERC20(0x77f973FCaF871459aa58cd81881Ce453759281bC);
+  IERC20 public constant vBZRX = IERC20(0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F);
 
   // kovan
   //IERC20 public constant iETH = IERC20(0x0afBFCe9DB35FFd1dFdF144A788fa196FD08EFe9);
@@ -33,10 +31,7 @@ contract iETHBuyBack is Ownable {
 
   function convert(uint256 _tokenAmount) external {
     uint256 whitelistAmount = whitelist[msg.sender];
-    require(
-      whitelistAmount != 0 && whitelistAmount >= _tokenAmount,
-      'unauthorized'
-    );
+    require(whitelistAmount != 0 && whitelistAmount >= _tokenAmount, 'unauthorized');
     require(isActive, 'swap not allowed');
 
     uint256 buyAmount = _tokenAmount.mul(10 ** 18).div(iETHSwapRate);
@@ -51,10 +46,7 @@ contract iETHBuyBack is Ownable {
     whitelist[msg.sender] = whitelistAmount - _tokenAmount;
   }
 
-  function setWhitelist(
-    address[] memory addrs,
-    uint256[] memory amounts
-  ) public onlyOwner {
+  function setWhitelist(address[] memory addrs, uint256[] memory amounts) public onlyOwner {
     require(addrs.length == amounts.length, 'count mismatch');
 
     for (uint256 i = 0; i < addrs.length; i++) {

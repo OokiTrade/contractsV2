@@ -18,10 +18,7 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
   address public priceFeedFactory;
 
   modifier onlyFactoryOrOwner() {
-    require(
-      msg.sender == priceFeedFactory || msg.sender == owner(),
-      'unauthorized'
-    );
+    require(msg.sender == priceFeedFactory || msg.sender == owner(), 'unauthorized');
     _;
   }
 
@@ -30,39 +27,20 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
   mapping(address => IPriceFeedsExt) public pricesFeeds; // token => pricefeed
   mapping(address => uint256) public decimals; // decimals of supported tokens
 
-  constructor(
-    IWeth wethtoken,
-    address usdc,
-    address bzrx,
-    address vbzrx,
-    address ooki
-  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {
+  constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {
     // set decimals for ether
     decimals[address(wethToken)] = 18;
   }
 
-  function queryRate(
-    address sourceToken,
-    address destToken
-  ) public view pausable returns (uint256 rate, uint256 precision) {
+  function queryRate(address sourceToken, address destToken) public view pausable returns (uint256 rate, uint256 precision) {
     return _queryRate(sourceToken, destToken);
   }
 
-  function queryPrecision(
-    address sourceToken,
-    address destToken
-  ) public view returns (uint256) {
-    return
-      sourceToken != destToken
-        ? _getDecimalPrecision(sourceToken, destToken)
-        : WEI_PRECISION;
+  function queryPrecision(address sourceToken, address destToken) public view returns (uint256) {
+    return sourceToken != destToken ? _getDecimalPrecision(sourceToken, destToken) : WEI_PRECISION;
   }
 
-  function queryReturn(
-    address sourceToken,
-    address destToken,
-    uint256 sourceAmount
-  ) public view pausable returns (uint256 destAmount) {
+  function queryReturn(address sourceToken, address destToken, uint256 sourceAmount) public view pausable returns (uint256 destAmount) {
     (uint256 rate, uint256 precision) = _queryRate(sourceToken, destToken);
 
     destAmount = (sourceAmount * rate) / precision;
@@ -82,9 +60,7 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
 
     sourceToDestSwapRate = (destAmount * WEI_PRECISION) / sourceAmount;
 
-    uint256 spreadValue = sourceToDestSwapRate > rate
-      ? sourceToDestSwapRate - rate
-      : rate - sourceToDestSwapRate;
+    uint256 spreadValue = sourceToDestSwapRate > rate ? sourceToDestSwapRate - rate : rate - sourceToDestSwapRate;
 
     if (spreadValue != 0) {
       spreadValue *= WEI_PERCENT_PRECISION;
@@ -94,28 +70,16 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
     }
   }
 
-  function amountInEth(
-    address tokenAddress,
-    uint256 amount
-  ) public view returns (uint256 ethAmount) {
+  function amountInEth(address tokenAddress, uint256 amount) public view returns (uint256 ethAmount) {
     if (tokenAddress == address(wethToken)) {
       ethAmount = amount;
     } else {
-      (uint toEthRate, uint256 toEthPrecision) = queryRate(
-        tokenAddress,
-        address(wethToken)
-      );
+      (uint toEthRate, uint256 toEthPrecision) = queryRate(tokenAddress, address(wethToken));
       ethAmount = (amount * toEthRate) / toEthPrecision;
     }
   }
 
-  function getMaxDrawdown(
-    address loanToken,
-    address collateralToken,
-    uint256 loanAmount,
-    uint256 collateralAmount,
-    uint256 margin
-  ) public view returns (uint256 maxDrawdown) {
+  function getMaxDrawdown(address loanToken, address collateralToken, uint256 loanAmount, uint256 collateralAmount, uint256 margin) public view returns (uint256 maxDrawdown) {
     uint256 loanToCollateralAmount;
     if (collateralToken == loanToken) {
       loanToCollateralAmount = loanAmount;
@@ -124,9 +88,7 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
       loanToCollateralAmount = (loanAmount * rate) / precision;
     }
 
-    uint256 combined = loanToCollateralAmount +
-      (loanToCollateralAmount * margin) /
-      WEI_PERCENT_PRECISION;
+    uint256 combined = loanToCollateralAmount + (loanToCollateralAmount * margin) / WEI_PERCENT_PRECISION;
 
     maxDrawdown = collateralAmount > combined ? collateralAmount - combined : 0;
   }
@@ -137,12 +99,7 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
     uint256 loanAmount,
     uint256 collateralAmount
   ) public view returns (uint256 currentMargin, uint256 collateralInEthAmount) {
-    (currentMargin, ) = getCurrentMargin(
-      loanToken,
-      collateralToken,
-      loanAmount,
-      collateralAmount
-    );
+    (currentMargin, ) = getCurrentMargin(loanToken, collateralToken, loanAmount, collateralAmount);
 
     collateralInEthAmount = amountInEth(collateralToken, collateralAmount);
   }
@@ -159,40 +116,20 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
       collateralToLoanRate = WEI_PRECISION;
     } else {
       uint256 collateralToLoanPrecision;
-      (collateralToLoanRate, collateralToLoanPrecision) = queryRate(
-        collateralToken,
-        loanToken
-      );
+      (collateralToLoanRate, collateralToLoanPrecision) = queryRate(collateralToken, loanToken);
 
-      collateralToLoanRate =
-        (collateralToLoanRate * WEI_PRECISION) /
-        collateralToLoanPrecision;
+      collateralToLoanRate = (collateralToLoanRate * WEI_PRECISION) / collateralToLoanPrecision;
 
-      collateralToLoanAmount =
-        (collateralAmount * collateralToLoanRate) /
-        WEI_PRECISION;
+      collateralToLoanAmount = (collateralAmount * collateralToLoanRate) / WEI_PRECISION;
     }
 
     if (loanAmount != 0 && collateralToLoanAmount >= loanAmount) {
-      currentMargin =
-        ((collateralToLoanAmount - loanAmount) * WEI_PERCENT_PRECISION) /
-        loanAmount;
+      currentMargin = ((collateralToLoanAmount - loanAmount) * WEI_PERCENT_PRECISION) / loanAmount;
     }
   }
 
-  function shouldLiquidate(
-    address loanToken,
-    address collateralToken,
-    uint256 loanAmount,
-    uint256 collateralAmount,
-    uint256 maintenanceMargin
-  ) public view returns (bool) {
-    (uint256 currentMargin, ) = getCurrentMargin(
-      loanToken,
-      collateralToken,
-      loanAmount,
-      collateralAmount
-    );
+  function shouldLiquidate(address loanToken, address collateralToken, uint256 loanAmount, uint256 collateralAmount, uint256 maintenanceMargin) public view returns (bool) {
+    (uint256 currentMargin, ) = getCurrentMargin(loanToken, collateralToken, loanAmount, collateralAmount);
 
     return currentMargin <= maintenanceMargin;
   }
@@ -201,10 +138,7 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
    * Owner functions
    */
 
-  function setPriceFeed(
-    address[] calldata tokens,
-    IPriceFeedsExt[] calldata feeds
-  ) external onlyFactoryOrOwner {
+  function setPriceFeed(address[] calldata tokens, IPriceFeedsExt[] calldata feeds) external onlyFactoryOrOwner {
     require(tokens.length == feeds.length, 'count mismatch');
 
     for (uint256 i = 0; i < tokens.length; i++) {
@@ -226,10 +160,7 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
    * Internal functions
    */
 
-  function _queryRate(
-    address sourceToken,
-    address destToken
-  ) internal view returns (uint256 rate, uint256 precision) {
+  function _queryRate(address sourceToken, address destToken) internal view returns (uint256 rate, uint256 precision) {
     if (sourceToken != destToken) {
       uint256 sourceRate = _queryRateCall(sourceToken);
       uint256 destRate = _queryRateCall(destToken);
@@ -279,23 +210,17 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
     return chainId;
   }
 
-  function _getDecimalPrecision(
-    address sourceToken,
-    address destToken
-  ) internal view returns (uint256) {
+  function _getDecimalPrecision(address sourceToken, address destToken) internal view returns (uint256) {
     if (sourceToken == destToken) {
       return WEI_PRECISION;
     } else {
       uint256 sourceTokenDecimals = decimals[sourceToken];
-      if (sourceTokenDecimals == 0)
-        sourceTokenDecimals = IERC20Metadata(sourceToken).decimals();
+      if (sourceTokenDecimals == 0) sourceTokenDecimals = IERC20Metadata(sourceToken).decimals();
 
       uint256 destTokenDecimals = decimals[destToken];
-      if (destTokenDecimals == 0)
-        destTokenDecimals = IERC20Metadata(destToken).decimals();
+      if (destTokenDecimals == 0) destTokenDecimals = IERC20Metadata(destToken).decimals();
       // TODO use abs
-      if (destTokenDecimals >= sourceTokenDecimals)
-        return 10 ** (18 - destTokenDecimals - sourceTokenDecimals);
+      if (destTokenDecimals >= sourceTokenDecimals) return 10 ** (18 - destTokenDecimals - sourceTokenDecimals);
       else return 10 ** (18 + sourceTokenDecimals - destTokenDecimals);
     }
   }

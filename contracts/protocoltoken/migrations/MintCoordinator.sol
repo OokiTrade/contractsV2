@@ -11,8 +11,7 @@ import '@openzeppelin-4.7.0/access/Ownable.sol';
 import '../OokiToken.sol';
 
 contract MintCoordinator is Ownable {
-  OokiToken public constant OOKI =
-    OokiToken(0x0De05F6447ab4D22c8827449EE4bA2D5C288379B);
+  OokiToken public constant OOKI = OokiToken(0x0De05F6447ab4D22c8827449EE4bA2D5C288379B);
   mapping(address => bool) public minters;
 
   function mint(address _to, uint256 _amount) public {

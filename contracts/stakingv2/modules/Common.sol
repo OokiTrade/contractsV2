@@ -29,17 +29,10 @@ contract Common is StakingStateV2, PausableGuardian_0_8 {
     return 0;
   }
 
-  function vestedBalanceForAmount(
-    uint256 tokenBalance,
-    uint256 lastUpdate,
-    uint256 vestingEndTime
-  ) public view returns (uint256 vested) {
+  function vestedBalanceForAmount(uint256 tokenBalance, uint256 lastUpdate, uint256 vestingEndTime) public view returns (uint256 vested) {
     vestingEndTime = vestingEndTime.min256(block.timestamp);
     if (vestingEndTime > lastUpdate) {
-      if (
-        vestingEndTime <= vestingCliffTimestamp ||
-        lastUpdate >= vestingEndTimestamp
-      ) {
+      if (vestingEndTime <= vestingCliffTimestamp || lastUpdate >= vestingEndTimestamp) {
         // time cannot be before vesting starts
         // OR all vested token has already been claimed
         return 0;
@@ -59,51 +52,26 @@ contract Common is StakingStateV2, PausableGuardian_0_8 {
   }
 
   // Voting balance not including delegated votes
-  function _votingFromStakedBalanceOf(
-    address account,
-    ProposalState memory proposal,
-    bool skipVestingLastSyncCheck
-  ) internal view returns (uint256 totalVotes) {
+  function _votingFromStakedBalanceOf(address account, ProposalState memory proposal, bool skipVestingLastSyncCheck) internal view returns (uint256 totalVotes) {
     uint256 _vestingLastSync = vestingLastSync[account];
-    if (
-      proposal.proposalTime == 0 ||
-      (!skipVestingLastSyncCheck &&
-        _vestingLastSync > proposal.proposalTime - 1)
-    ) {
+    if (proposal.proposalTime == 0 || (!skipVestingLastSyncCheck && _vestingLastSync > proposal.proposalTime - 1)) {
       return 0;
     }
 
     uint256 _vOOKIBalance = _balancesPerToken[vBZRX][account] * 10; // 10x for OOKI
     if (_vOOKIBalance != 0) {
-      if (
-        vestingEndTimestamp > proposal.proposalTime &&
-        vestingCliffTimestamp < proposal.proposalTime
-      ) {
+      if (vestingEndTimestamp > proposal.proposalTime && vestingCliffTimestamp < proposal.proposalTime) {
         // staked vBZRX is prorated based on total vested
-        totalVotes =
-          (_vOOKIBalance * (vestingEndTimestamp - proposal.proposalTime)) /
-          vestingDurationAfterCliff;
+        totalVotes = (_vOOKIBalance * (vestingEndTimestamp - proposal.proposalTime)) / vestingDurationAfterCliff;
       }
 
       // user is attributed a staked balance of vested OOKI, from their last update to the present (10x for OOKI)
-      totalVotes =
-        vestedBalanceForAmount(
-          _vOOKIBalance,
-          _vestingLastSync,
-          proposal.proposalTime
-        ) +
-        totalVotes;
+      totalVotes = vestedBalanceForAmount(_vOOKIBalance, _vestingLastSync, proposal.proposalTime) + totalVotes;
     }
 
-    totalVotes =
-      _balancesPerToken[OOKI][account] +
-      ookiRewards[account] +
-      totalVotes; // unclaimed BZRX rewards count as votes
+    totalVotes = _balancesPerToken[OOKI][account] + ookiRewards[account] + totalVotes; // unclaimed BZRX rewards count as votes
 
-    totalVotes =
-      (_balancesPerToken[iOOKI][account] * proposal.iOOKIWeight) /
-      1e50 +
-      totalVotes;
+    totalVotes = (_balancesPerToken[iOOKI][account] * proposal.iOOKIWeight) / 1e50 + totalVotes;
 
     // LPToken votes are measured based on amount of underlying BZRX staked
     /*totalVotes = proposal.lpBZRXBalance

@@ -17,11 +17,7 @@ library MathUtil {
   /**
    * @dev Integer division of two numbers, rounding up and truncating the quotient
    */
-  function divCeil(
-    uint256 a,
-    uint256 b,
-    string memory errorMessage
-  ) internal pure returns (uint256) {
+  function divCeil(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {
     if (a == 0) {
       return 0;
     }
