@@ -8,7 +8,7 @@ pragma solidity ^0.8.0;
 import "./LoanTokenBase.sol";
 
 
-contract AdvancedTokenStorage is LoanTokenBase {
+abstract contract AdvancedTokenStorage is LoanTokenBase {
     event Transfer(
         address indexed from,
         address indexed to,
@@ -33,6 +33,21 @@ contract AdvancedTokenStorage is LoanTokenBase {
         uint256 tokenAmount,
         uint256 assetAmount,
         uint256 price
+    );
+
+    event Deposit(
+        address indexed caller,
+        address indexed owner,
+        uint256 assets,
+        uint256 shares
+    );
+
+    event Withdraw(
+        address indexed caller,
+        address indexed receiver,
+        address indexed owner,
+        uint256 assets,
+        uint256 shares
     );
 
     event FlashBorrow(

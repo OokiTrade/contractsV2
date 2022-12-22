@@ -96,6 +96,9 @@ abstract contract State is Constants, Objects, ReentrancyGuard, Ownable {
     mapping(address => uint16) internal volumeLastIdx; //last index in the observation array. bounded by cardinality
     mapping(address => uint16) internal volumeTradedCardinality; //upper bound for recording data into array. Can be increased, not decreased, and increases cost for binary searches when increased. increase with caution
 
+    /* PL */
+    address public factory;
+
     function _setTarget(
         bytes4 sig,
         address target)

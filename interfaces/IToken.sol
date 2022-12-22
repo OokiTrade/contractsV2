@@ -25,15 +25,49 @@ interface IToken {
     event Burn(address indexed burner,uint256 tokenAmount,uint256 assetAmount,uint256 price);
     event FlashBorrow(address borrower,address target,address loanToken,uint256 loanAmount);
 
+    //ERC-4626 functions
+    function asset() external view returns (address assetTokenAddress);
+
+    function totalAssets() external view returns (uint256 totalManagedAssets);
+
+    function convertToShares(uint256 assets) external view returns (uint256 shares);
+
+    function convertToAssets(uint256 shares) external view returns (uint256 assets);
+
+    function maxDeposit(address receiver) external view returns (uint256 maxAssets);
+
+    function previewDeposit(uint256 assets) external view returns (uint256 shares);
+
+    function deposit(uint256 assets, address receiver) external returns (uint256 shares);
+
+    function maxMint(address receiver) external view returns (uint256 maxShares);
+
+    function previewMint(uint256 shares) external view returns (uint256 assets);
+
+    function mint(uint256 shares, address receiver) external returns (uint256 assets);
+
+    function maxWithdraw(address owner) external view returns (uint256 maxAssets);
+
+    function previewWithdraw(uint256 assets) external view returns (uint256 shares);
+
+    function withdraw(
+        uint256 assets,
+        address receiver,
+        address owner
+    ) external returns (uint256 shares);
+
+    function maxRedeem(address owner) external view returns (uint256 maxShares);
+
+    function previewRedeem(uint256 shares) external view returns (uint256 assets);
+
+    function redeem(
+        uint256 shares,
+        address receiver,
+        address owner
+    ) external returns (uint256 assets);  
+
+    //LoanTokenLogicStandard functions
     function tokenPrice() external view returns (uint256);
-
-    function mint(address receiver, uint256 depositAmount)
-        external
-        returns (uint256);
-
-    function burn(address receiver, uint256 burnAmount)
-        external
-        returns (uint256 loanAmountPaid);
 
     function flashBorrow(
         uint256 borrowAmount,
@@ -51,7 +85,7 @@ interface IToken {
         address collateralTokenAddress, // if address(0), this means ETH and ETH must be sent with the call or loanId must be provided
         address borrower,
         address receiver,
-        bytes calldata loanDataBytes // arbitrary order data
+        bytes calldata /*loanDataBytes*/ // arbitrary order data
     ) external payable returns (LoanOpenData memory);
 
     function marginTrade(
@@ -93,12 +127,23 @@ interface IToken {
 
     function assetBalanceOf(address _owner) external view returns (uint256);
 
+    function getDepositAmountForBorrow(
+        uint256 borrowAmount,
+        uint256 initialLoanDuration, // duration in seconds
+        address collateralTokenAddress // address(0) means ETH
+    ) external view returns (uint256); // depositAmount
+
+    function getBorrowAmountForDeposit(
+        uint256 depositAmount,
+        uint256 initialLoanDuration, // duration in seconds
+        address collateralTokenAddress // address(0) means ETH
+    ) external view returns (uint256 borrowAmount);
+
     function loanTokenAddress() external view returns (address);
 
     function initialPrice() external view returns (uint256);
 
-    function loanParamsIds(uint256) external view returns (bytes32);
-
+    function loanParamsIds(uint256) external view returns (bytes32); 
 
     /// Guardian interface
 
@@ -125,7 +170,11 @@ interface IToken {
 
     function transferOwnership(address newOwner) external;
 
-    function initializeDomainSeparator() external;
+    function initialize(
+        address loanToken,
+        string calldata name,
+        string calldata symbol)
+        external;
 
     struct LoanOpenData {
         bytes32 loanId;
@@ -147,6 +196,8 @@ interface IToken {
  
     function symbol() external view  returns (string memory);
 
+    function updateSettings(address settingsTarget, bytes calldata callData) external;
+    
     function mintWithEther(address receiver) external payable;
 
     function burnToEther(address payable receiver,uint256 burnAmount) external returns (uint256 loanAmountPaid);

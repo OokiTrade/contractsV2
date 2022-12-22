@@ -12,7 +12,7 @@ import "../../interfaces/IWeth.sol";
 import "../../governance/PausableGuardian_0_8.sol";
 import "@openzeppelin-4.7.0/token/ERC20/extensions/IERC20Metadata.sol";
 
-contract LoanTokenBase is ReentrancyGuard, Ownable, PausableGuardian_0_8 {
+abstract contract LoanTokenBase is ReentrancyGuard, Ownable, PausableGuardian_0_8 {
 
     uint256 internal constant WEI_PRECISION = 10**18;
     uint256 internal constant WEI_PERCENT_PRECISION = 10**20;

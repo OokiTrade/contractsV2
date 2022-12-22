@@ -14,35 +14,49 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
         LoanTokenLogicStandard(arbCaller, bzxcontract, wethtoken)
     {}
 
-    function mintWithEther(
-        address receiver)
+    function redeemToEther(
+        uint256 assets,
+        address payable receiver,
+        address owner)
         external
         payable
         nonReentrant
-        returns (uint256 mintAmount)
+        returns (uint256 shares)
     {
-        return _mintToken(
+        shares = _redeemToken(
+            assets,
             receiver,
-            msg.value
-        );
-    }
-
-    function burnToEther(
-        address payable receiver,
-        uint256 burnAmount)
-        external
-        nonReentrant
-        returns (uint256 loanAmountPaid)
-    {
-        loanAmountPaid = _burnToken(
-            burnAmount
+            owner
         );
 
-        if (loanAmountPaid != 0) {
-            IWeth(wethToken).withdraw(loanAmountPaid);
+        if (shares != 0) {
+            IWeth(wethToken).withdraw(assets);
             Address.sendValue(
                 receiver,
-                loanAmountPaid
+                assets
+            );
+        }
+    }
+
+    function withdrawToEther(
+        uint256 shares,
+        address payable receiver,
+        address owner)
+        external
+        nonReentrant
+        returns (uint256 assets)
+    {
+        assets = _withdrawToken(
+            shares,
+            receiver,
+            owner
+        );
+
+        if (assets != 0) {
+            IWeth(wethToken).withdraw(assets);
+            Address.sendValue(
+                receiver,
+                assets
             );
         }
     }

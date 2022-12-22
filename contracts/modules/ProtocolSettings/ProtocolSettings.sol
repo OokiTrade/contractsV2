@@ -25,11 +25,17 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
         
     }
 
+    modifier onlyFactoryOrOwner() {
+        require(msg.sender == factory || msg.sender == owner(), "unauthorized");_;
+    }
+
     function initialize(
         address target)
         external
         onlyOwner
     {
+        _setTarget(this.factory.selector, target);
+        _setTarget(this.setFactory.selector, target);
         _setTarget(this.setPriceFeedContract.selector, target);
         _setTarget(this.setSwapsImplContract.selector, target);
         _setTarget(this.setLoanPool.selector, target);
@@ -57,6 +63,14 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
             _setTarget(this.grantRewards.selector, target);
         */
 
+    }
+
+    function setFactory(
+        address newFactory)
+        external
+        onlyOwner
+    {
+        factory = newFactory;
     }
 
     function setPriceFeedContract(
@@ -93,7 +107,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
         address[] calldata pools,
         address[] calldata assets)
         external
-        onlyOwner
+        onlyFactoryOrOwner
     {
         require(pools.length == assets.length, "count mismatch");
 
@@ -133,7 +147,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
         bool[] calldata toggles,
         bool withApprovals)
         external
-        onlyOwner
+        onlyFactoryOrOwner
     {
         require(addrs.length == toggles.length, "count mismatch");
 
@@ -163,7 +177,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
         }
     }
 
-    function setApprovals(address[] calldata tokens, uint256[] calldata dexIDs) external onlyGuardian {
+    function setApprovals(address[] calldata tokens, uint256[] calldata dexIDs) external {
         bytes memory setSwapApprovalsData = abi.encodeWithSelector(
             0x4a99e3a1, // setSwapApprovals(address[])
             tokens

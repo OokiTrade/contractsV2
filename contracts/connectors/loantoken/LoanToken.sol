@@ -20,16 +20,15 @@ contract LoanToken is AdvancedTokenStorage {
         _setTarget(_newTarget);
     }
 
-    fallback() external payable {
+    fallback() external payable virtual {
         if (gasleft() <= 2300) {
             return;
         }
 
-        address impl = target_;
-
+        address target = _getTarget();
         bytes memory data = msg.data;
         assembly {
-            let result := delegatecall(gas(), impl, add(data, 0x20), mload(data), 0, 0)
+            let result := delegatecall(gas(), target, add(data, 0x20), mload(data), 0, 0)
             let size := returndatasize()
             let ptr := mload(0x40)
             returndatacopy(ptr, 0, size)
@@ -37,6 +36,14 @@ contract LoanToken is AdvancedTokenStorage {
             case 0 { revert(ptr, size) }
             default { return(ptr, size) }
         }
+    }
+
+    function _getTarget()
+        internal
+        virtual
+        returns (address)
+    {
+        return target_;
     }
 
     function setTarget(

@@ -15,6 +15,12 @@ import "../../interfaces/IToken.sol";
 
 contract PriceFeeds is Constants, PausableGuardian_0_8 {
 
+    address public priceFeedFactory;
+
+    modifier onlyFactoryOrOwner(){
+        require(msg.sender == priceFeedFactory || msg.sender == owner(), "unauthorized");_;
+    }
+
     event GlobalPricingPaused(
         address indexed sender,
         bool isPaused
@@ -235,7 +241,7 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
         address[] calldata tokens,
         IPriceFeedsExt[] calldata feeds)
         external
-        onlyOwner
+        onlyFactoryOrOwner
     {
         require(tokens.length == feeds.length, "count mismatch");
 
@@ -247,13 +253,15 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
     function setDecimals(
         IERC20Metadata[] calldata tokens)
         external
-        onlyGuardian
     {
         for (uint256 i = 0; i < tokens.length; i++) {
             decimals[address(tokens[i])] = tokens[i].decimals();
         }
     }
 
+    function setPriceFeedFactory(address newFactory) external onlyOwner {
+        priceFeedFactory = newFactory;
+    }
 
     /*
     * Internal functions

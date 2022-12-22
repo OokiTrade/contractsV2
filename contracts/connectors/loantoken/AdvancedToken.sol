@@ -32,6 +32,10 @@ contract AdvancedToken is Context, AdvancedTokenStorage{
         return _totalSupply;
     }
 
+    function asset() public view returns (address) {
+        return loanTokenAddress;
+    }
+
     /**
      * @dev See {IERC20-balanceOf}.
      */
