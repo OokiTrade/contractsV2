@@ -84,7 +84,7 @@ contract HelperImpl is Ownable {
     function assetBalanceOf(IToken[] calldata tokens, address wallet) public view returns (uint256[] memory balances) {
         balances = new uint256[](tokens.length);
         for (uint256 i = 0; i < tokens.length; i++) {
-            balances[i] = tokens[i].assetBalanceOf(wallet);
+            balances[i] = tokens[i].maxWithdraw(wallet);
         }
     }
 
@@ -117,7 +117,7 @@ contract HelperImpl is Ownable {
 
         for (uint256 i = 0; i < tokens.length; i++) {
             reserveDetails[i].iToken = address(tokens[i]);
-            reserveDetails[i].totalAssetSupply = tokens[i].totalAssetSupply();
+            reserveDetails[i].totalAssetSupply = tokens[i].totalAssets();
             reserveDetails[i].totalAssetBorrow = tokens[i].totalAssetBorrow();
             reserveDetails[i].supplyInterestRate = tokens[i].supplyInterestRate();
             reserveDetails[i].borrowInterestRate = tokens[i].borrowInterestRate();
