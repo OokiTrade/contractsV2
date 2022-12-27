@@ -12,73 +12,50 @@ import "../../utils/MathUtil.sol";
 import "../../utils/InterestOracle.sol";
 import "../../mixins/InterestHandler.sol";
 import "../../governance/PausableGuardian.sol";
+import "../../../interfaces/IPriceFeeds.sol";
 
 contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGuardian {
     using MathUtil for uint256;
     using InterestOracle for InterestOracle.Observation[256];
-    
-    function initialize(
-        address target)
-        external
-        onlyOwner
-    {
-        _setTarget(this.setupLoanParams.selector, target);
+
+    function initialize(address target) external onlyOwner {
         _setTarget(this.setupLoanPoolTWAI.selector, target);
         _setTarget(this.setTWAISettings.selector, target);
         _setTarget(this.disableLoanParams.selector, target);
-        _setTarget(this.getLoanParams.selector, target);
-        _setTarget(this.getLoanParamsList.selector, target);
         _setTarget(this.getTotalPrincipal.selector, target);
         _setTarget(this.getPoolPrincipalStored.selector, target);
         _setTarget(this.getPoolLastInterestRate.selector, target);
         _setTarget(this.getLoanPrincipal.selector, target);
         _setTarget(this.getLoanInterestOutstanding.selector, target);
+        _setTarget(this.modifyLoanParams.selector, target);
+        _setTarget(this.migrateLoanParamsList.selector, target); // TODO remove after migration
+
+        // TODO remove after deployment
+        _setTarget(bytes4(keccak256("setupLoanParams(LoanParams[])")), address(0));
+        _setTarget(bytes4(keccak256("getLoanParamsList(address,uint256,uint256)")), address(0));
     }
 
-    function setupLoanParams(
-        LoanParams[] calldata loanParamsList)
-        external
-        returns (bytes32[] memory loanParamsIdList)
-    {
-        loanParamsIdList = new bytes32[](loanParamsList.length);
-        for (uint256 i = 0; i < loanParamsList.length; i++) {
-            loanParamsIdList[i] = _setupLoanParams(loanParamsList[i]);
-        }
-    }
-
-    function setTWAISettings(
-        uint32 delta,
-        uint32 secondsAgo)
-        external
-        onlyGuardian
-    {
+    function setTWAISettings(uint32 delta, uint32 secondsAgo) external onlyGuardian {
         timeDelta = delta;
         twaiLength = secondsAgo;
     }
 
-
     function setupLoanPoolTWAI(address pool) external onlyGuardian {
-        require(poolInterestRateObservations[pool][0].blockTimestamp==0, "already initialized");
+        require(poolInterestRateObservations[pool][0].blockTimestamp == 0, "already initialized");
 
         if (poolLastUpdateTime[pool] == 0) {
             poolLastUpdateTime[pool] = block.timestamp;
         }
 
-        poolInterestRateObservations[pool][0].blockTimestamp = 
-            uint32(poolLastUpdateTime[pool].sub(twaiLength+timeDelta));
+        poolInterestRateObservations[pool][0].blockTimestamp = uint32(poolLastUpdateTime[pool].sub(twaiLength + timeDelta));
         if (poolLastInterestRate[pool] < 1e11) {
             poolLastInterestRate[pool] = 1e11;
         }
-
     }
 
     // Deactivates LoanParams for future loans. Active loans using it are unaffected.
-    function disableLoanParams(
-        bytes32[] calldata loanParamsIdList)
-        external
-    {
+    function disableLoanParams(bytes32[] calldata loanParamsIdList) external onlyGuardian {
         for (uint256 i = 0; i < loanParamsIdList.length; i++) {
-            require(msg.sender == loanParams[loanParamsIdList[i]].owner, "unauthorized owner");
             loanParams[loanParamsIdList[i]].active = false;
 
             LoanParams memory loanParamsLocal = loanParams[loanParamsIdList[i]];
@@ -91,178 +68,111 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
                 loanParamsLocal.maintenanceMargin,
                 loanParamsLocal.maxLoanTerm
             );
-            emit LoanParamsIdDisabled(
-                loanParamsLocal.id,
-                loanParamsLocal.owner
+            emit LoanParamsIdDisabled(loanParamsLocal.id, loanParamsLocal.owner);
+        }
+    }
+
+    function modifyLoanParams(LoanParams[] calldata loanParamsList) external onlyOwner {
+        for (uint256 i = 0; i < loanParamsList.length; i++) {
+            require(
+                supportedTokens[loanParamsList[i].loanToken] &&
+                    supportedTokens[loanParamsList[i].collateralToken] &&
+                    loanParamsList[i].id ==
+                    generateLoanParamId(
+                        loanParamsList[i].loanToken,
+                        loanParamsList[i].collateralToken,
+                        loanParamsList[i].maxLoanTerm == 0 // isTorqueLoan
+                    ) &&
+                    loanParamsList[i].minInitialMargin > loanParamsList[i].maintenanceMargin,
+                "invalid loanParam"
             );
+            LoanParams memory loanParam = loanParamsList[i];
+            loanParams[loanParam.id] = loanParam;
+            emit LoanParamsSetup(
+                loanParamsList[i].id,
+                loanParamsList[i].owner,
+                loanParamsList[i].loanToken,
+                loanParamsList[i].collateralToken,
+                loanParamsList[i].minInitialMargin,
+                loanParamsList[i].maintenanceMargin,
+                loanParamsList[i].maxLoanTerm
+            );
+            emit LoanParamsIdSetup(loanParamsList[i].id, loanParamsList[i].owner);
         }
     }
 
-    function getLoanParams(
-        bytes32[] memory loanParamsIdList)
-        public
-        view
-        returns (LoanParams[] memory loanParamsList)
-    {
-        loanParamsList = new LoanParams[](loanParamsIdList.length);
-        uint256 itemCount;
-
-        for (uint256 i = 0; i < loanParamsIdList.length; i++) {
-            LoanParams memory loanParamsLocal = loanParams[loanParamsIdList[i]];
-            if (loanParamsLocal.id == 0) {
-                continue;
-            }
-            loanParamsList[itemCount] = loanParamsLocal;
-            itemCount++;
-        }
-
-        if (itemCount < loanParamsList.length) {
-            assembly {
-                mstore(loanParamsList, itemCount)
-            }
-        }
-    }
-
-    function getLoanParamsList(
+    function migrateLoanParamsList(
         address owner,
         uint256 start,
-        uint256 count)
-        external
-        view
-        returns (bytes32[] memory loanParamsList)
-    {
+        uint256 count
+    ) external onlyGuardian {
         EnumerableBytes32Set.Bytes32Set storage set = userLoanParamSets[owner];
         uint256 end = start.add(count).min256(set.length());
         if (start >= end) {
-            return loanParamsList;
+            return;
         }
-        count = end-start;
-
-        loanParamsList = new bytes32[](count);
-        for (uint256 i = --end; i >= start; i--) {
-            loanParamsList[--count] = set.get(i);
-
-            if (i == 0) {
-                break;
-            }
+        
+        bytes32 loanParamId;
+        LoanParams memory loanParamsLocal;
+        bytes32 oldLoanParamId;
+        for (uint256 i = start; i < end; ++i) {
+            oldLoanParamId = set.get(i);
+            loanParamsLocal = loanParams[oldLoanParamId];
+            loanParamId = generateLoanParamId(
+                loanParamsLocal.loanToken,
+                loanParamsLocal.collateralToken,
+                loanParamsLocal.maxLoanTerm == 0 // isTorqueLoan
+                    ? true
+                    : false
+            );
+            loanParamsLocal.id = loanParamId;
+            // delete loanParams[oldLoanParamId]; don't delete old so that existing positions can be closed
+            loanParams[loanParamId] = loanParamsLocal;
+            // userLoanParamSets[owner].removeBytes32(oldLoanParamId); removing in loop breaks the index. we don't really need to clean this up
         }
+    }
+
+    function generateLoanParamId(
+        address loanToken,
+        address collateralToken,
+        bool isTorqueLoan
+    ) internal pure returns (bytes32) {
+        return keccak256(abi.encodePacked(loanToken, collateralToken, isTorqueLoan));
     }
 
     function getTotalPrincipal(
         address lender,
-        address /*loanToken*/)
-        external
-        view
-        returns (uint256)
-    {
-        return _getPoolPrincipal(
-            lender
-        );
+        address /*loanToken*/
+    ) external view returns (uint256) {
+        return _getPoolPrincipal(lender);
     }
 
-    function getPoolPrincipalStored(
-        address pool)
-        external
-        view
-        returns (uint256)
-    {
+    function getPoolPrincipalStored(address pool) external view returns (uint256) {
         uint256 _poolInterestTotal = poolInterestTotal[pool];
-        uint256 lendingFee = _poolInterestTotal
-            .mul(lendingFeePercent)
-            .divCeil(WEI_PERCENT_PRECISION);
+        uint256 lendingFee = _poolInterestTotal.mul(lendingFeePercent).divCeil(WEI_PERCENT_PRECISION);
 
-        return poolPrincipalTotal[pool]
-            .add(_poolInterestTotal)
-            .sub(lendingFee);
+        return poolPrincipalTotal[pool].add(_poolInterestTotal).sub(lendingFee);
     }
 
-    function getPoolLastInterestRate(
-        address pool)
-        external
-        view
-        returns (uint256)
-    {
+    function getPoolLastInterestRate(address pool) external view returns (uint256) {
         return poolLastInterestRate[pool];
     }
 
-    function getLoanPrincipal(
-        bytes32 loanId)
-        external
-        view
-        returns (uint256)
-    {
+    function getLoanPrincipal(bytes32 loanId) external view returns (uint256) {
         Loan memory loanLocal = loans[loanId];
         if (!loanLocal.active) {
             return 0;
         }
 
-        return _getLoanPrincipal(
-            loanLocal.lender,
-            loanId
-        );
+        return _getLoanPrincipal(loanLocal.lender, loanId);
     }
 
-    function getLoanInterestOutstanding(
-        bytes32 loanId)
-        external
-        view
-        returns (uint256 loanInterest)
-    {
+    function getLoanInterestOutstanding(bytes32 loanId) external view returns (uint256 loanInterest) {
         Loan storage loanLocal = loans[loanId];
         if (!loanLocal.active) {
             return 0;
         }
 
-        loanInterest = (_settleInterest2(
-            loanLocal.lender,
-            loanId,
-            false
-        ))[5];
-    }
-
-    function _setupLoanParams(
-        LoanParams memory loanParamsLocal)
-        internal
-        returns (bytes32)
-    {
-        bytes32 loanParamsId = keccak256(abi.encode(
-            loanParamsLocal.loanToken,
-            loanParamsLocal.collateralToken,
-            loanParamsLocal.minInitialMargin,
-            loanParamsLocal.maintenanceMargin,
-            loanParamsLocal.maxLoanTerm,
-            block.timestamp
-        ));
-        require(loanParams[loanParamsId].id == 0, "loanParams exists");
-
-        require(loanParamsLocal.loanToken != address(0) &&
-            loanParamsLocal.collateralToken != address(0) &&
-            loanParamsLocal.minInitialMargin > loanParamsLocal.maintenanceMargin &&
-            (loanParamsLocal.maxLoanTerm == 0 || loanParamsLocal.maxLoanTerm > 1 hours), // a defined maxLoanTerm has to be greater than one hour
-            "invalid params"
-        );
-
-        loanParamsLocal.id = loanParamsId;
-        loanParamsLocal.active = true;
-        loanParamsLocal.owner = msg.sender;
-
-        loanParams[loanParamsId] = loanParamsLocal;
-        userLoanParamSets[msg.sender].addBytes32(loanParamsId);
-
-        emit LoanParamsSetup(
-            loanParamsId,
-            loanParamsLocal.owner,
-            loanParamsLocal.loanToken,
-            loanParamsLocal.collateralToken,
-            loanParamsLocal.minInitialMargin,
-            loanParamsLocal.maintenanceMargin,
-            loanParamsLocal.maxLoanTerm
-        );
-        emit LoanParamsIdSetup(
-            loanParamsId,
-            loanParamsLocal.owner
-        );
-
-        return loanParamsId;
+        loanInterest = (_settleInterest2(loanLocal.lender, loanId, false))[5];
     }
 }

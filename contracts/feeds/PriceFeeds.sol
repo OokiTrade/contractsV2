@@ -11,13 +11,14 @@ import "@openzeppelin-2.5.0/token/ERC20/IERC20.sol";
 import "../interfaces/IERC20Detailed.sol";
 import "../core/Constants.sol";
 import "./IPriceFeedsExt.sol";
+import "../governance/PausableGuardian.sol";
+import "../../interfaces/IToken.sol";
+import "../utils/SignedSafeMath.sol";
 
-
-contract PriceFeeds is Constants, Ownable {
+// TODO Constans can be removed in favor of importing WEI_PRECISION 
+contract PriceFeeds is Constants, PausableGuardian {
     using SafeMath for uint256;
-
-    // address(1) is used as a stand-in for the non-existent token representing the fast-gas price on Chainlink
-    address internal constant FASTGAS_PRICEFEED_ADDRESS = address(1);
+    using SignedSafeMath for int256;
 
     event GlobalPricingPaused(
         address indexed sender,
@@ -26,8 +27,6 @@ contract PriceFeeds is Constants, Ownable {
 
     mapping (address => IPriceFeedsExt) public pricesFeeds;     // token => pricefeed
     mapping (address => uint256) public decimals;               // decimals of supported tokens
-
-    bool public globalPricingPaused = false;
 
     constructor()
         public
@@ -41,9 +40,9 @@ contract PriceFeeds is Constants, Ownable {
         address destToken)
         public
         view
+        pausable
         returns (uint256 rate, uint256 precision)
     {
-        require(!globalPricingPaused, "pricing is paused");
         return _queryRate(
             sourceToken,
             destToken
@@ -62,18 +61,15 @@ contract PriceFeeds is Constants, Ownable {
             WEI_PRECISION;
     }
 
-    //// NOTE: This function returns 0 during a pause, rather than a revert. Ensure calling contracts handle correctly. ///
     function queryReturn(
         address sourceToken,
         address destToken,
         uint256 sourceAmount)
         public
         view
+        pausable
         returns (uint256 destAmount)
     {
-        if (globalPricingPaused) {
-            return 0;
-        }
         (uint256 rate, uint256 precision) = _queryRate(
             sourceToken,
             destToken
@@ -92,9 +88,9 @@ contract PriceFeeds is Constants, Ownable {
         uint256 maxSlippage)
         public
         view
+        pausable
         returns (uint256 sourceToDestSwapRate)
     {
-        require(!globalPricingPaused, "pricing is paused");
         (uint256 rate, uint256 precision) = _queryRate(
             sourceToken,
             destToken
@@ -258,29 +254,6 @@ contract PriceFeeds is Constants, Ownable {
         return currentMargin <= maintenanceMargin;
     }
 
-    // returns per unit gas cost denominated in payToken * 1e36
-    function getFastGasPrice(
-        address payToken)
-        external
-        view
-        returns (uint256)
-    {
-        uint256 gasPrice = _getFastGasPrice()
-            .mul(WEI_PRECISION * WEI_PRECISION);
-        if (payToken != address(wethToken) && payToken != address(0)) {
-            require(!globalPricingPaused, "pricing is paused");
-            (uint256 rate, uint256 precision) = _queryRate(
-                address(wethToken),
-                payToken
-            );
-            gasPrice = gasPrice
-                .mul(rate)
-                .div(precision);
-        }
-        return gasPrice;
-    }
-
-
     /*
     * Owner functions
     */
@@ -301,25 +274,13 @@ contract PriceFeeds is Constants, Ownable {
     function setDecimals(
         IERC20Detailed[] calldata tokens)
         external
-        onlyOwner
+        onlyGuardian
     {
         for (uint256 i = 0; i < tokens.length; i++) {
             decimals[address(tokens[i])] = tokens[i].decimals();
         }
     }
 
-    function setGlobalPricingPaused(
-        bool isPaused)
-        external
-        onlyOwner
-    {
-        globalPricingPaused = isPaused;
-
-        emit GlobalPricingPaused(
-            msg.sender,
-            isPaused
-        );
-    }
 
     /*
     * Internal functions
@@ -347,20 +308,46 @@ contract PriceFeeds is Constants, Ownable {
         }
     }
 
+    // TODO remove getChainId() in favor of a WETH pricefeed
     function _queryRateCall(
         address token)
         internal
         view
         returns (uint256 rate)
-    {
-        if (token != address(wethToken)) {
-            IPriceFeedsExt _Feed = pricesFeeds[token];
-            require(address(_Feed) != address(0), "unsupported price feed");
-            rate = uint256(_Feed.latestAnswer());
+    {   
+        // on ETH all pricefeeds are etherum denominated. on all other chains its USD denominated. so on ETH the price of 1 eth is 1 eth
+        if (getChainId() != 1 || token != address(wethToken)) {
+            // IPriceFeedsExt _Feed = 
+            // require(address(_Feed) != address(0), "unsupported price feed");
+            rate = getPrice(token);
             require(rate != 0 && (rate >> 128) == 0, "price error");
         } else {
             rate = WEI_PRECISION;
         }
+    }
+
+    function getPrice(address token)
+        public
+        view
+        returns(uint256 price) 
+    {
+        IPriceFeedsExt feed = pricesFeeds[token];
+        if (address(feed) != address(0)) {
+            price = uint256(feed.latestAnswer());
+        } else {
+            // if token is invalid it will fail on `loanTokenAddress` however if token is arbitrary somebody can implement loanTokenAddress() and tokenPrice()
+            feed = pricesFeeds[IToken(token).loanTokenAddress()];
+            price = uint256(IPriceFeedsExt(feed).latestAnswer());
+
+            price = price.mul(IToken(token).tokenPrice())
+                .div(1e18);
+        }
+    }
+
+    function getChainId() internal pure returns (uint) {
+        uint256 chainId;
+        assembly { chainId := chainid() }
+        return chainId;
     }
 
     function _getDecimalPrecision(
@@ -386,14 +373,5 @@ contract PriceFeeds is Constants, Ownable {
             else
                 return 10**(SafeMath.add(18, sourceTokenDecimals-destTokenDecimals));
         }
-    }
-
-    function _getFastGasPrice()
-        internal
-        view
-        returns (uint256 gasPrice)
-    {
-        gasPrice = uint256(pricesFeeds[FASTGAS_PRICEFEED_ADDRESS].latestAnswer());
-        require(gasPrice != 0 && (gasPrice >> 128) == 0, "gas price error");
     }
 }

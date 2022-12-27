@@ -43,5 +43,5 @@ contract LoanTokenBase is ReentrancyGuard, Ownable, PausableGuardian {
     uint256 public initialPrice;
 
     mapping (uint256 => bytes32) public loanParamsIds; // mapping of keccak256(collateralToken, isTorqueLoan) to loanParamsId
-    mapping (address => uint256) internal checkpointPrices_; // price of token at last user checkpoint
+    mapping (address => uint256) internal checkpointPrices_DEPRECATED; // price of token at last user checkpoint
 }
