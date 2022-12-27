@@ -12,6 +12,13 @@ targets = []
 values = []
 calldatas = []
 
+wstETH_FEED = PriceFeedwstETH.deploy({"from":accounts[0]}) #Contract.from_abi("","",PriceFeedwstETH.abi)
+wstETH = "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0"
+PRICE_FEED = PriceFeeds.at("0x09Ef93750C5F33ab469851F022C1C42056a8BAda")
+
+targets.append(PRICE_FEED.address)
+calldatas.append(PRICE_FEED.setPriceFeed.encode_input([wstETH],[wstETH_FEED.address]))
+
 targets.append(BZX.address)
 calldatas.append(BZX.setSupportedTokens.encode_input([WETH, wstETH],[True, True], True))
 stETH = [BZX.generateLoanParamId(WETH, wstETH,True),True,NULL,WETH,wstETH,10e18,7e18,0]

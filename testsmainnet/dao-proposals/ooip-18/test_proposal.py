@@ -22,12 +22,6 @@ def BZX(interface):
     return Contract.from_abi("bzx", address="0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f", abi=interface.IBZx.abi)
 
 def testGovernanceProposal(accounts, DAO, WSTETH, iWETH, BZX, iUSDC):
-    wstETH_FEED = PriceFeedwstETH.deploy({"from":accounts[0]}) #Contract.from_abi("","",PriceFeedwstETH.abi)
-    wstETH = "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0"
-    PRICE_FEED = PriceFeeds.at("0x09Ef93750C5F33ab469851F022C1C42056a8BAda")
-
-    PRICE_FEED.setPriceFeed([wstETH],[wstETH_FEED.address], {"from":PRICE_FEED.owner()})
-
     wstETH_swap = SwapsImplstETH_ETH.deploy({"from":accounts[0]})
 
     Contract.from_abi("",BZX.swapsImpl(),DexRecords.abi).setDexID(wstETH_swap.address, {"from":Contract.from_abi("",BZX.swapsImpl(),DexRecords.abi).owner()})

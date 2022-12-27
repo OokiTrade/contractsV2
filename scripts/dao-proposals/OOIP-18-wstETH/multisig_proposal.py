@@ -6,13 +6,9 @@ from ape_safe import ApeSafe
 safe = ApeSafe(GUARDIAN_MULTISIG)
 from gnosis.safe import SafeOperation
 from brownie import *
-wstETH_FEED = PriceFeedwstETH.deploy({"from":accounts[0]}) #Contract.from_abi("","",PriceFeedwstETH.abi)
 wstETH = "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0"
-PRICE_FEED = PriceFeeds.at("0x09Ef93750C5F33ab469851F022C1C42056a8BAda")
 
 tx_list = []
-
-tx_list.append([PRICE_FEED, PRICE_FEED.setPriceFeed.encode_input([wstETH],[wstETH_FEED.address])])
 
 wstETH_swap = SwapsImplstETH_ETH.deploy({"from":accounts[0]})
 
