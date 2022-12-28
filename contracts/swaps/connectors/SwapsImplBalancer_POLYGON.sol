@@ -199,7 +199,9 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
 
             (IBalancerVault.BatchSwapStep[] memory swapParams, address[] memory tokens, int256[] memory limits) = abi.decode(payload, (IBalancerVault.BatchSwapStep[], address[], int256[]));
             require(tokens[0] == sourceTokenAddress && tokens[tokens.length-1] == destTokenAddress, "invalid tokens");
-            limits[0] = int256(maxSourceTokenAmount);
+            if (limits[0] > int256(maxSourceTokenAmount) || limits[0] == 0) {
+                limits[0] = int256(maxSourceTokenAmount);
+            }
             minSourceTokenAmount = 0;
             for (uint i; i < swapParams.length; ++i) {
                 if (swapParams[i].assetOutIndex != tokens.length-1) {
@@ -209,9 +211,9 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
                 }
             }
             if (requiredDestTokenAmount < minSourceTokenAmount) {
-                swapParams[swapParams.length-1].amount = swapParams[swapParams.length-1].amount.sub(minSourceTokenAmount-requiredDestTokenAmount);
+                swapParams[0].amount = swapParams[0].amount.sub(minSourceTokenAmount-requiredDestTokenAmount);
             } else if (requiredDestTokenAmount > minSourceTokenAmount) {
-                swapParams[swapParams.length-1].amount += requiredDestTokenAmount - minSourceTokenAmount;
+                swapParams[0].amount += requiredDestTokenAmount - minSourceTokenAmount;
             }
             IBalancerVault.FundManagement memory funds = IBalancerVault.FundManagement({
                 sender: address(this),
