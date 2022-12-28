@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity >=0.8.4;
+pragma solidity ^0.8.0;
 
 import "@prb-math/contracts/PRBMathUD60x18.sol";
 import "../interfaces/ICurvedInterestRate.sol";

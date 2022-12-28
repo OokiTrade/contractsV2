@@ -56,6 +56,7 @@ brownie pm install uniswap/v2-core@1.0.1
 brownie pm install uniswap/v3-core@1.0.0
 brownie pm install uniswap/v3-periphery@1.3.0
 brownie pm install celer-network/sgn-v2-contracts@0.2.0
+brownie pm install paulrberg/prb-math@2.4.1
 ```
 
 cloning without version - otherwise uniswap is not compiling properly due to inter dependency between core and periphery

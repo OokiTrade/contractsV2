@@ -4,7 +4,7 @@
  */
 
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity >=0.6.12;
+pragma solidity >=0.5.17 <0.9.0;
 pragma experimental ABIEncoderV2;
 
 interface IPriceGetterP125 {
