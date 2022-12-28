@@ -152,7 +152,7 @@ contract SwapsImplstETH_ETH is State, ISwapsImpl {
         if (sourceTokenAddress == WETH) {
             IWeth(WETH).withdraw(minSourceTokenAmount);
             if (abi.decode(payload, (uint256)) > 0) {
-                destTokenAmountReceived = STETHPOOL.exchange.value(minSourceTokenAmount)(0, 1, minSourceTokenAmount, abi.decode(payload, (uint256)));
+                destTokenAmountReceived = STETHPOOL.exchange.value(minSourceTokenAmount)(0, 1, minSourceTokenAmount, IwstETH(WSTETH).getStETHByWstETH(abi.decode(payload, (uint256))));
             } else {
                 destTokenAmountReceived = IstETH(STETH).submit.value(minSourceTokenAmount)(address(this));
             }
