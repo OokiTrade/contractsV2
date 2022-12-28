@@ -10,7 +10,7 @@ import '../../governance/PausableGuardian_0_8.sol';
 import '../../../interfaces/IToken.sol';
 import '../../../interfaces/IBZx.sol';
 import './FactoryLoanToken.sol';
-import '@openzeppelin-4.7.0/token/ERC20/extensions/IERC20Metadata.sol';
+import '@openzeppelin-4.8.0/token/ERC20/extensions/IERC20Metadata.sol';
 import '../../interfaces/ISignatureHelper.sol';
 
 contract LoanTokenFactory is PausableGuardian_0_8 {

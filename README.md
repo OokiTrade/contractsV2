@@ -43,6 +43,15 @@ To run the tests, first install the developer dependencies:
 pip install -r requirements.txt
 ```
 
+also install brownie dependencies
+```
+make sure to add dependencies to compile:
+
+```
+brownie pm install openzeppelin/openzeppelin-contracts@4.8.0
+brownie pm install openzeppelin/openzeppelin-contracts-upgradeable@4.8.0
+```
+
 Run the all tests with:
 
 ```bash

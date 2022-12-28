@@ -7,7 +7,7 @@
 pragma solidity ^0.8.0;
 
 import '../proxies/0_8/Upgradeable_0_8.sol';
-import '@openzeppelin-4.7.0/utils/Address.sol';
+import '@openzeppelin-4.8.0/utils/Address.sol';
 
 contract OokiTokenProxy is Upgradeable_0_8 {
   constructor(address _impl) {

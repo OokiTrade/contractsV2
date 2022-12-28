@@ -44,7 +44,9 @@ compiler:
         optimizer:
             enabled: true
             runs: 200
-        remappings: 
+        remappings:
+            - "@openzeppelin-4.8.0=openzeppelin/openzeppelin-contracts@4.8.0/contracts"
+            - "@openzeppelin-upgradeable-4.8.0=openzeppelin/openzeppelin-contracts-upgradeable@4.8.0/contracts"
             - "@openzeppelin-4.7.0=./node_modules/openzeppelin-4.7.0"
             - "@openzeppelin-3.4.0=./node_modules/openzeppelin-3.4.0"
             - "@openzeppelin-2.5.0=./node_modules/openzeppelin-2.5.0"
@@ -79,8 +81,10 @@ hypothesis:
 
 autofetch_sources: false
 dependencies:
-    - OpenZeppelin/openzeppelin-contracts@4.3.2
-    - OpenZeppelin/openzeppelin-contracts@3.4.0
-    - OpenZeppelin/openzeppelin-contracts@2.5.0
+    - openzeppelin/openzeppelin-contracts@4.8.0
+    - openzeppelin/openzeppelin-contracts-upgradeable@4.8.0
+    - openzeppelin/openzeppelin-contracts@4.3.2
+    - openzeppelin/openzeppelin-contracts@3.4.0
+    - openzeppelin/openzeppelin-contracts@2.5.0
     - paulrberg/prb-math@2.4.1
 dev_deployment_artifacts: false

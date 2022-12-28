@@ -8,7 +8,7 @@ pragma solidity ^0.8.0;
 
 import '../../../interfaces/IUniv3Twap.sol';
 import './IFeedFactory.sol';
-import '@openzeppelin-4.7.0/token/ERC20/extensions/IERC20Metadata.sol';
+import '@openzeppelin-4.8.0/token/ERC20/extensions/IERC20Metadata.sol';
 
 contract FactoryFeed {
   address public immutable TWAP;

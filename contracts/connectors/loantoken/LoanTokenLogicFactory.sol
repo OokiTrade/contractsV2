@@ -10,7 +10,7 @@ pragma experimental ABIEncoderV2;
 import './LoanTokenLogicStandard.sol';
 import '../../../interfaces/ILoanTokenFactory.sol';
 import '../../../interfaces/IBZx.sol';
-import '@openzeppelin-4.7.0/token/ERC20/utils/SafeERC20.sol';
+import '@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol';
 
 contract LoanTokenLogicFactory is LoanTokenLogicStandard {
   using SafeERC20 for IERC20;
