@@ -34,7 +34,7 @@ contract WBTCOracle is IChainlinkAggregatorV2V3 {
   }
 
   function description() external pure override returns (string memory) {
-    return 'WBTC / ETH';
+    return "WBTC / ETH";
   }
 
   /// @notice Get latest WBTC/BTC Chainlink feed timestamp

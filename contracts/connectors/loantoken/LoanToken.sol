@@ -6,7 +6,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import './AdvancedTokenStorage.sol';
+import "./AdvancedTokenStorage.sol";
 
 contract LoanToken is AdvancedTokenStorage {
   address internal target_;
@@ -47,7 +47,7 @@ contract LoanToken is AdvancedTokenStorage {
   }
 
   function _setTarget(address _newTarget) internal {
-    require(Address.isContract(_newTarget), 'target not a contract');
+    require(Address.isContract(_newTarget), "target not a contract");
     target_ = _newTarget;
   }
 }

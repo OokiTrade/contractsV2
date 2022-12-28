@@ -6,7 +6,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.5.17;
 
-import '../BZRXVestingToken.sol';
+import "../BZRXVestingToken.sol";
 
 contract BZRXVestingTokenMock is BZRXVestingToken {
   uint256 public currentBlock;

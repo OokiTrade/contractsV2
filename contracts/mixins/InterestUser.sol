@@ -7,9 +7,9 @@
 pragma solidity ^0.8.0;
 
 // import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
-import '../core/State.sol';
-import '../mixins/VaultController.sol';
-import './FeesHelper.sol';
+import "../core/State.sol";
+import "../mixins/VaultController.sol";
+import "./FeesHelper.sol";
 
 abstract contract InterestUser is State, VaultController, FeesHelper {
   using SafeERC20 for IERC20;
@@ -37,7 +37,11 @@ abstract contract InterestUser is State, VaultController, FeesHelper {
     }
   }
 
-  function _payInterestTransfer(address lender, address interestToken, uint256 interestOwedNow) internal {
+  function _payInterestTransfer(
+    address lender,
+    address interestToken,
+    uint256 interestOwedNow
+  ) internal {
     uint256 lendingFee = (interestOwedNow * lendingFeePercent).divCeil(WEI_PERCENT_PRECISION);
 
     _payLendingFee(lender, interestToken, lendingFee);

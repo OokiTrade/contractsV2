@@ -7,11 +7,11 @@
 pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
-import '@openzeppelin-4.8.0/token/ERC20/extensions/IERC20Metadata.sol';
-import '../../proxies/0_8/Upgradeable_0_8.sol';
-import '../../interfaces/IUniswapV3SwapRouter.sol';
-import '@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol';
-import './IPriceGetterP125.sol';
+import "@openzeppelin-4.8.0/token/ERC20/extensions/IERC20Metadata.sol";
+import "../../proxies/0_8/Upgradeable_0_8.sol";
+import "../../interfaces/IUniswapV3SwapRouter.sol";
+import "@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol";
+import "./IPriceGetterP125.sol";
 
 contract BuyBackAndBurn is Upgradeable_0_8 {
   IPriceGetterP125.V3Specs public specsForTWAP;
@@ -28,17 +28,17 @@ contract BuyBackAndBurn is Upgradeable_0_8 {
   address public constant P125 = 0x83000597e8420aD7e9EDD410b2883Df1b83823cF;
   IUniswapV3SwapRouter public constant SWAP_ROUTER = IUniswapV3SwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564); //uni v3
   IQuoter public constant QUOTER = IQuoter(0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6); //uni v3 quote v2
-  uint256 public constant WEI_PRECISION_PERCENT = 10 ** 20; //1e18 precision on percentages
+  uint256 public constant WEI_PRECISION_PERCENT = 10**20; //1e18 precision on percentages
 
   event BuyBack(uint256 indexed price, uint256 amountIn, uint256 amountBought);
 
   modifier onlyEOA() {
-    require(msg.sender == tx.origin, 'unauthorized');
+    require(msg.sender == tx.origin, "unauthorized");
     _;
   }
 
   modifier checkPause() {
-    require(!isPaused || msg.sender == owner(), 'paused');
+    require(!isPaused || msg.sender == owner(), "paused");
     _;
   }
 
@@ -54,7 +54,7 @@ contract BuyBackAndBurn is Upgradeable_0_8 {
   function buyBack(uint256 percentage) public checkPause onlyEOA {
     uint256 buyAmount;
     uint256 fullBalance = IERC20Metadata(USDC).balanceOf(address(this));
-    uint256 minAmountOut = (worstExecPrice() * fullBalance) / 10 ** 6;
+    uint256 minAmountOut = (worstExecPrice() * fullBalance) / 10**6;
     uint256 balanceUsed;
     uint256 execPrice;
     if (getDebtTokenAmountOut(fullBalance) >= minAmountOut) {
@@ -66,17 +66,24 @@ contract BuyBackAndBurn is Upgradeable_0_8 {
       unspentAllowance = setAllowance;
       counterForAllowance = block.timestamp;
     }
-    require(balanceUsed <= unspentAllowance, 'too much spent');
+    require(balanceUsed <= unspentAllowance, "too much spent");
     unspentAllowance -= balanceUsed;
     emit BuyBack(execPrice, balanceUsed, buyAmount);
   }
 
-  function _buyDebtToken(uint256 percentage) internal returns (uint256 price, uint256 amountIn, uint256 amountOut) {
+  function _buyDebtToken(uint256 percentage)
+    internal
+    returns (
+      uint256 price,
+      uint256 amountIn,
+      uint256 amountOut
+    )
+  {
     uint256 bought;
     uint256 balanceUsed = (IERC20Metadata(USDC).balanceOf(address(this)) * percentage) / WEI_PRECISION_PERCENT;
-    uint256 minAmountOut = (worstExecPrice() * balanceUsed) / 10 ** 6;
+    uint256 minAmountOut = (worstExecPrice() * balanceUsed) / 10**6;
     uint256 execPrice = getDebtTokenAmountOut(balanceUsed);
-    require(minAmountOut / 10 ** 12 >= balanceUsed, 'worst absolue price is 1:1'); //caps buyback price to $1
+    require(minAmountOut / 10**12 >= balanceUsed, "worst absolue price is 1:1"); //caps buyback price to $1
     IUniswapV3SwapRouter.ExactInputParams memory params = IUniswapV3SwapRouter.ExactInputParams({
       path: specsForTWAP.route,
       recipient: address(this),

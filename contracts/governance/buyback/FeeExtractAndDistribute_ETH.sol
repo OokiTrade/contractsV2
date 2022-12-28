@@ -7,14 +7,14 @@
 pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
-import '../../interfaces/IUniswapV2Router.sol';
-import '../../../interfaces/IBZx.sol';
-import '../../../interfaces/IPriceFeeds.sol';
-import '../../../interfaces/IStakingV2.sol';
-import './../../staking/interfaces/ICurve3Pool.sol';
-import '@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol';
-import '../../governance/PausableGuardian_0_8.sol';
-import '@celer/contracts/interfaces/IBridge.sol';
+import "../../interfaces/IUniswapV2Router.sol";
+import "../../../interfaces/IBZx.sol";
+import "../../../interfaces/IPriceFeeds.sol";
+import "../../../interfaces/IStakingV2.sol";
+import "./../../staking/interfaces/ICurve3Pool.sol";
+import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
+import "../../governance/PausableGuardian_0_8.sol";
+import "@celer/contracts/interfaces/IBridge.sol";
 
 contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
   using SafeERC20 for IERC20;
@@ -79,7 +79,7 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
   }
 
   function _convertFees(address[] memory assets, uint256[] memory amounts) internal returns (uint256 bzrxOutput, uint256 crv3Output) {
-    require(assets.length == amounts.length, 'count mismatch');
+    require(assets.length == amounts.length, "count mismatch");
 
     IPriceFeeds priceFeeds = IPriceFeeds(BZX.priceFeeds());
     //(uint256 bzrxRate, ) = priceFeeds.queryRate(OOKI, WETH);
@@ -104,7 +104,13 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
       }
 
       if (amounts[i] != 0) {
-        bzrxOutput += _convertFeeWithUniswap(asset, amounts[i], priceFeeds, 0 /*bzrxRate*/, maxDisagreement);
+        bzrxOutput += _convertFeeWithUniswap(
+          asset,
+          amounts[i],
+          priceFeeds,
+          0, /*bzrxRate*/
+          maxDisagreement
+        );
       }
     }
     if (bzrxOutput != 0) {
@@ -186,7 +192,13 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
         );*/
   }
 
-  function _convertFeeWithUniswap(address asset, uint256 amount, IPriceFeeds priceFeeds, uint256 bzrxRate, uint256 maxDisagreement) internal returns (uint256 returnAmount) {
+  function _convertFeeWithUniswap(
+    address asset,
+    uint256 amount,
+    IPriceFeeds priceFeeds,
+    uint256 bzrxRate,
+    uint256 maxDisagreement
+  ) internal returns (uint256 returnAmount) {
     uint256 stakingReward = stakingRewards[asset];
     if (stakingReward != 0) {
       if (amount > stakingReward) {
@@ -221,7 +233,11 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
     returnAmount = IERC20(USDC).balanceOf(address(this)) - beforeBalance; //does not underflow as USDC is not being transferred out
   }
 
-  function _convertFeesWithCurve(uint256 daiAmount, uint256 usdcAmount, uint256 usdtAmount) internal returns (uint256 returnAmount) {
+  function _convertFeesWithCurve(
+    uint256 daiAmount,
+    uint256 usdcAmount,
+    uint256 usdtAmount
+  ) internal returns (uint256 returnAmount) {
     uint256[3] memory curveAmounts;
     uint256 curveTotal;
     uint256 stakingReward;
@@ -265,14 +281,20 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
     returnAmount = CURVE_3CRV.balanceOf(address(this)) - beforeBalance;
   }
 
-  function _checkUniDisagreement(address asset, address recvAsset, uint256 assetAmount, uint256 recvAmount, uint256 maxDisagreement) internal view {
+  function _checkUniDisagreement(
+    address asset,
+    address recvAsset,
+    uint256 assetAmount,
+    uint256 recvAmount,
+    uint256 maxDisagreement
+  ) internal view {
     uint256 estAmountOut = IPriceFeeds(BZX.priceFeeds()).queryReturn(asset, recvAsset, assetAmount);
 
     uint256 spreadValue = estAmountOut > recvAmount ? estAmountOut - recvAmount : recvAmount - estAmountOut;
     if (spreadValue != 0) {
       spreadValue = (spreadValue * 1e20) / estAmountOut;
 
-      require(spreadValue <= maxDisagreement, 'uniswap price disagreement');
+      require(spreadValue <= maxDisagreement, "uniswap price disagreement");
     }
   }
 
@@ -295,11 +317,11 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
     address[] memory path;
     for (uint256 i = 0; i < paths.length; i++) {
       path = paths[i];
-      require(path.length >= 2 && path[0] != path[path.length - 1] && path[path.length - 1] == OOKI, 'invalid path');
+      require(path.length >= 2 && path[0] != path[path.length - 1] && path[path.length - 1] == OOKI, "invalid path");
 
       // check that the path exists
       uint256[] memory amountsOut = UNISWAP_ROUTER.getAmountsOut(1e10, path);
-      require(amountsOut[amountsOut.length - 1] != 0, 'path does not exist');
+      require(amountsOut[amountsOut.length - 1] != 0, "path does not exist");
 
       swapPaths[path[0]] = path;
       IERC20(path[0]).safeApprove(address(UNISWAP_ROUTER), 0);
@@ -319,7 +341,12 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
     slippage = newSlippage;
   }
 
-  function requestRefund(bytes calldata wdmsg, bytes[] calldata sigs, address[] calldata signers, uint256[] calldata powers) external onlyGuardian {
+  function requestRefund(
+    bytes calldata wdmsg,
+    bytes[] calldata sigs,
+    address[] calldata signers,
+    uint256[] calldata powers
+  ) external onlyGuardian {
     IBridge(BRIDGE).withdraw(wdmsg, sigs, signers, powers);
   }
 

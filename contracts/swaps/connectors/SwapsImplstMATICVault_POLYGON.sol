@@ -6,17 +6,21 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '../../core/State.sol';
-import '../ISwapsImpl.sol';
-import '@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol';
-import '../../interfaces/IBalancerVault.sol';
-import '../../interfaces/IBalancerHelpers.sol';
+import "../../core/State.sol";
+import "../ISwapsImpl.sol";
+import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
+import "../../interfaces/IBalancerVault.sol";
+import "../../interfaces/IBalancerHelpers.sol";
 
 //Added because of version issues
 interface IVault {
   function deposit(uint256 assets, address receiver) external returns (uint256 shares);
 
-  function redeem(uint256 shares, address receiver, address owner) external returns (uint256 assets);
+  function redeem(
+    uint256 shares,
+    address receiver,
+    address owner
+  ) external returns (uint256 assets);
 
   function convertAssetsToShares(uint256 assets, address receiver) external view returns (uint256 shares);
 
@@ -38,7 +42,13 @@ contract SwapsImplstMATICVault_POLYGON is State, ISwapsImpl {
   IVault public constant VAULT = IVault(0x976f31D12df9272f10c2f20BE2887824Cc3d974c);
   address public constant ASSET = 0xaF5E0B5425dE1F5a630A8cB5AA9D97B8141C908D;
 
-  constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
+  constructor(
+    IWeth wethtoken,
+    address usdc,
+    address bzrx,
+    address vbzrx,
+    address ooki
+  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
 
   function dexSwap(
     address sourceTokenAddress,
@@ -50,8 +60,8 @@ contract SwapsImplstMATICVault_POLYGON is State, ISwapsImpl {
     uint256 requiredDestTokenAmount,
     bytes memory payload
   ) public returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed) {
-    require(sourceTokenAddress != destTokenAddress, 'source == dest');
-    require((sourceTokenAddress == WMATIC || sourceTokenAddress == address(VAULT)) && (destTokenAddress == WMATIC || destTokenAddress == address(VAULT)), 'unsupported tokens');
+    require(sourceTokenAddress != destTokenAddress, "source == dest");
+    require((sourceTokenAddress == WMATIC || sourceTokenAddress == address(VAULT)) && (destTokenAddress == WMATIC || destTokenAddress == address(VAULT)), "unsupported tokens");
 
     IERC20 sourceToken = IERC20(sourceTokenAddress);
     address _thisAddress = address(this);
@@ -71,8 +81,12 @@ contract SwapsImplstMATICVault_POLYGON is State, ISwapsImpl {
     }
   }
 
-  function dexExpectedRate(address sourceTokenAddress, address destTokenAddress, uint256 sourceTokenAmount) public view returns (uint256 expectedRate) {
-    revert('unsupported');
+  function dexExpectedRate(
+    address sourceTokenAddress,
+    address destTokenAddress,
+    uint256 sourceTokenAmount
+  ) public view returns (uint256 expectedRate) {
+    revert("unsupported");
   }
 
   function dexAmountOut(bytes memory payload, uint256 amountIn) public returns (uint256 amountOut, address midToken) {
@@ -120,14 +134,16 @@ contract SwapsImplstMATICVault_POLYGON is State, ISwapsImpl {
   }
 
   function dexAmountIn(bytes memory route, uint256 amountOut) public returns (uint256 amountIn, address midToken) {
-    revert('unsupported');
+    revert("unsupported");
   }
 
   function dexAmountInFormatted(bytes memory payload, uint256 amountOut) public returns (uint256 amountIn, address midToken) {
-    revert('unsupported');
+    revert("unsupported");
   }
 
-  function setSwapApprovals(address[] memory /*tokens*/) public {
+  function setSwapApprovals(
+    address[] memory /*tokens*/
+  ) public {
     IERC20(WMATIC).safeApprove(_vault, 0);
     IERC20(WMATIC).safeApprove(_vault, type(uint256).max);
 
@@ -138,7 +154,9 @@ contract SwapsImplstMATICVault_POLYGON is State, ISwapsImpl {
     IERC20(ASSET).safeApprove(_vault, type(uint256).max);
   }
 
-  function revokeApprovals(address[] memory /*tokens*/) public {
+  function revokeApprovals(
+    address[] memory /*tokens*/
+  ) public {
     IERC20(WMATIC).safeApprove(_vault, 0);
     IERC20(ASSET).safeApprove(_vault, 0);
     IERC20(ASSET).safeApprove(address(VAULT), 0);
@@ -149,11 +167,11 @@ contract SwapsImplstMATICVault_POLYGON is State, ISwapsImpl {
     address destTokenAddress,
     address receiverAddress,
     uint256 minSourceTokenAmount,
-    uint256 /*maxSourceTokenAmount*/,
+    uint256, /*maxSourceTokenAmount*/
     uint256 requiredDestTokenAmount,
     bytes memory payload
   ) internal returns (uint256 sourceTokenAmountUsed, uint256 destTokenAmountReceived) {
-    require(requiredDestTokenAmount == 0, 'required dest token amount unsupported');
+    require(requiredDestTokenAmount == 0, "required dest token amount unsupported");
     sourceTokenAmountUsed = minSourceTokenAmount;
     address _thisAddress = address(this);
     if (sourceTokenAddress == WMATIC) {

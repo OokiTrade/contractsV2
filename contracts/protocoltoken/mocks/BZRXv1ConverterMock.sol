@@ -6,7 +6,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.5.17;
 
-import '../BZRXv1Converter.sol';
+import "../BZRXv1Converter.sol";
 
 contract BZRXv1ConverterMock is BZRXv1Converter {
   uint256 public currentTime;

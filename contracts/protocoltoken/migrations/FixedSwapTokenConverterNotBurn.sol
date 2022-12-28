@@ -7,9 +7,9 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import '@openzeppelin-3.4.0/token/ERC20/IERC20.sol';
-import '@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol';
-import '@openzeppelin-3.4.0/access/Ownable.sol';
+import "@openzeppelin-3.4.0/token/ERC20/IERC20.sol";
+import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
+import "@openzeppelin-3.4.0/access/Ownable.sol";
 
 contract FixedSwapTokenConverterNotBurn is Ownable {
   using SafeERC20 for IERC20;
@@ -33,12 +33,17 @@ contract FixedSwapTokenConverterNotBurn is Ownable {
   }
 
   function setTokenIn(address _tokenIn, uint256 _swapRate) public onlyOwner {
-    require(_tokenIn != address(0), 'address(0)');
+    require(_tokenIn != address(0), "address(0)");
     tokenIn[_tokenIn] = _swapRate;
   }
 
-  constructor(address[] memory _tokensIn, uint256[] memory _swapRates, address _tokenOut, address _defaultToken) public {
-    require(_tokensIn.length == _swapRates.length, '!length');
+  constructor(
+    address[] memory _tokensIn,
+    uint256[] memory _swapRates,
+    address _tokenOut,
+    address _defaultToken
+  ) public {
+    require(_tokensIn.length == _swapRates.length, "!length");
     tokenOut = _tokenOut;
     defaultToken = _defaultToken;
     for (uint256 i = 0; i < _tokensIn.length; i++) {
@@ -46,9 +51,13 @@ contract FixedSwapTokenConverterNotBurn is Ownable {
     }
   }
 
-  function _convert(address receiver, address _token, uint256 _tokenAmount) internal {
+  function _convert(
+    address receiver,
+    address _token,
+    uint256 _tokenAmount
+  ) internal {
     uint256 _swapRate = tokenIn[_token];
-    require(_swapRate != 0, 'swapRate == 0');
+    require(_swapRate != 0, "swapRate == 0");
 
     uint256 _balance = IERC20(_token).balanceOf(msg.sender);
     if (_tokenAmount > _balance) {
@@ -59,7 +68,7 @@ contract FixedSwapTokenConverterNotBurn is Ownable {
     }
 
     uint256 _amountOut = _tokenAmount.mul(_swapRate).div(1e18);
-    require(IERC20(tokenOut).balanceOf(address(this)) >= _amountOut, 'Migrator: low balance');
+    require(IERC20(tokenOut).balanceOf(address(this)) >= _amountOut, "Migrator: low balance");
 
     IERC20(_token).safeTransferFrom(msg.sender, address(this), _tokenAmount);
 
@@ -69,11 +78,15 @@ contract FixedSwapTokenConverterNotBurn is Ownable {
   }
 
   function convert(address receiver, uint256 _tokenAmount) public {
-    require(defaultToken != address(0), 'default is not set');
+    require(defaultToken != address(0), "default is not set");
     _convert(receiver, defaultToken, _tokenAmount);
   }
 
-  function convert(address receiver, address[] memory _tokens, uint256[] memory _amounts) public {
+  function convert(
+    address receiver,
+    address[] memory _tokens,
+    uint256[] memory _amounts
+  ) public {
     for (uint256 i = 0; i < _tokens.length; i++) {
       _convert(receiver, _tokens[i], _amounts[i]);
     }

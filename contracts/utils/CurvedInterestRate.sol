@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity >=0.8.4;
 
-import 'prb-math/contracts/PRBMathUD60x18.sol';
-import '../interfaces/ICurvedInterestRate.sol';
-import '../governance/PausableGuardian_0_8.sol';
+import "prb-math/contracts/PRBMathUD60x18.sol";
+import "../interfaces/ICurvedInterestRate.sol";
+import "../governance/PausableGuardian_0_8.sol";
 
 contract CurvedInterestRate is PausableGuardian_0_8, ICurvedInterestRate {
   using PRBMathUD60x18 for uint256;
@@ -28,7 +28,13 @@ contract CurvedInterestRate is PausableGuardian_0_8, ICurvedInterestRate {
 
   mapping(address => CurveIRParams) public PARAMS;
 
-  function getInterestRate(uint256 _U, uint256 _a, uint256 _b, uint256 _UR_MAX, uint256 _IR_ABSOLUTE_MIN) public pure override returns (uint256 interestRate) {
+  function getInterestRate(
+    uint256 _U,
+    uint256 _a,
+    uint256 _b,
+    uint256 _UR_MAX,
+    uint256 _IR_ABSOLUTE_MIN
+  ) public pure override returns (uint256 interestRate) {
     if (_U > _UR_MAX) {
       _U = _UR_MAX;
     }
@@ -44,7 +50,14 @@ contract CurvedInterestRate is PausableGuardian_0_8, ICurvedInterestRate {
   //     return getAB(_IR1, PARAMS[_OWNER].IR2, PARAMS[_OWNER].UR1, PARAMS[_OWNER].UR2);
   // }
 
-  function getAB(uint256 _IR1, uint256 _IR2, uint256 _UR1, uint256 _UR2, uint256 _IR_MIN, uint256 _IR_MAX) public pure override returns (uint256 a, uint256 b) {
+  function getAB(
+    uint256 _IR1,
+    uint256 _IR2,
+    uint256 _UR1,
+    uint256 _UR2,
+    uint256 _IR_MIN,
+    uint256 _IR_MAX
+  ) public pure override returns (uint256 a, uint256 b) {
     // some minimal interestRate to avoid zero a or b
     if (_IR1 < _IR_MIN) {
       _IR1 = _IR_MIN;
@@ -73,13 +86,13 @@ contract CurvedInterestRate is PausableGuardian_0_8, ICurvedInterestRate {
 
   function updateParams(CurveIRParams calldata _curveIRParams, address owner) public onlyGuardian {
     // updateParams((120e18, 80e18, 100e18, 100e18, 110e18, 0.1e18, 0.01e18), ZERO_ADDRESS, {"from": deployer}) # default across all
-    require(_curveIRParams.IR2 <= CHECK_IR2, 'IR2');
-    require(_curveIRParams.UR1 <= CHECK_UR_MAX, 'UR1');
-    require(_curveIRParams.UR2 <= CHECK_UR_MAX, 'UR2');
-    require(_curveIRParams.UR_MAX <= CHECK_UR_MAX, 'UR_MAX');
-    require(_curveIRParams.IR_MAX <= CHECK_IR2, 'IR_MAX');
-    require(_curveIRParams.IR_MIN >= CHECK_IR_MIN && _curveIRParams.IR_MIN <= CHECK_IR2, 'IR_MIN');
-    require(_curveIRParams.IR_ABSOLUTE_MIN >= CHECK_IR_ABSOLUTE_MIN && _curveIRParams.IR_ABSOLUTE_MIN < CHECK_IR_MAX, 'IR_ABSOLUTE_MIN');
+    require(_curveIRParams.IR2 <= CHECK_IR2, "IR2");
+    require(_curveIRParams.UR1 <= CHECK_UR_MAX, "UR1");
+    require(_curveIRParams.UR2 <= CHECK_UR_MAX, "UR2");
+    require(_curveIRParams.UR_MAX <= CHECK_UR_MAX, "UR_MAX");
+    require(_curveIRParams.IR_MAX <= CHECK_IR2, "IR_MAX");
+    require(_curveIRParams.IR_MIN >= CHECK_IR_MIN && _curveIRParams.IR_MIN <= CHECK_IR2, "IR_MIN");
+    require(_curveIRParams.IR_ABSOLUTE_MIN >= CHECK_IR_ABSOLUTE_MIN && _curveIRParams.IR_ABSOLUTE_MIN < CHECK_IR_MAX, "IR_ABSOLUTE_MIN");
     PARAMS[owner] = _curveIRParams;
   }
 }

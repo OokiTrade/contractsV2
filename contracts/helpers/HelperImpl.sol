@@ -7,12 +7,12 @@
 pragma solidity >=0.6.0 <0.8.0;
 pragma experimental ABIEncoderV2;
 
-import '@openzeppelin-3.4.0/access/Ownable.sol';
-import '@openzeppelin-3.4.0/token/ERC20/IERC20.sol';
+import "@openzeppelin-3.4.0/access/Ownable.sol";
+import "@openzeppelin-3.4.0/token/ERC20/IERC20.sol";
 
-import '../../interfaces/IPriceFeeds.sol';
-import '../../interfaces/IToken.sol';
-import '../../interfaces/IBZx.sol';
+import "../../interfaces/IPriceFeeds.sol";
+import "../../interfaces/IToken.sol";
+import "../../interfaces/IBZx.sol";
 
 contract HelperImpl is Ownable {
   address public constant bZxProtocol = 0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f; // mainnet
@@ -31,8 +31,8 @@ contract HelperImpl is Ownable {
   // address public constant wethToken = 0xD4949664cD82660AaE99bEdc034a0deA8A0bd517; // evmos
   // address public constant wethToken = 0x4200000000000000000000000000000000000006; // optimism
 
-  uint256 internal constant WEI_PRECISION = 10 ** 18;
-  uint256 internal constant WEI_PERCENT_PRECISION = 10 ** 20;
+  uint256 internal constant WEI_PRECISION = 10**18;
+  uint256 internal constant WEI_PERCENT_PRECISION = 10**20;
 
   function balanceOf(IERC20[] calldata tokens, address wallet) public view returns (uint256[] memory balances) {
     balances = new uint256[](tokens.length);
@@ -48,7 +48,11 @@ contract HelperImpl is Ownable {
     }
   }
 
-  function allowance(IERC20[] calldata tokens, address owner, address spender) public view returns (uint256[] memory allowances) {
+  function allowance(
+    IERC20[] calldata tokens,
+    address owner,
+    address spender
+  ) public view returns (uint256[] memory allowances) {
     allowances = new uint256[](tokens.length);
     for (uint256 i = 0; i < tokens.length; i++) {
       allowances[i] = tokens[i].allowance(owner, spender);
@@ -127,7 +131,11 @@ contract HelperImpl is Ownable {
     uint256 destAmount;
   }
 
-  function assetRates(address usdTokenAddress, address[] memory tokens, uint256[] memory sourceAmounts) public view returns (AssetRates[] memory assetRates) {
+  function assetRates(
+    address usdTokenAddress,
+    address[] memory tokens,
+    uint256[] memory sourceAmounts
+  ) public view returns (AssetRates[] memory assetRates) {
     IPriceFeeds feeds = IPriceFeeds(IBZx(bZxProtocol).priceFeeds());
     assetRates = new AssetRates[](tokens.length);
 
@@ -136,7 +144,7 @@ contract HelperImpl is Ownable {
 
       if (sourceAmounts[i] != 0) {
         assetRates[i].destAmount = sourceAmounts[i] * assetRates[i].rate;
-        require(assetRates[i].destAmount / sourceAmounts[i] == assetRates[i].rate, 'overflow');
+        require(assetRates[i].destAmount / sourceAmounts[i] == assetRates[i].rate, "overflow");
         assetRates[i].destAmount = assetRates[i].destAmount / assetRates[i].precision;
       }
     }

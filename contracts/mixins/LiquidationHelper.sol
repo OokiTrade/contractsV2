@@ -7,8 +7,8 @@
 pragma solidity ^0.8.0;
 
 library LiquidationHelper {
-  uint256 internal constant WEI_PRECISION = 10 ** 18;
-  uint256 internal constant WEI_PERCENT_PRECISION = 10 ** 20;
+  uint256 internal constant WEI_PRECISION = 10**18;
+  uint256 internal constant WEI_PERCENT_PRECISION = 10**20;
 
   function getLiquidationAmounts(
     uint256 principal,

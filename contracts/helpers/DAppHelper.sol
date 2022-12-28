@@ -6,9 +6,9 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity >=0.6.0 <0.8.4;
 pragma experimental ABIEncoderV2;
-import '../../interfaces/IBZx.sol';
-import '../../interfaces/IPriceFeeds.sol';
-import '../../interfaces/IToken.sol';
+import "../../interfaces/IBZx.sol";
+import "../../interfaces/IPriceFeeds.sol";
+import "../../interfaces/IToken.sol";
 
 // this contract is deprecated use HelperImpl
 contract DAppHelper {
@@ -25,7 +25,15 @@ contract DAppHelper {
     address usdTokenAddress,
     address[] memory tokens,
     uint256[] memory sourceAmounts
-  ) public view returns (uint256[] memory rates, uint256[] memory precisions, uint256[] memory destAmounts) {
+  )
+    public
+    view
+    returns (
+      uint256[] memory rates,
+      uint256[] memory precisions,
+      uint256[] memory destAmounts
+    )
+  {
     IPriceFeeds feeds = IPriceFeeds(IBZx(bZxProtocol).priceFeeds());
     rates = new uint256[](tokens.length);
     precisions = new uint256[](tokens.length);
@@ -36,15 +44,13 @@ contract DAppHelper {
 
       if (sourceAmounts[i] != 0) {
         destAmounts[i] = sourceAmounts[i] * rates[i];
-        require(destAmounts[i] / sourceAmounts[i] == rates[i], 'overflow');
+        require(destAmounts[i] / sourceAmounts[i] == rates[i], "overflow");
         destAmounts[i] = destAmounts[i] / precisions[i];
       }
     }
   }
 
-  function reserveDetails(
-    address[] memory tokenAddresses
-  )
+  function reserveDetails(address[] memory tokenAddresses)
     public
     view
     returns (

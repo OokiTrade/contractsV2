@@ -7,11 +7,11 @@
 pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
-import '../../../interfaces/IUniv3Twap.sol';
-import '../../governance/PausableGuardian_0_8.sol';
-import './FactoryFeed.sol';
-import '../../../interfaces/IPriceFeeds.sol';
-import '@uniswap/v3-core/contracts/interfaces/pool/IUniswapV3PoolActions.sol';
+import "../../../interfaces/IUniv3Twap.sol";
+import "../../governance/PausableGuardian_0_8.sol";
+import "./FactoryFeed.sol";
+import "../../../interfaces/IPriceFeeds.sol";
+import "@uniswap/v3-core/contracts/interfaces/pool/IUniswapV3PoolActions.sol";
 
 contract FeedFactory is PausableGuardian_0_8 {
   address public constant UNIV3_FACTORY = 0x1F98431c8aD98523631AE4a59f267346ea31F984;
@@ -23,11 +23,16 @@ contract FeedFactory is PausableGuardian_0_8 {
 
   IUniv3Twap.V3Specs public specs;
 
-  constructor(address priceFeed, address twapSource, address quote, uint256 decimalOffset) {
+  constructor(
+    address priceFeed,
+    address twapSource,
+    address quote,
+    uint256 decimalOffset
+  ) {
     PRICE_FEEDS = priceFeed;
     TWAP = twapSource;
     QUOTE = quote;
-    OFFSET = 10 ** decimalOffset;
+    OFFSET = 10**decimalOffset;
   }
 
   /* Code from PoolAddress.sol from Uniswap repo but there is compiler issue so it is fixed in here */
@@ -45,14 +50,18 @@ contract FeedFactory is PausableGuardian_0_8 {
   /// @param tokenB The second token of a pool, unsorted
   /// @param fee The fee level of the pool
   /// @return Poolkey The pool details with ordered token0 and token1 assignments
-  function getPoolKey(address tokenA, address tokenB, uint24 fee) internal pure returns (PoolKey memory) {
+  function getPoolKey(
+    address tokenA,
+    address tokenB,
+    uint24 fee
+  ) internal pure returns (PoolKey memory) {
     if (tokenA > tokenB) (tokenA, tokenB) = (tokenB, tokenA);
     return PoolKey({token0: tokenA, token1: tokenB, fee: fee});
   }
 
   function computeAddress(address factory, PoolKey memory key) internal pure returns (address pool) {
     require(key.token0 < key.token1);
-    pool = address(uint160(uint256(keccak256(abi.encodePacked(hex'ff', factory, keccak256(abi.encode(key.token0, key.token1, key.fee)), POOL_INIT_CODE_HASH)))));
+    pool = address(uint160(uint256(keccak256(abi.encodePacked(hex"ff", factory, keccak256(abi.encode(key.token0, key.token1, key.fee)), POOL_INIT_CODE_HASH)))));
   }
 
   /* End of code from PoolAddress.sol */
@@ -64,7 +73,7 @@ contract FeedFactory is PausableGuardian_0_8 {
     address[] memory feeds = new address[](1);
     tokens[0] = token;
     feeds[0] = address(f);
-    require(IPriceFeeds(PRICE_FEEDS).pricesFeeds(token) == address(0), 'already populated');
+    require(IPriceFeeds(PRICE_FEEDS).pricesFeeds(token) == address(0), "already populated");
     IPriceFeeds(PRICE_FEEDS).setPriceFeed(tokens, feeds);
     IPriceFeeds(PRICE_FEEDS).setDecimals(tokens);
   }

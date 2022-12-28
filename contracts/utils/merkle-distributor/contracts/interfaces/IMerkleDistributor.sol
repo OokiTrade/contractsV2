@@ -16,10 +16,21 @@ interface IMerkleDistributor {
   function isClaimed(uint256 airdropIndex, uint256 index) external view returns (bool);
 
   // Claim the given amount of the token to the given address. Reverts if the inputs are invalid.
-  function claim(uint256 airdropIndex, uint256 index, address account, uint256 amount, bytes32[] calldata merkleProof) external;
+  function claim(
+    uint256 airdropIndex,
+    uint256 index,
+    address account,
+    uint256 amount,
+    bytes32[] calldata merkleProof
+  ) external;
 
   // create new aridrop
-  function createAirdrop(address token, bytes32 merkleRoot, address airdropSource, uint256 amount) external;
+  function createAirdrop(
+    address token,
+    bytes32 merkleRoot,
+    address airdropSource,
+    uint256 amount
+  ) external;
 
   // This event is triggered whenever a new airdrop is created.
   event Created(uint256 indexed airdropIndex, address indexed token, address indexed source, uint256 amount);

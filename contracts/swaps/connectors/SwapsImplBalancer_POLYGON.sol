@@ -6,16 +6,22 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '../../core/State.sol';
-import '@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol';
-import '../ISwapsImpl.sol';
-import '../../interfaces/IBalancerVault.sol';
+import "../../core/State.sol";
+import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
+import "../ISwapsImpl.sol";
+import "../../interfaces/IBalancerVault.sol";
 
 contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
   using SafeERC20 for IERC20;
   IBalancerVault public constant VAULT = IBalancerVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
 
-  constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
+  constructor(
+    IWeth wethtoken,
+    address usdc,
+    address bzrx,
+    address vbzrx,
+    address ooki
+  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
 
   function dexSwap(
     address sourceTokenAddress,
@@ -27,8 +33,8 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
     uint256 requiredDestTokenAmount,
     bytes memory payload
   ) public returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed) {
-    require(sourceTokenAddress != destTokenAddress, 'source == dest');
-    require(supportedTokens[sourceTokenAddress] && supportedTokens[destTokenAddress], 'unsupported tokens');
+    require(sourceTokenAddress != destTokenAddress, "source == dest");
+    require(supportedTokens[sourceTokenAddress] && supportedTokens[destTokenAddress], "unsupported tokens");
 
     IERC20 sourceToken = IERC20(sourceTokenAddress);
     address _thisAddress = address(this);
@@ -48,14 +54,18 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
     }
   }
 
-  function dexExpectedRate(address sourceTokenAddress, address destTokenAddress, uint256 sourceTokenAmount) public view returns (uint256 expectedRate) {
-    revert('unsupported');
+  function dexExpectedRate(
+    address sourceTokenAddress,
+    address destTokenAddress,
+    uint256 sourceTokenAmount
+  ) public view returns (uint256 expectedRate) {
+    revert("unsupported");
   }
 
   function dexAmountOut(bytes memory payload, uint256 amountIn) public returns (uint256 amountOut, address midToken) {
     (IBalancerVault.BatchSwapStep[] memory swapParams, address[] memory tokens) = abi.decode(payload, (IBalancerVault.BatchSwapStep[], address[]));
     uint256 amountInSpecified = 0;
-    for (uint i; i < swapParams.length; ++i) {
+    for (uint256 i; i < swapParams.length; ++i) {
       if (swapParams[i].assetInIndex == 0) {
         amountInSpecified += swapParams[i].amount;
       }
@@ -84,7 +94,7 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
   function dexAmountIn(bytes memory route, uint256 amountOut) public returns (uint256 amountIn, address midToken) {
     (IBalancerVault.BatchSwapStep[] memory swapParams, address[] memory tokens) = abi.decode(route, (IBalancerVault.BatchSwapStep[], address[]));
     uint256 amountOutSpecified = 0;
-    for (uint i; i < swapParams.length; ++i) {
+    for (uint256 i; i < swapParams.length; ++i) {
       if (swapParams[i].assetOutIndex == swapParams.length - 1) {
         amountOutSpecified += swapParams[i].amount;
       }
@@ -111,14 +121,14 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
   }
 
   function setSwapApprovals(address[] memory tokens) public {
-    for (uint i; i < tokens.length; ++i) {
+    for (uint256 i; i < tokens.length; ++i) {
       IERC20(tokens[i]).safeApprove(address(VAULT), 0);
       IERC20(tokens[i]).safeApprove(address(VAULT), type(uint256).max);
     }
   }
 
   function revokeApprovals(address[] memory tokens) public {
-    for (uint i; i < tokens.length; ++i) {
+    for (uint256 i; i < tokens.length; ++i) {
       IERC20(tokens[i]).safeApprove(address(VAULT), 0);
     }
   }
@@ -137,12 +147,12 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
         payload,
         (IBalancerVault.BatchSwapStep[], address[], int256[])
       );
-      require(tokens[0] == sourceTokenAddress && tokens[tokens.length - 1] == destTokenAddress, 'invalid tokens');
+      require(tokens[0] == sourceTokenAddress && tokens[tokens.length - 1] == destTokenAddress, "invalid tokens");
       limits[0] = int256(minSourceTokenAmount);
       maxSourceTokenAmount = 0;
-      for (uint i; i < swapParams.length; ++i) {
+      for (uint256 i; i < swapParams.length; ++i) {
         if (swapParams[i].assetInIndex != 0) {
-          require(swapParams[i].amount == 0, 'invalid amount');
+          require(swapParams[i].amount == 0, "invalid amount");
         } else {
           maxSourceTokenAmount += swapParams[i].amount;
         }
@@ -161,19 +171,19 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
 
       limits = VAULT.batchSwap(IBalancerVault.SwapKind.GIVEN_IN, swapParams, tokens, funds, limits, block.timestamp);
       destTokenAmountReceived = uint256(-1 * limits[limits.length - 1]);
-      require(uint256(limits[0]) == minSourceTokenAmount, 'invalid inputs');
+      require(uint256(limits[0]) == minSourceTokenAmount, "invalid inputs");
       sourceTokenAmountUsed = uint256(limits[0]);
     } else {
       (IBalancerVault.BatchSwapStep[] memory swapParams, address[] memory tokens, int256[] memory limits) = abi.decode(
         payload,
         (IBalancerVault.BatchSwapStep[], address[], int256[])
       );
-      require(tokens[0] == sourceTokenAddress && tokens[tokens.length - 1] == destTokenAddress, 'invalid tokens');
+      require(tokens[0] == sourceTokenAddress && tokens[tokens.length - 1] == destTokenAddress, "invalid tokens");
       limits[0] = int256(maxSourceTokenAmount);
       minSourceTokenAmount = 0;
-      for (uint i; i < swapParams.length; ++i) {
+      for (uint256 i; i < swapParams.length; ++i) {
         if (swapParams[i].assetOutIndex != tokens.length - 1) {
-          require(swapParams[i].amount == 0, 'invalid amount');
+          require(swapParams[i].amount == 0, "invalid amount");
         } else {
           minSourceTokenAmount += swapParams[i].amount;
         }
@@ -192,7 +202,7 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
 
       limits = VAULT.batchSwap(IBalancerVault.SwapKind.GIVEN_OUT, swapParams, tokens, funds, limits, block.timestamp);
       destTokenAmountReceived = uint256(-limits[limits.length - 1]);
-      require(destTokenAmountReceived == requiredDestTokenAmount, 'invalid inputs');
+      require(destTokenAmountReceived == requiredDestTokenAmount, "invalid inputs");
       sourceTokenAmountUsed = uint256(limits[0]);
     }
   }

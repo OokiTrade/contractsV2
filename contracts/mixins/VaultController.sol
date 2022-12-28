@@ -6,8 +6,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '../core/Constants.sol';
-import '@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol';
+import "../core/Constants.sol";
+import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
 
 abstract contract VaultController is Constants {
   using SafeERC20 for IERC20;
@@ -35,7 +35,11 @@ abstract contract VaultController is Constants {
     }
   }
 
-  function vaultDeposit(address token, address from, uint256 value) internal {
+  function vaultDeposit(
+    address token,
+    address from,
+    uint256 value
+  ) internal {
     if (value != 0) {
       IERC20(token).safeTransferFrom(from, address(this), value);
 
@@ -43,7 +47,11 @@ abstract contract VaultController is Constants {
     }
   }
 
-  function vaultWithdraw(address token, address to, uint256 value) internal {
+  function vaultWithdraw(
+    address token,
+    address to,
+    uint256 value
+  ) internal {
     if (value != 0) {
       IERC20(token).safeTransfer(to, value);
 
@@ -51,7 +59,12 @@ abstract contract VaultController is Constants {
     }
   }
 
-  function vaultTransfer(address token, address from, address to, uint256 value) internal {
+  function vaultTransfer(
+    address token,
+    address from,
+    address to,
+    uint256 value
+  ) internal {
     if (value != 0) {
       if (from == address(this)) {
         IERC20(token).safeTransfer(to, value);
@@ -61,7 +74,11 @@ abstract contract VaultController is Constants {
     }
   }
 
-  function vaultApprove(address token, address to, uint256 value) internal {
+  function vaultApprove(
+    address token,
+    address to,
+    uint256 value
+  ) internal {
     if (value != 0 && IERC20(token).allowance(address(this), to) != 0) {
       IERC20(token).safeApprove(to, 0);
     }

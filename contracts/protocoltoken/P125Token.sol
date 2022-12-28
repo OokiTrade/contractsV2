@@ -6,10 +6,10 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '@openzeppelin-4.8.0/token/ERC20/ERC20.sol';
-import '@openzeppelin-4.8.0/token/ERC20/extensions/ERC20Burnable.sol';
-import '@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol';
-import '../proxies/0_8/Upgradeable_0_8.sol';
+import "@openzeppelin-4.8.0/token/ERC20/ERC20.sol";
+import "@openzeppelin-4.8.0/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
+import "../proxies/0_8/Upgradeable_0_8.sol";
 
 contract P125Token is Upgradeable_0_8, ERC20Burnable {
   bytes32 public DOMAIN_SEPARATOR;
@@ -18,14 +18,14 @@ contract P125Token is Upgradeable_0_8, ERC20Burnable {
 
   mapping(address => uint256) public nonces;
 
-  constructor() ERC20('P125 Token', 'P125') {}
+  constructor() ERC20("P125 Token", "P125") {}
 
   function initialize() public onlyOwner {
     DOMAIN_SEPARATOR = keccak256(
       abi.encode(
-        keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'),
-        keccak256(bytes('P125 Token')),
-        keccak256(bytes('1')),
+        keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+        keccak256(bytes("P125 Token")),
+        keccak256(bytes("1")),
         block.chainid,
         address(this)
       )
@@ -42,23 +42,35 @@ contract P125Token is Upgradeable_0_8, ERC20Burnable {
 
   // constructor does not modify proxy storage
   function name() public view override returns (string memory) {
-    return 'P125 Token';
+    return "P125 Token";
   }
 
   // constructor does not modify proxy storage
   function symbol() public view override returns (string memory) {
-    return 'P125';
+    return "P125";
   }
 
-  function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external {
-    require(deadline >= block.timestamp, 'P125: EXPIRED');
-    bytes32 digest = keccak256(abi.encodePacked('\x19\x01', DOMAIN_SEPARATOR, keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline))));
+  function permit(
+    address owner,
+    address spender,
+    uint256 value,
+    uint256 deadline,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  ) external {
+    require(deadline >= block.timestamp, "P125: EXPIRED");
+    bytes32 digest = keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline))));
     address recoveredAddress = ecrecover(digest, v, r, s);
-    require(recoveredAddress != address(0) && recoveredAddress == owner, 'P125: INVALID_SIGNATURE');
+    require(recoveredAddress != address(0) && recoveredAddress == owner, "P125: INVALID_SIGNATURE");
     _approve(owner, spender, value);
   }
 
-  function _beforeTokenTransfer(address /*from*/, address to, uint256 /*amount*/) internal override {
-    require(to != address(this), 'ERC20: token contract is receiver');
+  function _beforeTokenTransfer(
+    address, /*from*/
+    address to,
+    uint256 /*amount*/
+  ) internal override {
+    require(to != address(this), "ERC20: token contract is receiver");
   }
 }

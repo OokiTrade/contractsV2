@@ -6,9 +6,9 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import './Common.sol';
-import '../../governance/GovernorBravoInterfaces.sol';
-import '../delegation/VoteDelegator.sol';
+import "./Common.sol";
+import "../../governance/GovernorBravoInterfaces.sol";
+import "../delegation/VoteDelegator.sol";
 
 contract Voting is Common {
   function initialize(address target) external onlyOwner {
@@ -35,8 +35,8 @@ contract Voting is Common {
   }
 
   function _setProposalVals(address account, uint256 proposalId) public returns (uint256) {
-    require(msg.sender == governor, 'unauthorized');
-    require(_proposalState[proposalId].proposalTime == 0, 'proposal exists');
+    require(msg.sender == governor, "unauthorized");
+    require(_proposalState[proposalId].proposalTime == 0, "proposal exists");
     ProposalState memory newProposal = _getProposalState();
     _proposalState[proposalId] = newProposal;
 
@@ -44,7 +44,11 @@ contract Voting is Common {
   }
 
   // Voting balance including delegated votes
-  function _votingBalanceOf(address account, ProposalState memory proposal, uint256 blocknumber) internal view returns (uint256 totalVotes) {
+  function _votingBalanceOf(
+    address account,
+    ProposalState memory proposal,
+    uint256 blocknumber
+  ) internal view returns (uint256 totalVotes) {
     VoteDelegator _voteDelegator = VoteDelegator(voteDelegator);
     address _delegate = _voteDelegator.delegates(account);
 

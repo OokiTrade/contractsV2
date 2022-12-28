@@ -6,9 +6,9 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.5.17;
 
-import '@openzeppelin-2.5.0/token/ERC20/IERC20.sol';
-import '@openzeppelin-2.5.0/ownership/Ownable.sol';
-import '@openzeppelin-2.5.0/math/SafeMath.sol';
+import "@openzeppelin-2.5.0/token/ERC20/IERC20.sol";
+import "@openzeppelin-2.5.0/ownership/Ownable.sol";
+import "@openzeppelin-2.5.0/math/SafeMath.sol";
 
 contract iETHBuyBack is Ownable {
   using SafeMath for uint256;
@@ -31,10 +31,10 @@ contract iETHBuyBack is Ownable {
 
   function convert(uint256 _tokenAmount) external {
     uint256 whitelistAmount = whitelist[msg.sender];
-    require(whitelistAmount != 0 && whitelistAmount >= _tokenAmount, 'unauthorized');
-    require(isActive, 'swap not allowed');
+    require(whitelistAmount != 0 && whitelistAmount >= _tokenAmount, "unauthorized");
+    require(isActive, "swap not allowed");
 
-    uint256 buyAmount = _tokenAmount.mul(10 ** 18).div(iETHSwapRate);
+    uint256 buyAmount = _tokenAmount.mul(10**18).div(iETHSwapRate);
 
     iETH.transferFrom(msg.sender, address(this), _tokenAmount);
 
@@ -47,7 +47,7 @@ contract iETHBuyBack is Ownable {
   }
 
   function setWhitelist(address[] memory addrs, uint256[] memory amounts) public onlyOwner {
-    require(addrs.length == amounts.length, 'count mismatch');
+    require(addrs.length == amounts.length, "count mismatch");
 
     for (uint256 i = 0; i < addrs.length; i++) {
       whitelist[addrs[i]] = amounts[i];

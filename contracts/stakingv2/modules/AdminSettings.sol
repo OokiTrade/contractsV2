@@ -6,10 +6,10 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '../../interfaces/IMasterChefSushi.sol';
-import '../../interfaces/IMasterChefSushi2.sol';
-import './StakingPausableGuardian.sol';
-import './Common.sol';
+import "../../interfaces/IMasterChefSushi.sol";
+import "../../interfaces/IMasterChefSushi2.sol";
+import "./StakingPausableGuardian.sol";
+import "./Common.sol";
 
 contract AdminSettings is Common {
   using SafeERC20 for IERC20;
@@ -34,8 +34,13 @@ contract AdminSettings is Common {
   }
 
   //Migrate from v1 pool to v2
-  function migrateSushi(uint256 srcPoolPid, address srcMasterchef, uint256 dstPoolPid, address dstMasterchef) external onlyGuardian {
-    require(altRewardsPerSharePerBlock[SUSHI] == 0 && altRewardsStartBlock[SUSHI] == 0, 'Already migrated');
+  function migrateSushi(
+    uint256 srcPoolPid,
+    address srcMasterchef,
+    uint256 dstPoolPid,
+    address dstMasterchef
+  ) external onlyGuardian {
+    require(altRewardsPerSharePerBlock[SUSHI] == 0 && altRewardsStartBlock[SUSHI] == 0, "Already migrated");
     altRewardsStartBlock[SUSHI] = 14183871; //20220201
     IMasterChefSushi src = IMasterChefSushi(srcMasterchef);
     IMasterChefSushi2 dst = IMasterChefSushi2(dstMasterchef);
@@ -46,7 +51,7 @@ contract AdminSettings is Common {
     dst.deposit(dstPoolPid, balance, address(this));
 
     uint256 totalSupply = _totalSupplyPerToken[OOKI_ETH_LP];
-    require(totalSupply != 0, 'no deposits');
+    require(totalSupply != 0, "no deposits");
     uint256 cliff = block.number - altRewardsStartBlock[SUSHI];
     altRewardsPerShare[SUSHI] = (IERC20(SUSHI).balanceOf(address(this)) * 1e12) / totalSupply;
     altRewardsPerSharePerBlock[SUSHI] = altRewardsPerShare[SUSHI] / cliff;
@@ -54,7 +59,7 @@ contract AdminSettings is Common {
   }
 
   function setAltRewardsUserInfo(address[] calldata users, uint256[] calldata stakingStartBlock) external onlyGuardian {
-    require(users.length == stakingStartBlock.length, '!length');
+    require(users.length == stakingStartBlock.length, "!length");
     for (uint256 i = 0; i < users.length; i++) {
       userAltRewardsInfo[users[i]][SUSHI].stakingStartBlock = stakingStartBlock[i];
       userAltRewardsInfo[users[i]][SUSHI].pending = 0;
@@ -66,7 +71,11 @@ contract AdminSettings is Common {
     governor = _governor;
   }
 
-  function setApprovals(address _token, address _spender, uint256 _value) public onlyOwner {
+  function setApprovals(
+    address _token,
+    address _spender,
+    uint256 _value
+  ) public onlyOwner {
     IERC20(_token).safeApprove(_spender, _value);
   }
 

@@ -7,10 +7,10 @@
 pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
-import './AdvancedTokenStorage.sol';
-import './StorageExtension.sol';
-import '../../../interfaces/IBZx.sol';
-import '../../interfaces/ICurvedInterestRate.sol';
+import "./AdvancedTokenStorage.sol";
+import "./StorageExtension.sol";
+import "../../../interfaces/IBZx.sol";
+import "../../interfaces/ICurvedInterestRate.sol";
 
 contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage, StorageExtension {
   address public constant bZxContract = 0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f; // mainnet
@@ -25,7 +25,7 @@ contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage, StorageExtension {
   bytes32 internal constant iToken_LowerAdminContract = 0x34b31cff1dbd8374124bd4505521fc29cab0f9554a5386ba7d784a4e611c7e31; // keccak256("iToken_LowerAdminContract")
 
   fallback() external {
-    revert('fallback not allowed');
+    revert("fallback not allowed");
   }
 
   function setupLoanParams(IBZx.LoanParams[] memory loanParamsList, bool areTorqueLoans) public {
@@ -52,7 +52,7 @@ contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage, StorageExtension {
   }
 
   function disableLoanParams(address[] memory collateralTokens, bool[] memory isTorqueLoans) public {
-    require(collateralTokens.length == isTorqueLoans.length, 'count mismatch');
+    require(collateralTokens.length == isTorqueLoans.length, "count mismatch");
 
     bytes32[] memory loanParamsIdList = new bytes32[](collateralTokens.length);
     for (uint256 i = 0; i < collateralTokens.length; i++) {
@@ -97,7 +97,7 @@ contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage, StorageExtension {
   // }
 
   function setDemandCurve(ICurvedInterestRate _rateHelper) public {
-    require(address(_rateHelper) != address(0), 'no zero address');
+    require(address(_rateHelper) != address(0), "no zero address");
     rateHelper = _rateHelper;
   }
 }

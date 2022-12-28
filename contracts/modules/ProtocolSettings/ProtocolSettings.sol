@@ -6,23 +6,29 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '../../core/State.sol';
-import '../../events/ProtocolSettingsEvents.sol';
-import '@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol';
-import '../../interfaces/IVestingToken.sol';
-import '../../utils/MathUtil.sol';
-import '../../interfaces/IDexRecords.sol';
-import '../../governance/PausableGuardian_0_8.sol';
+import "../../core/State.sol";
+import "../../events/ProtocolSettingsEvents.sol";
+import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
+import "../../interfaces/IVestingToken.sol";
+import "../../utils/MathUtil.sol";
+import "../../interfaces/IDexRecords.sol";
+import "../../governance/PausableGuardian_0_8.sol";
 
 contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8 {
   using SafeERC20 for IERC20;
   using MathUtil for uint256;
   using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
 
-  constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
+  constructor(
+    IWeth wethtoken,
+    address usdc,
+    address bzrx,
+    address vbzrx,
+    address ooki
+  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
 
   modifier onlyFactoryOrOwner() {
-    require(msg.sender == factory || msg.sender == owner(), 'unauthorized');
+    require(msg.sender == factory || msg.sender == owner(), "unauthorized");
     _;
   }
 
@@ -76,19 +82,19 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
   }
 
   function setLoanPool(address[] calldata pools, address[] calldata assets) external onlyFactoryOrOwner {
-    require(pools.length == assets.length, 'count mismatch');
+    require(pools.length == assets.length, "count mismatch");
 
     for (uint256 i = 0; i < pools.length; i++) {
-      require(pools[i] != assets[i], 'pool == asset');
-      require(pools[i] != address(0), 'pool == 0');
+      require(pools[i] != assets[i], "pool == asset");
+      require(pools[i] != address(0), "pool == 0");
 
       address pool = loanPoolToUnderlying[pools[i]];
       if (assets[i] == address(0)) {
         // removal action
-        require(pool != address(0), 'pool not exists');
+        require(pool != address(0), "pool not exists");
       } else {
         // add action
-        require(pool == address(0), 'pool exists');
+        require(pool == address(0), "pool exists");
       }
 
       if (assets[i] == address(0)) {
@@ -105,8 +111,12 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
     }
   }
 
-  function setSupportedTokens(address[] calldata addrs, bool[] calldata toggles, bool withApprovals) external onlyFactoryOrOwner {
-    require(addrs.length == toggles.length, 'count mismatch');
+  function setSupportedTokens(
+    address[] calldata addrs,
+    bool[] calldata toggles,
+    bool withApprovals
+  ) external onlyFactoryOrOwner {
+    require(addrs.length == toggles.length, "count mismatch");
 
     for (uint256 i = 0; i < addrs.length; i++) {
       supportedTokens[addrs[i]] = toggles[i];
@@ -124,7 +134,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
         address swapImpl = _getDexRecord(i);
         if (swapImpl == address(0)) continue;
         (bool success, ) = swapImpl.delegatecall(setSwapApprovalsData);
-        require(success, 'approval calls failed');
+        require(success, "approval calls failed");
       }
     }
   }
@@ -134,11 +144,11 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
       0x4a99e3a1, // setSwapApprovals(address[])
       tokens
     );
-    for (uint i = 0; i < dexIDs.length; i++) {
+    for (uint256 i = 0; i < dexIDs.length; i++) {
       address swapImpl = _getDexRecord(dexIDs[i]);
       if (swapImpl == address(0)) continue;
       (bool success, ) = swapImpl.delegatecall(setSwapApprovalsData);
-      require(success, 'approval calls failed');
+      require(success, "approval calls failed");
     }
   }
 
@@ -152,7 +162,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
       address swapImpl = _getDexRecord(i);
       if (swapImpl == address(0)) continue;
       (bool success, ) = swapImpl.delegatecall(revokeApprovalsData);
-      require(success, 'approval calls failed');
+      require(success, "approval calls failed");
     }
   }
 
@@ -170,7 +180,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
   }
 
   function setLendingFeePercent(uint256 newValue) external onlyOwner {
-    require(newValue <= WEI_PERCENT_PRECISION, 'value too high');
+    require(newValue <= WEI_PERCENT_PRECISION, "value too high");
     uint256 oldValue = lendingFeePercent;
     lendingFeePercent = newValue;
 
@@ -178,7 +188,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
   }
 
   function setTradingFeePercent(uint256 newValue) external onlyOwner {
-    require(newValue <= WEI_PERCENT_PRECISION, 'value too high');
+    require(newValue <= WEI_PERCENT_PRECISION, "value too high");
     uint256 oldValue = tradingFeePercent;
     tradingFeePercent = newValue;
 
@@ -186,7 +196,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
   }
 
   function setBorrowingFeePercent(uint256 newValue) external onlyOwner {
-    require(newValue <= WEI_PERCENT_PRECISION, 'value too high');
+    require(newValue <= WEI_PERCENT_PRECISION, "value too high");
     uint256 oldValue = borrowingFeePercent;
     borrowingFeePercent = newValue;
 
@@ -194,18 +204,22 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
   }
 
   function setAffiliateFeePercent(uint256 newValue) external onlyOwner {
-    require(newValue <= WEI_PERCENT_PRECISION, 'value too high');
+    require(newValue <= WEI_PERCENT_PRECISION, "value too high");
     uint256 oldValue = affiliateFeePercent;
     affiliateFeePercent = newValue;
 
     emit SetAffiliateFeePercent(msg.sender, oldValue, newValue);
   }
 
-  function setLiquidationIncentivePercent(address[] calldata loanTokens, address[] calldata collateralTokens, uint256[] calldata amounts) external onlyOwner {
-    require(loanTokens.length == collateralTokens.length && loanTokens.length == amounts.length, 'count mismatch');
+  function setLiquidationIncentivePercent(
+    address[] calldata loanTokens,
+    address[] calldata collateralTokens,
+    uint256[] calldata amounts
+  ) external onlyOwner {
+    require(loanTokens.length == collateralTokens.length && loanTokens.length == amounts.length, "count mismatch");
 
     for (uint256 i = 0; i < loanTokens.length; i++) {
-      require(amounts[i] <= WEI_PERCENT_PRECISION, 'value too high');
+      require(amounts[i] <= WEI_PERCENT_PRECISION, "value too high");
 
       uint256 oldValue = liquidationIncentivePercent[loanTokens[i]][collateralTokens[i]];
       liquidationIncentivePercent[loanTokens[i]][collateralTokens[i]] = amounts[i];
@@ -236,8 +250,12 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
     emit SetFeesController(msg.sender, oldController, newController);
   }
 
-  function withdrawFees(address[] calldata tokens, address receiver, FeeClaimType feeType) external returns (uint256[] memory amounts) {
-    require(msg.sender == feesController, 'unauthorized');
+  function withdrawFees(
+    address[] calldata tokens,
+    address receiver,
+    FeeClaimType feeType
+  ) external returns (uint256[] memory amounts) {
+    require(msg.sender == feesController, "unauthorized");
 
     amounts = new uint256[](tokens.length);
     uint256 balance;

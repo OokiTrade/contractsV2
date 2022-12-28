@@ -6,8 +6,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.7.6;
 
-import '@openzeppelin-3.4.0/access/Ownable.sol';
-import '@openzeppelin-3.4.0/utils/Address.sol';
+import "@openzeppelin-3.4.0/access/Ownable.sol";
+import "@openzeppelin-3.4.0/utils/Address.sol";
 
 contract HelperProxy is Ownable {
   address public implementation;
@@ -48,7 +48,7 @@ contract HelperProxy is Ownable {
   }
 
   function replaceImplementation(address impl) public onlyOwner {
-    require(Address.isContract(impl), 'not a contract');
+    require(Address.isContract(impl), "not a contract");
     implementation = impl;
   }
 }

@@ -6,7 +6,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '../../governance/PausableGuardian_0_8.sol';
+import "../../governance/PausableGuardian_0_8.sol";
 
 contract LoanTokenLogicResolver is PausableGuardian_0_8 {
   address public implementation;

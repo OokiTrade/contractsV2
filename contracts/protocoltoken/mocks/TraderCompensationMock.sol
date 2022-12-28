@@ -6,7 +6,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.5.17;
 
-import '../TraderCompensation.sol';
+import "../TraderCompensation.sol";
 
 contract TraderCompensationMock is TraderCompensation {
   uint256 public currentTime;

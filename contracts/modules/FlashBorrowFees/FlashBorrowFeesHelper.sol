@@ -6,11 +6,17 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '../../core/State.sol';
-import '../../mixins/VaultController.sol';
+import "../../core/State.sol";
+import "../../mixins/VaultController.sol";
 
 contract FlashBorrowFeesHelper is State, VaultController {
-  constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
+  constructor(
+    IWeth wethtoken,
+    address usdc,
+    address bzrx,
+    address vbzrx,
+    address ooki
+  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
 
   event PayFlashBorrowFee(address indexed payer, address indexed token, uint256 amount);
 
@@ -18,11 +24,15 @@ contract FlashBorrowFeesHelper is State, VaultController {
     _setTarget(this.payFlashBorrowFees.selector, target);
   }
 
-  function payFlashBorrowFees(address user, uint256 borrowAmount, uint256 flashBorrowFeePercent) external {
+  function payFlashBorrowFees(
+    address user,
+    uint256 borrowAmount,
+    uint256 flashBorrowFeePercent
+  ) external {
     address feeToken = loanPoolToUnderlying[msg.sender];
 
     // only callable by loan pools
-    require(feeToken != address(0), 'not authorized');
+    require(feeToken != address(0), "not authorized");
 
     uint256 feeTokenAmount = (borrowAmount * flashBorrowFeePercent) / WEI_PERCENT_PRECISION;
 

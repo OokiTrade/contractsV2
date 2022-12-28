@@ -6,7 +6,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import './StakingStateV2.sol';
+import "./StakingStateV2.sol";
 
 contract StakingModularProxy is StakingStateV2 {
   fallback() external payable {
@@ -15,7 +15,7 @@ contract StakingModularProxy is StakingStateV2 {
     }
 
     address target = logicTargets[msg.sig];
-    require(target != address(0), 'target not active');
+    require(target != address(0), "target not active");
 
     bytes memory data = msg.data;
     assembly {
@@ -34,12 +34,12 @@ contract StakingModularProxy is StakingStateV2 {
   }
 
   function replaceContract(address target) external onlyOwner {
-    (bool success, ) = target.delegatecall(abi.encodeWithSignature('initialize(address)', target));
-    require(success, 'setup failed');
+    (bool success, ) = target.delegatecall(abi.encodeWithSignature("initialize(address)", target));
+    require(success, "setup failed");
   }
 
   function setTargets(string[] calldata sigsArr, address[] calldata targetsArr) external onlyOwner {
-    require(sigsArr.length == targetsArr.length, 'count mismatch');
+    require(sigsArr.length == targetsArr.length, "count mismatch");
 
     for (uint256 i = 0; i < sigsArr.length; i++) {
       _setTarget(bytes4(keccak256(abi.encodePacked(sigsArr[i]))), targetsArr[i]);

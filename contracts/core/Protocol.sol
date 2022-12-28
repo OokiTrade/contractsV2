@@ -6,10 +6,16 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import './State.sol';
+import "./State.sol";
 
 contract bZxProtocol is State {
-  constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
+  constructor(
+    IWeth wethtoken,
+    address usdc,
+    address bzrx,
+    address vbzrx,
+    address ooki
+  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
 
   fallback() external payable {
     if (gasleft() <= 2300) {
@@ -17,7 +23,7 @@ contract bZxProtocol is State {
     }
 
     address target = logicTargets[msg.sig];
-    require(target != address(0), 'target not active');
+    require(target != address(0), "target not active");
 
     bytes memory data = msg.data;
     assembly {
@@ -36,12 +42,12 @@ contract bZxProtocol is State {
   }
 
   function replaceContract(address target) external onlyOwner {
-    (bool success, ) = target.delegatecall(abi.encodeWithSignature('initialize(address)', target));
-    require(success, 'setup failed');
+    (bool success, ) = target.delegatecall(abi.encodeWithSignature("initialize(address)", target));
+    require(success, "setup failed");
   }
 
   function setTargets(string[] calldata sigsArr, address[] calldata targetsArr) external onlyOwner {
-    require(sigsArr.length == targetsArr.length, 'count mismatch');
+    require(sigsArr.length == targetsArr.length, "count mismatch");
 
     for (uint256 i = 0; i < sigsArr.length; i++) {
       _setTarget(bytes4(keccak256(abi.encodePacked(sigsArr[i]))), targetsArr[i]);

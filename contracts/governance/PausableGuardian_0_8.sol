@@ -6,7 +6,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '@openzeppelin-4.8.0/access/Ownable.sol';
+import "@openzeppelin-4.8.0/access/Ownable.sol";
 
 contract PausableGuardian_0_8 is Ownable {
   // keccak256("Pausable_FunctionPause")
@@ -16,12 +16,12 @@ contract PausableGuardian_0_8 is Ownable {
   bytes32 internal constant Pausable_GuardianAddress = 0x80e6706973d0c59541550537fd6a33b971efad732635e6c3b99fb01006803cdf;
 
   modifier pausable() {
-    require(!_isPaused(msg.sig) || msg.sender == getGuardian(), 'paused');
+    require(!_isPaused(msg.sig) || msg.sender == getGuardian(), "paused");
     _;
   }
 
   modifier onlyGuardian() {
-    require(msg.sender == owner() || msg.sender == getGuardian(), 'unauthorized');
+    require(msg.sender == owner() || msg.sender == getGuardian(), "unauthorized");
     _;
   }
 
@@ -33,7 +33,7 @@ contract PausableGuardian_0_8 is Ownable {
   }
 
   function toggleFunctionPause(bytes4 sig) public {
-    require(msg.sender == getGuardian() || msg.sender == owner(), 'unauthorized');
+    require(msg.sender == getGuardian() || msg.sender == owner(), "unauthorized");
     bytes32 slot = keccak256(abi.encodePacked(sig, Pausable_FunctionPause));
     assembly {
       sstore(slot, 1)
@@ -42,7 +42,7 @@ contract PausableGuardian_0_8 is Ownable {
 
   function toggleFunctionUnPause(bytes4 sig) public {
     // only DAO can unpause, and adding guardian temporarily
-    require(msg.sender == getGuardian() || msg.sender == owner(), 'unauthorized');
+    require(msg.sender == getGuardian() || msg.sender == owner(), "unauthorized");
     bytes32 slot = keccak256(abi.encodePacked(sig, Pausable_FunctionPause));
     assembly {
       sstore(slot, 0)
@@ -50,7 +50,7 @@ contract PausableGuardian_0_8 is Ownable {
   }
 
   function changeGuardian(address newGuardian) public {
-    require(msg.sender == getGuardian() || msg.sender == owner(), 'unauthorized');
+    require(msg.sender == getGuardian() || msg.sender == owner(), "unauthorized");
     assembly {
       sstore(Pausable_GuardianAddress, newGuardian)
     }

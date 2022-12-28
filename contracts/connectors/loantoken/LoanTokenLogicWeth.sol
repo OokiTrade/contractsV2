@@ -6,12 +6,20 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import './LoanTokenLogicStandard.sol';
+import "./LoanTokenLogicStandard.sol";
 
 contract LoanTokenLogicWeth is LoanTokenLogicStandard {
-  constructor(address arbCaller, address bzxcontract, address wethtoken) LoanTokenLogicStandard(arbCaller, bzxcontract, wethtoken) {}
+  constructor(
+    address arbCaller,
+    address bzxcontract,
+    address wethtoken
+  ) LoanTokenLogicStandard(arbCaller, bzxcontract, wethtoken) {}
 
-  function redeemToEther(uint256 assets, address payable receiver, address owner) external payable nonReentrant returns (uint256 shares) {
+  function redeemToEther(
+    uint256 assets,
+    address payable receiver,
+    address owner
+  ) external payable nonReentrant returns (uint256 shares) {
     shares = _redeemToken(assets, receiver, owner);
 
     if (shares != 0) {
@@ -20,7 +28,11 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
     }
   }
 
-  function withdrawToEther(uint256 shares, address payable receiver, address owner) external nonReentrant returns (uint256 assets) {
+  function withdrawToEther(
+    uint256 shares,
+    address payable receiver,
+    address owner
+  ) external nonReentrant returns (uint256 assets) {
     assets = _withdrawToken(shares, receiver, owner);
 
     if (assets != 0) {
@@ -54,7 +66,7 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
     uint256 loanTokenSent = sentAmounts[3];
     uint256 collateralTokenSent = sentAmounts[4];
 
-    require(_loanTokenAddress != collateralTokenAddress, '26');
+    require(_loanTokenAddress != collateralTokenAddress, "26");
 
     msgValue = msg.value;
 
@@ -63,25 +75,25 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
       IWeth(_wethToken).withdraw(withdrawalAmount);
       Address.sendValue(payable(address(uint160(receiver))), withdrawalAmount);
       if (newPrincipal > withdrawalAmount) {
-        _safeTransfer(_loanTokenAddress, bZxContract, newPrincipal - withdrawalAmount, '27');
+        _safeTransfer(_loanTokenAddress, bZxContract, newPrincipal - withdrawalAmount, "27");
       }
     } else {
-      _safeTransfer(_loanTokenAddress, bZxContract, newPrincipal, '27');
+      _safeTransfer(_loanTokenAddress, bZxContract, newPrincipal, "27");
     }
 
     if (collateralTokenSent != 0) {
       loanDataBytes = _checkPermit(collateralTokenAddress, loanDataBytes);
-      _safeTransferFrom(collateralTokenAddress, msg.sender, bZxContract, collateralTokenSent, '28');
+      _safeTransferFrom(collateralTokenAddress, msg.sender, bZxContract, collateralTokenSent, "28");
     }
 
     if (loanTokenSent != 0) {
       if (msgValue != 0 && msgValue >= loanTokenSent) {
         IWeth(_wethToken).deposit{value: loanTokenSent}();
-        _safeTransfer(_loanTokenAddress, bZxContract, loanTokenSent, '29');
+        _safeTransfer(_loanTokenAddress, bZxContract, loanTokenSent, "29");
         msgValue -= loanTokenSent;
       } else {
         loanDataBytes = _checkPermit(_loanTokenAddress, loanDataBytes);
-        _safeTransferFrom(_loanTokenAddress, msg.sender, bZxContract, loanTokenSent, '29');
+        _safeTransferFrom(_loanTokenAddress, msg.sender, bZxContract, loanTokenSent, "29");
       }
     }
     return (msgValue, loanDataBytes);

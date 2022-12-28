@@ -6,12 +6,12 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '../StakingStateV2.sol';
-import './StakingPausableGuardian.sol';
-import '../../interfaces/IMasterChefSushi2.sol';
-import '../delegation/VoteDelegator.sol';
-import '../../interfaces/IVestingToken.sol';
-import './Common.sol';
+import "../StakingStateV2.sol";
+import "./StakingPausableGuardian.sol";
+import "../../interfaces/IMasterChefSushi2.sol";
+import "../delegation/VoteDelegator.sol";
+import "../../interfaces/IVestingToken.sol";
+import "./Common.sol";
 
 contract StakeUnstake is Common {
   using SafeERC20 for IERC20;
@@ -86,7 +86,7 @@ contract StakeUnstake is Common {
   }
 
   function stake(address[] memory tokens, uint256[] memory values) public pausable updateRewards(msg.sender) {
-    require(tokens.length == values.length, 'count mismatch');
+    require(tokens.length == values.length, "count mismatch");
     VoteDelegator _voteDelegator = VoteDelegator(voteDelegator);
     address currentDelegate = _voteDelegator.delegates(msg.sender);
 
@@ -94,7 +94,7 @@ contract StakeUnstake is Common {
     uint256 votingBalanceBefore = _votingFromStakedBalanceOf(msg.sender, _proposalState, true);
     for (uint256 i = 0; i < tokens.length; i++) {
       address token = tokens[i];
-      require(token == OOKI || token == vBZRX || token == iOOKI || token == OOKI_ETH_LP, 'invalid token');
+      require(token == OOKI || token == vBZRX || token == iOOKI || token == OOKI_ETH_LP, "invalid token");
 
       uint256 stakeAmount = values[i];
       if (stakeAmount == 0) {
@@ -125,7 +125,7 @@ contract StakeUnstake is Common {
   }
 
   function unstake(address[] memory tokens, uint256[] memory values) public pausable updateRewards(msg.sender) {
-    require(tokens.length == values.length, 'count mismatch');
+    require(tokens.length == values.length, "count mismatch");
 
     VoteDelegator _voteDelegator = VoteDelegator(voteDelegator);
     address currentDelegate = _voteDelegator.delegates(msg.sender);
@@ -135,7 +135,7 @@ contract StakeUnstake is Common {
 
     for (uint256 i = 0; i < tokens.length; i++) {
       address token = tokens[i];
-      require(token == OOKI || token == vBZRX || token == iOOKI || token == OOKI_ETH_LP, 'invalid token');
+      require(token == OOKI || token == vBZRX || token == iOOKI || token == OOKI_ETH_LP, "invalid token");
 
       uint256 unstakeAmount = values[i];
       uint256 stakedAmount = _balancesPerToken[token][msg.sender];
@@ -293,9 +293,17 @@ contract StakeUnstake is Common {
     _;
   }
 
-  function earned(
-    address account
-  ) external view returns (uint256 ookiRewardsEarned, uint256 stableCoinRewardsEarned, uint256 ookiRewardsVesting, uint256 stableCoinRewardsVesting, uint256 sushiRewardsEarned) {
+  function earned(address account)
+    external
+    view
+    returns (
+      uint256 ookiRewardsEarned,
+      uint256 stableCoinRewardsEarned,
+      uint256 ookiRewardsVesting,
+      uint256 stableCoinRewardsVesting,
+      uint256 sushiRewardsEarned
+    )
+  {
     (ookiRewardsEarned, stableCoinRewardsEarned, ookiRewardsVesting, stableCoinRewardsVesting) = _earned(account, ookiPerTokenStored, stableCoinPerTokenStored);
 
     (ookiRewardsEarned, stableCoinRewardsEarned) = _syncVesting(account, ookiRewardsEarned, stableCoinRewardsEarned, ookiRewardsVesting, stableCoinRewardsVesting);
@@ -311,7 +319,16 @@ contract StakeUnstake is Common {
     address account,
     uint256 _ookiPerToken,
     uint256 _stableCoinPerToken
-  ) internal view returns (uint256 ookiRewardsEarned, uint256 stableCoinRewardsEarned, uint256 ookiRewardsVesting, uint256 stableCoinRewardsVesting) {
+  )
+    internal
+    view
+    returns (
+      uint256 ookiRewardsEarned,
+      uint256 stableCoinRewardsEarned,
+      uint256 ookiRewardsVesting,
+      uint256 stableCoinRewardsVesting
+    )
+  {
     uint256 ookiPerTokenUnpaid = _ookiPerToken - ookiRewardsPerTokenPaid[account];
     uint256 stableCoinPerTokenUnpaid = _stableCoinPerToken - stableCoinRewardsPerTokenPaid[account];
 
@@ -406,10 +423,18 @@ contract StakeUnstake is Common {
     }
   }
 
-  function _addAltRewards(address token, uint256 amount) internal view returns (uint256 _altRewardsPerShare, uint256 _altRewardsPerSharePerBlock, uint256 _altRewardsBlock) {
+  function _addAltRewards(address token, uint256 amount)
+    internal
+    view
+    returns (
+      uint256 _altRewardsPerShare,
+      uint256 _altRewardsPerSharePerBlock,
+      uint256 _altRewardsBlock
+    )
+  {
     address poolAddress = token == SUSHI ? OOKI_ETH_LP : token;
     uint256 totalSupply = _totalSupplyPerToken[poolAddress];
-    require(totalSupply != 0, 'no deposits');
+    require(totalSupply != 0, "no deposits");
     _altRewardsPerShare = altRewardsPerShare[token] + ((amount * 1e12) / totalSupply);
     _altRewardsPerSharePerBlock = _altRewardsPerShare / (block.number - altRewardsStartBlock[token]);
     _altRewardsBlock = block.number;
@@ -419,7 +444,16 @@ contract StakeUnstake is Common {
     balance = _balancesPerToken[token][account];
   }
 
-  function balanceOfByAssets(address account) external view returns (uint256 ookiBalance, uint256 iBZRXBalance, uint256 vBZRXBalance, uint256 LPTokenBalance) {
+  function balanceOfByAssets(address account)
+    external
+    view
+    returns (
+      uint256 ookiBalance,
+      uint256 iBZRXBalance,
+      uint256 vBZRXBalance,
+      uint256 LPTokenBalance
+    )
+  {
     return (balanceOfByAsset(OOKI, account), balanceOfByAsset(iOOKI, account), balanceOfByAsset(vBZRX, account), balanceOfByAsset(OOKI_ETH_LP, account));
   }
 

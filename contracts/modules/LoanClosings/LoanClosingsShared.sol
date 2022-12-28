@@ -6,13 +6,13 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '../../core/State.sol';
-import '../../events/LoanClosingsEvents.sol';
-import '../../mixins/VaultController.sol';
-import '../../mixins/InterestHandler.sol';
-import '../../swaps/SwapsUser.sol';
-import '../../interfaces/ILoanPool.sol';
-import '../../governance/PausableGuardian_0_8.sol';
+import "../../core/State.sol";
+import "../../events/LoanClosingsEvents.sol";
+import "../../mixins/VaultController.sol";
+import "../../mixins/InterestHandler.sol";
+import "../../swaps/SwapsUser.sol";
+import "../../interfaces/ILoanPool.sol";
+import "../../governance/PausableGuardian_0_8.sol";
 
 abstract contract LoanClosingsShared is State, LoanClosingsEvents, VaultController, InterestHandler, SwapsUser, PausableGuardian_0_8 {
   using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
@@ -39,18 +39,22 @@ abstract contract LoanClosingsShared is State, LoanClosingsEvents, VaultControll
         collateralToLoanRate := mload(add(data, 64))
       }
     } else {
-      require(silentFail, 'margin query failed');
+      require(silentFail, "margin query failed");
     }
   }
 
   // The receiver always gets back an ERC20 (even WETH)
-  function _returnPrincipalWithDeposit(address loanToken, address receiver, uint256 principalNeeded) internal {
+  function _returnPrincipalWithDeposit(
+    address loanToken,
+    address receiver,
+    uint256 principalNeeded
+  ) internal {
     if (principalNeeded != 0) {
       if (msg.value == 0) {
         vaultTransfer(loanToken, payable(msg.sender), receiver, principalNeeded);
       } else {
-        require(loanToken == address(wethToken), 'wrong asset sent');
-        require(msg.value >= principalNeeded, 'not enough ether');
+        require(loanToken == address(wethToken), "wrong asset sent");
+        require(msg.value >= principalNeeded, "not enough ether");
         wethToken.deposit{value: principalNeeded}();
         if (receiver != address(this)) {
           vaultTransfer(loanToken, address(this), receiver, principalNeeded);
@@ -61,12 +65,16 @@ abstract contract LoanClosingsShared is State, LoanClosingsEvents, VaultControll
         }
       }
     } else {
-      require(msg.value == 0, 'wrong asset sent');
+      require(msg.value == 0, "wrong asset sent");
     }
   }
 
-  function _closeLoan(Loan memory loanLocal, address loanToken, uint256 loanCloseAmount) internal returns (uint256 principalBefore, uint256 principalAfter) {
-    require(loanCloseAmount != 0, 'nothing to close');
+  function _closeLoan(
+    Loan memory loanLocal,
+    address loanToken,
+    uint256 loanCloseAmount
+  ) internal returns (uint256 principalBefore, uint256 principalAfter) {
+    require(loanCloseAmount != 0, "nothing to close");
 
     principalBefore = loanLocal.principal;
     uint256 loanInterest = loanInterestTotal[loanLocal.id];
@@ -143,7 +151,7 @@ abstract contract LoanClosingsShared is State, LoanClosingsEvents, VaultControll
 
       // currentLeverage = 100 / currentMargin
       if (currentMargin != 0) {
-        currentMargin = 10 ** 38 / currentMargin;
+        currentMargin = 10**38 / currentMargin;
       }
 
       emit CloseWithSwap(
@@ -176,7 +184,11 @@ abstract contract LoanClosingsShared is State, LoanClosingsEvents, VaultControll
   }
 
   // withdraws asset to receiver
-  function _withdrawAsset(address assetToken, address receiver, uint256 assetAmount) internal {
+  function _withdrawAsset(
+    address assetToken,
+    address receiver,
+    uint256 assetAmount
+  ) internal {
     if (assetAmount != 0) {
       if (assetToken == address(wethToken)) {
         vaultEtherWithdraw(receiver, assetAmount);

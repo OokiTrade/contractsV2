@@ -7,12 +7,12 @@
 pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
-import '@openzeppelin-4.8.0/token/ERC20/IERC20.sol';
-import '../../interfaces/IUniswapV2Router.sol';
-import '../../../interfaces/IBZx.sol';
-import '@celer/contracts/interfaces/IBridge.sol';
-import '../../../interfaces/IPriceFeeds.sol';
-import '../../governance/PausableGuardian_0_8.sol';
+import "@openzeppelin-4.8.0/token/ERC20/IERC20.sol";
+import "../../interfaces/IUniswapV2Router.sol";
+import "../../../interfaces/IBZx.sol";
+import "@celer/contracts/interfaces/IBridge.sol";
+import "../../../interfaces/IPriceFeeds.sol";
+import "../../governance/PausableGuardian_0_8.sol";
 
 contract FeeExtractAndDistribute_BSC is PausableGuardian_0_8 {
   address public implementation;
@@ -113,19 +113,24 @@ contract FeeExtractAndDistribute_BSC is PausableGuardian_0_8 {
     _checkUniDisagreement(path[0], inAmount, returnAmount, MAX_DISAGREEMENT);
   }
 
-  function _checkUniDisagreement(address asset, uint256 assetAmount, uint256 recvAmount, uint256 maxDisagreement) internal view {
+  function _checkUniDisagreement(
+    address asset,
+    uint256 assetAmount,
+    uint256 recvAmount,
+    uint256 maxDisagreement
+  ) internal view {
     uint256 estAmountOut = IPriceFeeds(BZX.priceFeeds()).queryReturn(asset, USDC, assetAmount);
 
     uint256 spreadValue = estAmountOut > recvAmount ? estAmountOut - recvAmount : recvAmount - estAmountOut;
     if (spreadValue != 0) {
       spreadValue = (spreadValue * 1e20) / estAmountOut;
 
-      require(spreadValue <= maxDisagreement, 'uniswap price disagreement');
+      require(spreadValue <= maxDisagreement, "uniswap price disagreement");
     }
   }
 
   function _bridgeFeesAndDistribute() internal {
-    require(IERC20(USDC).balanceOf(address(this)) >= MIN_USDC_AMOUNT, 'FeeExtractAndDistribute: bridge amount too low');
+    require(IERC20(USDC).balanceOf(address(this)) >= MIN_USDC_AMOUNT, "FeeExtractAndDistribute: bridge amount too low");
     IBridge(bridge).send(treasuryWallet, USDC, IERC20(USDC).balanceOf(address(this)), DEST_CHAINID, uint64(block.timestamp), slippage);
   }
 
@@ -155,7 +160,12 @@ contract FeeExtractAndDistribute_BSC is PausableGuardian_0_8 {
     slippage = newSlippage;
   }
 
-  function requestRefund(bytes calldata wdmsg, bytes[] calldata sigs, address[] calldata signers, uint256[] calldata powers) external onlyGuardian {
+  function requestRefund(
+    bytes calldata wdmsg,
+    bytes[] calldata sigs,
+    address[] calldata signers,
+    uint256[] calldata powers
+  ) external onlyGuardian {
     IBridge(bridge).withdraw(wdmsg, sigs, signers, powers);
   }
 

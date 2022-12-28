@@ -6,15 +6,15 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '../core/State.sol';
-import '../../interfaces/IPriceFeeds.sol';
-import '../events/SwapsEvents.sol';
-import '../mixins/FeesHelper.sol';
-import './ISwapsImpl.sol';
-import '../utils/TickMathV1.sol';
-import '../interfaces/IDexRecords.sol';
-import '../mixins/Flags.sol';
-import '../utils/VolumeTracker.sol';
+import "../core/State.sol";
+import "../../interfaces/IPriceFeeds.sol";
+import "../events/SwapsEvents.sol";
+import "../mixins/FeesHelper.sol";
+import "./ISwapsImpl.sol";
+import "../utils/TickMathV1.sol";
+import "../interfaces/IDexRecords.sol";
+import "../mixins/Flags.sol";
+import "../utils/VolumeTracker.sol";
 
 abstract contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
   using VolumeTracker for VolumeTracker.Observation[65535];
@@ -30,7 +30,14 @@ abstract contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
     uint256 requiredDestTokenAmount,
     bool bypassFee,
     bytes memory loanDataBytes
-  ) internal returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed, uint256 sourceToDestSwapRate) {
+  )
+    internal
+    returns (
+      uint256 destTokenAmountReceived,
+      uint256 sourceTokenAmountUsed,
+      uint256 sourceToDestSwapRate
+    )
+  {
     (destTokenAmountReceived, sourceTokenAmountUsed) = _swapsCall(
       [
         sourceToken,
@@ -70,7 +77,7 @@ abstract contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
     //vals[1]:  maxSourceTokenAmount
     //vals[2]:  requiredDestTokenAmount
 
-    require(vals[0] != 0, 'sourceAmount == 0');
+    require(vals[0] != 0, "sourceAmount == 0");
 
     uint256 destTokenAmountReceived;
     uint256 sourceTokenAmountUsed;
@@ -148,7 +155,7 @@ abstract contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
     if (vals[1] == 0) {
       vals[1] = vals[0];
     } else {
-      require(vals[0] <= vals[1], 'min greater than max');
+      require(vals[0] <= vals[1], "min greater than max");
     }
     if (flagNumber & DEX_SELECTOR_FLAG != 0) {
       (, bytes[] memory payload) = abi.decode(loanDataBytes, (uint128, bytes[]));
@@ -162,15 +169,15 @@ abstract contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
 
     if (vals[2] == 0) {
       // there's no minimum destTokenAmount, but all of vals[0] (minSourceTokenAmount) must be spent, and amount spent can't exceed vals[0]
-      require(sourceTokenAmountUsed == vals[0], 'swap too large to fill');
+      require(sourceTokenAmountUsed == vals[0], "swap too large to fill");
 
       if (tradingFee != 0) {
         sourceTokenAmountUsed = sourceTokenAmountUsed + tradingFee; // will never overflow
       }
     } else {
       // there's a minimum destTokenAmount required, but sourceTokenAmountUsed won't be greater than vals[1] (maxSourceTokenAmount)
-      require(sourceTokenAmountUsed <= vals[1], 'swap fill too large');
-      require(destTokenAmountReceived >= vals[2], 'insufficient swap liquidity');
+      require(sourceTokenAmountUsed <= vals[1], "swap fill too large");
+      require(destTokenAmountReceived >= vals[2], "insufficient swap liquidity");
 
       if (tradingFee != 0) {
         _payTradingFee(
@@ -187,7 +194,11 @@ abstract contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
     return (destTokenAmountReceived, sourceTokenAmountUsed);
   }
 
-  function _writeVolume(address user, address tradeToken, uint256 amount) internal {
+  function _writeVolume(
+    address user,
+    address tradeToken,
+    uint256 amount
+  ) internal {
     if (volumeTradedCardinality[user] == 0) volumeTradedCardinality[user] = 256;
     uint128 tradingVolumeInUSDC = uint128(IPriceFeeds(priceFeeds).queryReturn(tradeToken, USDC, amount));
     volumeLastIdx[user] = volumeTradedObservations[user].write(volumeLastIdx[user], uint32(block.timestamp), tradingVolumeInUSDC, volumeTradedCardinality[user], uint32(86400));
@@ -289,7 +300,7 @@ abstract contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
       } else {
         amountInEth = IPriceFeeds(priceFeeds).amountInEth(tokenAddress, amount);
       }
-      require(amountInEth <= _maxSwapSize, 'swap too large');
+      require(amountInEth <= _maxSwapSize, "swap too large");
     }
   }
 }

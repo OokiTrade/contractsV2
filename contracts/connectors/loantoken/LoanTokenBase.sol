@@ -6,18 +6,18 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '@openzeppelin-4.8.0/security/ReentrancyGuard.sol';
-import '@openzeppelin-4.8.0/access/Ownable.sol';
-import '@openzeppelin-4.8.0/utils/Address.sol';
-import '../../interfaces/IWeth.sol';
-import '../../governance/PausableGuardian_0_8.sol';
-import '@openzeppelin-4.8.0/token/ERC20/extensions/IERC20Metadata.sol';
+import "@openzeppelin-4.8.0/security/ReentrancyGuard.sol";
+import "@openzeppelin-4.8.0/access/Ownable.sol";
+import "@openzeppelin-4.8.0/utils/Address.sol";
+import "../../interfaces/IWeth.sol";
+import "../../governance/PausableGuardian_0_8.sol";
+import "@openzeppelin-4.8.0/token/ERC20/extensions/IERC20Metadata.sol";
 
 abstract contract LoanTokenBase is ReentrancyGuard, Ownable, PausableGuardian_0_8 {
-  uint256 internal constant WEI_PRECISION = 10 ** 18;
-  uint256 internal constant WEI_PERCENT_PRECISION = 10 ** 20;
+  uint256 internal constant WEI_PRECISION = 10**18;
+  uint256 internal constant WEI_PERCENT_PRECISION = 10**20;
 
-  int256 internal constant sWEI_PRECISION = 10 ** 18;
+  int256 internal constant sWEI_PRECISION = 10**18;
 
   string public name;
   string public symbol;

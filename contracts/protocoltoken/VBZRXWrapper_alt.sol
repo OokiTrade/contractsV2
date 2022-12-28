@@ -6,13 +6,13 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '../interfaces/IVestingToken.sol';
-import '../proxies/0_8/Upgradeable_0_8.sol';
+import "../interfaces/IVestingToken.sol";
+import "../proxies/0_8/Upgradeable_0_8.sol";
 
 contract VBZRXWrapper_alt is Upgradeable_0_8 {
   // --- ERC20 Data ---
-  string public constant name = 'Wrapped vBZRX';
-  string public constant symbol = 'wvBZRX';
+  string public constant name = "Wrapped vBZRX";
+  string public constant symbol = "wvBZRX";
   uint8 public constant decimals = 18;
   uint256 public totalSupply;
 
@@ -41,14 +41,18 @@ contract VBZRXWrapper_alt is Upgradeable_0_8 {
     return transferFrom(msg.sender, dst, value);
   }
 
-  function transferFrom(address src, address dst, uint256 value) public returns (bool) {
+  function transferFrom(
+    address src,
+    address dst,
+    uint256 value
+  ) public returns (bool) {
     settleVesting(src);
     settleVesting(dst);
 
     uint256 srcBalance = balanceOf[src];
-    require(srcBalance >= value, 'vBZRXWrapper/insufficient-balance');
+    require(srcBalance >= value, "vBZRXWrapper/insufficient-balance");
     if (src != msg.sender && allowance[src][msg.sender] != type(uint256).max) {
-      require(allowance[src][msg.sender] >= value, 'vBZRXWrapper/insufficient-allowance');
+      require(allowance[src][msg.sender] >= value, "vBZRXWrapper/insufficient-allowance");
       allowance[src][msg.sender] -= value;
     }
 
@@ -59,7 +63,7 @@ contract VBZRXWrapper_alt is Upgradeable_0_8 {
       bzrxVesties[dst] += moveAmount;
 
       uint256 depositBalance = depositBalanceOf[src];
-      require(value <= depositBalance, 'vBZRXWrapper/insufficient-deposit-balance');
+      require(value <= depositBalance, "vBZRXWrapper/insufficient-deposit-balance");
       depositBalanceOf[src] = depositBalance - value;
       depositBalanceOf[dst] += value;
     }
@@ -130,7 +134,7 @@ contract VBZRXWrapper_alt is Upgradeable_0_8 {
   }
 
   function deposit(uint256 value) external {
-    require(!bridge[msg.sender], 'unauthorized');
+    require(!bridge[msg.sender], "unauthorized");
 
     settleVesting(msg.sender);
     vBZRX.transferFrom(msg.sender, address(this), value);
@@ -144,7 +148,7 @@ contract VBZRXWrapper_alt is Upgradeable_0_8 {
   }
 
   function withdraw(uint256 value) public {
-    require(!bridge[msg.sender], 'unauthorized');
+    require(!bridge[msg.sender], "unauthorized");
 
     settleVesting(msg.sender);
     uint256 balance = balanceOf[msg.sender];
@@ -155,7 +159,7 @@ contract VBZRXWrapper_alt is Upgradeable_0_8 {
     totalSupply -= value;
 
     uint256 depositBalance = depositBalanceOf[msg.sender];
-    require(value <= depositBalance, 'vBZRXWrapper/insufficient-deposit-balance');
+    require(value <= depositBalance, "vBZRXWrapper/insufficient-deposit-balance");
     depositBalanceOf[msg.sender] = depositBalance - value;
 
     vBZRX.transfer(msg.sender, value);

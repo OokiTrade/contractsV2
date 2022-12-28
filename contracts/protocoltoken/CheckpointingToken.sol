@@ -6,8 +6,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.5.17;
 
-import '@openzeppelin-2.5.0/token/ERC20/IERC20.sol';
-import './Checkpointing.sol';
+import "@openzeppelin-2.5.0/token/ERC20/IERC20.sol";
+import "./Checkpointing.sol";
 
 contract CheckpointingToken is IERC20 {
   using Checkpointing for Checkpointing.History;
@@ -52,12 +52,16 @@ contract CheckpointingToken is IERC20 {
     return transferFrom(msg.sender, _to, _value);
   }
 
-  function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
+  function transferFrom(
+    address _from,
+    address _to,
+    uint256 _value
+  ) public returns (bool) {
     uint256 previousBalanceFrom = balanceOfAt(_from, block.number);
-    require(previousBalanceFrom >= _value, 'insufficient-balance');
+    require(previousBalanceFrom >= _value, "insufficient-balance");
 
-    if (_from != msg.sender && allowances_[_from][msg.sender] != uint(-1)) {
-      require(allowances_[_from][msg.sender] >= _value, 'insufficient-allowance');
+    if (_from != msg.sender && allowances_[_from][msg.sender] != uint256(-1)) {
+      require(allowances_[_from][msg.sender] >= _value, "insufficient-allowance");
       allowances_[_from][msg.sender] = allowances_[_from][msg.sender] - _value; // overflow not possible
     }
 
@@ -81,22 +85,22 @@ contract CheckpointingToken is IERC20 {
   }
 
   function add(uint256 x, uint256 y) internal pure returns (uint256 c) {
-    require((c = x + y) >= x, 'addition-overflow');
+    require((c = x + y) >= x, "addition-overflow");
   }
 
   function sub(uint256 x, uint256 y) internal pure returns (uint256 c) {
-    require((c = x - y) <= x, 'subtraction-overflow');
+    require((c = x - y) <= x, "subtraction-overflow");
   }
 
   function mul(uint256 a, uint256 b) internal pure returns (uint256 c) {
     if (a == 0) {
       return 0;
     }
-    require((c = a * b) / a == b, 'multiplication-overflow');
+    require((c = a * b) / a == b, "multiplication-overflow");
   }
 
   function div(uint256 a, uint256 b) internal pure returns (uint256 c) {
-    require(b != 0, 'division by zero');
+    require(b != 0, "division by zero");
     c = a / b;
   }
 }

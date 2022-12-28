@@ -6,11 +6,11 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol';
-import '../mixins/EnumerableBytes32Set.sol';
-import '../../interfaces/IStakingV2.sol';
-import '@openzeppelin-4.8.0/access/Ownable.sol';
-import './StakingConstantsV2.sol';
+import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
+import "../mixins/EnumerableBytes32Set.sol";
+import "../../interfaces/IStakingV2.sol";
+import "@openzeppelin-4.8.0/access/Ownable.sol";
+import "./StakingConstantsV2.sol";
 
 contract StakingStateV2 is StakingConstantsV2, Ownable {
   using SafeERC20 for IERC20;

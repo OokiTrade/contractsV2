@@ -6,8 +6,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.5.17;
 
-import '@openzeppelin-2.5.0/utils/Address.sol';
-import './Upgradeable_0_5.sol';
+import "@openzeppelin-2.5.0/utils/Address.sol";
+import "./Upgradeable_0_5.sol";
 
 contract Proxy_0_5 is Upgradeable_0_5 {
   constructor(address _impl) public payable {
@@ -38,7 +38,7 @@ contract Proxy_0_5 is Upgradeable_0_5 {
   }
 
   function replaceImplementation(address impl) public onlyOwner {
-    require(Address.isContract(impl), 'not a contract');
+    require(Address.isContract(impl), "not a contract");
     implementation = impl;
   }
 }

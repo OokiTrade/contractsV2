@@ -3,7 +3,7 @@
  * Licensed under the Apache-2.0
  */
 
-pragma solidity >=0.5.0 <0.9.0;
+pragma solidity >=0.5.17 <0.9.0;
 pragma experimental ABIEncoderV2;
 
 // import "@openzeppelin-3.4.0/token/ERC20/IERC20.sol";
@@ -23,7 +23,11 @@ interface IToken {
 
   function approve(address spender, uint256 amount) external returns (bool);
 
-  function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
+  function transferFrom(
+    address sender,
+    address recipient,
+    uint256 amount
+  ) external returns (bool);
 
   event Transfer(address indexed from, address indexed to, uint256 value);
   event Approval(address indexed owner, address indexed spender, uint256 value);
@@ -56,18 +60,32 @@ interface IToken {
 
   function previewWithdraw(uint256 assets) external view returns (uint256 shares);
 
-  function withdraw(uint256 assets, address receiver, address owner) external returns (uint256 shares);
+  function withdraw(
+    uint256 assets,
+    address receiver,
+    address owner
+  ) external returns (uint256 shares);
 
   function maxRedeem(address owner) external view returns (uint256 maxShares);
 
   function previewRedeem(uint256 shares) external view returns (uint256 assets);
 
-  function redeem(uint256 shares, address receiver, address owner) external returns (uint256 assets);
+  function redeem(
+    uint256 shares,
+    address receiver,
+    address owner
+  ) external returns (uint256 assets);
 
   //LoanTokenLogicStandard functions
   function tokenPrice() external view returns (uint256);
 
-  function flashBorrow(uint256 borrowAmount, address borrower, address target, string calldata signature, bytes calldata data) external payable returns (bytes memory);
+  function flashBorrow(
+    uint256 borrowAmount,
+    address borrower,
+    address target,
+    string calldata signature,
+    bytes calldata data
+  ) external payable returns (bytes memory);
 
   function borrow(
     bytes32 loanId, // 0 if new loan
@@ -142,13 +160,21 @@ interface IToken {
 
   function revokeApproval(address _loanTokenAddress) external;
 
-  function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
+  function permit(
+    address owner,
+    address spender,
+    uint256 value,
+    uint256 deadline,
+    uint8 v,
+    bytes32 r,
+    bytes32 s
+  ) external;
 
   function DOMAIN_SEPARATOR() external view returns (bytes32);
 
   function PERMIT_TYPEHASH() external view returns (bytes32);
 
-  function nonces(address) external view returns (uint);
+  function nonces(address) external view returns (uint256);
 
   /// Admin functions
   function setTarget(address _newTarget) external;
@@ -157,7 +183,11 @@ interface IToken {
 
   function transferOwnership(address newOwner) external;
 
-  function initialize(address loanToken, string calldata name, string calldata symbol) external;
+  function initialize(
+    address loanToken,
+    string calldata name,
+    string calldata symbol
+  ) external;
 
   struct LoanOpenData {
     bytes32 loanId;

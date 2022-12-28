@@ -6,8 +6,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '@openzeppelin-4.8.0/proxy/ERC1967/ERC1967Proxy.sol';
-import '@openzeppelin-4.8.0/access/Ownable.sol';
+import "@openzeppelin-4.8.0/proxy/ERC1967/ERC1967Proxy.sol";
+import "@openzeppelin-4.8.0/access/Ownable.sol";
 
 contract OokiOwnableProxy is Ownable, ERC1967Proxy {
   fallback() external payable override {

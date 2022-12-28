@@ -6,8 +6,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.5.17;
 
-import '@openzeppelin-2.5.0/token/ERC20/IERC20.sol';
-import '@openzeppelin-2.5.0/ownership/Ownable.sol';
+import "@openzeppelin-2.5.0/token/ERC20/IERC20.sol";
+import "@openzeppelin-2.5.0/ownership/Ownable.sol";
 
 contract BZRXv1Converter is Ownable {
   event ConvertBZRX(address indexed sender, uint256 amount);
@@ -19,7 +19,7 @@ contract BZRXv1Converter is Ownable {
   uint256 public terminationTimestamp;
 
   function convert(uint256 _tokenAmount) external {
-    require((_getTimestamp() < terminationTimestamp && msg.sender != address(1)) || msg.sender == owner(), 'convert not allowed');
+    require((_getTimestamp() < terminationTimestamp && msg.sender != address(1)) || msg.sender == owner(), "convert not allowed");
 
     BZRXv1.transferFrom(
       msg.sender,
@@ -37,13 +37,13 @@ contract BZRXv1Converter is Ownable {
 
   // open convert tool to the public
   function initialize() external onlyOwner {
-    require(terminationTimestamp == 0, 'already initialized');
+    require(terminationTimestamp == 0, "already initialized");
     terminationTimestamp = _getTimestamp() + 60 * 60 * 24 * 365; // one year from now
   }
 
   // funds unclaimed after one year can be rescued
   function rescue(address _receiver, uint256 _amount) external onlyOwner {
-    require(_getTimestamp() > terminationTimestamp, 'unauthorized');
+    require(_getTimestamp() > terminationTimestamp, "unauthorized");
 
     BZRX.transfer(_receiver, _amount);
   }

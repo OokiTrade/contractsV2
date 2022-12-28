@@ -6,9 +6,9 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '../StakingStateV2.sol';
-import '../../governance/PausableGuardian_0_8.sol';
-import '../../utils/MathUtil.sol';
+import "../StakingStateV2.sol";
+import "../../governance/PausableGuardian_0_8.sol";
+import "../../utils/MathUtil.sol";
 
 contract Common is StakingStateV2, PausableGuardian_0_8 {
   using MathUtil for uint256;
@@ -29,7 +29,11 @@ contract Common is StakingStateV2, PausableGuardian_0_8 {
     return 0;
   }
 
-  function vestedBalanceForAmount(uint256 tokenBalance, uint256 lastUpdate, uint256 vestingEndTime) public view returns (uint256 vested) {
+  function vestedBalanceForAmount(
+    uint256 tokenBalance,
+    uint256 lastUpdate,
+    uint256 vestingEndTime
+  ) public view returns (uint256 vested) {
     vestingEndTime = vestingEndTime.min256(block.timestamp);
     if (vestingEndTime > lastUpdate) {
       if (vestingEndTime <= vestingCliffTimestamp || lastUpdate >= vestingEndTimestamp) {
@@ -52,7 +56,11 @@ contract Common is StakingStateV2, PausableGuardian_0_8 {
   }
 
   // Voting balance not including delegated votes
-  function _votingFromStakedBalanceOf(address account, ProposalState memory proposal, bool skipVestingLastSyncCheck) internal view returns (uint256 totalVotes) {
+  function _votingFromStakedBalanceOf(
+    address account,
+    ProposalState memory proposal,
+    bool skipVestingLastSyncCheck
+  ) internal view returns (uint256 totalVotes) {
     uint256 _vestingLastSync = vestingLastSync[account];
     if (proposal.proposalTime == 0 || (!skipVestingLastSyncCheck && _vestingLastSync > proposal.proposalTime - 1)) {
       return 0;

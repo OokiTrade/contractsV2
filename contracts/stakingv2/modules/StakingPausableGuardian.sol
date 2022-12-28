@@ -6,8 +6,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '../StakingStateV2.sol';
-import '../../governance/PausableGuardian_0_8.sol';
+import "../StakingStateV2.sol";
+import "../../governance/PausableGuardian_0_8.sol";
 
 contract StakingPausableGuardian is StakingStateV2, PausableGuardian_0_8 {
   function initialize(address target) external onlyOwner {

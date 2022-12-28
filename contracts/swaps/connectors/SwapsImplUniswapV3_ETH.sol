@@ -5,18 +5,24 @@
 
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
-import '../../core/State.sol';
-import '@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol';
-import '../ISwapsImpl.sol';
-import '../../interfaces/IUniswapV3SwapRouter.sol';
-import '../../interfaces/IUniswapQuoter.sol';
+import "../../core/State.sol";
+import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
+import "../ISwapsImpl.sol";
+import "../../interfaces/IUniswapV3SwapRouter.sol";
+import "../../interfaces/IUniswapQuoter.sol";
 
 contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
   using SafeERC20 for IERC20;
   IUniswapV3SwapRouter public constant uniswapSwapRouter = IUniswapV3SwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564); //mainnet
   IUniswapQuoter public constant uniswapQuoteContract = IUniswapQuoter(0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6); //mainnet
 
-  constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
+  constructor(
+    IWeth wethtoken,
+    address usdc,
+    address bzrx,
+    address vbzrx,
+    address ooki
+  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
 
   function dexSwap(
     address sourceTokenAddress,
@@ -28,8 +34,8 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
     uint256 requiredDestTokenAmount,
     bytes memory payload
   ) public returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed) {
-    require(sourceTokenAddress != destTokenAddress, 'source == dest');
-    require(supportedTokens[sourceTokenAddress] && supportedTokens[destTokenAddress], 'invalid tokens');
+    require(sourceTokenAddress != destTokenAddress, "source == dest");
+    require(supportedTokens[sourceTokenAddress] && supportedTokens[destTokenAddress], "invalid tokens");
 
     IERC20 sourceToken = IERC20(sourceTokenAddress);
     address _thisAddress = address(this);
@@ -49,8 +55,12 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
     }
   }
 
-  function dexExpectedRate(address sourceTokenAddress, address destTokenAddress, uint256 sourceTokenAmount) public view returns (uint256 expectedRate) {
-    revert('unsupported');
+  function dexExpectedRate(
+    address sourceTokenAddress,
+    address destTokenAddress,
+    uint256 sourceTokenAmount
+  ) public view returns (uint256 expectedRate) {
+    revert("unsupported");
   }
 
   function dexAmountOut(bytes memory route, uint256 amountIn) public returns (uint256 amountOut, address midToken) {
@@ -141,13 +151,13 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
         require(
           _toAddress(exactParams[uniqueOutputParam].path, 0) == destTokenAddress &&
             _toAddress(exactParams[uniqueOutputParam].path, exactParams[uniqueOutputParam].path.length - 20) == sourceTokenAddress,
-          'improper route'
+          "improper route"
         );
         totalAmountsOut += exactParams[uniqueOutputParam].amountOut;
         totalAmountsInMax += exactParams[uniqueOutputParam].amountInMaximum;
         encodedTXs[uniqueOutputParam] = abi.encodeWithSelector(uniswapSwapRouter.exactOutput.selector, exactParams[uniqueOutputParam]);
       }
-      require(totalAmountsInMax <= maxSourceTokenAmount, 'Amount In Max too high');
+      require(totalAmountsInMax <= maxSourceTokenAmount, "Amount In Max too high");
       if (totalAmountsOut < requiredDestTokenAmount) {
         //does not need safe math as it cannot overflow
         uint256 displace = _numberAdjustment(totalAmountsOut, requiredDestTokenAmount);
@@ -174,7 +184,7 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
         require(
           _toAddress(exactParams[uniqueInputParam].path, 0) == sourceTokenAddress &&
             _toAddress(exactParams[uniqueInputParam].path, exactParams[uniqueInputParam].path.length - 20) == destTokenAddress,
-          'improper route'
+          "improper route"
         );
         sourceTokenAmountUsed += exactParams[uniqueInputParam].amountIn;
         encodedTXs[uniqueInputParam] = abi.encodeWithSelector(uniswapSwapRouter.exactInput.selector, exactParams[uniqueInputParam]);
@@ -199,8 +209,8 @@ contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
   }
 
   function _toAddress(bytes memory _bytes, uint256 _start) internal pure returns (address) {
-    require(_start + 20 >= _start, 'toAddress_overflow');
-    require(_bytes.length >= _start + 20, 'toAddress_outOfBounds');
+    require(_start + 20 >= _start, "toAddress_overflow");
+    require(_bytes.length >= _start + 20, "toAddress_outOfBounds");
     address tempAddress;
 
     assembly {

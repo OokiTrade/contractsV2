@@ -7,21 +7,29 @@
 pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
-import './LoanTokenLogicStandard.sol';
-import '../../../interfaces/ILoanTokenFactory.sol';
-import '../../../interfaces/IBZx.sol';
-import '@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol';
+import "./LoanTokenLogicStandard.sol";
+import "../../../interfaces/ILoanTokenFactory.sol";
+import "../../../interfaces/IBZx.sol";
+import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
 
 contract LoanTokenLogicFactory is LoanTokenLogicStandard {
   using SafeERC20 for IERC20;
   modifier onlyFactory() {
-    require(msg.sender == _getFactory(), 'not factory');
+    require(msg.sender == _getFactory(), "not factory");
     _;
   }
 
-  constructor(address arbCaller, address bzxcontract, address wethtoken) LoanTokenLogicStandard(arbCaller, bzxcontract, wethtoken) {}
+  constructor(
+    address arbCaller,
+    address bzxcontract,
+    address wethtoken
+  ) LoanTokenLogicStandard(arbCaller, bzxcontract, wethtoken) {}
 
-  function initialize(address _loanTokenAddress, string memory _name, string memory _symbol) public override onlyFactory {
+  function initialize(
+    address _loanTokenAddress,
+    string memory _name,
+    string memory _symbol
+  ) public override onlyFactory {
     loanTokenAddress = _loanTokenAddress;
 
     name = _name;

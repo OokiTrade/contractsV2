@@ -6,10 +6,16 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '../interfaces/IWeth.sol';
+import "../interfaces/IWeth.sol";
 
 contract Constants {
-  constructor(IWeth weth, address usdc, address bzrx, address vbzrx, address ooki) {
+  constructor(
+    IWeth weth,
+    address usdc,
+    address bzrx,
+    address vbzrx,
+    address ooki
+  ) {
     wethToken = weth;
     USDC = usdc;
     bzrxTokenAddress = bzrx;
@@ -17,14 +23,14 @@ contract Constants {
     OOKI = ooki;
   }
 
-  uint256 internal constant WEI_PRECISION = 10 ** 18;
-  uint256 internal constant WEI_PERCENT_PRECISION = 10 ** 20;
+  uint256 internal constant WEI_PRECISION = 10**18;
+  uint256 internal constant WEI_PERCENT_PRECISION = 10**20;
 
   uint256 internal constant DAYS_IN_A_YEAR = 365;
   uint256 internal constant ONE_MONTH = 2628000; // approx. seconds in a month
 
   // string internal constant UserRewardsID = "UserRewards"; // decommissioned
-  string internal constant LoanDepositValueID = 'LoanDepositValue';
+  string internal constant LoanDepositValueID = "LoanDepositValue";
 
   IWeth public immutable wethToken;
   address public immutable USDC;

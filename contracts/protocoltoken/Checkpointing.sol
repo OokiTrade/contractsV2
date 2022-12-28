@@ -39,7 +39,11 @@ library Checkpointing {
     Checkpoint[] history;
   }
 
-  function addCheckpoint(History storage _self, uint256 _time, uint256 _value) internal {
+  function addCheckpoint(
+    History storage _self,
+    uint256 _time,
+    uint256 _value
+  ) internal {
     uint256 length = _self.history.length;
     if (length == 0) {
       _self.history.push(Checkpoint(_time, _value));
@@ -53,7 +57,7 @@ library Checkpointing {
         currentCheckpoint.value = _value;
       } else {
         // ensure list ordering
-        revert('past-checkpoint');
+        revert("past-checkpoint");
       }
     }
   }

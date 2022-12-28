@@ -6,9 +6,9 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.5.17;
 
-import '@openzeppelin-2.5.0/token/ERC20/IERC20.sol';
-import '@openzeppelin-2.5.0/ownership/Ownable.sol';
-import '@openzeppelin-2.5.0/math/SafeMath.sol';
+import "@openzeppelin-2.5.0/token/ERC20/IERC20.sol";
+import "@openzeppelin-2.5.0/ownership/Ownable.sol";
+import "@openzeppelin-2.5.0/math/SafeMath.sol";
 
 interface iETHBuyBackV1 {
   function transferOwnership(address _newOwner) external;
@@ -42,7 +42,11 @@ contract iETHBuyBackV2 is Ownable {
   uint256 public iETHSold;
   uint256 public vBZRXBought;
 
-  constructor(uint256 _iETHSwapRate, uint256 _iETHSwapRateWL, address _newOwner) public {
+  constructor(
+    uint256 _iETHSwapRate,
+    uint256 _iETHSwapRateWL,
+    address _newOwner
+  ) public {
     iETHSwapRate = _iETHSwapRate;
     iETHSwapRateWL = _iETHSwapRateWL;
 
@@ -68,9 +72,9 @@ contract iETHBuyBackV2 is Ownable {
       swapRate = iETHSwapRate;
     }
 
-    require(swapRate != 0 && _tokenAmount != 0 && isActive, 'swap not allowed');
+    require(swapRate != 0 && _tokenAmount != 0 && isActive, "swap not allowed");
 
-    uint256 buyAmount = _tokenAmount.mul(10 ** 18).div(swapRate);
+    uint256 buyAmount = _tokenAmount.mul(10**18).div(swapRate);
 
     iETH.transferFrom(msg.sender, address(this), _tokenAmount);
 

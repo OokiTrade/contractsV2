@@ -6,10 +6,10 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '@openzeppelin-4.8.0/token/ERC20/ERC20.sol';
-import '@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol';
-import '@openzeppelin-4.8.0/access/Ownable.sol';
-import './MintCoordinator.sol';
+import "@openzeppelin-4.8.0/token/ERC20/ERC20.sol";
+import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin-4.8.0/access/Ownable.sol";
+import "./MintCoordinator.sol";
 
 contract BZRXv2Converter is Ownable {
   event ConvertBZRX(address indexed sender, uint256 amount);
@@ -38,7 +38,7 @@ contract BZRXv2Converter is Ownable {
 
   // open convert tool to the public
   function initialize(MintCoordinator _MINT_COORDINATOR) external onlyOwner {
-    require(address(MINT_COORDINATOR) == address(0), 'already initialized');
+    require(address(MINT_COORDINATOR) == address(0), "already initialized");
     MINT_COORDINATOR = _MINT_COORDINATOR;
   }
 

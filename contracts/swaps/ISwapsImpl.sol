@@ -18,7 +18,11 @@ interface ISwapsImpl {
     bytes calldata payload
   ) external returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed);
 
-  function dexExpectedRate(address sourceTokenAddress, address destTokenAddress, uint256 sourceTokenAmount) external view returns (uint256);
+  function dexExpectedRate(
+    address sourceTokenAddress,
+    address destTokenAddress,
+    uint256 sourceTokenAmount
+  ) external view returns (uint256);
 
   function dexAmountOut(bytes calldata route, uint256 amountIn) external returns (uint256 amountOut, address midToken);
 

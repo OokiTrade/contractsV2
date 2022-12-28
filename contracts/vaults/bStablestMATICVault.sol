@@ -6,13 +6,13 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '../interfaces/IVault.sol';
-import '@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol';
-import '@openzeppelin-4.8.0/token/ERC20/ERC20.sol';
-import '../interfaces/IBalancerGauge.sol';
-import '../interfaces/IBalancerVault.sol';
-import '../interfaces/IBalancerPool.sol';
-import '../../interfaces/IPriceFeeds.sol';
+import "../interfaces/IVault.sol";
+import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin-4.8.0/token/ERC20/ERC20.sol";
+import "../interfaces/IBalancerGauge.sol";
+import "../interfaces/IBalancerVault.sol";
+import "../interfaces/IBalancerPool.sol";
+import "../../interfaces/IPriceFeeds.sol";
 
 contract bStablestMATICVault is ERC20, IVault {
   using SafeERC20 for IERC20;
@@ -47,7 +47,7 @@ contract bStablestMATICVault is ERC20, IVault {
       toInternalBalance: false
     });
 
-  constructor() ERC20('bStable-stMATIC/MATIC-Vault', 'OVault') {}
+  constructor() ERC20("bStable-stMATIC/MATIC-Vault", "OVault") {}
 
   function convertToShares(uint256 assets) public view override returns (uint256 shares) {
     return (assets * 1e18) / _sharePrice;
@@ -101,8 +101,12 @@ contract bStablestMATICVault is ERC20, IVault {
     return convertToShares(assets);
   }
 
-  function withdraw(uint256 assets, address receiver, address owner) external override returns (uint256 shares) {
-    require(msg.sender == owner, 'unauthorized');
+  function withdraw(
+    uint256 assets,
+    address receiver,
+    address owner
+  ) external override returns (uint256 shares) {
+    require(msg.sender == owner, "unauthorized");
     compound();
     shares = convertToShares(assets);
     _burn(owner, shares);
@@ -120,8 +124,12 @@ contract bStablestMATICVault is ERC20, IVault {
     return convertToAssets(shares);
   }
 
-  function redeem(uint256 shares, address receiver, address owner) external override returns (uint256 assets) {
-    require(msg.sender == owner, 'unauthorized');
+  function redeem(
+    uint256 shares,
+    address receiver,
+    address owner
+  ) external override returns (uint256 assets) {
+    require(msg.sender == owner, "unauthorized");
     compound();
     assets = convertToAssets(shares);
     _burn(owner, shares);

@@ -6,14 +6,14 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.5.17;
 
-import '@openzeppelin-2.5.0/ownership/Ownable.sol';
-import './CheckpointingToken.sol';
+import "@openzeppelin-2.5.0/ownership/Ownable.sol";
+import "./CheckpointingToken.sol";
 
 contract BZRXVestingToken is CheckpointingToken, Ownable {
   event Claim(address indexed owner, uint256 value);
 
-  string public constant name = 'bZx Vesting Token';
-  string public constant symbol = 'vBZRX';
+  string public constant name = "bZx Vesting Token";
+  string public constant symbol = "vBZRX";
   uint8 public constant decimals = 18;
 
   uint256 public constant cliffDuration = 15768000; // 86400 * 365 * 0.5
@@ -42,7 +42,7 @@ contract BZRXVestingToken is CheckpointingToken, Ownable {
 
   // sets up vesting and deposits BZRX
   function initialize() external {
-    require(!isInitialized_, 'already initialized');
+    require(!isInitialized_, "already initialized");
 
     balancesHistory_[msg.sender].addCheckpoint(_getBlockNumber(), startingBalance_);
     totalSupplyHistory_.addCheckpoint(_getBlockNumber(), startingBalance_);
@@ -54,7 +54,11 @@ contract BZRXVestingToken is CheckpointingToken, Ownable {
     isInitialized_ = true;
   }
 
-  function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
+  function transferFrom(
+    address _from,
+    address _to,
+    uint256 _value
+  ) public returns (bool) {
     _claim(_from);
     if (_from != _to) {
       _claim(_to);
@@ -70,7 +74,7 @@ contract BZRXVestingToken is CheckpointingToken, Ownable {
 
   // user can burn remaining vBZRX tokens once fully vested; unclaimed BZRX with be withdrawn
   function burn() external {
-    require(_getTimestamp() >= vestingEndTimestamp, 'not fully vested');
+    require(_getTimestamp() >= vestingEndTimestamp, "not fully vested");
 
     _claim(msg.sender);
 
@@ -84,7 +88,7 @@ contract BZRXVestingToken is CheckpointingToken, Ownable {
 
   // funds unclaimed one year after vesting ends (5 years) can be rescued
   function rescue(address _receiver, uint256 _amount) external onlyOwner {
-    require(_getTimestamp() > vestingLastClaimTimestamp, 'unauthorized');
+    require(_getTimestamp() > vestingLastClaimTimestamp, "unauthorized");
 
     BZRX.transfer(_receiver, _amount);
   }

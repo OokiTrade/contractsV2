@@ -7,12 +7,12 @@
 pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
-import '@openzeppelin-4.8.0/token/ERC20/IERC20.sol';
-import '../../interfaces/IUniswapV2Router.sol';
-import '../../../interfaces/IBZx.sol';
-import '@celer/contracts/interfaces/IBridge.sol';
-import '../../../interfaces/IPriceFeeds.sol';
-import '../../governance/PausableGuardian_0_8.sol';
+import "@openzeppelin-4.8.0/token/ERC20/IERC20.sol";
+import "../../interfaces/IUniswapV2Router.sol";
+import "../../../interfaces/IBZx.sol";
+import "@celer/contracts/interfaces/IBridge.sol";
+import "../../../interfaces/IPriceFeeds.sol";
+import "../../governance/PausableGuardian_0_8.sol";
 
 contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
   address public implementation;
@@ -23,7 +23,7 @@ contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
   address public constant USDC = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
   address public constant WETH = 0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619;
   address public constant WBTC = 0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6;
-  uint256 public constant WEI_PRECISION_PERCENT = 10 ** 20;
+  uint256 public constant WEI_PRECISION_PERCENT = 10**20;
   uint64 public constant DEST_CHAINID = 1; //to be set
   uint256 public constant MIN_USDC_AMOUNT = 1000e6; //1000 USDC minimum bridge amount
   IUniswapV2Router public constant SWAPS_ROUTER_V2 = IUniswapV2Router(0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506); // Sushiswap
@@ -124,7 +124,7 @@ contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
   function _bridgeFeesAndDistribute() internal {
     uint256 total = IERC20(USDC).balanceOf(address(this));
     IERC20(USDC).transfer(BUYBACK_ADDRESS, (total * buybackPercentInWEI) / WEI_PRECISION_PERCENT); //allocates funds for buyback
-    require(IERC20(USDC).balanceOf(address(this)) > MIN_USDC_AMOUNT, 'FeeExtractAndDistribute: bridge amount too low');
+    require(IERC20(USDC).balanceOf(address(this)) > MIN_USDC_AMOUNT, "FeeExtractAndDistribute: bridge amount too low");
     _bridgeFees();
   }
 
@@ -132,14 +132,19 @@ contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
     IBridge(bridge).send(treasuryWallet, USDC, IERC20(USDC).balanceOf(address(this)), DEST_CHAINID, uint64(block.timestamp), slippage);
   }
 
-  function _checkUniDisagreement(address asset, uint256 assetAmount, uint256 recvAmount, uint256 maxDisagreement) internal view {
+  function _checkUniDisagreement(
+    address asset,
+    uint256 assetAmount,
+    uint256 recvAmount,
+    uint256 maxDisagreement
+  ) internal view {
     uint256 estAmountOut = IPriceFeeds(BZX.priceFeeds()).queryReturn(asset, USDC, assetAmount);
 
     uint256 spreadValue = estAmountOut > recvAmount ? estAmountOut - recvAmount : recvAmount - estAmountOut;
     if (spreadValue != 0) {
       spreadValue = (spreadValue * 1e20) / estAmountOut;
 
-      require(spreadValue <= maxDisagreement, 'uniswap price disagreement');
+      require(spreadValue <= maxDisagreement, "uniswap price disagreement");
     }
   }
 
@@ -174,7 +179,12 @@ contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
     slippage = newSlippage;
   }
 
-  function requestRefund(bytes calldata wdmsg, bytes[] calldata sigs, address[] calldata signers, uint256[] calldata powers) external onlyGuardian {
+  function requestRefund(
+    bytes calldata wdmsg,
+    bytes[] calldata sigs,
+    address[] calldata signers,
+    uint256[] calldata powers
+  ) external onlyGuardian {
     IBridge(bridge).withdraw(wdmsg, sigs, signers, powers);
   }
 

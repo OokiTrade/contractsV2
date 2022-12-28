@@ -6,7 +6,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import './Common.sol';
+import "./Common.sol";
 
 contract Rewards is Common {
   function initialize(address target) external onlyOwner {
@@ -32,7 +32,7 @@ contract Rewards is Common {
     (vBZRXWeightStored, iOOKIWeightStored, LPTokenWeightStored) = getVariableWeights();
 
     uint256 totalTokens = totalSupplyStored();
-    require(totalTokens != 0, 'nothing staked');
+    require(totalTokens != 0, "nothing staked");
 
     ookiPerTokenStored = (newOOKI * 1e36) / totalTokens + ookiPerTokenStored;
 
@@ -43,7 +43,15 @@ contract Rewards is Common {
     emit AddRewards(msg.sender, newOOKI, newStableCoin);
   }
 
-  function getVariableWeights() public view returns (uint256 vBZRXWeight, uint256 iOOKIWeight, uint256 LPTokenWeight) {
+  function getVariableWeights()
+    public
+    view
+    returns (
+      uint256 vBZRXWeight,
+      uint256 iOOKIWeight,
+      uint256 LPTokenWeight
+    )
+  {
     uint256 totalVested = vestedBalanceForAmount(_startingVBZRXBalance, 0, block.timestamp);
 
     vBZRXWeight = ((_startingVBZRXBalance - totalVested) * 1e18) / _startingVBZRXBalance; // overflow not possible

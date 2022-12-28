@@ -6,8 +6,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.5.17;
 
-import '@openzeppelin-2.5.0/math/SafeMath.sol';
-import '@openzeppelin-2.5.0/ownership/Ownable.sol';
+import "@openzeppelin-2.5.0/math/SafeMath.sol";
+import "@openzeppelin-2.5.0/ownership/Ownable.sol";
 
 contract TestToken is Ownable {
   using SafeMath for uint256;
@@ -25,7 +25,12 @@ contract TestToken is Ownable {
   mapping(address => mapping(address => uint256)) internal allowed;
   uint256 internal totalSupply_;
 
-  constructor(string memory _name, string memory _symbol, uint8 _decimals, uint256 _initialAmount) public {
+  constructor(
+    string memory _name,
+    string memory _symbol,
+    uint8 _decimals,
+    uint256 _initialAmount
+  ) public {
     name = _name;
     symbol = _symbol;
     decimals = _decimals;
@@ -42,7 +47,7 @@ contract TestToken is Ownable {
   }
 
   function transfer(address _to, uint256 _value) public returns (bool) {
-    require(_value <= balances[msg.sender] && _to != address(0), 'invalid transfer');
+    require(_value <= balances[msg.sender] && _to != address(0), "invalid transfer");
 
     balances[msg.sender] = balances[msg.sender].sub(_value);
     balances[_to] = balances[_to].add(_value);
@@ -51,9 +56,13 @@ contract TestToken is Ownable {
     return true;
   }
 
-  function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
+  function transferFrom(
+    address _from,
+    address _to,
+    uint256 _value
+  ) public returns (bool) {
     uint256 allowanceAmount = allowed[_from][msg.sender];
-    require(_value <= balances[_from] && _value <= allowanceAmount && _to != address(0), 'invalid transfer');
+    require(_value <= balances[_from] && _value <= allowanceAmount && _to != address(0), "invalid transfer");
 
     balances[_from] = balances[_from].sub(_value);
     balances[_to] = balances[_to].add(_value);
@@ -66,7 +75,7 @@ contract TestToken is Ownable {
   }
 
   function mint(address _to, uint256 _value) public {
-    require(_to != address(0), 'no burn allowed');
+    require(_to != address(0), "no burn allowed");
     totalSupply_ = totalSupply_.add(_value);
     balances[_to] = balances[_to].add(_value);
 
@@ -74,7 +83,7 @@ contract TestToken is Ownable {
   }
 
   function burn(uint256 _value) public {
-    require(_value <= balances[msg.sender], 'balance too low');
+    require(_value <= balances[msg.sender], "balance too low");
     // no need to require _value <= totalSupply, since that would imply the
     // sender's balance is greater than the totalSupply, which *should* be an assertion failure
 

@@ -6,9 +6,9 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '@openzeppelin-4.8.0/token/ERC20/IERC20.sol';
-import '../../interfaces/IStaking.sol';
-import '../governance/PausableGuardian_0_8.sol';
+import "@openzeppelin-4.8.0/token/ERC20/IERC20.sol";
+import "../../interfaces/IStaking.sol";
+import "../governance/PausableGuardian_0_8.sol";
 
 interface I3Pool {
   function add_liquidity(uint256[3] memory amounts, uint256 min_mint_amount) external;
@@ -49,7 +49,11 @@ contract ConvertAndAdminister is PausableGuardian_0_8 {
 
   //Owner functions
 
-  function setApprovals(address token, address spender, uint256 amount) external onlyOwner {
+  function setApprovals(
+    address token,
+    address spender,
+    uint256 amount
+  ) external onlyOwner {
     IERC20(token).approve(spender, 0);
     IERC20(token).approve(spender, amount);
   }

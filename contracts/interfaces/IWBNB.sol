@@ -17,5 +17,9 @@ interface IWBNB {
 
   function transfer(address dst, uint256 wad) external returns (bool);
 
-  function transferFrom(address src, address dst, uint256 wad) external;
+  function transferFrom(
+    address src,
+    address dst,
+    uint256 wad
+  ) external;
 }

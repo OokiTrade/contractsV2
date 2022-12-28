@@ -6,12 +6,12 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '../core/State.sol';
-import '../interfaces/ILoanPool.sol';
-import '../utils/MathUtil.sol';
-import '../events/InterestRateEvents.sol';
-import '../utils/InterestOracle.sol';
-import '../utils/TickMathV1.sol';
+import "../core/State.sol";
+import "../interfaces/ILoanPool.sol";
+import "../utils/MathUtil.sol";
+import "../events/InterestRateEvents.sol";
+import "../utils/InterestOracle.sol";
+import "../utils/TickMathV1.sol";
 
 abstract contract InterestHandler is State, InterestRateEvents {
   using MathUtil for uint256;
@@ -57,7 +57,11 @@ abstract contract InterestHandler is State, InterestRateEvents {
     return interestVals[4] + interestVals[5]; // _loanPrincipalTotal // _loanInterestTotal
   }
 
-  function _settleInterest2(address pool, bytes32 loanId, bool includeLendingFee) internal view returns (uint256[7] memory interestVals) {
+  function _settleInterest2(
+    address pool,
+    bytes32 loanId,
+    bool includeLendingFee
+  ) internal view returns (uint256[7] memory interestVals) {
     /*
             uint256[7] ->
             0: _poolPrincipalTotal,

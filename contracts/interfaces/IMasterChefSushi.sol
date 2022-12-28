@@ -4,7 +4,7 @@
  */
 
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity >=0.5.0 <0.9.0;
+pragma solidity >=0.5.17 <0.9.0;
 pragma experimental ABIEncoderV2;
 
 interface IMasterChefSushi {
@@ -22,7 +22,11 @@ interface IMasterChefSushi {
 
   function pendingSushi(uint256 _pid, address _user) external view returns (uint256);
 
-  function set(uint256 _pid, uint256 _allocPoint, bool _withUpdate) external;
+  function set(
+    uint256 _pid,
+    uint256 _allocPoint,
+    bool _withUpdate
+  ) external;
 
   function updatePool(uint256 _pid) external;
 

@@ -3,7 +3,7 @@
  * Licensed under the Apache-2.0
  */
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity >=0.5.0 <0.9.0;
+pragma solidity >=0.5.17 <0.9.0;
 pragma experimental ABIEncoderV2;
 
 /// @title A proxy interface for The Protocol
@@ -48,7 +48,11 @@ interface IBZx {
   /// @param addrs array of address of pools
   /// @param toggles array of addresses of assets
   /// @param withApprovals resets tokens to unlimited approval with the swaps integration (kyber, etc.)
-  function setSupportedTokens(address[] calldata addrs, bool[] calldata toggles, bool withApprovals) external;
+  function setSupportedTokens(
+    address[] calldata addrs,
+    bool[] calldata toggles,
+    bool withApprovals
+  ) external;
 
   /// @dev sets approvals for tokens for specific dexes on dex selector
   /// @param tokens tokens to have their approvals set
@@ -76,7 +80,11 @@ interface IBZx {
   /// @param loanTokens array list of loan tokens
   /// @param collateralTokens array list of collateral tokens
   /// @param amounts array list of liquidation inncetive amount
-  function setLiquidationIncentivePercent(address[] calldata loanTokens, address[] calldata collateralTokens, uint256[] calldata amounts) external;
+  function setLiquidationIncentivePercent(
+    address[] calldata loanTokens,
+    address[] calldata collateralTokens,
+    uint256[] calldata amounts
+  ) external;
 
   /// @dev sets max swap rate slippage percent.
   /// @param newAmount max swap rate slippage percent.
@@ -97,7 +105,11 @@ interface IBZx {
   /// @param tokens array of token addresses.
   /// @param receiver fees receiver address
   /// @return amounts array of amounts withdrawn
-  function withdrawFees(address[] calldata tokens, address receiver, FeeClaimType feeType) external returns (uint256[] memory amounts);
+  function withdrawFees(
+    address[] calldata tokens,
+    address receiver,
+    FeeClaimType feeType
+  ) external returns (uint256[] memory amounts);
 
   /*
     Targets still exist, but functions are decommissioned:
@@ -223,7 +235,11 @@ interface IBZx {
   /// @param start number of loans to return
   /// @param count total number of the items
   /// @return loanParamsList array of LoanParams
-  function getLoanParamsList(address owner, uint256 start, uint256 count) external view returns (bytes32[] memory loanParamsList);
+  function getLoanParamsList(
+    address owner,
+    uint256 start,
+    uint256 count
+  ) external view returns (bytes32[] memory loanParamsList);
 
   /// @dev returns total loan principal for token address
   /// @param lender address
@@ -241,7 +257,11 @@ interface IBZx {
   /// @return the last interset rate
   function getPoolLastInterestRate(address pool) external view returns (uint256);
 
-  function migrateLoanParamsList(address owner, uint256 start, uint256 count) external;
+  function migrateLoanParamsList(
+    address owner,
+    uint256 start,
+    uint256 count
+  ) external;
 
   ////// Loan Openings //////
 
@@ -273,13 +293,21 @@ interface IBZx {
     bytes calldata loanDataBytes
   ) external payable returns (LoanOpenData memory);
 
-  function swapLoanCollateral(bytes32 loanId, address newCollateralToken, bytes calldata loanDataBytes) external;
+  function swapLoanCollateral(
+    bytes32 loanId,
+    address newCollateralToken,
+    bytes calldata loanDataBytes
+  ) external;
 
   /// @dev sets/disables/enables the delegated manager for the loan
   /// @param loanId id of the loan
   /// @param delegated delegated manager address
   /// @param toggle boolean set enabled or disabled
-  function setDelegatedManager(bytes32 loanId, address delegated, bool toggle) external;
+  function setDelegatedManager(
+    bytes32 loanId,
+    address delegated,
+    bool toggle
+  ) external;
 
   /// @dev calculates required collateral for simulated position
   /// @param loanToken address of loan token
@@ -296,9 +324,17 @@ interface IBZx {
     bool isTorqueLoan
   ) external view returns (uint256 collateralAmountRequired);
 
-  function getDefaultLoanParams(address loanToken, address collateralToken, bool isTorqueLoan) external view returns (LoanParams memory loanParamsLocal, bool isDefault);
+  function getDefaultLoanParams(
+    address loanToken,
+    address collateralToken,
+    bool isTorqueLoan
+  ) external view returns (LoanParams memory loanParamsLocal, bool isDefault);
 
-  function generateLoanParamId(address loanToken, address collateralToken, bool isTorqueLoan) external pure returns (bytes32);
+  function generateLoanParamId(
+    address loanToken,
+    address collateralToken,
+    bool isTorqueLoan
+  ) external pure returns (bytes32);
 
   ////// Loan Closings //////
 
@@ -309,7 +345,18 @@ interface IBZx {
   /// @return loanCloseAmount amount of the collateral token of the loan
   /// @return seizedAmount sezied amount in the collateral token
   /// @return seizedToken loan token address
-  function liquidate(bytes32 loanId, address receiver, uint256 closeAmount) external payable returns (uint256 loanCloseAmount, uint256 seizedAmount, address seizedToken);
+  function liquidate(
+    bytes32 loanId,
+    address receiver,
+    uint256 closeAmount
+  )
+    external
+    payable
+    returns (
+      uint256 loanCloseAmount,
+      uint256 seizedAmount,
+      address seizedToken
+    );
 
   /// @dev close position with loan token deposit
   /// @param loanId id of the loan
@@ -324,7 +371,14 @@ interface IBZx {
     address receiver,
     uint256 depositAmount, // denominated in loanToken
     bytes calldata loanDataBytes
-  ) external payable returns (uint256 loanCloseAmount, uint256 withdrawAmount, address withdrawToken);
+  )
+    external
+    payable
+    returns (
+      uint256 loanCloseAmount,
+      uint256 withdrawAmount,
+      address withdrawToken
+    );
 
   /// @dev close position with swap
   /// @param loanId id of the loan
@@ -341,7 +395,13 @@ interface IBZx {
     uint256 swapAmount, // denominated in collateralToken
     bool returnTokenIsCollateral, // true: withdraws collateralToken, false: withdraws loanToken
     bytes calldata loanDataBytes
-  ) external returns (uint256 loanCloseAmount, uint256 withdrawAmount, address withdrawToken);
+  )
+    external
+    returns (
+      uint256 loanCloseAmount,
+      uint256 withdrawAmount,
+      address withdrawToken
+    );
 
   ////// Loan Closings With Gas Token //////
 
@@ -357,13 +417,21 @@ interface IBZx {
   /// @param receiver address of withdrawn tokens
   /// @param withdrawAmount amount to withdraw
   /// @return actualWithdrawAmount actual amount withdrawn
-  function withdrawCollateral(bytes32 loanId, address receiver, uint256 withdrawAmount) external returns (uint256 actualWithdrawAmount);
+  function withdrawCollateral(
+    bytes32 loanId,
+    address receiver,
+    uint256 withdrawAmount
+  ) external returns (uint256 actualWithdrawAmount);
 
   /// @dev settles accrued interest for all active loans from a loan pool
   /// @param loanId existing loan id
   function settleInterest(bytes32 loanId) external;
 
-  function setDepositAmount(bytes32 loanId, uint256 depositValueAsLoanToken, uint256 depositValueAsCollateralToken) external;
+  function setDepositAmount(
+    bytes32 loanId,
+    uint256 depositValueAsLoanToken,
+    uint256 depositValueAsCollateralToken
+  ) external;
 
   function transferLoan(bytes32 loanId, address newOwner) external;
 
@@ -373,10 +441,7 @@ interface IBZx {
   // Decommissioned function, but leave interface to allow remaining claims
   function rewardsBalanceOf(address user) external view returns (uint256 rewardsBalance);
 
-  function getInterestModelValues(
-    address pool,
-    bytes32 loanId
-  )
+  function getInterestModelValues(address pool, bytes32 loanId)
     external
     view
     returns (
@@ -400,7 +465,14 @@ interface IBZx {
   /// @param isLender whether to list lender loans or borrower loans
   /// @param unsafeOnly booleat if true return only unsafe loans that are open for liquidation
   /// @return loansData LoanReturnData array of loans
-  function getUserLoans(address user, uint256 start, uint256 count, LoanType loanType, bool isLender, bool unsafeOnly) external view returns (LoanReturnData[] memory loansData);
+  function getUserLoans(
+    address user,
+    uint256 start,
+    uint256 count,
+    LoanType loanType,
+    bool isLender,
+    bool unsafeOnly
+  ) external view returns (LoanReturnData[] memory loansData);
 
   function getUserLoansCount(address user, bool isLender) external view returns (uint256);
 
@@ -423,14 +495,23 @@ interface IBZx {
   /// @param start of the index
   /// @param count number of loans to return
   /// @param unsafeOnly boolean if true return unsafe loan only (open for liquidation)
-  function getActiveLoans(uint256 start, uint256 count, bool unsafeOnly) external view returns (LoanReturnData[] memory loansData);
+  function getActiveLoans(
+    uint256 start,
+    uint256 count,
+    bool unsafeOnly
+  ) external view returns (LoanReturnData[] memory loansData);
 
   /// @dev get current active loans in the system
   /// @param start of the index
   /// @param count number of loans to return
   /// @param unsafeOnly boolean if true return unsafe loan only (open for liquidation)
   /// @param isLiquidatable boolean if true return liquidatable loans only
-  function getActiveLoansAdvanced(uint256 start, uint256 count, bool unsafeOnly, bool isLiquidatable) external view returns (LoanReturnData[] memory loansData);
+  function getActiveLoansAdvanced(
+    uint256 start,
+    uint256 count,
+    bool unsafeOnly,
+    bool isLiquidatable
+  ) external view returns (LoanReturnData[] memory loansData);
 
   function getActiveLoansCount() external view returns (uint256);
 
@@ -462,7 +543,12 @@ interface IBZx {
   /// @param sourceTokenAmount source token amount
   /// @return amoun denominated in destination token
   // TODO remove as soon as deployed on all chains
-  function getSwapExpectedReturn(address sourceToken, address destToken, uint256 sourceTokenAmount, bytes calldata swapData) external view returns (uint256);
+  function getSwapExpectedReturn(
+    address sourceToken,
+    address destToken,
+    uint256 sourceTokenAmount,
+    bytes calldata swapData
+  ) external view returns (uint256);
 
   /// @dev calculate simulated return of swap
   /// @param trader the wallet that will be used to execute the trade
@@ -471,7 +557,13 @@ interface IBZx {
   /// @param sourceTokenAmount specifies source token amount
   /// @param payload loanDataBytes used
   /// @return amount amount received
-  function getSwapExpectedReturn(address trader, address sourceToken, address destToken, uint256 sourceTokenAmount, bytes calldata payload) external returns (uint256);
+  function getSwapExpectedReturn(
+    address trader,
+    address sourceToken,
+    address destToken,
+    uint256 sourceTokenAmount,
+    bytes calldata payload
+  ) external returns (uint256);
 
   /// @dev calculate simulated return of swap
   /// @param trader the wallet that will be used to execute the trade
@@ -481,7 +573,14 @@ interface IBZx {
   /// @param payload loanDataBytes used
   /// @param isAmountIn if marked as true it is returning an amount received and if false it returns an amount in
   /// @return amount amount received or amount in needed based on isAmountIn selection
-  function getSwapExpectedReturn(address trader, address sourceToken, address destToken, uint256 tokenAmount, bytes calldata payload, bool isAmountIn) external returns (uint256);
+  function getSwapExpectedReturn(
+    address trader,
+    address sourceToken,
+    address destToken,
+    uint256 tokenAmount,
+    bytes calldata payload,
+    bool isAmountIn
+  ) external returns (uint256);
 
   function owner() external view returns (address);
 
@@ -587,5 +686,9 @@ interface IBZx {
   }
 
   ////// Flash Borrow Fees //////
-  function payFlashBorrowFees(address user, uint256 borrowAmount, uint256 flashBorrowFeePercent) external;
+  function payFlashBorrowFees(
+    address user,
+    uint256 borrowAmount,
+    uint256 flashBorrowFeePercent
+  ) external;
 }

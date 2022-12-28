@@ -7,7 +7,7 @@
 pragma solidity ^0.5.16;
 pragma experimental ABIEncoderV2;
 
-import './GovernorBravoInterfaces.sol';
+import "./GovernorBravoInterfaces.sol";
 
 contract GovernorBravoDelegator is GovernorBravoDelegatorStorage, GovernorBravoEvents {
   constructor(
@@ -15,10 +15,10 @@ contract GovernorBravoDelegator is GovernorBravoDelegatorStorage, GovernorBravoE
     address staking_,
     address admin_,
     address implementation_,
-    uint votingPeriod_,
-    uint votingDelay_,
-    uint proposalThreshold_,
-    uint quorumPercentage_
+    uint256 votingPeriod_,
+    uint256 votingDelay_,
+    uint256 proposalThreshold_,
+    uint256 quorumPercentage_
   ) public {
     // Admin set to msg.sender for initialization
     admin = msg.sender;
@@ -26,7 +26,7 @@ contract GovernorBravoDelegator is GovernorBravoDelegatorStorage, GovernorBravoE
     delegateTo(
       implementation_,
       abi.encodeWithSignature(
-        'initialize(address,address,uint256,uint256,uint256,uint256)',
+        "initialize(address,address,uint256,uint256,uint256,uint256)",
         timelock_,
         staking_,
         votingPeriod_,
@@ -46,8 +46,8 @@ contract GovernorBravoDelegator is GovernorBravoDelegatorStorage, GovernorBravoE
    * @param implementation_ The address of the new implementation for delegation
    */
   function _setImplementation(address implementation_) public {
-    require(msg.sender == admin, 'GovernorBravoDelegator::_setImplementation: admin only');
-    require(implementation_ != address(0), 'GovernorBravoDelegator::_setImplementation: invalid implementation address');
+    require(msg.sender == admin, "GovernorBravoDelegator::_setImplementation: admin only");
+    require(implementation_ != address(0), "GovernorBravoDelegator::_setImplementation: invalid implementation address");
 
     address oldImplementation = implementation;
     implementation = implementation_;

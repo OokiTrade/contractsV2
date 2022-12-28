@@ -6,8 +6,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.5.17;
 
-import '@openzeppelin-2.5.0/token/ERC20/IERC20.sol';
-import '@openzeppelin-2.5.0/ownership/Ownable.sol';
+import "@openzeppelin-2.5.0/token/ERC20/IERC20.sol";
+import "@openzeppelin-2.5.0/ownership/Ownable.sol";
 
 contract TraderCompensation is Ownable {
   // mainnet
@@ -34,17 +34,17 @@ contract TraderCompensation is Ownable {
   }
 
   function optin() external {
-    require(_getTimestamp() < optinEndTimestamp, 'opt-in has ended');
+    require(_getTimestamp() < optinEndTimestamp, "opt-in has ended");
     optinlist[msg.sender] = true;
   }
 
   function claim() external {
-    require(_getTimestamp() >= claimStartTimestamp, 'claim not started');
-    require(_getTimestamp() < claimEndTimestamp, 'claim has ended');
+    require(_getTimestamp() >= claimStartTimestamp, "claim not started");
+    require(_getTimestamp() < claimEndTimestamp, "claim has ended");
 
     uint256 whitelistAmount = whitelist[msg.sender];
-    require(isActive && whitelistAmount != 0, 'unauthorized');
-    require(optinlist[msg.sender], 'no opt-in found');
+    require(isActive && whitelistAmount != 0, "unauthorized");
+    require(optinlist[msg.sender], "no opt-in found");
 
     vBZRX.transfer(msg.sender, whitelistAmount);
 
@@ -54,7 +54,7 @@ contract TraderCompensation is Ownable {
   }
 
   function setWhitelist(address[] memory addrs, uint256[] memory amounts) public onlyOwner {
-    require(addrs.length == amounts.length, 'count mismatch');
+    require(addrs.length == amounts.length, "count mismatch");
 
     for (uint256 i = 0; i < addrs.length; i++) {
       whitelist[addrs[i]] = amounts[i];
@@ -69,8 +69,12 @@ contract TraderCompensation is Ownable {
     isActive = _isActive;
   }
 
-  function setTimestamps(uint256 _optinStartTimestamp, uint256 _optinEndTimestamp, uint256 _claimEndTimestamp) public onlyOwner {
-    require(_optinEndTimestamp > _optinStartTimestamp && _claimEndTimestamp > _optinEndTimestamp, 'invalid params');
+  function setTimestamps(
+    uint256 _optinStartTimestamp,
+    uint256 _optinEndTimestamp,
+    uint256 _claimEndTimestamp
+  ) public onlyOwner {
+    require(_optinEndTimestamp > _optinStartTimestamp && _claimEndTimestamp > _optinEndTimestamp, "invalid params");
     optinStartTimestamp = _optinStartTimestamp;
     optinEndTimestamp = _optinEndTimestamp;
     claimStartTimestamp = _optinEndTimestamp;

@@ -6,18 +6,24 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '../../core/State.sol';
-import '../../events/LoanMaintenanceEvents.sol';
-import '../../governance/PausableGuardian_0_8.sol';
-import '../../mixins/InterestHandler.sol';
-import '../../utils/InterestOracle.sol';
-import '../../utils/TickMathV1.sol';
+import "../../core/State.sol";
+import "../../events/LoanMaintenanceEvents.sol";
+import "../../governance/PausableGuardian_0_8.sol";
+import "../../mixins/InterestHandler.sol";
+import "../../utils/InterestOracle.sol";
+import "../../utils/TickMathV1.sol";
 
 contract LoanMaintenance_2 is State, LoanMaintenanceEvents, PausableGuardian_0_8, InterestHandler {
   using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
   using InterestOracle for InterestOracle.Observation[256];
 
-  constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
+  constructor(
+    IWeth wethtoken,
+    address usdc,
+    address bzrx,
+    address vbzrx,
+    address ooki
+  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
 
   function initialize(address target) external onlyOwner {
     _setTarget(this.transferLoan.selector, target);
@@ -26,10 +32,7 @@ contract LoanMaintenance_2 is State, LoanMaintenanceEvents, PausableGuardian_0_8
     _setTarget(this.getTWAI.selector, target);
   }
 
-  function getInterestModelValues(
-    address pool,
-    bytes32 loanId
-  )
+  function getInterestModelValues(address pool, bytes32 loanId)
     external
     view
     returns (
@@ -57,11 +60,11 @@ contract LoanMaintenance_2 is State, LoanMaintenanceEvents, PausableGuardian_0_8
   function transferLoan(bytes32 loanId, address newOwner) external nonReentrant pausable {
     Loan storage loanLocal = loans[loanId];
     address currentOwner = loanLocal.borrower;
-    require(loanLocal.active, 'loan is closed');
-    require(currentOwner != newOwner, 'no owner change');
-    require(msg.sender == currentOwner || delegatedManagers[loanId][msg.sender], 'unauthorized');
+    require(loanLocal.active, "loan is closed");
+    require(currentOwner != newOwner, "no owner change");
+    require(msg.sender == currentOwner || delegatedManagers[loanId][msg.sender], "unauthorized");
 
-    require(borrowerLoanSets[currentOwner].removeBytes32(loanId), 'error in transfer');
+    require(borrowerLoanSets[currentOwner].removeBytes32(loanId), "error in transfer");
     borrowerLoanSets[newOwner].addBytes32(loanId);
     loanLocal.borrower = newOwner;
 
@@ -70,7 +73,7 @@ contract LoanMaintenance_2 is State, LoanMaintenanceEvents, PausableGuardian_0_8
 
   function settleInterest(bytes32 loanId) external pausable {
     // only callable by loan pools
-    require(loanPoolToUnderlying[msg.sender] != address(0), 'not authorized');
+    require(loanPoolToUnderlying[msg.sender] != address(0), "not authorized");
 
     _settleInterest(
       msg.sender, // loan pool

@@ -6,17 +6,23 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '../../core/State.sol';
-import '../../interfaces/IUniswapV2Router.sol';
-import '@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol';
-import '../ISwapsImpl.sol';
+import "../../core/State.sol";
+import "../../interfaces/IUniswapV2Router.sol";
+import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
+import "../ISwapsImpl.sol";
 
 contract SwapsImplUniswapV2_ARBITRUM is State, ISwapsImpl {
   using SafeERC20 for IERC20;
 
   address public constant uniswapRouter = 0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506; // Sushiswap
 
-  constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
+  constructor(
+    IWeth wethtoken,
+    address usdc,
+    address bzrx,
+    address vbzrx,
+    address ooki
+  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
 
   function dexSwap(
     address sourceTokenAddress,
@@ -28,8 +34,8 @@ contract SwapsImplUniswapV2_ARBITRUM is State, ISwapsImpl {
     uint256 requiredDestTokenAmount,
     bytes memory payload
   ) public returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed) {
-    require(sourceTokenAddress != destTokenAddress, 'source == dest');
-    require(supportedTokens[sourceTokenAddress] && supportedTokens[destTokenAddress], 'invalid tokens');
+    require(sourceTokenAddress != destTokenAddress, "source == dest");
+    require(supportedTokens[sourceTokenAddress] && supportedTokens[destTokenAddress], "invalid tokens");
 
     IERC20 sourceToken = IERC20(sourceTokenAddress);
     address _thisAddress = address(this);
@@ -49,8 +55,12 @@ contract SwapsImplUniswapV2_ARBITRUM is State, ISwapsImpl {
     }
   }
 
-  function dexExpectedRate(address sourceTokenAddress, address destTokenAddress, uint256 sourceTokenAmount) public view returns (uint256 expectedRate) {
-    revert('unsupported');
+  function dexExpectedRate(
+    address sourceTokenAddress,
+    address destTokenAddress,
+    uint256 sourceTokenAmount
+  ) public view returns (uint256 expectedRate) {
+    revert("unsupported");
   }
 
   function dexAmountOut(bytes memory payload, uint256 amountIn) public returns (uint256 amountOut, address midToken) {
@@ -181,7 +191,7 @@ contract SwapsImplUniswapV2_ARBITRUM is State, ISwapsImpl {
       if (sourceTokenAmountUsed == 0) {
         return (0, 0);
       }
-      require(sourceTokenAmountUsed <= maxSourceTokenAmount, 'source amount too high');
+      require(sourceTokenAmountUsed <= maxSourceTokenAmount, "source amount too high");
     } else {
       sourceTokenAmountUsed = minSourceTokenAmount;
       (destTokenAmountReceived, midToken) = dexAmountOut(abi.encode(sourceTokenAddress, destTokenAddress), sourceTokenAmountUsed);

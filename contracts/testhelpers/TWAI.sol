@@ -6,7 +6,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity >=0.8.4;
 
-import 'prb-math/contracts/PRBMathUD60x18.sol';
+import "prb-math/contracts/PRBMathUD60x18.sol";
 
 // import "@openzeppelin-4.8.0/math/SafeMath";
 contract TWAI {
@@ -30,7 +30,13 @@ contract TWAI {
     lastIR = interestRate;
   }
 
-  function calculateIR(uint256 U, uint256 IR1, uint256 IR2, uint256 UR1, uint256 UR2) public pure returns (uint256 interestRate) {
+  function calculateIR(
+    uint256 U,
+    uint256 IR1,
+    uint256 IR2,
+    uint256 UR1,
+    uint256 UR2
+  ) public pure returns (uint256 interestRate) {
     (uint256 _a, uint256 _b) = getAB(IR1, IR2, UR1, UR2);
     return getInterestRate(U, _a, _b);
   }
@@ -43,7 +49,12 @@ contract TWAI {
     (a, b) = getAB(interestRate);
   }
 
-  function getAB(uint256 IR1, uint256 IR2, uint256 UR1, uint256 UR2) public pure returns (uint256 _a, uint256 _b) {
+  function getAB(
+    uint256 IR1,
+    uint256 IR2,
+    uint256 UR1,
+    uint256 UR2
+  ) public pure returns (uint256 _a, uint256 _b) {
     // some minimal interestRate to avoid zero a or b
     if (IR1 < 0.001e18) {
       IR1 = 0.001e18;
@@ -96,7 +107,11 @@ contract TWAI {
     return getInterestRate(newUtilization, a, b);
   }
 
-  function getInterestRate(uint256 utilization, uint256 _a, uint256 _b) public pure returns (uint256 interestRate) {
+  function getInterestRate(
+    uint256 utilization,
+    uint256 _a,
+    uint256 _b
+  ) public pure returns (uint256 interestRate) {
     // (uint256 a, uint256 b) = getAB(interestRate);
     // if (utilization < 1e18) {
     //     utilization = 1e18;
@@ -113,7 +128,7 @@ contract TWAI {
   function log2(uint256 x) public pure returns (uint256 result) {
     if (x < SCALE) {
       // revert PRBMathUD60x18__LogInputTooSmall(x);
-      require(true, 'PRBMathUD60x18__LogInputTooSmall');
+      require(true, "PRBMathUD60x18__LogInputTooSmall");
     }
     // unchecked {
     // Calculate the integer part of the logarithm and add it to the result and finally calculate y = x * 2^(-n).
@@ -149,35 +164,35 @@ contract TWAI {
   }
 
   function mostSignificantBit(uint256 x) public pure returns (uint256 msb) {
-    if (x >= 2 ** 128) {
+    if (x >= 2**128) {
       x >>= 128;
       msb += 128;
     }
-    if (x >= 2 ** 64) {
+    if (x >= 2**64) {
       x >>= 64;
       msb += 64;
     }
-    if (x >= 2 ** 32) {
+    if (x >= 2**32) {
       x >>= 32;
       msb += 32;
     }
-    if (x >= 2 ** 16) {
+    if (x >= 2**16) {
       x >>= 16;
       msb += 16;
     }
-    if (x >= 2 ** 8) {
+    if (x >= 2**8) {
       x >>= 8;
       msb += 8;
     }
-    if (x >= 2 ** 4) {
+    if (x >= 2**4) {
       x >>= 4;
       msb += 4;
     }
-    if (x >= 2 ** 2) {
+    if (x >= 2**2) {
       x >>= 2;
       msb += 2;
     }
-    if (x >= 2 ** 1) {
+    if (x >= 2**1) {
       // No need to shift x any more.
       msb += 1;
     }
@@ -186,7 +201,7 @@ contract TWAI {
   function exp(uint256 x) public pure returns (uint256 result) {
     // Without this check, the value passed to "exp2" would be greater than 192.
     if (x >= 133_084258667509499441) {
-      require(true, 'PRBMathUD60x18__ExpInputTooBig');
+      require(true, "PRBMathUD60x18__ExpInputTooBig");
       // revert PRBMathUD60x18__ExpInputTooBig(x);
     }
 
@@ -201,7 +216,7 @@ contract TWAI {
     // 2^192 doesn't fit within the 192.64-bit format used internally in this function.
     if (x >= 192e18) {
       // revert PRBMathUD60x18__Exp2InputTooBig(x);
-      require(true, 'PRBMathUD60x18__Exp2InputTooBig');
+      require(true, "PRBMathUD60x18__Exp2InputTooBig");
     }
 
     // unchecked {

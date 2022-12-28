@@ -6,13 +6,13 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '../core/State.sol';
-import '@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol';
-import '@openzeppelin-4.8.0/token/ERC20/extensions/IERC20Metadata.sol';
-import '../../interfaces/IPriceFeeds.sol';
-import './VaultController.sol';
-import '../events/FeesEvents.sol';
-import '../utils/MathUtil.sol';
+import "../core/State.sol";
+import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin-4.8.0/token/ERC20/extensions/IERC20Metadata.sol";
+import "../../interfaces/IPriceFeeds.sol";
+import "./VaultController.sol";
+import "../events/FeesEvents.sol";
+import "../utils/MathUtil.sol";
 
 abstract contract FeesHelper is State, VaultController, FeesEvents {
   using SafeERC20 for IERC20;
@@ -57,7 +57,12 @@ abstract contract FeesHelper is State, VaultController, FeesEvents {
   }
 
   // settle trading fee
-  function _payTradingFee(address user, bytes32 loanId, address feeToken, uint256 tradingFee) internal {
+  function _payTradingFee(
+    address user,
+    bytes32 loanId,
+    address feeToken,
+    uint256 tradingFee
+  ) internal {
     if (tradingFee != 0) {
       tradingFeeTokensHeld[feeToken] = tradingFeeTokensHeld[feeToken] + tradingFee;
 
@@ -66,7 +71,12 @@ abstract contract FeesHelper is State, VaultController, FeesEvents {
   }
 
   // settle loan origination fee
-  function _payBorrowingFee(address user, bytes32 loanId, address feeToken, uint256 borrowingFee) internal {
+  function _payBorrowingFee(
+    address user,
+    bytes32 loanId,
+    address feeToken,
+    uint256 borrowingFee
+  ) internal {
     if (borrowingFee != 0) {
       borrowingFeeTokensHeld[feeToken] = borrowingFeeTokensHeld[feeToken] + borrowingFee;
 
@@ -75,7 +85,11 @@ abstract contract FeesHelper is State, VaultController, FeesEvents {
   }
 
   // settle lender (interest) fee
-  function _payLendingFee(address lender, address feeToken, uint256 lendingFee) internal {
+  function _payLendingFee(
+    address lender,
+    address feeToken,
+    uint256 lendingFee
+  ) internal {
     if (lendingFee != 0) {
       lendingFeeTokensHeld[feeToken] = lendingFeeTokensHeld[feeToken] + lendingFee;
 

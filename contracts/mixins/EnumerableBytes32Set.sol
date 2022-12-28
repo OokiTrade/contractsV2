@@ -121,9 +121,13 @@ library EnumerableBytes32Set {
      * WARNING: This function may run out of gas on large sets: use {length} and
      * {get} instead in these cases.
      */
-  function enumerate(Bytes32Set storage set, uint256 start, uint256 count) internal view returns (bytes32[] memory output) {
+  function enumerate(
+    Bytes32Set storage set,
+    uint256 start,
+    uint256 count
+  ) internal view returns (bytes32[] memory output) {
     uint256 end = start + count;
-    require(end >= start, 'addition overflow');
+    require(end >= start, "addition overflow");
     end = set.values.length < end ? set.values.length : end;
     if (end == 0 || start >= end) {
       return output;

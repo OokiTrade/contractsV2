@@ -6,23 +6,29 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '../../core/State.sol';
-import '../../events/LoanSettingsEvents.sol';
-import '../../utils/MathUtil.sol';
-import '../../utils/InterestOracle.sol';
-import '../../mixins/InterestHandler.sol';
-import '../../governance/PausableGuardian_0_8.sol';
-import '../../../interfaces/IPriceFeeds.sol';
+import "../../core/State.sol";
+import "../../events/LoanSettingsEvents.sol";
+import "../../utils/MathUtil.sol";
+import "../../utils/InterestOracle.sol";
+import "../../mixins/InterestHandler.sol";
+import "../../governance/PausableGuardian_0_8.sol";
+import "../../../interfaces/IPriceFeeds.sol";
 
 contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGuardian_0_8 {
   using MathUtil for uint256;
   using InterestOracle for InterestOracle.Observation[256];
   using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
 
-  constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
+  constructor(
+    IWeth wethtoken,
+    address usdc,
+    address bzrx,
+    address vbzrx,
+    address ooki
+  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
 
   modifier onlyGuardianOrFactory() {
-    require(msg.sender == factory || msg.sender == getGuardian() || msg.sender == owner(), 'unauthorized');
+    require(msg.sender == factory || msg.sender == getGuardian() || msg.sender == owner(), "unauthorized");
     _;
   }
 
@@ -39,8 +45,8 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
     _setTarget(this.migrateLoanParamsList.selector, target); // TODO remove after migration
 
     // TODO remove after deployment
-    _setTarget(bytes4(keccak256('setupLoanParams(LoanParams[])')), address(0));
-    _setTarget(bytes4(keccak256('getLoanParamsList(address,uint256,uint256)')), address(0));
+    _setTarget(bytes4(keccak256("setupLoanParams(LoanParams[])")), address(0));
+    _setTarget(bytes4(keccak256("getLoanParamsList(address,uint256,uint256)")), address(0));
   }
 
   function setTWAISettings(uint32 delta, uint32 secondsAgo) external onlyGuardian {
@@ -49,7 +55,7 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
   }
 
   function setupLoanPoolTWAI(address pool) external onlyGuardianOrFactory {
-    require(poolInterestRateObservations[pool][0].blockTimestamp == 0, 'already initialized');
+    require(poolInterestRateObservations[pool][0].blockTimestamp == 0, "already initialized");
 
     if (poolLastUpdateTime[pool] == 0) {
       poolLastUpdateTime[pool] = block.timestamp;
@@ -92,7 +98,7 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
             loanParamsList[i].maxLoanTerm == 0 // isTorqueLoan
           ) &&
           loanParamsList[i].minInitialMargin > loanParamsList[i].maintenanceMargin,
-        'invalid loanParam'
+        "invalid loanParam"
       );
       LoanParams memory loanParam = loanParamsList[i];
       loanParams[loanParam.id] = loanParam;
@@ -109,7 +115,11 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
     }
   }
 
-  function migrateLoanParamsList(address owner, uint256 start, uint256 count) external onlyGuardian {
+  function migrateLoanParamsList(
+    address owner,
+    uint256 start,
+    uint256 count
+  ) external onlyGuardian {
     EnumerableBytes32Set.Bytes32Set storage set = userLoanParamSets[owner];
     uint256 end = start + count;
     if (end > set.length()) {
@@ -139,11 +149,18 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
     }
   }
 
-  function generateLoanParamId(address loanToken, address collateralToken, bool isTorqueLoan) internal pure returns (bytes32) {
+  function generateLoanParamId(
+    address loanToken,
+    address collateralToken,
+    bool isTorqueLoan
+  ) internal pure returns (bytes32) {
     return keccak256(abi.encodePacked(loanToken, collateralToken, isTorqueLoan));
   }
 
-  function getTotalPrincipal(address lender, address /*loanToken*/) external view returns (uint256) {
+  function getTotalPrincipal(
+    address lender,
+    address /*loanToken*/
+  ) external view returns (uint256) {
     return _getPoolPrincipal(lender);
   }
 

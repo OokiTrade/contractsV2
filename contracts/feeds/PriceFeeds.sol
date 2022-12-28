@@ -6,19 +6,19 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '@openzeppelin-4.8.0/access/Ownable.sol';
-import '@openzeppelin-4.8.0/token/ERC20/IERC20.sol';
-import '@openzeppelin-4.8.0/token/ERC20/extensions/IERC20Metadata.sol';
-import '../core/Constants.sol';
-import './IPriceFeedsExt.sol';
-import '../governance/PausableGuardian_0_8.sol';
-import '../../interfaces/IToken.sol';
+import "@openzeppelin-4.8.0/access/Ownable.sol";
+import "@openzeppelin-4.8.0/token/ERC20/IERC20.sol";
+import "@openzeppelin-4.8.0/token/ERC20/extensions/IERC20Metadata.sol";
+import "../core/Constants.sol";
+import "./IPriceFeedsExt.sol";
+import "../governance/PausableGuardian_0_8.sol";
+import "../../interfaces/IToken.sol";
 
 contract PriceFeeds is Constants, PausableGuardian_0_8 {
   address public priceFeedFactory;
 
   modifier onlyFactoryOrOwner() {
-    require(msg.sender == priceFeedFactory || msg.sender == owner(), 'unauthorized');
+    require(msg.sender == priceFeedFactory || msg.sender == owner(), "unauthorized");
     _;
   }
 
@@ -27,7 +27,13 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
   mapping(address => IPriceFeedsExt) public pricesFeeds; // token => pricefeed
   mapping(address => uint256) public decimals; // decimals of supported tokens
 
-  constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {
+  constructor(
+    IWeth wethtoken,
+    address usdc,
+    address bzrx,
+    address vbzrx,
+    address ooki
+  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {
     // set decimals for ether
     decimals[address(wethToken)] = 18;
   }
@@ -40,7 +46,11 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
     return sourceToken != destToken ? _getDecimalPrecision(sourceToken, destToken) : WEI_PRECISION;
   }
 
-  function queryReturn(address sourceToken, address destToken, uint256 sourceAmount) public view pausable returns (uint256 destAmount) {
+  function queryReturn(
+    address sourceToken,
+    address destToken,
+    uint256 sourceAmount
+  ) public view pausable returns (uint256 destAmount) {
     (uint256 rate, uint256 precision) = _queryRate(sourceToken, destToken);
 
     destAmount = (sourceAmount * rate) / precision;
@@ -66,7 +76,7 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
       spreadValue *= WEI_PERCENT_PRECISION;
       spreadValue /= sourceToDestSwapRate;
 
-      require(spreadValue <= maxSlippage, 'price disagreement');
+      require(spreadValue <= maxSlippage, "price disagreement");
     }
   }
 
@@ -74,12 +84,18 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
     if (tokenAddress == address(wethToken)) {
       ethAmount = amount;
     } else {
-      (uint toEthRate, uint256 toEthPrecision) = queryRate(tokenAddress, address(wethToken));
+      (uint256 toEthRate, uint256 toEthPrecision) = queryRate(tokenAddress, address(wethToken));
       ethAmount = (amount * toEthRate) / toEthPrecision;
     }
   }
 
-  function getMaxDrawdown(address loanToken, address collateralToken, uint256 loanAmount, uint256 collateralAmount, uint256 margin) public view returns (uint256 maxDrawdown) {
+  function getMaxDrawdown(
+    address loanToken,
+    address collateralToken,
+    uint256 loanAmount,
+    uint256 collateralAmount,
+    uint256 margin
+  ) public view returns (uint256 maxDrawdown) {
     uint256 loanToCollateralAmount;
     if (collateralToken == loanToken) {
       loanToCollateralAmount = loanAmount;
@@ -128,7 +144,13 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
     }
   }
 
-  function shouldLiquidate(address loanToken, address collateralToken, uint256 loanAmount, uint256 collateralAmount, uint256 maintenanceMargin) public view returns (bool) {
+  function shouldLiquidate(
+    address loanToken,
+    address collateralToken,
+    uint256 loanAmount,
+    uint256 collateralAmount,
+    uint256 maintenanceMargin
+  ) public view returns (bool) {
     (uint256 currentMargin, ) = getCurrentMargin(loanToken, collateralToken, loanAmount, collateralAmount);
 
     return currentMargin <= maintenanceMargin;
@@ -139,7 +161,7 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
    */
 
   function setPriceFeed(address[] calldata tokens, IPriceFeedsExt[] calldata feeds) external onlyFactoryOrOwner {
-    require(tokens.length == feeds.length, 'count mismatch');
+    require(tokens.length == feeds.length, "count mismatch");
 
     for (uint256 i = 0; i < tokens.length; i++) {
       pricesFeeds[tokens[i]] = feeds[i];
@@ -181,7 +203,7 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
       // IPriceFeedsExt _Feed =
       // require(address(_Feed) != address(0), "unsupported price feed");
       rate = getPrice(token);
-      require(rate != 0 && (rate >> 128) == 0, 'price error');
+      require(rate != 0 && (rate >> 128) == 0, "price error");
     } else {
       rate = WEI_PRECISION;
     }
@@ -202,7 +224,7 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
   }
 
   // TODO remove function
-  function getChainId() internal view returns (uint) {
+  function getChainId() internal view returns (uint256) {
     uint256 chainId;
     assembly {
       chainId := chainid()
@@ -220,8 +242,8 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
       uint256 destTokenDecimals = decimals[destToken];
       if (destTokenDecimals == 0) destTokenDecimals = IERC20Metadata(destToken).decimals();
       // TODO use abs
-      if (destTokenDecimals >= sourceTokenDecimals) return 10 ** (18 - destTokenDecimals - sourceTokenDecimals);
-      else return 10 ** (18 + sourceTokenDecimals - destTokenDecimals);
+      if (destTokenDecimals >= sourceTokenDecimals) return 10**(18 - destTokenDecimals - sourceTokenDecimals);
+      else return 10**(18 + sourceTokenDecimals - destTokenDecimals);
     }
   }
 }

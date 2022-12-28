@@ -6,14 +6,14 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '@openzeppelin-4.8.0/access/Ownable.sol';
+import "@openzeppelin-4.8.0/access/Ownable.sol";
 
 contract DexRecords is Ownable {
   mapping(uint256 => address) public dexes;
   uint256 public dexCount = 0;
 
   function retrieveDexAddress(uint256 number) public view returns (address) {
-    require(dexes[number] != address(0), 'DexRecords: No implementation set');
+    require(dexes[number] != address(0), "DexRecords: No implementation set");
     return dexes[number];
   }
 

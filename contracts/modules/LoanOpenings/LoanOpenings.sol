@@ -6,25 +6,31 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '../../core/State.sol';
-import '../../events/LoanOpeningsEvents.sol';
-import '../../mixins/VaultController.sol';
-import '../../mixins/InterestHandler.sol';
-import '../../swaps/SwapsUser.sol';
-import '../../governance/PausableGuardian_0_8.sol';
+import "../../core/State.sol";
+import "../../events/LoanOpeningsEvents.sol";
+import "../../mixins/VaultController.sol";
+import "../../mixins/InterestHandler.sol";
+import "../../swaps/SwapsUser.sol";
+import "../../governance/PausableGuardian_0_8.sol";
 
 contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHandler, SwapsUser, PausableGuardian_0_8 {
   using MathUtil for uint256;
   using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
 
-  constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
+  constructor(
+    IWeth wethtoken,
+    address usdc,
+    address bzrx,
+    address vbzrx,
+    address ooki
+  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
 
   function initialize(address target) external onlyOwner {
     // TODO remove after migration
-    _setTarget(bytes4(keccak256('borrowOrTradeFromPool(bytes32,bytes32,bool,uint256,address,uint256,bytes)')), address(0));
+    _setTarget(bytes4(keccak256("borrowOrTradeFromPool(bytes32,bytes32,bool,uint256,address,uint256,bytes)")), address(0));
     // TEMP: remove after upgrade
-    _setTarget(bytes4(keccak256('migrateLoans(address,uint256,uint256)')), address(0));
-    _setTarget(bytes4(keccak256('getLoanCount(address)')), address(0));
+    _setTarget(bytes4(keccak256("migrateLoans(address,uint256,uint256)")), address(0));
+    _setTarget(bytes4(keccak256("getLoanCount(address)")), address(0));
 
     _setTarget(this.borrowOrTradeFromPool.selector, target);
     _setTarget(this.setDelegatedManager.selector, target);
@@ -53,29 +59,33 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
     // collateralTokenReceived: total collateralToken deposit
     bytes calldata loanDataBytes
   ) external payable nonReentrant pausable returns (LoanOpenData memory) {
-    require(msg.value == 0 || loanDataBytes.length != 0, 'loanDataBytes required with ether');
+    require(msg.value == 0 || loanDataBytes.length != 0, "loanDataBytes required with ether");
 
     // only callable by loan pools
     address loanToken = loanPoolToUnderlying[msg.sender];
-    require(loanToken != address(0), 'not authorized');
-    require(supportedTokens[loanToken] && supportedTokens[collateralToken], 'unsupported token');
+    require(loanToken != address(0), "not authorized");
+    require(supportedTokens[loanToken] && supportedTokens[collateralToken], "unsupported token");
 
     LoanParams memory loanParamsLocal = getDefaultLoanParamsAndStore(loanToken, collateralToken, isTorqueLoan);
-    require(loanParamsLocal.id != 0, 'loanParams not exists');
+    require(loanParamsLocal.id != 0, "loanParams not exists");
 
     if (initialMargin == 0) {
-      require(isTorqueLoan, 'initialMargin == 0');
+      require(isTorqueLoan, "initialMargin == 0");
       initialMargin = loanParamsLocal.minInitialMargin;
     }
 
     // get required collateral
     uint256 collateralAmountRequired = _getRequiredCollateral(loanParamsLocal.loanToken, loanParamsLocal.collateralToken, sentValues[1], initialMargin, isTorqueLoan);
-    require(collateralAmountRequired != 0, 'collateral is 0');
+    require(collateralAmountRequired != 0, "collateral is 0");
 
     return _borrowOrTrade(loanParamsLocal, loanId, isTorqueLoan, collateralAmountRequired, initialMargin, sentAddresses, sentValues, loanDataBytes);
   }
 
-  function getDefaultLoanParamsAndStore(address loanToken, address collateralToken, bool isTorqueLoan) internal returns (LoanParams memory loanParamsLocal) {
+  function getDefaultLoanParamsAndStore(
+    address loanToken,
+    address collateralToken,
+    bool isTorqueLoan
+  ) internal returns (LoanParams memory loanParamsLocal) {
     bool isDefault;
     (loanParamsLocal, isDefault) = getDefaultLoanParams(loanToken, collateralToken, isTorqueLoan);
     if (isDefault) {
@@ -84,30 +94,38 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
     }
   }
 
-  function swapLoanCollateral(bytes32 loanId, address newCollateralToken, bytes calldata loanDataBytes) external nonReentrant pausable {
-    require(supportedTokens[newCollateralToken], 'unsupported');
+  function swapLoanCollateral(
+    bytes32 loanId,
+    address newCollateralToken,
+    bytes calldata loanDataBytes
+  ) external nonReentrant pausable {
+    require(supportedTokens[newCollateralToken], "unsupported");
     Loan storage loanLocal = loans[loanId];
-    require(loanLocal.active, 'loan is closed');
-    require(msg.sender == loanLocal.borrower || delegatedManagers[loanLocal.id][msg.sender], 'unauthorized');
+    require(loanLocal.active, "loan is closed");
+    require(msg.sender == loanLocal.borrower || delegatedManagers[loanLocal.id][msg.sender], "unauthorized");
     LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
     address loanToken = loanParamsLocal.loanToken;
     address oldCollateralToken = loanParamsLocal.collateralToken;
-    require(loanParamsLocal.maxLoanTerm == 0, 'not torque');
-    require(loanToken != newCollateralToken, 'not allowed');
+    require(loanParamsLocal.maxLoanTerm == 0, "not torque");
+    require(loanToken != newCollateralToken, "not allowed");
     LoanParams memory params = getDefaultLoanParamsAndStore(loanToken, newCollateralToken, true);
     loanLocal.loanParamsId = params.id;
 
     (loanLocal.collateral, , ) = _loanSwap(loanId, oldCollateralToken, newCollateralToken, loanLocal.borrower, loanLocal.collateral, 0, 0, false, loanDataBytes);
 
     (uint256 initialMargin, uint256 collateralToLoanRate) = IPriceFeeds(priceFeeds).getCurrentMargin(loanToken, newCollateralToken, loanLocal.principal, loanLocal.collateral);
-    require(initialMargin > params.maintenanceMargin, 'unhealthy position');
+    require(initialMargin > params.maintenanceMargin, "unhealthy position");
 
     emit LoanCollateralSwap(loanLocal.borrower, loanId, oldCollateralToken, newCollateralToken, loanLocal.collateral, collateralToLoanRate, initialMargin);
   }
 
   // collateralToken is passed from the iToken and there it guarantees no invalid value can be passed
-  function getDefaultLoanParams(address loanToken, address collateralToken, bool isTorqueLoan) public view returns (LoanParams memory loanParamsLocal, bool isDefault) {
+  function getDefaultLoanParams(
+    address loanToken,
+    address collateralToken,
+    bool isTorqueLoan
+  ) public view returns (LoanParams memory loanParamsLocal, bool isDefault) {
     bytes32 loanParamsId = generateLoanParamId(loanToken, collateralToken, isTorqueLoan);
     loanParamsLocal = loanParams[loanParamsId];
     if (loanParamsLocal.id == 0) {
@@ -130,12 +148,20 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
     }
   }
 
-  function generateLoanParamId(address loanToken, address collateralToken, bool isTorqueLoan) public pure returns (bytes32) {
+  function generateLoanParamId(
+    address loanToken,
+    address collateralToken,
+    bool isTorqueLoan
+  ) public pure returns (bytes32) {
     return keccak256(abi.encodePacked(loanToken, collateralToken, isTorqueLoan));
   }
 
-  function setDelegatedManager(bytes32 loanId, address delegated, bool toggle) external pausable {
-    require(loans[loanId].borrower == msg.sender, 'unauthorized');
+  function setDelegatedManager(
+    bytes32 loanId,
+    address delegated,
+    bool toggle
+  ) external pausable {
+    require(loans[loanId].borrower == msg.sender, "unauthorized");
 
     _setDelegatedManager(loanId, msg.sender, delegated, toggle);
   }
@@ -178,15 +204,15 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
     // collateralTokenReceived: total collateralToken deposit
     bytes memory loanDataBytes
   ) internal returns (LoanOpenData memory) {
-    require(loanParamsLocal.collateralToken != loanParamsLocal.loanToken, 'collateral/loan match');
-    require(initialMargin >= loanParamsLocal.minInitialMargin, 'initialMargin too low');
+    require(loanParamsLocal.collateralToken != loanParamsLocal.loanToken, "collateral/loan match");
+    require(initialMargin >= loanParamsLocal.minInitialMargin, "initialMargin too low");
 
     // maxLoanTerm == 0 indicates a Torqueloan and requres that torqueInterest != 0
     /*require(loanParamsLocal.maxLoanTerm != 0 ||
             sentValues[2] != 0, // torqueInterest
             "invalid interest");*/
 
-    require(loanId != 0, 'invalid loanId');
+    require(loanId != 0, "invalid loanId");
 
     // initialize loan
     Loan storage loanLocal = _initializeLoan(loanParamsLocal, loanId, initialMargin, sentAddresses, sentValues);
@@ -195,7 +221,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
 
     uint256 amount;
     if (isTorqueLoan) {
-      require(sentValues[3] == 0, 'surplus loan token');
+      require(sentValues[3] == 0, "surplus loan token");
 
       // fee based off required collateral (amount variable repurposed)
       amount = _getBorrowingFee(collateralAmountRequired);
@@ -237,7 +263,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
         collateralAmountRequired,
         amount // borrowingFee
       ),
-      'collateral insufficient'
+      "collateral insufficient"
     );
 
     loanLocal.collateral = loanLocal.collateral + sentValues[4] - amount; // borrowingFee
@@ -257,14 +283,20 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
     return LoanOpenData({loanId: loanId, principal: sentValues[1], collateral: sentValues[4]});
   }
 
-  function _finalizeOpen(LoanParams memory loanParamsLocal, Loan storage loanLocal, address[4] memory sentAddresses, uint256[5] memory sentValues, bool isTorqueLoan) internal {
+  function _finalizeOpen(
+    LoanParams memory loanParamsLocal,
+    Loan storage loanLocal,
+    address[4] memory sentAddresses,
+    uint256[5] memory sentValues,
+    bool isTorqueLoan
+  ) internal {
     (uint256 initialMargin, uint256 collateralToLoanRate) = IPriceFeeds(priceFeeds).getCurrentMargin(
       loanParamsLocal.loanToken,
       loanParamsLocal.collateralToken,
       loanLocal.principal,
       loanLocal.collateral
     );
-    require(initialMargin > loanParamsLocal.maintenanceMargin, 'unhealthy position');
+    require(initialMargin > loanParamsLocal.maintenanceMargin, "unhealthy position");
 
     if (loanLocal.startTimestamp == block.timestamp) {
       if (isTorqueLoan) {
@@ -321,7 +353,12 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
     }
   }
 
-  function _setDelegatedManager(bytes32 loanId, address delegator, address delegated, bool toggle) internal {
+  function _setDelegatedManager(
+    bytes32 loanId,
+    address delegator,
+    address delegated,
+    bool toggle
+  ) internal {
     delegatedManagers[loanId][delegated] = toggle;
 
     emit DelegatedManagerSet(loanId, delegator, delegated, toggle);
@@ -363,7 +400,7 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
     address[4] memory sentAddresses,
     uint256[5] memory sentValues
   ) internal returns (Loan storage sloanLocal) {
-    require(loanParamsLocal.active, 'loanParams disabled');
+    require(loanParamsLocal.active, "loanParams disabled");
 
     address lender = sentAddresses[0];
     address borrower = sentAddresses[1];
@@ -397,10 +434,10 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
       // existing loan
       sloanLocal = loans[loanId];
       //require(sloanLocal.active && block.timestamp < sloanLocal.endTimestamp, "loan has ended");
-      require(sloanLocal.active, 'loan has ended');
-      require(sloanLocal.borrower == borrower, 'borrower mismatch');
-      require(sloanLocal.lender == lender, 'lender mismatch');
-      require(sloanLocal.loanParamsId == loanParamsLocal.id, 'loanParams mismatch');
+      require(sloanLocal.active, "loan has ended");
+      require(sloanLocal.borrower == borrower, "borrower mismatch");
+      require(sloanLocal.lender == lender, "lender mismatch");
+      require(sloanLocal.loanParamsId == loanParamsLocal.id, "loanParams mismatch");
 
       sloanLocal.principal += newPrincipal;
     }

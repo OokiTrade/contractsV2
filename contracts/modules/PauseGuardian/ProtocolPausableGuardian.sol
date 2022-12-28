@@ -6,11 +6,17 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import '../../core/State.sol';
-import '../../governance/PausableGuardian_0_8.sol';
+import "../../core/State.sol";
+import "../../governance/PausableGuardian_0_8.sol";
 
 contract ProtocolPausableGuardian is State, PausableGuardian_0_8 {
-  constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
+  constructor(
+    IWeth wethtoken,
+    address usdc,
+    address bzrx,
+    address vbzrx,
+    address ooki
+  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
 
   function initialize(address target) external onlyOwner {
     _setTarget(this._isPaused.selector, target);

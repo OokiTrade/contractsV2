@@ -6,7 +6,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.5.17;
 
-import '@openzeppelin-2.5.0/ownership/Ownable.sol';
+import "@openzeppelin-2.5.0/ownership/Ownable.sol";
 
 contract PausableGuardian is Ownable {
   // keccak256("Pausable_FunctionPause")
@@ -16,12 +16,12 @@ contract PausableGuardian is Ownable {
   bytes32 internal constant Pausable_GuardianAddress = 0x80e6706973d0c59541550537fd6a33b971efad732635e6c3b99fb01006803cdf;
 
   modifier pausable() {
-    require(!_isPaused(msg.sig), 'paused');
+    require(!_isPaused(msg.sig), "paused");
     _;
   }
 
   modifier onlyGuardian() {
-    require(msg.sender == getGuardian() || msg.sender == owner(), 'unauthorized');
+    require(msg.sender == getGuardian() || msg.sender == owner(), "unauthorized");
     _;
   }
 
