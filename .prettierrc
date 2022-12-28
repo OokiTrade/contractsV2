@@ -1,8 +1,16 @@
 {
+  "printWidth": 180,
   "trailingComma": "es5",
   "semi": true,
-  "tabWidth": 2,
   "singleQuote": true,
-  "bracketSpacing": true,
-  "bracketSameLine": true
+  "tabWidth": 2,
+  "overrides": [
+    {
+      "files": "*.sol",
+      "options": {
+        "semi": true,
+        "printWidth": 180
+      }
+    }
+  ]
 }

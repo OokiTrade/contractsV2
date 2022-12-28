@@ -1,495 +1,361 @@
 /**
- * Copyright 2017-2022, OokiDao. All Rights Reserved.
+ * Copyright 2017-2023, OokiDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
+// SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "../../core/State.sol";
-import "../../events/LoanMaintenanceEvents.sol";
-import "../../mixins/VaultController.sol";
-import "../../mixins/InterestHandler.sol";
-import "../../mixins/LiquidationHelper.sol";
-import "../../../interfaces/IPriceFeeds.sol";
-import "../../governance/PausableGuardian_0_8.sol";
-
+import '../../core/State.sol';
+import '../../events/LoanMaintenanceEvents.sol';
+import '../../mixins/VaultController.sol';
+import '../../mixins/InterestHandler.sol';
+import '../../mixins/LiquidationHelper.sol';
+import '../../../interfaces/IPriceFeeds.sol';
+import '../../governance/PausableGuardian_0_8.sol';
 
 contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, InterestHandler, PausableGuardian_0_8 {
-    using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
+  using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
 
-    constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki)
-    Constants(wethtoken, usdc, bzrx, vbzrx, ooki)
-    {
-        
-    }
+  constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
 
-    function initialize(
-        address target)
-        external
-        onlyOwner
-    {
-        _setTarget(this.depositCollateral.selector, target);
-        _setTarget(this.withdrawCollateral.selector, target);
-        _setTarget(this.setDepositAmount.selector, target);
-        _setTarget(this.getUserLoans.selector, target);
-        _setTarget(this.getUserLoansCount.selector, target);
-        _setTarget(this.getLoan.selector, target);
-        _setTarget(this.getActiveLoans.selector, target);
-        _setTarget(this.getActiveLoansAdvanced.selector, target);
-        _setTarget(this.getActiveLoansCount.selector, target);
+  function initialize(address target) external onlyOwner {
+    _setTarget(this.depositCollateral.selector, target);
+    _setTarget(this.withdrawCollateral.selector, target);
+    _setTarget(this.setDepositAmount.selector, target);
+    _setTarget(this.getUserLoans.selector, target);
+    _setTarget(this.getUserLoansCount.selector, target);
+    _setTarget(this.getLoan.selector, target);
+    _setTarget(this.getActiveLoans.selector, target);
+    _setTarget(this.getActiveLoansAdvanced.selector, target);
+    _setTarget(this.getActiveLoansCount.selector, target);
 
-        /*
+    /*
             Targets still exist, but functions are decommissioned:
             _setTarget(this.claimRewards.selector, target);
             _setTarget(this.rewardsBalanceOf.selector, target);
         */
+  }
+
+  function depositCollateral(
+    bytes32 loanId,
+    uint256 depositAmount // must match msg.value if ether is sent
+  ) external payable nonReentrant pausable {
+    require(depositAmount != 0, 'depositAmount is 0');
+
+    Loan storage loanLocal = loans[loanId];
+    require(loanLocal.active, 'loan is closed');
+
+    LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
+
+    address collateralToken = loanParamsLocal.collateralToken;
+    uint256 collateral = loanLocal.collateral;
+
+    require(msg.value == 0 || collateralToken == address(wethToken), 'wrong asset sent');
+
+    collateral = collateral + depositAmount;
+    loanLocal.collateral = collateral;
+
+    if (msg.value == 0) {
+      vaultDeposit(collateralToken, msg.sender, depositAmount);
+    } else {
+      require(msg.value == depositAmount, 'ether deposit mismatch');
+      vaultEtherDeposit(msg.sender, msg.value);
     }
 
-    function depositCollateral(
-        bytes32 loanId,
-        uint256 depositAmount) // must match msg.value if ether is sent
-        external
-        payable
-        nonReentrant
-        pausable
-    {
-        require(depositAmount != 0, "depositAmount is 0");
+    // update deposit amount
+    (uint256 collateralToLoanRate, uint256 collateralToLoanPrecision) = IPriceFeeds(priceFeeds).queryRate(collateralToken, loanParamsLocal.loanToken);
+    if (collateralToLoanRate != 0) {
+      _setDepositAmount(
+        loanId,
+        (depositAmount * collateralToLoanRate) / collateralToLoanPrecision,
+        depositAmount,
+        false // isSubtraction
+      );
+    }
 
-        Loan storage loanLocal = loans[loanId];
-        require(loanLocal.active, "loan is closed");
+    emit DepositCollateral(loanLocal.borrower, collateralToken, loanId, depositAmount);
+  }
 
-        LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
+  function withdrawCollateral(bytes32 loanId, address receiver, uint256 withdrawAmount) external nonReentrant pausable returns (uint256 actualWithdrawAmount) {
+    require(withdrawAmount != 0, 'withdrawAmount is 0');
+    Loan storage loanLocal = loans[loanId];
+    LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
-        address collateralToken = loanParamsLocal.collateralToken;
-        uint256 collateral = loanLocal.collateral;
+    require(loanLocal.active, 'loan is closed');
+    require(msg.sender == loanLocal.borrower || delegatedManagers[loanLocal.id][msg.sender], 'unauthorized');
 
-        require(msg.value == 0 || collateralToken == address(wethToken), "wrong asset sent");
+    address collateralToken = loanParamsLocal.collateralToken;
+    uint256 collateral = loanLocal.collateral;
 
-        collateral = collateral + depositAmount;
-        loanLocal.collateral = collateral;
+    uint256 maxDrawdown = IPriceFeeds(priceFeeds).getMaxDrawdown(loanParamsLocal.loanToken, collateralToken, loanLocal.principal, collateral, loanParamsLocal.maintenanceMargin);
 
-        if (msg.value == 0) {
-            vaultDeposit(
-                collateralToken,
-                msg.sender,
-                depositAmount
-            );
+    if (withdrawAmount > maxDrawdown) {
+      actualWithdrawAmount = maxDrawdown;
+    } else {
+      actualWithdrawAmount = withdrawAmount;
+    }
+
+    collateral = collateral - actualWithdrawAmount;
+    loanLocal.collateral = collateral;
+
+    if (collateralToken == address(wethToken)) {
+      vaultEtherWithdraw(receiver, actualWithdrawAmount);
+    } else {
+      vaultWithdraw(collateralToken, receiver, actualWithdrawAmount);
+    }
+
+    // update deposit amount
+    (uint256 collateralToLoanRate, uint256 collateralToLoanPrecision) = IPriceFeeds(priceFeeds).queryRate(collateralToken, loanParamsLocal.loanToken);
+    if (collateralToLoanRate != 0) {
+      _setDepositAmount(
+        loanId,
+        (actualWithdrawAmount * collateralToLoanRate) / collateralToLoanPrecision,
+        actualWithdrawAmount,
+        true // isSubtraction
+      );
+    }
+
+    emit WithdrawCollateral(loanLocal.borrower, collateralToken, loanId, actualWithdrawAmount);
+  }
+
+  function setDepositAmount(bytes32 loanId, uint256 depositValueAsLoanToken, uint256 depositValueAsCollateralToken) external {
+    // only callable by loan pools
+    require(loanPoolToUnderlying[msg.sender] != address(0), 'not authorized');
+
+    _setDepositAmount(
+      loanId,
+      depositValueAsLoanToken,
+      depositValueAsCollateralToken,
+      false // isSubtraction
+    );
+  }
+
+  // Only returns data for loans that are active
+  // All(0): all loans
+  // Margin(1): margin trade loans
+  // NonMargin(2): non-margin trade loans
+  // only active loans are returned
+  function getUserLoans(address user, uint256 start, uint256 count, LoanType loanType, bool isLender, bool unsafeOnly) external view returns (LoanReturnData[] memory loansData) {
+    EnumerableBytes32Set.Bytes32Set storage set = isLender ? lenderLoanSets[user] : borrowerLoanSets[user];
+    uint256 end = start + count;
+    if (end > set.length()) {
+      end = set.length();
+    }
+    if (start >= end) {
+      return loansData;
+    }
+    count = end - start;
+
+    uint256 idx = count;
+    LoanReturnData memory loanData;
+    loansData = new LoanReturnData[](idx);
+    for (uint256 i = --end; i >= start; i--) {
+      loanData = _getLoan(
+        set.get(i), // loanId
+        loanType,
+        unsafeOnly
+      );
+      if (loanData.loanId == 0) {
+        if (i == 0) {
+          break;
         } else {
-            require(msg.value == depositAmount, "ether deposit mismatch");
-            vaultEtherDeposit(
-                msg.sender,
-                msg.value
-            );
+          continue;
         }
+      }
 
-        // update deposit amount
-        (uint256 collateralToLoanRate, uint256 collateralToLoanPrecision) = IPriceFeeds(priceFeeds).queryRate(
-            collateralToken,
-            loanParamsLocal.loanToken
-        );
-        if (collateralToLoanRate != 0) {
-            _setDepositAmount(
-                loanId,
-                depositAmount * collateralToLoanRate / collateralToLoanPrecision,
-                depositAmount,
-                false // isSubtraction
-            );
-        }
+      loansData[count - (idx--)] = loanData;
 
-        emit DepositCollateral(
-            loanLocal.borrower,
-            collateralToken,
-            loanId,
-            depositAmount
-        );
+      if (i == 0) {
+        break;
+      }
     }
 
-    function withdrawCollateral(
-        bytes32 loanId,
-        address receiver,
-        uint256 withdrawAmount)
-        external
-        nonReentrant
-        pausable
-        returns (uint256 actualWithdrawAmount)
-    {
-        require(withdrawAmount != 0, "withdrawAmount is 0");
-        Loan storage loanLocal = loans[loanId];
-        LoanParams storage loanParamsLocal = loanParams[loanLocal.loanParamsId];
+    if (idx != 0) {
+      count -= idx;
+      assembly {
+        mstore(loansData, count)
+      }
+    }
+  }
 
-        require(loanLocal.active, "loan is closed");
-        require(
-            msg.sender == loanLocal.borrower ||
-            delegatedManagers[loanLocal.id][msg.sender],
-            "unauthorized"
-        );
+  function getUserLoansCount(address user, bool isLender) external view returns (uint256) {
+    return isLender ? lenderLoanSets[user].length() : borrowerLoanSets[user].length();
+  }
 
-        address collateralToken = loanParamsLocal.collateralToken;
-        uint256 collateral = loanLocal.collateral;
+  function getLoan(bytes32 loanId) external view returns (LoanReturnData memory loanData) {
+    return
+      _getLoan(
+        loanId,
+        LoanType.All,
+        false // unsafeOnly
+      );
+  }
 
-        uint256 maxDrawdown = IPriceFeeds(priceFeeds).getMaxDrawdown(
-            loanParamsLocal.loanToken,
-            collateralToken,
-            loanLocal.principal,
-            collateral,
-            loanParamsLocal.maintenanceMargin
-        );
+  function getActiveLoans(uint256 start, uint256 count, bool unsafeOnly) external view returns (LoanReturnData[] memory loansData) {
+    return _getActiveLoans(start, count, unsafeOnly, false);
+  }
 
-        if (withdrawAmount > maxDrawdown) {
-            actualWithdrawAmount = maxDrawdown;
+  function getActiveLoansAdvanced(uint256 start, uint256 count, bool unsafeOnly, bool isLiquidatable) external view returns (LoanReturnData[] memory loansData) {
+    return _getActiveLoans(start, count, unsafeOnly, isLiquidatable);
+  }
+
+  function _getActiveLoans(uint256 start, uint256 count, bool unsafeOnly, bool isLiquidatable) internal view returns (LoanReturnData[] memory loansData) {
+    uint256 end = start + count;
+    if (end > activeLoansSet.length()) {
+      end = activeLoansSet.length();
+    }
+    if (start >= end) {
+      return loansData;
+    }
+    count = end - start;
+
+    uint256 idx = count;
+    LoanReturnData memory loanData;
+    loansData = new LoanReturnData[](idx);
+    for (uint256 i = --end; i >= start; i--) {
+      loanData = _getLoan(
+        activeLoansSet.get(i), // loanId
+        LoanType.All,
+        unsafeOnly
+      );
+
+      if (loanData.loanId == 0) {
+        if (i == 0) {
+          break;
         } else {
-            actualWithdrawAmount = withdrawAmount;
+          continue;
         }
+      }
 
-        collateral = collateral - actualWithdrawAmount;
-        loanLocal.collateral = collateral;
-
-        if (collateralToken == address(wethToken)) {
-            vaultEtherWithdraw(
-                receiver,
-                actualWithdrawAmount
-            );
+      if (isLiquidatable && loanData.currentMargin == 0) {
+        // we skip, not adding it to result set
+        if (i == 0) {
+          break;
         } else {
-            vaultWithdraw(
-                collateralToken,
-                receiver,
-                actualWithdrawAmount
-            );
+          continue;
         }
+      }
 
-        // update deposit amount
-        (uint256 collateralToLoanRate, uint256 collateralToLoanPrecision) = IPriceFeeds(priceFeeds).queryRate(
-            collateralToken,
-            loanParamsLocal.loanToken
-        );
-        if (collateralToLoanRate != 0) {
-            _setDepositAmount(
-                loanId,
-                actualWithdrawAmount * collateralToLoanRate / collateralToLoanPrecision,
-                actualWithdrawAmount,
-                true // isSubtraction
-            );
-        }
+      loansData[count - (idx--)] = loanData;
 
-        emit WithdrawCollateral(
-            loanLocal.borrower,
-            collateralToken,
-            loanId,
-            actualWithdrawAmount
-        );
+      if (i == 0) {
+        break;
+      }
     }
 
-    function setDepositAmount(
-        bytes32 loanId,
-        uint256 depositValueAsLoanToken,
-        uint256 depositValueAsCollateralToken)
-        external
-    {
-        // only callable by loan pools
-        require(loanPoolToUnderlying[msg.sender] != address(0), "not authorized");
+    if (idx != 0) {
+      count -= idx;
+      assembly {
+        mstore(loansData, count)
+      }
+    }
+  }
 
-        _setDepositAmount(
-            loanId,
-            depositValueAsLoanToken,
-            depositValueAsCollateralToken,
-            false // isSubtraction
-        );
+  function getActiveLoansCount() external view returns (uint256) {
+    return activeLoansSet.length();
+  }
+
+  function _getLoan(bytes32 loanId, LoanType loanType, bool unsafeOnly) internal view returns (LoanReturnData memory loanData) {
+    Loan memory loanLocal = loans[loanId];
+    LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
+
+    if ((loanType == LoanType.Margin && loanParamsLocal.maxLoanTerm == 0) || (loanType == LoanType.NonMargin && loanParamsLocal.maxLoanTerm != 0)) {
+      return loanData;
     }
 
-    // Only returns data for loans that are active
-    // All(0): all loans
-    // Margin(1): margin trade loans
-    // NonMargin(2): non-margin trade loans
-    // only active loans are returned
-    function getUserLoans(
-        address user,
-        uint256 start,
-        uint256 count,
-        LoanType loanType,
-        bool isLender,
-        bool unsafeOnly)
-        external
-        view
-        returns (LoanReturnData[] memory loansData)
-    {
-        EnumerableBytes32Set.Bytes32Set storage set = isLender ?
-            lenderLoanSets[user] :
-            borrowerLoanSets[user];
-        uint256 end = start + count;
-        if (end > set.length()) {
-            end = set.length();
-        }
-        if (start >= end) {
-            return loansData;
-        }
-        count = end-start;
+    loanLocal.principal = _getLoanPrincipal(loanLocal.lender, loanLocal.id);
+    (uint256 currentMargin, uint256 value) = IPriceFeeds(priceFeeds).getCurrentMargin( // currentMargin, collateralToLoanRate
+      loanParamsLocal.loanToken,
+      loanParamsLocal.collateralToken,
+      loanLocal.principal,
+      loanLocal.collateral
+    );
 
-        uint256 idx = count;
-        LoanReturnData memory loanData;
-        loansData = new LoanReturnData[](idx);
-        for (uint256 i = --end; i >= start; i--) {
-            loanData = _getLoan(
-                set.get(i), // loanId
-                loanType,
-                unsafeOnly
-            );
-            if (loanData.loanId == 0) {
-                if (i == 0) {
-                    break;
-                } else {
-                    continue;
-                }
-            }
-
-            loansData[count-(idx--)] = loanData;
-
-            if (i == 0) {
-                break;
-            }
-        }
-
-        if (idx != 0) {
-            count -= idx;
-            assembly {
-                mstore(loansData, count)
-            }
-        }
+    uint256 maxLiquidatable;
+    uint256 maxSeizable;
+    if (currentMargin <= loanParamsLocal.maintenanceMargin) {
+      (maxLiquidatable, maxSeizable) = LiquidationHelper.getLiquidationAmounts(
+        loanLocal.principal,
+        loanLocal.collateral,
+        currentMargin,
+        loanParamsLocal.maintenanceMargin,
+        value, // collateralToLoanRate
+        liquidationIncentivePercent[loanParamsLocal.loanToken][loanParamsLocal.collateralToken]
+      );
+    } else if (unsafeOnly) {
+      return loanData;
     }
 
-    function getUserLoansCount(
-        address user,
-        bool isLender)
-        external
-        view
-        returns (uint256)
-    {
-        return isLender ?
-            lenderLoanSets[user].length() :
-            borrowerLoanSets[user].length();
+    uint256 depositValueAsLoanToken;
+    uint256 depositValueAsCollateralToken;
+    bytes32 slot = keccak256(abi.encode(loanId, LoanDepositValueID));
+    assembly {
+      depositValueAsLoanToken := sload(slot)
+      depositValueAsCollateralToken := sload(add(slot, 1))
     }
 
-    function getLoan(
-        bytes32 loanId)
-        external
-        view
-        returns (LoanReturnData memory loanData)
-    {
-        return _getLoan(
-            loanId,
-            LoanType.All,
-            false // unsafeOnly
-        );
+    return
+      LoanReturnData({
+        loanId: loanId,
+        endTimestamp: 0, // depreciated: uint96(loanLocal.endTimestamp),
+        loanToken: loanParamsLocal.loanToken,
+        collateralToken: loanParamsLocal.collateralToken,
+        principal: loanLocal.principal,
+        collateral: loanLocal.collateral,
+        interestOwedPerDay: 0, // depreciated
+        interestDepositRemaining: 0, // depreciated
+        startRate: loanLocal.startRate,
+        startMargin: loanLocal.startMargin,
+        maintenanceMargin: loanParamsLocal.maintenanceMargin,
+        currentMargin: currentMargin,
+        maxLoanTerm: loanParamsLocal.maxLoanTerm,
+        maxLiquidatable: maxLiquidatable,
+        maxSeizable: maxSeizable,
+        depositValueAsLoanToken: depositValueAsLoanToken,
+        depositValueAsCollateralToken: depositValueAsCollateralToken
+      });
+  }
+
+  function _setDepositAmount(bytes32 loanId, uint256 depositValueAsLoanToken, uint256 depositValueAsCollateralToken, bool isSubtraction) internal {
+    bytes32 slot = keccak256(abi.encode(loanId, LoanDepositValueID));
+    assembly {
+      let val := sload(slot)
+      switch isSubtraction
+      case 0 {
+        sstore(slot, add(val, depositValueAsLoanToken))
+      }
+      default {
+        switch gt(val, depositValueAsLoanToken)
+        case 1 {
+          sstore(slot, sub(val, depositValueAsLoanToken))
+        }
+        default {
+          sstore(slot, 0)
+        }
+      }
+
+      slot := add(slot, 1)
+      val := sload(slot)
+      switch isSubtraction
+      case 0 {
+        sstore(slot, add(val, depositValueAsCollateralToken))
+      }
+      default {
+        switch gt(val, depositValueAsCollateralToken)
+        case 1 {
+          sstore(slot, sub(val, depositValueAsCollateralToken))
+        }
+        default {
+          sstore(slot, 0)
+        }
+      }
     }
 
-    function getActiveLoans(
-        uint256 start,
-        uint256 count,
-        bool unsafeOnly)
-        external
-        view
-        returns (LoanReturnData[] memory loansData)
-    {
-        return _getActiveLoans(start, count, unsafeOnly, false);
-    }
+    emit LoanDeposit(loanId, depositValueAsLoanToken, depositValueAsCollateralToken);
+  }
 
-    function getActiveLoansAdvanced(
-        uint256 start,
-        uint256 count,
-        bool unsafeOnly,
-        bool isLiquidatable)
-        external
-        view
-        returns (LoanReturnData[] memory loansData) 
-    {
-        return _getActiveLoans(start, count, unsafeOnly, isLiquidatable);
-    }
-
-    function _getActiveLoans(
-        uint256 start,
-        uint256 count,
-        bool unsafeOnly,
-        bool isLiquidatable)
-        internal
-        view 
-        returns (LoanReturnData[] memory loansData)
-    {
-        uint256 end = start + count;
-        if (end > activeLoansSet.length()) {
-            end = activeLoansSet.length();
-        }
-        if (start >= end) {
-            return loansData;
-        }
-        count = end-start;
-
-        uint256 idx = count;
-        LoanReturnData memory loanData;
-        loansData = new LoanReturnData[](idx);
-        for (uint256 i = --end; i >= start; i--) {
-            loanData = _getLoan(
-                activeLoansSet.get(i), // loanId
-                LoanType.All,
-                unsafeOnly
-            );
-
-            if (loanData.loanId == 0) {
-                if (i == 0) {
-                    break;
-                } else {
-                    continue;
-                }
-            }
-
-            if (isLiquidatable && loanData.currentMargin == 0) {
-                // we skip, not adding it to result set
-                if (i == 0) {
-                    break;
-                } else {
-                    continue;
-                }
-            }
-
-            loansData[count-(idx--)] = loanData;
-
-            if (i == 0) {
-                break;
-            }
-        }
-
-        if (idx != 0) {
-            count -= idx;
-            assembly {
-                mstore(loansData, count)
-            }
-        }
-    }
-
-    function getActiveLoansCount()
-        external
-        view
-        returns (uint256)
-    {
-        return activeLoansSet.length();
-    }
-
-    function _getLoan(
-        bytes32 loanId,
-        LoanType loanType,
-        bool unsafeOnly)
-        internal
-        view
-        returns (LoanReturnData memory loanData)
-    {
-        Loan memory loanLocal = loans[loanId];
-        LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
-
-        if ((loanType == LoanType.Margin && loanParamsLocal.maxLoanTerm == 0) ||
-            (loanType == LoanType.NonMargin && loanParamsLocal.maxLoanTerm != 0)) {
-            return loanData;
-        }
-
-        loanLocal.principal = _getLoanPrincipal(loanLocal.lender, loanLocal.id);
-        (uint256 currentMargin, uint256 value) = IPriceFeeds(priceFeeds).getCurrentMargin( // currentMargin, collateralToLoanRate
-            loanParamsLocal.loanToken,
-            loanParamsLocal.collateralToken,
-            loanLocal.principal,
-            loanLocal.collateral
-        );
-
-        uint256 maxLiquidatable;
-        uint256 maxSeizable;
-        if (currentMargin <= loanParamsLocal.maintenanceMargin) {
-            (maxLiquidatable, maxSeizable) = LiquidationHelper.getLiquidationAmounts(
-                loanLocal.principal,
-                loanLocal.collateral,
-                currentMargin,
-                loanParamsLocal.maintenanceMargin,
-                value, // collateralToLoanRate
-                liquidationIncentivePercent[loanParamsLocal.loanToken][loanParamsLocal.collateralToken]
-            );
-        } else if (unsafeOnly) {
-            return loanData;
-        }
-
-        uint256 depositValueAsLoanToken;
-        uint256 depositValueAsCollateralToken;
-        bytes32 slot = keccak256(abi.encode(loanId, LoanDepositValueID));
-        assembly {
-            depositValueAsLoanToken := sload(slot)
-            depositValueAsCollateralToken := sload(add(slot, 1))
-        }
-
-        return LoanReturnData({
-            loanId: loanId,
-            endTimestamp: 0, // depreciated: uint96(loanLocal.endTimestamp),
-            loanToken: loanParamsLocal.loanToken,
-            collateralToken: loanParamsLocal.collateralToken,
-            principal: loanLocal.principal,
-            collateral: loanLocal.collateral,
-            interestOwedPerDay: 0, // depreciated
-            interestDepositRemaining: 0, // depreciated
-            startRate: loanLocal.startRate,
-            startMargin: loanLocal.startMargin,
-            maintenanceMargin: loanParamsLocal.maintenanceMargin,
-            currentMargin: currentMargin,
-            maxLoanTerm: loanParamsLocal.maxLoanTerm,
-            maxLiquidatable: maxLiquidatable,
-            maxSeizable: maxSeizable,
-            depositValueAsLoanToken: depositValueAsLoanToken,
-            depositValueAsCollateralToken: depositValueAsCollateralToken
-        });
-    }
-
-
-    function _setDepositAmount(
-        bytes32 loanId,
-        uint256 depositValueAsLoanToken,
-        uint256 depositValueAsCollateralToken,
-        bool isSubtraction)
-        internal
-    {
-        bytes32 slot = keccak256(abi.encode(loanId, LoanDepositValueID));
-        assembly {
-            let val := sload(slot)
-            switch isSubtraction
-            case 0 {
-                sstore(slot, add(val, depositValueAsLoanToken))
-            }
-            default {
-                switch gt(val, depositValueAsLoanToken)
-                case 1 {
-                    sstore(slot, sub(val, depositValueAsLoanToken))
-                }
-                default {
-                    sstore(slot, 0)
-                }
-            }
-
-            slot := add(slot, 1)
-            val := sload(slot)
-            switch isSubtraction
-            case 0 {
-                sstore(slot, add(val, depositValueAsCollateralToken))
-            }
-            default {
-                switch gt(val, depositValueAsCollateralToken)
-                case 1 {
-                    sstore(slot, sub(val, depositValueAsCollateralToken))
-                }
-                default {
-                    sstore(slot, 0)
-                }
-            }
-        }
-
-        emit LoanDeposit(
-            loanId,
-            depositValueAsLoanToken,
-            depositValueAsCollateralToken
-        );
-    }
-
-    /*
+  /*
     function claimRewards(
         address receiver)
         external
@@ -535,5 +401,4 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
         }
     }
     */
-
 }
