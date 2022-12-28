@@ -4,15 +4,15 @@
  */
 
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity ^0.7.6;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin-3.4.0/access/Ownable.sol";
-import "@openzeppelin-3.4.0/utils/Address.sol";
+import "@openzeppelin-4.8.0/access/Ownable.sol";
+import "@openzeppelin-4.8.0/utils/Address.sol";
 
 contract HelperProxy is Ownable {
   address public implementation;
 
-  constructor(address _impl) public payable {
+  constructor(address _impl) payable {
     replaceImplementation(_impl);
   }
 

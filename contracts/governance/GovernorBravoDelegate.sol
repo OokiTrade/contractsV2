@@ -6,7 +6,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.5.17;
 pragma experimental ABIEncoderV2;
-import "@openzeppelin-2.5.0/token/ERC20/IERC20.sol";
+import "@openzeppelin-2.5.1/token/ERC20/IERC20.sol";
 import "./GovernorBravoInterfaces.sol";
 
 contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoEvents {

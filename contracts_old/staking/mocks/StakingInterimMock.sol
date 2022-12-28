@@ -5,7 +5,7 @@
 
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.5.17;
-pragma experimental ABIEncoderV2;
+
 
 import '../interim/StakingInterim.sol';
 

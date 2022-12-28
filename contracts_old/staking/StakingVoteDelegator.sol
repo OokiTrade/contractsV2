@@ -6,12 +6,12 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.5.17;
 
-import '@openzeppelin-2.5.0/math/SafeMath.sol';
+import '@openzeppelin-2.5.1/math/SafeMath.sol';
 import '../governance/GovernorBravoDelegate.sol';
 import '../../interfaces/IStaking.sol';
 import './StakingVoteDelegatorState.sol';
 import './StakingVoteDelegatorConstants.sol';
-import '@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol';
+import '@openzeppelin-2.5.1/token/ERC20/SafeERC20.sol';
 import '../governance/PausableGuardian.sol';
 
 contract StakingVoteDelegator is StakingVoteDelegatorState, StakingVoteDelegatorConstants, PausableGuardian {

@@ -6,7 +6,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity >=0.8.4;
 
-import "prb-math/contracts/PRBMathUD60x18.sol";
+import "@prb-math/contracts/PRBMathUD60x18.sol";
 
 // import "@openzeppelin-4.8.0/math/SafeMath";
 contract TWAI {

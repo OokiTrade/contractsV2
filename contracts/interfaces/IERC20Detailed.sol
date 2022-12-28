@@ -4,7 +4,7 @@
  */
 
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity >=0.5.0 <0.8.0;
+pragma solidity >=0.5.17 <0.9.0;
 
 // optional functions from IERC20 not inheriting since old solidity version
 interface IERC20Detailed {

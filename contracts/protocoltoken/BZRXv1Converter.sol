@@ -6,8 +6,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.5.17;
 
-import "@openzeppelin-2.5.0/token/ERC20/IERC20.sol";
-import "@openzeppelin-2.5.0/ownership/Ownable.sol";
+import "@openzeppelin-2.5.1/token/ERC20/IERC20.sol";
+import "@openzeppelin-2.5.1/ownership/Ownable.sol";
 
 contract BZRXv1Converter is Ownable {
   event ConvertBZRX(address indexed sender, uint256 amount);

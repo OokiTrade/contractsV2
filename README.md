@@ -50,6 +50,19 @@ make sure to add dependencies to compile:
 ```
 brownie pm install openzeppelin/openzeppelin-contracts@4.8.0
 brownie pm install openzeppelin/openzeppelin-contracts-upgradeable@4.8.0
+brownie pm install openzeppelin/openzeppelin-contracts@3.4.2
+brownie pm install openzeppelin/openzeppelin-contracts@2.5.1
+brownie pm install uniswap/v2-core@1.0.1
+brownie pm install uniswap/v3-core@1.0.0
+brownie pm install uniswap/v3-periphery@1.3.0
+brownie pm install celer-network/sgn-v2-contracts@0.2.0
+```
+
+cloning without version - otherwise uniswap is not compiling properly due to inter dependency between core and periphery
+```
+brownie pm clone uniswap/v2-core@1.0.1 ~/.brownie/packages/uniswap/v2-core
+brownie pm clone uniswap/uniswap/v3-core@1.0.0 ~/.brownie/packages/uniswap/v3-core
+brownie pm clone uniswap/v3-periphery@1.3.0 ~/.brownie/packages/uniswap/uniswap/v3-periphery
 ```
 
 Run the all tests with:

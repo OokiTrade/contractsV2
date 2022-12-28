@@ -4,9 +4,9 @@
  */
 
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity 0.6.12;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin-3.4.0/token/ERC20/IERC20.sol";
+import "@openzeppelin-4.8.0/token/ERC20/IERC20.sol";
 import "./Upgradeable.sol";
 
 // Temporary implementation to handle initial monthly salaries, while full implementation is under development

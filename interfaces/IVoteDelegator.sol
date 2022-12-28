@@ -4,7 +4,7 @@
  */
 
 pragma solidity >=0.5.17 <0.9.0;
-pragma experimental ABIEncoderV2;
+
 
 interface IVoteDelegator {
   /**

@@ -7,8 +7,8 @@
 pragma solidity 0.5.17;
 
 import './StakingUpgradeable.sol';
-import '@openzeppelin-2.5.0/math/SafeMath.sol';
-import '@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol';
+import '@openzeppelin-2.5.1/math/SafeMath.sol';
+import '@openzeppelin-2.5.1/token/ERC20/SafeERC20.sol';
 import '../mixins/EnumerableBytes32Set.sol';
 import '../../interfaces/IStaking.sol';
 

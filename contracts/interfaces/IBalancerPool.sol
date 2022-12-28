@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity >=0.5.17 <0.9.0;
-pragma experimental ABIEncoderV2;
+
 
 interface IBalancerPool {
   function getRate() external view returns (uint256);

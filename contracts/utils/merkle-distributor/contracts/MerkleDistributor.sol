@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.6.12;
 
-import "@openzeppelin-3.4.0/token/ERC20/IERC20.sol";
-import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
-import "@openzeppelin-3.4.0/cryptography/MerkleProof.sol";
-import "@openzeppelin-3.4.0/access/Ownable.sol";
+import "@openzeppelin-3.4.2/token/ERC20/IERC20.sol";
+import "@openzeppelin-3.4.2/token/ERC20/SafeERC20.sol";
+import "@openzeppelin-3.4.2/cryptography/MerkleProof.sol";
+import "@openzeppelin-3.4.2/access/Ownable.sol";
 import "./interfaces/IMerkleDistributor.sol";
 
 contract MerkleDistributor is IMerkleDistributor, Ownable {

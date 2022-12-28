@@ -4,7 +4,7 @@
  */
 
 pragma solidity >=0.5.17 <0.9.0;
-pragma experimental ABIEncoderV2;
+pragma abicoder v2;
 
 // import "@openzeppelin-3.4.0/token/ERC20/IERC20.sol";
 

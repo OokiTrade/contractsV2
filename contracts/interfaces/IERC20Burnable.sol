@@ -4,9 +4,9 @@
  */
 
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity >=0.6.0 <0.8.0;
+pragma solidity >=0.5.17 <0.9.0;
 
-import "@openzeppelin-3.4.0/token/ERC20/IERC20.sol";
+import "@openzeppelin-4.8.0/token/ERC20/IERC20.sol";
 
 interface IERC20Burnable is IERC20 {
   function burn(uint256 amount) external;

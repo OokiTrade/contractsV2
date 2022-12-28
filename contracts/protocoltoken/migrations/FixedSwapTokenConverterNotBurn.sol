@@ -5,11 +5,11 @@
 
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.6.12;
-pragma experimental ABIEncoderV2;
 
-import "@openzeppelin-3.4.0/token/ERC20/IERC20.sol";
-import "@openzeppelin-3.4.0/token/ERC20/SafeERC20.sol";
-import "@openzeppelin-3.4.0/access/Ownable.sol";
+
+import "@openzeppelin-3.4.2/token/ERC20/IERC20.sol";
+import "@openzeppelin-3.4.2/token/ERC20/SafeERC20.sol";
+import "@openzeppelin-3.4.2/access/Ownable.sol";
 
 contract FixedSwapTokenConverterNotBurn is Ownable {
   using SafeERC20 for IERC20;

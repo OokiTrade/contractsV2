@@ -5,13 +5,13 @@
 
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.5.17;
-pragma experimental ABIEncoderV2;
+
 
 import './StakingState.sol';
 import './StakingConstants.sol';
 import '../interfaces/IMasterChefSushi.sol';
 import '../governance/PausableGuardian.sol';
-import '@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol';
+import '@openzeppelin-2.5.1/token/ERC20/SafeERC20.sol';
 
 contract StakingAdminSettings is StakingState, StakingConstants, PausableGuardian {
   using SafeERC20 for IERC20;
