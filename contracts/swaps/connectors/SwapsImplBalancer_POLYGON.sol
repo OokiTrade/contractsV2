@@ -109,9 +109,9 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
             }
         }
         if (amountOutSpecified > amountOut) {
-            swapParams[0].amount = swapParams[0].amount.sub(amountOutSpecified -amountOut);
+            swapParams[swapParams.length-1].amount = swapParams[swapParams.length-1].amount.sub(amountOutSpecified -amountOut);
         } else if (amountOutSpecified < amountOut) {
-            swapParams[0].amount += amountOut - amountOutSpecified;
+            swapParams[swapParams.length-1].amount += amountOut - amountOutSpecified;
         }
         if (amountOut != 0) {
             IBalancerVault.FundManagement memory funds = IBalancerVault.FundManagement({
@@ -211,9 +211,9 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
                 }
             }
             if (requiredDestTokenAmount < minSourceTokenAmount) {
-                swapParams[0].amount = swapParams[0].amount.sub(minSourceTokenAmount-requiredDestTokenAmount);
+                swapParams[swapParams.length-1].amount = swapParams[swapParams.length-1].amount.sub(minSourceTokenAmount-requiredDestTokenAmount);
             } else if (requiredDestTokenAmount > minSourceTokenAmount) {
-                swapParams[0].amount += requiredDestTokenAmount - minSourceTokenAmount;
+                swapParams[swapParams.length-1].amount += requiredDestTokenAmount - minSourceTokenAmount;
             }
             IBalancerVault.FundManagement memory funds = IBalancerVault.FundManagement({
                 sender: address(this),
