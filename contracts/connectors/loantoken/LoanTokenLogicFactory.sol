@@ -7,9 +7,9 @@
 pragma solidity ^0.8.0;
 
 
-import "./LoanTokenLogicStandard.sol";
-import "../../../interfaces/ILoanTokenFactory.sol";
-import "../../../interfaces/IBZx.sol";
+import "contracts/connectors/loantoken/LoanTokenLogicStandard.sol";
+import "interfaces/ILoanTokenFactory.sol";
+import "interfaces/IBZx.sol";
 import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
 
 contract LoanTokenLogicFactory is LoanTokenLogicStandard {

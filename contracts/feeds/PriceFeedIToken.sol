@@ -6,8 +6,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "./IPriceFeedsExt.sol";
-import "../../interfaces/IToken.sol";
+import "contracts/feeds/IPriceFeedsExt.sol";
+import "interfaces/IToken.sol";
 
 contract PriceFeedIToken {
   IPriceFeedsExt public priceFeedAddress; // underlying token Chainlink feed address

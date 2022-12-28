@@ -6,10 +6,10 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "../../core/State.sol";
+import "contracts/core/State.sol";
 import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
-import "../ISwapsImpl.sol";
-import "../../interfaces/IBalancerVault.sol";
+import "contracts/swaps/ISwapsImpl.sol";
+import "contracts/interfaces/IBalancerVault.sol";
 
 contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
   using SafeERC20 for IERC20;

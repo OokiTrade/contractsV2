@@ -6,15 +6,15 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "../core/State.sol";
-import "../../interfaces/IPriceFeeds.sol";
-import "../events/SwapsEvents.sol";
-import "../mixins/FeesHelper.sol";
-import "./ISwapsImpl.sol";
-import "../utils/TickMathV1.sol";
-import "../interfaces/IDexRecords.sol";
-import "../mixins/Flags.sol";
-import "../utils/VolumeTracker.sol";
+import "contracts/core/State.sol";
+import "interfaces/IPriceFeeds.sol";
+import "contracts/events/SwapsEvents.sol";
+import "contracts/mixins/FeesHelper.sol";
+import "contracts/swaps/ISwapsImpl.sol";
+import "contracts/utils/TickMathV1.sol";
+import "contracts/interfaces/IDexRecords.sol";
+import "contracts/mixins/Flags.sol";
+import "contracts/utils/VolumeTracker.sol";
 
 abstract contract SwapsUser is State, SwapsEvents, FeesHelper, Flags {
   using VolumeTracker for VolumeTracker.Observation[65535];

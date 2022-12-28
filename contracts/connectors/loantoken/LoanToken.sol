@@ -6,7 +6,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "./AdvancedTokenStorage.sol";
+import "contracts/connectors/loantoken/AdvancedTokenStorage.sol";
 
 contract LoanToken is AdvancedTokenStorage {
   address internal target_;

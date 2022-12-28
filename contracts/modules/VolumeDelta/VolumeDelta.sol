@@ -6,9 +6,9 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "../../core/State.sol";
-import "../../utils/VolumeTracker.sol";
-import "../../utils/TickMathV1.sol";
+import "contracts/core/State.sol";
+import "contracts/utils/VolumeTracker.sol";
+import "contracts/utils/TickMathV1.sol";
 
 contract VolumeDelta is State {
   using VolumeTracker for VolumeTracker.Observation[65535];

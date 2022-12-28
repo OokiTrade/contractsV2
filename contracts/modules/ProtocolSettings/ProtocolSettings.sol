@@ -6,13 +6,13 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "../../core/State.sol";
-import "../../events/ProtocolSettingsEvents.sol";
+import "contracts/core/State.sol";
+import "contracts/events/ProtocolSettingsEvents.sol";
 import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
-import "../../interfaces/IVestingToken.sol";
-import "../../utils/MathUtil.sol";
-import "../../interfaces/IDexRecords.sol";
-import "../../governance/PausableGuardian_0_8.sol";
+import "contracts/interfaces/IVestingToken.sol";
+import "contracts/utils/MathUtil.sol";
+import "contracts/interfaces/IDexRecords.sol";
+import "contracts/governance/PausableGuardian_0_8.sol";
 
 contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8 {
   using SafeERC20 for IERC20;

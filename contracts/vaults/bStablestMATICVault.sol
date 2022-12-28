@@ -6,13 +6,13 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "../interfaces/IVault.sol";
+import "contracts/interfaces/IVault.sol";
 import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin-4.8.0/token/ERC20/ERC20.sol";
-import "../interfaces/IBalancerGauge.sol";
-import "../interfaces/IBalancerVault.sol";
-import "../interfaces/IBalancerPool.sol";
-import "../../interfaces/IPriceFeeds.sol";
+import "contracts/interfaces/IBalancerGauge.sol";
+import "contracts/interfaces/IBalancerVault.sol";
+import "contracts/interfaces/IBalancerPool.sol";
+import "interfaces/IPriceFeeds.sol";
 
 contract bStablestMATICVault is ERC20, IVault {
   using SafeERC20 for IERC20;

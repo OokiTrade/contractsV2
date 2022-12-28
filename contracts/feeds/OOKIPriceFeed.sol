@@ -6,8 +6,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "./IPriceFeedsExt.sol";
-import "../governance/PausableGuardian_0_8.sol";
+import "contracts/feeds/IPriceFeedsExt.sol";
+import "contracts/governance/PausableGuardian_0_8.sol";
 
 contract OOKIPriceFeed is PausableGuardian_0_8, IPriceFeedsExt {
   int256 public storedPrice = 2e6; // $0.02

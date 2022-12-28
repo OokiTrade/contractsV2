@@ -6,8 +6,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "../../core/State.sol";
-import "../../mixins/VaultController.sol";
+import "contracts/core/State.sol";
+import "contracts/mixins/VaultController.sol";
 
 contract FlashBorrowFeesHelper is State, VaultController {
   constructor(

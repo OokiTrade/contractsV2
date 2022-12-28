@@ -6,9 +6,9 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "../../../interfaces/IPriceFeeds.sol";
-import "../../interfaces/IBalancerVault.sol";
-import "../../interfaces/IBalancerPool.sol";
+import "interfaces/IPriceFeeds.sol";
+import "contracts/interfaces/IBalancerVault.sol";
+import "contracts/interfaces/IBalancerPool.sol";
 
 import "@openzeppelin-4.8.0/token/ERC20/IERC20.sol";
 

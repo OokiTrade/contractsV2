@@ -6,7 +6,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.5.17;
 
-import "../IPriceFeedsExt.sol";
+import "contracts/feeds/IPriceFeedsExt.sol";
 
 // mainnet: 0xc64F3C3925a216a11Ce0828498133cbC65fA4042
 contract AAVEToLENDFeed is IPriceFeedsExt {

@@ -7,10 +7,10 @@
 pragma solidity ^0.8.0;
 
 
-import "./AdvancedTokenStorage.sol";
-import "./StorageExtension.sol";
-import "../../../interfaces/IBZx.sol";
-import "../../interfaces/ICurvedInterestRate.sol";
+import "contracts/connectors/loantoken/AdvancedTokenStorage.sol";
+import "contracts/connectors/loantoken/StorageExtension.sol";
+import "interfaces/IBZx.sol";
+import "contracts/interfaces/ICurvedInterestRate.sol";
 
 contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage, StorageExtension {
   address public constant bZxContract = 0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f; // mainnet

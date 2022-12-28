@@ -19,15 +19,7 @@ networks:
         priority_fee: null
         reverting_tx_gas_limit: max
         default_contract_owner: true
-        cmd_settings:
-            port: 8555
-            gas_limit: 8000000
-            accounts: 10
-            evm_version: istanbul
-            mnemonic: brownie
-            block_time: 0
-            default_balance: 100
-            #time: 2020-05-08T14:54:08+0000
+        cmd_settings: null
     live:
         gas_limit: auto
         gas_buffer: 1.1
@@ -60,7 +52,7 @@ compiler:
             - "@celer=celer-network/sgn-v2-contracts@0.2.0"
             # - "prb-math=./node_modules/prb-math"
             - "@prb-math=paulrberg/prb-math@2.4.1"
-            - "@root=./"
+            
 console:
     show_colors: true
     color_style: monokai
@@ -68,24 +60,21 @@ console:
     completions: true
 
 reports:
-    exclude_paths:
-        - contracts/testhelpers/**/*.*
-        - contracts/openzeppelin/**/*.*
-        - contracts/feeds/testnet/**/*.*
-    exclude_contracts:
-        - Address
-        - Context
-        - Ownable
-        - ReentrancyGuard
-        - SafeERC20
-        - SafeMath
-        - EnumerableBytes32Set
+    exclude_paths: null
+    exclude_contracts: null
+    only_include_project: true
 
 hypothesis:
     deadline: null
     max_examples: 50
     report_multiple_bugs: False
     stateful_step_count: 10
+    phases:
+        explicit: true
+        reuse: true
+        generate: true
+        target: true
+        shrink: true
 
 autofetch_sources: false
 dependencies:

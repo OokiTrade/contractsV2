@@ -6,7 +6,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "../../interfaces/ICurvedInterestRate.sol";
+import "contracts/interfaces/ICurvedInterestRate.sol";
 
 contract StorageExtension {
   address internal target_;

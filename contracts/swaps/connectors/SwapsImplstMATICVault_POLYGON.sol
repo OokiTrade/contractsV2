@@ -6,13 +6,13 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "../../core/State.sol";
-import "../ISwapsImpl.sol";
+import "contracts/core/State.sol";
+import "contracts/swaps/ISwapsImpl.sol";
 import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
-import "../../interfaces/IBalancerVault.sol";
-import "../../interfaces/IBalancerHelpers.sol";
+import "contracts/interfaces/IBalancerVault.sol";
+import "contracts/interfaces/IBalancerHelpers.sol";
 
-//Added because of version issues
+//Added because of version issues.. TODO
 interface IVault {
   function deposit(uint256 assets, address receiver) external returns (uint256 shares);
 

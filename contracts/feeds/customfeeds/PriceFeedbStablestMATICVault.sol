@@ -6,8 +6,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "../../../interfaces/IPriceFeeds.sol";
-import "../../interfaces/IVault.sol";
+import "interfaces/IPriceFeeds.sol";
+import "contracts/interfaces/IVault.sol";
 
 contract PriceFeedbStablestMATICVault {
   IPriceFeeds internal constant _PRICEFEED = IPriceFeeds(0x600F8E7B10CF6DA18871Ff79e4A61B13caCEd9BC);

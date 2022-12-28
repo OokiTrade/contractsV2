@@ -7,10 +7,10 @@
 pragma solidity ^0.8.0;
 
 
-import "../../../interfaces/IUniv3Twap.sol";
-import "../../governance/PausableGuardian_0_8.sol";
-import "./FactoryFeed.sol";
-import "../../../interfaces/IPriceFeeds.sol";
+import "interfaces/IUniv3Twap.sol";
+import "contracts/governance/PausableGuardian_0_8.sol";
+import "contracts/feeds/factoryfeeds/FactoryFeed.sol";
+import "interfaces/IPriceFeeds.sol";
 import "@uniswap/v3-core/contracts/interfaces/pool/IUniswapV3PoolActions.sol";
 
 contract FeedFactory is PausableGuardian_0_8 {

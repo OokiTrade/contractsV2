@@ -6,12 +6,12 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "./Constants.sol";
-import "./Objects.sol";
-import "../mixins/EnumerableBytes32Set.sol";
+import "contracts/core/Constants.sol";
+import "contracts/core/Objects.sol";
+import "contracts/mixins/EnumerableBytes32Set.sol";
 import "@openzeppelin-4.8.0/security/ReentrancyGuard.sol";
-import "../utils/InterestOracle.sol";
-import "../utils/VolumeTracker.sol";
+import "contracts/utils/InterestOracle.sol";
+import "contracts/utils/VolumeTracker.sol";
 import "@openzeppelin-4.8.0/access/Ownable.sol";
 
 abstract contract State is Constants, Objects, ReentrancyGuard, Ownable {

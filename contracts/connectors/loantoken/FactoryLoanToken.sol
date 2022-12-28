@@ -6,8 +6,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "./LoanToken.sol";
-import "../../../interfaces/ILoanTokenFactory.sol";
+import "contracts/connectors/loantoken/LoanToken.sol";
+import "interfaces/ILoanTokenFactory.sol";
 
 contract FactoryLoanToken is LoanToken {
   address factory;

@@ -6,10 +6,10 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "../../core/State.sol";
-import "../../interfaces/IUniswapV2Router.sol";
+import "contracts/core/State.sol";
+import "contracts/interfaces/IUniswapV2Router.sol";
 import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
-import "../ISwapsImpl.sol";
+import "contracts/swaps/ISwapsImpl.sol";
 
 contract SwapsImplUniswapV2_ARBITRUM is State, ISwapsImpl {
   using SafeERC20 for IERC20;

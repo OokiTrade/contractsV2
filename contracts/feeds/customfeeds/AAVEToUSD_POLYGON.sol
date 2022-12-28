@@ -6,7 +6,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.5.17;
 
-import "../IPriceFeedsExt.sol";
+import "contracts/feeds/IPriceFeedsExt.sol";
 
 // polygon: 0xC47812857A74425e2039b57891a3DFcF51602d5d
 contract AAVEToUSD_POLYGON is IPriceFeedsExt {

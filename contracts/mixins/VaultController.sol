@@ -6,7 +6,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "../core/Constants.sol";
+import "contracts/core/Constants.sol";
 import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
 
 abstract contract VaultController is Constants {

@@ -6,7 +6,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "./LoanClosingsShared.sol";
+import "contracts/modules/LoanClosings/LoanClosingsShared.sol";
 
 contract LoanClosings is LoanClosingsShared {
   constructor(

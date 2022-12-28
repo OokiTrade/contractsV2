@@ -7,9 +7,9 @@
 pragma solidity ^0.8.0;
 
 // import "@openzeppelin-2.5.1/token/ERC20/SafeERC20.sol";
-import "../core/State.sol";
-import "../mixins/VaultController.sol";
-import "./FeesHelper.sol";
+import "contracts/core/State.sol";
+import "contracts/mixins/VaultController.sol";
+import "contracts/mixins/FeesHelper.sol";
 
 abstract contract InterestUser is State, VaultController, FeesHelper {
   using SafeERC20 for IERC20;

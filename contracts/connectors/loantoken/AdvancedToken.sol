@@ -6,7 +6,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "./AdvancedTokenStorage.sol";
+import "contracts/connectors/loantoken/AdvancedTokenStorage.sol";
 import "@openzeppelin-4.8.0/utils/Context.sol";
 
 // Direct copy from ERC20.sol from openzeppelin-4.7.0

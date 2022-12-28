@@ -6,7 +6,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.5.17;
 
-import "../IPriceFeedsExt.sol";
+import "contracts/feeds/IPriceFeedsExt.sol";
 import "@openzeppelin-2.5.1/ownership/Ownable.sol";
 
 // bsc: 0xfe4F0eb0A1Ad109185c9AaDE64C48ff8e928e54B

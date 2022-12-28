@@ -6,7 +6,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "./LoanTokenLogicStandard.sol";
+import "contracts/connectors/loantoken/LoanTokenLogicStandard.sol";
 
 contract LoanTokenLogicWeth is LoanTokenLogicStandard {
   constructor(

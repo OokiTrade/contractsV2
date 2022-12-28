@@ -6,13 +6,13 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "../../core/State.sol";
-import "../../events/LoanSettingsEvents.sol";
-import "../../utils/MathUtil.sol";
-import "../../utils/InterestOracle.sol";
-import "../../mixins/InterestHandler.sol";
-import "../../governance/PausableGuardian_0_8.sol";
-import "../../../interfaces/IPriceFeeds.sol";
+import "contracts/core/State.sol";
+import "contracts/events/LoanSettingsEvents.sol";
+import "contracts/utils/MathUtil.sol";
+import "contracts/utils/InterestOracle.sol";
+import "contracts/mixins/InterestHandler.sol";
+import "contracts/governance/PausableGuardian_0_8.sol";
+import "interfaces/IPriceFeeds.sol";
 
 contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGuardian_0_8 {
   using MathUtil for uint256;

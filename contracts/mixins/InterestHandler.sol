@@ -6,12 +6,12 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "../core/State.sol";
-import "../interfaces/ILoanPool.sol";
-import "../utils/MathUtil.sol";
-import "../events/InterestRateEvents.sol";
-import "../utils/InterestOracle.sol";
-import "../utils/TickMathV1.sol";
+import "contracts/core/State.sol";
+import "contracts/interfaces/ILoanPool.sol";
+import "contracts/utils/MathUtil.sol";
+import "contracts/events/InterestRateEvents.sol";
+import "contracts/utils/InterestOracle.sol";
+import "contracts/utils/TickMathV1.sol";
 
 abstract contract InterestHandler is State, InterestRateEvents {
   using MathUtil for uint256;

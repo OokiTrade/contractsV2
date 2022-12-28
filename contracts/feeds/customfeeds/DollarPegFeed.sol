@@ -6,7 +6,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.5.17;
 
-import "../IPriceFeedsExt.sol";
+import "contracts/feeds/IPriceFeedsExt.sol";
 
 // mainnet: 0xA9F9F897dD367C416e350c33a92fC12e53e1Cee5
 contract DollarPegFeed is IPriceFeedsExt {

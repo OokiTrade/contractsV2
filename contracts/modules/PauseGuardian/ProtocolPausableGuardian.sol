@@ -6,8 +6,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "../../core/State.sol";
-import "../../governance/PausableGuardian_0_8.sol";
+import "contracts/core/State.sol";
+import "contracts/governance/PausableGuardian_0_8.sol";
 
 contract ProtocolPausableGuardian is State, PausableGuardian_0_8 {
   constructor(

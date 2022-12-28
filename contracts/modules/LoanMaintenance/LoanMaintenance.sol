@@ -6,13 +6,13 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "../../core/State.sol";
-import "../../events/LoanMaintenanceEvents.sol";
-import "../../mixins/VaultController.sol";
-import "../../mixins/InterestHandler.sol";
-import "../../mixins/LiquidationHelper.sol";
-import "../../../interfaces/IPriceFeeds.sol";
-import "../../governance/PausableGuardian_0_8.sol";
+import "contracts/core/State.sol";
+import "contracts/events/LoanMaintenanceEvents.sol";
+import "contracts/mixins/VaultController.sol";
+import "contracts/mixins/InterestHandler.sol";
+import "contracts/mixins/LiquidationHelper.sol";
+import "interfaces/IPriceFeeds.sol";
+import "contracts/governance/PausableGuardian_0_8.sol";
 
 contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, InterestHandler, PausableGuardian_0_8 {
   using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;

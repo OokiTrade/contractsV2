@@ -6,13 +6,13 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "../core/State.sol";
+import "contracts/core/State.sol";
 import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin-4.8.0/token/ERC20/extensions/IERC20Metadata.sol";
-import "../../interfaces/IPriceFeeds.sol";
-import "./VaultController.sol";
-import "../events/FeesEvents.sol";
-import "../utils/MathUtil.sol";
+import "interfaces/IPriceFeeds.sol";
+import "contracts/mixins/VaultController.sol";
+import "contracts/events/FeesEvents.sol";
+import "contracts/utils/MathUtil.sol";
 
 abstract contract FeesHelper is State, VaultController, FeesEvents {
   using SafeERC20 for IERC20;

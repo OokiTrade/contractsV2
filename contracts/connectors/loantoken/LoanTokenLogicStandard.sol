@@ -6,11 +6,11 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "./AdvancedToken.sol";
-import "./StorageExtension.sol";
-import "../../../interfaces/IBZx.sol";
-import "../../../interfaces/IPriceFeeds.sol";
-import "../../mixins/Flags.sol";
+import "contracts/connectors/loantoken/AdvancedToken.sol";
+import "contracts/connectors/loantoken/StorageExtension.sol";
+import "interfaces/IBZx.sol";
+import "interfaces/IPriceFeeds.sol";
+import "contracts/mixins/Flags.sol";
 // import "../../interfaces/draft-IERC20Permit.sol";
 import "@openzeppelin-4.8.0/token/ERC20/IERC20.sol";
 // import "../../interfaces/IERC20Detailed.sol";
