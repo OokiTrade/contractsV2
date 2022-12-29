@@ -6,7 +6,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity >=0.5.17 <0.9.0;
 
-import "contracts/interfaces/IUniv3Twap.sol";
+import "contracts/interfaces/uniswap/IUniv3Twap.sol";
 
 interface IFeedFactory is IUniv3Twap {
   function specs() external view returns (V3Specs memory);

@@ -7,12 +7,12 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
-import "../interfaces/IUniswapV2Router.sol";
-import "../interfaces/curve/ICurve3Pool.sol";
-import "../interfaces/curve/ICurveMinter.sol";
-import "../interfaces/curve/ICurve3PoolGauge.sol";
-import "../../interfaces/IBZx.sol";
-import "../../interfaces/IBZRXv2Converter.sol";
+import "contracts/interfaces/uniswap/IUniswapV2Router.sol";
+import "contracts/interfaces/curve/ICurve3Pool.sol";
+import "contracts/interfaces/curve/ICurveMinter.sol";
+import "contracts/interfaces/curve/ICurve3PoolGauge.sol";
+import "interfaces/IBZx.sol";
+import "interfaces/IBZRXv2Converter.sol";
 
 contract StakingConstantsV2 {
   address internal constant ZERO_ADDRESS = address(0);

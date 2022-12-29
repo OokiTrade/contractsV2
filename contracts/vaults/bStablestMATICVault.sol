@@ -9,9 +9,9 @@ pragma solidity ^0.8.0;
 import "contracts/interfaces/IVault.sol";
 import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin-4.8.0/token/ERC20/ERC20.sol";
-import "contracts/interfaces/IBalancerGauge.sol";
-import "contracts/interfaces/IBalancerVault.sol";
-import "contracts/interfaces/IBalancerPool.sol";
+import "contracts/interfaces/balancer/IBalancerGauge.sol";
+import "contracts/interfaces/balancer/IBalancerVault.sol";
+import "contracts/interfaces/balancer/IBalancerPool.sol";
 import "interfaces/IPriceFeeds.sol";
 
 contract bStablestMATICVault is ERC20, IVault {

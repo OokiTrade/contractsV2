@@ -9,8 +9,8 @@ pragma solidity ^0.8.0;
 import "contracts/core/State.sol";
 import "contracts/swaps/ISwapsImpl.sol";
 import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
-import "contracts/interfaces/IBalancerVault.sol";
-import "contracts/interfaces/IBalancerHelpers.sol";
+import "contracts/interfaces/balancer/IBalancerVault.sol";
+import "contracts/interfaces/balancer/IBalancerHelpers.sol";
 
 //Added because of version issues.. TODO
 interface IVault {

@@ -6,7 +6,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "../../interfaces/ICurvePool.sol";
+import "../../interfaces/curve/ICurvePool.sol";
 import "contracts/feeds/IPriceFeedsExt.sol";
 
 contract PriceFeedCurvestETH {

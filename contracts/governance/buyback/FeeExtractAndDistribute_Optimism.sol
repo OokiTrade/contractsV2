@@ -7,7 +7,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin-4.8.0/token/ERC20/IERC20.sol";
-import "contracts/interfaces/IUniswapV3SwapRouter.sol";
+import "contracts/interfaces/uniswap/IUniswapV3SwapRouter.sol";
 import "interfaces/IBZx.sol";
 import "@celer/contracts/interfaces/IBridge.sol";
 import "interfaces/IPriceFeeds.sol";

@@ -6,8 +6,8 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "../../interfaces/IMasterChefSushi.sol";
-import "../../interfaces/IMasterChefSushi2.sol";
+import "contracts/interfaces/IMasterChefSushi.sol";
+import "contracts/interfaces/IMasterChefSushi2.sol";
 import "./StakingPausableGuardian.sol";
 import "./Common.sol";
 

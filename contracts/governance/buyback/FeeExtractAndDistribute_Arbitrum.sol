@@ -8,7 +8,7 @@ pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin-4.8.0/token/ERC20/IERC20.sol";
-import "../../interfaces/IUniswapV2Router.sol";
+import "../../interfaces/uniswap/IUniswapV2Router.sol";
 import "../../../interfaces/IBZx.sol";
 import "@celer/contracts/interfaces/IBridge.sol";
 import "../../../interfaces/IPriceFeeds.sol";

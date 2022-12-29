@@ -9,7 +9,7 @@ pragma experimental ABIEncoderV2;
 
 import "@openzeppelin-4.8.0/token/ERC20/extensions/IERC20Metadata.sol";
 import "../../proxies/0_8/Upgradeable_0_8.sol";
-import "../../interfaces/IUniswapV3SwapRouter.sol";
+import "../../interfaces/uniswap/IUniswapV3SwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol";
 import "./IPriceGetterP125.sol";
 

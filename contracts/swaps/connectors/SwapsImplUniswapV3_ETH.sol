@@ -8,8 +8,8 @@ pragma solidity ^0.8.0;
 import "contracts/core/State.sol";
 import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
 import "contracts/swaps/ISwapsImpl.sol";
-import "contracts/interfaces/IUniswapV3SwapRouter.sol";
-import "contracts/interfaces/IUniswapQuoter.sol";
+import "contracts/interfaces/uniswap/IUniswapV3SwapRouter.sol";
+import "contracts/interfaces/uniswap/IUniswapQuoter.sol";
 
 contract SwapsImplUniswapV3_ETH is State, ISwapsImpl {
   using SafeERC20 for IERC20;
