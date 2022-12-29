@@ -11,7 +11,7 @@ import "contracts/interfaces/uniswap/IUniswapV2Router.sol";
 import "interfaces/IBZx.sol";
 import "interfaces/IPriceFeeds.sol";
 import "interfaces/IStakingV2.sol";
-import "contracts/interfaces/curve/ICurve3Pool.sol";
+import "contracts/interfaces/curve/ICurvePool.sol";
 import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
 import "contracts/governance/PausableGuardian_0_8.sol";
 import "@celer/contracts/interfaces/IBridge.sol";
@@ -34,7 +34,7 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
   uint64 public constant DEST_CHAINID = 137; //polygon
 
   IUniswapV2Router public constant UNISWAP_ROUTER = IUniswapV2Router(0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F); // sushiswap
-  ICurve3Pool public constant CURVE_3POOL = ICurve3Pool(0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7);
+  ICurvePool public constant CURVE_3POOL = ICurvePool(0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7);
   IBZx public constant BZX = IBZx(0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f);
 
   mapping(address => address[]) public swapPaths;

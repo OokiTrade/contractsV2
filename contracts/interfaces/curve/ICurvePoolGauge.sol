@@ -7,7 +7,7 @@
 pragma solidity >=0.5.17 <0.9.0;
 
 //0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A eth mainnet
-interface ICurve3PoolGauge {
+interface ICurvePoolGauge {
   function balanceOf(address _addr) external view returns (uint256);
 
   function working_balances(address) external view returns (uint256);

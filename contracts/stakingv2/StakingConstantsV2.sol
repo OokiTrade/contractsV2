@@ -8,9 +8,9 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
 import "contracts/interfaces/uniswap/IUniswapV2Router.sol";
-import "contracts/interfaces/curve/ICurve3Pool.sol";
+import "contracts/interfaces/curve/ICurvePool.sol";
 import "contracts/interfaces/curve/ICurveMinter.sol";
-import "contracts/interfaces/curve/ICurve3PoolGauge.sol";
+import "contracts/interfaces/curve/ICurvePoolGauge.sol";
 import "interfaces/IBZx.sol";
 import "interfaces/IBZRXv2Converter.sol";
 
@@ -38,7 +38,7 @@ contract StakingConstantsV2 {
   uint256 internal constant OOKI_ETH_SUSHI_MASTERCHEF_PID = 50;
   address public constant SUSHI = 0x6B3595068778DD592e39A122f4f5a5cF09C90fE2;
 
-  ICurve3Pool public constant curve3pool = ICurve3Pool(0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7);
+  ICurvePool public constant curve3pool = ICurvePool(0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7);
   IERC20 public constant curve3Crv = IERC20(0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490);
 
   ICurveMinter public constant curveMinter = ICurveMinter(0xd061D61a4d941c39E5453435B6345Dc261C2fcE0);
