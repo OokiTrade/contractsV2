@@ -11,7 +11,7 @@ import "contracts/events/LoanClosingsEvents.sol";
 import "contracts/mixins/VaultController.sol";
 import "contracts/mixins/InterestHandler.sol";
 import "contracts/swaps/SwapsUser.sol";
-import "contracts/interfaces/ILoanPool.sol";
+import "interfaces/ILoanPool.sol";
 import "contracts/governance/PausableGuardian_0_8.sol";
 
 abstract contract LoanClosingsShared is State, LoanClosingsEvents, VaultController, InterestHandler, SwapsUser, PausableGuardian_0_8 {

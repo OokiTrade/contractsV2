@@ -7,11 +7,11 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin-4.8.0/token/ERC20/IERC20.sol";
-import "../../interfaces/IUniswapV3SwapRouter.sol";
-import "../../../interfaces/IBZx.sol";
+import "contracts/interfaces/IUniswapV3SwapRouter.sol";
+import "interfaces/IBZx.sol";
 import "@celer/contracts/interfaces/IBridge.sol";
-import "../../../interfaces/IPriceFeeds.sol";
-import "../../governance/PausableGuardian_0_8.sol";
+import "interfaces/IPriceFeeds.sol";
+import "contracts/governance/PausableGuardian_0_8.sol";
 
 contract FeeExtractAndDistribute_Optimism is PausableGuardian_0_8 {
   address public implementation;

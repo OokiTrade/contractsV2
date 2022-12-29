@@ -12,7 +12,7 @@ import "contracts/events/SwapsEvents.sol";
 import "contracts/mixins/FeesHelper.sol";
 import "contracts/swaps/ISwapsImpl.sol";
 import "contracts/utils/TickMathV1.sol";
-import "contracts/interfaces/IDexRecords.sol";
+import "interfaces/IDexRecords.sol";
 import "contracts/mixins/Flags.sol";
 import "contracts/utils/VolumeTracker.sol";
 

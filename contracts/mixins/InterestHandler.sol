@@ -7,7 +7,7 @@
 pragma solidity ^0.8.0;
 
 import "contracts/core/State.sol";
-import "contracts/interfaces/ILoanPool.sol";
+import "interfaces/ILoanPool.sol";
 import "contracts/utils/MathUtil.sol";
 import "contracts/events/InterestRateEvents.sol";
 import "contracts/utils/InterestOracle.sol";

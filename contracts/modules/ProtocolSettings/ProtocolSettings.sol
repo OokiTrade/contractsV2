@@ -11,7 +11,7 @@ import "contracts/events/ProtocolSettingsEvents.sol";
 import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
 import "contracts/interfaces/IVestingToken.sol";
 import "contracts/utils/MathUtil.sol";
-import "contracts/interfaces/IDexRecords.sol";
+import "interfaces/IDexRecords.sol";
 import "contracts/governance/PausableGuardian_0_8.sol";
 
 contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8 {
