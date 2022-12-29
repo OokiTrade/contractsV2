@@ -6,7 +6,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "interfaces/IUniv3Twap.sol";
+import "contracts/interfaces/IUniv3Twap.sol";
 import "contracts/governance/PausableGuardian_0_8.sol";
 import "contracts/feeds/factoryfeeds/FactoryFeed.sol";
 import "interfaces/IPriceFeeds.sol";
