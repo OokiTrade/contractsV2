@@ -10,7 +10,7 @@ import "contracts/core/State.sol";
 import "interfaces/IPriceFeeds.sol";
 import "contracts/events/SwapsEvents.sol";
 import "contracts/mixins/FeesHelper.sol";
-import "contracts/swaps/ISwapsImpl.sol";
+import "interfaces/ISwapsImpl.sol";
 import "contracts/utils/TickMathV1.sol";
 import "interfaces/IDexRecords.sol";
 import "contracts/mixins/Flags.sol";

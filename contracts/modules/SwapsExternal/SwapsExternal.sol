@@ -9,7 +9,7 @@ pragma solidity ^0.8.0;
 import "contracts/core/State.sol";
 import "contracts/mixins/VaultController.sol";
 import "contracts/swaps/SwapsUser.sol";
-import "contracts/swaps/ISwapsImpl.sol";
+import "interfaces/ISwapsImpl.sol";
 import "contracts/governance/PausableGuardian_0_8.sol";
 
 contract SwapsExternal is State, VaultController, SwapsUser, PausableGuardian_0_8 {
