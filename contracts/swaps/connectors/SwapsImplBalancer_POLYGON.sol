@@ -134,7 +134,7 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
     }
   }
 
-x  function _swap(
+  function _swap(
     address sourceTokenAddress,
     address destTokenAddress,
     address receiverAddress,
