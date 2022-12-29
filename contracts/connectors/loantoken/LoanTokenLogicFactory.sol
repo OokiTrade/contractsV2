@@ -6,7 +6,6 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-
 import "contracts/connectors/loantoken/LoanTokenLogicStandard.sol";
 import "interfaces/ILoanTokenFactory.sol";
 import "interfaces/IBZx.sol";

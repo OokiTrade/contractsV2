@@ -5,7 +5,6 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity >=0.5.17 <0.9.0;
 
-
 interface IStakingV2 {
   struct ProposalState {
     uint256 proposalTime;

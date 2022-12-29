@@ -99,11 +99,11 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
         amountOutSpecified += swapParams[i].amount;
       }
     }
-		if (amountOutSpecified > amountOut) {
-				swapParams[swapParams.length-1].amount = swapParams[swapParams.length-1].amount + (amountOutSpecified -amountOut);
-		} else if (amountOutSpecified < amountOut) {
-				swapParams[swapParams.length-1].amount += amountOut - amountOutSpecified;
-		}
+    if (amountOutSpecified > amountOut) {
+      swapParams[swapParams.length - 1].amount = swapParams[swapParams.length - 1].amount + (amountOutSpecified - amountOut);
+    } else if (amountOutSpecified < amountOut) {
+      swapParams[swapParams.length - 1].amount += amountOut - amountOutSpecified;
+    }
 
     if (amountOut != 0) {
       IBalancerVault.FundManagement memory funds = IBalancerVault.FundManagement({
@@ -150,7 +150,7 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
       );
       require(tokens[0] == sourceTokenAddress && tokens[tokens.length - 1] == destTokenAddress, "invalid tokens");
       if (limits[0] > int256(maxSourceTokenAmount) || limits[0] == 0) {
-  	    limits[0] = int256(maxSourceTokenAmount);
+        limits[0] = int256(maxSourceTokenAmount);
       }
       maxSourceTokenAmount = 0;
       for (uint256 i; i < swapParams.length; ++i) {

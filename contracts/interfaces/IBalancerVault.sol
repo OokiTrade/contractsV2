@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity >=0.5.17 <0.9.0;
 
-
 interface IBalancerVault {
   function joinPool(
     bytes32 poolId,
