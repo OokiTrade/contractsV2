@@ -11,6 +11,7 @@ import "./Objects.sol";
 import "../mixins/EnumerableBytes32Set.sol";
 import "../utils/ReentrancyGuard.sol";
 import "../utils/InterestOracle.sol";
+import "../utils/VolumeTracker.sol";
 import "@openzeppelin-2.5.0/ownership/Ownable.sol";
 import "@openzeppelin-2.5.0/math/SafeMath.sol";
 
@@ -24,7 +25,7 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
     mapping (bytes4 => address) public logicTargets;                                        // implementations of protocol functions
 
     mapping (bytes32 => Loan) public loans;                                                 // loanId => Loan
-    mapping (bytes32 => LoanParams) public loanParams;                                      // loanParamsId => LoanParams
+    mapping (bytes32 => LoanParams) public loanParams;                                      // loanParamsId => LoanParams loanParamsId = keccak(loanToken, collateralToken,isTorque)
 
     mapping (address => mapping (bytes32 => Order)) public lenderOrders;                    // lender => orderParamsId => Order
     mapping (address => mapping (bytes32 => Order)) public borrowerOrders;                  // borrower => orderParamsId => Order
@@ -41,7 +42,7 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
 
     mapping (address => EnumerableBytes32Set.Bytes32Set) internal lenderLoanSets;           // lender loans set
     mapping (address => EnumerableBytes32Set.Bytes32Set) internal borrowerLoanSets;         // borrow loans set
-    mapping (address => EnumerableBytes32Set.Bytes32Set) internal userLoanParamSets;        // user loan params set
+    mapping (address => EnumerableBytes32Set.Bytes32Set) internal userLoanParamSets;        // user loan params set (deprecated)
 
     address public feesController;                                                          // address controlling fee withdrawals
 
@@ -62,7 +63,7 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
 
     uint256 public affiliateFeePercent = 30 ether; // 30% fee share                         // fee share for affiliate program
 
-    mapping (address => mapping (address => uint256)) public liquidationIncentivePercent;   // percent discount on collateral for liquidators per loanToken and collateralToken
+    mapping (address => mapping (address => uint256)) public liquidationIncentivePercent;   // percent discount on collateral for liquidators per loanToken and collateralToken, LiquidationHelper.getLiquidationAmounts will use default liquidation incentive of 7e18
 
     mapping (address => address) public loanPoolToUnderlying;                               // loanPool => underlying
     mapping (address => address) public underlyingToLoanPool;                               // underlying => loanPool
@@ -93,6 +94,9 @@ contract State is Constants, Objects, ReentrancyGuard, Ownable {
     uint32 public twaiLength;
     /**** new interest model end */
 
+    mapping(address => VolumeTracker.Observation[65535]) internal volumeTradedObservations; //recorded Observations for every trade per user
+    mapping(address => uint16) internal volumeLastIdx; //last index in the observation array. bounded by cardinality
+    mapping(address => uint16) internal volumeTradedCardinality; //upper bound for recording data into array. Can be increased, not decreased, and increases cost for binary searches when increased. increase with caution
 
     function _setTarget(
         bytes4 sig,

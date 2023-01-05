@@ -10,7 +10,6 @@ for l in list:
     globals()[underlyingTemp.symbol()] = underlyingTemp
 
 HELPER = Contract.from_abi("HELPER", "0x81B91c9a68b94F88f3DFC4F375f101223dDd5007", HelperImpl.abi)
-BGOV = Contract.from_abi("PGOV", "0xf8E026dC4C0860771f691EcFFBbdfe2fa51c77CF", GovToken.abi)
 
 ADMIN_LOCK = Contract.from_abi("ADMIN_LOCK", "0xcd5788e81821500cc306378e079b34b964876e55", AdminLock.abi)
 SUSHI_ROUTER = Contract.from_abi("router", "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506", interface.IPancakeRouter02.abi)
@@ -21,3 +20,6 @@ LOAN_TOKEN_SETTINGS_LOWER_ADMIN = Contract.from_abi("LOAN_TOKEN_SETTINGS_LOWER_A
 MULTICALL3 = Contract.from_abi("MULTICALL3", "0xcA11bde05977b3631167028862bE2a173976CA11", interface.IMulticall3.abi)
 SWEEP_FEES = Contract.from_abi("SWEEP_FEES", "0xC9726942C732fa048dC56f0DeBea7fB2c596bA8C", FeeExtractAndDistribute_Arbitrum.abi)
 OOKI = Contract.from_abi("OOKI", "0xa5a6817ac4c164F27df3254B71fE83904B1C3c3e", interface.ERC20.abi)
+PRICE_FEED = Contract.from_abi("PRICE_FEED", BZX.priceFeeds(), abi = PriceFeeds.abi)
+
+CUI = CurvedInterestRate.at("0x78cb68020c4FC8BBB489C4CD197F8A0226fE4135")

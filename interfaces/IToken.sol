@@ -51,7 +51,7 @@ interface IToken {
         address collateralTokenAddress, // if address(0), this means ETH and ETH must be sent with the call or loanId must be provided
         address borrower,
         address receiver,
-        bytes calldata /*loanDataBytes*/ // arbitrary order data
+        bytes calldata loanDataBytes // arbitrary order data
     ) external payable returns (LoanOpenData memory);
 
     function marginTrade(
@@ -114,9 +114,19 @@ interface IToken {
     
     function revokeApproval(address _loanTokenAddress) external;
 
+    function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
+    function DOMAIN_SEPARATOR() external view returns(bytes32);
+    function PERMIT_TYPEHASH() external view returns(bytes32);
+    function nonces(address) external view returns (uint);
     /// Admin functions
     function setTarget(address _newTarget) external;
     
+    function owner() external view returns (address);
+
+    function transferOwnership(address newOwner) external;
+
+    function initializeDomainSeparator() external;
+
     struct LoanOpenData {
         bytes32 loanId;
         uint256 principal;
@@ -126,6 +136,8 @@ interface IToken {
     //flash borrow fees
     function updateFlashBorrowFeePercent(uint256 newFeePercent) external;
 
+    function setDemandCurve(address _rateHelper) external; 
+
     function getPoolUtilization()
         external
         view
@@ -134,12 +146,6 @@ interface IToken {
     function name() external view returns (string memory);
  
     function symbol() external view  returns (string memory);
-
-    function updateSettings(address settingsTarget, bytes calldata callData) external;
-    
-    function owner() external view returns (address);
-
-    function transferOwnership(address newOwner) external;
 
     function mintWithEther(address receiver) external payable;
 

@@ -64,9 +64,10 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
         address collateralTokenAddress,
         address[4] memory sentAddresses,
         uint256[5] memory sentAmounts,
-        uint256 withdrawalAmount)
+        uint256 withdrawalAmount,
+        bytes memory loanDataBytes)
         internal
-        returns (uint256 msgValue)
+        returns (uint256 msgValue, bytes memory)
     {
         address _wethToken = wethToken;
         address _loanTokenAddress = _wethToken;
@@ -93,6 +94,7 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
         }
 
         if (collateralTokenSent != 0) {
+            loanDataBytes = _checkPermit(collateralTokenAddress, loanDataBytes);
             _safeTransferFrom(collateralTokenAddress, msg.sender, bZxContract, collateralTokenSent, "28");
         }
 
@@ -102,8 +104,10 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
                 _safeTransfer(_loanTokenAddress, bZxContract, loanTokenSent, "29");
                 msgValue -= loanTokenSent;
             } else {
+                loanDataBytes = _checkPermit(_loanTokenAddress, loanDataBytes);
                 _safeTransferFrom(_loanTokenAddress, msg.sender, bZxContract, loanTokenSent, "29");
             }
         }
+        return (msgValue, loanDataBytes);
     }
 }

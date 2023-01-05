@@ -6,7 +6,7 @@
 pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin-4.3.2/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin-4.7.0/token/ERC20/extensions/IERC20Metadata.sol";
 import "../../proxies/0_8/Upgradeable_0_8.sol";
 import "../../interfaces/IUniswapV3SwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/interfaces/IQuoter.sol";

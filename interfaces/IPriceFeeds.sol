@@ -7,6 +7,12 @@ pragma solidity >=0.5.0 <0.9.0;
 
 
 interface IPriceFeeds {
+
+    function pricesFeeds(address token)
+        external
+        view
+        returns(address pricefeed);
+
     function queryRate(
         address sourceToken,
         address destToken)
@@ -83,10 +89,4 @@ interface IPriceFeeds {
         external
         view
         returns (bool);
-
-    function getFastGasPrice(
-        address payToken)
-        external
-        view
-        returns (uint256);
 }

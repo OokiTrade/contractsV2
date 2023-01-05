@@ -5,7 +5,7 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin-4.3.2/access/Ownable.sol";
+import "@openzeppelin-4.7.0/access/Ownable.sol";
 
 contract PausableGuardian_0_8 is Ownable {
     // keccak256("Pausable_FunctionPause")
