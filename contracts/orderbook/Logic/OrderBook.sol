@@ -72,9 +72,6 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
     }
 
     function getGasPrice() public view returns (uint256) {
-        if (chainGasPrice == 0) {
-            return IPriceFeeds(priceFeed).getFastGasPrice(WRAPPED_TOKEN)/1e36;
-        }
         return chainGasPrice;
     }
 

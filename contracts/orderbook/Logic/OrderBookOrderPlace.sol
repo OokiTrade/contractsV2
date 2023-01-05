@@ -53,7 +53,7 @@ contract OrderBookOrderPlace is OrderBookEvents, OrderBookStorage {
     }
 
     function _getGasPrice() internal view returns (uint256 gasPrice) {
-        gasPrice = chainGasPrice == 0 ? IPriceFeeds(priceFeed).getFastGasPrice(WRAPPED_TOKEN)/1e36 : chainGasPrice;
+        gasPrice = chainGasPrice;
     }
  
     function _gasToSend(uint256 gasUsed) internal view returns (uint256) {
