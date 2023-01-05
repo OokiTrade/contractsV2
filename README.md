@@ -63,7 +63,7 @@ cloning without version - otherwise uniswap is not compiling properly due to int
 ```
 brownie pm clone uniswap/v2-core@1.0.1 ~/.brownie/packages/uniswap/v2-core
 brownie pm clone uniswap/v3-core@1.0.0 ~/.brownie/packages/uniswap/v3-core
-brownie pm clone uniswap/v3-periphery@1.3.0 ~/.brownie/packages/uniswap/uniswap/v3-periphery
+brownie pm clone uniswap/v3-periphery@1.3.0 ~/.brownie/packages/uniswap/v3-periphery
 ```
 
 Run the all tests with:
