@@ -5,7 +5,7 @@ import "../../swaps/ISwapsImpl.sol";
 import "../OrderVault/IDeposits.sol";
 import "../../mixins/Flags.sol";
 import "../../interfaces/IWeth.sol";
-import "@openzeppelin-4.3.2/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin-4.7.0/token/ERC20/utils/SafeERC20.sol";
 
 contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
     using EnumerableSet for EnumerableSet.Bytes32Set;

@@ -1,6 +1,6 @@
 pragma solidity ^0.8.0;
 import "../IOrderBook.sol";
-import "@openzeppelin-4.3.2/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin-4.7.0/token/ERC20/extensions/IERC20Metadata.sol";
 import "../../governance/PausableGuardian_0_8.sol";
 
 contract OrderKeeper is PausableGuardian_0_8 {

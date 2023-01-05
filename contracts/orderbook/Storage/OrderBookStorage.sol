@@ -2,11 +2,11 @@ pragma solidity ^0.8.0;
 
 import "../IOrderBook.sol";
 import "../../governance/PausableGuardian_0_8.sol";
-import "@openzeppelin-4.3.2/utils/structs/EnumerableSet.sol";
+import "@openzeppelin-4.7.0/utils/structs/EnumerableSet.sol";
 import "../../../interfaces/IPriceFeeds.sol";
 import "../../../interfaces/IToken.sol";
-import "@openzeppelin-4.3.2/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin-4.3.2/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin-4.7.0/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin-4.7.0/token/ERC20/extensions/IERC20Metadata.sol";
 import "./OrderBookConstants.sol";
 
 contract OrderBookStorage is OrderBookConstants, PausableGuardian_0_8 {
