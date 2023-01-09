@@ -1,5 +1,5 @@
 from brownie import *
-
+ARB_CALLER = "0x000F400e6818158D541C3EBE45FE3AA0d47372FF"
 BZX = Contract.from_abi("BZX", "0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f", interface.IBZx.abi)
 TOKEN_REGISTRY = Contract.from_abi("TOKEN_REGISTRY", "0xf0E474592B455579Fe580D610b846BdBb529C6F7", TokenRegistry.abi)
 
@@ -36,15 +36,15 @@ PRICE_FEED = Contract.from_abi("PRICE_FEED", BZX.priceFeeds(), abi = PriceFeeds.
 
 SWEEP_FEES = Contract.from_abi("STAKING", "0xfFB328AD3b727830F9482845A4737AfDDDe85554", FeeExtractAndDistribute_ETH.abi)
 
-SUSHI_ROUTER = Contract.from_abi("SUSHI_ROUTER", "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F", interface.IPancakeRouter02.abi)
-SUSHI_CHEF_OLD = Contract.from_abi("SUSHI_CHEF", "0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd", interface.IMasterChefSushi.abi)
+# SUSHI_ROUTER = Contract.from_abi("SUSHI_ROUTER", "0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F", interface.IPancakeRouter02.abi)
+# SUSHI_CHEF_OLD = Contract.from_abi("SUSHI_CHEF", "0xc2EdaD668740f1aA35E4D8f227fB8E17dcA888Cd", interface.IMasterChefSushi.abi)
 
 SUSHI_CHEF = Contract.from_abi("SUSHI_CHEF", "0xEF0881eC094552b2e128Cf945EF17a6752B4Ec5d", interface.IMasterChefSushi2.abi)
 
 
 SUSHI = Contract.from_abi("SUSHI", "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2", TestToken.abi)
 
-# FEE_EXTRACTOR = Contract.from_abi("FEE_EXTRACTOR", BZX.feesController(), FeeExtractAndDistribute_ETH.abi)
+FEE_EXTRACTOR = Contract.from_abi("FEE_EXTRACTOR", BZX.feesController(), FeeExtractAndDistribute_ETH.abi)
 
 DAO = Contract.from_abi("DAO", address="0x3133b4f4dcffc083724435784fefad510fa659c6", abi=GovernorBravoDelegate.abi)
 TIMELOCK = Contract.from_abi("TIMELOCK", address="0xfedC4dD5247B93feb41e899A09C44cFaBec29Cbc", abi=Timelock.abi)
@@ -54,12 +54,12 @@ TEAM_VOTING_MULTISIG = "0x02c6819c2cb8519ab72fd1204a8a0992b5050c6e"
 
 CRV = Contract.from_abi("CRV", "0xD533a949740bb3306d119CC777fa900bA034cd52", TestToken.abi)
 CRV_MINER  = Contract.from_abi("ICurveMinter", "0xd061D61a4d941c39E5453435B6345Dc261C2fcE0", interface.ICurveMinter.abi)
-POOL3Gauge = Contract.from_abi("3POOLGauge", "0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A", interface.ICurve3PoolGauge.abi)
+POOL3Gauge = Contract.from_abi("3POOLGauge", "0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A", interface.ICurvePoolGauge.abi)
 BZRX_TO_OOKI_CONVERTER = Contract.from_abi("BZRX_TO_OOKI_CONVERTER", "0x6BE9B7406260B6B6db79a1D4997e7f8f5c9D7400", FixedSwapTokenConverter.abi)
-POOL3_GAUGE = Contract.from_abi("POOL3_GAUGE", "0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A", interface.ICurve3PoolGauge.abi)
+POOL3_GAUGE = Contract.from_abi("POOL3_GAUGE", "0xbFcF63294aD7105dEa65aA58F8AE5BE2D9d0952A", interface.ICurvePoolGauge.abi)
 CRV3 = Contract.from_abi("CRV3", "0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490", TestToken.abi)
 
-OOKI_ETH_LP = Contract.from_abi("OOKI_ETH_LP", "0xEaaddE1E14C587a7Fb4Ba78eA78109BB32975f1e", interface.IPancakePair.abi)
+OOKI_ETH_LP = Contract.from_abi("OOKI_ETH_LP", "0xEaaddE1E14C587a7Fb4Ba78eA78109BB32975f1e", TestToken.abi)
 
 
 
@@ -72,7 +72,7 @@ OOKI_ETH_LP = Contract.from_abi("OOKI_ETH_LP", "0xEaaddE1E14C587a7Fb4Ba78eA78109
 
 CUI = CurvedInterestRate.at("0xfbdd8919c8b2ad0ea06da5ca8bc4d3e29cf3d2e4")
 
-LOAN_TOKEN_SETTINGS_LOWER_ADMIN = LoanTokenSettingsLowerAdmin.at("0x20Aa8bB73b6EEd3c48E485218C0293d1efa7Efcc")
+# LOAN_TOKEN_SETTINGS_LOWER_ADMIN = LoanTokenSettingsLowerAdmin.at("0x20Aa8bB73b6EEd3c48E485218C0293d1efa7Efcc")
 
 # TODO remove
 class Deployment_Immutables:

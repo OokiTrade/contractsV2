@@ -61,11 +61,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
   bytes32 internal constant iToken_LowerAdminAddress = 0x7ad06df6a0af6bd602d90db766e0d5f253b45187c3717a0f9026ea8b10ff0d4b; // keccak256("iToken_LowerAdminAddress")
   bytes32 internal constant iToken_LowerAdminContract = 0x34b31cff1dbd8374124bd4505521fc29cab0f9554a5386ba7d784a4e611c7e31; // keccak256("iToken_LowerAdminContract")
 
-  constructor(
-    address arbCaller,
-    address bzxcontract,
-    address wethtoken
-  ) AdvancedToken("", "") {
+  constructor(address arbCaller, address bzxcontract, address wethtoken) AdvancedToken("", "") {
     arbitraryCaller = arbCaller;
     bZxContract = bzxcontract;
     wethToken = wethtoken;
@@ -78,11 +74,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
 
   /* Public functions */
 
-  function deposit(
-    uint256 assets,
-    address receiver,
-    bytes calldata loanDataBytes
-  ) external returns (uint256 shares) {
+  function deposit(uint256 assets, address receiver, bytes calldata loanDataBytes) external returns (uint256 shares) {
     _checkPermit(loanTokenAddress, loanDataBytes);
     return deposit(assets, receiver);
   }
@@ -91,11 +83,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     return _depositToken(assets, receiver);
   }
 
-  function mint(
-    uint256 shares,
-    address receiver,
-    bytes calldata loanDataBytes
-  ) external returns (uint256 assets) {
+  function mint(uint256 shares, address receiver, bytes calldata loanDataBytes) external returns (uint256 assets) {
     _checkPermit(loanTokenAddress, loanDataBytes);
     return mint(shares, receiver);
   }
@@ -104,21 +92,13 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     return _mintToken(shares, receiver);
   }
 
-  function withdraw(
-    uint256 assets,
-    address receiver,
-    address owner
-  ) external returns (uint256 shares) {
+  function withdraw(uint256 assets, address receiver, address owner) external returns (uint256 shares) {
     require(msg.sender == owner, "unauthorized");
     shares = _withdrawToken(assets, receiver, owner);
     IERC20(loanTokenAddress).safeTransfer(receiver, assets);
   }
 
-  function redeem(
-    uint256 shares,
-    address receiver,
-    address owner
-  ) external returns (uint256 assets) {
+  function redeem(uint256 shares, address receiver, address owner) external returns (uint256 assets) {
     require(msg.sender == owner, "unauthorized");
     assets = _redeemToken(shares, receiver, owner);
     IERC20(loanTokenAddress).safeTransfer(receiver, assets);
@@ -186,9 +166,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     address receiver,
     bytes memory loanDataBytes // arbitrary order data
   ) public payable nonReentrant pausable returns (IBZx.LoanOpenData memory) {
-    // TODO why?
-    require(msg.value == 30828359524518432, "rip");
-    require(withdrawAmount == 33403000, "rip1");
     return _borrow(loanId, withdrawAmount, 0, collateralTokenSent, collateralTokenAddress, borrower, receiver, loanDataBytes);
   }
 
@@ -362,11 +339,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     emit Deposit(msg.sender, receiver, depositAmount, mintAmount);
   }
 
-  function _withdrawToken(
-    uint256 assets,
-    address receiver,
-    address owner
-  ) internal pausable returns (uint256 shares) {
+  function _withdrawToken(uint256 assets, address receiver, address owner) internal pausable returns (uint256 shares) {
     _settleInterest(0);
 
     uint256 currentPrice = tokenPrice();
@@ -379,11 +352,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     emit Withdraw(msg.sender, receiver, owner, assets, burnAmount);
   }
 
-  function _redeemToken(
-    uint256 shares,
-    address receiver,
-    address owner
-  ) internal pausable returns (uint256 assets) {
+  function _redeemToken(uint256 shares, address receiver, address owner) internal pausable returns (uint256 assets) {
     _settleInterest(0);
 
     uint256 currentPrice = tokenPrice();
@@ -637,22 +606,11 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     return (msgValue, loanDataBytes);
   }
 
-  function _safeTransfer(
-    address token,
-    address to,
-    uint256 amount,
-    string memory errorMsg
-  ) internal {
+  function _safeTransfer(address token, address to, uint256 amount, string memory errorMsg) internal {
     _callOptionalReturn(token, abi.encodeWithSelector(IERC20(token).transfer.selector, to, amount), errorMsg);
   }
 
-  function _safeTransferFrom(
-    address token,
-    address from,
-    address to,
-    uint256 amount,
-    string memory errorMsg
-  ) internal {
+  function _safeTransferFrom(address token, address from, address to, uint256 amount, string memory errorMsg) internal {
     _callOptionalReturn(token, abi.encodeWithSelector(IERC20(token).transferFrom.selector, from, to, amount), errorMsg);
   }
 
@@ -673,11 +631,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     return loanDataBytes;
   }
 
-  function _callOptionalReturn(
-    address token,
-    bytes memory data,
-    string memory errorMsg
-  ) internal {
+  function _callOptionalReturn(address token, bytes memory data, string memory errorMsg) internal {
     (bool success, bytes memory returndata) = token.call(data);
     require(success, errorMsg);
 
@@ -686,11 +640,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     }
   }
 
-  function _nextSupplyInterestRate(
-    uint256 nextBorrowRate,
-    uint256 assetBorrow,
-    uint256 assetSupply
-  ) public view returns (uint256) {
+  function _nextSupplyInterestRate(uint256 nextBorrowRate, uint256 assetBorrow, uint256 assetSupply) public view returns (uint256) {
     if (assetBorrow != 0 && assetSupply >= assetBorrow) {
       return
         (nextBorrowRate *
@@ -700,11 +650,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     }
   }
 
-  function _nextBorrowInterestRate(
-    uint256 totalBorrow,
-    uint256 newBorrowNotYetRealized,
-    uint256 lastIR
-  ) public view returns (uint256 nextRate) {
+  function _nextBorrowInterestRate(uint256 totalBorrow, uint256 newBorrowNotYetRealized, uint256 lastIR) public view returns (uint256 nextRate) {
     return _nextBorrowInterestRate(totalBorrow, newBorrowNotYetRealized, lastIR, _totalAssetSupply(totalBorrow));
   }
 
@@ -713,12 +659,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     return IERC20(loanTokenAddress).balanceOf(address(this));
   }
 
-  function _nextBorrowInterestRate(
-    uint256 totalBorrow,
-    uint256 newBorrowNotYetRealized,
-    uint256 lastIR,
-    uint256 assetSupply
-  ) internal view returns (uint256 nextRate) {
+  function _nextBorrowInterestRate(uint256 totalBorrow, uint256 newBorrowNotYetRealized, uint256 lastIR, uint256 assetSupply) internal view returns (uint256 nextRate) {
     uint256 utilRate = _utilizationRate(totalBorrow + newBorrowNotYetRealized, assetSupply);
 
     //utilRate from 0e18 to 100e18
@@ -730,16 +671,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     uint256 collateralTokenSent,
     uint256 loanTokenSent,
     uint256 leverageAmount
-  )
-    internal
-    view
-    returns (
-      uint256 borrowAmount,
-      uint256 interestRate,
-      uint256 totalDeposit,
-      uint256 collateralToLoanRate
-    )
-  {
+  ) internal view returns (uint256 borrowAmount, uint256 interestRate, uint256 totalDeposit, uint256 collateralToLoanRate) {
     (totalDeposit, collateralToLoanRate) = _totalDeposit(collateralTokenAddress, collateralTokenSent, loanTokenSent);
 
     uint256 initialMargin = (WEI_PRECISION * WEI_PERCENT_PRECISION) / leverageAmount;
@@ -770,11 +702,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     }
   }
 
-  function initialize(
-    address _loanTokenAddress,
-    string memory _name,
-    string memory _symbol
-  ) public virtual onlyGuardian {
+  function initialize(address _loanTokenAddress, string memory _name, string memory _symbol) public virtual onlyGuardian {
     loanTokenAddress = _loanTokenAddress;
 
     name = _name;
