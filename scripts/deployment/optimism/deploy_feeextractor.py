@@ -2,9 +2,11 @@ from eth_abi.packed import encode_abi_packed
 exec(open("./scripts/env/set-optimism.py").read())
 
 deployer = accounts.load('deployer')
-sweepImpl = deployer.deploy(FeeExtractAndDistribute_Optimism)
-proxy = deployer.deploy(Proxy_0_5, sweepImpl)
-SWEEP_FEES = Contract.from_abi("SWEEP_FEES", proxy, FeeExtractAndDistribute_Optimism.abi)
+#sweepImpl = deployer.deploy(FeeExtractAndDistribute_Optimism) #0x86290f885b56d6e180Ac18b4792766c92A78d08c
+sweepImpl = Contract.from_abi("SWEEP_FEES", "0x86290f885b56d6e180Ac18b4792766c92A78d08c", FeeExtractAndDistribute_Optimism.abi)
+#proxy = deployer.deploy(Proxy_0_8, sweepImpl) #0xEfC00F2b226130461f6C9E9C5A5e465BF23FFD77
+proxy = Contract.from_abi("SWEEP_FEES", "0xEfC00F2b226130461f6C9E9C5A5e465BF23FFD77", Proxy_0_8.abi)
+SWEEP_FEES = Contract.from_abi("SWEEP_FEES", "0xEfC00F2b226130461f6C9E9C5A5e465BF23FFD77", FeeExtractAndDistribute_Optimism.abi)
 SWEEP_FEES.setBridge('0x9D39Fc627A6d9d9F8C831c16995b209548cc3401', {'from': deployer})
 SWEEP_FEES.setSlippage(10000, {'from': deployer})
 SWEEP_FEES.setTreasuryWallet('0x8c02edee0c759df83e31861d11e6918dd93427d2', {'from': deployer})
