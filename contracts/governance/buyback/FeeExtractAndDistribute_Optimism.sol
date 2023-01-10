@@ -90,9 +90,7 @@ contract FeeExtractAndDistribute_Optimism is PausableGuardian_0_8 {
             emit ExtractAndDistribute(usdcOutput, 0); //for tracking distribution amounts
         }
     }
-    event Logger(string name, address _address, uint256 _value);
     function _swap(address inToken, uint256 amountIn) internal returns (uint256 returnAmount) {
-        emit Logger("inToken", inToken, amountIn);
         IUniswapV3SwapRouter.ExactInputParams memory params = IUniswapV3SwapRouter.ExactInputParams({
             path: swapPaths[inToken],
             recipient: address(this),
