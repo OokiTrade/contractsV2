@@ -149,6 +149,13 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
         }
     }
 
+    function _checkLimits(int256[] memory limits) internal {
+        require(limits[limits.length-1] <= 0, "cannot spend dest token");
+        for(uint i=1; i < limits.length-1; ++i) {
+            require(limits[i] == 0, "unsupported limit");
+        }
+    }
+
     function _swap(
         address sourceTokenAddress,
         address destTokenAddress,
@@ -165,10 +172,7 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
             (IBalancerVault.BatchSwapStep[] memory swapParams, address[] memory tokens, int256[] memory limits) = abi.decode(payload, (IBalancerVault.BatchSwapStep[], address[], int256[]));
             require(tokens[0] == sourceTokenAddress && tokens[tokens.length-1] == destTokenAddress, "invalid tokens");
             limits[0] = int256(minSourceTokenAmount);
-            require(limits[limits.length-1] <= 0, "cannot spend dest token");
-            for(uint i=1; i < limits.length-1; ++i) {
-                require(limits[i] == 0, "unsupported limit");
-            }
+            _checkLimits(limits);
             maxSourceTokenAmount = 0;
             for (uint i; i < swapParams.length; ++i) {
                 if (swapParams[i].assetInIndex == 0) {
@@ -204,10 +208,7 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
                 limits[0] = int256(maxSourceTokenAmount);
             }
             minSourceTokenAmount = 0;
-            require(limits[limits.length-1] <= 0, "cannot spend dest token");
-            for(uint i=1; i < limits.length-1; ++i) {
-                require(limits[i] == 0, "unsupported limit");
-            }
+            _checkLimits(limits);
             for (uint i; i < swapParams.length; ++i) {
                 if (swapParams[i].assetOutIndex == tokens.length-1) {
                     minSourceTokenAmount = minSourceTokenAmount.add(swapParams[i].amount);
