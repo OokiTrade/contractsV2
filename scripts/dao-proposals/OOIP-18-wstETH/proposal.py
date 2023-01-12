@@ -12,12 +12,13 @@ targets = []
 values = []
 calldatas = []
 
+priceFeedWETHETHDenominated = PriceFeedWETHETHDenominated.at("0x4b22d75dd2b8e0a2787b0bf93636990d8ba12c65")
 wstETH_FEED = PriceFeedwstETH.deploy({"from":accounts[0]}) #Contract.from_abi("","",PriceFeedwstETH.abi)
 wstETH = "0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0"
 PRICE_FEED = PriceFeeds.at("0x09Ef93750C5F33ab469851F022C1C42056a8BAda")
 
 targets.append(PRICE_FEED.address)
-calldatas.append(PRICE_FEED.setPriceFeed.encode_input([wstETH],[wstETH_FEED.address]))
+calldatas.append(PRICE_FEED.setPriceFeed.encode_input([wstETH, WETH],[wstETH_FEED.address, priceFeedWETHETHDenominated.address]))
 
 targets.append(BZX.address)
 calldatas.append(BZX.setSupportedTokens.encode_input([WETH, wstETH],[True, True], True))

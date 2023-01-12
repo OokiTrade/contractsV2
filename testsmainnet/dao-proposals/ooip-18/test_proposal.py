@@ -27,10 +27,6 @@ def testGovernanceProposal(accounts, DAO, WSTETH, iWETH, BZX, iUSDC):
     Contract.from_abi("",BZX.swapsImpl(),DexRecords.abi).setDexID(wstETH_swap.address, {"from":Contract.from_abi("",BZX.swapsImpl(),DexRecords.abi).owner()})
 
     proposerAddress = "0x02c6819c2cb8519ab72fd1204a8a0992b5050c6e"
-    # DAO.execute(10, {"from": proposerAddress})
-    voter1 = "0x3fDA2D22e7853f548C3a74df3663a9427FfbB362"
-    voter2 = "0x9030B78A312147DbA34359d1A8819336fD054230"
-
     voter1 = "0x3fDA2D22e7853f548C3a74df3663a9427FfbB362"
     voter2 = "0x9B43a385E08EE3e4b402D4312dABD11296d09E93"
     voter3 = "0xE9d5472Cc0107938bBcaa630c2e4797F75A2D382"
@@ -74,13 +70,22 @@ def testGovernanceProposal(accounts, DAO, WSTETH, iWETH, BZX, iUSDC):
     DAO.execute(id, {"from": proposerAddress})
 
     #source wstETH to open a borrow and open a margin trade for wstETH/ETH and close it
-    WSTETH.transfer(accounts[1],1e18, {"from":"0x6ce0f913f035ec6195bc3ce885aec4c66e485bc4"})
+    WSTETH.transfer(accounts[1],15e18, {"from":"0x6ce0f913f035ec6195bc3ce885aec4c66e485bc4"})
     WSTETH.approve(iUSDC.address, 1e18, {"from":accounts[1]})
     iUSDC.borrow(0, 10e6, 0, 1e18, WSTETH, accounts[1], accounts[1], b"", {'from': accounts[1]})
-    dex_payload = encode_abi(['uint256'],[int(10e18)])
+    dex_payload = encode_abi(['uint256'],[int(8e18)])
     selector_payload = encode_abi(['uint256','bytes'],[3,dex_payload])
     loanDataBytes = encode_abi(['uint128','bytes[]'],[2,[selector_payload]]) #flag value of Base-2: 10
     iWETH.marginTrade(0,9e18,1e18,0,WSTETH.address,accounts[0],loanDataBytes, {"from":accounts[0],"value":1e18})
+
+
+    dex_payload = encode_abi(['uint256'],[int(8e18)])
+    selector_payload = encode_abi(['uint256','bytes'],[3,dex_payload])
+    loanDataBytes = encode_abi(['uint128','bytes[]'],[2,[selector_payload]]) #flag value of Base-2: 10
+    WSTETH.approve(iETH.address, 2**256-1, {"from":accounts[1]})
+    iETH.mintWithEther(accounts[3], {"from": accounts[3], "value": Wei("99 ether")})
+    iWETH.marginTrade(0,9e18,0,1e18,WSTETH.address,accounts[1],loanDataBytes, {"from":accounts[1]})
+
     loanToAnalyze = BZX.getUserLoans(accounts[0],0,10,0,False,False)[0]
     print(loanToAnalyze)
     dex_payload = encode_abi(['uint256'],[loanToAnalyze[4]])
