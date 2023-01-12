@@ -20,7 +20,6 @@ def ValuationTokenContract():
 @pytest.fixture(scope="module")
 def StakeVault(accounts, Contract, StakingVault, Proxy_0_8, PriceFeedContract, ProtocolContract, RewardTokenContract, ValuationTokenContract):
     #deploy and configure vault
-    print("hello")
     s = StakingVault.deploy("", {"from":accounts[0]})
     s_proxy = Proxy_0_8.deploy(s, {"from":accounts[0]})
     s = Contract.from_abi("StakingVault",s_proxy.address, StakingVault.abi)
