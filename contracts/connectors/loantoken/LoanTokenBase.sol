@@ -1,47 +1,45 @@
 /**
- * Copyright 2017-2022, OokiDao. All Rights Reserved.
+ * Copyright 2017-2023, OokiDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: Apache-2.0
+pragma solidity ^0.8.0;
 
-import "@openzeppelin-2.5.0/math/SafeMath.sol";
-import "../../utils/SignedSafeMath.sol";
-import "../../utils/ReentrancyGuard.sol";
-import "@openzeppelin-2.5.0/ownership/Ownable.sol";
-import "@openzeppelin-2.5.0/utils/Address.sol";
-import "../../interfaces/IWethERC20.sol";
-import "../../governance/PausableGuardian.sol";
+import "@openzeppelin-4.8.0/security/ReentrancyGuard.sol";
+import "@openzeppelin-4.8.0/access/Ownable.sol";
+import "@openzeppelin-4.8.0/utils/Address.sol";
+import "contracts/interfaces/IWeth.sol";
+import "contracts/governance/PausableGuardian_0_8.sol";
+import "@openzeppelin-4.8.0/token/ERC20/extensions/IERC20Metadata.sol";
 
+abstract contract LoanTokenBase is ReentrancyGuard, Ownable, PausableGuardian_0_8 {
+  uint256 internal constant WEI_PRECISION = 10**18;
+  uint256 internal constant WEI_PERCENT_PRECISION = 10**20;
 
-contract LoanTokenBase is ReentrancyGuard, Ownable, PausableGuardian {
+  int256 internal constant sWEI_PRECISION = 10**18;
 
-    uint256 internal constant WEI_PRECISION = 10**18;
-    uint256 internal constant WEI_PERCENT_PRECISION = 10**20;
+  string public name;
+  string public symbol;
+  uint8 public decimals;
 
-    int256 internal constant sWEI_PRECISION = 10**18;
+  // uint88 for tight packing -> 8 + 88 + 160 = 256
+  uint88 internal lastSettleTime_;
 
-    string public name;
-    string public symbol;
-    uint8 public decimals;
+  address public loanTokenAddress;
 
-    // uint88 for tight packing -> 8 + 88 + 160 = 256
-    uint88 internal lastSettleTime_;
+  uint256 internal baseRate_UNUSED;
+  uint256 internal rateMultiplier_UNUSED;
+  uint256 internal lowUtilBaseRate_UNUSED;
+  uint256 internal lowUtilRateMultiplier_UNUSED;
+  uint256 internal targetLevel_UNUSED;
+  uint256 internal kinkLevel_UNUSED;
+  uint256 internal maxScaleRate_UNUSED;
 
-    address public loanTokenAddress;
+  uint256 internal _flTotalAssetSupply;
+  uint256 internal checkpointSupply_UNUSED;
+  uint256 public initialPrice;
 
-    uint256 internal baseRate_UNUSED;
-    uint256 internal rateMultiplier_UNUSED;
-    uint256 internal lowUtilBaseRate_UNUSED;
-    uint256 internal lowUtilRateMultiplier_UNUSED;
-    uint256 internal targetLevel_UNUSED;
-    uint256 internal kinkLevel_UNUSED;
-    uint256 internal maxScaleRate_UNUSED;
-
-    uint256 internal _flTotalAssetSupply;
-    uint256 internal checkpointSupply_UNUSED;
-    uint256 public initialPrice;
-
-    mapping (uint256 => bytes32) public loanParamsIds; // mapping of keccak256(collateralToken, isTorqueLoan) to loanParamsId
-    mapping (address => uint256) internal checkpointPrices_DEPRECATED; // price of token at last user checkpoint
+  mapping(uint256 => bytes32) public loanParamsIds; // mapping of keccak256(collateralToken, isTorqueLoan) to loanParamsId
+  mapping(address => uint256) internal checkpointPrices_DEPRECATED; // price of token at last user checkpoint
 }

@@ -19,15 +19,7 @@ networks:
         priority_fee: null
         reverting_tx_gas_limit: max
         default_contract_owner: true
-        cmd_settings:
-            port: 8555
-            gas_limit: 8000000
-            accounts: 10
-            evm_version: istanbul
-            mnemonic: brownie
-            block_time: 0
-            default_balance: 100
-            #time: 2020-05-08T14:54:08+0000
+        cmd_settings: null
     live:
         gas_limit: auto
         gas_buffer: 1.1
@@ -44,13 +36,23 @@ compiler:
         optimizer:
             enabled: true
             runs: 200
-        remappings: 
-            - "@openzeppelin-4.7.0=./node_modules/openzeppelin-4.7.0"
-            - "@openzeppelin-3.4.0=./node_modules/openzeppelin-3.4.0"
-            - "@openzeppelin-2.5.0=./node_modules/openzeppelin-2.5.0"
-            - "@uniswap=./node_modules/@uniswap"
-            - "@celer=./node_modules/celer"
-            - "prb-math=./node_modules/prb-math"
+        remappings:
+            - "@openzeppelin-4.8.0=openzeppelin/openzeppelin-contracts@4.8.0/contracts"
+            - "@openzeppelin-upgradeable-4.8.0=openzeppelin/openzeppelin-contracts-upgradeable@4.8.0/contracts"
+            - "@openzeppelin-3.4.2=openzeppelin/openzeppelin-contracts@3.4.2/contracts"
+            - "@openzeppelin-2.5.1=openzeppelin/openzeppelin-contracts@2.5.1/contracts"
+            # - "@openzeppelin-4.7.0=./node_modules/openzeppelin-4.7.0"
+            # - "@openzeppelin-3.4.0=./node_modules/openzeppelin-3.4.0"
+            # - "@openzeppelin-2.5.1=./node_modules/openzeppelin-2.5.0"
+            - "@uniswap=uniswap"
+            # - "@uniswapv3-core=uniswap/v3-core@1.0.0/contracts"
+            # - "@uniswapv3-periphery=uniswap/v3-periphery@1.3.0/contracts"
+            # - "@uniswap=./node_modules/@uniswap"
+            # - "@celer=./node_modules/celer"
+            - "@celer=celer-network/sgn-v2-contracts@0.2.0"
+            # - "prb-math=./node_modules/prb-math"
+            - "@prb-math=paulrberg/prb-math@2.4.1"
+            
 console:
     show_colors: true
     color_style: monokai
@@ -58,29 +60,31 @@ console:
     completions: true
 
 reports:
-    exclude_paths:
-        - contracts/testhelpers/**/*.*
-        - contracts/openzeppelin/**/*.*
-        - contracts/feeds/testnet/**/*.*
-    exclude_contracts:
-        - Address
-        - Context
-        - Ownable
-        - ReentrancyGuard
-        - SafeERC20
-        - SafeMath
-        - EnumerableBytes32Set
+    exclude_paths: null
+    exclude_contracts: null
+    only_include_project: true
 
 hypothesis:
     deadline: null
     max_examples: 50
     report_multiple_bugs: False
     stateful_step_count: 10
+    phases:
+        explicit: true
+        reuse: true
+        generate: true
+        target: true
+        shrink: true
 
 autofetch_sources: false
 dependencies:
-    - OpenZeppelin/openzeppelin-contracts@4.3.2
-    - OpenZeppelin/openzeppelin-contracts@3.4.0
-    - OpenZeppelin/openzeppelin-contracts@2.5.0
+    - openzeppelin/openzeppelin-contracts@4.8.0
+    - openzeppelin/openzeppelin-contracts-upgradeable@4.8.0
+    - openzeppelin/openzeppelin-contracts@4.3.2
+    - openzeppelin/openzeppelin-contracts@3.4.0
+    - openzeppelin/openzeppelin-contracts@2.5.0
     - paulrberg/prb-math@2.4.1
+    - uniswap/uniswap-v2-core@1.0.1
+    - uniswap/uniswap-v3-core@1.0.0
+    - uniswap/uniswap-v3-periphery@1.3.0
 dev_deployment_artifacts: false

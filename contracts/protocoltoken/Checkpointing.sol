@@ -1,10 +1,10 @@
 /**
- * Copyright 2017-2022, OokiDao. All Rights Reserved.
+ * Copyright 2017-2023, OokiDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
+// SPDX-License-Identifier: Apache-2.0
 pragma solidity 0.5.17;
-
 
 /**
  * Copyright (C) 2019 Aragon One <https://aragon.one/>
@@ -30,123 +30,100 @@ pragma solidity 0.5.17;
  *   - Checkpointing  (https://github.com/aragonone/voting-connectors/blob/master/shared/contract-utils/contracts/Checkpointing.sol)
  */
 library Checkpointing {
+  struct Checkpoint {
+    uint256 time;
+    uint256 value;
+  }
 
-    struct Checkpoint {
-        uint256 time;
-        uint256 value;
+  struct History {
+    Checkpoint[] history;
+  }
+
+  function addCheckpoint(
+    History storage _self,
+    uint256 _time,
+    uint256 _value
+  ) internal {
+    uint256 length = _self.history.length;
+    if (length == 0) {
+      _self.history.push(Checkpoint(_time, _value));
+    } else {
+      Checkpoint storage currentCheckpoint = _self.history[length - 1];
+      uint256 currentCheckpointTime = currentCheckpoint.time;
+
+      if (_time > currentCheckpointTime) {
+        _self.history.push(Checkpoint(_time, _value));
+      } else if (_time == currentCheckpointTime) {
+        currentCheckpoint.value = _value;
+      } else {
+        // ensure list ordering
+        revert("past-checkpoint");
+      }
+    }
+  }
+
+  function getValueAt(History storage _self, uint256 _time) internal view returns (uint256) {
+    return _getValueAt(_self, _time);
+  }
+
+  function lastUpdated(History storage _self) internal view returns (uint256) {
+    uint256 length = _self.history.length;
+    if (length != 0) {
+      return _self.history[length - 1].time;
+    }
+  }
+
+  function latestValue(History storage _self) internal view returns (uint256) {
+    uint256 length = _self.history.length;
+    if (length != 0) {
+      return _self.history[length - 1].value;
+    }
+  }
+
+  function _getValueAt(History storage _self, uint256 _time) private view returns (uint256) {
+    uint256 length = _self.history.length;
+
+    // Short circuit if there's no checkpoints yet
+    // Note that this also lets us avoid using SafeMath later on, as we've established that
+    // there must be at least one checkpoint
+    if (length == 0) {
+      return 0;
     }
 
-    struct History {
-        Checkpoint[] history;
+    // Check last checkpoint
+    uint256 lastIndex = length - 1;
+    Checkpoint storage lastCheckpoint = _self.history[lastIndex];
+    if (_time >= lastCheckpoint.time) {
+      return lastCheckpoint.value;
     }
 
-    function addCheckpoint(
-        History storage _self,
-        uint256 _time,
-        uint256 _value)
-        internal
-    {
-        uint256 length = _self.history.length;
-        if (length == 0) {
-            _self.history.push(Checkpoint(_time, _value));
-        } else {
-            Checkpoint storage currentCheckpoint = _self.history[length - 1];
-            uint256 currentCheckpointTime = currentCheckpoint.time;
-
-            if (_time > currentCheckpointTime) {
-                _self.history.push(Checkpoint(_time, _value));
-            } else if (_time == currentCheckpointTime) {
-                currentCheckpoint.value = _value;
-            } else { // ensure list ordering
-                revert("past-checkpoint");
-            }
-        }
+    // Check first checkpoint (if not already checked with the above check on last)
+    if (length == 1 || _time < _self.history[0].time) {
+      return 0;
     }
 
-    function getValueAt(
-        History storage _self,
-        uint256 _time)
-        internal
-        view
-        returns (uint256)
-    {
-        return _getValueAt(_self, _time);
+    // Do binary search
+    // As we've already checked both ends, we don't need to check the last checkpoint again
+    uint256 low = 0;
+    uint256 high = lastIndex - 1;
+
+    while (high != low) {
+      uint256 mid = (high + low + 1) / 2; // average, ceil round
+      Checkpoint storage checkpoint = _self.history[mid];
+      uint256 midTime = checkpoint.time;
+
+      if (_time > midTime) {
+        low = mid;
+      } else if (_time < midTime) {
+        // Note that we don't need SafeMath here because mid must always be greater than 0
+        // from the while condition
+        high = mid - 1;
+      } else {
+        // _time == midTime
+        return checkpoint.value;
+      }
     }
 
-    function lastUpdated(
-        History storage _self)
-        internal
-        view
-        returns (uint256)
-    {
-        uint256 length = _self.history.length;
-        if (length != 0) {
-            return _self.history[length - 1].time;
-        }
-    }
-
-    function latestValue(
-        History storage _self)
-        internal
-        view
-        returns (uint256)
-    {
-        uint256 length = _self.history.length;
-        if (length != 0) {
-            return _self.history[length - 1].value;
-        }
-    }
-
-    function _getValueAt(
-        History storage _self,
-        uint256 _time)
-        private
-        view
-        returns (uint256)
-    {
-        uint256 length = _self.history.length;
-
-        // Short circuit if there's no checkpoints yet
-        // Note that this also lets us avoid using SafeMath later on, as we've established that
-        // there must be at least one checkpoint
-        if (length == 0) {
-            return 0;
-        }
-
-        // Check last checkpoint
-        uint256 lastIndex = length - 1;
-        Checkpoint storage lastCheckpoint = _self.history[lastIndex];
-        if (_time >= lastCheckpoint.time) {
-            return lastCheckpoint.value;
-        }
-
-        // Check first checkpoint (if not already checked with the above check on last)
-        if (length == 1 || _time < _self.history[0].time) {
-            return 0;
-        }
-
-        // Do binary search
-        // As we've already checked both ends, we don't need to check the last checkpoint again
-        uint256 low = 0;
-        uint256 high = lastIndex - 1;
-
-        while (high != low) {
-            uint256 mid = (high + low + 1) / 2; // average, ceil round
-            Checkpoint storage checkpoint = _self.history[mid];
-            uint256 midTime = checkpoint.time;
-
-            if (_time > midTime) {
-                low = mid;
-            } else if (_time < midTime) {
-                // Note that we don't need SafeMath here because mid must always be greater than 0
-                // from the while condition
-                high = mid - 1;
-            } else {
-                // _time == midTime
-                return checkpoint.value;
-            }
-        }
-
-        return _self.history[low].value;
-    }
+    return _self.history[low].value;
+  }
 }
