@@ -3,108 +3,66 @@
  * Licensed under the Apache License, Version 2.0.
  */
 
-pragma solidity 0.5.17;
+// SPDX-License-Identifier: Apache-2.0
+pragma solidity ^0.8.0;
 
-import "../core/State.sol";
-import "../interfaces/ILoanPool.sol";
-import "../utils/MathUtil.sol";
-import "../events/InterestRateEvents.sol";
-import "../utils/InterestOracle.sol";
-import "../utils/TickMathV1.sol";
+import "contracts/core/State.sol";
+import "interfaces/ILoanPool.sol";
+import "contracts/utils/MathUtil.sol";
+import "contracts/events/InterestRateEvents.sol";
+import "contracts/utils/InterestOracle.sol";
+import "contracts/utils/TickMathV1.sol";
 
-contract InterestHandler is State, InterestRateEvents {
-    using MathUtil for uint256;
-    using InterestOracle for InterestOracle.Observation[256];
-    // returns up to date loan interest or 0 if not applicable
-    function _settleInterest(
-        address pool,
-        bytes32 loanId)
-        internal
-        returns (uint256 _loanInterestTotal)
-    {
-        poolLastIdx[pool] = poolInterestRateObservations[pool].write(
-            poolLastIdx[pool],
-            uint32(block.timestamp),
-            TickMathV1.getTickAtSqrtRatio(uint160(poolLastInterestRate[pool])),
-            uint8(-1),
-            timeDelta
-        );
-        uint256[7] memory interestVals = _settleInterest2(
-            pool,
-            loanId,
-            false
-        );
-        poolInterestTotal[pool] = interestVals[1];
-        poolRatePerTokenStored[pool] = interestVals[2];
+abstract contract InterestHandler is State, InterestRateEvents {
+  using MathUtil for uint256;
+  using InterestOracle for InterestOracle.Observation[256];
 
-        if (interestVals[3] != 0) {
-            poolLastInterestRate[pool] = interestVals[3];
-            emit PoolInterestRateVals(
-                pool,
-                interestVals[0],
-                interestVals[1],
-                interestVals[2],
-                interestVals[3]
-            );
-        }
+  // returns up to date loan interest or 0 if not applicable
+  function _settleInterest(address pool, bytes32 loanId) internal returns (uint256 _loanInterestTotal) {
+    poolLastIdx[pool] = poolInterestRateObservations[pool].write(
+      poolLastIdx[pool],
+      uint32(block.timestamp),
+      TickMathV1.getTickAtSqrtRatio(uint160(poolLastInterestRate[pool])),
+      type(uint8).max,
+      timeDelta
+    );
+    uint256[7] memory interestVals = _settleInterest2(pool, loanId, false);
+    poolInterestTotal[pool] = interestVals[1];
+    poolRatePerTokenStored[pool] = interestVals[2];
 
-        if (loanId != 0) {
-            _loanInterestTotal = interestVals[5];
-            loanInterestTotal[loanId] = _loanInterestTotal;
-            loanRatePerTokenPaid[loanId] = interestVals[6];
-            emit LoanInterestRateVals(
-                loanId,
-                interestVals[4],
-                interestVals[5],
-                interestVals[6]
-            );
-        }
-
-        poolLastUpdateTime[pool] = block.timestamp;
+    if (interestVals[3] != 0) {
+      poolLastInterestRate[pool] = interestVals[3];
+      emit PoolInterestRateVals(pool, interestVals[0], interestVals[1], interestVals[2], interestVals[3]);
     }
 
-    function _getPoolPrincipal(
-        address pool)
-        internal
-        view
-        returns (uint256)
-    {
-        uint256[7] memory interestVals = _settleInterest2(
-            pool,
-            0,
-            true
-        );
-
-        return interestVals[0]      // _poolPrincipalTotal
-            .add(interestVals[1]);  // _poolInterestTotal
+    if (loanId != 0) {
+      _loanInterestTotal = interestVals[5];
+      loanInterestTotal[loanId] = _loanInterestTotal;
+      loanRatePerTokenPaid[loanId] = interestVals[6];
+      emit LoanInterestRateVals(loanId, interestVals[4], interestVals[5], interestVals[6]);
     }
 
-    function _getLoanPrincipal(
-        address pool,
-        bytes32 loanId)
-        internal
-        view
-        returns (uint256)
-    {
-        uint256[7] memory interestVals = _settleInterest2(
-            pool,
-            loanId,
-            false
-        );
+    poolLastUpdateTime[pool] = block.timestamp;
+  }
 
-        return interestVals[4]      // _loanPrincipalTotal
-            .add(interestVals[5]);  // _loanInterestTotal
-    }
+  function _getPoolPrincipal(address pool) internal view returns (uint256) {
+    uint256[7] memory interestVals = _settleInterest2(pool, 0, true);
 
-    function _settleInterest2(
-        address pool,
-        bytes32 loanId,
-        bool includeLendingFee)
-        internal
-        view
-        returns (uint256[7] memory interestVals)
-    {
-        /*
+    return interestVals[0] + interestVals[1]; // _poolPrincipalTotal // _poolInterestTotal
+  }
+
+  function _getLoanPrincipal(address pool, bytes32 loanId) internal view returns (uint256) {
+    uint256[7] memory interestVals = _settleInterest2(pool, loanId, false);
+
+    return interestVals[4] + interestVals[5]; // _loanPrincipalTotal // _loanInterestTotal
+  }
+
+  function _settleInterest2(
+    address pool,
+    bytes32 loanId,
+    bool includeLendingFee
+  ) internal view returns (uint256[7] memory interestVals) {
+    /*
             uint256[7] ->
             0: _poolPrincipalTotal,
             1: _poolInterestTotal,
@@ -115,60 +73,47 @@ contract InterestHandler is State, InterestRateEvents {
             6: _loanRatePerTokenPaid
         */
 
-        interestVals[0] = poolPrincipalTotal[pool]
-            .add(lenderInterest[pool][loanPoolToUnderlying[pool]].principalTotal); // backwards compatibility
-        interestVals[1] = poolInterestTotal[pool];
+    interestVals[0] = poolPrincipalTotal[pool] + lenderInterest[pool][loanPoolToUnderlying[pool]].principalTotal; // backwards compatibility
+    interestVals[1] = poolInterestTotal[pool];
 
-        uint256 lendingFee = interestVals[1]
-            .mul(lendingFeePercent)
-            .divCeil(WEI_PERCENT_PRECISION);
+    uint256 lendingFee = interestVals[1] * (lendingFeePercent).divCeil(WEI_PERCENT_PRECISION);
 
-        uint256 _poolVariableRatePerTokenNewAmount;
-        (_poolVariableRatePerTokenNewAmount, interestVals[3]) = _getRatePerTokenNewAmount(pool, interestVals[0].add(interestVals[1] - lendingFee));
+    uint256 _poolVariableRatePerTokenNewAmount;
+    (_poolVariableRatePerTokenNewAmount, interestVals[3]) = _getRatePerTokenNewAmount(pool, interestVals[0] + (interestVals[1] - lendingFee));
 
-        interestVals[1] = interestVals[0]
-            .mul(_poolVariableRatePerTokenNewAmount)
-            .div(WEI_PERCENT_PRECISION * WEI_PERCENT_PRECISION)
-            .add(interestVals[1]);
+    interestVals[1] = (interestVals[0] * _poolVariableRatePerTokenNewAmount) / (WEI_PERCENT_PRECISION * WEI_PERCENT_PRECISION) + interestVals[1];
 
-        if (includeLendingFee) {
-            interestVals[1] -= lendingFee;
-        }
-
-        interestVals[2] = poolRatePerTokenStored[pool]
-            .add(_poolVariableRatePerTokenNewAmount);
-
-         if (loanId != 0 && (interestVals[4] = loans[loanId].principal) != 0) {
-            interestVals[5] = interestVals[4]
-                .mul(interestVals[2].sub(loanRatePerTokenPaid[loanId])) // _loanRatePerTokenUnpaid
-                .div(WEI_PERCENT_PRECISION * WEI_PERCENT_PRECISION)
-                .add(loanInterestTotal[loanId]);
-
-            interestVals[6] = interestVals[2];
-        }
+    if (includeLendingFee) {
+      interestVals[1] -= lendingFee;
     }
 
-    function _getRatePerTokenNewAmount(
-        address pool,
-        uint256 poolTotal)
-        internal
-        view
-        returns (uint256 ratePerTokenNewAmount, uint256 nextInterestRate)
-    {
-        uint256 timeSinceUpdate = block.timestamp.sub(poolLastUpdateTime[pool]);
-        uint256 benchmarkRate = TickMathV1.getSqrtRatioAtTick(poolInterestRateObservations[pool].arithmeticMean(
-            uint32(block.timestamp),
-            [uint32(timeSinceUpdate+twaiLength), uint32(timeSinceUpdate)],
-            poolInterestRateObservations[pool][poolLastIdx[pool]].tick,
-            poolLastIdx[pool],
-            uint8(-1)
-        ));
-        if (timeSinceUpdate != 0 &&
-            (nextInterestRate = ILoanPool(pool)._nextBorrowInterestRate(poolTotal, 0, benchmarkRate)) != 0) {
-            ratePerTokenNewAmount = timeSinceUpdate
-                .mul(nextInterestRate) // rate per year
-                .mul(WEI_PERCENT_PRECISION)
-                .div(31536000); // seconds in a year
-        }
+    interestVals[2] = poolRatePerTokenStored[pool] + _poolVariableRatePerTokenNewAmount;
+
+    if (loanId != 0 && (interestVals[4] = loans[loanId].principal) != 0) {
+      interestVals[5] =
+        (interestVals[4] * (interestVals[2] - (loanRatePerTokenPaid[loanId]))) / // _loanRatePerTokenUnpaid
+        (WEI_PERCENT_PRECISION * WEI_PERCENT_PRECISION) +
+        (loanInterestTotal[loanId]);
+
+      interestVals[6] = interestVals[2];
     }
+  }
+
+  function _getRatePerTokenNewAmount(address pool, uint256 poolTotal) internal view returns (uint256 ratePerTokenNewAmount, uint256 nextInterestRate) {
+    uint256 timeSinceUpdate = block.timestamp - poolLastUpdateTime[pool];
+    uint256 benchmarkRate = TickMathV1.getSqrtRatioAtTick(
+      poolInterestRateObservations[pool].arithmeticMean(
+        uint32(block.timestamp),
+        [uint32(timeSinceUpdate + twaiLength), uint32(timeSinceUpdate)],
+        poolInterestRateObservations[pool][poolLastIdx[pool]].tick,
+        poolLastIdx[pool],
+        type(uint8).max
+      )
+    );
+    if (timeSinceUpdate != 0 && (nextInterestRate = ILoanPool(pool)._nextBorrowInterestRate(poolTotal, 0, benchmarkRate)) != 0) {
+      ratePerTokenNewAmount =
+        (timeSinceUpdate * (nextInterestRate) * (WEI_PERCENT_PRECISION)) / // rate per year
+        (31536000); // seconds in a year
+    }
+  }
 }
