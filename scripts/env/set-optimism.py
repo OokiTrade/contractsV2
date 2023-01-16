@@ -14,10 +14,12 @@ tickMath = Contract.from_abi("TickMathV1", "0x3D87106A93F56ceE890769A808Af62Abc6
 
 GUARDIAN_MULTISIG = "0x4e5b10F8221eadCeDEAA84a122620e22775F82Df"
 LOAN_TOKEN_SETTINGS_LOWER_ADMIN = Contract.from_abi("LOAN_TOKEN_SETTINGS_LOWER_ADMIN", "0x46530E77a3ad47f432D1ad206fB8c44435932B91", LoanTokenSettingsLowerAdmin.abi)
-LOAN_TOKEN_SETTINGS = Contract.from_abi("LOAN_TOKEN_SETTINGS", "0xe98dE80395972Ff6e32885F6a472b38436bE1716", LoanTokenSettings.abi)
+#LOAN_TOKEN_SETTINGS = Contract.from_abi("LOAN_TOKEN_SETTINGS", "0xe98dE80395972Ff6e32885F6a472b38436bE1716", LoanTokenSettings.abi)
 
 MULTICALL3 = Contract.from_abi("MULTICALL3", "0xcA11bde05977b3631167028862bE2a173976CA11", interface.IMulticall3.abi)
 
 DEX_RECORDS = Contract.from_abi("DexRecords", BZX.swapsImpl(), DexRecords.abi)
+PRICE_FEED = Contract.from_abi("PRICE_FEED", BZX.priceFeeds(), abi = PriceFeeds.abi)
+SWEEP_FEES = Contract.from_abi("SWEEP_FEES", "0xEfC00F2b226130461f6C9E9C5A5e465BF23FFD77", FeeExtractAndDistribute_Optimism.abi)
 
-#SWEEP_FEES = Contract.from_abi("SWEEP_FEES", "XXXX", FeeExtractAndDistribute_Arbitrum.abi)
+CUI = CurvedInterestRate.at("0x100f9EC4E0085d8f469500F66370f8dc64e1F670")

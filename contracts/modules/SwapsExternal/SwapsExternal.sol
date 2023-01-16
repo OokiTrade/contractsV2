@@ -35,6 +35,7 @@ contract SwapsExternal is State, VaultController, SwapsUser, PausableGuardian {
         public
         payable
         nonReentrant
+        pausable
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
     {
         return _swapExternal(
@@ -89,7 +90,7 @@ contract SwapsExternal is State, VaultController, SwapsUser, PausableGuardian {
             [
                 sourceToken,
                 destToken,
-                receiver,
+                address(this),
                 returnToSender,
                 msg.sender // user
             ],
@@ -102,6 +103,8 @@ contract SwapsExternal is State, VaultController, SwapsUser, PausableGuardian {
             false, // bypassFee
             swapData
         );
+
+        IERC20(destToken).safeTransfer(receiver, destTokenAmountReceived);
 
         emit ExternalSwap(
             msg.sender, // user
@@ -116,8 +119,9 @@ contract SwapsExternal is State, VaultController, SwapsUser, PausableGuardian {
         address trader,
         address sourceToken,
         address destToken,
-        uint256 sourceTokenAmount,
-        bytes calldata payload)
+        uint256 tokenAmount,
+        bytes calldata payload,
+        bool isGetAmountOut)
         external
         returns (uint256)
     {
@@ -125,8 +129,9 @@ contract SwapsExternal is State, VaultController, SwapsUser, PausableGuardian {
             trader,
             sourceToken,
             destToken,
-            sourceTokenAmount,
-            payload
+            tokenAmount,
+            payload,
+            isGetAmountOut
         );
     }
 }

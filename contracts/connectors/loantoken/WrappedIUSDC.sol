@@ -6,11 +6,11 @@
 
 pragma solidity ^0.8.0;
 
-import "@openzeppelin-4.3.2/token/ERC20/ERC20.sol";
-import "@openzeppelin-4.3.2/token/ERC20/extensions/ERC20Burnable.sol";
-import "@openzeppelin-4.3.2/token/ERC20/extensions/IERC20Metadata.sol";
-import "@openzeppelin-4.3.2/token/ERC20/utils/SafeERC20.sol";
-// import "@openzeppelin-4.3.2/utils/math/SafeMath.sol";
+import "@openzeppelin-4.7.0/token/ERC20/ERC20.sol";
+import "@openzeppelin-4.7.0/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin-4.7.0/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin-4.7.0/token/ERC20/utils/SafeERC20.sol";
+// import "@openzeppelin-4.7.0/utils/math/SafeMath.sol";
 import "../../proxies/0_8/Upgradeable_0_8.sol";
 import "../../../interfaces/IToken.sol";
 

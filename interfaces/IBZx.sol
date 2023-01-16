@@ -56,6 +56,11 @@ interface IBZx {
         bool withApprovals
     ) external;
 
+    /// @dev sets approvals for tokens for specific dexes on dex selector
+    /// @param tokens tokens to have their approvals set
+    /// @param dexIDs IDs of the swap impls on dex selector
+    function setApprovals(address[] calldata tokens, uint256[] calldata dexIDs) external;
+
     /// @dev sets lending fee with WEI_PERCENT_PRECISION
     /// @param newValue lending fee percent
     function setLendingFeePercent(uint256 newValue) external;
@@ -230,6 +235,10 @@ interface IBZx {
     /// @param loanParamsIdList array of loan ids
     function disableLoanParams(bytes32[] calldata loanParamsIdList) external;
 
+    /// @dev Modifies or adds new loan params, guardianOnly
+    /// @param loanParamsList array of loanParams
+    function modifyLoanParams(LoanParams[] calldata loanParamsList) external;
+
     /// @dev gets array of LoanParams by given ids
     /// @param loanParamsIdList array of loan ids
     /// @return loanParamsList array of LoanParams
@@ -273,11 +282,17 @@ interface IBZx {
         external
         view
         returns (uint256);
+    
+    function migrateLoanParamsList(
+        address owner,
+        uint256 start,
+        uint256 count)
+        external;
 
     ////// Loan Openings //////
 
     /// @dev This is THE function that borrows or trades on the protocol
-    /// @param loanParamsId id of the LoanParam created beforehand by setupLoanParams function
+    /// @param collateralTokenAddress collateral address
     /// @param loanId id of existing loan, if 0, start a new loan
     /// @param isTorqueLoan boolean whether it is toreque or non torque loan
     /// @param initialMargin in WEI_PERCENT_PRECISION
@@ -295,7 +310,7 @@ interface IBZx {
     /// @param loanDataBytes required when sending ether
     /// @return principal of the loan and collateral amount
     function borrowOrTradeFromPool(
-        bytes32 loanParamsId,
+        address collateralTokenAddress,
         bytes32 loanId,
         bool isTorqueLoan,
         uint256 initialMargin,
@@ -303,6 +318,12 @@ interface IBZx {
         uint256[5] calldata sentValues,
         bytes calldata loanDataBytes
     ) external payable returns (LoanOpenData memory);
+
+    function swapLoanCollateral(
+        bytes32 loanId,
+        address newCollateralToken,
+        bytes calldata loanDataBytes
+    ) external;
 
     /// @dev sets/disables/enables the delegated manager for the loan
     /// @param loanId id of the loan
@@ -328,31 +349,21 @@ interface IBZx {
         uint256 marginAmount,
         bool isTorqueLoan
     ) external view returns (uint256 collateralAmountRequired);
-
-    function getRequiredCollateralByParams(
-        bytes32 loanParamsId,
-        uint256 newPrincipal
-    ) external view returns (uint256 collateralAmountRequired);
-
-    /// @dev calculates borrow amount for simulated position
-    /// @param loanToken address of loan token
-    /// @param collateralToken address of collateral token
-    /// @param collateralTokenAmount amount of collateral token sent
-    /// @param marginAmount margin amount
-    /// @param isTorqueLoan boolean torque or non torque loan
-    /// @return borrowAmount possible borrow amount
-    function getBorrowAmount(
+    
+    function getDefaultLoanParams(
         address loanToken,
         address collateralToken,
-        uint256 collateralTokenAmount,
-        uint256 marginAmount,
-        bool isTorqueLoan
-    ) external view returns (uint256 borrowAmount);
+        bool isTorqueLoan)
+        external
+        view
+        returns(LoanParams memory loanParamsLocal, bool isDefault);
 
-    function getBorrowAmountByParams(
-        bytes32 loanParamsId,
-        uint256 collateralTokenAmount
-    ) external view returns (uint256 borrowAmount);
+    function generateLoanParamId(
+        address loanToken,
+        address collateralToken,
+        bool isTorqueLoan
+    ) external pure returns (bytes32);
+
 
     ////// Loan Closings //////
 
@@ -380,13 +391,15 @@ interface IBZx {
     /// @param loanId id of the loan
     /// @param receiver collateral token reciever address
     /// @param depositAmount amount of loan token to deposit
+    /// @param loanDataBytes additional functionality e.g permits
     /// @return loanCloseAmount loan close amount
     /// @return withdrawAmount loan token withdraw amount
     /// @return withdrawToken loan token address
     function closeWithDeposit(
         bytes32 loanId,
         address receiver,
-        uint256 depositAmount // denominated in loanToken
+        uint256 depositAmount, // denominated in loanToken
+        bytes calldata loanDataBytes
     )
         external
         payable
@@ -420,74 +433,6 @@ interface IBZx {
         );
 
     ////// Loan Closings With Gas Token //////
-
-    /// @dev liquidates unhealty loans by using Gas token
-    /// @param loanId id of the loan
-    /// @param receiver address receiving liquidated loan collateral
-    /// @param gasTokenUser user address of the GAS token
-    /// @param closeAmount amount to close denominated in loanToken
-    /// @return loanCloseAmount loan close amount
-    /// @return seizedAmount loan token withdraw amount
-    /// @return seizedToken loan token address
-    function liquidateWithGasToken(
-        bytes32 loanId,
-        address receiver,
-        address gasTokenUser,
-        uint256 closeAmount // denominated in loanToken
-    )
-        external
-        payable
-        returns (
-            uint256 loanCloseAmount,
-            uint256 seizedAmount,
-            address seizedToken
-        );
-
-    /// @dev close position with loan token deposit
-    /// @param loanId id of the loan
-    /// @param receiver collateral token reciever address
-    /// @param gasTokenUser user address of the GAS token
-    /// @param depositAmount amount of loan token to deposit denominated in loanToken
-    /// @return loanCloseAmount loan close amount
-    /// @return withdrawAmount loan token withdraw amount
-    /// @return withdrawToken loan token address
-    function closeWithDepositWithGasToken(
-        bytes32 loanId,
-        address receiver,
-        address gasTokenUser,
-        uint256 depositAmount
-    )
-        external
-        payable
-        returns (
-            uint256 loanCloseAmount,
-            uint256 withdrawAmount,
-            address withdrawToken
-        );
-
-    /// @dev close position with swap
-    /// @param loanId id of the loan
-    /// @param receiver collateral token reciever address
-    /// @param gasTokenUser user address of the GAS token
-    /// @param swapAmount amount of loan token to swap denominated in collateralToken
-    /// @param returnTokenIsCollateral  true: withdraws collateralToken, false: withdraws loanToken
-    /// @return loanCloseAmount loan close amount
-    /// @return withdrawAmount loan token withdraw amount
-    /// @return withdrawToken loan token address
-    function closeWithSwapWithGasToken(
-        bytes32 loanId,
-        address receiver,
-        address gasTokenUser,
-        uint256 swapAmount,
-        bool returnTokenIsCollateral,
-        bytes calldata loanDataBytes
-    )
-        external
-        returns (
-            uint256 loanCloseAmount,
-            uint256 withdrawAmount,
-            address withdrawToken
-        );
 
     ////// Loan Maintenance //////
 
@@ -654,34 +599,6 @@ interface IBZx {
             uint256 sourceTokenAmountUsed
         );
 
-    /// @dev swap thru external integration using GAS
-    /// @param sourceToken source token address
-    /// @param destToken destintaion token address
-    /// @param receiver address to receive tokens
-    /// @param returnToSender TODO
-    /// @param gasTokenUser user address of the GAS token
-    /// @param sourceTokenAmount source token amount
-    /// @param requiredDestTokenAmount destination token amount
-    /// @param swapData TODO
-    /// @return destTokenAmountReceived destination token received
-    /// @return sourceTokenAmountUsed source token amount used
-    function swapExternalWithGasToken(
-        address sourceToken,
-        address destToken,
-        address receiver,
-        address returnToSender,
-        address gasTokenUser,
-        uint256 sourceTokenAmount,
-        uint256 requiredDestTokenAmount,
-        bytes calldata swapData
-    )
-        external
-        payable
-        returns (
-            uint256 destTokenAmountReceived,
-            uint256 sourceTokenAmountUsed
-        );
-
     /// @dev calculate simulated return of swap
     /// @param sourceToken source token address
     /// @param destToken destination token address
@@ -695,12 +612,37 @@ interface IBZx {
         bytes calldata swapData
     ) external view returns (uint256);
 
+    /// @dev calculate simulated return of swap
+    /// @param trader the wallet that will be used to execute the trade
+    /// @param sourceToken source token address
+    /// @param destToken destination token address
+    /// @param sourceTokenAmount specifies source token amount
+    /// @param payload loanDataBytes used
+    /// @return amount amount received
     function getSwapExpectedReturn(
         address trader,
         address sourceToken,
         address destToken,
         uint256 sourceTokenAmount,
         bytes calldata payload)
+        external
+        returns (uint256);
+
+    /// @dev calculate simulated return of swap
+    /// @param trader the wallet that will be used to execute the trade
+    /// @param sourceToken source token address
+    /// @param destToken destination token address
+    /// @param tokenAmount specifies either token amount in or specific amount out
+    /// @param payload loanDataBytes used
+    /// @param isAmountIn if marked as true it is returning an amount received and if false it returns an amount in 
+    /// @return amount amount received or amount in needed based on isAmountIn selection
+    function getSwapExpectedReturn(
+        address trader,
+        address sourceToken,
+        address destToken,
+        uint256 tokenAmount,
+        bytes calldata payload,
+        bool isAmountIn)
         external
         returns (uint256);
 

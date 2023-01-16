@@ -6,7 +6,7 @@
 pragma solidity 0.6.12;
 
 import "@openzeppelin-3.4.0/token/ERC20/IERC20.sol";
-import "../../farm/interfaces/Upgradeable.sol";
+import "./Upgradeable.sol";
 
 
 // Temporary implementation to handle initial monthly salaries, while full implementation is under development

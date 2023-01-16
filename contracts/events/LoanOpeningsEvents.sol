@@ -44,6 +44,16 @@ contract LoanOpeningsEvents {
         bool isActive
     );
 
+    event LoanCollateralSwap(
+        address indexed user,
+        bytes32 indexed loanId,
+        address oldCollateralToken,
+        address newCollateralToken,
+        uint256 collateral,
+        uint256 collateralToLoanRate,
+        uint256 currentMargin
+    );
+
     struct LoanOpenData {
         bytes32 loanId;
         uint256 principal;
