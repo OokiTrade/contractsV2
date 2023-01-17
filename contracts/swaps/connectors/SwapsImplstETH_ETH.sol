@@ -19,13 +19,7 @@ contract SwapsImplstETH_ETH is State, ISwapsImpl {
   address public constant WSTETH = 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0;
   ICurve public constant STETHPOOL = ICurve(0xDC24316b9AE028F1497c275EB9192a3Ea0f67022);
 
-  constructor(
-    IWeth wethtoken,
-    address usdc,
-    address bzrx,
-    address vbzrx,
-    address ooki
-  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
+  constructor(IWeth wethtoken, address usdc, address bzrx, address vbzrx, address ooki) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
 
   function dexSwap(
     address sourceTokenAddress,
@@ -61,11 +55,7 @@ contract SwapsImplstETH_ETH is State, ISwapsImpl {
     }
   }
 
-  function dexExpectedRate(
-    address sourceTokenAddress,
-    address destTokenAddress,
-    uint256 sourceTokenAmount
-  ) public view returns (uint256 expectedRate) {
+  function dexExpectedRate(address sourceTokenAddress, address destTokenAddress, uint256 sourceTokenAmount) public view returns (uint256 expectedRate) {
     revert("unsupported");
   }
 
@@ -98,18 +88,14 @@ contract SwapsImplstETH_ETH is State, ISwapsImpl {
     revert("unsupported");
   }
 
-  function setSwapApprovals(
-    address[] memory /*tokens*/
-  ) public {
+  function setSwapApprovals(address[] memory /*tokens*/) public {
     IERC20(STETH).safeApprove(WSTETH, 0);
     IERC20(STETH).safeApprove(WSTETH, type(uint256).max);
     IERC20(STETH).safeApprove(address(STETHPOOL), 0);
     IERC20(STETH).safeApprove(address(STETHPOOL), type(uint256).max);
   }
 
-  function revokeApprovals(
-    address[] memory /*tokens*/
-  ) public {
+  function revokeApprovals(address[] memory /*tokens*/) public {
     IERC20(STETH).safeApprove(WSTETH, 0);
     IERC20(STETH).safeApprove(address(STETHPOOL), 0);
   }
@@ -119,7 +105,7 @@ contract SwapsImplstETH_ETH is State, ISwapsImpl {
     address destTokenAddress,
     address receiverAddress,
     uint256 minSourceTokenAmount,
-    uint256, /*maxSourceTokenAmount*/
+    uint256 /*maxSourceTokenAmount*/,
     uint256 requiredDestTokenAmount,
     bytes memory payload
   ) internal returns (uint256 sourceTokenAmountUsed, uint256 destTokenAmountReceived) {
@@ -127,7 +113,8 @@ contract SwapsImplstETH_ETH is State, ISwapsImpl {
     sourceTokenAmountUsed = minSourceTokenAmount;
     if (sourceTokenAddress == address(wethToken)) {
       wethToken.withdraw(minSourceTokenAmount);
-      if (abi.decode(payload, (uint256)) > 0) {
+      uint256 wstETHAmount = abi.decode(payload, (uint256));
+      if (wstETHAmount > 0) {
         destTokenAmountReceived = STETHPOOL.exchange{value: minSourceTokenAmount}(0, 1, minSourceTokenAmount, abi.decode(payload, (uint256)));
       } else {
         destTokenAmountReceived = IstETH(STETH).submit{value: minSourceTokenAmount}(address(this));
