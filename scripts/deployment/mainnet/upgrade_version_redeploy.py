@@ -76,3 +76,12 @@ for l in list:
         iToken.setTarget(itokenImplWeth, {"from": iToken.owner()})
     else:
         iToken.setTarget(itokenImpl, {"from": iToken.owner()})
+
+USDC.transfer(accounts[0], 1000000e6, {"from": "0xf977814e90da44bfa03b6295a0616a897441acec"})
+USDC.approve(iUSDC, 2**256-1, {"from": accounts[0]})
+USDC.approve(iUSDT, 2**256-1, {"from": accounts[0]})
+USDC.approve(iETH, 2**256-1, {"from": accounts[0]})
+USDC.approve(BZX, 2**256-1, {"from": accounts[0]})
+iUSDC.mint(100e6, accounts[0], {"from": accounts[0]})
+iUSDT.borrow("", 50e6, 7884000, 100e6, USDC, accounts[0], accounts[0], b"", {'from': accounts[0]})
+iUSDT.borrow("", 50e6, 7884000, 100e6, USDC, accounts[0], accounts[0], b"", {'from': accounts[0]})
