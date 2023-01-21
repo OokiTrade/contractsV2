@@ -168,11 +168,11 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
         internal
         returns (uint256 sourceTokenAmountUsed, uint256 destTokenAmountReceived)
     {
-        _checkLimits(limits);
-        require(tokens[0] == sourceTokenAddress && tokens[tokens.length-1] == destTokenAddress, "invalid tokens");
         if (requiredDestTokenAmount == 0) {
             (IBalancerVault.BatchSwapStep[] memory swapParams, address[] memory tokens, int256[] memory limits) = abi.decode(payload, (IBalancerVault.BatchSwapStep[], address[], int256[]));
+            require(tokens[0] == sourceTokenAddress && tokens[tokens.length-1] == destTokenAddress, "invalid tokens");
             limits[0] = int256(minSourceTokenAmount);
+            _checkLimits(limits);
             maxSourceTokenAmount = 0;
             for (uint i; i < swapParams.length; ++i) {
                 if (swapParams[i].assetInIndex == 0) {
