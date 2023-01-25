@@ -5,7 +5,7 @@ iETH_OLD = Contract.from_abi("iETH_OLD", "0x77f973FCaF871459aa58cd81881Ce4537592
 impl = ITokenV1Migrator.deploy({'from': deployer})
 proxy = Proxy_0_8.deploy(impl, {'from': deployer})
 V1_ITOKEN_MIGRATOR = Contract.from_abi("V1_ITOKEN_MIGRATOR", address=proxy, abi=ITokenV1Migrator.abi)
-V1_ITOKEN_MIGRATOR.setTokenPrice(iETH_OLD, iETH_OLD.tokenPrice(), iETH, {'from': deployer})
+V1_ITOKEN_MIGRATOR.setTokenPrice(iETH_OLD, iETH_OLD.tokenPrice(), iETH,  iETH_OLD.tokenPrice(), {'from': deployer})
 
 extractor = TokenExtractor.deploy({'from': deployer})
 balance = WETH.balanceOf(iETH_OLD)
