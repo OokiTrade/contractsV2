@@ -8,7 +8,7 @@ import "../../interfaces/IPriceFeeds.sol";
 import "../proxies/0_8/Upgradeable_0_8.sol";
 contract StakingVault is Upgradeable_0_8, ERC1155 {
     using SafeERC20 for IERC20;
-    struct tokenComposition {
+    struct TokenComposition {
         address depositToken;
         address tokenToBack;
     }
@@ -18,7 +18,7 @@ contract StakingVault is Upgradeable_0_8, ERC1155 {
     address[] public stakingTokens;
     mapping(address=>bool) public tokenSupported;
     mapping(uint256=>uint256) public sTokenPrice;
-    mapping(uint256=>tokenComposition) public IDToTokens;
+    mapping(uint256=>TokenComposition) public identifierToTokens;
     mapping(uint256=>uint256) public balanceStakedPerID;
     mapping(uint256=>uint256) public supplyPerID;
 
@@ -27,6 +27,7 @@ contract StakingVault is Upgradeable_0_8, ERC1155 {
     address public rewardToken;
     mapping(address=>mapping(uint256=>uint256)) public lastClaimRewardAccrual;
     mapping(uint256=>bool) public initialized;
+    mapping(address=>uint8) public tokenDecimalCache;
 
     event PriceFeed(address feed);
     event Protocol(address protocol);
@@ -50,6 +51,9 @@ contract StakingVault is Upgradeable_0_8, ERC1155 {
         stakingTokens = listOfSupportedTokens;
         for (uint i; i<tokens.length;) {
             tokenSupported[tokens[i]] = support[i];
+            if (tokenDecimalCache[tokens[i]] == 0) {
+                tokenDecimalCache[tokens[i]] = IERC20Metadata(tokens[i]).decimals();
+            }
             unchecked { ++i; }
         }
 
@@ -63,10 +67,10 @@ contract StakingVault is Upgradeable_0_8, ERC1155 {
     function deposit(address depositToken, address tokenToBack, uint256 amount) external {
         require(tokenSupported[depositToken], "unsupported deposit token");
         uint256 tokenID = convertToID(depositToken, tokenToBack);
-        if (IDToTokens[tokenID].depositToken == address(0)) {
+        if (identifierToTokens[tokenID].depositToken == address(0)) {
             sTokenPrice[tokenID] = 1e18;
         }
-        IDToTokens[tokenID] = tokenComposition({depositToken:depositToken, tokenToBack:tokenToBack});
+        identifierToTokens[tokenID] = TokenComposition({depositToken:depositToken, tokenToBack:tokenToBack});
         uint256 mintAmount = _amountToMint(tokenID, amount);
         _claimReward(tokenID);
         _mint(msg.sender, tokenID, mintAmount, "");
@@ -151,13 +155,13 @@ contract StakingVault is Upgradeable_0_8, ERC1155 {
     }
 
     function _amountToMint(uint256 tokenID, uint256 amount) internal returns (uint256) {
-        uint8 decimals = IERC20Metadata(IDToTokens[tokenID].depositToken).decimals();
+        uint8 decimals = tokenDecimalCache[identifierToTokens[tokenID].depositToken];
 
         return (amount*1e18/sTokenPrice[tokenID])*10**(18-decimals);
     }
 
     function _amountToSend(uint256 tokenID, uint256 amountBurnt) internal returns (uint256) {
-        uint8 decimals = IERC20Metadata(IDToTokens[tokenID].depositToken).decimals();
+        uint8 decimals = IERC20Metadata(identifierToTokens[tokenID].depositToken).decimals();
 
         return (sTokenPrice[tokenID]*amountBurnt/1e18)/10**(18-decimals);
     }
