@@ -2,55 +2,64 @@
 from brownie import *
 import pytest
 
-holders_1 = {
-    'DAI': '0x66f62574ab04989737228d18c3624f7fc1edae14',
-    #'WETH' : '0xf04a5cc80b1e94c69b48f5ee68a08cd2f09a7c3e',
-    'USDC': '0xF977814e90dA44bFA03b6295A0616a897441aceC',
-    # 'WBTC': '0x218b95be3ed99141b0144dba6ce88807c4ad7c09',
-    # # 'LRC' : '0x46f80018211d5cbbc988e853a8683501fca4ee9b',
-    # # 'KNC' : '0x97f991971a37d4ca58064e6a98fc563f03a71e5c',
-    # 'MKR' : '0xa9dda2045d140eb7ccd30c4ef6b9901ccb279793', #Deprecated
-    # 'LINK': '0x7182bdeacab178a1c5a14502d532f8b2b7cf4285',
-    # # 'YFI': '0xe174c389249b0e3a4ec84d2a5667aa4920cb77de',
-    # # 'AAVE': '0x3744da57184575064838bbc87a0fc791f5e39ea2',
-    # # 'UNI': '0x0ec9e8aa56e0425b60dee347c8efbad959579d0f',
-    # 'COMP': '0xfbe18f066f9583dac19c88444bc2005c99881e56',
-    # 'OOKI': '0x16f179f5c344cc29672a58ea327a26f64b941a63',
-    # 'APE': '0x91951fa186a77788197975ed58980221872a3352',
+env = {
+    '1': {
+        'protocol': '0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f',
+        'regestry': '0xf0E474592B455579Fe580D610b846BdBb529C6F7',
+        'helper': '0xb887f5b81deec1e271b06257f138e5a9d422bc8c',
+        'holders': {
+            'DAI': '0x66f62574ab04989737228d18c3624f7fc1edae14',
+            #'WETH' : '0xf04a5cc80b1e94c69b48f5ee68a08cd2f09a7c3e',
+            'USDC': '0xF977814e90dA44bFA03b6295A0616a897441aceC',
+            # 'WBTC': '0x218b95be3ed99141b0144dba6ce88807c4ad7c09',
+            # # 'LRC' : '0x46f80018211d5cbbc988e853a8683501fca4ee9b',
+            # # 'KNC' : '0x97f991971a37d4ca58064e6a98fc563f03a71e5c',
+            # 'MKR' : '0xa9dda2045d140eb7ccd30c4ef6b9901ccb279793', #Deprecated
+            # 'LINK': '0x7182bdeacab178a1c5a14502d532f8b2b7cf4285',
+            # # 'YFI': '0xe174c389249b0e3a4ec84d2a5667aa4920cb77de',
+            # # 'AAVE': '0x3744da57184575064838bbc87a0fc791f5e39ea2',
+            # # 'UNI': '0x0ec9e8aa56e0425b60dee347c8efbad959579d0f',
+            # 'COMP': '0xfbe18f066f9583dac19c88444bc2005c99881e56',
+            # 'OOKI': '0x16f179f5c344cc29672a58ea327a26f64b941a63',
+            # 'APE': '0x91951fa186a77788197975ed58980221872a3352',
+        }
+    }
 }
 
-def holders():
-    return holders_1
+@pytest.fixture(scope="module")
+def ENV():
+    thisNetwork = network.chain.id
+    if thisNetwork == 1:
+       return env['1']
+
+@pytest.fixture(scope="module")
+def regestry(TokenRegistry, ENV):
+    return Contract.from_abi("TOKEN_regestry", ENV['regestry'], TokenRegistry.abi)
 
 
 @pytest.fixture(scope="module")
-def REGISTRY(TokenRegistry):
-    return Contract.from_abi("TOKEN_REGISTRY", "0xf0E474592B455579Fe580D610b846BdBb529C6F7", TokenRegistry.abi)
-
-
-@pytest.fixture(scope="module")
-def BZX(interface):
-    return Contract.from_abi("BZX", "0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f", interface.IBZx.abi)
+def bzx(interface, ENV):
+    return Contract.from_abi("bzx", ENV['protocol'], interface.IBZx.abi)
 
 @pytest.fixture(scope="module")
-def HELPER(interface):
-    return Contract.from_abi("HELPER", "0xb887f5b81deec1e271b06257f138e5a9d422bc8c", HelperImpl.abi)
+def HELPER(interface, ENV):
+    return Contract.from_abi("HELPER", ENV['helper'], HelperImpl.abi)
 
 
 
 @pytest.fixture(scope="module")
-def ITOKENS(REGISTRY):
+def ITOKENS(regestry):
     res = {}
-    list = REGISTRY.getTokens(0, 50)
+    list = regestry.getTokens(0, 50)
     for l in list:
         iTokenTemp = Contract.from_abi("iTokenTemp", l[0], interface.IToken.abi)
         res[iTokenTemp.symbol()] = iTokenTemp
     return res
 
 @pytest.fixture(scope="module")
-def TOKENS(REGISTRY):
+def TOKENS(regestry):
     res = {}
-    list = REGISTRY.getTokens(0, 50)
+    list = regestry.getTokens(0, 50)
     for l in list:
         underlyingTemp = Contract.from_abi("underlyingTemp", l[1], TestToken.abi)
         if (l[1] == "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2"):
@@ -63,8 +72,10 @@ def TOKENS(REGISTRY):
 
 def pytest_generate_tests(metafunc):
     res = []
-    for i in holders().keys():
-        for j in holders().keys():
+
+    #ToDo: load from ENV fixture!!!!!!
+    for i in env['1']['holders'].keys():
+        for j in env['1']['holders'].keys():
             if(i == j):
                 res.append(['mint', 'i'+i, j])
             else:
@@ -78,12 +89,12 @@ def pytest_generate_tests(metafunc):
 
 
 
-def get_amount(loanToken, USDT, interface, BZX):
+def get_amount(loanToken, USDT, interface, bzx):
     print('==================')
-    decimals = interface.IERC20Detailed(loanToken).decimals()
+    decimals = interface.IERC20Metadata(loanToken).decimals()
     print(loanToken.symbol())
     print(decimals)
-    pricefeeds = interface.IPriceFeeds(BZX.priceFeeds())
+    pricefeeds = interface.IPriceFeeds(bzx.priceFeeds())
     usdtPricefeed = interface.IPriceFeedsExt(pricefeeds.pricesFeeds(USDT.address))
     pricefeed = interface.IPriceFeedsExt(pricefeeds.pricesFeeds(loanToken))
     currentPrice = pricefeed.latestAnswer() / (usdtPricefeed.latestAnswer())  # current token price in USDT
@@ -102,7 +113,7 @@ def mint(itoken, loanToken, amount, account):
 
 def burn(itoken, amount, account):
     print("Burn: ", amount, itoken.symbol())
-    itoken.burn(amount, account, {'from': account})
+    itoken.redeem(amount, account, account, {'from': account})
     assert history[-1].status.name == 'Confirmed'
 
 
@@ -130,21 +141,21 @@ def borrow(itoken, loanToken, collateral, amount, account, isNativeCollateral, H
     assert history[-1].status.name == 'Confirmed'
 
 
-def closeWithDeposit(loan, token, account, isNative, BZX):
-    if (token.allowance(account, BZX) == 0):
-        token.approve(BZX, 2**256-1, {'from': account})
+def closeWithDeposit(loan, token, account, isNative, bzx):
+    if (token.allowance(account, bzx) == 0):
+        token.approve(bzx, 2**256-1, {'from': account})
     print("closeWithDeposit")
     amount = (int)(loan[4] * 1.01)
     value = 0 if not isNative else amount
     print("loan before: ", loan)
     print("Value: ", value)
-    BZX.closeWithDeposit(loan[0], account, amount, b'', {'from': account, 'value': value})
+    bzx.closeWithDeposit(loan[0], account, amount, b'', {'from': account, 'value': value})
     assert history[-1].status.name == 'Confirmed'
-    print("loan after: ", BZX.getLoan(loan[0]))
+    print("loan after: ", bzx.getLoan(loan[0]))
 
 
-def t_borrow(loanToken, itoken, collateral, account, isNativeToken, isNativeCollateral, USDT, interface, BZX, HELPER):
-    amount = get_amount(loanToken, USDT, interface, BZX)
+def t_borrow(loanToken, itoken, collateral, account, isNativeToken, isNativeCollateral, USDT, interface, bzx, HELPER):
+    amount = get_amount(loanToken, USDT, interface, bzx)
     if (collateral.allowance(account, itoken) == 0):
         collateral.approve(itoken, 2**256-1, {'from': account})
     # BORROW
@@ -174,13 +185,13 @@ def t_borrow(loanToken, itoken, collateral, account, isNativeToken, isNativeColl
     assert tokenBalanceBefore < tokenBalanceAfter
     assert collatralTokenBalanceBefore > collatralTokenBalanceAfter
 
-    # loan = BZX.getLoan(history[-1].logs[4]['topics'][3])
-    loan = BZX.getUserLoans(account, 0, 100, 0, False, False)[0]
+    # loan = bzx.getLoan(history[-1].logs[4]['topics'][3])
+    loan = bzx.getUserLoans(account, 0, 100, 0, False, False)[0]
     tokenBalanceBefore = loanToken.balanceOf(account) if not isNativeToken else account.balance()
     collatralTokenBalanceBefore = collateral.balanceOf(account) if not isNativeCollateral else account.balance()
     print("tokenBalanceBefore: ", tokenBalanceBefore)
     print("collatralTokenBalanceBefore: ", collatralTokenBalanceBefore)
-    closeWithDeposit(loan, loanToken, account, isNativeToken, BZX)
+    closeWithDeposit(loan, loanToken, account, isNativeToken, bzx)
     tokenBalanceAfter = loanToken.balanceOf(account) if not isNativeToken else account.balance()
     collatralTokenBalanceAfter = collateral.balanceOf(account) if not isNativeCollateral else account.balance()
     print("tokenBalanceAfter: ", tokenBalanceAfter)
@@ -189,11 +200,11 @@ def t_borrow(loanToken, itoken, collateral, account, isNativeToken, isNativeColl
     assert collatralTokenBalanceBefore < collatralTokenBalanceAfter
 
 
-def margin_trade(loanToken, itoken, collateral, isNativeToken, isNativeCollateral, account, USDT, interface, BZX):
+def margin_trade(loanToken, itoken, collateral, isNativeToken, isNativeCollateral, account, USDT, interface, bzx):
     if (collateral.allowance(account, itoken) == 0):
         collateral.approve(itoken, 2**256-1, {'from': account})
         
-    amount = get_amount(collateral, USDT, interface, BZX)
+    amount = get_amount(collateral, USDT, interface, bzx)
     acc = accounts.at(account)
 
     print("itoken: ", itoken.symbol())
@@ -218,24 +229,24 @@ def margin_trade(loanToken, itoken, collateral, isNativeToken, isNativeCollatera
     assert collatralTokenBalanceBefore > collatralTokenBalanceAfter
 
 
-def test_1(input, TOKENS, ITOKENS, interface, BZX, HELPER):
+def test_1(input, TOKENS, ITOKENS, interface, bzx, HELPER, ENV):
     tokenName = input[2]
     itokenName = input[1]
     iToken = ITOKENS[input[1]]
     token = TOKENS[input[2]]
-    account = holders()[tokenName]
-    decimals = interface.IERC20Detailed(token).decimals()
+    account = ENV['holders'][tokenName]
+    decimals = interface.IERC20Metadata(token).decimals()
     USDT = TOKENS['USDT']
-    amount = get_amount(token, USDT, interface, BZX) * 100
+    amount = get_amount(token, USDT, interface, bzx) * 100
     loanToken = interface.ERC20(iToken.loanTokenAddress()) 
 
     if(input[0] == 'mint'):
         t_mint(iToken, token, amount, account)
     elif(input[0] == 'borrow'):
-        t_borrow(loanToken, iToken, token, account, False, False, USDT, interface, BZX, HELPER)
+        t_borrow(loanToken, iToken, token, account, False, False, USDT, interface, bzx, HELPER)
 
     elif(input[0] == 'trade'):
-        margin_trade(loanToken, iToken, token, False, False, account,  USDT, interface, BZX)
+        margin_trade(loanToken, iToken, token, False, False, account,  USDT, interface, bzx)
    
     else:
         pass
