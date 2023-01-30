@@ -15,17 +15,21 @@ def stMATIC(interface):
 def WMATIC(interface):
     return interface.IERC20("0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270")
 
-def test_swaps(Contract, SwapsImplBalancer_POLYGON, DexRecords, BZX, stMATIC, WMATIC):
+@pytest.fixture(scope="module")
+def USDC(interface):
+    return interface.IERC20("0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174")
+
+def test_swaps(Contract, SwapsImplBalancer_POLYGON, DexRecords, BZX, stMATIC, WMATIC, USDC):
 
     bal = SwapsImplBalancer_POLYGON.deploy({"from":accounts[0]})
 
     DEX_RECORDS = Contract.from_abi("DEX_RECORDS",BZX.swapsImpl(),DexRecords.abi)
-    DEX_RECORDS.setDexID(3,bal,{"from":DEX_RECORDS.owner()})
+    DEX_RECORDS.setDexID(bal,{"from":DEX_RECORDS.owner()})
 
     poolID = bytes.fromhex("af5e0b5425de1f5a630a8cb5aa9d97b8141c908d000200000000000000000366")
     poolData = (poolID,0,1,int(5e17),b'')
     dex_payload = encode_abi(['(bytes32,uint256,uint256,uint256,bytes)[]','address[]','uint256[]'],[[poolData],[stMATIC.address, WMATIC.address], [0, 0]])
-    selector_payload = encode_abi(['uint256','bytes'],[3,dex_payload])
+    selector_payload = encode_abi(['uint256','bytes'],[4,dex_payload])
     loanDataBytes = encode_abi(['uint128','bytes[]'],[2,[selector_payload]]) #flag value of Base-2: 10  
 
     stMATIC.transfer(accounts[0], 1e18, {"from":"0x765c6d09ef9223b1becd3b92a0ec01548d53cfba"})
@@ -33,8 +37,22 @@ def test_swaps(Contract, SwapsImplBalancer_POLYGON, DexRecords, BZX, stMATIC, WM
     BZX.swapExternal(stMATIC, WMATIC, accounts[0], accounts[0], 5e17, 5e17, loanDataBytes, {"from":accounts[0]}).return_value
 
     dex_payload = encode_abi(['(bytes32,uint256,uint256,uint256,bytes)[]','address[]','uint256[]'],[[poolData],[stMATIC.address, WMATIC.address], [100, 0]])
-    selector_payload = encode_abi(['uint256','bytes'],[3,dex_payload])
+    selector_payload = encode_abi(['uint256','bytes'],[4,dex_payload])
     loanDataBytes = encode_abi(['uint128','bytes[]'],[2,[selector_payload]]) #flag value of Base-2: 10  
 
     with reverts("BAL#507"): #this should fail but shows that the max source token amount can be controlled by the user through the payload
+        BZX.swapExternal(stMATIC, WMATIC, accounts[0], accounts[0], 5e17, 5e17, loanDataBytes, {"from":accounts[0]}).return_value
+
+    dex_payload = encode_abi(['(bytes32,uint256,uint256,uint256,bytes)[]','address[]','uint256[]'],[[poolData],[stMATIC.address, WMATIC.address], [100, 1]])
+    selector_payload = encode_abi(['uint256','bytes'],[4,dex_payload])
+    loanDataBytes = encode_abi(['uint128','bytes[]'],[2,[selector_payload]]) #flag value of Base-2: 10  
+
+    with reverts("cannot spend dest token"): #this should fail but shows that the max source token amount can be controlled by the user through the payload
+        BZX.swapExternal(stMATIC, WMATIC, accounts[0], accounts[0], 5e17, 5e17, loanDataBytes, {"from":accounts[0]}).return_value
+
+    dex_payload = encode_abi(['(bytes32,uint256,uint256,uint256,bytes)[]','address[]','uint256[]'],[[poolData],[stMATIC.address, USDC.address, WMATIC.address], [100, 1, 0]])
+    selector_payload = encode_abi(['uint256','bytes'],[4,dex_payload])
+    loanDataBytes = encode_abi(['uint128','bytes[]'],[2,[selector_payload]]) #flag value of Base-2: 10  
+
+    with reverts("unsupported limit"): #this should fail but shows that the max source token amount can be controlled by the user through the payload
         BZX.swapExternal(stMATIC, WMATIC, accounts[0], accounts[0], 5e17, 5e17, loanDataBytes, {"from":accounts[0]}).return_value
