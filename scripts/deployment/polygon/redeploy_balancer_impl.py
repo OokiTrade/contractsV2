@@ -10,7 +10,7 @@ bal = SwapsImplBalancer_POLYGON.deploy({"from":deployer}, publish_source=True)
 
 tx_list = []
 DEX_RECORDS = Contract.from_abi("DEX_RECORDS",BZX.swapsImpl(),DexRecords.abi)
-tx_list.append([DEX_RECORDS,DEX_RECORDS.setDexID.encode_input(3,bal)])
+tx_list.append([DEX_RECORDS,DEX_RECORDS.setDexID.encode_input(bal)])
 
 for tx in tx_list:
     sTxn = safe.build_multisig_tx(tx[0].address, 0, tx[1], SafeOperation.CALL.value, safe_nonce=safe.pending_nonce())

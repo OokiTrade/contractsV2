@@ -10,6 +10,7 @@ import "contracts/core/State.sol";
 import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
 import "interfaces/ISwapsImpl.sol";
 import "contracts/interfaces/balancer/IBalancerVault.sol";
+import "@openzeppelin-4.8.0/utils/math/Math.sol";
 
 contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
   using SafeERC20 for IERC20;
@@ -22,6 +23,7 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
     address vbzrx,
     address ooki
   ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
+
 
   function dexSwap(
     address sourceTokenAddress,
@@ -100,11 +102,10 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
       }
     }
     if (amountOutSpecified > amountOut) {
-      swapParams[swapParams.length - 1].amount = swapParams[swapParams.length - 1].amount + (amountOutSpecified - amountOut);
+      swapParams[swapParams.length - 1].amount += (amountOutSpecified - amountOut);
     } else if (amountOutSpecified < amountOut) {
       swapParams[swapParams.length - 1].amount += amountOut - amountOutSpecified;
     }
-
     if (amountOut != 0) {
       IBalancerVault.FundManagement memory funds = IBalancerVault.FundManagement({
         sender: address(this),
@@ -134,6 +135,13 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
     }
   }
 
+  function _checkLimits(int256[] memory limits) internal pure {
+    require(limits[limits.length - 1] <= 0, "cannot spend dest token");
+    for (uint256 i = 1; i < limits.length - 1; ++i) {
+      require(limits[i] == 0, "unsupported limit");
+    }
+  }
+
   function _swap(
     address sourceTokenAddress,
     address destTokenAddress,
@@ -149,19 +157,16 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
         (IBalancerVault.BatchSwapStep[], address[], int256[])
       );
       require(tokens[0] == sourceTokenAddress && tokens[tokens.length - 1] == destTokenAddress, "invalid tokens");
-      if (limits[0] > int256(maxSourceTokenAmount) || limits[0] == 0) {
-        limits[0] = int256(maxSourceTokenAmount);
-      }
+      limits[0] = int256(minSourceTokenAmount);
+      _checkLimits(limits);
       maxSourceTokenAmount = 0;
       for (uint256 i; i < swapParams.length; ++i) {
-        if (swapParams[i].assetInIndex != 0) {
-          require(swapParams[i].amount == 0, "invalid amount");
-        } else {
-          maxSourceTokenAmount += swapParams[i].amount;
+        if (swapParams[i].assetInIndex == 0) {
+          maxSourceTokenAmount += (swapParams[i].amount);
         }
       }
       if (maxSourceTokenAmount > minSourceTokenAmount) {
-        swapParams[0].amount -= maxSourceTokenAmount - minSourceTokenAmount;
+        swapParams[0].amount -= (maxSourceTokenAmount - minSourceTokenAmount);
       } else if (maxSourceTokenAmount < minSourceTokenAmount) {
         swapParams[0].amount += minSourceTokenAmount - maxSourceTokenAmount;
       }
@@ -181,18 +186,17 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
         payload,
         (IBalancerVault.BatchSwapStep[], address[], int256[])
       );
-      require(tokens[0] == sourceTokenAddress && tokens[tokens.length - 1] == destTokenAddress, "invalid tokens");
-      limits[0] = int256(maxSourceTokenAmount);
+      if (limits[0] > int256(maxSourceTokenAmount) || limits[0] == 0) {
+        limits[0] = int256(maxSourceTokenAmount);
+      }
       minSourceTokenAmount = 0;
       for (uint256 i; i < swapParams.length; ++i) {
-        if (swapParams[i].assetOutIndex != tokens.length - 1) {
-          require(swapParams[i].amount == 0, "invalid amount");
-        } else {
-          minSourceTokenAmount += swapParams[i].amount;
+        if (swapParams[i].assetOutIndex == tokens.length - 1) {
+          minSourceTokenAmount += (swapParams[i].amount);
         }
       }
       if (requiredDestTokenAmount < minSourceTokenAmount) {
-        swapParams[swapParams.length - 1].amount -= minSourceTokenAmount - requiredDestTokenAmount;
+        swapParams[swapParams.length - 1].amount -= (minSourceTokenAmount - requiredDestTokenAmount);
       } else if (requiredDestTokenAmount > minSourceTokenAmount) {
         swapParams[swapParams.length - 1].amount += requiredDestTokenAmount - minSourceTokenAmount;
       }
