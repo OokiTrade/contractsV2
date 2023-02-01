@@ -18,7 +18,7 @@ contract FeeExtractAndDistribute_Optimism is PausableGuardian_0_8 {
   IBZx public constant BZX = IBZx(0xAcedbFd5Bc1fb0dDC948579d4195616c05E74Fd1);
 
   address public constant ETH = 0x4200000000000000000000000000000000000006;
-  address public constant USDC = 0x94b008aA00579c1307B0EF2c499aD98a8ce58e58;
+  address public constant USDC = 0x7F5c764cBc14f9669B88837ca1490cCa17c31607;
   uint64 public constant DEST_CHAINID = 137; //send to polygon
   uint256 public constant MIN_USDC_AMOUNT = 30e6; //$30 min bridge amount
   IUniswapV3SwapRouter public constant SWAPS_ROUTER_V3 = IUniswapV3SwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
@@ -93,7 +93,7 @@ contract FeeExtractAndDistribute_Optimism is PausableGuardian_0_8 {
   }
 
   function _bridgeFeesAndDistribute() internal {
-    require(IERC20(USDC).balanceOf(address(this)) >= MIN_USDC_AMOUNT, "FeeExtractAndDistribute_Arbitrum: Fees Bridged Too Little");
+    require(IERC20(USDC).balanceOf(address(this)) >= MIN_USDC_AMOUNT, "FeeExtractAndDistribute_Optimism: Fees Bridged Too Little");
     IBridge(bridge).send(treasuryWallet, USDC, IERC20(USDC).balanceOf(address(this)), DEST_CHAINID, uint64(block.timestamp), slippage);
   }
 
@@ -121,12 +121,7 @@ contract FeeExtractAndDistribute_Optimism is PausableGuardian_0_8 {
     bridge = _wallet;
   }
 
-  function _checkUniDisagreement(
-    address asset,
-    uint256 assetAmount,
-    uint256 recvAmount,
-    uint256 maxDisagreement
-  ) internal view {
+  function _checkUniDisagreement(address asset, uint256 assetAmount, uint256 recvAmount, uint256 maxDisagreement) internal view {
     uint256 estAmountOut = IPriceFeeds(BZX.priceFeeds()).queryReturn(asset, USDC, assetAmount);
 
     uint256 spreadValue = estAmountOut > recvAmount ? estAmountOut - recvAmount : recvAmount - estAmountOut;
@@ -141,12 +136,7 @@ contract FeeExtractAndDistribute_Optimism is PausableGuardian_0_8 {
     slippage = newSlippage;
   }
 
-  function requestRefund(
-    bytes calldata wdmsg,
-    bytes[] calldata sigs,
-    address[] calldata signers,
-    uint256[] calldata powers
-  ) external onlyGuardian {
+  function requestRefund(bytes calldata wdmsg, bytes[] calldata sigs, address[] calldata signers, uint256[] calldata powers) external onlyGuardian {
     IBridge(bridge).withdraw(wdmsg, sigs, signers, powers);
   }
 

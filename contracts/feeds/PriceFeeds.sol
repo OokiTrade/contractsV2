@@ -184,28 +184,15 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
 
   function _queryRate(address sourceToken, address destToken) internal view returns (uint256 rate, uint256 precision) {
     if (sourceToken != destToken) {
-      uint256 sourceRate = _queryRateCall(sourceToken);
-      uint256 destRate = _queryRateCall(destToken);
+      uint256 sourceRate = getPrice(sourceToken);
+      uint256 destRate = getPrice(destToken);
 
-      rate *= WEI_PRECISION;
-      rate /= precision;
+      rate = (sourceRate * WEI_PRECISION)/ destRate;
 
       precision = _getDecimalPrecision(sourceToken, destToken);
     } else {
       rate = WEI_PRECISION;
       precision = WEI_PRECISION;
-    }
-  }
-
-  function _queryRateCall(address token) internal view returns (uint256 rate) {
-    // on ETH all pricefeeds are etherum denominated. on all other chains its USD denominated. so on ETH the price of 1 eth is 1 eth
-    if (getChainId() != 1 || token != address(wethToken)) {
-      // IPriceFeedsExt _Feed =
-      // require(address(_Feed) != address(0), "unsupported price feed");
-      rate = getPrice(token);
-      require(rate != 0 && (rate >> 128) == 0, "price error");
-    } else {
-      rate = WEI_PRECISION;
     }
   }
 
@@ -223,27 +210,20 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
     }
   }
 
-  // TODO remove function
-  function getChainId() internal view returns (uint256) {
-    uint256 chainId;
-    assembly {
-      chainId := chainid()
-    }
-    return chainId;
-  }
-
   function _getDecimalPrecision(address sourceToken, address destToken) internal view returns (uint256) {
     if (sourceToken == destToken) {
       return WEI_PRECISION;
     } else {
-      uint256 sourceTokenDecimals = decimals[sourceToken];
-      if (sourceTokenDecimals == 0) sourceTokenDecimals = IERC20Metadata(sourceToken).decimals();
+      uint256 sourceTokenDecimals = _getTokenDecimalPrecision(sourceToken);
+      uint256 destTokenDecimals = _getTokenDecimalPrecision(destToken);
 
-      uint256 destTokenDecimals = decimals[destToken];
-      if (destTokenDecimals == 0) destTokenDecimals = IERC20Metadata(destToken).decimals();
-      // TODO use abs
-      if (destTokenDecimals >= sourceTokenDecimals) return 10**(18 - destTokenDecimals - sourceTokenDecimals);
-      else return 10**(18 + sourceTokenDecimals - destTokenDecimals);
+      if (destTokenDecimals >= sourceTokenDecimals) return 10**(18 - (destTokenDecimals - sourceTokenDecimals));
+      else return 10**(18 + (sourceTokenDecimals - destTokenDecimals));
     }
+  }
+
+  function _getTokenDecimalPrecision(address token) internal view returns (uint256 destTokenDecimals) {
+    destTokenDecimals = decimals[token];
+    if (destTokenDecimals == 0) destTokenDecimals = IERC20Metadata(token).decimals();
   }
 }
