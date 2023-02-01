@@ -85,11 +85,11 @@ contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
 
             if (amount != 0) {
                 if (asset == MATIC) {
-                    usdcOutput = _swapWithPair([asset, USDC], amount);
+                    usdcOutput += _swapWithPair([asset, USDC], amount);
                 } else if (asset == WBTC) {
-                    usdcOutput = _swapWithPair([asset, WETH, USDC], amount);
+                    usdcOutput += _swapWithPair([asset, WETH, USDC], amount);
                 } else {
-                    usdcOutput = _swapWithPair([asset, MATIC, USDC], amount); //builds route for all tokens to route through MATIC
+                    usdcOutput += _swapWithPair([asset, MATIC, USDC], amount); //builds route for all tokens to route through MATIC
                 }
             }
         }
