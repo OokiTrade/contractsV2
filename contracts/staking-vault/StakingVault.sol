@@ -181,13 +181,13 @@ contract StakingVault is Upgradeable_0_8, ERC1155 {
     return uint256(keccak256(abi.encode(depositToken, tokenToBack)));
   }
 
-  function _amountToMint(uint256 tokenID, uint256 amount) internal returns (uint256) {
+  function _amountToMint(uint256 tokenID, uint256 amount) internal view returns (uint256) {
     uint8 decimals = tokenDecimalCache[identifierToTokens[tokenID].depositToken];
 
     return ((amount * 1e18) / sTokenPrice[tokenID]) * 10**(18 - decimals);
   }
 
-  function _amountToSend(uint256 tokenID, uint256 amountBurnt) internal returns (uint256) {
+  function _amountToSend(uint256 tokenID, uint256 amountBurnt) internal view returns (uint256) {
     uint8 decimals = IERC20Metadata(identifierToTokens[tokenID].depositToken).decimals();
 
     return ((sTokenPrice[tokenID] * amountBurnt) / 1e18) / 10**(18 - decimals);
