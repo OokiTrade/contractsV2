@@ -9,13 +9,16 @@ pragma solidity ^0.8.0;
 import "@openzeppelin-4.8.0/access/Ownable.sol";
 import "@openzeppelin-4.8.0/token/ERC20/IERC20.sol";
 import "@openzeppelin-4.8.0/token/ERC20/extensions/IERC20Metadata.sol";
-import "contracts/core/Constants.sol";
+import "contracts/interfaces/IWeth.sol";
 import "contracts/feeds/IPriceFeedsExt.sol";
 import "contracts/governance/PausableGuardian_0_8.sol";
 import "interfaces/IToken.sol";
 
-contract PriceFeeds is Constants, PausableGuardian_0_8 {
+contract PriceFeeds is PausableGuardian_0_8 {
   address public priceFeedFactory;
+  IWeth public immutable WETH_TOKEN;
+  uint256 internal constant WEI_PRECISION = 10**18;
+  uint256 internal constant WEI_PERCENT_PRECISION = 10**20;
 
   modifier onlyFactoryOrOwner() {
     require(msg.sender == priceFeedFactory || msg.sender == owner(), "unauthorized");
@@ -27,15 +30,10 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
   mapping(address => IPriceFeedsExt) public pricesFeeds; // token => pricefeed
   mapping(address => uint256) public decimals; // decimals of supported tokens
 
-  constructor(
-    IWeth wethtoken,
-    address usdc,
-    address bzrx,
-    address vbzrx,
-    address ooki
-  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {
+  constructor(IWeth wethtoken) {
     // set decimals for ether
-    decimals[address(wethToken)] = 18;
+    decimals[address(WETH_TOKEN)] = 18;
+    WETH_TOKEN = wethtoken;
   }
 
   function queryRate(address sourceToken, address destToken) public view pausable returns (uint256 rate, uint256 precision) {
@@ -81,10 +79,10 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
   }
 
   function amountInEth(address tokenAddress, uint256 amount) public view returns (uint256 ethAmount) {
-    if (tokenAddress == address(wethToken)) {
+    if (tokenAddress == address(WETH_TOKEN)) {
       ethAmount = amount;
     } else {
-      (uint256 toEthRate, uint256 toEthPrecision) = queryRate(tokenAddress, address(wethToken));
+      (uint256 toEthRate, uint256 toEthPrecision) = queryRate(tokenAddress, address(WETH_TOKEN));
       ethAmount = (amount * toEthRate) / toEthPrecision;
     }
   }
@@ -187,7 +185,7 @@ contract PriceFeeds is Constants, PausableGuardian_0_8 {
       uint256 sourceRate = getPrice(sourceToken);
       uint256 destRate = getPrice(destToken);
 
-      rate = (sourceRate * WEI_PRECISION)/ destRate;
+      rate = (sourceRate * WEI_PRECISION) / destRate;
 
       precision = _getDecimalPrecision(sourceToken, destToken);
     } else {
