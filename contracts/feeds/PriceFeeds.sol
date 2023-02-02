@@ -32,7 +32,7 @@ contract PriceFeeds is PausableGuardian_0_8 {
 
   constructor(IWeth wethtoken) {
     // set decimals for ether
-    decimals[address(WETH_TOKEN)] = 18;
+    decimals[address(wethtoken)] = 18;
     WETH_TOKEN = wethtoken;
   }
 

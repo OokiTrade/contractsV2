@@ -9,19 +9,19 @@ pragma solidity ^0.8.0;
 import "contracts/interfaces/IWeth.sol";
 
 contract Constants {
-  // constructor(
-  //   IWeth weth,
-  //   address usdc,
-  //   address bzrx,
-  //   address vbzrx,
-  //   address ooki
-  // ) {
-  //   wethToken = weth;
-  //   USDC = usdc;
-  //   bzrxTokenAddress = bzrx;
-  //   vbzrxTokenAddress = vbzrx;
-  //   OOKI = ooki;
-  // }
+  constructor(
+    IWeth weth,
+    address usdc,
+    address bzrx,
+    address vbzrx,
+    address ooki
+  ) {
+    wethToken = weth;
+    USDC = usdc;
+    bzrxTokenAddress = bzrx;
+    vbzrxTokenAddress = vbzrx;
+    OOKI = ooki;
+  }
 
   uint256 internal constant WEI_PRECISION = 10**18;
   uint256 internal constant WEI_PERCENT_PRECISION = 10**20;
@@ -32,11 +32,11 @@ contract Constants {
   // string internal constant UserRewardsID = "UserRewards"; // decommissioned
   string internal constant LoanDepositValueID = "LoanDepositValue";
 
-  // IWeth public immutable wethToken;
-  // address public immutable USDC;
-  // address public immutable bzrxTokenAddress;
-  // address public immutable vbzrxTokenAddress;
-  // address public immutable OOKI;
+  IWeth public immutable wethToken;
+  address public immutable USDC;
+  address public immutable bzrxTokenAddress;
+  address public immutable vbzrxTokenAddress;
+  address public immutable OOKI;
 
   // IWeth public constant wethToken = IWeth(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // mainnet
   // address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48; // mainnet
