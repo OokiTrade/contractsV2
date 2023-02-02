@@ -22,15 +22,12 @@ contract Constants {
   uint256 internal constant WEI_PRECISION = 10**18;
   uint256 internal constant WEI_PERCENT_PRECISION = 10**20;
 
-  uint256 internal constant DAYS_IN_A_YEAR = 365;
-  uint256 internal constant ONE_MONTH = 2628000; // approx. seconds in a month
-
   // string internal constant UserRewardsID = "UserRewards"; // decommissioned
-  string internal constant LoanDepositValueID = "LoanDepositValue";
+  string internal constant LoanDepositValueID = "LoanDepositValue"; // TODO save as keccak
 
-  IWeth public immutable wethToken;
-  address public immutable USDC;
-  address public immutable OOKI;
+  IWeth internal immutable wethToken;
+  address internal immutable USDC;
+  address internal immutable OOKI;
 
   // IWeth public constant wethToken = IWeth(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // mainnet
   // address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48; // mainnet
