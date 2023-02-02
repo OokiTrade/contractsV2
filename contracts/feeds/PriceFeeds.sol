@@ -9,14 +9,13 @@ pragma solidity ^0.8.0;
 import "@openzeppelin-4.8.0/access/Ownable.sol";
 import "@openzeppelin-4.8.0/token/ERC20/IERC20.sol";
 import "@openzeppelin-4.8.0/token/ERC20/extensions/IERC20Metadata.sol";
-import "contracts/interfaces/IWeth.sol";
 import "contracts/feeds/IPriceFeedsExt.sol";
 import "contracts/governance/PausableGuardian_0_8.sol";
 import "interfaces/IToken.sol";
 
 contract PriceFeeds is PausableGuardian_0_8 {
   address public priceFeedFactory;
-  IWeth public immutable WETH_TOKEN;
+  address public immutable WETH_TOKEN;
   uint256 internal constant WEI_PRECISION = 10**18;
   uint256 internal constant WEI_PERCENT_PRECISION = 10**20;
 
@@ -30,7 +29,7 @@ contract PriceFeeds is PausableGuardian_0_8 {
   mapping(address => IPriceFeedsExt) public pricesFeeds; // token => pricefeed
   mapping(address => uint256) public decimals; // decimals of supported tokens
 
-  constructor(IWeth wethtoken) {
+  constructor(address wethtoken) {
     // set decimals for ether
     decimals[address(wethtoken)] = 18;
     WETH_TOKEN = wethtoken;
@@ -79,10 +78,10 @@ contract PriceFeeds is PausableGuardian_0_8 {
   }
 
   function amountInEth(address tokenAddress, uint256 amount) public view returns (uint256 ethAmount) {
-    if (tokenAddress == address(WETH_TOKEN)) {
+    if (tokenAddress == WETH_TOKEN) {
       ethAmount = amount;
     } else {
-      (uint256 toEthRate, uint256 toEthPrecision) = queryRate(tokenAddress, address(WETH_TOKEN));
+      (uint256 toEthRate, uint256 toEthPrecision) = queryRate(tokenAddress, WETH_TOKEN);
       ethAmount = (amount * toEthRate) / toEthPrecision;
     }
   }
