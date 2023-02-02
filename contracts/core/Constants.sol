@@ -8,15 +8,47 @@ pragma solidity ^0.8.0;
 
 import "contracts/interfaces/IWeth.sol";
 
-contract Constants {
-  constructor(
-    IWeth weth,
-    address usdc,
-    address ooki
-  ) {
-    wethToken = weth;
-    USDC = usdc;
-    OOKI = ooki;
+abstract contract Constants {
+
+  constructor() {
+    uint256 chainId = block.chainid;
+
+    IWeth weth_;
+    address USDC_;
+    address OOKI_;
+
+    if (chainId == 1) {
+      // ethereum mainnet
+      weth_ = IWeth(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
+      USDC_ = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+      OOKI_ = 0x0De05F6447ab4D22c8827449EE4bA2D5C288379B;
+    } else if (chainId == 10) {
+      // optimism
+      weth_ = IWeth(0x4200000000000000000000000000000000000006);
+      USDC_ = 0x7F5c764cBc14f9669B88837ca1490cCa17c31607;
+      OOKI_ = address(0);
+    } else if (chainId == 56) {
+      // bsc
+      weth_ = IWeth(0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c); // Wrapped BNB
+      USDC_ = 0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d;
+      OOKI_ = 0xa5a6817ac4c164F27df3254B71fE83904B1C3c3e;
+    } else if (chainId == 137) {
+      // polygon
+      weth_ = IWeth(0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270); // Wraped MATIC
+      USDC_ = 0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174;
+      OOKI_ = 0xCd150B1F528F326f5194c012f32Eb30135C7C2c9;
+    } else if (chainId == 42161) {
+      // arbitrum
+      weth_ = IWeth(0x82aF49447D8a07e3bd95BD0d56f35241523fBab1);
+      USDC_ = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
+      OOKI_ = 0x400F3ff129Bc9C9d239a567EaF5158f1850c65a4;
+    } else {
+      require(false, "invalid chain");
+    }
+
+    WETH = weth_;
+    USDC = USDC_;
+    OOKI = OOKI_;
   }
 
   uint256 internal constant WEI_PRECISION = 10**18;
@@ -25,7 +57,7 @@ contract Constants {
   // string internal constant UserRewardsID = "UserRewards"; // decommissioned
   string internal constant LoanDepositValueID = "LoanDepositValue"; // TODO save as keccak
 
-  IWeth internal immutable wethToken;
+  IWeth internal immutable WETH;
   address internal immutable USDC;
   address internal immutable OOKI;
 

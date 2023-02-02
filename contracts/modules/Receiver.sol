@@ -9,12 +9,6 @@ pragma solidity ^0.8.0;
 import "contracts/core/State.sol";
 
 contract Receiver is State {
-  constructor(
-    IWeth wethtoken,
-    address usdc,
-    address ooki
-  ) Constants(wethtoken, usdc,  ooki) {}
-
   function initialize(address target) external onlyOwner {
     _setTarget(0, target);
   }

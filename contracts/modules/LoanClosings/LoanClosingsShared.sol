@@ -53,9 +53,9 @@ abstract contract LoanClosingsShared is State, LoanClosingsEvents, VaultControll
       if (msg.value == 0) {
         vaultTransfer(loanToken, payable(msg.sender), receiver, principalNeeded);
       } else {
-        require(loanToken == address(wethToken), "wrong asset sent");
+        require(loanToken == address(WETH), "wrong asset sent");
         require(msg.value >= principalNeeded, "not enough ether");
-        wethToken.deposit{value: principalNeeded}();
+        WETH.deposit{value: principalNeeded}();
         if (receiver != address(this)) {
           vaultTransfer(loanToken, address(this), receiver, principalNeeded);
         }
@@ -190,7 +190,7 @@ abstract contract LoanClosingsShared is State, LoanClosingsEvents, VaultControll
     uint256 assetAmount
   ) internal {
     if (assetAmount != 0) {
-      if (assetToken == address(wethToken)) {
+      if (assetToken == address(WETH)) {
         vaultEtherWithdraw(receiver, assetAmount);
       } else {
         vaultWithdraw(assetToken, receiver, assetAmount);

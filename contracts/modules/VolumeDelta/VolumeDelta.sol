@@ -13,12 +13,6 @@ import "contracts/utils/TickMathV1.sol";
 contract VolumeDelta is State {
   using VolumeTracker for VolumeTracker.Observation[65535];
 
-  constructor(
-    IWeth wethtoken,
-    address usdc,
-    address ooki
-  ) Constants(wethtoken, usdc, ooki) {}
-
   function initialize(address target) external onlyOwner {
     _setTarget(this.retrieveTradedVolume.selector, target);
     _setTarget(this.adjustCardinality.selector, target);

@@ -19,12 +19,6 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
   using MathUtil for uint256;
   using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
 
-  constructor(
-    IWeth wethtoken,
-    address usdc,
-    address ooki
-  ) Constants(wethtoken, usdc, ooki) {}
-
   modifier onlyFactoryOrOwner() {
     require(msg.sender == factory || msg.sender == owner(), "unauthorized");
     _;

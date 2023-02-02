@@ -42,12 +42,6 @@ contract SwapsImplstMATICVault_POLYGON is State, ISwapsImpl {
   IVault public constant VAULT = IVault(0x976f31D12df9272f10c2f20BE2887824Cc3d974c);
   address public constant ASSET = 0xaF5E0B5425dE1F5a630A8cB5AA9D97B8141C908D;
 
-  constructor(
-    IWeth wethtoken,
-    address usdc,
-    address ooki
-  ) Constants(wethtoken, usdc, ooki) {}
-
   function dexSwap(
     address sourceTokenAddress,
     address destTokenAddress,

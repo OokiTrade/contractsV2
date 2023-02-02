@@ -15,12 +15,6 @@ import "contracts/governance/PausableGuardian_0_8.sol";
 contract SwapsExternal is State, VaultController, SwapsUser, PausableGuardian_0_8 {
   using SafeERC20 for IERC20;
 
-  constructor(
-    IWeth wethtoken,
-    address usdc,
-    address ooki
-  ) Constants(wethtoken, usdc, ooki) {}
-
   function initialize(address target) external onlyOwner {
     _setTarget(this.swapExternal.selector, target);
     _setTarget(this.getSwapExpectedReturn.selector, target);
@@ -51,12 +45,12 @@ contract SwapsExternal is State, VaultController, SwapsUser, PausableGuardian_0_
 
     if (msg.value != 0) {
       if (sourceToken == address(0)) {
-        sourceToken = address(wethToken);
+        sourceToken = address(WETH);
       } else {
-        require(sourceToken == address(wethToken), "sourceToken mismatch");
+        require(sourceToken == address(WETH), "sourceToken mismatch");
       }
       require(msg.value == sourceTokenAmount, "sourceTokenAmount mismatch");
-      wethToken.deposit{value: sourceTokenAmount}();
+      WETH.deposit{value: sourceTokenAmount}();
     } else {
       IERC20 sourceTokenContract = IERC20(sourceToken);
 

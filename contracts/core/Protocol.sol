@@ -9,14 +9,6 @@ pragma solidity ^0.8.0;
 import "contracts/core/State.sol";
 
 contract bZxProtocol is State {
-  constructor(
-    IWeth wethtoken,
-    address usdc,
-    address bzrx,
-    address vbzrx,
-    address ooki
-  ) Constants(wethtoken, usdc, ooki) {}
-
   fallback() external payable {
     if (gasleft() <= 2300) {
       return;

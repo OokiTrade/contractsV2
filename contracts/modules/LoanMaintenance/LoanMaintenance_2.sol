@@ -17,12 +17,6 @@ contract LoanMaintenance_2 is State, LoanMaintenanceEvents, PausableGuardian_0_8
   using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
   using InterestOracle for InterestOracle.Observation[256];
 
-  constructor(
-    IWeth wethtoken,
-    address usdc,
-    address ooki
-  ) Constants(wethtoken, usdc, ooki) {}
-
   function initialize(address target) external onlyOwner {
     _setTarget(this.transferLoan.selector, target);
     _setTarget(this.settleInterest.selector, target);

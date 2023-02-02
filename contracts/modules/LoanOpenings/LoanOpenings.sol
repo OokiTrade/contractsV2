@@ -17,12 +17,6 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
   using MathUtil for uint256;
   using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
 
-  constructor(
-    IWeth wethtoken,
-    address usdc,
-    address ooki
-  ) Constants(wethtoken, usdc, ooki) {}
-
   function initialize(address target) external onlyOwner {
     // TODO remove after migration
     _setTarget(bytes4(keccak256("borrowOrTradeFromPool(bytes32,bytes32,bool,uint256,address,uint256,bytes)")), address(0));

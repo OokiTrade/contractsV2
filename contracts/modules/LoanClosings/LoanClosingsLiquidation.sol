@@ -10,14 +10,6 @@ import "contracts/modules/LoanClosings/LoanClosingsShared.sol";
 import "contracts/mixins/LiquidationHelper.sol";
 
 contract LoanClosingsLiquidation is LoanClosingsShared {
-  constructor(
-    IWeth wethtoken,
-    address usdc,
-    address bzrx,
-    address vbzrx,
-    address ooki
-  ) Constants(wethtoken, usdc, ooki) {}
-
   function initialize(address target) external onlyOwner {
     _setTarget(this.liquidate.selector, target);
   }

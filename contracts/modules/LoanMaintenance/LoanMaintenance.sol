@@ -17,14 +17,6 @@ import "contracts/governance/PausableGuardian_0_8.sol";
 contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, InterestHandler, PausableGuardian_0_8 {
   using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
 
-  constructor(
-    IWeth wethtoken,
-    address usdc,
-    address bzrx,
-    address vbzrx,
-    address ooki
-  ) Constants(wethtoken, usdc, ooki) {}
-
   function initialize(address target) external onlyOwner {
     _setTarget(this.depositCollateral.selector, target);
     _setTarget(this.withdrawCollateral.selector, target);
@@ -57,7 +49,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
     address collateralToken = loanParamsLocal.collateralToken;
     uint256 collateral = loanLocal.collateral;
 
-    require(msg.value == 0 || collateralToken == address(wethToken), "wrong asset sent");
+    require(msg.value == 0 || collateralToken == address(WETH), "wrong asset sent");
 
     collateral = collateral + depositAmount;
     loanLocal.collateral = collateral;
@@ -109,7 +101,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
     collateral = collateral - actualWithdrawAmount;
     loanLocal.collateral = collateral;
 
-    if (collateralToken == address(wethToken)) {
+    if (collateralToken == address(WETH)) {
       vaultEtherWithdraw(receiver, actualWithdrawAmount);
     } else {
       vaultWithdraw(collateralToken, receiver, actualWithdrawAmount);

@@ -9,13 +9,6 @@ pragma solidity ^0.8.0;
 import "contracts/modules/LoanClosings/LoanClosingsShared.sol";
 
 contract LoanClosings is LoanClosingsShared {
-  constructor(
-    IWeth wethtoken,
-    address usdc,
-    address bzrx,
-    address vbzrx,
-    address ooki
-  ) Constants(wethtoken, usdc, ooki) {}
 
   function initialize(address target) external onlyOwner {
     // TODO remove after migration

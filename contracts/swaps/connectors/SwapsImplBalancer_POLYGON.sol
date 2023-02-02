@@ -16,13 +16,6 @@ contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
   using SafeERC20 for IERC20;
   IBalancerVault public constant VAULT = IBalancerVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
 
-  constructor(
-    IWeth wethtoken,
-    address usdc,
-    address ooki
-  ) Constants(wethtoken, usdc, ooki) {}
-
-
   function dexSwap(
     address sourceTokenAddress,
     address destTokenAddress,

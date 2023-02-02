@@ -16,11 +16,6 @@ contract SwapsImplUniswapV2_ARBITRUM is State, ISwapsImpl {
 
   address public constant uniswapRouter = 0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506; // Sushiswap
 
-  constructor(
-    IWeth wethtoken,
-    address usdc,
-    address ooki
-  ) Constants(wethtoken, usdc, ooki) {}
 
   function dexSwap(
     address sourceTokenAddress,
@@ -77,12 +72,12 @@ contract SwapsImplUniswapV2_ARBITRUM is State, ISwapsImpl {
       path[0] = sourceTokenAddress;
       path[2] = destTokenAddress;
 
-      if (sourceTokenAddress != address(wethToken) && destTokenAddress != address(wethToken)) {
-        path[1] = address(wethToken);
+      if (sourceTokenAddress != address(WETH) && destTokenAddress != address(WETH)) {
+        path[1] = address(WETH);
         tmpValue = _getAmountOut(amountIn, path);
         if (tmpValue > amountOut) {
           amountOut = tmpValue;
-          midToken = address(wethToken);
+          midToken = address(WETH);
         }
       }
     }
@@ -108,12 +103,12 @@ contract SwapsImplUniswapV2_ARBITRUM is State, ISwapsImpl {
       path[0] = sourceTokenAddress;
       path[2] = destTokenAddress;
 
-      if (sourceTokenAddress != address(wethToken) && destTokenAddress != address(wethToken)) {
-        path[1] = address(wethToken);
+      if (sourceTokenAddress != address(WETH) && destTokenAddress != address(WETH)) {
+        path[1] = address(WETH);
         tmpValue = _getAmountIn(amountOut, path);
         if (tmpValue < amountIn) {
           amountIn = tmpValue;
-          midToken = address(wethToken);
+          midToken = address(WETH);
         }
       }
 
