@@ -22,10 +22,8 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
   constructor(
     IWeth wethtoken,
     address usdc,
-    address bzrx,
-    address vbzrx,
     address ooki
-  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
+  ) Constants(wethtoken, usdc, ooki) {}
 
   modifier onlyGuardianOrFactory() {
     require(msg.sender == factory || msg.sender == getGuardian() || msg.sender == owner(), "unauthorized");

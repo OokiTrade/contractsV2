@@ -16,7 +16,7 @@ contract FlashBorrowFeesHelper is State, VaultController {
     address bzrx,
     address vbzrx,
     address ooki
-  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
+  ) Constants(wethtoken, usdc, ooki) {}
 
   event PayFlashBorrowFee(address indexed payer, address indexed token, uint256 amount);
 

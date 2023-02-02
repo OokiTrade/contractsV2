@@ -19,10 +19,8 @@ contract SwapsImplUniswapV2_ARBITRUM is State, ISwapsImpl {
   constructor(
     IWeth wethtoken,
     address usdc,
-    address bzrx,
-    address vbzrx,
     address ooki
-  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
+  ) Constants(wethtoken, usdc, ooki) {}
 
   function dexSwap(
     address sourceTokenAddress,

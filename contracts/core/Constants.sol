@@ -12,14 +12,10 @@ contract Constants {
   constructor(
     IWeth weth,
     address usdc,
-    address bzrx,
-    address vbzrx,
     address ooki
   ) {
     wethToken = weth;
     USDC = usdc;
-    bzrxTokenAddress = bzrx;
-    vbzrxTokenAddress = vbzrx;
     OOKI = ooki;
   }
 
@@ -34,8 +30,6 @@ contract Constants {
 
   IWeth public immutable wethToken;
   address public immutable USDC;
-  address public immutable bzrxTokenAddress;
-  address public immutable vbzrxTokenAddress;
   address public immutable OOKI;
 
   // IWeth public constant wethToken = IWeth(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // mainnet

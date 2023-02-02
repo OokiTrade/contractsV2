@@ -15,7 +15,7 @@ contract bZxProtocol is State {
     address bzrx,
     address vbzrx,
     address ooki
-  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
+  ) Constants(wethtoken, usdc, ooki) {}
 
   fallback() external payable {
     if (gasleft() <= 2300) {

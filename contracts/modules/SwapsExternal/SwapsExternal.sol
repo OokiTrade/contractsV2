@@ -18,10 +18,8 @@ contract SwapsExternal is State, VaultController, SwapsUser, PausableGuardian_0_
   constructor(
     IWeth wethtoken,
     address usdc,
-    address bzrx,
-    address vbzrx,
     address ooki
-  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
+  ) Constants(wethtoken, usdc, ooki) {}
 
   function initialize(address target) external onlyOwner {
     _setTarget(this.swapExternal.selector, target);

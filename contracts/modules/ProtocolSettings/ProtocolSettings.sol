@@ -22,10 +22,8 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
   constructor(
     IWeth wethtoken,
     address usdc,
-    address bzrx,
-    address vbzrx,
     address ooki
-  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
+  ) Constants(wethtoken, usdc, ooki) {}
 
   modifier onlyFactoryOrOwner() {
     require(msg.sender == factory || msg.sender == owner(), "unauthorized");

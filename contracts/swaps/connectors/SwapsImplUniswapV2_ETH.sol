@@ -24,10 +24,8 @@ contract SwapsImplUniswapV2_ETH is State, ISwapsImpl {
   constructor(
     IWeth wethtoken,
     address USDC,
-    address bzrx,
-    address vbzrx,
     address ooki
-  ) Constants(wethtoken, USDC, bzrx, vbzrx, ooki) {}
+  ) Constants(wethtoken, USDC, ooki) {}
 
   function dexSwap(
     address sourceTokenAddress,
