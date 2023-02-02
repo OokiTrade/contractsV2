@@ -15,7 +15,7 @@ import "interfaces/IToken.sol";
 
 contract PriceFeeds is PausableGuardian_0_8 {
   address public priceFeedFactory;
-  address public immutable WETH_TOKEN;
+  address private immutable WETH_TOKEN;
   uint256 internal constant WEI_PRECISION = 10**18;
   uint256 internal constant WEI_PERCENT_PRECISION = 10**20;
 
