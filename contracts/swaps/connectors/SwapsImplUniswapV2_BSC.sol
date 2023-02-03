@@ -21,13 +21,6 @@ contract SwapsImplUniswapV2_BSC is State, ISwapsImpl {
   address public constant busd = 0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56;
   address public constant usdt = 0x55d398326f99059fF775485246999027B3197955;
 
-  constructor(
-    IWeth wethtoken,
-    address usdc,
-    address bzrx,
-    address vbzrx,
-    address ooki
-  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
 
   function dexSwap(
     address sourceTokenAddress,
@@ -84,12 +77,12 @@ contract SwapsImplUniswapV2_BSC is State, ISwapsImpl {
       path[0] = sourceTokenAddress;
       path[2] = destTokenAddress;
 
-      if (sourceTokenAddress != address(wethToken) && destTokenAddress != address(wethToken)) {
-        path[1] = address(wethToken);
+      if (sourceTokenAddress != address(WETH) && destTokenAddress != address(WETH)) {
+        path[1] = address(WETH);
         tmpValue = _getAmountOut(amountIn, path);
         if (tmpValue > amountOut) {
           amountOut = tmpValue;
-          midToken = address(wethToken);
+          midToken = address(WETH);
         }
       }
 
@@ -133,12 +126,12 @@ contract SwapsImplUniswapV2_BSC is State, ISwapsImpl {
       path[0] = sourceTokenAddress;
       path[2] = destTokenAddress;
 
-      if (sourceTokenAddress != address(wethToken) && destTokenAddress != address(wethToken)) {
-        path[1] = address(wethToken);
+      if (sourceTokenAddress != address(WETH) && destTokenAddress != address(WETH)) {
+        path[1] = address(WETH);
         tmpValue = _getAmountIn(amountOut, path);
         if (tmpValue < amountIn) {
           amountIn = tmpValue;
-          midToken = address(wethToken);
+          midToken = address(WETH);
         }
       }
 

@@ -10,13 +10,6 @@ import "contracts/core/State.sol";
 import "contracts/governance/PausableGuardian_0_8.sol";
 
 contract ProtocolPausableGuardian is State, PausableGuardian_0_8 {
-  constructor(
-    IWeth wethtoken,
-    address usdc,
-    address bzrx,
-    address vbzrx,
-    address ooki
-  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
 
   function initialize(address target) external onlyOwner {
     _setTarget(this._isPaused.selector, target);
