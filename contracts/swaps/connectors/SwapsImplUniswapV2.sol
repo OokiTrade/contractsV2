@@ -71,7 +71,11 @@ contract SwapsImplUniswapV2 is State, ISwapsImpl {
   }
 
   function dexAmountIn(bytes memory payload, uint256 amountOut) public view returns (uint256 amountIn, address midToken) {
-     return findBestPath(this._getAmountIn, payload, amountOut);
+    (amountIn, midToken) = findBestPath(this._getAmountIn, payload, amountOut);
+
+    if (amountIn == type(uint256).max) {
+      amountIn = 0;
+    }
   }
 
   function findBestPath(
