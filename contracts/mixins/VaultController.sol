@@ -16,22 +16,20 @@ abstract contract VaultController is Constants {
   event VaultWithdraw(address indexed asset, address indexed to, uint256 amount);
 
   function vaultEtherDeposit(address from, uint256 value) internal {
-    IWeth _wethToken = wethToken;
-    _wethToken.deposit{value: value}();
+    WETH.deposit{value: value}();
 
-    emit VaultDeposit(address(_wethToken), from, value);
+    emit VaultDeposit(address(WETH), from, value);
   }
 
   function vaultEtherWithdraw(address to, uint256 value) internal {
     if (value != 0) {
-      IWeth _wethToken = wethToken;
       uint256 balance = address(this).balance;
       if (value > balance) {
-        _wethToken.withdraw(value - balance);
+        WETH.withdraw(value - balance);
       }
       Address.sendValue(payable(address(uint160(to))), value);
 
-      emit VaultWithdraw(address(_wethToken), to, value);
+      emit VaultWithdraw(address(WETH), to, value);
     }
   }
 

@@ -10,14 +10,6 @@ import "contracts/core/State.sol";
 import "contracts/mixins/VaultController.sol";
 
 contract FlashBorrowFeesHelper is State, VaultController {
-  constructor(
-    IWeth wethtoken,
-    address usdc,
-    address bzrx,
-    address vbzrx,
-    address ooki
-  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
-
   event PayFlashBorrowFee(address indexed payer, address indexed token, uint256 amount);
 
   function initialize(address target) external onlyOwner {

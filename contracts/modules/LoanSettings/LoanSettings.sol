@@ -19,14 +19,6 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
   using InterestOracle for InterestOracle.Observation[256];
   using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
 
-  constructor(
-    IWeth wethtoken,
-    address usdc,
-    address bzrx,
-    address vbzrx,
-    address ooki
-  ) Constants(wethtoken, usdc, bzrx, vbzrx, ooki) {}
-
   modifier onlyGuardianOrFactory() {
     require(msg.sender == factory || msg.sender == getGuardian() || msg.sender == owner(), "unauthorized");
     _;
