@@ -1,0 +1,211 @@
+/**
+ * Copyright 2017-2023, OokiDao. All Rights Reserved.
+ * Licensed under the Apache License, Version 2.0.
+ */
+
+// SPDX-License-Identifier: Apache-2.0
+pragma solidity ^0.8.0;
+
+import "contracts/core/State.sol";
+import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
+import "interfaces/ISwapsImpl.sol";
+import "contracts/interfaces/balancer/IBalancerVault.sol";
+import "@openzeppelin-4.8.0/utils/math/Math.sol";
+
+contract SwapsImplBalancer is State, ISwapsImpl {
+  using SafeERC20 for IERC20;
+  IBalancerVault public immutable VAULT;
+
+  constructor(IBalancerVault vault) {
+    VAULT = vault;
+  }
+
+  function dexSwap(
+    address sourceTokenAddress,
+    address destTokenAddress,
+    address receiverAddress,
+    address returnToSenderAddress,
+    uint256 minSourceTokenAmount,
+    uint256 maxSourceTokenAmount,
+    uint256 requiredDestTokenAmount,
+    bytes memory payload
+  ) public returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed) {
+    require(sourceTokenAddress != destTokenAddress, "source == dest");
+    require(supportedTokens[sourceTokenAddress] && supportedTokens[destTokenAddress], "unsupported tokens");
+
+    IERC20 sourceToken = IERC20(sourceTokenAddress);
+    address _thisAddress = address(this);
+    (sourceTokenAmountUsed, destTokenAmountReceived) = _swap(
+      sourceTokenAddress,
+      destTokenAddress,
+      receiverAddress,
+      minSourceTokenAmount,
+      maxSourceTokenAmount,
+      requiredDestTokenAmount,
+      payload
+    );
+
+    if (returnToSenderAddress != _thisAddress && sourceTokenAmountUsed < maxSourceTokenAmount) {
+      // send unused source token back
+      sourceToken.safeTransfer(returnToSenderAddress, maxSourceTokenAmount - sourceTokenAmountUsed);
+    }
+  }
+
+  function dexExpectedRate(
+    address sourceTokenAddress,
+    address destTokenAddress,
+    uint256 sourceTokenAmount
+  ) public view returns (uint256 expectedRate) {
+    revert("unsupported");
+  }
+
+  function dexAmountOut(bytes memory payload, uint256 amountIn) public returns (uint256 amountOut, address midToken) {
+    (IBalancerVault.BatchSwapStep[] memory swapParams, address[] memory tokens) = abi.decode(payload, (IBalancerVault.BatchSwapStep[], address[]));
+    uint256 amountInSpecified = 0;
+    for (uint256 i; i < swapParams.length; ++i) {
+      if (swapParams[i].assetInIndex == 0) {
+        amountInSpecified += swapParams[i].amount;
+      }
+    }
+    if (amountInSpecified > amountIn) {
+      swapParams[0].amount -= amountInSpecified - amountIn;
+    } else if (amountInSpecified < amountIn) {
+      swapParams[0].amount += amountIn - amountInSpecified;
+    }
+    if (amountIn != 0) {
+      IBalancerVault.FundManagement memory funds = IBalancerVault.FundManagement({
+        sender: address(this),
+        fromInternalBalance: false,
+        recipient: payable(address(this)),
+        toInternalBalance: false
+      });
+      int256[] memory deltas = VAULT.queryBatchSwap(IBalancerVault.SwapKind.GIVEN_IN, swapParams, tokens, funds);
+      amountOut = uint256(-deltas[deltas.length - 1]);
+    }
+  }
+
+  function dexAmountOutFormatted(bytes memory payload, uint256 amountIn) public returns (uint256 amountOut, address midToken) {
+    return dexAmountOut(payload, amountIn);
+  }
+
+  function dexAmountIn(bytes memory route, uint256 amountOut) public returns (uint256 amountIn, address midToken) {
+    (IBalancerVault.BatchSwapStep[] memory swapParams, address[] memory tokens) = abi.decode(route, (IBalancerVault.BatchSwapStep[], address[]));
+    uint256 amountOutSpecified = 0;
+    for (uint256 i; i < swapParams.length; ++i) {
+      if (swapParams[i].assetOutIndex == swapParams.length - 1) {
+        amountOutSpecified += swapParams[i].amount;
+      }
+    }
+    if (amountOutSpecified > amountOut) {
+      swapParams[swapParams.length - 1].amount += (amountOutSpecified - amountOut);
+    } else if (amountOutSpecified < amountOut) {
+      swapParams[swapParams.length - 1].amount += amountOut - amountOutSpecified;
+    }
+    if (amountOut != 0) {
+      IBalancerVault.FundManagement memory funds = IBalancerVault.FundManagement({
+        sender: address(this),
+        fromInternalBalance: false,
+        recipient: payable(address(this)),
+        toInternalBalance: false
+      });
+      int256[] memory deltas = VAULT.queryBatchSwap(IBalancerVault.SwapKind.GIVEN_OUT, swapParams, tokens, funds);
+      amountIn = uint256(deltas[0]);
+    }
+  }
+
+  function dexAmountInFormatted(bytes memory payload, uint256 amountOut) public returns (uint256 amountIn, address midToken) {
+    return dexAmountIn(payload, amountOut);
+  }
+
+  function setSwapApprovals(address[] memory tokens) public {
+    for (uint256 i; i < tokens.length; ++i) {
+      IERC20(tokens[i]).safeApprove(address(VAULT), 0);
+      IERC20(tokens[i]).safeApprove(address(VAULT), type(uint256).max);
+    }
+  }
+
+  function revokeApprovals(address[] memory tokens) public {
+    for (uint256 i; i < tokens.length; ++i) {
+      IERC20(tokens[i]).safeApprove(address(VAULT), 0);
+    }
+  }
+
+  function _checkLimits(int256[] memory limits) internal pure {
+    require(limits[limits.length - 1] <= 0, "cannot spend dest token");
+    for (uint256 i = 1; i < limits.length - 1; ++i) {
+      require(limits[i] == 0, "unsupported limit");
+    }
+  }
+
+  function _swap(
+    address sourceTokenAddress,
+    address destTokenAddress,
+    address receiverAddress,
+    uint256 minSourceTokenAmount,
+    uint256 maxSourceTokenAmount,
+    uint256 requiredDestTokenAmount,
+    bytes memory payload
+  ) internal returns (uint256 sourceTokenAmountUsed, uint256 destTokenAmountReceived) {
+    if (requiredDestTokenAmount == 0) {
+      (IBalancerVault.BatchSwapStep[] memory swapParams, address[] memory tokens, int256[] memory limits) = abi.decode(
+        payload,
+        (IBalancerVault.BatchSwapStep[], address[], int256[])
+      );
+      require(tokens[0] == sourceTokenAddress && tokens[tokens.length - 1] == destTokenAddress, "invalid tokens");
+      limits[0] = int256(minSourceTokenAmount);
+      _checkLimits(limits);
+      maxSourceTokenAmount = 0;
+      for (uint256 i; i < swapParams.length; ++i) {
+        if (swapParams[i].assetInIndex == 0) {
+          maxSourceTokenAmount += (swapParams[i].amount);
+        }
+      }
+      if (maxSourceTokenAmount > minSourceTokenAmount) {
+        swapParams[0].amount -= (maxSourceTokenAmount - minSourceTokenAmount);
+      } else if (maxSourceTokenAmount < minSourceTokenAmount) {
+        swapParams[0].amount += minSourceTokenAmount - maxSourceTokenAmount;
+      }
+      IBalancerVault.FundManagement memory funds = IBalancerVault.FundManagement({
+        sender: address(this),
+        fromInternalBalance: false,
+        recipient: payable(receiverAddress),
+        toInternalBalance: false
+      });
+
+      limits = VAULT.batchSwap(IBalancerVault.SwapKind.GIVEN_IN, swapParams, tokens, funds, limits, block.timestamp);
+      destTokenAmountReceived = uint256(-1 * limits[limits.length - 1]);
+      require(uint256(limits[0]) == minSourceTokenAmount, "invalid inputs");
+      sourceTokenAmountUsed = uint256(limits[0]);
+    } else {
+      (IBalancerVault.BatchSwapStep[] memory swapParams, address[] memory tokens, int256[] memory limits) = abi.decode(
+        payload,
+        (IBalancerVault.BatchSwapStep[], address[], int256[])
+      );
+      if (limits[0] > int256(maxSourceTokenAmount) || limits[0] == 0) {
+        limits[0] = int256(maxSourceTokenAmount);
+      }
+      minSourceTokenAmount = 0;
+      for (uint256 i; i < swapParams.length; ++i) {
+        if (swapParams[i].assetOutIndex == tokens.length - 1) {
+          minSourceTokenAmount += (swapParams[i].amount);
+        }
+      }
+      if (requiredDestTokenAmount < minSourceTokenAmount) {
+        swapParams[swapParams.length - 1].amount -= (minSourceTokenAmount - requiredDestTokenAmount);
+      } else if (requiredDestTokenAmount > minSourceTokenAmount) {
+        swapParams[swapParams.length - 1].amount += requiredDestTokenAmount - minSourceTokenAmount;
+      }
+      IBalancerVault.FundManagement memory funds = IBalancerVault.FundManagement({
+        sender: address(this),
+        fromInternalBalance: false,
+        recipient: payable(receiverAddress),
+        toInternalBalance: false
+      });
+
+      limits = VAULT.batchSwap(IBalancerVault.SwapKind.GIVEN_OUT, swapParams, tokens, funds, limits, block.timestamp);
+      destTokenAmountReceived = uint256(-limits[limits.length - 1]);
+      require(destTokenAmountReceived == requiredDestTokenAmount, "invalid inputs");
+      sourceTokenAmountUsed = uint256(limits[0]);
+    }
+  }
+}
