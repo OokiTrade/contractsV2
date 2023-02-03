@@ -63,7 +63,7 @@ contract SwapsImplUniswapV2 is State, ISwapsImpl {
   }
 
   function dexAmountOut(bytes memory payload, uint256 amountIn) public view returns (uint256 amountOut, address midToken) {
-    return findBestPath(this._getAmountOut, payload, amountIn);
+    // return findBestPath(this._getAmountOut, this.bigger, payload, amountIn);
   }
 
   function dexAmountOutFormatted(bytes memory payload, uint256 amountIn) public view returns (uint256 amountOut, address midToken) {
@@ -71,15 +71,24 @@ contract SwapsImplUniswapV2 is State, ISwapsImpl {
   }
 
   function dexAmountIn(bytes memory payload, uint256 amountOut) public view returns (uint256 amountIn, address midToken) {
-    (amountIn, midToken) = findBestPath(this._getAmountIn, payload, amountOut);
+    (amountIn, midToken) = findBestPath(this._getAmountIn, this.smaller, payload, amountOut);
 
     if (amountIn == type(uint256).max) {
       amountIn = 0;
     }
   }
 
+  function bigger(uint256 a, uint256 b) external pure returns (bool) {
+    return a > b;
+  }
+
+  function smaller(uint256 a, uint256 b) external pure returns (bool) {
+    return a < b;
+  }
+
   function findBestPath(
     function(uint256, address[] memory) external view returns (uint256) getAmount,
+    function(uint256, uint256) external pure returns (bool) comarator,
     bytes memory payload,
     uint256 amountIn
   ) internal view returns (uint256 amountOut, address midToken) {
@@ -101,7 +110,7 @@ contract SwapsImplUniswapV2 is State, ISwapsImpl {
       if (sourceTokenAddress != address(WETH) && destTokenAddress != address(WETH)) {
         path[1] = address(WETH);
         tmpValue = getAmount(amountIn, path);
-        if (tmpValue > amountOut) {
+        if (comarator(tmpValue, amountOut)) {
           amountOut = tmpValue;
           midToken = address(WETH);
         }
@@ -110,7 +119,7 @@ contract SwapsImplUniswapV2 is State, ISwapsImpl {
       if (sourceTokenAddress != DAI && destTokenAddress != DAI) {
         path[1] = DAI;
         tmpValue = getAmount(amountIn, path);
-        if (tmpValue > amountOut) {
+        if (comarator(tmpValue, amountOut)) {
           amountOut = tmpValue;
           midToken = DAI;
         }
@@ -119,7 +128,7 @@ contract SwapsImplUniswapV2 is State, ISwapsImpl {
       if (sourceTokenAddress != USDC && destTokenAddress != USDC) {
         path[1] = USDC;
         tmpValue = getAmount(amountIn, path);
-        if (tmpValue > amountOut) {
+        if (comarator(tmpValue, amountOut)) {
           amountOut = tmpValue;
           midToken = USDC;
         }
@@ -128,7 +137,7 @@ contract SwapsImplUniswapV2 is State, ISwapsImpl {
       if (sourceTokenAddress != USDT && destTokenAddress != USDT) {
         path[1] = USDT;
         tmpValue = getAmount(amountIn, path);
-        if (tmpValue > amountOut) {
+        if (comarator(tmpValue, amountOut)) {
           amountOut = tmpValue;
           midToken = USDT;
         }
