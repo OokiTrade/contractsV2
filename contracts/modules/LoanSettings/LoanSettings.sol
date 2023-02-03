@@ -35,10 +35,6 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
     _setTarget(this.getLoanInterestOutstanding.selector, target);
     _setTarget(this.modifyLoanParams.selector, target);
     _setTarget(this.migrateLoanParamsList.selector, target); // TODO remove after migration
-
-    // TODO remove after deployment
-    _setTarget(bytes4(keccak256("setupLoanParams(LoanParams[])")), address(0));
-    _setTarget(bytes4(keccak256("getLoanParamsList(address,uint256,uint256)")), address(0));
   }
 
   function setTWAISettings(uint32 delta, uint32 secondsAgo) external onlyGuardian {

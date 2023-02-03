@@ -18,12 +18,6 @@ contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHan
   using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
 
   function initialize(address target) external onlyOwner {
-    // TODO remove after migration
-    _setTarget(bytes4(keccak256("borrowOrTradeFromPool(bytes32,bytes32,bool,uint256,address,uint256,bytes)")), address(0));
-    // TEMP: remove after upgrade
-    _setTarget(bytes4(keccak256("migrateLoans(address,uint256,uint256)")), address(0));
-    _setTarget(bytes4(keccak256("getLoanCount(address)")), address(0));
-
     _setTarget(this.borrowOrTradeFromPool.selector, target);
     _setTarget(this.setDelegatedManager.selector, target);
     _setTarget(this.generateLoanParamId.selector, target);
