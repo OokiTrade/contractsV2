@@ -35,7 +35,7 @@ contract ITokenV1Migrator is Ownable {
     function migrate(address _v1itokenAddress) public {
         require(_v1itokenAddress != address(0));
         uint256 v1ITokenPrice = iTokenPrices[_v1itokenAddress];
-        require(v1ITokenPrice > 1, "itoken is not configured");
+        require(v1ITokenPrice > 1e18, "itoken is not configured");
         uint256 inAmount = IERC20(_v1itokenAddress).balanceOf(msg.sender);
         require(inAmount > 0, "Nothing to migrate");
 
