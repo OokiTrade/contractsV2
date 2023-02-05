@@ -4,11 +4,7 @@ deployer = accounts[0]
 
 price_feed_old = PRICE_FEED
 
-BZRX = Deployment_Immutables.BZRX()
-WETH = Deployment_Immutables.WETH()
-USDC = Deployment_Immutables.USDC()
-vBZRX = Deployment_Immutables.VBZRX()
-price_feed_new = PriceFeeds.deploy(WETH, USDC, BZRX, vBZRX, OOKI, {"from": deployer})
+price_feed_new = PriceFeeds.deploy(WETH, {"from": deployer})
 
 supportedTokenAssetsPairs = TOKEN_REGISTRY.getTokens(0, 100)
 tokens = []
@@ -28,14 +24,14 @@ tickMathV1 = accounts[0].deploy(TickMathV1) #
 liquidationHelper = accounts[0].deploy(LiquidationHelper) #
 volumeTracker = accounts[0].deploy(VolumeTracker) #
 
-lo = deployer.deploy(LoanOpenings, WETH, USDC, BZRX, vBZRX, OOKI) #
-ls = deployer.deploy(LoanSettings, WETH, USDC, BZRX, vBZRX, OOKI) #
-ps = deployer.deploy(ProtocolSettings, WETH, USDC, BZRX, vBZRX, OOKI) #
-lcs= deployer.deploy(LoanClosingsLiquidation, WETH, USDC, BZRX, vBZRX, OOKI) #
-lc = deployer.deploy(LoanClosings, WETH, USDC, BZRX, vBZRX, OOKI) #
-lm = deployer.deploy(LoanMaintenance, WETH, USDC, BZRX, vBZRX, OOKI) #
-lm2 = deployer.deploy(LoanMaintenance_2, WETH, USDC, BZRX, vBZRX, OOKI) #
-se = deployer.deploy(SwapsExternal, WETH, USDC, BZRX, vBZRX, OOKI) #
+lo = deployer.deploy(LoanOpenings) #
+ls = deployer.deploy(LoanSettings) #
+ps = deployer.deploy(ProtocolSettings) #
+lcs= deployer.deploy(LoanClosingsLiquidation) #
+lc = deployer.deploy(LoanClosings) #
+lm = deployer.deploy(LoanMaintenance) #
+lm2 = deployer.deploy(LoanMaintenance_2) #
+se = deployer.deploy(SwapsExternal) #
 
 
 # tickMathV = TickMathV1.at("")
@@ -80,12 +76,3 @@ for l in list:
         iToken.setTarget(itokenImplWeth, {"from": iToken.owner()})
     else:
         iToken.setTarget(itokenImpl, {"from": iToken.owner()})
-
-USDC.transfer(accounts[0], 1000000e6, {"from": "0xf977814e90da44bfa03b6295a0616a897441acec"})
-USDC.approve(iUSDC, 2**256-1, {"from": accounts[0]})
-USDC.approve(iUSDT, 2**256-1, {"from": accounts[0]})
-USDC.approve(iETH, 2**256-1, {"from": accounts[0]})
-USDC.approve(BZX, 2**256-1, {"from": accounts[0]})
-iUSDC.mint(100e6, accounts[0], {"from": accounts[0]})
-iUSDT.borrow("", 50e6, 7884000, 100e6, USDC, accounts[0], accounts[0], b"", {'from': accounts[0]})
-iUSDT.borrow("", 50e6, 7884000, 100e6, USDC, accounts[0], accounts[0], b"", {'from': accounts[0]})
