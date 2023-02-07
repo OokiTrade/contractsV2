@@ -15,9 +15,8 @@ contract ITokenV1Migrator is Ownable {
     address constant DEAD = 0x000000000000000000000000000000000000dEaD;
 
     //v1 address => tokenPrice
-    mapping(address => uint256) public v1iTokenPrices;
-    //v1 address => tokenPrice
-    mapping(address => uint256) public v2iTokenPrices;
+    mapping(address => uint256) public iTokenPrices;
+
     //v1 address => v2 address
     mapping(address => address) public iTokens;
 
@@ -28,9 +27,9 @@ contract ITokenV1Migrator is Ownable {
             && _v1itokenAddress != address(this) && _v2itokenAddress != address(this),
             "Invalid itoken address"
         );
-        require(_v1itokenPrice > 1e18, "_v1itokenPrice should be > 1");
-        v1iTokenPrices[_v1itokenAddress] = _v1itokenPrice;
-        v2iTokenPrices[_v2itokenAddress] = _v2itokenPrice;
+        require(_v1itokenPrice > 1e18, "_v1itokenPrice should be > 1e18");
+        require(_v2itokenPrice > 1e18, "_v2itokenPrice should be > 1e18");
+        iTokenPrices[_v1itokenAddress] = 1e18 * _v1itokenPrice / _v2itokenPrice;
         iTokens[_v1itokenAddress] = _v2itokenAddress;
 
     }
@@ -38,14 +37,13 @@ contract ITokenV1Migrator is Ownable {
     function migrate(address _v1itokenAddress) public {
         require(_v1itokenAddress != address(0));
         address _v2itokenAddress = iTokens[_v1itokenAddress];
-        uint256 v1ITokenPrice = v1iTokenPrices[_v1itokenAddress];
-        uint256 v2ITokenPrice = v2iTokenPrices[_v2itokenAddress];
-        require(v1ITokenPrice > 1e18, "itoken is not configured");
+        uint256 iTokenPrice = iTokenPrices[_v1itokenAddress];
+        require(iTokenPrice > 0, "itoken is not configured");
         uint256 inAmount = IERC20(_v1itokenAddress).balanceOf(msg.sender);
         require(inAmount > 0, "Nothing to migrate");
 
         require(IERC20(_v1itokenAddress).allowance(msg.sender, address(this)) >= inAmount, "Please approve");
-        uint256 outAmount = inAmount * v1ITokenPrice / v2ITokenPrice;
+        uint256 outAmount = inAmount * iTokenPrice / 1e18;
         IERC20(_v1itokenAddress).transferFrom(msg.sender, DEAD, inAmount);
         IERC20(_v2itokenAddress).transfer(msg.sender, outAmount);
     }

@@ -10,7 +10,6 @@ import "@openzeppelin-4.7.0/token/ERC20/utils/SafeERC20.sol";
 
 contract TokenExtractor {
     using SafeERC20 for IERC20;
-
     function withdraw(address _token, address _to, uint256 _amount) public {
             IERC20(_token).safeTransfer(_to,_amount);
     }
