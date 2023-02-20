@@ -14,9 +14,12 @@ contract StakingVault is IStakingVault, Upgradeable_0_8, ERC1155 {
     address depositToken;
     address tokenToBack;
   }
-  address private immutable _protocol;
-  IPriceFeeds private immutable _priceFeed;
-  address private immutable _valuationToken;
+  address private immutable PROTOCOL;
+  IPriceFeeds private immutable PRICE_FEED;
+  address private immutable VALUATION_TOKEN;
+  address private immutable REWARD_TOKEN;
+
+
   address[] private _stakingTokens;
   mapping(address => bool) public tokenSupported;
   mapping(uint256 => uint256) private _sTokenPrice;
@@ -26,37 +29,37 @@ contract StakingVault is IStakingVault, Upgradeable_0_8, ERC1155 {
 
   mapping(address => uint256) public undistributedRewards;
   mapping(uint256 => uint256) public rewardsPerToken;
-  address private immutable _rewardToken;
+  
   mapping(address => mapping(uint256 => uint256)) public lastClaimRewardAccrual;
   mapping(uint256 => bool) public initialized;
   mapping(address => uint8) public tokenDecimalCache;
 
   modifier onlyProtocol() {
-    require(msg.sender == _protocol, "not protocol");
+    require(msg.sender == PROTOCOL, "not protocol");
     _;
   }
 
   constructor(string memory uri_, IPriceFeeds pFeed, address rToken, address p, address vToken) ERC1155(uri_) {
-    _priceFeed = pFeed;
-    _rewardToken = rToken;
-    _protocol = p;
-    _valuationToken = vToken;
+    PRICE_FEED = pFeed;
+    REWARD_TOKEN = rToken;
+    PROTOCOL = p;
+    VALUATION_TOKEN = vToken;
   }
 
   function priceFeed() external view returns (IPriceFeeds) {
-    return _priceFeed;
+    return PRICE_FEED;
   }
 
   function rewardToken() external view returns (address) {
-    return _rewardToken;
+    return REWARD_TOKEN;
   }
 
   function protocol() external view returns (address) {
-    return _protocol;
+    return PROTOCOL;
   }
 
   function valuationToken() external view returns (address) {
-    return _valuationToken;
+    return VALUATION_TOKEN;
   }
 
   function stakingTokens() external view returns (address[] memory) {
@@ -130,16 +133,16 @@ contract StakingVault is IStakingVault, Upgradeable_0_8, ERC1155 {
     uint256[] memory valuesPerToken = new uint256[](tokensStaked.length);
     uint256 totalValue;
     for (uint256 i = 0; i < tokensStaked.length; ) {
-      valuesPerToken[i] = _priceFeed.queryReturn(tokensStaked[i], _valuationToken, balanceStakedPerID[convertToID(tokensStaked[i], tokenBacked)]);
+      valuesPerToken[i] = PRICE_FEED.queryReturn(tokensStaked[i], VALUATION_TOKEN, balanceStakedPerID[convertToID(tokensStaked[i], tokenBacked)]);
       totalValue += valuesPerToken[i];
       unchecked {
         ++i;
       }
     }
     uint256[] memory amountDrawnPerToken = new uint256[](tokensStaked.length);
-    uint256 valueOfCoverage = _priceFeed.queryReturn(tokenToCover, _valuationToken, amountToCover);
+    uint256 valueOfCoverage = PRICE_FEED.queryReturn(tokenToCover, VALUATION_TOKEN, amountToCover);
     for (uint256 i = 0; i < tokensStaked.length; ) {
-      amountDrawnPerToken[i] = _priceFeed.queryReturn(_valuationToken, tokensStaked[i], (valueOfCoverage * valuesPerToken[i]) / totalValue);
+      amountDrawnPerToken[i] = PRICE_FEED.queryReturn(VALUATION_TOKEN, tokensStaked[i], (valueOfCoverage * valuesPerToken[i]) / totalValue);
       IERC20(tokensStaked[i]).safeTransfer(msg.sender, amountDrawnPerToken[i]);
       unchecked {
         ++i;
@@ -160,7 +163,7 @@ contract StakingVault is IStakingVault, Upgradeable_0_8, ERC1155 {
     address[] memory tokensStaked = _stakingTokens;
     uint256 value;
     for (uint256 i; i < tokensStaked.length; ) {
-      value += _priceFeed.queryReturn(tokensStaked[i], _valuationToken, balanceStakedPerID[convertToID(token, tokensStaked[i])]);
+      value += PRICE_FEED.queryReturn(tokensStaked[i], VALUATION_TOKEN, balanceStakedPerID[convertToID(token, tokensStaked[i])]);
     }
     return value;
   }
@@ -182,14 +185,14 @@ contract StakingVault is IStakingVault, Upgradeable_0_8, ERC1155 {
 
   function addRewards(address tokenBacked, uint256 rewardAmount) external {
     _addRewards(rewardAmount, tokenBacked);
-    IERC20(_rewardToken).safeTransferFrom(msg.sender, address(this), rewardAmount);
+    IERC20(REWARD_TOKEN).safeTransferFrom(msg.sender, address(this), rewardAmount);
 
     emit AddRewards(tokenBacked, rewardAmount);
   }
 
   function accumulateRewards(address tokenBacked, uint256 rewardAmount) external {
     undistributedRewards[tokenBacked] += rewardAmount;
-    IERC20(_rewardToken).safeTransferFrom(msg.sender, address(this), rewardAmount);
+    IERC20(REWARD_TOKEN).safeTransferFrom(msg.sender, address(this), rewardAmount);
 
     emit AccumulateRewards(tokenBacked, rewardAmount);
   }
@@ -244,7 +247,7 @@ contract StakingVault is IStakingVault, Upgradeable_0_8, ERC1155 {
     uint256 tokenID;
     for (uint256 i; i < tokensStaked.length; ) {
       tokenID = convertToID(tokensStaked[i], tokenBacked);
-      values[i] = _priceFeed.queryReturn(tokensStaked[i], _valuationToken, balanceStakedPerID[tokenID]);
+      values[i] = PRICE_FEED.queryReturn(tokensStaked[i], VALUATION_TOKEN, balanceStakedPerID[tokenID]);
       totalValue += values[i];
       unchecked {
         ++i;
@@ -270,7 +273,7 @@ contract StakingVault is IStakingVault, Upgradeable_0_8, ERC1155 {
     if (newAmount - previousAmount == 0) {
       return;
     }
-    IERC20(_rewardToken).safeTransfer(msg.sender, ((newAmount - previousAmount) * balanceOf(msg.sender, tokenID)) / 1e18);
+    IERC20(REWARD_TOKEN).safeTransfer(msg.sender, ((newAmount - previousAmount) * balanceOf(msg.sender, tokenID)) / 1e18);
     if (!initialized[tokenID] && newAmount > 0) {
       initialized[tokenID] = true;
     }
