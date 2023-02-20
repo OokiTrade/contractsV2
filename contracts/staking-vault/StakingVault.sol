@@ -14,10 +14,10 @@ contract StakingVault is IStakingVault, Upgradeable_0_8, ERC1155 {
     address depositToken;
     address tokenToBack;
   }
-  address private immutable PROTOCOL;
-  IPriceFeeds private immutable PRICE_FEED;
-  address private immutable VALUATION_TOKEN;
-  address private immutable REWARD_TOKEN;
+  address public immutable PROTOCOL;
+  IPriceFeeds public immutable PRICE_FEED;
+  address public immutable VALUATION_TOKEN;
+  address public immutable REWARD_TOKEN;
 
 
   address[] private _stakingTokens;
@@ -44,22 +44,6 @@ contract StakingVault is IStakingVault, Upgradeable_0_8, ERC1155 {
     REWARD_TOKEN = rToken;
     PROTOCOL = p;
     VALUATION_TOKEN = vToken;
-  }
-
-  function priceFeed() external view returns (IPriceFeeds) {
-    return PRICE_FEED;
-  }
-
-  function rewardToken() external view returns (address) {
-    return REWARD_TOKEN;
-  }
-
-  function protocol() external view returns (address) {
-    return PROTOCOL;
-  }
-
-  function valuationToken() external view returns (address) {
-    return VALUATION_TOKEN;
   }
 
   function stakingTokens() external view returns (address[] memory) {
