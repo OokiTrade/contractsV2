@@ -28,7 +28,7 @@ contract StakingVault is IStakingVault, Upgradeable_0_8, ERC1155 {
   mapping(uint256 => uint256) public supplyPerID;
 
   mapping(address => uint256) public undistributedRewards;
-  mapping(uint256 => uint256) public rewardsPerToken;
+  mapping(uint256 => uint256) public rewardsPerID;
   
   mapping(address => mapping(uint256 => uint256)) public lastClaimRewardAccrual;
   mapping(uint256 => bool) public initialized;
@@ -240,7 +240,7 @@ contract StakingVault is IStakingVault, Upgradeable_0_8, ERC1155 {
     for (uint256 i; i < tokensStaked.length; ) {
       tokenID = convertToID(tokensStaked[i], tokenBacked);
       values[i] = (values[i] * 1e18) / totalValue;
-      rewardsPerToken[tokenID] += (rewardAmount * values[i]) / supplyPerID[tokenID];
+      rewardsPerID[tokenID] += (rewardAmount * values[i]) / supplyPerID[tokenID];
       unchecked {
         ++i;
       }
@@ -250,10 +250,10 @@ contract StakingVault is IStakingVault, Upgradeable_0_8, ERC1155 {
   function _claimReward(uint256 tokenID) internal {
     uint256 previousAmount = lastClaimRewardAccrual[msg.sender][tokenID];
     if (previousAmount == 0 && initialized[tokenID]) {
-      lastClaimRewardAccrual[msg.sender][tokenID] = rewardsPerToken[tokenID];
+      lastClaimRewardAccrual[msg.sender][tokenID] = rewardsPerID[tokenID];
       return;
     }
-    uint256 newAmount = rewardsPerToken[tokenID];
+    uint256 newAmount = rewardsPerID[tokenID];
     if (newAmount - previousAmount == 0) {
       return;
     }
