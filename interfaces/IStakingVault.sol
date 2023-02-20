@@ -22,11 +22,11 @@ interface IStakingVault {
     function accumulateRewards(address tokenBacked, uint256 rewardAmount) external;
     function distributeRewards(address tokenBacked) external;
     function claimRewards(uint256[] memory tokenIDs) external;
-    function priceFeed() external view returns (IPriceFeeds);
-    function protocol() external view returns (address);
-    function valuationToken() external view returns (address);
+    // function priceFeed() external view returns (IPriceFeeds);
+    // function protocol() external view returns (address);
+    // function valuationToken() external view returns (address);
     function stakingTokens() external view returns (address[] memory);
-    function rewardToken() external view returns (address);
+    // function rewardToken() external view returns (address);
     function drawOnPool(address tokenBacked, address tokenToCover, uint256 amountToCover) external returns (uint256[] memory);
 
 }
