@@ -1,4 +1,4 @@
-exec(open("./scripts/env/set_eth.py").read())
+exec(open("./scripts/env/set_arbitrum.py").read())
 
 deployer = accounts[0]
 

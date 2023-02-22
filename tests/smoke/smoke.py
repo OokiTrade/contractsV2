@@ -22,6 +22,24 @@ env = {
             # 'COMP': '0xfbe18f066f9583dac19c88444bc2005c99881e56',
             # 'OOKI': '0x16f179f5c344cc29672a58ea327a26f64b941a63',
             # 'APE': '0x91951fa186a77788197975ed58980221872a3352',
+        },
+        'aliases': {
+
+        }
+    },
+
+    '42161': {
+        'protocol': '0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB',
+        'regestry': '0x86003099131d83944d826F8016E09CC678789A30',
+        'helper': '0xB8329B5458B1E493EFd8D9DA8C3B5E6D68e67C21',
+        'holders': {
+            'USDC': '0x62383739d68dd0f844103db8dfb05a7eded5bbe6',
+            #'WETH': '0xc31e54c7a869b9fcbecc14363cf510d1c41fa443',
+            'WBTC': '0x149e36e72726e0bcea5c59d40df2c43f60f5a22d'
+
+        },
+        'aliases': {
+            'iWBTC': 'iBTC'
         }
     }
 }
@@ -29,8 +47,7 @@ env = {
 @pytest.fixture(scope="module")
 def ENV():
     thisNetwork = network.chain.id
-    if thisNetwork == 1:
-       return env['1']
+    return env[str(thisNetwork)]
 
 @pytest.fixture(scope="module")
 def regestry(TokenRegistry, ENV):
@@ -72,15 +89,20 @@ def TOKENS(regestry):
 
 def pytest_generate_tests(metafunc):
     res = []
+    aliases =  env['42161']['aliases']
 
     #ToDo: load from ENV fixture!!!!!!
-    for i in env['1']['holders'].keys():
-        for j in env['1']['holders'].keys():
+    for i in env['42161']['holders'].keys():
+        for j in env['42161']['holders'].keys():
+            itokenname = 'i'+i
+            if(itokenname in aliases):
+                itokenname = aliases[itokenname]
+
             if(i == j):
-                res.append(['mint', 'i'+i, j])
+                res.append(['mint', itokenname, j])
             else:
-                res.append(['borrow', 'i'+i, j])
-                res.append(['trade', 'i'+i, j])
+                res.append(['borrow', itokenname, j])
+                res.append(['trade', itokenname, j])
 
     print(res)
 
@@ -232,7 +254,7 @@ def margin_trade(loanToken, itoken, collateral, isNativeToken, isNativeCollatera
 def test_1(input, TOKENS, ITOKENS, interface, bzx, HELPER, ENV):
     tokenName = input[2]
     itokenName = input[1]
-    iToken = ITOKENS[input[1]]
+    iToken = ITOKENS[itokenName]
     token = TOKENS[input[2]]
     account = ENV['holders'][tokenName]
     decimals = interface.IERC20Metadata(token).decimals()
