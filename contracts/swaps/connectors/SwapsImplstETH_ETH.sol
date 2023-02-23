@@ -15,9 +15,19 @@ import "contracts/interfaces/IstETH.sol";
 
 contract SwapsImplstETH_ETH is State, ISwapsImpl {
   using SafeERC20 for IERC20;
-  address public constant STETH = 0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84;
-  address public constant WSTETH = 0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0;
-  ICurve public constant STETHPOOL = ICurve(0xDC24316b9AE028F1497c275EB9192a3Ea0f67022);
+  address public immutable STETH;
+  address public immutable WSTETH;
+  ICurve public immutable STETHPOOL;
+
+  constructor(
+    address steth,
+    address wsteth,
+    ICurve stethpool
+  ) {
+    STETH = steth;
+    WSTETH = wsteth;
+    STETHPOOL = stethpool;
+  }
 
   function dexSwap(
     address sourceTokenAddress,
@@ -30,10 +40,7 @@ contract SwapsImplstETH_ETH is State, ISwapsImpl {
     bytes memory payload
   ) public returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed) {
     require(sourceTokenAddress != destTokenAddress, "source == dest");
-    require(
-      (sourceTokenAddress == WSTETH || sourceTokenAddress == address(WETH)) && (destTokenAddress == WSTETH || destTokenAddress == address(WETH)),
-      "unsupported tokens"
-    );
+    require((sourceTokenAddress == WSTETH || sourceTokenAddress == address(WETH)) && (destTokenAddress == WSTETH || destTokenAddress == address(WETH)), "unsupported tokens");
 
     IERC20 sourceToken = IERC20(sourceTokenAddress);
     address _thisAddress = address(this);
@@ -53,7 +60,11 @@ contract SwapsImplstETH_ETH is State, ISwapsImpl {
     }
   }
 
-  function dexExpectedRate(address sourceTokenAddress, address destTokenAddress, uint256 sourceTokenAmount) public view returns (uint256 expectedRate) {
+  function dexExpectedRate(
+    address sourceTokenAddress,
+    address destTokenAddress,
+    uint256 sourceTokenAmount
+  ) public view returns (uint256 expectedRate) {
     revert("unsupported");
   }
 
@@ -86,14 +97,18 @@ contract SwapsImplstETH_ETH is State, ISwapsImpl {
     revert("unsupported");
   }
 
-  function setSwapApprovals(address[] memory /*tokens*/) public {
+  function setSwapApprovals(
+    address[] memory /*tokens*/
+  ) public {
     IERC20(STETH).safeApprove(WSTETH, 0);
     IERC20(STETH).safeApprove(WSTETH, type(uint256).max);
     IERC20(STETH).safeApprove(address(STETHPOOL), 0);
     IERC20(STETH).safeApprove(address(STETHPOOL), type(uint256).max);
   }
 
-  function revokeApprovals(address[] memory /*tokens*/) public {
+  function revokeApprovals(
+    address[] memory /*tokens*/
+  ) public {
     IERC20(STETH).safeApprove(WSTETH, 0);
     IERC20(STETH).safeApprove(address(STETHPOOL), 0);
   }
@@ -103,7 +118,7 @@ contract SwapsImplstETH_ETH is State, ISwapsImpl {
     address destTokenAddress,
     address receiverAddress,
     uint256 minSourceTokenAmount,
-    uint256 /*maxSourceTokenAmount*/,
+    uint256, /*maxSourceTokenAmount*/
     uint256 requiredDestTokenAmount,
     bytes memory payload
   ) internal returns (uint256 sourceTokenAmountUsed, uint256 destTokenAmountReceived) {
