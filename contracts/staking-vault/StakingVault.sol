@@ -249,7 +249,8 @@ contract StakingVault is IStakingVault, Upgradeable_0_8, ERC1155 {
 
   function _claimReward(uint256 tokenID) internal {
     uint256 previousAmount = lastClaimRewardAccrual[msg.sender][tokenID];
-    if (previousAmount == 0 && initialized[tokenID]) {
+    bool tokenIDInitialized = initialized[tokenID];
+    if (previousAmount == 0 && tokenIDInitialized) {
       lastClaimRewardAccrual[msg.sender][tokenID] = rewardsPerID[tokenID];
       return;
     }
@@ -258,7 +259,7 @@ contract StakingVault is IStakingVault, Upgradeable_0_8, ERC1155 {
       return;
     }
     IERC20(REWARD_TOKEN).safeTransfer(msg.sender, ((newAmount - previousAmount) * balanceOf(msg.sender, tokenID)) / 1e18);
-    if (!initialized[tokenID] && newAmount > 0) {
+    if (!tokenIDInitialized && newAmount > 0) {
       initialized[tokenID] = true;
     }
     lastClaimRewardAccrual[msg.sender][tokenID] = newAmount;
