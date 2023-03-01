@@ -10,6 +10,7 @@ import "@openzeppelin-4.8.0/access/Ownable.sol";
 import "@openzeppelin-4.8.0/token/ERC20/IERC20.sol";
 import "@openzeppelin-4.8.0/token/ERC20/extensions/IERC20Metadata.sol";
 import "contracts/feeds/IPriceFeedsExt.sol";
+import "interfaces/IPriceFeedHelper.sol";
 import "contracts/governance/PausableGuardian_0_8.sol";
 import "interfaces/IToken.sol";
 
@@ -28,6 +29,7 @@ contract PriceFeeds is PausableGuardian_0_8 {
 
   mapping(address => IPriceFeedsExt) public pricesFeeds; // token => pricefeed
   mapping(address => uint256) public decimals; // decimals of supported tokens
+  mapping(address => IPriceFeedHelper) public pricesHelpers; // token => pricefeedhelper
 
   constructor(address wethtoken) {
     // set decimals for ether
@@ -165,6 +167,15 @@ contract PriceFeeds is PausableGuardian_0_8 {
     }
   }
 
+
+  function setPriceFeedHelper(address[] calldata tokens, IPriceFeedHelper[] calldata feeds) external onlyFactoryOrOwner {
+    require(tokens.length == feeds.length, "count mismatch");
+
+    for (uint256 i = 0; i < tokens.length; i++) {
+      pricesHelpers[tokens[i]] = feeds[i];
+    }
+  }
+
   function setDecimals(IERC20Metadata[] calldata tokens) external {
     for (uint256 i = 0; i < tokens.length; i++) {
       decimals[address(tokens[i])] = tokens[i].decimals();
@@ -197,13 +208,14 @@ contract PriceFeeds is PausableGuardian_0_8 {
     IPriceFeedsExt feed = pricesFeeds[token];
     if (address(feed) != address(0)) {
       price = uint256(feed.latestAnswer());
-    } else {
+    } else if((feed = pricesFeeds[IToken(token).loanTokenAddress()]) != IPriceFeedsExt(address(0))){
       // if token is invalid it will fail on `loanTokenAddress` however if token is arbitrary somebody can implement loanTokenAddress() and tokenPrice()
-      feed = pricesFeeds[IToken(token).loanTokenAddress()];
-      price = uint256(IPriceFeedsExt(feed).latestAnswer());
+      price = uint256(feed.latestAnswer());
 
       price *= IToken(token).tokenPrice();
       price /= 1e18;
+    } else {
+      price = pricesHelpers[token].latestAnswer(token);
     }
   }
 
