@@ -22,3 +22,5 @@ SWEEP_FEES = Contract.from_abi("SWEEP_FEES", "0xcbDE8C5603D4bA855a162A450B1d054A
 PRICE_FEED = Contract.from_abi("PRICE_FEED", BZX.priceFeeds(), abi = PriceFeeds.abi)
 
 CUI = CurvedInterestRate.at("0x138236a9a3BD8A40Ec8e4aF592e6007f352f6beB")
+
+DEX_RECORDS = Contract.from_abi("DEX_RECORDS",BZX.swapsImpl(), DexRecords.abi)

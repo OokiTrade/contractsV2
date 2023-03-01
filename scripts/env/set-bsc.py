@@ -23,3 +23,4 @@ OOKI = Contract.from_abi("OOKI", "0xa5a6817ac4c164F27df3254B71fE83904B1C3c3e", i
 PRICE_FEED = Contract.from_abi("PRICE_FEED", BZX.priceFeeds(), abi = PriceFeeds.abi)
 
 CUI = CurvedInterestRate.at("0x78cb68020c4FC8BBB489C4CD197F8A0226fE4135")
+DEX_RECORDS = Contract.from_abi("DEX_RECORDS",BZX.swapsImpl(), DexRecords.abi)

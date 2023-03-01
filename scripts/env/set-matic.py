@@ -28,3 +28,4 @@ BZRX = Contract.from_abi("BZRX", "0x54cFe73f2c7d0c4b62Ab869B473F5512Dc0944D2", i
 SWEEP_FEES = Contract.from_abi("SWEEP_FEES", "0x8c02eDeE0c759df83e31861d11E6918Dd93427d2", FeeExtractAndDistribute_Polygon.abi)
 
 CUI = CurvedInterestRate.at("0xF65905c663dFDb92435DB321a5008ff34D83C61D")
+DEX_RECORDS = Contract.from_abi("DEX_RECORDS",BZX.swapsImpl(), DexRecords.abi)
