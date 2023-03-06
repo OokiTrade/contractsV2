@@ -41,8 +41,8 @@ contract UniV2PriceFeedHelper {
     IPriceFeedsExt private constant OOKI_PRICE_FEED = IPriceFeedsExt(0xd219325Cf1c4FA17E5984feA5911d0Ba0CaE60F9);
     IPriceFeedsExt private constant APE_PRICE_FEED = IPriceFeedsExt(0xc7de7f4d4C9c991fF62a07D18b3E31e349833A18);
 
-    event Logger(string name, uint256 value);
-    function latestAnswer(address token) public returns (uint256 answer) {
+    // event Logger(string name, uint256 value);
+    function latestAnswer(address token) public view returns (uint256 answer) {
         // check token validity
         address token0 = IUniswapV2Pair(token).token0();
         address token1 = IUniswapV2Pair(token).token1();
@@ -52,26 +52,12 @@ contract UniV2PriceFeedHelper {
         require(address(feed0) != address(0) && address(feed1) != address(0), "wrong lp");
 
         (uint256 reserve0, uint256 reserve1,) = IUniswapV2Pair(token).getReserves();
-        emit Logger("reserve0", reserve0);
-        emit Logger("reserve1", reserve1);
-        emit Logger("feed0.latestAnswer()", uint256(feed0.latestAnswer()));
-        emit Logger("feed1.latestAnswer()", uint256(feed1.latestAnswer()));
-        emit Logger("10**(IERC20Detailed(token0).decimals()", 10**(IERC20Detailed(token0).decimals()));
-        emit Logger("10**(IERC20Detailed(token1).decimals()", 10**(IERC20Detailed(token1).decimals()));
+
         uint256 reserve0_to_eth = reserve0 * uint256(feed0.latestAnswer()) / 10**(IERC20Detailed(token0).decimals());
         uint256 reserve1_to_eth = reserve1 * uint256(feed1.latestAnswer()) / 10**(IERC20Detailed(token1).decimals());
 
-        emit Logger("reserve0_to_eth", reserve0);
-        emit Logger("reserve1_to_eth", reserve1);
-        answer = (reserve0_to_eth + reserve1_to_eth)/ IUniswapV2Pair(token).totalSupply()*1e18;
-        emit Logger("answer", answer);
-        // return (reserve0_to_eth + reserve1_to_eth)/ IUniswapV2Pair(token).totalSupply()*1e18;
+        answer = (reserve0_to_eth + reserve1_to_eth) * 1e18/ IUniswapV2Pair(token).totalSupply();
 
-
-        // if (token == address(DAI_PRICE_FEED)) {
-        //     return (uint256(DAI_PRICE_FEED.latestAnswer()) * IToken(token).tokenPrice()) / 1e18;
-        // }
-        // return (uint256(getFeed(token).latestAnswer()) * IToken(token).tokenPrice()) / 1e18;
     }
 
     function getFeed(address token) public pure returns(IPriceFeedsExt feed) {
