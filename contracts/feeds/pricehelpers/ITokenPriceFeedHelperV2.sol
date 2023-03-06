@@ -54,7 +54,6 @@ contract ITokenPriceFeedHelperV2 is IPriceFeedHelper {
     IPriceFeedsExt private constant AAVE_PRICE_FEED = IPriceFeedsExt(0x6Df09E975c830ECae5bd4eD9d90f3A95a4f88012);
     IPriceFeedsExt private constant UNI_PRICE_FEED = IPriceFeedsExt(0xD6aA3D25116d8dA79Ea0246c4826EB951872e02e);
     IPriceFeedsExt private constant COMP_PRICE_FEED = IPriceFeedsExt(0x1B39Ee86Ec5979ba5C322b826B3ECb8C79991699);
-    IPriceFeedsExt private constant OOKI_PRICE_FEED = IPriceFeedsExt(0xd219325Cf1c4FA17E5984feA5911d0Ba0CaE60F9);
     IPriceFeedsExt private constant APE_PRICE_FEED = IPriceFeedsExt(0xc7de7f4d4C9c991fF62a07D18b3E31e349833A18);
 
     function latestAnswer(address token) public view returns (uint256) {
@@ -87,8 +86,6 @@ contract ITokenPriceFeedHelperV2 is IPriceFeedHelper {
             feed = UNI_PRICE_FEED;
         } else if (token == address(ICOMP)) {
             feed = COMP_PRICE_FEED;
-        } else if (token == address(IOOKI)) {
-            feed = OOKI_PRICE_FEED;
         } else if (token == address(IAPE)) {
             feed = APE_PRICE_FEED;
         }

@@ -52,6 +52,7 @@ compiler:
             - "@celer=celer-network/sgn-v2-contracts@0.2.0"
             - "prb-math=./node_modules/prb-math"
             # - "@prb-math=paulrberg/prb-math@2.4.1"
+            - "@aave-v3-core=aave/aave-v3-core@1.17.2/contracts"
             
 console:
     show_colors: true

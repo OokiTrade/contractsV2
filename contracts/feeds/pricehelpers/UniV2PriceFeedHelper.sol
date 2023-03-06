@@ -28,7 +28,7 @@ contract UniV2PriceFeedHelper {
     address private constant APE = 0x4d224452801ACEd8B2F0aebE155379bb5D594381;
 
     IPriceFeedsExt private constant DAI_PRICE_FEED = IPriceFeedsExt(0x773616E4d11A78F511299002da57A0a94577F1f4);
-    IPriceFeedsExt private constant ETH_PRICE_FEED = IPriceFeedsExt(0x4B22d75DD2b8e0A2787B0bf93636990d8ba12C65);
+    IPriceFeedsExt private constant WETH_PRICE_FEED = IPriceFeedsExt(0x4B22d75DD2b8e0A2787B0bf93636990d8ba12C65);
     IPriceFeedsExt private constant USDC_PRICE_FEED = IPriceFeedsExt(0x986b5E1e1755e3C2440e960477f25201B0a8bbD4); // this is form DollarPeggedFeed
     IPriceFeedsExt private constant WBTC_PRICE_FEED = IPriceFeedsExt(0xdeb288F737066589598e9214E782fa5A8eD689e8);
     IPriceFeedsExt private constant MKR_PRICE_FEED = IPriceFeedsExt(0x24551a8Fb2A7211A25a17B1481f043A8a8adC7f2);
@@ -65,7 +65,7 @@ contract UniV2PriceFeedHelper {
         if (token == address(DAI)) {
             feed = DAI_PRICE_FEED;
         } else if (token == address(WETH)) {
-            feed = ETH_PRICE_FEED;
+            feed = WETH_PRICE_FEED;
         } else if (token == address(USDC)) {
             feed = USDC_PRICE_FEED;
         } else if (token == address(WBTC)) {
