@@ -10,7 +10,7 @@ import "interfaces/IPriceFeedHelper.sol";
 import "contracts/interfaces/ICToken.sol";
 import "contracts/feeds/IPriceFeedsExt.sol";
 
-contract CTokenPriceHelper is IPriceFeedHelper {
+contract CTokenPriceHelper_ETH is IPriceFeedHelper {
     ICToken private constant cUSDC = ICToken(0x39AA39c021dfbaE8faC545936693aC917d5E7563);
     ICToken private constant cDAI = ICToken(0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643);
     ICToken private constant cUNI = ICToken(0x35A18000230DA775CAc24873d00Ff85BccdeD550);

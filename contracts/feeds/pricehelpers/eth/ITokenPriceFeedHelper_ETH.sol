@@ -10,7 +10,7 @@ import "contracts/feeds/IPriceFeedsExt.sol";
 import "interfaces/IPriceFeedHelper.sol";
 import "interfaces/IToken.sol";
 
-contract ITokenPriceFeedHelper is IPriceFeedHelper {
+contract ITokenPriceFeedHelper_ETH is IPriceFeedHelper {
     IPriceFeedsExt private immutable PRICE_FEED_EXT; // underlying token Chainlink feed address
 
     constructor(IPriceFeedsExt _priceFeedAddress) {

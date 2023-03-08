@@ -14,7 +14,7 @@ import "@aave-v3-core/interfaces/IPool.sol";
 
 import "contracts/feeds/IPriceFeedsExt.sol";
 
-contract ATokenPriceHelper is IPriceFeedHelper {
+contract ATokenPriceHelper_ETH is IPriceFeedHelper {
     IAToken private constant aWETH = IAToken(0x4d5F47FA6A74757f35C14fD3a6Ef8E3C9BC514E8);
     IAToken private constant awstETH = IAToken(0x0B925eD163218f6662a35e0f0371Ac234f9E9371);
     IAToken private constant aWBTC = IAToken(0x5Ee5bf7ae06D1Be5997A1A72006FE6C607eC6DE8);

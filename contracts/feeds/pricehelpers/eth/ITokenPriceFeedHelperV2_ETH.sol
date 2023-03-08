@@ -27,7 +27,7 @@ import "interfaces/IToken.sol";
 // iOOKI 0x05d5160cbc6714533ef44CEd6dd32112d56Ad7da 0xd219325Cf1c4FA17E5984feA5911d0Ba0CaE60F9
 // iAPE 0x5c5d12feD25160942623132325A839eDE3F4f4D9 0xc7de7f4d4C9c991fF62a07D18b3E31e349833A18
 
-contract ITokenPriceFeedHelperV2 is IPriceFeedHelper {
+contract ITokenPriceFeedHelperV2_ETH is IPriceFeedHelper {
 
     IToken private constant IDAI = IToken(0x6b093998D36f2C7F0cc359441FBB24CC629D5FF0);
     IToken private constant IETH = IToken(0xB983E01458529665007fF7E0CDdeCDB74B967Eb6);
@@ -57,9 +57,6 @@ contract ITokenPriceFeedHelperV2 is IPriceFeedHelper {
     IPriceFeedsExt private constant APE_PRICE_FEED = IPriceFeedsExt(0xc7de7f4d4C9c991fF62a07D18b3E31e349833A18);
 
     function latestAnswer(address token) public view returns (uint256) {
-        if (token == address(DAI_PRICE_FEED)) {
-            return (uint256(DAI_PRICE_FEED.latestAnswer()) * IToken(token).tokenPrice()) / 1e18;
-        }
         return (uint256(getFeed(token).latestAnswer()) * IToken(token).tokenPrice()) / 1e18;
     }
 

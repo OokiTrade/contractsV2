@@ -9,9 +9,11 @@ pragma solidity ^0.8.0;
 import "contracts/feeds/IPriceFeedsExt.sol";
 import "interfaces/IPriceFeedHelper.sol";
 import "contracts/interfaces/uniswap/IUniswapV2Pair.sol";
-import "../../interfaces/IERC20Detailed.sol";
+import "@openzeppelin-4.8.0/token/ERC20/extensions/IERC20Metadata.sol";
 
-contract UniV2PriceFeedHelper {
+
+
+contract UniV2PriceFeedHelper_ETH {
 
     address private constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
     address private constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
@@ -53,8 +55,8 @@ contract UniV2PriceFeedHelper {
 
         (uint256 reserve0, uint256 reserve1,) = IUniswapV2Pair(token).getReserves();
 
-        uint256 reserve0_to_eth = reserve0 * uint256(feed0.latestAnswer()) / 10**(IERC20Detailed(token0).decimals());
-        uint256 reserve1_to_eth = reserve1 * uint256(feed1.latestAnswer()) / 10**(IERC20Detailed(token1).decimals());
+        uint256 reserve0_to_eth = reserve0 * uint256(feed0.latestAnswer()) / 10**(IERC20Metadata(token0).decimals());
+        uint256 reserve1_to_eth = reserve1 * uint256(feed1.latestAnswer()) / 10**(IERC20Metadata(token1).decimals());
 
         answer = (reserve0_to_eth + reserve1_to_eth) * 1e18/ IUniswapV2Pair(token).totalSupply();
 
