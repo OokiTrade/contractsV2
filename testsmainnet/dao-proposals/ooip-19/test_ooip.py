@@ -80,7 +80,7 @@ def testGovernanceProposal(requireMainnetFork, accounts, DAO, TIMELOCK, iUSDC, O
     voter2 = "0xE9d5472Cc0107938bBcaa630c2e4797F75A2D382"
 
 
-    exec(open("./scripts/dao-proposals/OOIP-19-pricefeed-to-guardian/proposal.py").read())
+    exec(open("./scripts/dao-proposals/OOIP-19-pricefeed-update/proposal.py").read())
 
     proposalCount = DAO.proposalCount()
     proposal = DAO.proposals(proposalCount)
@@ -117,8 +117,7 @@ def testGovernanceProposal(requireMainnetFork, accounts, DAO, TIMELOCK, iUSDC, O
     DAO.execute(id, {"from": proposerAddress})
 
     PRICE_FEED = PriceFeeds.at(BZX.priceFeeds())
-    NULL = "0x0000000000000000000000000000000000000000"
-    assert PRICE_FEED.owner().lower() == GUARDIAN_MULTISIG.lower()
+    assert PRICE_FEED.pricesFeeds(USDC) == '0x986b5E1e1755e3C2440e960477f25201B0a8bbD4'
     assert False
 
 
