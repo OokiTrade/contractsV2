@@ -74,7 +74,7 @@ def GUARDIAN_MULTISIG():
 def INFRASTRUCTURE_MULTISIG():
     return "0x2a599cEba64CAb8C88549c2c7314ea02A161fC70"
 
-def testGovernanceProposal(requireMainnetFork, accounts, DAO, TIMELOCK, iUSDC, OOKI, interface, INFRASTRUCTURE_MULTISIG, USDC, BZX, iUSDT, TokenRegistry):
+def testGovernanceProposal(requireMainnetFork, accounts, DAO, TIMELOCK, iUSDC, OOKI, interface, INFRASTRUCTURE_MULTISIG, USDC, USDT,  BZX, iUSDT, TokenRegistry):
     proposerAddress = "0x02c6819c2cb8519ab72fd1204a8a0992b5050c6e"
     voter1 = "0x9B43a385E08EE3e4b402D4312dABD11296d09E93"
     voter2 = "0xE9d5472Cc0107938bBcaa630c2e4797F75A2D382"
@@ -118,6 +118,8 @@ def testGovernanceProposal(requireMainnetFork, accounts, DAO, TIMELOCK, iUSDC, O
 
     PRICE_FEED = PriceFeeds.at(BZX.priceFeeds())
     assert PRICE_FEED.pricesFeeds(USDC) == '0x986b5E1e1755e3C2440e960477f25201B0a8bbD4'
+    assert PRICE_FEED.pricesFeeds(USDT) == '0xEe9F2375b4bdF6387aa8265dD4FB8F16512A1d46'
+
     assert False
 
 
