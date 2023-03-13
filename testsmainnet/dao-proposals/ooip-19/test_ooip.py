@@ -120,6 +120,24 @@ def testGovernanceProposal(requireMainnetFork, accounts, DAO, TIMELOCK, iUSDC, O
     assert PRICE_FEED.pricesFeeds(USDC) == '0x986b5E1e1755e3C2440e960477f25201B0a8bbD4'
     assert PRICE_FEED.pricesFeeds(USDT) == '0xEe9F2375b4bdF6387aa8265dD4FB8F16512A1d46'
 
+    acc = '0x28f1d5FE896dB571Cba7679863DD4E1272d49eAc'
+    USDC.approve(iUSDT, 2**256-1, {'from':acc})
+    iUSDT.borrow("", 50e6, 0, 100e6, USDC, acc, acc, b"", {'from': acc})
+    assert  history[-1].status.name == 'Confirmed'
+    iUSDT.marginTrade(0x0000000000000000000000000000000000000000000000000000000000000000, 2000000000000000000, 0, 10000000000000000, '0x0000000000000000000000000000000000000000', accounts[0], b'', {'from': accounts[0], 'value': 10000000000000000})
+    assert  history[-1].status.name == 'Confirmed'
+    iUSDT.marginTrade(0x0000000000000000000000000000000000000000000000000000000000000000, 2000000000000000000, 0, 100e6, USDC, acc, b'', {'from': acc})
+    assert  history[-1].status.name == 'Confirmed'
+
+    acc = '0xee5B5B923fFcE93A870B3104b7CA09c3db80047A'
+    USDT.approve(iUSDC, 2**256-1, {'from':acc})
+    iUSDC.borrow("", 50e6, 0, 100e6, USDT, acc, acc, b"", {'from': acc})
+    assert  history[-1].status.name == 'Confirmed'
+    iUSDC.marginTrade(0x0000000000000000000000000000000000000000000000000000000000000000, 2000000000000000000, 0, 10000000000000000, '0x0000000000000000000000000000000000000000', accounts[0], b'', {'from': accounts[0], 'value': 10000000000000000})
+    assert  history[-1].status.name == 'Confirmed'
+    iUSDC.marginTrade(0x0000000000000000000000000000000000000000000000000000000000000000, 2000000000000000000, 0, 100e6, USDT, acc, b'', {'from': acc})
+    assert  history[-1].status.name == 'Confirmed'
     assert False
+
 
 
