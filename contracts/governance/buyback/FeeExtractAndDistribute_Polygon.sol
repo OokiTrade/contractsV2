@@ -63,11 +63,6 @@ contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
         _extractAndDistribute(assets);
     }
 
-    function setSwapRoute(address _asset, address[] memory _route) external {
-        require(_route.length != 0 && _route[0] == _asset && _route[_route.length -1] == USDC);
-        swapRoutes[_asset] = _route;
-    }
-
     function _extractAndDistribute(address[] memory assets) internal {
         uint256[] memory amounts = BZX.withdrawFees(
             assets,
@@ -199,6 +194,11 @@ contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
 
     function setBuyBackPercentage(uint256 _percentage) external onlyOwner {
         buybackPercentInWEI = _percentage;
+    }
+
+    function setSwapRoute(address _asset, address[] memory _route) external onlyGuardian {
+        require(_route.length != 0 && _route[0] == _asset && _route[_route.length -1] == USDC);
+        swapRoutes[_asset] = _route;
     }
 
     function setSlippage(uint32 newSlippage) external onlyGuardian {
