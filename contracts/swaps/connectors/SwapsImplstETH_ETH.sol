@@ -77,17 +77,15 @@ contract SwapsImplstETH_ETH is State, ISwapsImpl {
         returns (uint256 amountOut, address midToken)
     {
         if (amountIn != 0) {
-            (, address srcToken, address destToken) = abi.decode(
+            (uint256 amount, address srcToken, address destToken) = abi.decode(
                 payload,
                 (uint256, address, address)
             );
             if (srcToken == WETH) {
-                if (abi.decode(payload, (uint256)) > 0) {
-                    amountIn = STETHPOOL.get_dy(0, 1, amountIn);
-                    amountOut = IwstETH(WSTETH).getWstETHBystETH(amountIn);
-                } else {
-                    amountOut = IwstETH(WSTETH).getWstETHBystETH(amountIn);
+                if (amount > 0) {
+                    amountIn = STETHPOOL.get_dy(0, 1, amount);
                 }
+                amountOut = IwstETH(WSTETH).getWstETHByStETH(amountIn);
             } else {
                 amountIn = IwstETH(WSTETH).getStETHByWstETH(amountIn);
                 amountOut = STETHPOOL.get_dy(1, 0, amountIn);
