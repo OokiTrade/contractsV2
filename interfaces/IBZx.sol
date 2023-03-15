@@ -600,35 +600,6 @@ interface IBZx {
         );
 
     /// @dev calculate simulated return of swap
-    /// @param sourceToken source token address
-    /// @param destToken destination token address
-    /// @param sourceTokenAmount source token amount
-    /// @return amoun denominated in destination token
-    // TODO remove as soon as deployed on all chains
-    function getSwapExpectedReturn(
-        address sourceToken,
-        address destToken,
-        uint256 sourceTokenAmount,
-        bytes calldata swapData
-    ) external view returns (uint256);
-
-    /// @dev calculate simulated return of swap
-    /// @param trader the wallet that will be used to execute the trade
-    /// @param sourceToken source token address
-    /// @param destToken destination token address
-    /// @param sourceTokenAmount specifies source token amount
-    /// @param payload loanDataBytes used
-    /// @return amount amount received
-    function getSwapExpectedReturn(
-        address trader,
-        address sourceToken,
-        address destToken,
-        uint256 sourceTokenAmount,
-        bytes calldata payload)
-        external
-        returns (uint256);
-
-    /// @dev calculate simulated return of swap
     /// @param trader the wallet that will be used to execute the trade
     /// @param sourceToken source token address
     /// @param destToken destination token address
