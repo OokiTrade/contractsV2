@@ -19,6 +19,11 @@ def WMATIC(interface):
 def USDC(interface):
     return interface.IERC20("0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174")
 
+@pytest.fixture(scope="module")
+def PRICE_FEED(Contract, BZX, PriceFeeds):
+    return Contract.from_abi("PRICE_FEED", BZX.priceFeeds(), PriceFeeds.abi)
+
+
 def test_swaps(Contract, SwapsImplBalancer_POLYGON, DexRecords, BZX, stMATIC, WMATIC, USDC):
 
     bal = SwapsImplBalancer_POLYGON.deploy({"from":accounts[0]})
@@ -56,3 +61,54 @@ def test_swaps(Contract, SwapsImplBalancer_POLYGON, DexRecords, BZX, stMATIC, WM
 
     with reverts("unsupported limit"): #this should fail but shows that the max source token amount can be controlled by the user through the payload
         BZX.swapExternal(stMATIC, WMATIC, accounts[0], accounts[0], 5e17, 5e17, loanDataBytes, {"from":accounts[0]}).return_value
+
+#test case 2. trade test case where it uses Balancer to open and close
+def test_case2(Contract, SwapsImplBalancer_POLYGON, DexRecords, BZX, stMATIC, WMATIC, USDC, PRICE_FEED):
+    
+    bal = SwapsImplBalancer_POLYGON.deploy({"from":accounts[0]})
+    STMATIC_SWAP_IMPL_ID = 4
+    DEX_RECORDS = Contract.from_abi("DEX_RECORDS",BZX.swapsImpl(),DexRecords.abi)
+    DEX_RECORDS.setDexID(WSTETH_SWAP_IMPL_ID, WSTETH_SWAP_IMPL, {'from':DEX_RECORDS.owner()})
+    PRICE_FEED.setPriceFeed([WSTETH], [WSTETH_PRICE_FEED], {'from': PRICE_FEED.owner()})
+    BZX.setSupportedTokens([WETH, WSTETH], [True, True], True, {'from': BZX.owner()})
+    BZX.modifyLoanParams([[BZX.generateLoanParamId(WETH,WSTETH,False),True,iETH,WETH,WSTETH,int(6.6667*1e18), int(5*1e18), 1]],{'from':BZX.owner()}) #set params for margin trading
+    
+    amountOfEthToTrade = 1*10**18
+    FLAGS_DEX_SELECTOR_FLAG = 2
+    LEAVERAGE = 15
+    FEE = 0.1
+    
+    # minAmountOfStEthToReceive = WSTETH_SWAP_IMPL.dexAmountOutFormatted.call(encode_abi(['uint256',"address", "address"],[amountOfEthToTrade * LEAVERAGE, WETH.address, WSTETH.address]), amountOfEthToTrade * LEAVERAGE)
+    dex_payload = encode_abi(['uint256',"address", "address"],[amountOfEthToTrade * LEAVERAGE, WETH.address, WSTETH.address])
+    selector_payload = encode_abi(['uint256','bytes'],[WSTETH_SWAP_IMPL_ID, dex_payload]) # 
+    loanDataBytes = encode_abi(['uint128','bytes[]'],[FLAGS_DEX_SELECTOR_FLAG, [selector_payload]]) #flag value of Base-2: 10, -> Flags_DEX_SELECTOR_FLAG
+    minAmountOfStEthToReceive = BZX.getSwapExpectedReturn.call(accounts[0], WETH.address, WSTETH.address, amountOfEthToTrade * LEAVERAGE, loanDataBytes, True, {"from": accounts[0]})
+
+
+    #prep data
+    dex_payload = encode_abi(['uint256'],[minAmountOfStEthToReceive])
+    selector_payload = encode_abi(['uint256','bytes'],[WSTETH_SWAP_IMPL_ID, dex_payload]) # 
+    loanDataBytes = encode_abi(['uint128','bytes[]'],[FLAGS_DEX_SELECTOR_FLAG, [selector_payload]]) #flag value of Base-2: 10, -> Flags_DEX_SELECTOR_FLAG
+
+    balanceBefore = WSTETH.balanceOf(BZX)
+    #margin trade
+    iETH.marginTrade(0, (LEAVERAGE-1)*1e18, amountOfEthToTrade, 0, WSTETH,accounts[0],loanDataBytes,{'from':accounts[0],'value':amountOfEthToTrade}) #15x position
+
+    loanToAnalyze = BZX.getUserLoans(accounts[0],0,10,0,False,False)[0]
+
+    assert(loanToAnalyze[4] == 14e18)
+    assert(loanToAnalyze[5] >= 13e18)
+    assert(WSTETH.balanceOf(BZX)-balanceBefore==loanToAnalyze[5])
+
+    dex_payload = encode_abi(['uint256'],[loanToAnalyze[4]])
+    selector_payload = encode_abi(['uint256','bytes'],[3,dex_payload])
+    loanDataBytes = encode_abi(['uint128','bytes[]'],[2,[selector_payload]]) #flag value of Base-2: 10    
+    BZX.closeWithSwap(loanToAnalyze[0], accounts[0], loanToAnalyze[5], False, loanDataBytes, {'from':accounts[0]})
+
+    # assert(BZX.getUserLoans(accounts[0],0,10,0,False,False)[0][0] != loanToAnalyze[0]) # loan already closed
+    assert(BZX.getUserLoans(accounts[0],0,10,0,False,False) == ())
+    print(WSTETH.balanceOf(BZX))
+    print(WSTETH.balanceOf(BZX)-loanToAnalyze[5]*0.0015)
+    assert(WSTETH.balanceOf(BZX)-loanToAnalyze[5]*0.0015-balanceBefore <= 10)
+    assert(WSTETH.balanceOf(BZX)-loanToAnalyze[5]*0.0015-balanceBefore >= -10)
+    assert False
