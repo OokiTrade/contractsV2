@@ -83,7 +83,7 @@ contract SwapsImplstETH_ETH is State, ISwapsImpl {
             );
             if (srcToken == WETH) {
                 if (amount > 0) {
-                    amountIn = STETHPOOL.get_dy(0, 1, amount);
+                    amountIn = STETHPOOL.get_dy(0, 1, amountIn);
                 }
                 amountOut = IwstETH(WSTETH).getWstETHByStETH(amountIn);
             } else {
