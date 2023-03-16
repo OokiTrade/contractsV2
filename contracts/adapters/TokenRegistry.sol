@@ -17,6 +17,7 @@ contract TokenRegistry {
     //address public constant bZxContract = 0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB; // arbitrum
     //address public constant bZxContract = 0xf2FBaD7E59f0DeeE0ec2E724d2b6827Ea1cCf35f; // evmos
     // address public constant bZxContract = 0xAcedbFd5Bc1fb0dDC948579d4195616c05E74Fd1; // optimism
+    // address public constant bZxContract = 0xBf2c07A86b73c6E338767E8160a24F55a656A9b7; // goerly base
 
     struct TokenMetadata {
         address token; // iToken
