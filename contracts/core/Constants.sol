@@ -66,4 +66,10 @@ contract Constants {
     // address public constant USDC = 0x7F5c764cBc14f9669B88837ca1490cCa17c31607;
     // address public constant OOKI = address(0); // optimism
 
+//    IWethERC20 public constant wethToken = IWethERC20(0x4200000000000000000000000000000000000006); // goerly base
+//    address public constant USDC = address(0x2e668Bb88287675e34c8dF82686dfd0b7F0c0383); // goerly base
+//    address public constant bzrxTokenAddress = address(0); // goerly base
+//    address public constant vbzrxTokenAddress = address(0); // goerly base
+//    address public constant OOKI = address(0); // goerly base
+
 }

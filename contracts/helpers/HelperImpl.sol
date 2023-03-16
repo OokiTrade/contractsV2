@@ -23,6 +23,7 @@ contract HelperImpl is Ownable {
     // address public constant bZxProtocol = 0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB; // arbitrum
     //address public constant bZxProtocol = 0xf2FBaD7E59f0DeeE0ec2E724d2b6827Ea1cCf35f; // evmos
     // address public constant bZxProtocol = 0xAcedbFd5Bc1fb0dDC948579d4195616c05E74Fd1; // optimism
+//    address public constant bZxProtocol = 0xBf2c07A86b73c6E338767E8160a24F55a656A9b7; // goerly base
 
     address public constant wethToken = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2; // mainnet
     // address public constant wethToken = 0xd0A1E359811322d97991E03f863a0C30C2cF029C; // kovan
@@ -31,6 +32,7 @@ contract HelperImpl is Ownable {
     // address public constant wethToken = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1; // arbitrum
     // address public constant wethToken = 0xD4949664cD82660AaE99bEdc034a0deA8A0bd517; // evmos
     // address public constant wethToken = 0x4200000000000000000000000000000000000006; // optimism
+//    address public constant wethToken = 0x4200000000000000000000000000000000000006; // goerly base
 
     uint256 internal constant WEI_PRECISION = 10**18;
     uint256 internal constant WEI_PERCENT_PRECISION = 10**20;

@@ -21,6 +21,7 @@ contract LoanTokenSettingsLowerAdmin is AdvancedTokenStorage, StorageExtension {
     // address public constant bZxContract = 0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB; // arbitrum
     //address public constant bZxContract = 0xf2FBaD7E59f0DeeE0ec2E724d2b6827Ea1cCf35f; // evmos
     // address public constant bZxContract = 0xAcedbFd5Bc1fb0dDC948579d4195616c05E74Fd1; // optimism
+//    address public constant bZxContract = 0xBf2c07A86b73c6E338767E8160a24F55a656A9b7; // goerly base
 
     bytes32 internal constant iToken_LowerAdminAddress = 0x7ad06df6a0af6bd602d90db766e0d5f253b45187c3717a0f9026ea8b10ff0d4b;    // keccak256("iToken_LowerAdminAddress")
     bytes32 internal constant iToken_LowerAdminContract = 0x34b31cff1dbd8374124bd4505521fc29cab0f9554a5386ba7d784a4e611c7e31;   // keccak256("iToken_LowerAdminContract")
