@@ -124,7 +124,7 @@ def test_case2(accounts, BZX, DEX_RECORDS, WSTETH_PRICE_FEED, WSTETH_SWAP_IMPL, 
     assert(loanToAnalyze[5] >= 13e18)
     assert(WSTETH.balanceOf(BZX)-balanceBefore==loanToAnalyze[5])
 
-    dex_payload = encode_abi(['uint256'],[loanToAnalyze[4]])
+    dex_payload = encode_abi(['uint256'],[loanToAnalyze[4]]) # in theory we need ot do getExpectedSwap return from loanToAnalyze[5] again and place it in here
     selector_payload = encode_abi(['uint256','bytes'],[3,dex_payload])
     loanDataBytes = encode_abi(['uint128','bytes[]'],[2,[selector_payload]]) #flag value of Base-2: 10    
     BZX.closeWithSwap(loanToAnalyze[0], accounts[0], loanToAnalyze[5], False, loanDataBytes, {'from':accounts[0]})
