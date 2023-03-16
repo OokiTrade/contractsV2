@@ -3,10 +3,12 @@ pragma solidity ^0.8.0;
 interface IDeposits {
     function deposit(
         bytes32 orderID,
-        uint256 TokenAmount,
+        uint256 tokenAmount,
         address trader,
         address token
     ) external;
+
+    function depositGasToken(address trader) external payable;
 
     function withdraw(bytes32 orderID) external;
 

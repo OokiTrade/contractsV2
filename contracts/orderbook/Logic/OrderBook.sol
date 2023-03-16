@@ -81,13 +81,12 @@ contract OrderBook is OrderBookEvents, OrderBookStorage, Flags {
 
     function depositGasFeeToken(uint256 amount) external payable {
         require(msg.value==0||amount==0, "cant be both");
-        if(msg.value!=0){
-            IWeth(WRAPPED_TOKEN).deposit{value:msg.value}();
-            IERC20(WRAPPED_TOKEN).transfer(msg.sender, msg.value);
-            amount = msg.value;
+        if(msg.value==0){
+            IERC20(WRAPPED_TOKEN).safeTransferFrom(msg.sender, address(this), amount);
+            IWeth(WRAPPED_TOKEN).withdraw(amount);
         }
         bytes32 orderID = keccak256(abi.encode(msg.sender, 0));
-        IDeposits(VAULT).deposit(orderID, amount, msg.sender, WRAPPED_TOKEN);
+        IDeposits(VAULT).depositGasToken{value:amount}(msg.sender);
     }
 
     function withdrawGasFeeToken(uint256 amount) external {

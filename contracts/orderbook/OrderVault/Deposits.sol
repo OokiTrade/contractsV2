@@ -2,6 +2,7 @@ pragma solidity ^0.8.0;
 import "../../governance/PausableGuardian_0_8.sol";
 import "@openzeppelin-4.7.0/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin-4.7.0/token/ERC20/extensions/IERC20Metadata.sol";
+import "../../interfaces/IWeth.sol";
 
 contract Deposits is PausableGuardian_0_8 {
     struct DepositInfo {
@@ -9,6 +10,7 @@ contract Deposits is PausableGuardian_0_8 {
         uint256 depositAmount;
     }
     mapping(bytes32 => DepositInfo) internal _depositInfo;
+    address public constant WRAPPED_TOKEN = 0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270;
     address public orderBook = address(0);
 
     function deposit(
@@ -28,6 +30,14 @@ contract Deposits is PausableGuardian_0_8 {
             address(this),
             tokenAmount
         );
+    }
+
+    function depositGasToken(address trader) external pausable payable {
+        require(msg.sender == orderBook, "unauthorized");
+        IWeth(WRAPPED_TOKEN).deposit{value:msg.value}();
+        bytes32 orderID = keccak256(abi.encode(trader, 0));
+        _depositInfo[orderID].depositToken = WRAPPED_TOKEN;
+        _depositInfo[orderID].depositAmount += msg.value;
     }
 
     function setOrderBook(address n) external onlyOwner {
