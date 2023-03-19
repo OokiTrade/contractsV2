@@ -10,14 +10,14 @@ import "../../interfaces/IBZx.sol";
 
 contract TokenRegistry {
 
-    address public constant bZxContract = 0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f; // mainnet
+    //address public constant bZxContract = 0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f; // mainnet
     //address public constant bZxContract = 0x5cfba2639a3db0D9Cc264Aa27B2E6d134EeA486a; // kovan
     // address public constant bZxContract = 0xD154eE4982b83a87b0649E5a7DDA1514812aFE1f; // bsc
     // address public constant bZxContract = 0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8; // polygon
     //address public constant bZxContract = 0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB; // arbitrum
     //address public constant bZxContract = 0xf2FBaD7E59f0DeeE0ec2E724d2b6827Ea1cCf35f; // evmos
     // address public constant bZxContract = 0xAcedbFd5Bc1fb0dDC948579d4195616c05E74Fd1; // optimism
-    // address public constant bZxContract = 0xBf2c07A86b73c6E338767E8160a24F55a656A9b7; // goerly base
+    address public constant bZxContract = 0x5D90e4D6152F3B0dd326df479E0f6DBA2Af57FD5; // goerly base
 
     struct TokenMetadata {
         address token; // iToken
