@@ -13,7 +13,7 @@ import "../ISwapsImpl.sol";
 contract SwapsImplUniswapV2_GOERLYBASE is State, ISwapsImpl {
     using SafeERC20 for IERC20;
 
-    address public constant uniswapRouter = 0x4DF34A29aabd0694A62cbF65a844E12A44617975; // WooRouterV2
+    address public constant uniswapRouter = 0xed7899C74D5201Fd6a273a3B69C398DB8Cc1998D;
 
     function dexSwap(
         address sourceTokenAddress,

@@ -1,3 +1,5 @@
+TUSDC = "0xcA39967eAa11848298DCBd2DB9a8D45fE97be7a8"
+
 #bZxProtocol.deploy({'from': deployer})
 BZX = Contract.from_abi("BZX", "0xBf2c07A86b73c6E338767E8160a24F55a656A9b7", interface.IBZx.abi)
 #TokenRegistry.deploy({'from': deployer})
@@ -75,9 +77,9 @@ loanTokenLogicWeth = Contract.from_abi("LoanTokenLogicWeth", address="0x6658d93F
 
 
 #DexRecords.deploy({'from':deployer})
-dex_record = Contract.from_abi("dex_record", address="0xBFcf8755Ba9d23F7F0EBbA0da70819A907dA2aCC", abi=DexRecords.abi)
+dex_record = Contract.from_abi("dex_record", address="0xABbB7bF62E911533a1d5Ef2678e7a505F7bE9715", abi=DexRecords.abi)
 #SwapsImplUniswapV2_GOERLYBASE.deploy({'from':deployer})
-univ2 = Contract.from_abi("SwapsImplUniswapV2_GOERLYBASE", address="0x0515fDe94bb95d6A5b7640f8F0d3AC98C9390903", abi=SwapsImplUniswapV2_GOERLYBASE.abi)
+univ2 = Contract.from_abi("SwapsImplUniswapV2_GOERLYBASE", address="0x4c25C9b8E7e7B94c97A22353D321d755b54F1CDD", abi=SwapsImplUniswapV2_GOERLYBASE.abi)
 #dex_record.setDexID(univ2.address, {'from':deployer})
 #BZX.setSwapsImplContract(dex_record, {'from': deployer})
 
@@ -160,4 +162,6 @@ MINIMAL_RATES = {
 #     CUI.updateParams((120e18, 80e18, 100e18, 100e18, 110e18, MINIMAL_RATES.get(existingIToken.symbol()), MINIMAL_RATES.get(existingIToken.symbol())), existingIToken, {"from": deployer})
 #     existingIToken.setDemandCurve(CUI,{"from": deployer})
 
+pricefeeds.setDecimals([USDC, WETH], {"from": deployer})
+BZX.setApprovals([USDC, WETH], [1], {'from': deployer})
 assert False
