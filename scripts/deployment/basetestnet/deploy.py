@@ -100,7 +100,7 @@ iTUSDProxy = Contract.from_abi("iTUSDProxy", address="0x3F2aa02380fE061042b042D1
 iTUSD = Contract.from_abi("iTUSD", iTUSDProxy, LoanTokenLogicStandard.abi)
 # underlyingSymbol = "TUSD"
 # iTokenSymbol = "i{}".format(underlyingSymbol)
-# iTokenName = "Fulcrum {} iToken ({})".format(underlyingSymbol, iTokenSymbol)
+# iTokenName = "Ooki {} iToken ({})".format(underlyingSymbol, iTokenSymbol)
 # iTUSD.initialize(TUSD, iTokenName, iTokenSymbol, {'from': deployer})
 # iTUSD.initializeDomainSeparator({"from": deployer})
 
@@ -110,7 +110,7 @@ iETHProxy = Contract.from_abi("iETHProxy", address="0x5596D7435C887D0e7009aD5454
 iETH = Contract.from_abi("iETH", iETHProxy, loanTokenLogicWeth.abi)
 # underlyingSymbol = "ETH"
 # iTokenSymbol = "i{}".format(underlyingSymbol)
-# iTokenName = "Fulcrum {} iToken ({})".format(underlyingSymbol, iTokenSymbol)
+# iTokenName = "Ooki {} iToken ({})".format(underlyingSymbol, iTokenSymbol)
 # iETH.initialize(WETH, iTokenName, iTokenSymbol, {'from': deployer})
 # iETH.initializeDomainSeparator({"from": deployer})
 
