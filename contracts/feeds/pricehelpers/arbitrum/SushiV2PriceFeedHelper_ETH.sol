@@ -39,7 +39,6 @@ contract SushiV2PriceFeedHelper_ETH {
 
         (IPriceFeedsExt feed0, uint256 decimals0) = getFeed(token0);
         (IPriceFeedsExt feed1, uint256 decimals1) = getFeed(token1);
-        require(address(feed0) != address(0) && address(feed1) != address(0), "wrong lp");
 
         (uint256 reserve0, uint256 reserve1,) = IUniswapV2Pair(token).getReserves();
         
