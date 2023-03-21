@@ -263,12 +263,20 @@ def test_case_atoken(accounts, PRICE_FEED, iUSDT, iUSDC, iETH, WETH, USDT, USDC,
     aDAI =  interface.ERC20("0x82E64f49Ed5EC1bC6e43DAD4FC8Af9bb3A2312EE")
     DAI = interface.ERC20("0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1")
     
-    aDAI.transfer(accounts[0], 1000e18, {"from": aDAIHolder})
+    aDAI.transfer(accounts[0], 2000e18, {"from": aDAIHolder})
 
     DAI_PRICE_FEED = interface.IPriceFeedsExt("0xc5C8E77B397E531B8EC06BFb0048328B30E9eCfB")
 
-    balanceUSD = DAI.balanceOf(aDAI) * DAI_PRICE_FEED.latestAnswer()/1e8
-    priceOfOneLP = (balanceUSD/1e18) / (aDAI.totalSupply()/1e18)
+    # balanceUSD = DAI.balanceOf(aDAI) * DAI_PRICE_FEED.latestAnswer()/1e8
+    # priceOfOneLP = (balanceUSD/1e18) / (aDAI.totalSupply()/1e18)
 
+    # pool = interface.IPool("0x794a61358D6845594F94dc1DB02A252b5b4814aD")
+    
     pf = interface.IPriceFeedHelper(PRICE_FEED.pricesHelpers(aDAI))
-    assert False
+    assert pf.latestAnswer(aDAI) >= 101220487 # rate right now
+
+    BZX.setSupportedTokens([aDAI], [True], False, {"from": BZX.owner()})
+    aDAI.approve(iUSDT, 2**256-1, {"from": accounts[0]})
+    iUSDT.borrow("", 1000e6, 0, 1200e18, aDAI, accounts[0], accounts[0], b"", {"from": accounts[0]})
+
+    assert True
