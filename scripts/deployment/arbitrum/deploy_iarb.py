@@ -1,80 +1,49 @@
+
+exec(open("./scripts/env/set-arbitrum.py").read())
 MINIMAL_RATES = {
     "iARB":   0.1e18
 }
 loanTokenLogicStandard = Contract.from_abi("loanTokenLogicStandard", address="0x9DF59cc228C19b4D63888dFD910d1Fd9A6a4d8C9", abi=LoanTokenLogicStandard.abi)
-ARB = '0x912ce59144191c1204e64559fe8253a0e49e6548'
+loanTokenAddress = 'TBU'
 
-# arbPriceFeed = 'TBU' #Chainlink
-# PRICE_FEED.setPriceFeed([ARB], [arbPriceFeed], {"from": GUARDIAN_MULTISIG})
-# PRICE_FEED.setDecimals([ARB], {"from": GUARDIAN_MULTISIG})
+priceFeedAddress = 'TBU' #Chainlink
+PRICE_FEED.setPriceFeed([loanTokenAddress], [priceFeedAddress], {"from": GUARDIAN_MULTISIG})
+PRICE_FEED.setDecimals([loanTokenAddress], {"from": GUARDIAN_MULTISIG})
 
-BZX.setApprovals([ARB], [1,2], {'from': GUARDIAN_MULTISIG})
-
-#iARB
-iARBProxy = LoanToken.deploy(deployer, loanTokenLogicStandard, {"from": deployer})
-#iARBProxy = Contract.from_abi("iARBProxy", address="", abi=LoanToken.abi)
-iARB = Contract.from_abi("iARB", iARBProxy, LoanTokenLogicStandard.abi)
+iProxy = LoanToken.deploy(deployer, loanTokenLogicStandard, {"from": deployer})
+#iToken = Contract.from_abi("iToken", address="", abi=LoanToken.abi)
+iToken = Contract.from_abi("iToken", iProxy, LoanTokenLogicStandard.abi)
 underlyingSymbol = "ARB"
 iTokenSymbol = "i{}".format(underlyingSymbol)
 iTokenName = "Ooki {} iToken ({})".format(underlyingSymbol, iTokenSymbol)
-iARB.initialize(ARB, iTokenName, iTokenSymbol, {'from': deployer})
-iARB.initializeDomainSeparator({"from": deployer})
-iARB.updateFlashBorrowFeePercent(0.03e18, {"from": deployer})
+iToken.initialize(loanTokenAddress, iTokenName, iTokenSymbol, {'from': deployer})
+iToken.initializeDomainSeparator({"from": deployer})
 
-CUI.updateParams((120e18, 80e18, 100e18, 100e18, 110e18, MINIMAL_RATES.get(iARB.symbol()), MINIMAL_RATES.get(iARB.symbol())), iARB, {"from": GUARDIAN_MULTISIG})
-iARB.setDemandCurve(CUI,{"from": deployer})
+CUI.updateParams((120e18, 80e18, 100e18, 100e18, 110e18, MINIMAL_RATES.get(iToken.symbol()), MINIMAL_RATES.get(iToken.symbol())), iToken, {"from": GUARDIAN_MULTISIG})
+iToken.setDemandCurve(CUI,{"from": deployer})
 
-iARBProxy.transferOwnership(GUARDIAN_MULTISIG, {'from': deployer})
+BZX.setApprovals([loanTokenAddress], [1,2], {'from': GUARDIAN_MULTISIG})
+BZX.setupLoanPoolTWAI(iProxy, {"from": GUARDIAN_MULTISIG})
 
-BZX.setLoanPool([iARB], [ARB], {"from": GUARDIAN_MULTISIG})
-BZX.setSupportedTokens([ARB], [True], False, {"from": GUARDIAN_MULTISIG})
+BZX.setLoanPool([iToken], [loanTokenAddress], {"from": GUARDIAN_MULTISIG})
+BZX.setSupportedTokens([loanTokenAddress, iToken], [True, True], True, {"from": GUARDIAN_MULTISIG})
+iProxy.transferOwnership(GUARDIAN_MULTISIG, {'from': deployer})
 
 exec(open("./scripts/env/set-arbitrum.py").read())
 
+assert False
+##Test!!!!!!
+ARB = TestToken.at(loanTokenAddress)
+acc = "TBU"
+ARB.transfer(accounts[0], 1000e18, {'from': acc})
+ARB.approve(iETH, 2**256-1, {'from': accounts[0]})
+ARB.approve(iARB, 2**256-1, {'from': accounts[0]})
+iARB.approve(iETH, 2**256-1, {'from': accounts[0]})
+iARB.mint(accounts[0], 100e18, {'from': accounts[0]})
 
-supportedTokenAssetsPairs = TOKEN_REGISTRY.getTokens(0, 100)
-loanTokensArr = []
-collateralTokensArr = []
-amountsArr = []
-params = []
-BZX.setupLoanPoolTWAI(iARB, {'from': GUARDIAN_MULTISIG})
-
-for tokenAssetPairA in supportedTokenAssetsPairs:
-    params.clear()
-    loanTokensArr.clear()
-    collateralTokensArr.clear()
-    amountsArr.clear()
-
-    # below is to allow new iToken.loanTokenAddress in other existing iTokens
-    existingIToken = Contract.from_abi("existingIToken", address=tokenAssetPairA[0], abi=LoanTokenLogicStandard.abi)
-    existingITokenLoanTokenAddress = existingIToken.loanTokenAddress()
-    print("itoken", existingIToken.symbol(), tokenAssetPairA[0])
-
-    for tokenAssetPairB in supportedTokenAssetsPairs:
-        collateralTokenAddress = tokenAssetPairB[1]
-        existingToken = Contract.from_abi("existingToken", address=existingITokenLoanTokenAddress, abi=TestToken.abi)
-        collateralToken = Contract.from_abi("collateralToken", address=collateralTokenAddress, abi=TestToken.abi)
-        if collateralTokenAddress == existingITokenLoanTokenAddress:
-            continue
-
-        if(existingToken.symbol() != 'ARB' and collateralToken.symbol() != 'ARB'):
-            continue
-
-        print(existingToken.name(), " <--> ", collateralToken.name())
-        loanParam = [BZX.generateLoanParamId(existingToken, collateralToken, True), True, ZERO_ADDRESS, existingToken, collateralToken, 10e18, 7e18, 0]
-        BZX.modifyLoanParams([loanParam], {"from": GUARDIAN_MULTISIG})
-        loanParam = [BZX.generateLoanParamId(existingToken, collateralToken, False), True, ZERO_ADDRESS, existingToken, collateralToken, 10e18, 7e18, 1]
-        BZX.modifyLoanParams([loanParam], {"from": GUARDIAN_MULTISIG})
-
-        loanTokensArr.append(existingITokenLoanTokenAddress)
-        collateralTokensArr.append(collateralTokenAddress)
-        amountsArr.append(7*10**18)
-
-    if(len(collateralTokensArr) > 0):
-        print("setLiquidationIncentivePercent: ", collateralTokensArr)
-        BZX.setLiquidationIncentivePercent(loanTokensArr, collateralTokensArr, amountsArr, {"from": GUARDIAN_MULTISIG})
-
-
-BZX.setSupportedTokens([ARB], [True], True, {"from": GUARDIAN_MULTISIG})
+iARB.borrow(0x0000000000000000000000000000000000000000000000000000000000000000, 1000000, 7884000, 0.01e18, ZERO_ADDRESS, accounts[0], accounts[0], b'', {'from': accounts[0], 'value':0.01e18})
+iETH.borrow(0x0000000000000000000000000000000000000000000000000000000000000000, 1000000, 7884000, 5e18, ARB, accounts[0], accounts[0], b'', {'from': accounts[0]})
+iETH.marginTrade(0x0000000000000000000000000000000000000000000000000000000000000000, 2000000000000000000, 0, 5e18, ARB, accounts[0], b'', {'from': accounts[0]})
+iARB.marginTrade(0x0000000000000000000000000000000000000000000000000000000000000000, 2000000000000000000, 0, 0.01e18, ZERO_ADDRESS, accounts[0], b'', {'from': accounts[0], 'value':0.01e18})
 
 assert False
