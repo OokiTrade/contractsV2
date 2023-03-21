@@ -208,12 +208,12 @@ contract PriceFeeds is PausableGuardian_0_8 {
     IPriceFeedsExt feed = pricesFeeds[token];
     if (address(feed) != address(0)) {
       price = uint256(feed.latestAnswer());
-    } else if((feed = pricesFeeds[IToken(token).loanTokenAddress()]) != IPriceFeedsExt(address(0))){
-      // if token is invalid it will fail on `loanTokenAddress` however if token is arbitrary somebody can implement loanTokenAddress() and tokenPrice()
-      price = uint256(feed.latestAnswer());
+    // } else if((feed = pricesFeeds[IToken(token).loanTokenAddress()]) != IPriceFeedsExt(address(0))){
+    //   // if token is invalid it will fail on `loanTokenAddress` however if token is arbitrary somebody can implement loanTokenAddress() and tokenPrice()
+    //   price = uint256(feed.latestAnswer());
 
-      price *= IToken(token).tokenPrice();
-      price /= 1e18;
+    //   price *= IToken(token).tokenPrice();
+    //   price /= 1e18;
     } else {
       price = pricesHelpers[token].latestAnswer(token);
     }

@@ -12,8 +12,8 @@ import "@openzeppelin-4.8.0/token/ERC20/IERC20.sol";
 import "contracts/feeds/IPriceFeedsExt.sol";
 
 contract Crv3CryptoTokenPriceHelper_ARB {
-    address private CURVE_USD_BTC_ETH_TOKEN = 0x8e0B8c8BB9db49a46697F3a5Bb8A308e744821D2;
-    address private CURVE_USD_BTC_ETH_POOL = 0x960ea3e3C7FB317332d990873d354E18d7645590;
+    address private constant CURVE_USD_BTC_ETH_TOKEN = 0x8e0B8c8BB9db49a46697F3a5Bb8A308e744821D2;
+    address private constant CURVE_USD_BTC_ETH_POOL = 0x960ea3e3C7FB317332d990873d354E18d7645590;
 
 
     IERC20 private constant USDT = IERC20(0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9);

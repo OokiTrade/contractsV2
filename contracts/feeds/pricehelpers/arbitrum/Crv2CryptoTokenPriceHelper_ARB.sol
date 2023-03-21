@@ -12,7 +12,7 @@ import "@openzeppelin-4.8.0/token/ERC20/IERC20.sol";
 import "contracts/feeds/IPriceFeedsExt.sol";
 
 contract Crv2CryptoTokenPriceHelper_ARB {
-    address private CURVE_USDT_USDC_TOKEN = 0x7f90122BF0700F9E7e1F688fe926940E8839F353;
+    address private constant CURVE_USDT_USDC_TOKEN = 0x7f90122BF0700F9E7e1F688fe926940E8839F353;
 
 
     IERC20 private constant USDT = IERC20(0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9);

@@ -43,7 +43,6 @@ contract UniV2PriceFeedHelper_ETH {
     IPriceFeedsExt private constant OOKI_PRICE_FEED = IPriceFeedsExt(0xd219325Cf1c4FA17E5984feA5911d0Ba0CaE60F9);
     IPriceFeedsExt private constant APE_PRICE_FEED = IPriceFeedsExt(0xc7de7f4d4C9c991fF62a07D18b3E31e349833A18);
 
-    // event Logger(string name, uint256 value);
     function latestAnswer(address token) public view returns (uint256 answer) {
         // check token validity
         address token0 = IUniswapV2Pair(token).token0();

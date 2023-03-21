@@ -24,7 +24,7 @@ contract ATokenPriceHelper_ARB is IPriceFeedHelper {
     IAToken private constant aArbWBTC = IAToken(0x078f358208685046a11C85e8ad32895DED33A249);
     IAToken private constant aArbWETH = IAToken(0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8);
 
-    address private constant DAI = 0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1;
+    address private constant DAI  = 0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1;
     address private constant ERUS = 0xD22a58f79e9481D1a88e00c343885A588b34b68B;
     address private constant USDC = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
     address private constant USDT = 0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9;
