@@ -9,7 +9,6 @@ pragma solidity ^0.8.0;
 import "contracts/feeds/IPriceFeedsExt.sol";
 import "interfaces/IPriceFeedHelper.sol";
 import "contracts/interfaces/uniswap/IUniswapV2Pair.sol";
-import "@openzeppelin-4.8.0/token/ERC20/extensions/IERC20Metadata.sol";
 
 
 
@@ -38,39 +37,46 @@ contract SushiV2PriceFeedHelper_ETH {
         address token0 = IUniswapV2Pair(token).token0();
         address token1 = IUniswapV2Pair(token).token1();
 
-        IPriceFeedsExt feed0 = getFeed(token0);
-        IPriceFeedsExt feed1 = getFeed(token1);
+        (IPriceFeedsExt feed0, uint256 decimals0) = getFeed(token0);
+        (IPriceFeedsExt feed1, uint256 decimals1) = getFeed(token1);
         require(address(feed0) != address(0) && address(feed1) != address(0), "wrong lp");
 
         (uint256 reserve0, uint256 reserve1,) = IUniswapV2Pair(token).getReserves();
         
 
-        // TODO optimize for extra call decimals
-        uint256 reserve0_to_eth = reserve0 * uint256(feed0.latestAnswer()) / 10**(IERC20Metadata(token0).decimals());
-        uint256 reserve1_to_eth = reserve1 * uint256(feed1.latestAnswer()) / 10**(IERC20Metadata(token1).decimals());
+        uint256 reserve0_to_eth = reserve0 * uint256(feed0.latestAnswer()) / 10**(decimals0);
+        uint256 reserve1_to_eth = reserve1 * uint256(feed1.latestAnswer()) / 10**(decimals1);
 
         answer = (reserve0_to_eth + reserve1_to_eth) * 1e18/ IUniswapV2Pair(token).totalSupply();
 
     }
 
-    function getFeed(address token) public pure returns(IPriceFeedsExt feed) {
+    function getFeed(address token) public pure returns(IPriceFeedsExt feed, uint256 decimals) {
         
         if (token == address(DAI)) {
             feed = DAI_PRICE_FEED;
+            decimals = 18;
         } else if (token == address(ERUS)) {
             feed = ERUS_PRICE_FEED;
+            decimals = 2;
         } else if (token == address(USDC)) {
             feed = USDC_PRICE_FEED;
+            decimals = 6;
         } else if (token == address(USDT)) {
             feed = USDT_PRICE_FEED;
+            decimals = 6;
         } else if (token == address(AAVE)) {
             feed = AAVE_PRICE_FEED;
+            decimals = 18;
         } else if (token == address(LINK)) {
             feed = LINK_PRICE_FEED;
+            decimals = 18;
         } else if (token == address(WBTC)) {
             feed = WBTC_PRICE_FEED;
+            decimals = 18;
         } else if (token == address(WETH)) {
             feed = WETH_PRICE_FEED;
+            decimals = 18;
         }
     }
 }
