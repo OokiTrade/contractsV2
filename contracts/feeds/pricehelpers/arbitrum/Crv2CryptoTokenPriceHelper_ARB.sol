@@ -24,7 +24,8 @@ contract Crv2CryptoTokenPriceHelper_ARB {
     function latestAnswer(address token) external view returns (uint256) {
         require(token == CURVE_USDT_USDC_TOKEN, "unsupported");
         uint256 balanceUSD = USDT.balanceOf(CURVE_USDT_USDC_TOKEN) * uint256(USDT_PRICE_FEED.latestAnswer()) / 1e8;
-        balanceUSD += USDC.balanceOf(CURVE_USDT_USDC_TOKEN) * uint256(USDC_PRICE_FEED.latestAnswer()) / 1e10;
-        return balanceUSD * 1e18 / IERC20(CURVE_USDT_USDC_TOKEN).totalSupply() ;
+        balanceUSD += USDC.balanceOf(CURVE_USDT_USDC_TOKEN) * uint256(USDC_PRICE_FEED.latestAnswer()) / 1e8;
+        // 1e20 = 1e18 + 1e2. 1e2 is to allighn to 8 decimal chainlink like pricefeed
+        return balanceUSD * 1e20 / IERC20(CURVE_USDT_USDC_TOKEN).totalSupply();
     }
 }

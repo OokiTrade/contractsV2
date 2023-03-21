@@ -13,6 +13,11 @@ interface IPriceFeeds {
         view
         returns(address pricefeed);
 
+    function pricesHelpers(address token)
+        external
+        view
+        returns(address pricefeed);
+
     function queryRate(
         address sourceToken,
         address destToken)

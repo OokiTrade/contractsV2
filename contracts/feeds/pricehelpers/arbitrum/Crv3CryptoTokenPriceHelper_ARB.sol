@@ -30,6 +30,7 @@ contract Crv3CryptoTokenPriceHelper_ARB {
         uint256 balanceUSDT = USDT.balanceOf(CURVE_USD_BTC_ETH_POOL) * uint256(USDT_PRICE_FEED.latestAnswer()) / 1e8;
         balanceUSDT += WBTC.balanceOf(CURVE_USD_BTC_ETH_POOL) * uint256(WBTC_PRICE_FEED.latestAnswer()) / 1e10;
         balanceUSDT += WETH.balanceOf(CURVE_USD_BTC_ETH_POOL) * uint256(WETH_PRICE_FEED.latestAnswer()) / 1e20;
-        return balanceUSDT * 1e18 / IERC20(CURVE_USD_BTC_ETH_TOKEN).totalSupply() ;
+        // 1e20 = 1e18 + 1e2. 1e2 is to allighn to 8 decimal chainlink like pricefeed
+        return balanceUSDT * 1e20 / IERC20(CURVE_USD_BTC_ETH_TOKEN).totalSupply() ;
     }
 }
