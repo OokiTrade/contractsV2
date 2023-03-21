@@ -1,16 +1,9 @@
-CHEF =  Contract.from_abi("CHEF", "0xd39Ff512C3e55373a30E94BB1398651420Ae1D43", MasterChef_Polygon.abi)
-
-deployer = accounts.at(CHEF.owner(), True)
-SWEEP_FEES = Contract.from_abi("STAKING", "0xf970FA9E6797d0eBfdEE8e764FC5f3123Dc6befD", FeeExtractAndDistribute_Polygon.abi)
-
-
-masterChefProxy = Contract.from_abi("masterChefProxy", address="0xd39Ff512C3e55373a30E94BB1398651420Ae1D43", abi=Proxy.abi)
-masterChefImpl = MasterChef_Polygon.deploy({'from': deployer})
-masterChefProxy.replaceImplementation(masterChefImpl, {'from': deployer})
+deployer = accounts[0]
+exec(open("./scripts/env/set-matic.py").read())
 
 sweepImpl = deployer.deploy(FeeExtractAndDistribute_Polygon)
 sweepProxy = Contract.from_abi("sweepProxy", SWEEP_FEES, Proxy_0_5.abi)
-sweepProxy.replaceImplementation(sweepImpl, {"from": deployer})
-
-SWEEP_FEES.togglePause(False, {"from": deployer})
-
+sweepProxy.replaceImplementation(sweepImpl, {"from": GUARDIAN_MULTISIG})
+SWEEP_FEES.setSwapRoute(WMATIC, [WMATIC, USDC], {'from': GUARDIAN_MULTISIG})
+SWEEP_FEES.setSwapRoute(LINK, [LINK, WETH, USDC], {'from': GUARDIAN_MULTISIG})
+SWEEP_FEES.setSwapRoute(WBTC, [WBTC, WETH, USDC], {'from': GUARDIAN_MULTISIG})
