@@ -82,7 +82,7 @@ def iBTC(accounts, LoanTokenLogicStandard, interface, CurvedInterestRate, GUARDI
 
 
 @pytest.fixture(scope="module")
-def PRICE_FEED(interface, accounts, BZX, PriceFeeds, GUARDIAN_MULTISIG, WETH, REGISTRY, ITokenPriceFeedHelperV2_ARB, Crv2CryptoTokenPriceHelper_ARB, Crv3CryptoTokenPriceHelper_ARB, ATokenPriceHelper_ARB, SushiV2PriceFeedHelper_ETH):
+def PRICE_FEED(interface, accounts, BZX, PriceFeeds, GUARDIAN_MULTISIG, WETH, REGISTRY, ITokenPriceFeedHelperV2_ARB, Crv2CryptoTokenPriceHelper_ARB, Crv3CryptoTokenPriceHelper_ARB, ATokenPriceHelper_ARB, SushiV2PriceFeedHelper_ETH, CrvwstETHCRVTokenPriceHelper_ARB):
     # TODO
     price_feed = PriceFeeds.deploy(WETH, {"from": accounts[0]})
     price_feed.changeGuardian(GUARDIAN_MULTISIG, {"from": accounts[0]})
@@ -141,6 +141,9 @@ def PRICE_FEED(interface, accounts, BZX, PriceFeeds, GUARDIAN_MULTISIG, WETH, RE
     price_feed.setPriceFeedHelper(lp_tokens, [sushiV2PriceFeed] * len(lp_tokens), {"from": price_feed.owner()})
     BZX.setPriceFeedContract(price_feed, {"from": BZX.owner()})
 
+    # 5 set CRV wstETHETH price Feeds
+    crvwstETHCRVPriceFeed = accounts[0].deploy(CrvwstETHCRVTokenPriceHelper_ARB);
+    price_feed.setPriceFeedHelper(["0xDbcD16e622c95AcB2650b38eC799f76BFC557a0b"], [crvwstETHCRVPriceFeed], {"from": price_feed.owner()})
 
     return Contract.from_abi("PRICE_FEED", BZX.priceFeeds(), abi = PriceFeeds.abi)
 
@@ -353,3 +356,32 @@ def calc_price(sushiLp_USDT_WBTC, USDT_PRICE_FEED, WBTC_PRICE_FEED, USDT, BTC, p
 
     # assert abs(int(priceOfOneLP/1e8) -pf_USDT_WBTC.latestAnswer(sushiLp_USDT_WBTC)/1e8)< 1000
     return priceOfOneLP
+
+
+def test_case_crvwstETHCrypto(accounts, PRICE_FEED, iUSDT, iUSDC, iETH, WETH, USDT, USDC, FRAX, iFRAX, BTC, iBTC, interface, BZX):
+    crvwstETHcryptoHolder = "0x51dA134F3d0F7A1D6C69b8d6F67205A7f889b5C0"
+    WSTETHETHCRYPTO = interface.ERC20("0xDbcD16e622c95AcB2650b38eC799f76BFC557a0b")
+    WSTETH = interface.ERC20("0x5979D7b546E38E414F7E9822514be443A4800529")
+    WSTETHETHCRYPTO.transfer(accounts[0], 19e18, {"from": crvwstETHcryptoHolder})
+
+    pf = interface.IPriceFeedHelper(PRICE_FEED.pricesHelpers(WSTETHETHCRYPTO))
+    
+    WETH_PRICE_FEED = interface.IPriceFeedsExt("0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612")
+    WSTETH_PRICE_FEED = interface.IPriceFeedsExt("0x07C5b924399cc23c24a95c8743DE4006a32b7f2a")
+    
+    CURVE_WSTETH_ETH_POOL = "0x6eB2dc694eB516B16Dc9FBc678C60052BbdD7d80"
+
+    balanceUSD = web3.eth.getBalance(CURVE_WSTETH_ETH_POOL) * WETH_PRICE_FEED.latestAnswer()/1e20
+    balanceUSD += WSTETH.balanceOf(CURVE_WSTETH_ETH_POOL) * WSTETH_PRICE_FEED.latestAnswer()/1e20
+
+    priceOfOneLP = balanceUSD * 1e18 *1e2 / WSTETHETHCRYPTO.totalSupply()
+    
+    assert (int(priceOfOneLP) == pf.latestAnswer(WSTETHETHCRYPTO))
+
+    BZX.setSupportedTokens([WSTETHETHCRYPTO], [True], False, {"from": BZX.owner()})
+    WSTETHETHCRYPTO.approve(iUSDT, 2**256-1, {"from": accounts[0]})
+
+    iUSDT.borrow("", 1400e6, 0, 1e18, WSTETHETHCRYPTO, accounts[0], accounts[0], b"", {"from": accounts[0]})
+
+    assert USDT.balanceOf(accounts[0]) == 1400e6
+    assert True
