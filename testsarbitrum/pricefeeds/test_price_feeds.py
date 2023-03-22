@@ -280,3 +280,76 @@ def test_case_atoken(accounts, PRICE_FEED, iUSDT, iUSDC, iETH, WETH, USDT, USDC,
     iUSDT.borrow("", 1000e6, 0, 1200e18, aDAI, accounts[0], accounts[0], b"", {"from": accounts[0]})
 
     assert True
+
+def test_case_shushiv2(accounts, PRICE_FEED, iUSDT, iUSDC, iETH, WETH, USDT, USDC, FRAX, iFRAX, BTC, iBTC, interface, BZX):
+    ERUS = interface.ERC20("0xD22a58f79e9481D1a88e00c343885A588b34b68B")
+    # AAVE = interface.IERC20("0xba5DdD1f9d7F570dc94a51479a000E3BCE967196")
+    LINK = interface.ERC20("0xf97f4df75117a78c1A5a0DBb814Af92458539FB4")
+
+    sushiLpHolder_USDT_WBTC = "0x42a49DcF7902C6B7938A00Cdbe62a112A2b539E8"
+    sushiLpHolder_WETH_WBTC = "0xA5Ae03278e0533300779936293087FE8196BEe6A"
+    sushiLpHolder_USDC_WETH = "0x2a2f17DB6F5A9dFf54CA0594046635978c4bD396"
+    sushiLpHolder_USDC_LINK = "0x6f7875F5d325c6D9f9A1F04DE1B686fe36CFBc04"
+
+    factory = interface.IUniswapV2Factory("0xc35DADB65012eC5796536bD9864eD8773aBc74C4")
+    sushiLp_USDT_WBTC = interface.ERC20(factory.getPair(USDT, BTC))
+    sushiLp_WETH_WBTC = interface.ERC20(factory.getPair(WETH, BTC))
+    sushiLp_USDC_WETH = interface.ERC20(factory.getPair(USDC, WETH))
+    sushiLp_USDC_LINK = interface.ERC20(factory.getPair(USDC, LINK))
+
+    pf_USDT_WBTC = interface.IPriceFeedHelper(PRICE_FEED.pricesHelpers(sushiLp_USDT_WBTC))
+    pf_WETH_WBTC = interface.IPriceFeedHelper(PRICE_FEED.pricesHelpers(sushiLp_WETH_WBTC))
+    pf_USDC_WETH = interface.IPriceFeedHelper(PRICE_FEED.pricesHelpers(sushiLp_USDC_WETH))
+    pf_USDC_LINK = interface.IPriceFeedHelper(PRICE_FEED.pricesHelpers(sushiLp_USDC_LINK))
+
+    DAI_PRICE_FEED = interface.IPriceFeedsExt("0xc5C8E77B397E531B8EC06BFb0048328B30E9eCfB")
+    ERUS_PRICE_FEED = interface.IPriceFeedsExt("0xA14d53bC1F1c0F31B4aA3BD109344E5009051a84") 
+    USDC_PRICE_FEED = interface.IPriceFeedsExt("0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3")
+    USDT_PRICE_FEED = interface.IPriceFeedsExt("0x3f3f5dF88dC9F13eac63DF89EC16ef6e7E25DdE7")
+    AAVE_PRICE_FEED = interface.IPriceFeedsExt("0xaD1d5344AaDE45F43E596773Bcc4c423EAbdD034")
+    LINK_PRICE_FEED = interface.IPriceFeedsExt("0x86E53CF1B870786351Da77A57575e79CB55812CB")
+    WBTC_PRICE_FEED = interface.IPriceFeedsExt("0xd0C7101eACbB49F3deCcCc166d238410D6D46d57") 
+    WETH_PRICE_FEED = interface.IPriceFeedsExt("0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612")
+
+    # # priceOfOneLP_USDT_WBTC = pf_USDT_WBTC.latestAnswer(sushiLp_USDT_WBTC)
+    # unipair = interface.IUniswapV2Pair(sushiLp_USDT_WBTC)
+    # reserves = unipair.getReserves()
+    # balanceUSD = reserves[1] * USDT_PRICE_FEED.latestAnswer()/1e6
+    # balanceUSD += reserves[0] * WBTC_PRICE_FEED.latestAnswer()/1e8
+    # priceOfOneLP = balanceUSD * 1e18 / sushiLp_USDT_WBTC.totalSupply()
+
+    # assert abs(int(priceOfOneLP/1e8) -pf_USDT_WBTC.latestAnswer(sushiLp_USDT_WBTC)/1e8)< 1000
+
+    priceOfOneLP_USDT_WBTC = calc_price(sushiLp_USDT_WBTC, USDT_PRICE_FEED, WBTC_PRICE_FEED, USDT, BTC, pf_USDT_WBTC)
+    priceOfOneLP_WETH_WBTC = calc_price(sushiLp_WETH_WBTC, WETH_PRICE_FEED, WBTC_PRICE_FEED, WETH, BTC, pf_WETH_WBTC)
+    priceOfOneLP_USDC_WETH = calc_price(sushiLp_USDC_WETH, USDC_PRICE_FEED, WETH_PRICE_FEED, USDC, WETH, pf_USDC_WETH)
+    priceOfOneLP_USDC_LINK = calc_price(sushiLp_USDC_LINK, USDC_PRICE_FEED, LINK_PRICE_FEED, USDC, LINK, pf_USDC_LINK)
+
+    assert abs(int(priceOfOneLP_USDT_WBTC/1e8) - int(pf_USDT_WBTC.latestAnswer(sushiLp_USDT_WBTC)/1e8))<= 2000
+    assert abs(int(priceOfOneLP_WETH_WBTC/1e8) - int(pf_WETH_WBTC.latestAnswer(sushiLp_WETH_WBTC)/1e8))<= 0
+    assert abs(int(priceOfOneLP_USDC_WETH/1e8) - int(pf_USDC_WETH.latestAnswer(sushiLp_USDC_WETH)/1e8))<= 0
+    assert abs(int(priceOfOneLP_USDC_LINK/1e8) - int(pf_USDC_LINK.latestAnswer(sushiLp_USDC_LINK)/1e8))<= 0
+    
+    print(int(priceOfOneLP_USDT_WBTC/1e8), pf_USDT_WBTC.latestAnswer(sushiLp_USDT_WBTC)/1e8)
+    print(int(priceOfOneLP_WETH_WBTC/1e8), pf_WETH_WBTC.latestAnswer(sushiLp_WETH_WBTC)/1e8)
+    print(int(priceOfOneLP_USDC_WETH/1e8), pf_USDC_WETH.latestAnswer(sushiLp_USDC_WETH)/1e8)
+    print(int(priceOfOneLP_USDC_LINK/1e8), pf_USDC_LINK.latestAnswer(sushiLp_USDC_LINK)/1e8)
+
+    BZX.setSupportedTokens([sushiLp_USDT_WBTC, sushiLp_WETH_WBTC], [True, True], False, {"from": BZX.owner()})
+
+    sushiLp_WETH_WBTC.transfer(accounts[0], sushiLp_WETH_WBTC.balanceOf(sushiLpHolder_WETH_WBTC), {"from": sushiLpHolder_WETH_WBTC})
+    sushiLp_WETH_WBTC.approve(iUSDT, 2**256-1, {"from": accounts[0]})
+    iUSDT.borrow("", 1000e6, 0, sushiLp_WETH_WBTC.balanceOf(accounts[0]), sushiLp_WETH_WBTC, accounts[0], accounts[0], b"", {"from": accounts[0]})
+
+    assert True
+
+def calc_price(sushiLp_USDT_WBTC, USDT_PRICE_FEED, WBTC_PRICE_FEED, USDT, BTC, pf_USDT_WBTC):
+
+    # unipair = interface.IUniswapV2Pair(sushiLp_USDT_WBTC)
+    # reserves = unipair.getReserves()
+    balanceUSD = USDT.balanceOf(sushiLp_USDT_WBTC) * USDT_PRICE_FEED.latestAnswer()/10**(USDT.decimals())
+    balanceUSD += BTC.balanceOf(sushiLp_USDT_WBTC) * WBTC_PRICE_FEED.latestAnswer()/10**(BTC.decimals())
+    priceOfOneLP = balanceUSD * 1e18 / sushiLp_USDT_WBTC.totalSupply()
+
+    # assert abs(int(priceOfOneLP/1e8) -pf_USDT_WBTC.latestAnswer(sushiLp_USDT_WBTC)/1e8)< 1000
+    return priceOfOneLP

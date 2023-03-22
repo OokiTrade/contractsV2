@@ -43,10 +43,10 @@ contract SushiV2PriceFeedHelper_ETH {
         (uint256 reserve0, uint256 reserve1,) = IUniswapV2Pair(token).getReserves();
         
 
-        uint256 reserve0_to_eth = reserve0 * uint256(feed0.latestAnswer()) / 10**(decimals0);
-        uint256 reserve1_to_eth = reserve1 * uint256(feed1.latestAnswer()) / 10**(decimals1);
+        uint256 reserve0_to_usd = reserve0 * uint256(feed0.latestAnswer()) / 10**(decimals0);
+        uint256 reserve1_to_usd = reserve1 * uint256(feed1.latestAnswer()) / 10**(decimals1);
 
-        answer = (reserve0_to_eth + reserve1_to_eth) * 1e18/ IUniswapV2Pair(token).totalSupply();
+        answer = (reserve0_to_usd + reserve1_to_usd) * 1e18/ IUniswapV2Pair(token).totalSupply();
 
     }
 
@@ -72,7 +72,7 @@ contract SushiV2PriceFeedHelper_ETH {
             decimals = 18;
         } else if (token == address(WBTC)) {
             feed = WBTC_PRICE_FEED;
-            decimals = 18;
+            decimals = 8;
         } else if (token == address(WETH)) {
             feed = WETH_PRICE_FEED;
             decimals = 18;
