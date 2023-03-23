@@ -73,19 +73,17 @@ contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
       amount = exportedFees[asset];
       exportedFees[asset] = 0;
 
-            if (amount != 0) {
-                address[] memory _swapRoutes = swapRoutes[asset];
-                if(_swapRoutes.length == 0){
-                    _swapRoutes = new address[](3);
-                    _swapRoutes[0] = asset;
-                    _swapRoutes[1] = MATIC;
-                    _swapRoutes[2] = USDC;
-                }
-                usdcOutput += _swapWithPair(_swapRoutes, amount);
+        if (amount != 0) {
+            address[] memory _swapRoutes = swapRoutes[asset];
+            if(_swapRoutes.length == 0){
+                _swapRoutes = new address[](3);
+                _swapRoutes[0] = asset;
+                _swapRoutes[1] = MATIC;
+                _swapRoutes[2] = USDC;
             }
+            usdcOutput += _swapWithPair(_swapRoutes, amount);
         }
       }
-    }
     if (usdcOutput != 0) {
       _bridgeFeesAndDistribute(); //bridges fees to Ethereum to be distributed to stakers
       emit ExtractAndDistribute(usdcOutput, 0); //for tracking distribution amounts
