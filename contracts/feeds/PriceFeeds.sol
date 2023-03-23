@@ -168,7 +168,7 @@ contract PriceFeeds is PausableGuardian_0_8 {
   }
 
 
-  function setPriceFeedHelper(address[] calldata tokens, IPriceFeedHelper[] calldata feeds) external onlyFactoryOrOwner {
+  function setPriceFeedHelper(address[] calldata tokens, IPriceFeedHelper[] calldata feeds) external onlyGuardian {
     require(tokens.length == feeds.length, "count mismatch");
 
     for (uint256 i = 0; i < tokens.length; i++) {
