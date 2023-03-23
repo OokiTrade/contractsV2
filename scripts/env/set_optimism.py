@@ -24,6 +24,7 @@ PRICE_FEED = Contract.from_abi("PRICE_FEED", BZX.priceFeeds(), abi = PriceFeeds.
 SWEEP_FEES = Contract.from_abi("SWEEP_FEES", "0xEfC00F2b226130461f6C9E9C5A5e465BF23FFD77", FeeExtractAndDistribute_Optimism.abi)
 
 CUI = CurvedInterestRate.at("0x100f9EC4E0085d8f469500F66370f8dc64e1F670")
+<<<<<<< HEAD:scripts/env/set_optimism.py
 
 class Deployment_Immutables:
     def WETH():
@@ -38,3 +39,6 @@ class Deployment_Immutables:
         return "0x7F5c764cBc14f9669B88837ca1490cCa17c31607"
     def ARB_CALLER():
         return "0x8150F58218120AB900105C7cDBf0F12061D94441"
+=======
+DEX_RECORDS = Contract.from_abi("DEX_RECORDS",BZX.swapsImpl(), DexRecords.abi)
+>>>>>>> development:scripts/env/set-optimism.py

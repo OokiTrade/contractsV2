@@ -1,4 +1,3 @@
-from brownie import *
 BZX = Contract.from_abi("BZX", "0xD154eE4982b83a87b0649E5a7DDA1514812aFE1f", interface.IBZx.abi)
 TOKEN_REGISTRY = Contract.from_abi("TOKEN_REGISTRY", "0x1BE70f29D30bB1D325E5D76Ee73109de3e50A57d", TokenRegistry.abi)
 
@@ -24,17 +23,4 @@ OOKI = Contract.from_abi("OOKI", "0xa5a6817ac4c164F27df3254B71fE83904B1C3c3e", i
 PRICE_FEED = Contract.from_abi("PRICE_FEED", BZX.priceFeeds(), abi = PriceFeeds.abi)
 
 CUI = CurvedInterestRate.at("0x78cb68020c4FC8BBB489C4CD197F8A0226fE4135")
-
-class Deployment_Immutables:
-    def WETH():
-        return "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
-    def BZRX():
-        return "0x0000000000000000000000000000000000000000"
-    def VBZRX():
-        return "0x0000000000000000000000000000000000000000"
-    def OOKI():
-        return "0xa5a6817ac4c164F27df3254B71fE83904B1C3c3e"
-    def USDC():
-        return "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d"
-    def ARB_CALLER():
-        return "0x81e7dddFAD37E6FAb0eccE95f0B508fd40996e6d"
+DEX_RECORDS = Contract.from_abi("DEX_RECORDS",BZX.swapsImpl(), DexRecords.abi)

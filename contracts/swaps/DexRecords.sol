@@ -25,6 +25,7 @@ contract DexRecords is Ownable {
     dexes[ID] = dex;
   }
 
+  // TODO @drypto if we have public method then dexCount variable needs to be private
   function getDexCount() external view returns (uint256) {
     return dexCount;
   }
