@@ -3,10 +3,11 @@ from brownie import *
 from eth_abi import encode_abi
 
 @pytest.fixture(scope="module")
-def BZX(accounts, interface, TickMathV1, LoanOpenings, LoanClosings, LoanSettings, Receiver, ProtocolSettings, LoanClosingsLiquidation, LoanMaintenance, LiquidationHelper):
+def BZX(accounts, interface, TickMathV1, LoanOpenings, LoanClosings, LoanSettings, Receiver, ProtocolSettings, LoanClosingsLiquidation, LoanMaintenance, LiquidationHelper, VolumeTracker):
     tickMathV1 = accounts[0].deploy(TickMathV1)
     liquidationHelper = accounts[0].deploy(LiquidationHelper)
 
+    volumeTracker = accounts[0].deploy(VolumeTracker)
     lo = accounts[0].deploy(LoanOpenings)
     lc = accounts[0].deploy(LoanClosings)
     ls = accounts[0].deploy(LoanSettings)
@@ -77,7 +78,7 @@ def test_case1(accounts, BZX, WSTETH_PRICE_FEED, WETH, iUSDC, USDC, WSTETH, PRIC
 
     #add wstETH as collateral and add to price feed
     PRICE_FEED.setPriceFeed([WSTETH], [WSTETH_PRICE_FEED], {'from': PRICE_FEED.owner()})
-    BZX.setSupportedTokens([WETH, WSTETH], [True, True], False, {'from': GUARDIAN_MULTISIG})
+    BZX.setSupportedTokens([WETH, WSTETH], [True, True], False, {'from': BZX.owner()})
     #set approval
     WSTETH.approve(iUSDC, 10e18, {'from':accounts[0]})
 
@@ -90,30 +91,46 @@ def test_case1(accounts, BZX, WSTETH_PRICE_FEED, WETH, iUSDC, USDC, WSTETH, PRIC
 #test case 2. trade test case where it uses Curve to open and close
 def test_case2(accounts, BZX, DEX_RECORDS, WSTETH_PRICE_FEED, WSTETH_SWAP_IMPL, WETH, iETH, WSTETH, PRICE_FEED, GUARDIAN_MULTISIG):
     #add wstETH as collateral and add to price feed
-    DEX_RECORDS.setDexID(WSTETH_SWAP_IMPL, {'from':DEX_RECORDS.owner()})
+    WSTETH_SWAP_IMPL_ID = 3
+    DEX_RECORDS.setDexID(WSTETH_SWAP_IMPL_ID, WSTETH_SWAP_IMPL, {'from':DEX_RECORDS.owner()})
     PRICE_FEED.setPriceFeed([WSTETH], [WSTETH_PRICE_FEED], {'from': PRICE_FEED.owner()})
-    BZX.setSupportedTokens([WETH, WSTETH], [True, True], True, {'from': GUARDIAN_MULTISIG})
-    BZX.modifyLoanParams([[BZX.generateLoanParamId(WETH,WSTETH,False),True,iETH,WETH,WSTETH,int(6.6667*1e18), int(5*1e18), 1]],{'from':GUARDIAN_MULTISIG}) #set params for margin trading
+    BZX.setSupportedTokens([WETH, WSTETH], [True, True], True, {'from': BZX.owner()})
+    BZX.modifyLoanParams([[BZX.generateLoanParamId(WETH,WSTETH,False),True,iETH,WETH,WSTETH,int(6.6667*1e18), int(5*1e18), 1]],{'from':BZX.owner()}) #set params for margin trading
+    
+    amountOfEthToTrade = 1*10**18
+    FLAGS_DEX_SELECTOR_FLAG = 2
+    LEAVERAGE = 15
+    FEE = 0.1
+    
+    # minAmountOfStEthToReceive = WSTETH_SWAP_IMPL.dexAmountOutFormatted.call(encode_abi(['uint256',"address", "address"],[amountOfEthToTrade * LEAVERAGE, WETH.address, WSTETH.address]), amountOfEthToTrade * LEAVERAGE)
+    dex_payload = encode_abi(['uint256',"address", "address"],[amountOfEthToTrade * LEAVERAGE, WETH.address, WSTETH.address])
+    selector_payload = encode_abi(['uint256','bytes'],[WSTETH_SWAP_IMPL_ID, dex_payload]) # 
+    loanDataBytes = encode_abi(['uint128','bytes[]'],[FLAGS_DEX_SELECTOR_FLAG, [selector_payload]]) #flag value of Base-2: 10, -> Flags_DEX_SELECTOR_FLAG
+    minAmountOfStEthToReceive = BZX.getSwapExpectedReturn.call(accounts[0], WETH.address, WSTETH.address, amountOfEthToTrade * LEAVERAGE, loanDataBytes, True, {"from": accounts[0]})
+
+
     #prep data
-    dex_payload = encode_abi(['uint256'],[int(15*1e18)])
-    selector_payload = encode_abi(['uint256','bytes'],[3,dex_payload])
-    loanDataBytes = encode_abi(['uint128','bytes[]'],[2,[selector_payload]]) #flag value of Base-2: 10
+    dex_payload = encode_abi(['uint256'],[minAmountOfStEthToReceive])
+    selector_payload = encode_abi(['uint256','bytes'],[WSTETH_SWAP_IMPL_ID, dex_payload]) # 
+    loanDataBytes = encode_abi(['uint128','bytes[]'],[FLAGS_DEX_SELECTOR_FLAG, [selector_payload]]) #flag value of Base-2: 10, -> Flags_DEX_SELECTOR_FLAG
 
     balanceBefore = WSTETH.balanceOf(BZX)
     #margin trade
-    iETH.marginTrade(0,14e18,1e18,0,WSTETH,accounts[0],loanDataBytes,{'from':accounts[0],'value':1e18}) #15x position
+    iETH.marginTrade(0, (LEAVERAGE-1)*1e18, amountOfEthToTrade, 0, WSTETH,accounts[0],loanDataBytes,{'from':accounts[0],'value':amountOfEthToTrade}) #15x position
+
     loanToAnalyze = BZX.getUserLoans(accounts[0],0,10,0,False,False)[0]
 
     assert(loanToAnalyze[4] == 14e18)
     assert(loanToAnalyze[5] >= 13e18)
     assert(WSTETH.balanceOf(BZX)-balanceBefore==loanToAnalyze[5])
 
-    dex_payload = encode_abi(['uint256'],[loanToAnalyze[4]])
+    dex_payload = encode_abi(['uint256'],[loanToAnalyze[4]]) # in theory we need ot do getExpectedSwap return from loanToAnalyze[5] again and place it in here
     selector_payload = encode_abi(['uint256','bytes'],[3,dex_payload])
     loanDataBytes = encode_abi(['uint128','bytes[]'],[2,[selector_payload]]) #flag value of Base-2: 10    
     BZX.closeWithSwap(loanToAnalyze[0], accounts[0], loanToAnalyze[5], False, loanDataBytes, {'from':accounts[0]})
 
-    assert(BZX.getUserLoans(accounts[0],0,10,0,False,False)[0][0] != loanToAnalyze[0])
+    # assert(BZX.getUserLoans(accounts[0],0,10,0,False,False)[0][0] != loanToAnalyze[0]) # loan already closed
+    assert(BZX.getUserLoans(accounts[0],0,10,0,False,False) == ())
     print(WSTETH.balanceOf(BZX))
     print(WSTETH.balanceOf(BZX)-loanToAnalyze[5]*0.0015)
     assert(WSTETH.balanceOf(BZX)-loanToAnalyze[5]*0.0015-balanceBefore <= 10)
