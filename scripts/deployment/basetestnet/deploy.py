@@ -45,8 +45,8 @@
 # #SwapsExternal.deploy({'from': deployer})
 # swapsImpl = Contract.from_abi("swapsImpl", address="0x34bb0E89363C9baf64e9f737ADa646cDE8F47709", abi=SwapsExternal.abi)
 #
-# #PriceFeeds.deploy({"from": deployer})
-# pricefeeds = Contract.from_abi('priceFeeds', "0x1b2bf52a094B96B82F42eA162ee6F6852dD7fFc5", PriceFeeds.abi)
+# #PriceFeeds_GOERLYBASE.deploy({"from": deployer})
+# pricefeeds = Contract.from_abi('priceFeeds', "0xf84B43B84aAAa3956Cc2b50E9330B9AbF54648fa", PriceFeeds.abi)
 #
 # ## ProtocolSettings
 # #ProtocolSettings.deploy({'from': deployer})
@@ -89,8 +89,8 @@
 # TUSD = '0xad5bAD2C6E9B809a74fA65B52850aa179160818f'
 # ethPriceFeed = '0xcD2A119bD1F7DF95d706DE6F2057fDD45A0503E2' #Chainlink
 # tusdPriceFeed = '0xb85765935B4d9Ab6f841c9a00690Da5F34368bc0' #Chainlink
-# pricefeeds.setPriceFeed([WETH], [ethPriceFeed], {"from": deployer})
-# pricefeeds.setPriceFeed([TUSD], [tusdPriceFeed], {"from": deployer})
+# pricefeeds.setPriceFeed([WETH, TUSD], [ethPriceFeed, tusdPriceFeed], {"from": deployer})
+
 # pricefeeds.setDecimals([TUSD, WETH], {"from": deployer})
 # BZX.setApprovals([TUSD, WETH], [1], {'from': deployer})
 
