@@ -6,8 +6,12 @@ def BZX(interface):
     return interface.IBZx("0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8")
 
 @pytest.fixture(scope="module")
-def LIQUIDITYLOCK(LiquidityLock, BZX):
-    return LiquidityLock.deploy(BZX, {"from":accounts[0]})
+def TREASURY():
+    return "0x01F569df8A270eCA78597aFe97D30c65D8a8ca80"
+
+@pytest.fixture(scope="module")
+def LIQUIDITYLOCK(LiquidityLock, BZX, TREASURY):
+    return LiquidityLock.deploy(BZX, TREASURY, {"from":accounts[0]})
 
 @pytest.fixture(scope="module")
 def USDC(interface):
@@ -28,22 +32,29 @@ def test_case1(LIQUIDITYLOCK, BZX, interface, USDC, IUSDC):
     #minimum guaranteed APR is 1%
     #it is increased by 0.5% for every 30 days of lockup
     LIQUIDITYLOCK.updateSettings(USDC, 1e18, 19025875190300, 3942000, {"from":accounts[0]})
-    LIQUIDITYLOCK.setLockCap([USDC], [100e6], {"from":accounts[0]})
+    LIQUIDITYLOCK.setLockCap([USDC], [109e6], {"from":accounts[0]})
     LIQUIDITYLOCK.setApprovals([USDC], [IUSDC], {"from":accounts[0]})
     month_1 = 2628000
 
     claim_code = LIQUIDITYLOCK.lock(USDC, 100e6, chain.time()+month_1, {"from":accounts[0]}).return_value
+    print(claim_code)
     claimData = LIQUIDITYLOCK.claims(claim_code)
     assert claimData[0] == IUSDC.address
-    assert claimData[1] > chain.time()
-    assert claimData[2] > 0
-    assert claimData[3] == 100e6
+    assert claimData[2] > chain.time()
+    assert claimData[3] > 0
+    assert claimData[4] == 100e6
+    chain.sleep(int(month_1/2))
+    chain.mine()
+    LIQUIDITYLOCK.increaseLockup(claim_code, 4e6, {"from":accounts[0]})
+    claimData1 = LIQUIDITYLOCK.claims(claim_code)
+    assert claimData[0] == IUSDC.address
+    assert claimData[2] > chain.time()
+    assert claimData1[3] > claimData[3]
+    assert claimData1[4] > 104e6
     chain.sleep(month_1+100)
     chain.mine()
     LIQUIDITYLOCK.unlock(claim_code, {"from":accounts[0]})
-    assert IUSDC.balanceOf(accounts[0]) == claimData[2]
-    IUSDC.burn(accounts[0], claimData[2], {"from":accounts[0]})
-    assert USDC.balanceOf(accounts[0]) >= (100e6+100e6*(1.00125))
+    assert USDC.balanceOf(accounts[0]) >= (96e6+100e6*(1.00125)+4e6*(1.000625))
 
 #throw error because over lock cap
 def test_case2(LIQUIDITYLOCK, BZX, interface, USDC, IUSDC):
@@ -75,6 +86,5 @@ def test_case5(LIQUIDITYLOCK, BZX, interface, USDC, IUSDC):
     chain.sleep(2629100)
     chain.mine()
     LIQUIDITYLOCK.unlock(claim_code, {"from":accounts[0]})
-    balanceOfIUSDC = IUSDC.balanceOf(accounts[0])
-    LIQUIDITYLOCK.unlock(claim_code, {"from":accounts[0]})
-    assert IUSDC.balanceOf(accounts[0]) == balanceOfIUSDC
+    with reverts("19"):
+        LIQUIDITYLOCK.unlock(claim_code, {"from":accounts[0]})
