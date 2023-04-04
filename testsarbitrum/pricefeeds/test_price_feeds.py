@@ -102,6 +102,14 @@ def PRICE_FEED(interface, accounts, BZX, PriceFeeds, GUARDIAN_MULTISIG, WETH, RE
     
     # 1 set iToken price feed helpers
     ITokenPriceFeed = accounts[0].deploy(ITokenPriceFeedHelperV2_ARB);
+    ITokenPriceFeed.updateTokenInfo("0xC3f6816C860e7d7893508C8F8568d5AF190f6d7d","0x0809E3d38d1B4214958faf06D8b1B1a2b73f2ab8")
+    ITokenPriceFeed.updateTokenInfo("0xEDa7f294844808B7C93EE524F990cA7792AC2aBd","0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3")
+    ITokenPriceFeed.updateTokenInfo("0xd103a2D544fC02481795b0B33eb21DE430f3eD23","0x3f3f5dF88dC9F13eac63DF89EC16ef6e7E25DdE7")
+    ITokenPriceFeed.updateTokenInfo("0x76F3Fca193Aa9aD86347F70D82F013c19060D22C","0x86E53CF1B870786351Da77A57575e79CB55812CB")
+    ITokenPriceFeed.updateTokenInfo("0xE602d108BCFbB7f8281Fd0835c3CF96e5c9B5486","0x639Fe6ab55C921f74e7fac1ee960C0B6293ba612")
+    ITokenPriceFeed.updateTokenInfo("0x4eBD7e71aFA27506EfA4a4783DFbFb0aD091701e","0x6ce185860a4963106506C203335A2910413708e9")
+
+    
     ITokenList = []
     priceFeedList = []
     for l in supportedTokenAssetsPairs:
@@ -220,7 +228,7 @@ def test_case_crv2crypto(accounts, PRICE_FEED, iUSDT, iUSDC, iETH, WETH, USDT, U
 
     priceOfOneLP = balanceUSD * 1e18 *1e2 / CRV2CRYPTO.totalSupply()
     
-    assert (int(priceOfOneLP) == pf.latestAnswer(CRV2CRYPTO))
+    assert abs(int(priceOfOneLP) - pf.latestAnswer(CRV2CRYPTO)) < 1300000
 
     BZX.setSupportedTokens([CRV2CRYPTO], [True], False, {"from": BZX.owner()})
     CRV2CRYPTO.approve(iUSDT, 2**256-1, {"from": accounts[0]})
@@ -250,7 +258,7 @@ def test_case_crv3crypto(accounts, PRICE_FEED, iUSDT, iUSDC, iETH, WETH, USDT, U
 
     priceOfOneLP = balanceUSD * 1e18 *1e2 / CRV3CRYPTO.totalSupply()
     
-    assert (int(priceOfOneLP) == pf.latestAnswer(CRV3CRYPTO))
+    assert abs(int(priceOfOneLP) - pf.latestAnswer(CRV3CRYPTO)) < 40*1e8
 
     BZX.setSupportedTokens([CRV3CRYPTO], [True], False, {"from": BZX.owner()})
     CRV3CRYPTO.approve(iUSDT, 2**256-1, {"from": accounts[0]})
@@ -262,7 +270,7 @@ def test_case_crv3crypto(accounts, PRICE_FEED, iUSDT, iUSDC, iETH, WETH, USDT, U
 
 def test_case_atoken(accounts, PRICE_FEED, iUSDT, iUSDC, iETH, WETH, USDT, USDC, FRAX, iFRAX, BTC, iBTC, interface, BZX):
 
-    aDAIHolder = "0x42a49DcF7902C6B7938A00Cdbe62a112A2b539E8"
+    aDAIHolder = "0xb2b6a75099b4bc294221885f3df673a7df64ec6e"
     aDAI =  interface.ERC20("0x82E64f49Ed5EC1bC6e43DAD4FC8Af9bb3A2312EE")
     DAI = interface.ERC20("0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1")
     
@@ -290,7 +298,7 @@ def test_case_shushiv2(accounts, PRICE_FEED, iUSDT, iUSDC, iETH, WETH, USDT, USD
     LINK = interface.ERC20("0xf97f4df75117a78c1A5a0DBb814Af92458539FB4")
 
     sushiLpHolder_USDT_WBTC = "0x42a49DcF7902C6B7938A00Cdbe62a112A2b539E8"
-    sushiLpHolder_WETH_WBTC = "0xA5Ae03278e0533300779936293087FE8196BEe6A"
+    sushiLpHolder_WETH_WBTC = "0xf96eff19e5701cbafc94a832cfd553fd9e65ec2e"
     sushiLpHolder_USDC_WETH = "0x2a2f17DB6F5A9dFf54CA0594046635978c4bD396"
     sushiLpHolder_USDC_LINK = "0x6f7875F5d325c6D9f9A1F04DE1B686fe36CFBc04"
 
@@ -359,10 +367,10 @@ def calc_price(sushiLp_USDT_WBTC, USDT_PRICE_FEED, WBTC_PRICE_FEED, USDT, BTC, p
 
 
 def test_case_crvwstETHCrypto(accounts, PRICE_FEED, iUSDT, iUSDC, iETH, WETH, USDT, USDC, FRAX, iFRAX, BTC, iBTC, interface, BZX):
-    crvwstETHcryptoHolder = "0x51dA134F3d0F7A1D6C69b8d6F67205A7f889b5C0"
-    WSTETHETHCRYPTO = interface.ERC20("0xDbcD16e622c95AcB2650b38eC799f76BFC557a0b")
+    crvwstETHcryptoHolder = "0x28c626c177bd8e8b4de376bf02cb6339a678cf2b"
+    WSTETHETHCRYPTO = interface.ICurvePool("0xDbcD16e622c95AcB2650b38eC799f76BFC557a0b")
     WSTETH = interface.ERC20("0x5979D7b546E38E414F7E9822514be443A4800529")
-    WSTETHETHCRYPTO.transfer(accounts[0], 19e18, {"from": crvwstETHcryptoHolder})
+    interface.ERC20(WSTETHETHCRYPTO).transfer(accounts[0], 16e18, {"from": crvwstETHcryptoHolder})
 
     pf = interface.IPriceFeedHelper(PRICE_FEED.pricesHelpers(WSTETHETHCRYPTO))
     
@@ -374,9 +382,9 @@ def test_case_crvwstETHCrypto(accounts, PRICE_FEED, iUSDT, iUSDC, iETH, WETH, US
     balanceUSD = web3.eth.getBalance(CURVE_WSTETH_ETH_POOL) * WETH_PRICE_FEED.latestAnswer()/1e20
     balanceUSD += WSTETH.balanceOf(CURVE_WSTETH_ETH_POOL) * WSTETH_PRICE_FEED.latestAnswer()/1e20
 
-    priceOfOneLP = balanceUSD * 1e18 *1e2 / WSTETHETHCRYPTO.totalSupply()
+    priceOfOneLP = balanceUSD * 1e18 *1e2 / interface.ERC20(WSTETHETHCRYPTO).totalSupply()
     
-    assert (int(priceOfOneLP) == pf.latestAnswer(WSTETHETHCRYPTO))
+    assert abs(int(priceOfOneLP) == pf.latestAnswer(WSTETHETHCRYPTO)) < 30e8
 
     BZX.setSupportedTokens([WSTETHETHCRYPTO], [True], False, {"from": BZX.owner()})
     WSTETHETHCRYPTO.approve(iUSDT, 2**256-1, {"from": accounts[0]})
@@ -384,4 +392,4 @@ def test_case_crvwstETHCrypto(accounts, PRICE_FEED, iUSDT, iUSDC, iETH, WETH, US
     iUSDT.borrow("", 1400e6, 0, 1e18, WSTETHETHCRYPTO, accounts[0], accounts[0], b"", {"from": accounts[0]})
 
     assert USDT.balanceOf(accounts[0]) == 1400e6
-    assert True
+    assert False

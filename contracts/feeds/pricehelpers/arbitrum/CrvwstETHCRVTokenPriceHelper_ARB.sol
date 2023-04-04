@@ -8,7 +8,7 @@ pragma solidity ^0.8.0;
 
 import "interfaces/IPriceFeedHelper.sol";
 import "@openzeppelin-4.8.0/token/ERC20/IERC20.sol";
-
+import "contracts/interfaces/curve/ICurvePool.sol";
 import "contracts/feeds/IPriceFeedsExt.sol";
 
 contract CrvwstETHCRVTokenPriceHelper_ARB {
@@ -24,10 +24,9 @@ contract CrvwstETHCRVTokenPriceHelper_ARB {
 
     function latestAnswer(address token) external view returns (uint256) {
         require(token == CURVE_WSTETH_ETH_TOKEN, "unsupported");
-        uint256 balanceUSDT = WSTETH.balanceOf(CURVE_WSTETH_ETH_POOL) * uint256(WSTETH_PRICE_FEED.latestAnswer()) / 1e20;
-        balanceUSDT += CURVE_WSTETH_ETH_POOL.balance * uint256(WETH_PRICE_FEED.latestAnswer()) / 1e20;
+        uint256 balanceUSD = WSTETH.balanceOf(CURVE_WSTETH_ETH_POOL) * uint256(WSTETH_PRICE_FEED.latestAnswer()) / 1e20;
+        balanceUSD += CURVE_WSTETH_ETH_POOL.balance * uint256(WETH_PRICE_FEED.latestAnswer()) / 1e20;
 
-        // 1e20 = 1e18 + 1e2. 1e2 is to allighn to 8 decimal chainlink like pricefeed
-        return balanceUSDT * 1e20 / IERC20(CURVE_WSTETH_ETH_TOKEN).totalSupply() ;
+        return balanceUSD * ICurvePool(CURVE_WSTETH_ETH_POOL).get_virtual_price() * 1e2/ IERC20(CURVE_WSTETH_ETH_TOKEN).totalSupply();
     }
 }
