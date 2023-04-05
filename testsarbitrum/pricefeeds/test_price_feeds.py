@@ -387,7 +387,7 @@ def test_case_crvwstETHCrypto(accounts, PRICE_FEED, iUSDT, iUSDC, iETH, WETH, US
     assert abs(int(priceOfOneLP) == pf.latestAnswer(WSTETHETHCRYPTO)) < 30e8
 
     BZX.setSupportedTokens([WSTETHETHCRYPTO], [True], False, {"from": BZX.owner()})
-    WSTETHETHCRYPTO.approve(iUSDT, 2**256-1, {"from": accounts[0]})
+    interface.ERC20(WSTETHETHCRYPTO).approve(iUSDT, 2**256-1, {"from": accounts[0]})
 
     iUSDT.borrow("", 1400e6, 0, 1e18, WSTETHETHCRYPTO, accounts[0], accounts[0], b"", {"from": accounts[0]})
 

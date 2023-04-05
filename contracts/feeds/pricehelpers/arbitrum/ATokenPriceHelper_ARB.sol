@@ -16,7 +16,7 @@ import "contracts/feeds/IPriceFeedsExt.sol";
 
 contract ATokenPriceHelper_ARB is IPriceFeedHelper {
     IAToken private constant aArbDAI = IAToken(0x82E64f49Ed5EC1bC6e43DAD4FC8Af9bb3A2312EE);
-    IAToken private constant aArbERUS = IAToken(0x6d80113e533a2C0fe82EaBD35f1875DcEA89Ea97);
+    IAToken private constant aArbEURS = IAToken(0x6d80113e533a2C0fe82EaBD35f1875DcEA89Ea97);
     IAToken private constant aArbUSDC = IAToken(0x625E7708f30cA75bfd92586e17077590C60eb4cD);
     IAToken private constant aArbUSDT = IAToken(0x6ab707Aca953eDAeFBc4fD23bA73294241490620);
     IAToken private constant aArbAAVE = IAToken(0xf329e36C7bF6E5E86ce2150875a84Ce77f477375);
@@ -25,7 +25,7 @@ contract ATokenPriceHelper_ARB is IPriceFeedHelper {
     IAToken private constant aArbWETH = IAToken(0xe50fA9b3c56FfB159cB0FCA61F5c9D750e8128c8);
 
     address private constant DAI  = 0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1;
-    address private constant ERUS = 0xD22a58f79e9481D1a88e00c343885A588b34b68B;
+    address private constant EURS = 0xD22a58f79e9481D1a88e00c343885A588b34b68B;
     address private constant USDC = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8;
     address private constant USDT = 0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9;
     address private constant AAVE = 0xba5DdD1f9d7F570dc94a51479a000E3BCE967196;
@@ -34,7 +34,7 @@ contract ATokenPriceHelper_ARB is IPriceFeedHelper {
     address private constant WETH = 0x82aF49447D8a07e3bd95BD0d56f35241523fBab1;
 
     IPriceFeedsExt private constant DAI_PRICE_FEED = IPriceFeedsExt(0xc5C8E77B397E531B8EC06BFb0048328B30E9eCfB);
-    IPriceFeedsExt private constant ERUS_PRICE_FEED = IPriceFeedsExt(0xA14d53bC1F1c0F31B4aA3BD109344E5009051a84); //EUR/USD
+    IPriceFeedsExt private constant EURS_PRICE_FEED = IPriceFeedsExt(0xA14d53bC1F1c0F31B4aA3BD109344E5009051a84); //EUR/USD
     IPriceFeedsExt private constant USDC_PRICE_FEED = IPriceFeedsExt(0x50834F3163758fcC1Df9973b6e91f0F0F0434aD3);
     IPriceFeedsExt private constant USDT_PRICE_FEED = IPriceFeedsExt(0x3f3f5dF88dC9F13eac63DF89EC16ef6e7E25DdE7);
     IPriceFeedsExt private constant AAVE_PRICE_FEED = IPriceFeedsExt(0xaD1d5344AaDE45F43E596773Bcc4c423EAbdD034);
@@ -54,8 +54,8 @@ contract ATokenPriceHelper_ARB is IPriceFeedHelper {
     function getFeed(address token) private pure returns(IPriceFeedsExt feed, address underlying) {
         if (token == address(aArbDAI)) {
             return (DAI_PRICE_FEED, DAI);
-        } else if (token == address(aArbERUS)) {
-            return (ERUS_PRICE_FEED, ERUS);
+        } else if (token == address(aArbEURS)) {
+            return (EURS_PRICE_FEED, EURS);
         } else if (token == address(aArbUSDC)) {
             return (USDC_PRICE_FEED, USDC);
         } else if (token == address(aArbUSDT)) {
