@@ -383,6 +383,9 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             return loanData;
         }
 
+        if(IPriceFeeds(priceFeeds).pricesFeeds(loanParamsLocal.loanToken) == address (0) || IPriceFeeds(priceFeeds).pricesFeeds(loanParamsLocal.collateralToken) == address (0)){
+            return loanData;
+        }
         loanLocal.principal = _getLoanPrincipal(loanLocal.lender, loanLocal.id);
         (uint256 currentMargin, uint256 value) = IPriceFeeds(priceFeeds).getCurrentMargin( // currentMargin, collateralToLoanRate
             loanParamsLocal.loanToken,
@@ -390,6 +393,7 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             loanLocal.principal,
             loanLocal.collateral
         );
+
 
         uint256 maxLiquidatable;
         uint256 maxSeizable;
