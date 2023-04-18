@@ -118,7 +118,7 @@ interface IToken {
 
   function supplyInterestRate() external view returns (uint256);
 
-  function nextSupplyInterestRate(int256 supplyAmount) external view returns (uint256);
+  function flashBorrowFeePercent() external view returns(uint256);
 
   function totalSupplyInterestRate(uint256 assetSupply) external view returns (uint256);
 
