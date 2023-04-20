@@ -10,10 +10,14 @@ import "../../interfaces/IUniswapV2Router.sol";
 import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 import "../ISwapsImpl.sol";
 
+import "../../../interfaces/IPriceFeeds.sol";
+import "../../testhelpers/TestToken.sol";
+
 contract SwapsImplUniswapV2_GOERLYBASE is State, ISwapsImpl {
     using SafeERC20 for IERC20;
 
-    address public constant uniswapRouter = 0xed7899C74D5201Fd6a273a3B69C398DB8Cc1998D;
+    event Logger(string name, uint256 value);
+    event LoggerAddress(string name, address value);
 
     function dexSwap(
         address sourceTokenAddress,
@@ -29,32 +33,44 @@ contract SwapsImplUniswapV2_GOERLYBASE is State, ISwapsImpl {
         returns (uint256 destTokenAmountReceived, uint256 sourceTokenAmountUsed)
     {
         require(sourceTokenAddress != destTokenAddress, "source == dest");
-        require(
-            supportedTokens[sourceTokenAddress] &&
-                supportedTokens[destTokenAddress],
-            "invalid tokens"
+        require(sourceTokenAddress != address(wethToken) && destTokenAddress != address(wethToken),
+            "WETH swaps not supported on testnet"
         );
 
-        IERC20 sourceToken = IERC20(sourceTokenAddress);
-        address _thisAddress = address(this);
-
-        (sourceTokenAmountUsed, destTokenAmountReceived) = _swapWithUni(
+        (uint256 tradeRate, uint256 precision) = IPriceFeeds(priceFeeds).queryRate(
             sourceTokenAddress,
-            destTokenAddress,
-            receiverAddress,
-            minSourceTokenAmount,
-            maxSourceTokenAmount,
-            requiredDestTokenAmount
+            destTokenAddress
         );
+        emit LoggerAddress("sourceTokenAddress", sourceTokenAddress);
+        emit LoggerAddress("destTokenAddress", destTokenAddress);
 
-        if (
-            returnToSenderAddress != _thisAddress &&
-            sourceTokenAmountUsed < maxSourceTokenAmount
-        ) {
+        if (requiredDestTokenAmount == 0) {
+            sourceTokenAmountUsed = minSourceTokenAmount;
+            destTokenAmountReceived = minSourceTokenAmount
+            .mul(tradeRate)
+            .div(precision)
+            .mul(1000) // inject a little swap slippage
+            .div(1005);
+        } else {
+            destTokenAmountReceived = requiredDestTokenAmount;
+            sourceTokenAmountUsed = requiredDestTokenAmount
+            .mul(precision)
+            .div(tradeRate)
+            .mul(1005) // inject a little swap slippage
+            .div(1000);
+            require(sourceTokenAmountUsed <= maxSourceTokenAmount, "destAmount too great");
+        }
+
+        emit Logger("sourceTokenAmountUsed", sourceTokenAmountUsed);
+        emit Logger("destTokenAmountReceived", destTokenAmountReceived);
+        TestToken(sourceTokenAddress).burn(sourceTokenAmountUsed);
+        TestToken(destTokenAddress).mint(address(this), destTokenAmountReceived);
+
+        if (returnToSenderAddress != address(this) && sourceTokenAmountUsed < maxSourceTokenAmount) {
             // send unused source token back
-            sourceToken.safeTransfer(
+            IERC20(sourceTokenAddress).safeTransfer(
                 returnToSenderAddress,
-                maxSourceTokenAmount - sourceTokenAmountUsed
+                maxSourceTokenAmount-sourceTokenAmountUsed
             );
         }
     }
@@ -64,43 +80,26 @@ contract SwapsImplUniswapV2_GOERLYBASE is State, ISwapsImpl {
         address destTokenAddress,
         uint256 sourceTokenAmount
     ) public view returns (uint256 expectedRate) {
-        revert("unsupported");
+        address _priceFeeds = priceFeeds;
+        if (_priceFeeds == address(0)) {
+            //keccak256("TestNet_localPriceFeeds")
+            assembly {
+                _priceFeeds := sload(0x42b587029048e5d48be95db5da189bcafe09be3a4fbb99206a1c8f4ced7d89b4)
+            }
+        }
+        (uint256 expectedRate,) = IPriceFeeds(_priceFeeds).queryRate(
+            sourceTokenAddress,
+            destTokenAddress
+        );
+
+        return expectedRate;
     }
 
     function dexAmountOut(bytes memory payload, uint256 amountIn)
         public
         returns (uint256 amountOut, address midToken)
     {
-        (address sourceTokenAddress, address destTokenAddress) = abi.decode(
-            payload,
-            (address, address)
-        );
-        if (sourceTokenAddress == destTokenAddress) {
-            amountOut = amountIn;
-        } else if (amountIn != 0) {
-            uint256 tmpValue;
 
-            address[] memory path = new address[](2);
-            path[0] = sourceTokenAddress;
-            path[1] = destTokenAddress;
-            amountOut = _getAmountOut(amountIn, path);
-
-            path = new address[](3);
-            path[0] = sourceTokenAddress;
-            path[2] = destTokenAddress;
-
-            if (
-                sourceTokenAddress != address(wethToken) &&
-                destTokenAddress != address(wethToken)
-            ) {
-                path[1] = address(wethToken);
-                tmpValue = _getAmountOut(amountIn, path);
-                if (tmpValue > amountOut) {
-                    amountOut = tmpValue;
-                    midToken = address(wethToken);
-                }
-            }
-        }
     }
 
     function dexAmountOutFormatted(bytes memory payload, uint256 amountIn)
@@ -114,40 +113,7 @@ contract SwapsImplUniswapV2_GOERLYBASE is State, ISwapsImpl {
         public
         returns (uint256 amountIn, address midToken)
     {
-        (address sourceTokenAddress, address destTokenAddress) = abi.decode(
-            payload,
-            (address, address)
-        );
-        if (sourceTokenAddress == destTokenAddress) {
-            amountIn = amountOut;
-        } else if (amountOut != 0) {
-            uint256 tmpValue;
 
-            address[] memory path = new address[](2);
-            path[0] = sourceTokenAddress;
-            path[1] = destTokenAddress;
-            amountIn = _getAmountIn(amountOut, path);
-
-            path = new address[](3);
-            path[0] = sourceTokenAddress;
-            path[2] = destTokenAddress;
-
-            if (
-                sourceTokenAddress != address(wethToken) &&
-                destTokenAddress != address(wethToken)
-            ) {
-                path[1] = address(wethToken);
-                tmpValue = _getAmountIn(amountOut, path);
-                if (tmpValue < amountIn) {
-                    amountIn = tmpValue;
-                    midToken = address(wethToken);
-                }
-            }
-
-            if (amountIn == uint256(-1)) {
-                amountIn = 0;
-            }
-        }
     }
 
     function dexAmountInFormatted(bytes memory payload, uint256 amountOut)
@@ -157,118 +123,35 @@ contract SwapsImplUniswapV2_GOERLYBASE is State, ISwapsImpl {
         return dexAmountIn(payload, amountOut);
     }
 
-    function _getAmountOut(uint256 amountIn, address[] memory path)
-        public
-        view
-        returns (uint256 amountOut)
-    {
-        (bool success, bytes memory data) = uniswapRouter.staticcall(
-            abi.encodeWithSelector(
-                0xd06ca61f, // keccak("getAmountsOut(uint256,address[])")
-                amountIn,
-                path
-            )
-        );
-        if (success) {
-            uint256 len = data.length;
-            assembly {
-                amountOut := mload(add(data, len)) // last amount value array
-            }
-        }
-    }
-
-    function _getAmountIn(uint256 amountOut, address[] memory path)
-        public
-        view
-        returns (uint256 amountIn)
-    {
-        (bool success, bytes memory data) = uniswapRouter.staticcall(
-            abi.encodeWithSelector(
-                0x1f00ca74, // keccak("getAmountsIn(uint256,address[])")
-                amountOut,
-                path
-            )
-        );
-        if (success) {
-            uint256 len = data.length;
-            assembly {
-                amountIn := mload(add(data, 96)) // first amount value in array
-            }
-        }
-        if (amountIn == 0) {
-            amountIn = uint256(-1);
-        }
-    }
 
     function setSwapApprovals(address[] memory tokens) public {
-        for (uint256 i = 0; i < tokens.length; i++) {
-            IERC20(tokens[i]).safeApprove(uniswapRouter, 0);
-            IERC20(tokens[i]).safeApprove(uniswapRouter, uint256(-1));
-        }
+
     }
 
     function revokeApprovals(address[] memory tokens) public {
-        for (uint256 i = 0; i < tokens.length; i++) {
-            IERC20(tokens[i]).safeApprove(uniswapRouter, 0);
-        }
+
     }
 
-    function _swapWithUni(
-        address sourceTokenAddress,
-        address destTokenAddress,
-        address receiverAddress,
-        uint256 minSourceTokenAmount,
-        uint256 maxSourceTokenAmount,
-        uint256 requiredDestTokenAmount
-    )
-        internal
-        returns (uint256 sourceTokenAmountUsed, uint256 destTokenAmountReceived)
+    function localPriceFeed()
+    external
+    view
+    returns (address feed)
     {
-        address midToken;
-        if (requiredDestTokenAmount != 0) {
-            (sourceTokenAmountUsed, midToken) = dexAmountIn(
-                abi.encode(sourceTokenAddress, destTokenAddress),
-                requiredDestTokenAmount
-            );
-            if (sourceTokenAmountUsed == 0) {
-                return (0, 0);
-            }
-            require(
-                sourceTokenAmountUsed <= maxSourceTokenAmount,
-                "source amount too high"
-            );
-        } else {
-            sourceTokenAmountUsed = minSourceTokenAmount;
-            (destTokenAmountReceived, midToken) = dexAmountOut(
-                abi.encode(sourceTokenAddress, destTokenAddress),
-                sourceTokenAmountUsed
-            );
-            if (destTokenAmountReceived == 0) {
-                return (0, 0);
-            }
+        assembly {
+            feed := sload(0x42b587029048e5d48be95db5da189bcafe09be3a4fbb99206a1c8f4ced7d89b4)
         }
-
-        address[] memory path;
-        if (midToken != address(0)) {
-            path = new address[](3);
-            path[0] = sourceTokenAddress;
-            path[1] = midToken;
-            path[2] = destTokenAddress;
-        } else {
-            path = new address[](2);
-            path[0] = sourceTokenAddress;
-            path[1] = destTokenAddress;
-        }
-
-        uint256[] memory amounts = IUniswapV2Router(uniswapRouter)
-            .swapExactTokensForTokens(
-                sourceTokenAmountUsed,
-                1, // amountOutMin
-                path,
-                receiverAddress,
-                block.timestamp
-            );
-
-        destTokenAmountReceived = amounts[amounts.length - 1];
     }
+
+    function setLocalPriceFeedContract(
+        address newContract)
+    external
+    onlyOwner
+    {
+        //keccak256("TestNet_localPriceFeeds")
+        assembly {
+            sstore(0x42b587029048e5d48be95db5da189bcafe09be3a4fbb99206a1c8f4ced7d89b4, newContract)
+        }
+    }
+
+
 }
