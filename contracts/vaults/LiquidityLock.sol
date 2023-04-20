@@ -1,8 +1,8 @@
 pragma solidity ^0.8.0;
 
-import "../../interfaces/IToken.sol";
-import "../../interfaces/IBZx.sol";
-import "../proxies/0_8/Upgradeable_0_8.sol";
+import "interfaces/IToken.sol";
+import "interfaces/IBZx.sol";
+import "contracts/proxies/0_8/Upgradeable_0_8.sol";
 import "@openzeppelin-4.7.0/token/ERC20/utils/SafeERC20.sol";
 
 contract LiquidityLock is Ownable {
