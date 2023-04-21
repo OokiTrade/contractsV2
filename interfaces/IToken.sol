@@ -176,6 +176,8 @@ interface IToken {
 
   function nonces(address) external view returns (uint256);
 
+  function _nextBorrowInterestRate(uint256 totalBorrow, uint256 newBorrowNotYetRealized, uint256 lastIR) external view returns (uint256 nextRate);
+
   /// Admin functions
   function setTarget(address _newTarget) external;
 

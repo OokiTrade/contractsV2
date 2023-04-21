@@ -7,7 +7,7 @@
 pragma solidity ^0.8.0;
 
 import "contracts/core/State.sol";
-import "interfaces/ILoanPool.sol";
+import "interfaces/IToken.sol";
 import "contracts/utils/MathUtil.sol";
 import "contracts/events/InterestRateEvents.sol";
 import "contracts/utils/InterestOracle.sol";
@@ -110,7 +110,7 @@ abstract contract InterestHandler is State, InterestRateEvents {
         type(uint8).max
       )
     );
-    if (timeSinceUpdate != 0 && (nextInterestRate = ILoanPool(pool)._nextBorrowInterestRate(poolTotal, 0, benchmarkRate)) != 0) {
+    if (timeSinceUpdate != 0 && (nextInterestRate = IToken(pool)._nextBorrowInterestRate(poolTotal, 0, benchmarkRate)) != 0) {
       ratePerTokenNewAmount =
         (timeSinceUpdate * (nextInterestRate) * (WEI_PERCENT_PRECISION)) / // rate per year
         (31536000); // seconds in a year
