@@ -11,7 +11,7 @@ import "interfaces/IToken.sol";
 import "interfaces/IBZx.sol";
 import "contracts/connectors/loantoken/LoanTokenLogicStandard.sol";
 import "@openzeppelin-4.8.3/token/ERC20/extensions/IERC20Metadata.sol";
-import "contracts/interfaces/ISignatureHelper.sol"; // TODO why the hell do we need this @drypto?
+// import "contracts/interfaces/ISignatureHelper.sol"; // TODO why the hell do we need this @drypto?
 
 contract LoanTokenFactory is PausableGuardian_0_8 {
   // IBZx public constant PROTOCOL = IBZx(0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f); // mainnet
@@ -92,7 +92,7 @@ contract LoanTokenFactory is PausableGuardian_0_8 {
   //   f.transferOwnership(owner());
   }
 
-  function isPaused(bytes calldata data) external view returns (bool) {
-    return _isPaused(ISignatureHelper(SIG_HELPER).getSig(data)); //slice to get signature
-  }
+  // function isPaused(bytes calldata data) external view returns (bool) {
+  //   return _isPaused(ISignatureHelper(SIG_HELPER).getSig(data)); //slice to get signature
+  // }
 }
