@@ -7,8 +7,9 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin-4.8.3/access/Ownable.sol";
+import "interfaces/IDexRecords.sol";
 
-contract DexRecords is Ownable {
+contract DexRecords is Ownable, IDexRecords {
   mapping(uint256 => address) public dexes;
   uint256 public dexCount = 0;
 
@@ -23,10 +24,5 @@ contract DexRecords is Ownable {
 
   function setDexID(uint256 ID, address dex) public onlyOwner {
     dexes[ID] = dex;
-  }
-
-  // TODO @drypto if we have public method then dexCount variable needs to be private
-  function getDexCount() external view returns (uint256) {
-    return dexCount;
   }
 }

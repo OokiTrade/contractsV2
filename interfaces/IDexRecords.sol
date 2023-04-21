@@ -8,5 +8,5 @@ interface IDexRecords {
 
   function setDexID(uint256 dexID, address dexAddress) external;
 
-  function getDexCount() external view returns (uint256);
+  function dexCount() external view returns (uint256);
 }
