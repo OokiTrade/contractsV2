@@ -41,10 +41,10 @@ contract HelperImpl is Ownable {
     }
   }
 
-  function totalSupply(IERC20[] calldata tokens) public view returns (uint256[] memory totalSupply) {
-    totalSupply = new uint256[](tokens.length);
+  function totalSupply(IERC20[] calldata tokens) public view returns (uint256[] memory supply) {
+    supply = new uint256[](tokens.length);
     for (uint256 i = 0; i < tokens.length; i++) {
-      totalSupply[i] = tokens[i].totalSupply();
+      supply[i] = tokens[i].totalSupply();
     }
   }
 
@@ -111,17 +111,17 @@ contract HelperImpl is Ownable {
     uint256 vaultBalance;
   }
 
-  function reserveDetails(IToken[] calldata tokens) public view returns (ReserveDetail[] memory reserveDetails) {
-    reserveDetails = new ReserveDetail[](tokens.length);
+  function reserveDetails(IToken[] calldata tokens) public view returns (ReserveDetail[] memory reserves) {
+    reserves = new ReserveDetail[](tokens.length);
 
     for (uint256 i = 0; i < tokens.length; i++) {
-      reserveDetails[i].iToken = address(tokens[i]);
-      reserveDetails[i].totalAssetSupply = tokens[i].totalAssetSupply();
-      reserveDetails[i].totalAssetBorrow = tokens[i].totalAssetBorrow();
-      reserveDetails[i].supplyInterestRate = tokens[i].supplyInterestRate();
-      reserveDetails[i].borrowInterestRate = tokens[i].borrowInterestRate();
-      reserveDetails[i].torqueBorrowInterestRate = tokens[i].nextBorrowInterestRate(0);
-      reserveDetails[i].vaultBalance = IERC20(tokens[i].loanTokenAddress()).balanceOf(bZxProtocol);
+      reserves[i].iToken = address(tokens[i]);
+      reserves[i].totalAssetSupply = tokens[i].totalAssetSupply();
+      reserves[i].totalAssetBorrow = tokens[i].totalAssetBorrow();
+      reserves[i].supplyInterestRate = tokens[i].supplyInterestRate();
+      reserves[i].borrowInterestRate = tokens[i].borrowInterestRate();
+      reserves[i].torqueBorrowInterestRate = tokens[i].nextBorrowInterestRate(0);
+      reserves[i].vaultBalance = IERC20(tokens[i].loanTokenAddress()).balanceOf(bZxProtocol);
     }
   }
 
@@ -135,17 +135,17 @@ contract HelperImpl is Ownable {
     address usdTokenAddress,
     address[] memory tokens,
     uint256[] memory sourceAmounts
-  ) public view returns (AssetRates[] memory assetRates) {
+  ) public view returns (AssetRates[] memory rates) {
     IPriceFeeds feeds = IPriceFeeds(IBZx(bZxProtocol).priceFeeds());
-    assetRates = new AssetRates[](tokens.length);
+    rates = new AssetRates[](tokens.length);
 
     for (uint256 i = 0; i < tokens.length; i++) {
-      (assetRates[i].rate, assetRates[i].precision) = feeds.queryRate(tokens[i], usdTokenAddress);
+      (rates[i].rate, rates[i].precision) = feeds.queryRate(tokens[i], usdTokenAddress);
 
       if (sourceAmounts[i] != 0) {
-        assetRates[i].destAmount = sourceAmounts[i] * assetRates[i].rate;
-        require(assetRates[i].destAmount / sourceAmounts[i] == assetRates[i].rate, "overflow");
-        assetRates[i].destAmount = assetRates[i].destAmount / assetRates[i].precision;
+        rates[i].destAmount = sourceAmounts[i] * rates[i].rate;
+        require(rates[i].destAmount / sourceAmounts[i] == rates[i].rate, "overflow");
+        rates[i].destAmount = rates[i].destAmount / rates[i].precision;
       }
     }
   }

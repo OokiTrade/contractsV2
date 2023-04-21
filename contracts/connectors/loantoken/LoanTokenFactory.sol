@@ -9,7 +9,7 @@ pragma solidity ^0.8.0;
 import "contracts/governance/PausableGuardian_0_8.sol";
 import "interfaces/IToken.sol";
 import "interfaces/IBZx.sol";
-import "contracts/connectors/loantoken/FactoryLoanToken.sol";
+import "contracts/connectors/loantoken/LoanTokenLogicStandard.sol";
 import "@openzeppelin-4.8.3/token/ERC20/extensions/IERC20Metadata.sol";
 import "contracts/interfaces/ISignatureHelper.sol"; // TODO why the hell do we need this @drypto?
 
@@ -41,12 +41,13 @@ contract LoanTokenFactory is PausableGuardian_0_8 {
   }
 
   function _createLoanToken(address loanTokenAddress) internal pausable returns (address) {
-    address newLoanToken = address(new FactoryLoanToken());
-    string memory symbol = IERC20Metadata(loanTokenAddress).symbol();
-    string memory name = string(abi.encodePacked("Ooki ", symbol, " iToken"));
-    symbol = string(abi.encodePacked("i", symbol));
-    IToken(newLoanToken).initialize(loanTokenAddress, name, symbol);
-    return newLoanToken;
+    // TODO
+    // address newLoanToken = address(new FactoryLoanToken());
+    // string memory symbol = IERC20Metadata(loanTokenAddress).symbol();
+    // string memory name = string(abi.encodePacked("Ooki ", symbol, " iToken"));
+    // symbol = string(abi.encodePacked("i", symbol));
+    // IToken(newLoanToken).initialize(loanTokenAddress, name, symbol);
+    // return newLoanToken;
   }
 
   function getRateHelper() external view returns (address) {
@@ -82,12 +83,13 @@ contract LoanTokenFactory is PausableGuardian_0_8 {
     address _rateHelper,
     uint256 flashLoanFee
   ) external onlyOwner {
-    FactoryLoanToken f = FactoryLoanToken(iTokenAddress);
-    f.setTarget(whitelistedITokenTarget);
-    f.setFactory(address(0));
-    IToken(iTokenAddress).setDemandCurve(_rateHelper);
-    IToken(iTokenAddress).updateFlashBorrowFeePercent(flashLoanFee);
-    f.transferOwnership(owner());
+    // TODO
+  //   FactoryLoanToken f = FactoryLoanToken(iTokenAddress);
+  //   f.setTarget(whitelistedITokenTarget);
+  //   f.setFactory(address(0));
+  //   IToken(iTokenAddress).setDemandCurve(_rateHelper);
+  //   IToken(iTokenAddress).updateFlashBorrowFeePercent(flashLoanFee);
+  //   f.transferOwnership(owner());
   }
 
   function isPaused(bytes calldata data) external view returns (bool) {
