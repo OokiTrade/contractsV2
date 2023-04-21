@@ -122,7 +122,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
         addrs
       );
       IDexRecords records = IDexRecords(swapsImpl);
-      for (uint256 i = 1; i <= records.getDexCount(); i++) {
+      for (uint256 i = 1; i <= records.dexCount(); i++) {
         address swapImpl = _getDexRecord(i);
         if (swapImpl == address(0)) continue;
         (bool success, ) = swapImpl.delegatecall(setSwapApprovalsData);
@@ -150,7 +150,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
       addrs
     );
     IDexRecords records = IDexRecords(swapsImpl);
-    for (uint256 i = 1; i <= records.getDexCount(); i++) {
+    for (uint256 i = 1; i <= records.dexCount(); i++) {
       address swapImpl = _getDexRecord(i);
       if (swapImpl == address(0)) continue;
       (bool success, ) = swapImpl.delegatecall(revokeApprovalsData);

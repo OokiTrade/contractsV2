@@ -15,13 +15,16 @@ contract PausableGuardian_0_8 is Ownable {
   // keccak256("Pausable_GuardianAddress")
   bytes32 internal constant Pausable_GuardianAddress = 0x80e6706973d0c59541550537fd6a33b971efad732635e6c3b99fb01006803cdf;
 
+  string internal constant UNAUTHORIZED_ERROR = "unauthorized";
+  string internal constant PAUSED_ERROR = "paused";
+
   modifier pausable() {
-    require(!_isPaused(msg.sig) || msg.sender == getGuardian(), "paused");
+    require(!_isPaused(msg.sig) || msg.sender == getGuardian(), PAUSED_ERROR);
     _;
   }
 
   modifier onlyGuardian() {
-    require(msg.sender == owner() || msg.sender == getGuardian(), "unauthorized");
+    require(msg.sender == owner() || msg.sender == getGuardian(), UNAUTHORIZED_ERROR);
     _;
   }
 
@@ -33,7 +36,7 @@ contract PausableGuardian_0_8 is Ownable {
   }
 
   function toggleFunctionPause(bytes4 sig) public {
-    require(msg.sender == getGuardian() || msg.sender == owner(), "unauthorized");
+    require(msg.sender == getGuardian() || msg.sender == owner(), UNAUTHORIZED_ERROR);
     bytes32 slot = keccak256(abi.encodePacked(sig, Pausable_FunctionPause));
     assembly {
       sstore(slot, 1)
@@ -42,7 +45,7 @@ contract PausableGuardian_0_8 is Ownable {
 
   function toggleFunctionUnPause(bytes4 sig) public {
     // only DAO can unpause, and adding guardian temporarily
-    require(msg.sender == getGuardian() || msg.sender == owner(), "unauthorized");
+    require(msg.sender == getGuardian() || msg.sender == owner(), UNAUTHORIZED_ERROR);
     bytes32 slot = keccak256(abi.encodePacked(sig, Pausable_FunctionPause));
     assembly {
       sstore(slot, 0)
@@ -50,7 +53,7 @@ contract PausableGuardian_0_8 is Ownable {
   }
 
   function changeGuardian(address newGuardian) public {
-    require(msg.sender == getGuardian() || msg.sender == owner(), "unauthorized");
+    require(msg.sender == getGuardian() || msg.sender == owner(), UNAUTHORIZED_ERROR);
     assembly {
       sstore(Pausable_GuardianAddress, newGuardian)
     }
@@ -59,18 +62,6 @@ contract PausableGuardian_0_8 is Ownable {
   function getGuardian() public view returns (address guardian) {
     assembly {
       guardian := sload(Pausable_GuardianAddress)
-    }
-  }
-
-  function pause(bytes4[] calldata sig) external onlyGuardian {
-    for (uint256 i = 0; i < sig.length; ++i) {
-      toggleFunctionPause(sig[i]);
-    }
-  }
-
-  function unpause(bytes4[] calldata sig) external onlyGuardian {
-    for (uint256 i = 0; i < sig.length; ++i) {
-      toggleFunctionUnPause(sig[i]);
     }
   }
 }
