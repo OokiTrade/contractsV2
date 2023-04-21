@@ -23,8 +23,6 @@ interface IVault {
   ) external returns (uint256 assets);
 
   function convertAssetsToShares(uint256 assets, address receiver) external view returns (uint256 shares);
-
-  function convertSharesToAssets(uint256 shares, address receiver) external view returns (uint256 assets);
 }
 
 contract SwapsImplstMATICVault_POLYGON is State, ISwapsImpl {
