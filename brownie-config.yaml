@@ -37,8 +37,9 @@ compiler:
             enabled: true
             runs: 200
         remappings:
-            - "@openzeppelin-4.8.0=openzeppelin/openzeppelin-contracts@4.8.0/contracts"
-            - "@openzeppelin-upgradeable-4.8.0=openzeppelin/openzeppelin-contracts-upgradeable@4.8.0/contracts"
+            - "@openzeppelin-4.8.3=openzeppelin/openzeppelin-contracts@4.8.0/contracts"
+            # - "@openzeppelin-4.8.0=openzeppelin/openzeppelin-contracts@4.8.0/contracts"
+            # - "@openzeppelin-upgradeable-4.8.0=openzeppelin/openzeppelin-contracts-upgradeable@4.8.0/contracts"
             - "@openzeppelin-3.4.2=openzeppelin/openzeppelin-contracts@3.4.2/contracts"
             - "@openzeppelin-2.5.1=openzeppelin/openzeppelin-contracts@2.5.1/contracts"
             # - "@openzeppelin-4.7.0=./node_modules/openzeppelin-4.7.0"

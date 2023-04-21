@@ -8,7 +8,7 @@ pragma solidity ^0.8.0;
 
 import "contracts/core/State.sol";
 import "contracts/events/ProtocolSettingsEvents.sol";
-import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin-4.8.3/token/ERC20/utils/SafeERC20.sol";
 import "contracts/interfaces/IVestingToken.sol";
 import "contracts/utils/MathUtil.sol";
 import "interfaces/IDexRecords.sol";

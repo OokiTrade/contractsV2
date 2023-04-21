@@ -7,8 +7,8 @@
 pragma solidity ^0.8.0;
 pragma abicoder v2;
 
-import "@openzeppelin-4.8.0/access/Ownable.sol";
-import "@openzeppelin-4.8.0/token/ERC20/IERC20.sol";
+import "@openzeppelin-4.8.3/access/Ownable.sol";
+import "@openzeppelin-4.8.3/token/ERC20/IERC20.sol";
 
 import "interfaces/IPriceFeeds.sol";
 import "interfaces/IToken.sol";

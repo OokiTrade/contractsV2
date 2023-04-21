@@ -10,7 +10,7 @@ import "interfaces/IPriceFeeds.sol";
 import "contracts/interfaces/balancer/IBalancerVault.sol";
 import "contracts/interfaces/balancer/IBalancerPool.sol";
 
-import "@openzeppelin-4.8.0/token/ERC20/IERC20.sol";
+import "@openzeppelin-4.8.3/token/ERC20/IERC20.sol";
 
 contract PriceFeedbStablestMATIC {
   IPriceFeeds internal constant _PRICEFEED = IPriceFeeds(0x600F8E7B10CF6DA18871Ff79e4A61B13caCEd9BC);

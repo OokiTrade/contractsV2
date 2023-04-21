@@ -9,10 +9,10 @@ pragma solidity ^0.8.0;
 import "contracts/core/Constants.sol";
 import "contracts/core/Objects.sol";
 import "contracts/mixins/EnumerableBytes32Set.sol";
-import "@openzeppelin-4.8.0/security/ReentrancyGuard.sol";
+import "@openzeppelin-4.8.3/security/ReentrancyGuard.sol";
 import "contracts/utils/InterestOracle.sol";
 import "contracts/utils/VolumeTracker.sol";
-import "@openzeppelin-4.8.0/access/Ownable.sol";
+import "@openzeppelin-4.8.3/access/Ownable.sol";
 
 abstract contract State is Constants, Objects, ReentrancyGuard, Ownable {
   using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;

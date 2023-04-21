@@ -8,6 +8,7 @@ pragma solidity ^0.8.0;
 
 import "contracts/connectors/loantoken/LoanToken.sol";
 import "interfaces/ILoanTokenFactory.sol";
+import "@openzeppelin-4.8.3/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 contract FactoryLoanToken is LoanToken {
   address factory;

@@ -7,10 +7,10 @@
 pragma solidity ^0.8.0;
 
 import "contracts/core/State.sol";
-import "@openzeppelin-4.8.0/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin-4.8.3/token/ERC20/utils/SafeERC20.sol";
 import "interfaces/ISwapsImpl.sol";
 import "contracts/interfaces/balancer/IBalancerVault.sol";
-import "@openzeppelin-4.8.0/utils/math/Math.sol";
+import "@openzeppelin-4.8.3/utils/math/Math.sol";
 
 contract SwapsImplBalancer_POLYGON is State, ISwapsImpl {
   using SafeERC20 for IERC20;

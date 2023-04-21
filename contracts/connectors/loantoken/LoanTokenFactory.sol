@@ -10,7 +10,7 @@ import "contracts/governance/PausableGuardian_0_8.sol";
 import "interfaces/IToken.sol";
 import "interfaces/IBZx.sol";
 import "contracts/connectors/loantoken/FactoryLoanToken.sol";
-import "@openzeppelin-4.8.0/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin-4.8.3/token/ERC20/extensions/IERC20Metadata.sol";
 import "contracts/interfaces/ISignatureHelper.sol"; // TODO why the hell do we need this @drypto?
 
 contract LoanTokenFactory is PausableGuardian_0_8 {
