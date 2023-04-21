@@ -17,8 +17,6 @@ abstract contract LoanTokenBase is ReentrancyGuard, Ownable, PausableGuardian_0_
   uint256 internal constant WEI_PRECISION = 10**18;
   uint256 internal constant WEI_PERCENT_PRECISION = 10**20;
 
-  int256 internal constant sWEI_PRECISION = 10**18;
-
   string public name;
   string public symbol;
   uint8 public decimals;
@@ -40,6 +38,6 @@ abstract contract LoanTokenBase is ReentrancyGuard, Ownable, PausableGuardian_0_
   uint256 internal checkpointSupply_UNUSED;
   uint256 public initialPrice;
 
-  mapping(uint256 => bytes32) public loanParamsIds; // mapping of keccak256(collateralToken, isTorqueLoan) to loanParamsId
+  mapping(uint256 => bytes32) public loanParamsIds_DEPRECATED; // mapping of keccak256(collateralToken, isTorqueLoan) to loanParamsId
   mapping(address => uint256) internal checkpointPrices_DEPRECATED; // price of token at last user checkpoint
 }
