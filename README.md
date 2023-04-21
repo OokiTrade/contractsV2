@@ -48,7 +48,7 @@ also install brownie dependencies
 make sure to add dependencies to compile:
 
 ```
-brownie pm install openzeppelin/openzeppelin-contracts@4.8.0
+brownie pm install openzeppelin/openzeppelin-contracts@4.8.3
 brownie pm install openzeppelin/openzeppelin-contracts-upgradeable@4.8.0
 brownie pm install openzeppelin/openzeppelin-contracts@3.4.2
 brownie pm install openzeppelin/openzeppelin-contracts@2.5.1
