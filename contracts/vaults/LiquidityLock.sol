@@ -42,9 +42,10 @@ contract LiquidityLock is Ownable {
     function lock(address base, uint256 depositAmount, uint256 endTimestamp) external returns (bytes32 claimID) {
         Settings memory tokenSettings = lockSettings[base];
         IToken iToken = IToken(PROTOCOL.underlyingToLoanPool(base));
+        require(address(iToken) != address(0), "invalid underlying token");
         claimID = keccak256(abi.encode(address(iToken),msg.sender,endTimestamp));
         require(claims[claimID].token == address(0), "already used id");
-        require(block.timestamp <= endTimestamp && endTimestamp-block.timestamp<tokenSettings.maxLockTime, "invalid ending time");
+        require(endTimestamp-block.timestamp<tokenSettings.maxLockTime, "invalid ending time");
         IERC20(base).safeTransferFrom(msg.sender, address(this), depositAmount);
         uint256 discountAmount = tokenSettings.minimumDiscount+tokenSettings.discountAdditionPerSecond*(endTimestamp-block.timestamp);
         discountAmount = discountAmount*(endTimestamp-block.timestamp) / 31557600;
