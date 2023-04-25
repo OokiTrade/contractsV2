@@ -18,19 +18,19 @@ loanTokenLogicStandard = Contract.from_abi("loanTokenLogicStandard", address="0x
 loanTokenAddress = "TBU"
 
 priceFeedAddress = "TBU"
-PRICE_FEED.setPriceFeed([loanTokenAddress], [priceFeedAddress], {"from": TIMELOCK})
-PRICE_FEED.setDecimals([loanTokenAddress], {"from": TIMELOCK})
+calldatas.append(PRICE_FEED.setPriceFeed.encode_input([loanTokenAddress], [priceFeedAddress]))
+calldatas.append(PRICE_FEED.setDecimals.encode_input([loanTokenAddress]))
 
 iToken = Contract.from_abi("iToken", "TBU", LoanTokenLogicStandard.abi)
 
-CUI.updateParams((120e18, 80e18, 100e18, 100e18, 110e18, MINIMAL_RATES.get(iToken.symbol()), MINIMAL_RATES.get(iToken.symbol())), iToken, {"from": TIMELOCK})
-iToken.setDemandCurve(CUI,{"from": deployer})
+calldatas.append(CUI.updateParams.encode_input((120e18, 80e18, 100e18, 100e18, 110e18, MINIMAL_RATES.get(iToken.symbol()), MINIMAL_RATES.get(iToken.symbol()))))
+calldatas.append(iToken.setDemandCurve.encode_input(CUI))
 
-BZX.setApprovals([loanTokenAddress], [1,2], {'from': TIMELOCK})
-BZX.setupLoanPoolTWAI(iProxy, {"from": TIMELOCK})
+calldatas.append(BZX.setApprovals.encode_input([loanTokenAddress], [1,2]))
+calldatas.append(BZX.setupLoanPoolTWAI.encode_input(iProxy))
 
-BZX.setLoanPool([iToken], [loanTokenAddress], {"from": TIMELOCK})
-BZX.setSupportedTokens([loanTokenAddress, iToken], [True, True], True, {"from": TIMELOCK})
+calldatas.append(BZX.setLoanPool.encode_input([iToken], [loanTokenAddress]))
+calldatas.append(BZX.setSupportedTokens.encode_input([loanTokenAddress, iToken], [True, True], True))
 
 
 values = [0] * len(targets)  # empty array
