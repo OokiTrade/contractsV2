@@ -31,7 +31,7 @@ def test_case1(LIQUIDITYLOCK, BZX, interface, USDC, IUSDC):
     #max lock time set here is 45 days
     #minimum guaranteed APR is 1%
     #it is increased by 0.5% for every 30 days of lockup
-    LIQUIDITYLOCK.updateSettings(USDC, 1e18, 19025875190300, 3942000, {"from":accounts[0]})
+    LIQUIDITYLOCK.updateSettings(USDC, 1e18, 190258751903, 3942000, {"from":accounts[0]})
     LIQUIDITYLOCK.setLockCap([USDC], [109e6], {"from":accounts[0]})
     LIQUIDITYLOCK.setApprovals([USDC], [IUSDC], {"from":accounts[0]})
     month_1 = 2628000
