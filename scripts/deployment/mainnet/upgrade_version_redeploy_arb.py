@@ -59,12 +59,13 @@ BZX.setPriceFeedContract(price_feed_new, {"from": BZX.owner()})
 
 
 
-helperImpl = HelperImpl.deploy({"from": accounts[0]}) #
+helperImpl = HelperImpl.deploy(BZX, WETH, {"from": accounts[0]}) #
 # helperImpl = HelperImpl.at("")
 HELPER = Contract.from_abi("HELPER", HELPER, HelperProxy.abi)
 HELPER.replaceImplementation(helperImpl, {"from": GUARDIAN_MULTISIG})
 HELPER = Contract.from_abi("HELPER", HELPER, HelperImpl.abi)
 
+ARB_CALLER = "0x01207468F48822f8535BC96D1Cf18EddDE4A2392"
 itokenImpl = deployer.deploy(LoanTokenLogicStandard, ARB_CALLER, BZX, WETH) #
 itokenImplWeth = deployer.deploy(LoanTokenLogicWeth, ARB_CALLER, BZX, WETH) #
 # itokenImpl = LoanTokenLogicStandard.at("")
