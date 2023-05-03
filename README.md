@@ -1,5 +1,5 @@
 <br/>
-<p align="center"><img src="https://user-images.githubusercontent.com/1526150/185404709-25820340-18e6-4dd6-b0f8-05a1b91ba803.png" width="256" /></p>
+<p align="center"><img src="https://link.storjshare.io/raw/jxhm5s5fd5p5vok3335gd3acngqa/ooki-files%2Fimage_2023-01-16_23-26-28.png" width="256" /></p>
 
 <div align="center">
 

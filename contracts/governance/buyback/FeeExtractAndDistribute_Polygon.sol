@@ -43,6 +43,8 @@ contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
 
     uint32 public slippage = 10000;
 
+    mapping(address => address[]) public swapRoutes;
+
     event ExtractAndDistribute(uint256 amountTreasury, uint256 amountStakers);
 
     event AssetSwap(
@@ -82,15 +84,15 @@ contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
             if (asset == USDC) continue; //USDC already accounted for
             amount = exportedFees[asset];
             exportedFees[asset] = 0;
-
             if (amount != 0) {
-                if (asset == MATIC) {
-                    usdcOutput = _swapWithPair([asset, USDC], amount);
-                } else if (asset == WBTC) {
-                    usdcOutput = _swapWithPair([asset, WETH, USDC], amount);
-                } else {
-                    usdcOutput = _swapWithPair([asset, MATIC, USDC], amount); //builds route for all tokens to route through MATIC
+                address[] memory _swapRoutes = swapRoutes[asset];
+                if(_swapRoutes.length == 0){
+                    _swapRoutes = new address[](3);
+                    _swapRoutes[0] = asset;
+                    _swapRoutes[1] = MATIC;
+                    _swapRoutes[2] = USDC;
                 }
+                usdcOutput += _swapWithPair(_swapRoutes, amount);
             }
         }
         if (usdcOutput != 0) {
@@ -99,43 +101,20 @@ contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
         }
     }
 
-    function _swapWithPair(address[2] memory route, uint256 inAmount)
+    function _swapWithPair(address[] memory route, uint256 inAmount)
         internal
         returns (uint256 returnAmount)
     {
-        address[] memory path = new address[](2);
-        path[0] = route[0];
-        path[1] = route[1];
         uint256[] memory amounts = SWAPS_ROUTER_V2.swapExactTokensForTokens(
             inAmount,
             1, // amountOutMin
-            path,
+            route,
             address(this),
             block.timestamp
         );
 
-        returnAmount = amounts[1];
-        _checkUniDisagreement(path[0], inAmount, returnAmount, 5e18);
-    }
-
-    function _swapWithPair(address[3] memory route, uint256 inAmount)
-        internal
-        returns (uint256 returnAmount)
-    {
-        address[] memory path = new address[](3);
-        path[0] = route[0];
-        path[1] = route[1];
-        path[2] = route[2];
-        uint256[] memory amounts = SWAPS_ROUTER_V2.swapExactTokensForTokens(
-            inAmount,
-            1, // amountOutMin
-            path,
-            address(this),
-            block.timestamp
-        );
-
-        returnAmount = amounts[2];
-        _checkUniDisagreement(path[0], inAmount, returnAmount, 5e18);
+        returnAmount = amounts[route.length - 1];
+        _checkUniDisagreement(route[0], inAmount, returnAmount, 5e18);
     }
 
     function _bridgeFeesAndDistribute() internal {
@@ -215,6 +194,11 @@ contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
 
     function setBuyBackPercentage(uint256 _percentage) external onlyOwner {
         buybackPercentInWEI = _percentage;
+    }
+
+    function setSwapRoute(address _asset, address[] memory _route) external onlyGuardian {
+        require(_route.length != 0 && _route[0] == _asset && _route[_route.length -1] == USDC);
+        swapRoutes[_asset] = _route;
     }
 
     function setSlippage(uint32 newSlippage) external onlyGuardian {
