@@ -15,23 +15,40 @@ MINIMAL_RATES = {
 }
 
 loanTokenLogicStandard = Contract.from_abi("loanTokenLogicStandard", address="0x624f7f89414011b276c60ea2337bfba936d1cbbe", abi=LoanTokenLogicStandard.abi)
-loanTokenAddress = "TBU"
+loanTokenAddress = "0xf71040d20Cc3FFBb28c1abcEF46134C7936624e0"
+priceFeedAddress = "0x986b5E1e1755e3C2440e960477f25201B0a8bbD4" #Chainlink USDC pricefeed
 
-priceFeedAddress = "TBU"
 calldatas.append(PRICE_FEED.setPriceFeed.encode_input([loanTokenAddress], [priceFeedAddress]))
+targets.append(PRICE_FEED.address)
+
 calldatas.append(PRICE_FEED.setDecimals.encode_input([loanTokenAddress]))
+targets.append(PRICE_FEED.address)
+deployer = accounts[0]
+iProxy = LoanToken.deploy(deployer, loanTokenLogicStandard, {"from": deployer})
+iToken = Contract.from_abi("iToken", iProxy, LoanTokenLogicStandard.abi)
+underlyingSymbol = "crvUSD"
+iTokenSymbol = "i{}".format(underlyingSymbol)
+iTokenName = "Ooki {} iToken ({})".format(underlyingSymbol, iTokenSymbol)
+iToken.initialize(loanTokenAddress, iTokenName, iTokenSymbol, {'from': deployer})
+iToken.initializeDomainSeparator({"from": deployer})
+iToken.setDemandCurve(CUI,{"from": deployer})
 
-iToken = Contract.from_abi("iToken", "TBU", LoanTokenLogicStandard.abi)
+iProxy.transferOwnership(TIMELOCK, {'from': deployer})
 
-calldatas.append(CUI.updateParams.encode_input((120e18, 80e18, 100e18, 100e18, 110e18, MINIMAL_RATES.get(iToken.symbol()), MINIMAL_RATES.get(iToken.symbol()))))
 calldatas.append(iToken.setDemandCurve.encode_input(CUI))
+targets.append(iToken.address)
 
 calldatas.append(BZX.setApprovals.encode_input([loanTokenAddress], [1,2]))
-calldatas.append(BZX.setupLoanPoolTWAI.encode_input(iProxy))
+targets.append(BZX.address)
+
+calldatas.append(BZX.setupLoanPoolTWAI.encode_input(iToken))
+targets.append(BZX.address)
 
 calldatas.append(BZX.setLoanPool.encode_input([iToken], [loanTokenAddress]))
-calldatas.append(BZX.setSupportedTokens.encode_input([loanTokenAddress, iToken], [True, True], True))
+targets.append(BZX.address)
 
+calldatas.append(BZX.setSupportedTokens.encode_input([loanTokenAddress, iToken], [True, True], True))
+targets.append(BZX.address)
 
 values = [0] * len(targets)  # empty array
 signatures = [""] * len(targets)  # empty signatures array

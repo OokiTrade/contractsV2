@@ -5,9 +5,9 @@ MINIMAL_RATES = {
 }
 
 loanTokenLogicStandard = Contract.from_abi("loanTokenLogicStandard", address="0x624f7f89414011b276c60ea2337bfba936d1cbbe", abi=LoanTokenLogicStandard.abi)
-loanTokenAddress = TestToken.deploy("crvusd", "crvusd", 18, 1000e18,{"from": deployer}).address
+loanTokenAddress = "0xf71040d20Cc3FFBb28c1abcEF46134C7936624e0"
 
-priceFeedAddress = FixedPriceFeed.deploy({"from": deployer}).address
+priceFeedAddress = "0x986b5E1e1755e3C2440e960477f25201B0a8bbD4"
 PRICE_FEED.setPriceFeed([loanTokenAddress], [priceFeedAddress], {"from": TIMELOCK})
 PRICE_FEED.setDecimals([loanTokenAddress], {"from": TIMELOCK})
 
@@ -21,7 +21,6 @@ iToken.initialize(loanTokenAddress, iTokenName, iTokenSymbol, {'from': deployer}
 iToken.initializeDomainSeparator({"from": deployer})
 iProxy.transferOwnership(TIMELOCK, {'from': deployer})
 
-CUI.updateParams((120e18, 80e18, 100e18, 100e18, 110e18, MINIMAL_RATES.get(iToken.symbol()), MINIMAL_RATES.get(iToken.symbol())), iToken, {"from": TIMELOCK})
 iToken.setDemandCurve(CUI,{"from": deployer})
 
 BZX.setApprovals([loanTokenAddress], [1,2], {'from': TIMELOCK})
