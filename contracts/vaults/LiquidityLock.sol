@@ -82,10 +82,11 @@ contract LiquidityLock is Ownable {
         totalLocked[base] += addedDeposit;
         require(lockCap[base] >= totalLocked[base], "over committed");
         uint256 newBalanceIncreaseAmount = addedDeposit + addedDeposit*aprEarning/1e20;
-        IERC20(base).safeTransferFrom(msg.sender, address(this), addedDeposit);
+        IERC20(base).safeTransferFrom(msg.sender, address(this), increaseDeposit);
         claimableBonus[base] -= newBalanceIncreaseAmount - addedDeposit;
-        claim.iTokenAmount += iToken.mint(address(this), newBalanceIncreaseAmount);
-        claim.endAmountReceived += newBalanceIncreaseAmount;
+        uint256 iTokenMintIncrease = newBalanceIncreaseAmount-realizedInterest;
+        claim.iTokenAmount += iToken.mint(address(this), iTokenMintIncrease); //realizedInterest already is in iToken form
+        claim.endAmountReceived += iTokenMintIncrease; //realizedInterest already is included in this and would be double counted
         claims[claimID] = claim;
 
         emit LockUpdated(claimID, claim.iTokenAmount);
