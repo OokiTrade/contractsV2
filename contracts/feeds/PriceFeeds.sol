@@ -6,9 +6,9 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "@openzeppelin-4.8.3/access/Ownable.sol";
-import "@openzeppelin-4.8.3/token/ERC20/IERC20.sol";
-import "@openzeppelin-4.8.3/token/ERC20/extensions/IERC20Metadata.sol";
+import "@openzeppelin-4.9.3/access/Ownable.sol";
+import "@openzeppelin-4.9.3/token/ERC20/IERC20.sol";
+import "@openzeppelin-4.9.3/token/ERC20/extensions/IERC20Metadata.sol";
 import "contracts/feeds/IPriceFeedsExt.sol";
 import "contracts/governance/PausableGuardian_0_8.sol";
 import "interfaces/IToken.sol";

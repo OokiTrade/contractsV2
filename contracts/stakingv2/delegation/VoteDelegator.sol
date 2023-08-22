@@ -6,7 +6,7 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "@openzeppelin-4.8.3/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin-4.9.3/token/ERC20/utils/SafeERC20.sol";
 import "../../governance/PausableGuardian_0_8.sol";
 import "../../../interfaces/IStakingV2.sol";
 import "./VoteDelegatorState.sol";
