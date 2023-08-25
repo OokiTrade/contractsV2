@@ -17,13 +17,18 @@ contract LoanTokenFactory is PausableGuardian_0_8 {
   // IBZx public constant PROTOCOL = IBZx(0xD8Ee69652E4e4838f2531732a46d1f7F584F0b7f); // mainnet
   // IBZx public constant PROTOCOL = IBZx(0xD154eE4982b83a87b0649E5a7DDA1514812aFE1f); // bsc
   // IBZx public constant PROTOCOL = IBZx(0x059D60a9CEfBc70b9Ea9FFBb9a041581B1dFA6a8); // polygon
-  IBZx public constant PROTOCOL = IBZx(0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB); // arbitrum
+  // IBZx public immutable constant PROTOCOL = IBZx(0x37407F3178ffE07a6cF5C847F8f680FEcf319FAB); // arbitrum
   // IBZx public constant PROTOCOL = IBZx(0xAcedbFd5Bc1fb0dDC948579d4195616c05E74Fd1); // optimism
-  address public constant SIG_HELPER = 0x888B54Ee4eD8D1B699F19F89146842147F16cA89; //Arbitrum
+  IBZx public immutable PROTOCOL;
+  // address public constant SIG_HELPER = 0x888B54Ee4eD8D1B699F19F89146842147F16cA89; //Arbitrum
   address public rateHelper;
   uint256 flashLoanFeePercent;
   address public target;
   address public whitelistedITokenTarget;
+
+  constructor(address _PROTOCOL) {
+    PROTOCOL = IBZx(_PROTOCOL);
+  }
 
   function addNewToken(address loanTokenAddress) external {
     address iToken = _createLoanToken(loanTokenAddress);
