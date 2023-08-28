@@ -51,19 +51,19 @@ contract LoanClosings is LoanClosingsShared {
     return _closeWithSwap(loanId, receiver, swapAmount, returnTokenIsCollateral, loanDataBytes);
   }
 
-  function _checkPermit(address token, bytes memory loanDataBytes) internal {
-    if (loanDataBytes.length != 0) {
-      if (abi.decode(loanDataBytes, (uint128)) & WITH_PERMIT != 0) {
-        (uint128 f, bytes[] memory payload) = abi.decode(loanDataBytes, (uint128, bytes[]));
-        (address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) = abi.decode(
-          payload[2],
-          (address, address, uint256, uint256, uint8, bytes32, bytes32)
-        );
-        require(spender == address(this), "Permit");
-        IERC20Permit(token).permit(owner, spender, value, deadline, v, r, s);
-      }
-    }
-  }
+  // function _checkPermit(address token, bytes memory loanDataBytes) internal {
+  //   if (loanDataBytes.length != 0) {
+  //     if (abi.decode(loanDataBytes, (uint128)) & WITH_PERMIT != 0) {
+  //       (uint128 f, bytes[] memory payload) = abi.decode(loanDataBytes, (uint128, bytes[]));
+  //       (address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s) = abi.decode(
+  //         payload[2],
+  //         (address, address, uint256, uint256, uint8, bytes32, bytes32)
+  //       );
+  //       require(spender == address(this), "Permit");
+  //       IERC20Permit(token).permit(owner, spender, value, deadline, v, r, s);
+  //     }
+  //   }
+  // }
 
   function _closeWithDeposit(
     bytes32 loanId,
@@ -90,7 +90,7 @@ contract LoanClosings is LoanClosingsShared {
 
     LoanParams memory loanParamsLocal = loanParams[loanLocal.loanParamsId];
 
-    _checkPermit(loanParamsLocal.loanToken, loanDataBytes);
+    // _checkPermit(loanParamsLocal.loanToken, loanDataBytes);
 
     uint256 principalPlusInterest = _settleInterest(loanLocal.lender, loanId) + loanLocal.principal;
 

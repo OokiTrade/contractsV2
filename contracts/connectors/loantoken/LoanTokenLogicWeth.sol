@@ -82,7 +82,7 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
     }
 
     if (collateralTokenSent != 0) {
-      loanDataBytes = _checkPermit(collateralTokenAddress, loanDataBytes);
+      // loanDataBytes = _checkPermit(collateralTokenAddress, loanDataBytes);
       _safeTransferFrom(collateralTokenAddress, msg.sender, bZxContract, collateralTokenSent, "28");
     }
 
@@ -92,7 +92,7 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
         _safeTransfer(_loanTokenAddress, bZxContract, loanTokenSent, "29");
         msgValue -= loanTokenSent;
       } else {
-        loanDataBytes = _checkPermit(_loanTokenAddress, loanDataBytes);
+        // loanDataBytes = _checkPermit(_loanTokenAddress, loanDataBytes);
         _safeTransferFrom(_loanTokenAddress, msg.sender, bZxContract, loanTokenSent, "29");
       }
     }
