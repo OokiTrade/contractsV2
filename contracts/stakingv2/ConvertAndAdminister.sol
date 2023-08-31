@@ -8,7 +8,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin-4.9.3/token/ERC20/IERC20.sol";
 import "../../interfaces/IStaking.sol";
-import "../governance/PausableGuardian_0_8.sol";
+import "./PausableGuardian_0_8_old.sol";
 
 interface I3Pool {
   function add_liquidity(uint256[3] memory amounts, uint256 min_mint_amount) external;
@@ -16,7 +16,7 @@ interface I3Pool {
   function get_virtual_price() external view returns (uint256);
 }
 
-contract ConvertAndAdminister is PausableGuardian_0_8 {
+contract ConvertAndAdminister is PausableGuardian_0_8_old {
   address public implementation;
   address public constant crv3 = 0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490;
   address public constant pool3 = 0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7;

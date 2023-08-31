@@ -19,11 +19,6 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
   using InterestOracle for InterestOracle.Observation[256];
   using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
 
-  modifier onlyGuardianOrFactory() {
-    require(msg.sender == factory || msg.sender == getGuardian() || msg.sender == owner(), "unauthorized");
-    _;
-  }
-
   function initialize(address target) external onlyOwner {
     _setTarget(this.setupLoanPoolTWAI.selector, target);
     _setTarget(this.setTWAISettings.selector, target);
@@ -37,12 +32,12 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
     _setTarget(this.migrateLoanParamsList.selector, target); // TODO remove after migration
   }
 
-  function setTWAISettings(uint32 delta, uint32 secondsAgo) external onlyGuardian {
+  function setTWAISettings(uint32 delta, uint32 secondsAgo) external onlyHasRole(GUARDIAN_ROLE) {
     timeDelta = delta;
     twaiLength = secondsAgo;
   }
 
-  function setupLoanPoolTWAI(address pool) external onlyGuardianOrFactory {
+  function setupLoanPoolTWAI(address pool) external onlyHasRole(GUARDIAN_ROLE) {
     require(poolInterestRateObservations[pool][0].blockTimestamp == 0, "already initialized");
 
     if (poolLastUpdateTime[pool] == 0) {
@@ -56,7 +51,7 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
   }
 
   // Deactivates LoanParams for future loans. Active loans using it are unaffected.
-  function disableLoanParams(bytes32[] calldata loanParamsIdList) external onlyGuardian {
+  function disableLoanParams(bytes32[] calldata loanParamsIdList) external onlyHasRole(GUARDIAN_ROLE) {
     for (uint256 i = 0; i < loanParamsIdList.length; i++) {
       loanParams[loanParamsIdList[i]].active = false;
 
@@ -74,7 +69,7 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
     }
   }
 
-  function modifyLoanParams(LoanParams[] calldata loanParamsList) external onlyOwner {
+  function modifyLoanParams(LoanParams[] calldata loanParamsList) external onlyHasRole(GUARDIAN_ROLE) {
     for (uint256 i = 0; i < loanParamsList.length; i++) {
       require(
         supportedTokens[loanParamsList[i].loanToken] &&
@@ -107,7 +102,7 @@ contract LoanSettings is State, InterestHandler, LoanSettingsEvents, PausableGua
     address owner,
     uint256 start,
     uint256 count
-  ) external onlyGuardian {
+  ) external onlyHasRole(GUARDIAN_ROLE) {
     EnumerableBytes32Set.Bytes32Set storage set = userLoanParamSets[owner];
     uint256 end = start + count;
     if (end > set.length()) {

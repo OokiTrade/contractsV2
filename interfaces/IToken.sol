@@ -8,10 +8,10 @@ pragma abicoder v2;
 
 // import "@openzeppelin-3.4.0/token/ERC20/IERC20.sol";
 
-// import "contracts/interfaces/IERC20.sol";
+import "interfaces/IGuardian.sol";
 // SPDX-License-Identifier: Apache-2.0
 
-interface IToken {
+interface IToken is IGuardian{
   // IERC20 specification. hard including it to avoid compatibility of openzeppelin with different libraries
   function totalSupply() external view returns (uint256);
 
@@ -213,4 +213,10 @@ interface IToken {
   function mintWithEther(address receiver) external payable;
 
   function burnToEther(address payable receiver, uint256 burnAmount) external returns (uint256 loanAmountPaid);
+
+  function arbitraryCaller() external view returns (address);
+
+  function bZxContract() external view returns (address);
+
+  function wethToken() external view returns (address);
 }

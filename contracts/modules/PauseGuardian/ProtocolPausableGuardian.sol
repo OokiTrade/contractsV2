@@ -15,9 +15,7 @@ contract ProtocolPausableGuardian is State, PausableGuardian_0_8 {
     _setTarget(this._isPaused.selector, target);
     _setTarget(this.toggleFunctionPause.selector, target);
     _setTarget(this.toggleFunctionUnPause.selector, target);
-    // _setTarget(this.pause.selector, target);
-    // _setTarget(this.unpause.selector, target);
-    _setTarget(this.changeGuardian.selector, target);
-    _setTarget(this.getGuardian.selector, target);
+    _setTarget(this.grantRole.selector, target);
+    _setTarget(this.hasRole.selector, target);
   }
 }

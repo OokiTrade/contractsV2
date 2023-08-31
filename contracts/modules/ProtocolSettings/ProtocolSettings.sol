@@ -24,7 +24,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
     _;
   }
 
-  function initialize(address target) external onlyOwner {
+  function initialize(address target) external onlyHasRole(TIMELOCK_ROLE) {
     _setTarget(this.factory.selector, target);
     _setTarget(this.setFactory.selector, target);
     _setTarget(this.setPriceFeedContract.selector, target);
@@ -55,18 +55,18 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
         */
   }
 
-  function setFactory(address newFactory) external onlyOwner {
+  function setFactory(address newFactory) external onlyHasRole(TIMELOCK_ROLE) {
     factory = newFactory;
   }
 
-  function setPriceFeedContract(address newContract) external onlyOwner {
+  function setPriceFeedContract(address newContract) external onlyHasRole(TIMELOCK_ROLE) {
     address oldContract = priceFeeds;
     priceFeeds = newContract;
 
     emit SetPriceFeedContract(msg.sender, oldContract, newContract);
   }
 
-  function setSwapsImplContract(address newContract) external onlyOwner {
+  function setSwapsImplContract(address newContract) external onlyHasRole(TIMELOCK_ROLE) {
     address oldContract = swapsImpl;
     swapsImpl = newContract;
 
@@ -144,7 +144,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
     }
   }
 
-  function revokeApprovals(address[] calldata addrs) external onlyGuardian {
+  function revokeApprovals(address[] calldata addrs) external onlyHasRole(GUARDIAN_ROLE) {
     bytes memory revokeApprovalsData = abi.encodeWithSelector(
       0x7265766f, // revokeApprovals(address[])
       addrs
@@ -171,7 +171,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
     }
   }
 
-  function setLendingFeePercent(uint256 newValue) external onlyOwner {
+  function setLendingFeePercent(uint256 newValue) external onlyHasRole(TIMELOCK_ROLE) {
     require(newValue <= WEI_PERCENT_PRECISION, "value too high");
     uint256 oldValue = lendingFeePercent;
     lendingFeePercent = newValue;
@@ -179,7 +179,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
     emit SetLendingFeePercent(msg.sender, oldValue, newValue);
   }
 
-  function setTradingFeePercent(uint256 newValue) external onlyOwner {
+  function setTradingFeePercent(uint256 newValue) external onlyHasRole(TIMELOCK_ROLE) {
     require(newValue <= WEI_PERCENT_PRECISION, "value too high");
     uint256 oldValue = tradingFeePercent;
     tradingFeePercent = newValue;
@@ -187,7 +187,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
     emit SetTradingFeePercent(msg.sender, oldValue, newValue);
   }
 
-  function setBorrowingFeePercent(uint256 newValue) external onlyOwner {
+  function setBorrowingFeePercent(uint256 newValue) external onlyHasRole(TIMELOCK_ROLE) {
     require(newValue <= WEI_PERCENT_PRECISION, "value too high");
     uint256 oldValue = borrowingFeePercent;
     borrowingFeePercent = newValue;
@@ -195,7 +195,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
     emit SetBorrowingFeePercent(msg.sender, oldValue, newValue);
   }
 
-  function setAffiliateFeePercent(uint256 newValue) external onlyOwner {
+  function setAffiliateFeePercent(uint256 newValue) external onlyHasRole(TIMELOCK_ROLE) {
     require(newValue <= WEI_PERCENT_PRECISION, "value too high");
     uint256 oldValue = affiliateFeePercent;
     affiliateFeePercent = newValue;
@@ -207,7 +207,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
     address[] calldata loanTokens,
     address[] calldata collateralTokens,
     uint256[] calldata amounts
-  ) external onlyOwner {
+  ) external onlyHasRole(TIMELOCK_ROLE) {
     require(loanTokens.length == collateralTokens.length && loanTokens.length == amounts.length, "count mismatch");
 
     for (uint256 i = 0; i < loanTokens.length; i++) {
@@ -220,22 +220,22 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
     }
   }
 
-  function setMaxDisagreement(uint256 newValue) external onlyOwner {
+  function setMaxDisagreement(uint256 newValue) external onlyHasRole(TIMELOCK_ROLE) {
     maxDisagreement = newValue;
   }
 
-  function setSourceBufferPercent(uint256 newValue) external onlyOwner {
+  function setSourceBufferPercent(uint256 newValue) external onlyHasRole(TIMELOCK_ROLE) {
     sourceBufferPercent = newValue;
   }
 
-  function setMaxSwapSize(uint256 newValue) external onlyOwner {
+  function setMaxSwapSize(uint256 newValue) external onlyHasRole(TIMELOCK_ROLE) {
     uint256 oldValue = maxSwapSize;
     maxSwapSize = newValue;
 
     emit SetMaxSwapSize(msg.sender, oldValue, newValue);
   }
 
-  function setFeesController(address newController) external onlyOwner {
+  function setFeesController(address newController) external onlyHasRole(TIMELOCK_ROLE) {
     address oldController = feesController;
     feesController = newController;
 
@@ -343,7 +343,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
         address receiver,
         uint256 amount)
         external
-        onlyOwner
+        onlyHasRole(TIMELOCK_ROLE)
         returns (address rewardToken, uint256 withdrawAmount)
     {
         rewardToken = vbzrxTokenAddress;
@@ -386,7 +386,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
     function depositProtocolToken(
         uint256 amount)
         external
-        onlyOwner
+        onlyHasRole(TIMELOCK_ROLE)
     {
         protocolTokenHeld = protocolTokenHeld
             .add(amount);
@@ -402,7 +402,7 @@ contract ProtocolSettings is State, ProtocolSettingsEvents, PausableGuardian_0_8
         address[] calldata users,
         uint256[] calldata amounts)
         external
-        onlyOwner
+        onlyHasRole(TIMELOCK_ROLE)
         returns (uint256 totalAmount)
     {
         require(users.length == amounts.length, "count mismatch");

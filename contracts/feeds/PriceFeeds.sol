@@ -19,10 +19,10 @@ contract PriceFeeds is PausableGuardian_0_8 {
   uint256 internal constant WEI_PRECISION = 10**18;
   uint256 internal constant WEI_PERCENT_PRECISION = 10**20;
 
-  modifier onlyFactoryOrOwner() {
-    require(msg.sender == priceFeedFactory || msg.sender == owner(), "unauthorized");
-    _;
-  }
+  // modifier onlyFactoryOrOwner() {
+  //   require(msg.sender == priceFeedFactory || msg.sender == owner(), "unauthorized");
+  //   _;
+  // }
 
   event GlobalPricingPaused(address indexed sender, bool isPaused);
 
@@ -157,7 +157,7 @@ contract PriceFeeds is PausableGuardian_0_8 {
    * Owner functions
    */
 
-  function setPriceFeed(address[] calldata tokens, IPriceFeedsExt[] calldata feeds) external onlyFactoryOrOwner {
+  function setPriceFeed(address[] calldata tokens, IPriceFeedsExt[] calldata feeds) external onlyHasRole(TIMELOCK_ROLE) {
     require(tokens.length == feeds.length, "count mismatch");
 
     for (uint256 i = 0; i < tokens.length; i++) {
@@ -171,7 +171,7 @@ contract PriceFeeds is PausableGuardian_0_8 {
     }
   }
 
-  function setPriceFeedFactory(address newFactory) external onlyOwner {
+  function setPriceFeedFactory(address newFactory) external onlyHasRole(TIMELOCK_ROLE) {
     priceFeedFactory = newFactory;
   }
 

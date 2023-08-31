@@ -84,7 +84,7 @@ contract CurvedInterestRate is PausableGuardian_0_8, ICurvedInterestRate {
     return getInterestRate(_U, a, b, localParam.UR_MAX, localParam.IR_ABSOLUTE_MIN);
   }
 
-  function updateParams(CurveIRParams calldata _curveIRParams, address owner) public onlyGuardian {
+  function updateParams(CurveIRParams calldata _curveIRParams, address owner) public onlyHasRole(GUARDIAN_ROLE) {
     // updateParams((120e18, 80e18, 100e18, 100e18, 110e18, 0.1e18, 0.01e18), ZERO_ADDRESS, {"from": deployer}) # default across all
     require(_curveIRParams.IR2 <= CHECK_IR2, "IR2");
     require(_curveIRParams.UR1 <= CHECK_UR_MAX, "UR1");

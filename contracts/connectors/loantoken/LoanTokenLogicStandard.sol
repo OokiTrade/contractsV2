@@ -23,7 +23,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
 
   //// CONSTANTS ////
 
-  uint256 public constant VERSION = 9;
+  uint256 public constant VERSION = 10;
 
   address public immutable arbitraryCaller;
   address public immutable bZxContract;
@@ -702,7 +702,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     }
   }
 
-  function initialize(address _loanTokenAddress, string memory _name, string memory _symbol) public virtual onlyGuardian {
+  function initialize(address _loanTokenAddress, string memory _name, string memory _symbol) public virtual hasAnyRole(GUARDIAN_ROLE, FACTORY_ROLE) {
     loanTokenAddress = _loanTokenAddress;
 
     name = _name;

@@ -7,9 +7,9 @@
 pragma solidity ^0.8.0;
 
 import "../StakingStateV2.sol";
-import "../../governance/PausableGuardian_0_8.sol";
+import "../PausableGuardian_0_8_old.sol";
 
-contract StakingPausableGuardian is StakingStateV2, PausableGuardian_0_8 {
+contract StakingPausableGuardian is StakingStateV2, PausableGuardian_0_8_old {
   function initialize(address target) external onlyOwner {
     _setTarget(this._isPaused.selector, target);
     _setTarget(this.toggleFunctionPause.selector, target);

@@ -77,7 +77,7 @@ contract FeedFactory is PausableGuardian_0_8 {
     IPriceFeeds(PRICE_FEEDS).setDecimals(tokens);
   }
 
-  function setSpecs(IUniv3Twap.V3Specs calldata newSpecs) external onlyOwner {
+  function setSpecs(IUniv3Twap.V3Specs calldata newSpecs) external onlyHasRole(TIMELOCK_ROLE) {
     specs = newSpecs;
   }
 }

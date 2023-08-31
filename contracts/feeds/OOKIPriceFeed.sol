@@ -12,7 +12,7 @@ import "contracts/governance/PausableGuardian_0_8.sol";
 contract OOKIPriceFeed is PausableGuardian_0_8, IPriceFeedsExt {
   int256 public storedPrice = 2e6; // $0.02
 
-  function updateStoredPrice(int256 price) external onlyGuardian {
+  function updateStoredPrice(int256 price) external onlyHasRole(GUARDIAN_ROLE) {
     storedPrice = price;
   }
 

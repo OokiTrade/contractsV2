@@ -119,11 +119,11 @@ contract FeeExtractAndDistribute_Arbitrum is PausableGuardian_0_8 {
 
   // OnlyOwner functions
 
-  function setTreasuryWallet(address payable _wallet) public onlyOwner {
+  function setTreasuryWallet(address payable _wallet) public onlyHasRole(TIMELOCK_ROLE) {
     treasuryWallet = _wallet;
   }
 
-  function setFeeTokens(address[] calldata tokens) public onlyOwner {
+  function setFeeTokens(address[] calldata tokens) public onlyHasRole(TIMELOCK_ROLE) {
     currentFeeTokens = tokens;
     for (uint256 i = 0; i < tokens.length; i++) {
       IERC20(tokens[i]).approve(address(SWAPS_ROUTER_V2), 0);
@@ -131,12 +131,12 @@ contract FeeExtractAndDistribute_Arbitrum is PausableGuardian_0_8 {
     }
   }
 
-  function setBridgeApproval(address token) public onlyOwner {
+  function setBridgeApproval(address token) public onlyHasRole(TIMELOCK_ROLE) {
     IERC20(token).approve(bridge, 0);
     IERC20(token).approve(bridge, type(uint256).max);
   }
 
-  function setBridge(address _wallet) public onlyOwner {
+  function setBridge(address _wallet) public onlyHasRole(TIMELOCK_ROLE) {
     bridge = _wallet;
   }
 
@@ -156,7 +156,7 @@ contract FeeExtractAndDistribute_Arbitrum is PausableGuardian_0_8 {
     }
   }
 
-  function setSlippage(uint32 newSlippage) external onlyGuardian {
+  function setSlippage(uint32 newSlippage) external onlyHasRole(GUARDIAN_ROLE) {
     slippage = newSlippage;
   }
 
@@ -165,11 +165,11 @@ contract FeeExtractAndDistribute_Arbitrum is PausableGuardian_0_8 {
     bytes[] calldata sigs,
     address[] calldata signers,
     uint256[] calldata powers
-  ) external onlyGuardian {
+  ) external onlyHasRole(GUARDIAN_ROLE) {
     IBridge(bridge).withdraw(wdmsg, sigs, signers, powers);
   }
 
-  function guardianBridge() external onlyGuardian {
+  function guardianBridge() external onlyHasRole(GUARDIAN_ROLE) {
     _bridgeFeesAndDistribute();
   }
 }

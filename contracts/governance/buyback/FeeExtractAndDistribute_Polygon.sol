@@ -141,11 +141,11 @@ contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
 
   // OnlyOwner functions
 
-  function setTreasuryWallet(address payable _wallet) external onlyOwner {
+  function setTreasuryWallet(address payable _wallet) external onlyHasRole(TIMELOCK_ROLE) {
     treasuryWallet = _wallet;
   }
 
-  function setFeeTokens(address[] calldata tokens) external onlyOwner {
+  function setFeeTokens(address[] calldata tokens) external onlyHasRole(TIMELOCK_ROLE) {
     currentFeeTokens = tokens;
     for (uint256 i = 0; i < tokens.length; i++) {
       IERC20(tokens[i]).approve(address(SWAPS_ROUTER_V2), 0);
@@ -153,33 +153,33 @@ contract FeeExtractAndDistribute_Polygon is PausableGuardian_0_8 {
     }
   }
 
-  function setBridgeApproval(address token) external onlyOwner {
+  function setBridgeApproval(address token) external onlyHasRole(TIMELOCK_ROLE) {
     IERC20(token).approve(bridge, 0);
     IERC20(token).approve(bridge, type(uint256).max);
   }
 
-  function setBridge(address _wallet) external onlyOwner {
+  function setBridge(address _wallet) external onlyHasRole(TIMELOCK_ROLE) {
     bridge = _wallet;
   }
 
-  function setBuyBackPercentage(uint256 _percentage) external onlyOwner {
+  function setBuyBackPercentage(uint256 _percentage) external onlyHasRole(TIMELOCK_ROLE) {
     buybackPercentInWEI = _percentage;
   }
 
-    function setSwapRoute(address _asset, address[] memory _route) external onlyGuardian {
+    function setSwapRoute(address _asset, address[] memory _route) external onlyHasRole(GUARDIAN_ROLE) {
         require(_route.length != 0 && _route[0] == _asset && _route[_route.length -1] == USDC);
         swapRoutes[_asset] = _route;
     }
 
-  function setSlippage(uint32 newSlippage) external onlyGuardian {
+  function setSlippage(uint32 newSlippage) external onlyHasRole(GUARDIAN_ROLE) {
     slippage = newSlippage;
   }
 
-    function requestRefund(bytes calldata wdmsg, bytes[] calldata sigs, address[] calldata signers, uint256[] calldata powers) external onlyGuardian {
+    function requestRefund(bytes calldata wdmsg, bytes[] calldata sigs, address[] calldata signers, uint256[] calldata powers) external onlyHasRole(GUARDIAN_ROLE) {
         IBridge(bridge).withdraw(wdmsg, sigs, signers, powers);
     }
 
-  function guardianBridge() external onlyGuardian {
+  function guardianBridge() external onlyHasRole(GUARDIAN_ROLE) {
     _bridgeFees();
   }
 }

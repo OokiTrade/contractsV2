@@ -298,7 +298,7 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
     }
   }
 
-  function setApprovals() external onlyOwner {
+  function setApprovals() external onlyHasRole(TIMELOCK_ROLE) {
     IERC20(DAI).safeApprove(address(CURVE_3POOL), type(uint256).max);
     IERC20(USDC).safeApprove(address(CURVE_3POOL), type(uint256).max);
     IERC20(USDC).safeApprove(BRIDGE, type(uint256).max);
@@ -313,7 +313,7 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
   // path should start with the asset to swap and end with OOKI
   // only one path allowed per asset
   // ex: asset -> WETH -> OOKI
-  function setPaths(address[][] calldata paths) external onlyOwner {
+  function setPaths(address[][] calldata paths) external onlyHasRole(TIMELOCK_ROLE) {
     address[] memory path;
     for (uint256 i = 0; i < paths.length; i++) {
       path = paths[i];
@@ -329,15 +329,15 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
     }
   }
 
-  function setBuybackSettings(uint256 amount) external onlyOwner {
+  function setBuybackSettings(uint256 amount) external onlyHasRole(TIMELOCK_ROLE) {
     buybackPercent = amount;
   }
 
-  function setFeeTokens(address[] calldata tokens) external onlyOwner {
+  function setFeeTokens(address[] calldata tokens) external onlyHasRole(TIMELOCK_ROLE) {
     feeTokens = tokens;
   }
 
-  function setSlippage(uint32 newSlippage) external onlyGuardian {
+  function setSlippage(uint32 newSlippage) external onlyHasRole(GUARDIAN_ROLE) {
     slippage = newSlippage;
   }
 
@@ -346,11 +346,11 @@ contract FeeExtractAndDistribute_ETH is PausableGuardian_0_8 {
     bytes[] calldata sigs,
     address[] calldata signers,
     uint256[] calldata powers
-  ) external onlyGuardian {
+  ) external onlyHasRole(GUARDIAN_ROLE) {
     IBridge(BRIDGE).withdraw(wdmsg, sigs, signers, powers);
   }
 
-  function guardianBridge() external onlyGuardian {
+  function guardianBridge() external onlyHasRole(GUARDIAN_ROLE) {
     _bridgeFeesToPolygon(IERC20(USDC).balanceOf(address(this)));
   }
 }

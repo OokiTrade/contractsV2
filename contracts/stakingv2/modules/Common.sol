@@ -7,10 +7,10 @@
 pragma solidity ^0.8.0;
 
 import "../StakingStateV2.sol";
-import "../../governance/PausableGuardian_0_8.sol";
+import "../PausableGuardian_0_8_old.sol";
 import "../../utils/MathUtil.sol";
 
-contract Common is StakingStateV2, PausableGuardian_0_8 {
+contract Common is StakingStateV2, PausableGuardian_0_8_old {
   using MathUtil for uint256;
 
   function _getProposalState() internal view returns (ProposalState memory) {
