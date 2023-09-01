@@ -32,6 +32,9 @@ calldatas.append(BZX.setLoanPool.encode_input([iToken], [iToken.loanTokenAddress
 targets.append(BZX.address)
 calldatas.append(BZX.setSupportedTokens.encode_input([iToken.loanTokenAddress()], [True], True))
 
+targets.append(BZRX.address)
+calldatas.append(BZRX.approve.encode_input(DAO_FUNDING, 45000000e18))
+
 values = [0] * len(targets)  # empty array
 signatures = [""] * len(targets)  # empty signatures array
 
@@ -39,8 +42,6 @@ GUARDIAN_MULTISIG = "0x9B43a385E08EE3e4b402D4312dABD11296d09E93"
 TEAM_VOTING_MULTISIG = "0x02c6819c2cb8519ab72fd1204a8a0992b5050c6e"
 
 # Make proposal
-OOKI.approve(STAKING, 2**256-1, {'from': '0x5a52E96BAcdaBb82fd05763E25335261B270Efcb'})
-STAKING.stake([OOKI], [50e25], {'from': '0x5a52E96BAcdaBb82fd05763E25335261B270Efcb'})
 call = DAO.propose(targets, values, signatures, calldatas, description, {"from": '0x5a52E96BAcdaBb82fd05763E25335261B270Efcb'})
 print("call", call)
 

@@ -86,11 +86,10 @@ def GUARDIAN_MULTISIG():
 def INFRASTRUCTURE_MULTISIG():
     return "0x2a599cEba64CAb8C88549c2c7314ea02A161fC70"
 
-def testGovernanceProposal(requireMainnetFork, accounts, DAO, TIMELOCK, iUSDC, PRICE_FEED, interface, INFRASTRUCTURE_MULTISIG, USDC, USDT, crvUSD,icrvUSD, BZX, iUSDT, TokenRegistry):
+def testGovernanceProposal(requireMainnetFork, accounts, DAO, TIMELOCK, iUSDC, PRICE_FEED, interface, INFRASTRUCTURE_MULTISIG, USDC, USDT, crvUSD,icrvUSD, BZX, iUSDT, TokenRegistry, OOKI):
     proposerAddress = "0x02c6819c2cb8519ab72fd1204a8a0992b5050c6e"
     voter1 = "0x9B43a385E08EE3e4b402D4312dABD11296d09E93"
     voter2 = "0xE9d5472Cc0107938bBcaa630c2e4797F75A2D382"
-    voter3 = "0x5a52E96BAcdaBb82fd05763E25335261B270Efcb"
 
     exec(open("./scripts/dao-proposals/OOIP-20-iCRVUSD/proposal.py").read())
 
@@ -109,7 +108,7 @@ def testGovernanceProposal(requireMainnetFork, accounts, DAO, TIMELOCK, iUSDC, P
     tx = DAO.castVote(id, 1, {"from": proposerAddress})
     tx = DAO.castVote(id, 1, {"from": voter1})
     tx = DAO.castVote(id, 1, {"from": voter2})
-    tx = DAO.castVote(id, 1, {"from": voter3})
+
 
     assert DAO.state.call(id) == 1
 
