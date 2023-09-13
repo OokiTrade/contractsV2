@@ -4,9 +4,8 @@
  */
 
 // SPDX-License-Identifier: Apache-2.0
-pragma solidity >=0.5.17 <0.9.0;
+pragma solidity ^0.8.0;
 
-//0xd061D61a4d941c39E5453435B6345Dc261C2fcE0 eth mainnet
-interface ICurveMinter {
-  function mint(address _addr) external;
+interface IPriceFeedHelper {
+    function latestAnswer(address token) external view returns(uint256);
 }

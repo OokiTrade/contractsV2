@@ -12,7 +12,7 @@ import "../../../interfaces/IBZx.sol";
 import "../../../interfaces/IPriceFeeds.sol";
 import "../../mixins/Flags.sol";
 import "../../interfaces/draft-IERC20Permit.sol";
-import "../../interfaces/IERC20Detailed.sol";
+import "../../interfaces/IERC20Detailed.sol"; // TODO replace with IERC20Metadata
 import "@openzeppelin-2.5.0/token/ERC20/SafeERC20.sol";
 
 contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
