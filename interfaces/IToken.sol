@@ -152,4 +152,6 @@ interface IToken {
     function mintWithEther(address receiver) external payable;
 
     function burnToEther(address payable receiver,uint256 burnAmount) external returns (uint256 loanAmountPaid);
+
+    function consume(uint256 consumeAmount) external;
 }

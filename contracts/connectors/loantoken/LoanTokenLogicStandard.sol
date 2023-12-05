@@ -824,7 +824,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         view
         returns (uint256)
     {
-        return IERC20(loanTokenAddress).balanceOf(address(this));
+        return internalBalanceOf;
     }
 
     function _nextBorrowInterestRate(
@@ -892,6 +892,18 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         if (totalSupply == 0) {
             totalSupply = _underlyingBalance()
                 .add(totalBorrow);
+        }
+    }
+
+    function consume(uint256 consumeAmount) public onlyGuardian {
+        uint256 currentBalanceOf = IERC20(loanTokenAddress).balanceOf(address(this));
+        uint256 newBalanceOf = consumeAmount + internalBalanceOf;
+        if (newBalanceOf >= currentBalanceOf) {
+            // consume everything
+            internalBalanceOf = currentBalanceOf;
+        } else {
+            // consume only specific amount 
+            internalBalanceOf = newBalanceOf;
         }
     }
 
