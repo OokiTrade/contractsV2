@@ -110,6 +110,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
 
         if (loanAmountPaid != 0) {
             _safeTransfer(loanTokenAddress, receiver, loanAmountPaid, "5");
+            internalBalanceOf = internalBalanceOf.sub(loanAmountPaid);
         }
     }
 
@@ -397,6 +398,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
             require(msg.value == depositAmount, "18");
             IWeth(wethToken).deposit.value(depositAmount)();
         }
+        internalBalanceOf = internalBalanceOf.add(depositAmount);
 
         _mint(receiver, mintAmount);
         emit Mint(receiver, mintAmount, depositAmount, currentPrice);
@@ -896,6 +898,10 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     }
 
     function consume(uint256 consumeAmount) public onlyGuardian {
+        _consume(consumeAmount);
+    }
+
+    function _consume(uint256 consumeAmount) internal {
         uint256 currentBalanceOf = IERC20(loanTokenAddress).balanceOf(address(this));
         uint256 newBalanceOf = consumeAmount + internalBalanceOf;
         if (newBalanceOf >= currentBalanceOf) {
