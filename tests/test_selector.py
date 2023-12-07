@@ -2,7 +2,6 @@ from brownie import *
 from eth_abi import encode_abi, is_encodable, encode_single
 from eth_abi.packed import encode_single_packed, encode_abi_packed
 from hexbytes import HexBytes
-from ethereum.abi import decode_abi
 import pytest
 timelock = '0xfedC4dD5247B93feb41e899A09C44cFaBec29Cbc'
 impersonate = '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266'
