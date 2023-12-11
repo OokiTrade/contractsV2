@@ -9,11 +9,10 @@ pragma experimental ABIEncoderV2;
 import "../../core/State.sol";
 import "../../events/LoanOpeningsEvents.sol";
 import "../../mixins/VaultController.sol";
-import "../../mixins/InterestHandler.sol";
 import "../../swaps/SwapsUser.sol";
 import "../../governance/PausableGuardian.sol";
 
-contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHandler, SwapsUser, PausableGuardian {
+contract LoanOpenings is State, LoanOpeningsEvents, VaultController, SwapsUser, PausableGuardian {
     function initialize(address target) external onlyOwner {
         
          // TODO remove after migration

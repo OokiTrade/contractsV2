@@ -208,11 +208,6 @@ interface StakingInterface {
         uint proposalCount)
         external
         returns (uint);
-    
-    function totalSupplyStored()
-        external
-        view
-        returns (uint256 supply);
 }
 
 

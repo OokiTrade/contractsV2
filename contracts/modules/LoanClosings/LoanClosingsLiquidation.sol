@@ -2,6 +2,7 @@ pragma solidity 0.5.17;
 
 import "./LoanClosingsShared.sol";
 import "../../mixins/LiquidationHelper.sol";
+import "../../../interfaces/IToken.sol";
 
 contract LoanClosingsLiquidation is LoanClosingsShared {
 
@@ -101,6 +102,7 @@ contract LoanClosingsLiquidation is LoanClosingsShared {
             loanLocal.lender,
             loanCloseAmount
         );
+        IToken(loanLocal.lender).consume(loanCloseAmount);
 
         seizedToken = loanParamsLocal.collateralToken;
 

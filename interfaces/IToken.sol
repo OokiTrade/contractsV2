@@ -27,6 +27,8 @@ interface IToken {
 
     function tokenPrice() external view returns (uint256);
 
+    function internalBalanceOf() external view returns(uint256);
+
     function mint(address receiver, uint256 depositAmount)
         external
         returns (uint256);

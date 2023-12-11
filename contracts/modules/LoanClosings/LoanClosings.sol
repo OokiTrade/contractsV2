@@ -8,6 +8,7 @@ pragma experimental ABIEncoderV2;
 
 import "./LoanClosingsShared.sol";
 import "../../interfaces/draft-IERC20Permit.sol";
+import "../../../interfaces/IToken.sol";
 
 contract LoanClosings is LoanClosingsShared {
 
@@ -128,6 +129,7 @@ contract LoanClosings is LoanClosingsShared {
                 loanCloseAmount
             );
         }
+        IToken(loanLocal.lender).consume(loanCloseAmount);
 
         if (loanCloseAmount == principalPlusInterest) {
             // collateral is only withdrawn if the loan is closed in full
@@ -215,7 +217,8 @@ contract LoanClosings is LoanClosingsShared {
                 loanCloseAmount
             );
         }
-
+        IToken(loanLocal.lender).consume(loanCloseAmount);
+        
         if (usedCollateral != 0) {
             loanLocal.collateral = loanLocal.collateral
                 .sub(usedCollateral);

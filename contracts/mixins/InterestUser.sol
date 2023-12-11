@@ -9,7 +9,6 @@ pragma solidity 0.5.17;
 import "../core/State.sol";
 import "../mixins/VaultController.sol";
 import "./FeesHelper.sol";
-import "../../interfaces/IToken.sol";
 
 
 contract InterestUser is State, VaultController, FeesHelper {
@@ -67,13 +66,12 @@ contract InterestUser is State, VaultController, FeesHelper {
             lendingFee
         );
 
-        interestOwedNow = interestOwedNow.sub(lendingFee);
         // transfers the interest to the lender, less the interest fee
         vaultWithdraw(
             interestToken,
             lender,
             interestOwedNow
+                .sub(lendingFee)
         );
-        IToken(lender).consume(interestOwedNow);
     }
 }
