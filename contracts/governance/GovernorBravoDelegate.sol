@@ -181,8 +181,8 @@ contract GovernorBravoDelegate is GovernorBravoDelegateStorageV1, GovernorBravoE
       * @return The number of votes in support of a proposal required in order for a quorum to be reached and for a vote to succeed
       */
     function quorumVotes() public view returns (uint256) {
-        uint256 totalSupply = staking.totalSupplyStored();
-
+        uint256 totalSupply = IERC20(0x0De05F6447ab4D22c8827449EE4bA2D5C288379B) // OOKI
+            .totalSupply();
         return totalSupply * quorumPercentage / 1e20;
     }
 

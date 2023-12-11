@@ -240,7 +240,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         view
         returns (uint256) // price
     {
-        return _tokenPrice(_totalAssetSupply(totalAssetBorrow()));
+        return _tokenPrice(_totalAssetSupply());
     }
 
     // the current rate being paid by borrowers in active loans
@@ -280,7 +280,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         return _nextSupplyInterestRate(
             _nextBorrowInterestRate(assetBorrow, 0, poolTWAI()),
             assetBorrow,
-            _totalAssetSupply(assetBorrow)
+            _totalAssetSupply()
         );
     }
 
@@ -292,7 +292,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         returns (uint256)
     {
         uint256 assetBorrow = totalAssetBorrow();
-        uint256 totalSupply = _totalAssetSupply(assetBorrow);
+        uint256 totalSupply = _totalAssetSupply();
 
         if(supplyAmount >= 0)
             totalSupply = totalSupply.add(uint256(supplyAmount));
@@ -331,7 +331,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         view
         returns (uint256)
     {
-        return _totalAssetSupply(totalAssetBorrow());
+        return _totalAssetSupply();
     }
 
     function poolLastInterestRate()
@@ -370,7 +370,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         uint256 totalBorrow = totalAssetBorrow();
         return _utilizationRate(
             totalBorrow,
-            _totalAssetSupply(totalBorrow)
+            _totalAssetSupply()
         );
     }
 
@@ -387,7 +387,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
 
         _settleInterest(0);
 
-        uint256 currentPrice = _tokenPrice(_totalAssetSupply(_totalAssetBorrowStored()));
+        uint256 currentPrice = _tokenPrice(_totalAssetSupply());
         mintAmount = depositAmount
             .mul(WEI_PRECISION)
             .div(currentPrice);
@@ -419,7 +419,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
             burnAmount = balanceOf(msg.sender);
         }
 
-        uint256 currentPrice = _tokenPrice(_totalAssetSupply(_totalAssetBorrowStored()));
+        uint256 currentPrice = _tokenPrice(_totalAssetSupply());
 
         uint256 loanAmountOwed = burnAmount
             .mul(currentPrice)
@@ -816,7 +816,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
 	        totalBorrow,
             newBorrowNotYetRealized,
             lastIR,
-            _totalAssetSupply(totalBorrow)
+            _totalAssetSupply()
         );
     }
 
@@ -884,16 +884,14 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
             .div(initialMargin);
     }
 
-    function _totalAssetSupply(
-        uint256 totalBorrow)
+    function _totalAssetSupply()
         internal
         view
         returns (uint256 totalSupply)
     {
         totalSupply = _flTotalAssetSupply; // temporary locked totalAssetSupply during a flash loan transaction
         if (totalSupply == 0) {
-            totalSupply = _underlyingBalance()
-                .add(totalBorrow);
+            totalSupply = _underlyingBalance();
         }
     }
 
