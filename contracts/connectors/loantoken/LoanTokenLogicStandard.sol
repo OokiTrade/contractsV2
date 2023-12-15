@@ -907,7 +907,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
 
     function _consume(uint256 consumeAmount) internal {
         uint256 currentBalanceOf = IERC20(loanTokenAddress).balanceOf(address(this));
-        uint256 newBalanceOf = consumeAmount + internalBalanceOf;
+        uint256 newBalanceOf = consumeAmount.add(internalBalanceOf);
         if (newBalanceOf >= currentBalanceOf) {
             // consume everything
             internalBalanceOf = currentBalanceOf;
