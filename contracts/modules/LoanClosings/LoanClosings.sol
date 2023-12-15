@@ -128,7 +128,7 @@ contract LoanClosings is LoanClosingsShared {
                 loanLocal.lender,
                 loanCloseAmount
             );
-        }       
+        }
 
         if (loanCloseAmount == principalPlusInterest) {
             // collateral is only withdrawn if the loan is closed in full
@@ -217,7 +217,7 @@ contract LoanClosings is LoanClosingsShared {
                 loanCloseAmount
             );
         }
-        
+
         if (usedCollateral != 0) {
             loanLocal.collateral = loanLocal.collateral
                 .sub(usedCollateral);
