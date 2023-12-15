@@ -102,7 +102,6 @@ contract LoanClosingsLiquidation is LoanClosingsShared {
             loanLocal.lender,
             loanCloseAmount
         );
-        
 
         seizedToken = loanParamsLocal.collateralToken;
 
@@ -133,7 +132,7 @@ contract LoanClosingsLiquidation is LoanClosingsShared {
             loanParamsLocal.loanToken,
             loanCloseAmount
         );
-        
+
         IToken(loanLocal.lender).consume(loanCloseAmount);
     }
 }
