@@ -129,7 +129,7 @@ contract LoanClosings is LoanClosingsShared {
                 loanCloseAmount
             );
         }
-        IToken(loanLocal.lender).consume(loanCloseAmount);
+        
 
         if (loanCloseAmount == principalPlusInterest) {
             // collateral is only withdrawn if the loan is closed in full
@@ -152,6 +152,7 @@ contract LoanClosings is LoanClosingsShared {
             0, // collateralToLoanSwapRate
             CloseTypes.Deposit
         );
+        IToken(loanLocal.lender).consume(loanCloseAmount);
     }
 
     function _closeWithSwap(
@@ -217,7 +218,7 @@ contract LoanClosings is LoanClosingsShared {
                 loanCloseAmount
             );
         }
-        IToken(loanLocal.lender).consume(loanCloseAmount);
+        
         
         if (usedCollateral != 0) {
             loanLocal.collateral = loanLocal.collateral
@@ -244,6 +245,7 @@ contract LoanClosings is LoanClosingsShared {
             collateralToLoanSwapRate,
             CloseTypes.Swap
         );
+        IToken(loanLocal.lender).consume(loanCloseAmount);
     }
 
     function _updateDepositAmount(
