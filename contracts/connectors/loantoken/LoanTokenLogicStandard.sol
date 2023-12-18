@@ -897,7 +897,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     }
 
     modifier onlyAuthorized {
-        require(msg.sender == getGuardian() || msg.sender == owner() || msg.sender == bZxContract, "unauthorized");
+        require(msg.sender == bZxContract || msg.sender == getGuardian() || msg.sender == owner(), "unauthorized");
         _;
     }
 
