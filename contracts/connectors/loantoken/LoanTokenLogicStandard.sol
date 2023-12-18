@@ -110,7 +110,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
 
         if (loanAmountPaid != 0) {
             _safeTransfer(loanTokenAddress, receiver, loanAmountPaid, "5");
-            internalBalanceOf = internalBalanceOf.sub(loanAmountPaid);
         }
     }
 
@@ -398,7 +397,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
             require(msg.value == depositAmount, "18");
             IWeth(wethToken).deposit.value(depositAmount)();
         }
-        internalBalanceOf = internalBalanceOf.add(depositAmount);
 
         _mint(receiver, mintAmount);
         emit Mint(receiver, mintAmount, depositAmount, currentPrice);
@@ -424,7 +422,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         uint256 loanAmountOwed = burnAmount
             .mul(currentPrice)
             .div(WEI_PRECISION);
-        uint256 loanAmountAvailableInContract = internalBalanceOf;
+        uint256 loanAmountAvailableInContract = _underlyingBalance();
 
         loanAmountPaid = loanAmountOwed;
         require(loanAmountPaid <= loanAmountAvailableInContract, "37");
@@ -622,7 +620,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         internal
         returns (IBZx.LoanOpenData memory)
     {
-        require (sentAmounts[1] <= internalBalanceOf && // newPrincipal
+        require (sentAmounts[1] <= _underlyingBalance() && // newPrincipal
             sentAddresses[1] != address(0), // borrower
             "24"
         );
@@ -659,7 +657,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         if (leverageAmount != 0) {
             leverageAmount = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, leverageAmount);
         }
-        internalBalanceOf = internalBalanceOf.sub(sentAmounts[1]);
+
         return IBZx(bZxContract).borrowOrTradeFromPool.value(msgValue)(
             collateralTokenAddress,
             loanId,
@@ -739,6 +737,8 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
             abi.encodeWithSelector(IERC20(token).transfer.selector, to, amount),
             errorMsg
         );
+
+        _modifyBalances(token, to, amount);
     }
 
     function _safeTransferFrom(
@@ -754,6 +754,18 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
             abi.encodeWithSelector(IERC20(token).transferFrom.selector, from, to, amount),
             errorMsg
         );
+
+        _modifyBalances(token, to, amount);
+    }
+
+    function _modifyBalances(address token, address to, uint256 amount) internal {
+        if (token == loanTokenAddress) {
+            if (to != address(this)) {
+                internalBalanceOf = internalBalanceOf.sub(amount);
+            } else {
+                internalBalanceOf = internalBalanceOf.add(amount);
+            }
+        }
     }
 
     function _checkPermit(address token, bytes memory loanDataBytes) internal returns (bytes memory) {
@@ -892,7 +904,8 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     {
         totalSupply = _flTotalAssetSupply; // temporary locked totalAssetSupply during a flash loan transaction
         if (totalSupply == 0) {
-            totalSupply = internalBalanceOf.add(totalBorrow);
+            totalSupply = _underlyingBalance()
+                .add(totalBorrow);
         }
     }
 
