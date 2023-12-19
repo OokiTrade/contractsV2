@@ -422,7 +422,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         uint256 loanAmountOwed = burnAmount
             .mul(currentPrice)
             .div(WEI_PRECISION);
-        uint256 loanAmountAvailableInContract = _underlyingBalance();
+        uint256 loanAmountAvailableInContract = internalBalanceOf;
 
         loanAmountPaid = loanAmountOwed;
         require(loanAmountPaid <= loanAmountAvailableInContract, "37");
@@ -620,7 +620,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         internal
         returns (IBZx.LoanOpenData memory)
     {
-        require (sentAmounts[1] <= _underlyingBalance() && // newPrincipal
+        require (sentAmounts[1] <= internalBalanceOf && // newPrincipal
             sentAddresses[1] != address(0), // borrower
             "24"
         );
@@ -658,6 +658,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
             leverageAmount = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, leverageAmount);
         }
 
+        internalBalanceOf = internalBalanceOf.sub(sentAmounts[1]);
         return IBZx(bZxContract).borrowOrTradeFromPool.value(msgValue)(
             collateralTokenAddress,
             loanId,
@@ -904,8 +905,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     {
         totalSupply = _flTotalAssetSupply; // temporary locked totalAssetSupply during a flash loan transaction
         if (totalSupply == 0) {
-            totalSupply = _underlyingBalance()
-                .add(totalBorrow);
+            totalSupply = internalBalanceOf.add(totalBorrow);
         }
     }
 
