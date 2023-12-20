@@ -10,30 +10,36 @@ tx_list = []
 
 for l in list:
     iToken = Contract.from_abi("LoanTokenLogicStandard", address=l[0], abi=interface.IToken.abi)
-
-    if (iToken.address.lower() == "0x05d5160cbc6714533ef44CEd6dd32112d56Ad7da".lower()):
-        #Under GUARDIAN_MULTISIG
+    if (l[1] == OOKI.address):
         print("iOOKI will be upgraded by GUARDIAN")
         continue
     if (iToken == iETH):
         tx_list.append([iToken, iToken.setTarget.encode_input(itokenImplWeth)])
+        #iToken.setTarget(itokenImplWeth,{"from": TIMELOCK})
     else:
         tx_list.append([iToken, iToken.setTarget.encode_input(itokenImpl)])
+        #iToken.setTarget(itokenImpl,{"from": TIMELOCK})
+    tx_list.append([iToken, iToken.consume.encode_input(2**256-1)])
+    #iToken.consume(2**256-1, {"from": TIMELOCK})
 
-iTokens = [item[0] for item in list]
-tx_list.append([BZX, BZX.setSupportedTokens.encode_input(iTokens, [True] * len(iTokens), True)])
+tx_list.append([BZX, BZX.replaceContract.encode_input(lcl.address)])
+#BZX.replaceContract(lcl,{"from": TIMELOCK})
+tx_list.append([BZX, BZX.replaceContract.encode_input(lc.address)])
+#BZX.replaceContract(lc,{"from": TIMELOCK})
+
+tx_list.append([BZX, BZX.setPriceFeedContract.encode_input(price_feed.address)])
+#BZX.setPriceFeedContract(price_feed, {"from": TIMELOCK})
+tx_list.append([DAO, DAO.__setQuorumPercentage.encode_input(DAO.MIN_QUORUM_PERCENTAGE())])
+#DAO.__setQuorumPercentage(DAO.MIN_QUORUM_PERCENTAGE(), {'from': TIMELOCK})
+
 
 for tx in tx_list:
     targets.append(tx[0].address)
     calldatas.append(tx[1])
 
-##ToDo: disable iLRC
-##ToDo: reinit iOOKI
-
 values = [0] * len(targets)  # empty array
 signatures = [""] * len(targets)  # empty signatures array
 
-
 # Make proposal
-call = DAO.propose(targets, values, signatures, calldatas, description, {'from': TEAM_VOTING_MULTISIG, "required_confs": 1})
+call = DAO.propose(targets, values, signatures, calldatas, description, {'from': "0xE9d5472Cc0107938bBcaa630c2e4797F75A2D382"})
 print("call", call)
