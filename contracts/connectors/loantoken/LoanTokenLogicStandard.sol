@@ -658,7 +658,6 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
             leverageAmount = SafeMath.div(WEI_PRECISION * WEI_PERCENT_PRECISION, leverageAmount);
         }
 
-        internalBalanceOf = internalBalanceOf.sub(sentAmounts[1]);
         return IBZx(bZxContract).borrowOrTradeFromPool.value(msgValue)(
             collateralTokenAddress,
             loanId,
