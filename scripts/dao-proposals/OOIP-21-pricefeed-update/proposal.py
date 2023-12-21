@@ -31,7 +31,7 @@ tx_list.append([BZX, BZX.setPriceFeedContract.encode_input(price_feed.address)])
 #BZX.setPriceFeedContract(price_feed, {"from": TIMELOCK})
 tx_list.append([DAO, DAO.__setQuorumPercentage.encode_input(DAO.MIN_QUORUM_PERCENTAGE())])
 #DAO.__setQuorumPercentage(DAO.MIN_QUORUM_PERCENTAGE(), {'from': TIMELOCK})
-tx_list.append(BZRX, BZRX.approve.encode_input(DAO_FUNDING, 45000000e18))
+tx_list.append([BZRX, BZRX.approve.encode_input(DAO_FUNDING, 45000000e18)])
 
 for tx in tx_list:
     targets.append(tx[0].address)
