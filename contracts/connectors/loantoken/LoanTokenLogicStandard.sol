@@ -989,6 +989,9 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
 
         initialPrice = WEI_PRECISION; // starting price of 1
 
+        if(IERC20(_loanTokenAddress).allowance(bZxContract) != 0)
+            IERC20(_loanTokenAddress).safeApprove(bZxContract, 0);
+
         IERC20(_loanTokenAddress).safeApprove(bZxContract, uint256(-1));
     }
 
