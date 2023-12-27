@@ -42,6 +42,7 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
 
         if (loanAmountPaid != 0) {
             IWethERC20(wethToken).withdraw(loanAmountPaid);
+            _modifyBalances(wethToken, address(this), receiver, loanAmountPaid);
             Address.sendValue(
                 receiver,
                 loanAmountPaid
@@ -82,6 +83,7 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
 
         if (withdrawalAmount != 0) { // withdrawOnOpen == true
             IWethERC20(_wethToken).withdraw(withdrawalAmount);
+            _modifyBalances(_wethToken, address(this), receiver, withdrawalAmount);
             Address.sendValue(
                 address(uint160(receiver)),
                 withdrawalAmount
