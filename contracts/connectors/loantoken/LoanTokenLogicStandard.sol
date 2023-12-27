@@ -732,13 +732,13 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         string memory errorMsg)
         internal
     {
+        _modifyBalances(token, address(this), to, amount);
+        
         _callOptionalReturn(
             token,
             abi.encodeWithSelector(IERC20(token).transfer.selector, to, amount),
             errorMsg
         );
-
-        _modifyBalances(token, to, amount);
     }
 
     function _safeTransferFrom(
@@ -749,20 +749,20 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         string memory errorMsg)
         internal
     {
+        _modifyBalances(token, from, to, amount);
+
         _callOptionalReturn(
             token,
             abi.encodeWithSelector(IERC20(token).transferFrom.selector, from, to, amount),
             errorMsg
         );
-
-        _modifyBalances(token, to, amount);
     }
 
-    function _modifyBalances(address token, address to, uint256 amount) internal {
+    function _modifyBalances(address token, address from, address to, uint256 amount) internal {
         if (token == loanTokenAddress) {
-            if (to != address(this)) {
+            if (from == address(this) && to != address(this)) {
                 internalBalanceOf = internalBalanceOf.sub(amount);
-            } else {
+            } else if (from != address(this) && to == address(this)) {
                 internalBalanceOf = internalBalanceOf.add(amount);
             }
         }
