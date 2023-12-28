@@ -396,6 +396,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         } else {
             require(msg.value == depositAmount, "18");
             IWeth(wethToken).deposit.value(depositAmount)();
+            _modifyBalances(wethToken, msg.sender, address(this), depositAmount);
         }
 
         _mint(receiver, mintAmount);
