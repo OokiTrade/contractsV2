@@ -113,7 +113,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         }
     }
 
-    function flashBorrow(
+function flashBorrow(
         uint256 borrowAmount,
         address borrower,
         address target,
@@ -131,7 +131,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
 
         // save before balances
         uint256 beforeEtherBalance = address(this).balance.sub(msg.value);
-        uint256 beforeAssetsBalance = _underlyingBalance()
+        uint256 beforeAssetsBalance = internalBalanceOf
             .add(_totalAssetBorrowStored());
 
         // lock totalAssetSupply for duration of flash loan
@@ -161,18 +161,20 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
 
         // unlock totalAssetSupply
         _flTotalAssetSupply = 0;
-		
-		// pay flash borrow fees
+  
+        // pay flash borrow fees
         IBZx(bZxContract).payFlashBorrowFees(
             borrower,
             borrowAmount,
             flashBorrowFeePercent
         );
-	
+ 
+        _consume(borrowAmount);
+
         // verifies return of flash loan
         require(
             address(this).balance >= beforeEtherBalance &&
-            _underlyingBalance()
+            internalBalanceOf
                 .add(_totalAssetBorrowStored()) >= beforeAssetsBalance,
             "40"
         );
