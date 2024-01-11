@@ -20,6 +20,6 @@ itokenImplWeth = LoanTokenLogicWeth.deploy({"from": accounts[0]});
 tickMathV1 = TickMathV1.at("0xae0886d167ccf942c4dad960f5cfc9c3c7a2816e")
 volumeTracker = VolumeTracker.at("0xff00e3da71d76f85dcaf9946a747463c8bfa153f")
 liquidationHelper = LiquidationHelper.at("0xcfe69c933a941613f752ab0e255af0ef20cb958b")
-
+fbh = FlashBorrowFeesHelper.deploy({'from': accounts[0]})
 lcl= LoanClosingsLiquidation.deploy({"from": accounts[0]})
 lc = LoanClosings.deploy({"from": accounts[0]})

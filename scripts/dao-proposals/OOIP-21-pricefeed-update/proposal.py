@@ -26,7 +26,7 @@ tx_list.append([BZX, BZX.replaceContract.encode_input(lcl.address)])
 #BZX.replaceContract(lcl,{"from": TIMELOCK})
 tx_list.append([BZX, BZX.replaceContract.encode_input(lc.address)])
 #BZX.replaceContract(lc,{"from": TIMELOCK})
-
+tx_list.append([BZX, BZX.replaceContract.encode_input(fbh.address)])
 tx_list.append([BZX, BZX.setPriceFeedContract.encode_input(price_feed.address)])
 #BZX.setPriceFeedContract(price_feed, {"from": TIMELOCK})
 tx_list.append([DAO, DAO.__setQuorumPercentage.encode_input(DAO.MIN_QUORUM_PERCENTAGE())])
