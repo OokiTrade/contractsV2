@@ -170,7 +170,7 @@ contract PriceFeeds is Constants, PausableGuardian {
                     .div(WEI_PERCENT_PRECISION)
                 );
 
-        maxDrawdown = collateralAmount > combined ?
+        maxDrawdown = collateralAmount > combined && combined != 0 ?
             collateralAmount - combined :
             0;
     }
