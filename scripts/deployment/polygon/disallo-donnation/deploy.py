@@ -13,10 +13,10 @@ price_feed = Contract.from_abi("PriceFeeds", address="0x7FCea20C7136649FeFDE497e
 # price_feed.setPriceFeed(tokenList, priceFeedList, {"from": deployer})
 # price_feed.setDecimals(tokenList, {'from': deployer})
 
-itokenImpl = Contract.from_abi("LoanTokenLogicStandard", address="0x528D205b9521a5e5193b3da9be940c6A18D32a4d", abi=LoanTokenLogicStandard.abi)
-# itokenImpl = LoanTokenLogicStandard.deploy({"from": deployer});
-itokenImplWeth = Contract.from_abi("LoanTokenLogicWeth", address="0x9B4dC5A53331c8d300Ed75D84525D824D38c028avo", abi=LoanTokenLogicWeth.abi)
-#itokenImplWeth = LoanTokenLogicWeth.deploy({"from": deployer});
+itokenImpl = Contract.from_abi("LoanTokenLogicStandard", address="0x307682D3cBc3F94345b8Ba8F3168fd883D68af5c", abi=LoanTokenLogicStandard.abi)
+# itokenImpl = LoanTokenLogicStandard.deploy({"from": deployer})
+itokenImplWeth = Contract.from_abi("LoanTokenLogicWeth", address="0xaECAD4373Dc7fD95c37cb56446B8DD9dD1394811", abi=LoanTokenLogicWeth.abi)
+#itokenImplWeth = LoanTokenLogicWeth.deploy({"from": deployer})
 
 # tickMathV1 = Contract.from_abi("TickMathV1", address="0x6796A1F9682a1Cf4A83D237A57A8F9eBEEC6e4F2", abi=TickMathV1.abi)
 tickMathV1 = TickMathV1.at("0x6796A1F9682a1Cf4A83D237A57A8F9eBEEC6e4F2")
