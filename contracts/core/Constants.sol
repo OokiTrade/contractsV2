@@ -19,11 +19,11 @@ contract Constants {
     // string internal constant UserRewardsID = "UserRewards"; // decommissioned
     string internal constant LoanDepositValueID = "LoanDepositValue";
 
-    // IWethERC20 public constant wethToken = IWethERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // mainnet
-    // address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48; // mainnet
-    // address public constant bzrxTokenAddress = 0x56d811088235F11C8920698a204A5010a788f4b3; // mainnet
-    // address public constant vbzrxTokenAddress = 0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F; // mainnet
-    // address public constant OOKI = address(0x0De05F6447ab4D22c8827449EE4bA2D5C288379B); // mainnet
+    IWethERC20 public constant wethToken = IWethERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // mainnet
+    address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48; // mainnet
+    address public constant bzrxTokenAddress = 0x56d811088235F11C8920698a204A5010a788f4b3; // mainnet
+    address public constant vbzrxTokenAddress = 0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F; // mainnet
+    address public constant OOKI = address(0x0De05F6447ab4D22c8827449EE4bA2D5C288379B); // mainnet
 
     //IWethERC20 public constant wethToken = IWethERC20(0xd0A1E359811322d97991E03f863a0C30C2cF029C); // kovan
     //address public constant bzrxTokenAddress = 0xB54Fc2F2ea17d798Ad5C7Aba2491055BCeb7C6b2; // kovan
@@ -49,11 +49,11 @@ contract Constants {
     //address public constant bzrxTokenAddress = address(0); // avax
     //address public constant vbzrxTokenAddress = address(0); // avax
 
-    IWethERC20 public constant wethToken = IWethERC20(0x82aF49447D8a07e3bd95BD0d56f35241523fBab1); // arbitrum
-    address public constant bzrxTokenAddress = address(0); // arbitrum
-    address public constant vbzrxTokenAddress = address(0); // arbitrum
-    address public constant USDC = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8; // arbitrum
-    address public constant OOKI = address(0x400F3ff129Bc9C9d239a567EaF5158f1850c65a4); // arbitrum
+    // IWethERC20 public constant wethToken = IWethERC20(0x82aF49447D8a07e3bd95BD0d56f35241523fBab1); // arbitrum
+    // address public constant bzrxTokenAddress = address(0); // arbitrum
+    // address public constant vbzrxTokenAddress = address(0); // arbitrum
+    // address public constant USDC = 0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8; // arbitrum
+    // address public constant OOKI = address(0x400F3ff129Bc9C9d239a567EaF5158f1850c65a4); // arbitrum
 
     // IWethERC20 public constant wethToken = IWethERC20(0xD4949664cD82660AaE99bEdc034a0deA8A0bd517); // evmos (Wrapped evmos)
     // address public constant bzrxTokenAddress = address(0); // evmos
