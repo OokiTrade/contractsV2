@@ -30,7 +30,7 @@ contract LoanTokenBase is ReentrancyGuard, Ownable, PausableGuardian {
 
     address public loanTokenAddress;
 
-    uint256 internal baseRate_UNUSED;
+    uint256 public internalBalanceOf;
     uint256 internal rateMultiplier_UNUSED;
     uint256 internal lowUtilBaseRate_UNUSED;
     uint256 internal lowUtilRateMultiplier_UNUSED;

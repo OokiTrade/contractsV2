@@ -27,6 +27,8 @@ interface IToken {
 
     function tokenPrice() external view returns (uint256);
 
+    function internalBalanceOf() external view returns(uint256);
+
     function mint(address receiver, uint256 depositAmount)
         external
         returns (uint256);
@@ -152,4 +154,6 @@ interface IToken {
     function mintWithEther(address receiver) external payable;
 
     function burnToEther(address payable receiver,uint256 burnAmount) external returns (uint256 loanAmountPaid);
+
+    function consume(uint256 consumeAmount) external;
 }

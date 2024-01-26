@@ -8,6 +8,7 @@ pragma experimental ABIEncoderV2;
 
 import "./LoanClosingsShared.sol";
 import "../../interfaces/draft-IERC20Permit.sol";
+import "../../../interfaces/IToken.sol";
 
 contract LoanClosings is LoanClosingsShared {
 
@@ -150,6 +151,7 @@ contract LoanClosings is LoanClosingsShared {
             0, // collateralToLoanSwapRate
             CloseTypes.Deposit
         );
+        IToken(loanLocal.lender).consume(loanCloseAmount);
     }
 
     function _closeWithSwap(
@@ -241,6 +243,7 @@ contract LoanClosings is LoanClosingsShared {
             collateralToLoanSwapRate,
             CloseTypes.Swap
         );
+        IToken(loanLocal.lender).consume(loanCloseAmount);
     }
 
     function _updateDepositAmount(

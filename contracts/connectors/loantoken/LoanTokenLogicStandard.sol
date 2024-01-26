@@ -113,7 +113,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         }
     }
 
-    function flashBorrow(
+function flashBorrow(
         uint256 borrowAmount,
         address borrower,
         address target,
@@ -131,7 +131,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
 
         // save before balances
         uint256 beforeEtherBalance = address(this).balance.sub(msg.value);
-        uint256 beforeAssetsBalance = _underlyingBalance()
+        uint256 beforeAssetsBalance = internalBalanceOf
             .add(_totalAssetBorrowStored());
 
         // lock totalAssetSupply for duration of flash loan
@@ -161,18 +161,20 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
 
         // unlock totalAssetSupply
         _flTotalAssetSupply = 0;
-		
-		// pay flash borrow fees
+  
+        // pay flash borrow fees
         IBZx(bZxContract).payFlashBorrowFees(
             borrower,
             borrowAmount,
             flashBorrowFeePercent
         );
-	
+ 
+        _consume(borrowAmount);
+
         // verifies return of flash loan
         require(
             address(this).balance >= beforeEtherBalance &&
-            _underlyingBalance()
+            internalBalanceOf
                 .add(_totalAssetBorrowStored()) >= beforeAssetsBalance,
             "40"
         );
@@ -396,6 +398,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         } else {
             require(msg.value == depositAmount, "18");
             IWeth(wethToken).deposit.value(depositAmount)();
+            _modifyBalances(wethToken, msg.sender, address(this), depositAmount);
         }
 
         _mint(receiver, mintAmount);
@@ -422,7 +425,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         uint256 loanAmountOwed = burnAmount
             .mul(currentPrice)
             .div(WEI_PRECISION);
-        uint256 loanAmountAvailableInContract = _underlyingBalance();
+        uint256 loanAmountAvailableInContract = internalBalanceOf;
 
         loanAmountPaid = loanAmountOwed;
         require(loanAmountPaid <= loanAmountAvailableInContract, "37");
@@ -620,7 +623,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         internal
         returns (IBZx.LoanOpenData memory)
     {
-        require (sentAmounts[1] <= _underlyingBalance() && // newPrincipal
+        require (sentAmounts[1] <= internalBalanceOf && // newPrincipal
             sentAddresses[1] != address(0), // borrower
             "24"
         );
@@ -732,6 +735,8 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         string memory errorMsg)
         internal
     {
+        _modifyBalances(token, address(this), to, amount);
+        
         _callOptionalReturn(
             token,
             abi.encodeWithSelector(IERC20(token).transfer.selector, to, amount),
@@ -747,11 +752,23 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         string memory errorMsg)
         internal
     {
+        _modifyBalances(token, from, to, amount);
+
         _callOptionalReturn(
             token,
             abi.encodeWithSelector(IERC20(token).transferFrom.selector, from, to, amount),
             errorMsg
         );
+    }
+
+    function _modifyBalances(address token, address from, address to, uint256 amount) internal {
+        if (token == loanTokenAddress) {
+            if (from == address(this) && to != address(this)) {
+                internalBalanceOf = internalBalanceOf.sub(amount);
+            } else if (from != address(this) && to == address(this)) {
+                internalBalanceOf = internalBalanceOf.add(amount);
+            }
+        }
     }
 
     function _checkPermit(address token, bytes memory loanDataBytes) internal returns (bytes memory) {
@@ -890,8 +907,28 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     {
         totalSupply = _flTotalAssetSupply; // temporary locked totalAssetSupply during a flash loan transaction
         if (totalSupply == 0) {
-            totalSupply = _underlyingBalance()
-                .add(totalBorrow);
+            totalSupply = internalBalanceOf.add(totalBorrow);
+        }
+    }
+
+    modifier onlyAuthorized {
+        require(msg.sender == bZxContract || msg.sender == getGuardian() || msg.sender == owner(), "unauthorized");
+        _;
+    }
+
+    function consume(uint256 consumeAmount) public onlyAuthorized {
+        _consume(consumeAmount);
+    }
+
+    function _consume(uint256 consumeAmount) internal {
+        uint256 currentBalanceOf = IERC20(loanTokenAddress).balanceOf(address(this));
+        uint256 newBalanceOf = consumeAmount.add(internalBalanceOf);
+        if (newBalanceOf >= currentBalanceOf) {
+            // consume everything
+            internalBalanceOf = currentBalanceOf;
+        } else {
+            // consume only specific amount 
+            internalBalanceOf = newBalanceOf;
         }
     }
 
@@ -954,6 +991,9 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
         decimals = IERC20Detailed(loanTokenAddress).decimals();
 
         initialPrice = WEI_PRECISION; // starting price of 1
+
+        if(IERC20(_loanTokenAddress).allowance(address(this), bZxContract) != 0)
+            IERC20(_loanTokenAddress).safeApprove(bZxContract, 0);
 
         IERC20(_loanTokenAddress).safeApprove(bZxContract, uint256(-1));
     }
