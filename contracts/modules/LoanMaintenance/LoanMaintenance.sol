@@ -382,7 +382,9 @@ contract LoanMaintenance is State, LoanMaintenanceEvents, VaultController, Inter
             (loanType == LoanType.NonMargin && loanParamsLocal.maxLoanTerm != 0)) {
             return loanData;
         }
-
+        if(IPriceFeeds(priceFeeds).pricesFeeds(loanParamsLocal.loanToken) == address (0) || IPriceFeeds(priceFeeds).pricesFeeds(loanParamsLocal.collateralToken) == address (0)){
+            return loanData;
+        }
         loanLocal.principal = _getLoanPrincipal(loanLocal.lender, loanLocal.id);
         (uint256 currentMargin, uint256 value) = IPriceFeeds(priceFeeds).getCurrentMargin( // currentMargin, collateralToLoanRate
             loanParamsLocal.loanToken,
