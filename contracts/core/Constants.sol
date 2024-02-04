@@ -19,11 +19,11 @@ contract Constants {
     // string internal constant UserRewardsID = "UserRewards"; // decommissioned
     string internal constant LoanDepositValueID = "LoanDepositValue";
 
-    IWethERC20 public constant wethToken = IWethERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // mainnet
-    address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48; // mainnet
-    address public constant bzrxTokenAddress = 0x56d811088235F11C8920698a204A5010a788f4b3; // mainnet
-    address public constant vbzrxTokenAddress = 0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F; // mainnet
-    address public constant OOKI = address(0x0De05F6447ab4D22c8827449EE4bA2D5C288379B); // mainnet
+//    IWethERC20 public constant wethToken = IWethERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // mainnet
+//    address public constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48; // mainnet
+//    address public constant bzrxTokenAddress = 0x56d811088235F11C8920698a204A5010a788f4b3; // mainnet
+//    address public constant vbzrxTokenAddress = 0xB72B31907C1C95F3650b64b2469e08EdACeE5e8F; // mainnet
+//    address public constant OOKI = address(0x0De05F6447ab4D22c8827449EE4bA2D5C288379B); // mainnet
 
     //IWethERC20 public constant wethToken = IWethERC20(0xd0A1E359811322d97991E03f863a0C30C2cF029C); // kovan
     //address public constant bzrxTokenAddress = 0xB54Fc2F2ea17d798Ad5C7Aba2491055BCeb7C6b2; // kovan
@@ -65,5 +65,11 @@ contract Constants {
     // address public constant vbzrxTokenAddress = address(0); // optimism
     // address public constant USDC = 0x7F5c764cBc14f9669B88837ca1490cCa17c31607;
     // address public constant OOKI = address(0); // optimism
+
+    IWethERC20 public constant wethToken = IWethERC20(0x4200000000000000000000000000000000000006); // goerly base
+    address public constant USDC = address(0xad5bAD2C6E9B809a74fA65B52850aa179160818f); // goerly base
+    address public constant bzrxTokenAddress = address(0); // goerly base
+    address public constant vbzrxTokenAddress = address(0); // goerly base
+    address public constant OOKI = address(0); // goerly base
 
 }
