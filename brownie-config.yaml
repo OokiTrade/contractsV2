@@ -51,6 +51,7 @@ compiler:
             - "@uniswap=./node_modules/@uniswap"
             - "@celer=./node_modules/celer"
             - "prb-math=./node_modules/prb-math"
+            - "@chainlink=./node_modules/@chainlink"
 console:
     show_colors: true
     color_style: monokai
