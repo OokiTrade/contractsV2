@@ -334,7 +334,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     } else {
       require(msg.value == depositAmount, "18");
       IWeth(wethToken).deposit{value: depositAmount}();
-            _modifyBalances(wethToken, msg.sender, address(this), depositAmount);
+      _modifyBalances(wethToken, msg.sender, address(this), depositAmount);
     }
 
     _mint(receiver, mintAmount);
@@ -617,6 +617,16 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     _callOptionalReturn(token, abi.encodeWithSelector(IERC20(token).transferFrom.selector, from, to, amount), errorMsg);
   }
 
+  function _modifyBalances(address token, address from, address to, uint256 amount) internal {
+    if (token == loanTokenAddress) {
+      if (from == address(this) && to != address(this)) {
+        internalBalanceOf = internalBalanceOf - amount;
+      } else if (from != address(this) && to == address(this)) {
+        internalBalanceOf = internalBalanceOf + amount;
+      }
+    }
+  }
+
   // function _checkPermit(address token, bytes memory loanDataBytes) internal returns (bytes memory) {
   //   if (loanDataBytes.length != 0) {
   //     if (abi.decode(loanDataBytes, (uint128)) & WITH_PERMIT != 0) {
@@ -688,6 +698,28 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     if (totalSupply == 0) {
       totalSupply = _underlyingBalance() + totalBorrow;
     }
+  }
+
+
+  modifier onlyAuthorized {
+      require(msg.sender == bZxContract || msg.sender == getGuardian() || msg.sender == owner(), "unauthorized");
+      _;
+  }
+
+  function consume(uint256 consumeAmount) public onlyAuthorized {
+      _consume(consumeAmount);
+  }
+
+  function _consume(uint256 consumeAmount) internal {
+      uint256 currentBalanceOf = IERC20(loanTokenAddress).balanceOf(address(this));
+      uint256 newBalanceOf = consumeAmount + internalBalanceOf;
+      if (newBalanceOf >= currentBalanceOf) {
+          // consume everything
+          internalBalanceOf = currentBalanceOf;
+      } else {
+          // consume only specific amount 
+          internalBalanceOf = newBalanceOf;
+      }
   }
 
   function _getRateHelper() internal view virtual returns (ICurvedInterestRate) {
