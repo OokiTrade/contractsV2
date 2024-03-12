@@ -13,7 +13,7 @@ import "contracts/mixins/InterestHandler.sol";
 import "contracts/swaps/SwapsUser.sol";
 import "contracts/governance/PausableGuardian_0_8.sol";
 
-contract LoanOpenings is State, LoanOpeningsEvents, VaultController, InterestHandler, SwapsUser, PausableGuardian_0_8 {
+contract LoanOpenings is State, LoanOpeningsEvents, VaultController, SwapsUser, PausableGuardian_0_8 {
   using MathUtil for uint256;
   using EnumerableBytes32Set for EnumerableBytes32Set.Bytes32Set;
 

@@ -26,13 +26,13 @@ abstract contract LoanTokenBase is ReentrancyGuard, Ownable, PausableGuardian_0_
 
   address public loanTokenAddress;
 
-  uint256 internal baseRate_UNUSED;
-  uint256 internal rateMultiplier_UNUSED;
-  uint256 internal lowUtilBaseRate_UNUSED;
-  uint256 internal lowUtilRateMultiplier_UNUSED;
-  uint256 internal targetLevel_UNUSED;
-  uint256 internal kinkLevel_UNUSED;
-  uint256 internal maxScaleRate_UNUSED;
+    uint256 internal internalBalanceOf;
+    uint256 internal rateMultiplier_UNUSED;
+    uint256 internal lowUtilBaseRate_UNUSED;
+    uint256 internal lowUtilRateMultiplier_UNUSED;
+    uint256 internal targetLevel_UNUSED;
+    uint256 internal kinkLevel_UNUSED;
+    uint256 internal maxScaleRate_UNUSED;
 
   uint256 internal _flTotalAssetSupply;
   uint256 internal checkpointSupply_UNUSED;

@@ -37,6 +37,7 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
 
     if (assets != 0) {
       IWeth(wethToken).withdraw(assets);
+      _modifyBalances(wethToken, address(this), receiver, assets);
       Address.sendValue(receiver, assets);
     }
   }
@@ -73,6 +74,7 @@ contract LoanTokenLogicWeth is LoanTokenLogicStandard {
     if (withdrawalAmount != 0) {
       // withdrawOnOpen == true
       IWeth(_wethToken).withdraw(withdrawalAmount);
+      _modifyBalances(_wethToken, address(this), receiver, withdrawalAmount);
       Address.sendValue(payable(address(uint160(receiver))), withdrawalAmount);
       if (newPrincipal > withdrawalAmount) {
         _safeTransfer(_loanTokenAddress, bZxContract, newPrincipal - withdrawalAmount, "27");

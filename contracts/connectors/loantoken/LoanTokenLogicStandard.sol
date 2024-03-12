@@ -117,7 +117,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
 
     // save before balances
     uint256 beforeEtherBalance = address(this).balance - msg.value;
-    uint256 beforeAssetsBalance = _underlyingBalance() + _totalAssetBorrowStored();
+    uint256 beforeAssetsBalance = internalBalanceOf + _totalAssetBorrowStored();
 
     // lock totalAssetSupply for duration of flash loan
     _flTotalAssetSupply = beforeAssetsBalance;
@@ -149,6 +149,8 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
 
     // pay flash borrow fees
     IBZx(bZxContract).payFlashBorrowFees(borrower, borrowAmount, _getFlashLoanFee());
+
+    _consume(borrowAmount);
 
     // verifies return of flash loan
     require(address(this).balance >= beforeEtherBalance && _underlyingBalance() + _totalAssetBorrowStored() >= beforeAssetsBalance, "40");
@@ -332,6 +334,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     } else {
       require(msg.value == depositAmount, "18");
       IWeth(wethToken).deposit{value: depositAmount}();
+            _modifyBalances(wethToken, msg.sender, address(this), depositAmount);
     }
 
     _mint(receiver, mintAmount);
@@ -512,7 +515,7 @@ contract LoanTokenLogicStandard is AdvancedToken, StorageExtension, Flags {
     bytes memory loanDataBytes
   ) internal returns (IBZx.LoanOpenData memory) {
     require(
-      sentAmounts[1] <= _underlyingBalance() && // newPrincipal
+      sentAmounts[1] <= internalBalanceOf && // newPrincipal
         sentAddresses[1] != address(0), // borrower
       "24"
     );

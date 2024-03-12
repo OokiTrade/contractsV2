@@ -7,6 +7,7 @@
 pragma solidity ^0.8.0;
 
 import "contracts/modules/LoanClosings/LoanClosingsShared.sol";
+import "../../../interfaces/IToken.sol";
 
 contract LoanClosings is LoanClosingsShared {
 
@@ -118,6 +119,7 @@ contract LoanClosings is LoanClosingsShared {
       0, // collateralToLoanSwapRate
       CloseTypes.Deposit
     );
+        IToken(loanLocal.lender).consume(loanCloseAmount);
   }
 
   function _closeWithSwap(
@@ -185,6 +187,7 @@ contract LoanClosings is LoanClosingsShared {
     }
 
     _finalizeClose(loanLocal, loanParamsLocal, loanCloseAmount, usedCollateral, collateralToLoanSwapRate, CloseTypes.Swap);
+    IToken(loanLocal.lender).consume(loanCloseAmount);
   }
 
   function _updateDepositAmount(

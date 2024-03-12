@@ -8,6 +8,7 @@ pragma solidity ^0.8.0;
 
 import "contracts/modules/LoanClosings/LoanClosingsShared.sol";
 import "contracts/mixins/LiquidationHelper.sol";
+import "../../../interfaces/IToken.sol";
 
 contract LoanClosingsLiquidation is LoanClosingsShared {
   function initialize(address target) external onlyOwner {
@@ -110,5 +111,7 @@ contract LoanClosingsLiquidation is LoanClosingsShared {
     );
 
     _closeLoan(loanLocal, loanParamsLocal.loanToken, loanCloseAmount);
+
+    IToken(loanLocal.lender).consume(loanCloseAmount);
   }
 }

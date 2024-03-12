@@ -103,7 +103,7 @@ contract PriceFeeds is PausableGuardian_0_8 {
 
     uint256 combined = loanToCollateralAmount + (loanToCollateralAmount * margin) / WEI_PERCENT_PRECISION;
 
-    maxDrawdown = collateralAmount > combined ? collateralAmount - combined : 0;
+    maxDrawdown = collateralAmount > combined && combined != 0 ? collateralAmount - combined : 0;
   }
 
   function getCurrentMarginAndCollateralSize(
