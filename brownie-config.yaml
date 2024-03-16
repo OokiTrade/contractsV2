@@ -82,10 +82,11 @@ dependencies:
     - openzeppelin/openzeppelin-contracts@4.9.3
     - openzeppelin/openzeppelin-contracts-upgradeable@4.9.3
     - openzeppelin/openzeppelin-contracts@4.3.2
-    - openzeppelin/openzeppelin-contracts@3.4.0
-    - openzeppelin/openzeppelin-contracts@2.5.0
+    - openzeppelin/openzeppelin-contracts@3.4.2
+    - openzeppelin/openzeppelin-contracts@2.5.1
     - paulrberg/prb-math@2.4.1
-    - uniswap/uniswap-v2-core@1.0.1
-    - uniswap/uniswap-v3-core@1.0.0
-    - uniswap/uniswap-v3-periphery@1.3.0
+    - uniswap/v2-core@1.0.1
+    - uniswap/v3-core@1.0.0
+    - uniswap/v3-periphery@1.3.0
+    - celer-network/sgn-v2-contracts@0.2.0
 dev_deployment_artifacts: false
