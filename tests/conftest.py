@@ -46,9 +46,7 @@ def priceFeeds(accounts, WETH, DAI, LINK, PriceFeeds, PriceFeedsLocal):
     )
     return feeds
 
-@pytest.fixture(scope="module")
-def swapsImpl(accounts, SwapsImplKyber, SwapsImplTestnets):
-    return accounts[0].deploy(SwapsImplTestnets)
+
 
 @pytest.fixture(scope="module", autouse=True)
 def bzx(accounts, 
@@ -59,8 +57,6 @@ def bzx(accounts,
     LoanMaintenance, 
     LoanOpenings, 
     LoanClosings,
-    LoanClosingsWithGasToken,
-    swapsImpl, 
     priceFeeds):
     bzxproxy = accounts[0].deploy(bZxProtocol)
     bzx = Contract.from_abi("bzx", address=bzxproxy.address, abi=interface.IBZx.abi, owner=accounts[0])
@@ -71,7 +67,6 @@ def bzx(accounts,
     bzx.replaceContract(accounts[0].deploy(LoanMaintenance).address)
     bzx.replaceContract(accounts[0].deploy(LoanOpenings).address)
     bzx.replaceContract(accounts[0].deploy(LoanClosings).address)
-    # bzx.replaceContract(accounts[0].deploy(LoanClosingsWithGasToken).address) disable for now so that coverage works
 
     bzx.setPriceFeedContract(
         priceFeeds.address # priceFeeds

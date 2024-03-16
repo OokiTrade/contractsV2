@@ -23,14 +23,19 @@
     "prb-math": "^2.4.1",
     "prettier": "^2.5.1",
     "prettier-plugin-solidity": "^1.0.0-beta.19",
+    "pretty-quick": "^3.1.3",
     "solhint": "^3.0.0",
-    "solhint-plugin-prettier": "^0.0.4"
+    "solhint-plugin-prettier": "^0.0.5"
   },
   "scripts": {
     "analyize-contracts": "slither .",
     "lint-contracts": "solhint contracts/**/*.sol",
     "test": "brownie test",
-    "generate-merkle-root:output": "ts-node scripts/merkle-distributor/generate-merkle-root.ts --input scripts/merkle-distributor/output.json"
+    "generate-merkle-root:output": "ts-node scripts/merkle-distributor/generate-merkle-root.ts --input scripts/merkle-distributor/output.json",
+    "format": "pretty-quick --staged",
+    "prettier:check": "prettier -c 'contracts/**/*.sol' 'interfaces/**/*.sol'",
+    "prettier:write": "prettier --write 'contracts/**/*.sol' 'interfaces/**/*.sol'",
+    "lint:sol": "solhint 'contracts/**/*.sol' 'interfaces/**/*.sol' && prettier -c 'contracts/**/*.sol' 'interfaces/**/*.sol'"
   },
   "husky": {
     "hooks": {

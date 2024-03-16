@@ -1,62 +1,67 @@
 /**
- * Copyright 2017-2022, OokiDao. All Rights Reserved.
+ * Copyright 2017-2023, OokiDao. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0.
  */
 
+// SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.0;
 
-import "@openzeppelin-4.7.0/access/Ownable.sol";
+import "@openzeppelin-4.9.3/access/Ownable.sol";
 
 contract PausableGuardian_0_8 is Ownable {
-    // keccak256("Pausable_FunctionPause")
-    bytes32 internal constant Pausable_FunctionPause = 0xa7143c84d793a15503da6f19bf9119a2dac94448ca45d77c8bf08f57b2e91047;
+  // keccak256("Pausable_FunctionPause")
+  bytes32 internal constant Pausable_FunctionPause = 0xa7143c84d793a15503da6f19bf9119a2dac94448ca45d77c8bf08f57b2e91047;
 
-    // keccak256("Pausable_GuardianAddress")
-    bytes32 internal constant Pausable_GuardianAddress = 0x80e6706973d0c59541550537fd6a33b971efad732635e6c3b99fb01006803cdf;
+  // keccak256("Pausable_GuardianAddress")
+  bytes32 internal constant Pausable_GuardianAddress = 0x80e6706973d0c59541550537fd6a33b971efad732635e6c3b99fb01006803cdf;
 
-    modifier pausable() {
-        require(!_isPaused(msg.sig) || msg.sender == getGuardian(), "paused");
-        _;
+  string internal constant UNAUTHORIZED_ERROR = "unauthorized";
+  string internal constant PAUSED_ERROR = "paused";
+
+  modifier pausable() {
+    require(!_isPaused(msg.sig) || msg.sender == getGuardian(), PAUSED_ERROR);
+    _;
+  }
+
+  modifier onlyGuardian() {
+    require(msg.sender == owner() || msg.sender == getGuardian(), UNAUTHORIZED_ERROR);
+    _;
+  }
+
+  function _isPaused(bytes4 sig) public view returns (bool isPaused) {
+    bytes32 slot = keccak256(abi.encodePacked(sig, Pausable_FunctionPause));
+    assembly {
+      isPaused := sload(slot)
     }
+  }
 
-    modifier onlyGuardian() {
-        require(msg.sender==owner() || msg.sender==getGuardian(), "unauthorized");_;
+  function toggleFunctionPause(bytes4 sig) public {
+    require(msg.sender == getGuardian() || msg.sender == owner(), UNAUTHORIZED_ERROR);
+    bytes32 slot = keccak256(abi.encodePacked(sig, Pausable_FunctionPause));
+    assembly {
+      sstore(slot, 1)
     }
+  }
 
-    function _isPaused(bytes4 sig) public view returns (bool isPaused) {
-        bytes32 slot = keccak256(abi.encodePacked(sig, Pausable_FunctionPause));
-        assembly {
-            isPaused := sload(slot)
-        }
+  function toggleFunctionUnPause(bytes4 sig) public {
+    // only DAO can unpause, and adding guardian temporarily
+    require(msg.sender == getGuardian() || msg.sender == owner(), UNAUTHORIZED_ERROR);
+    bytes32 slot = keccak256(abi.encodePacked(sig, Pausable_FunctionPause));
+    assembly {
+      sstore(slot, 0)
     }
+  }
 
-    function toggleFunctionPause(bytes4 sig) public {
-        require(msg.sender == getGuardian() || msg.sender == owner(), "unauthorized");
-        bytes32 slot = keccak256(abi.encodePacked(sig, Pausable_FunctionPause));
-        assembly {
-            sstore(slot, 1)
-        }
+  function changeGuardian(address newGuardian) public {
+    require(msg.sender == getGuardian() || msg.sender == owner(), UNAUTHORIZED_ERROR);
+    assembly {
+      sstore(Pausable_GuardianAddress, newGuardian)
     }
+  }
 
-    function toggleFunctionUnPause(bytes4 sig) public {
-        // only DAO can unpause, and adding guardian temporarily
-        require(msg.sender == getGuardian() || msg.sender == owner(), "unauthorized");
-        bytes32 slot = keccak256(abi.encodePacked(sig, Pausable_FunctionPause));
-        assembly {
-            sstore(slot, 0)
-        }
+  function getGuardian() public view returns (address guardian) {
+    assembly {
+      guardian := sload(Pausable_GuardianAddress)
     }
-
-    function changeGuardian(address newGuardian) public {
-        require(msg.sender == getGuardian() || msg.sender == owner(), "unauthorized");
-        assembly {
-            sstore(Pausable_GuardianAddress, newGuardian)
-        }
-    }
-
-    function getGuardian() public view returns (address guardian) {
-        assembly {
-            guardian := sload(Pausable_GuardianAddress)
-        }
-    }
+  }
 }
